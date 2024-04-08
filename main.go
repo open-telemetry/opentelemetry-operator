@@ -29,6 +29,7 @@ import (
 	"github.com/spf13/pflag"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -134,7 +135,7 @@ func main() {
 	pflag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	pflag.BoolVar(&createRBACPermissions, "create-rbac-permissions", false, "Automatically create RBAC permissions needed by the processors")
+	pflag.BoolVar(&createRBACPermissions, "create-rbac-permissions", false, "Automatically create RBAC permissions needed by the processors (deprecated)")
 	pflag.BoolVar(&enableMultiInstrumentation, "enable-multi-instrumentation", false, "Controls whether the operator supports multi instrumentation")
 	pflag.BoolVar(&enableApacheHttpdInstrumentation, constants.FlagApacheHttpd, true, "Controls whether the operator supports Apache HTTPD auto-instrumentation")
 	pflag.BoolVar(&enableDotNetInstrumentation, constants.FlagDotNet, true, "Controls whether the operator supports dotnet auto-instrumentation")
@@ -188,54 +189,6 @@ func main() {
 
 	restConfig := ctrl.GetConfigOrDie()
 
-	// builds the operator's configuration
-	ad, err := autodetect.New(restConfig)
-	if err != nil {
-		setupLog.Error(err, "failed to setup auto-detect routine")
-		os.Exit(1)
-	}
-
-	cfg := config.New(
-		config.WithLogger(ctrl.Log.WithName("config")),
-		config.WithVersion(v),
-		config.WithCollectorImage(collectorImage),
-		config.WithCreateRBACPermissions(createRBACPermissions),
-		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
-		config.WithEnableApacheHttpdInstrumentation(enableApacheHttpdInstrumentation),
-		config.WithEnableDotNetInstrumentation(enableDotNetInstrumentation),
-		config.WithEnableNginxInstrumentation(enableNginxInstrumentation),
-		config.WithEnablePythonInstrumentation(enablePythonInstrumentation),
-		config.WithTargetAllocatorImage(targetAllocatorImage),
-		config.WithOperatorOpAMPBridgeImage(operatorOpAMPBridgeImage),
-		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
-		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
-		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
-		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
-		config.WithAutoInstrumentationGoImage(autoInstrumentationGo),
-		config.WithAutoInstrumentationApacheHttpdImage(autoInstrumentationApacheHttpd),
-		config.WithAutoInstrumentationNginxImage(autoInstrumentationNginx),
-		config.WithAutoDetect(ad),
-		config.WithLabelFilters(labelsFilter),
-		config.WithAnnotationFilters(annotationsFilter),
-	)
-	err = cfg.AutoDetect()
-	if err != nil {
-		setupLog.Error(err, "failed to autodetect config variables")
-	}
-	// Only add these to the scheme if they are available
-	if cfg.PrometheusCRAvailability() == prometheus.Available {
-		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
-		utilruntime.Must(monitoringv1.AddToScheme(scheme))
-	} else {
-		setupLog.Info("Prometheus CRDs are not installed, skipping adding to scheme.")
-	}
-	if cfg.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
-		setupLog.Info("Openshift CRDs are installed, adding to scheme.")
-		utilruntime.Must(routev1.Install(scheme))
-	} else {
-		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
-	}
-
 	var namespaces map[string]cache.Config
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
 	if found {
@@ -284,17 +237,81 @@ func main() {
 		os.Exit(1)
 	}
 
+	clientset, clientErr := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		setupLog.Error(clientErr, "failed to create kubernetes clientset")
+	}
+
+	reviewer := rbac.NewReviewer(clientset)
+	createRBACPermissions = true
 	ctx := ctrl.SetupSignalHandler()
+	w, err := checkRbacPermissions(reviewer, ctx)
+	if err != nil {
+		createRBACPermissions = false
+		setupLog.Info("the operator has not permissions to create rbac resources", "error", err, "serviceAccount")
+	}
+	if w != nil {
+		createRBACPermissions = false
+		setupLog.Info("the operator has not permissions to create rbac resources", "permissions", w)
+	}
+
+	if createRBACPermissions {
+		setupLog.Info("the operator has permissions to create rbac resources")
+	}
+
+	// builds the operator's configuration
+	ad, err := autodetect.New(restConfig)
+	if err != nil {
+		setupLog.Error(err, "failed to setup auto-detect routine")
+		os.Exit(1)
+	}
+
+	cfg := config.New(
+		config.WithLogger(ctrl.Log.WithName("config")),
+		config.WithVersion(v),
+		config.WithCollectorImage(collectorImage),
+		config.WithCreateRBACPermissions(createRBACPermissions),
+		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
+		config.WithEnableApacheHttpdInstrumentation(enableApacheHttpdInstrumentation),
+		config.WithEnableDotNetInstrumentation(enableDotNetInstrumentation),
+		config.WithEnableNginxInstrumentation(enableNginxInstrumentation),
+		config.WithEnablePythonInstrumentation(enablePythonInstrumentation),
+		config.WithTargetAllocatorImage(targetAllocatorImage),
+		config.WithOperatorOpAMPBridgeImage(operatorOpAMPBridgeImage),
+		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
+		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
+		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
+		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
+		config.WithAutoInstrumentationGoImage(autoInstrumentationGo),
+		config.WithAutoInstrumentationApacheHttpdImage(autoInstrumentationApacheHttpd),
+		config.WithAutoInstrumentationNginxImage(autoInstrumentationNginx),
+		config.WithAutoDetect(ad),
+		config.WithLabelFilters(labelsFilter),
+		config.WithAnnotationFilters(annotationsFilter),
+	)
+	err = cfg.AutoDetect()
+	if err != nil {
+		setupLog.Error(err, "failed to autodetect config variables")
+	}
+	// Only add these to the scheme if they are available
+	if cfg.PrometheusCRAvailability() == prometheus.Available {
+		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
+		utilruntime.Must(monitoringv1.AddToScheme(scheme))
+	} else {
+		setupLog.Info("Prometheus CRDs are not installed, skipping adding to scheme.")
+	}
+	if cfg.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
+		setupLog.Info("Openshift CRDs are installed, adding to scheme.")
+		utilruntime.Must(routev1.Install(scheme))
+	} else {
+		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
+	}
+
 	err = addDependencies(ctx, mgr, cfg, v)
 	if err != nil {
 		setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
 		os.Exit(1)
 	}
-	clientset, clientErr := kubernetes.NewForConfig(mgr.GetConfig())
-	if err != nil {
-		setupLog.Error(clientErr, "failed to create kubernetes clientset")
-	}
-	reviewer := rbac.NewReviewer(clientset)
 
 	if err = controllers.NewReconciler(controllers.Params{
 		Client:   mgr.GetClient(),
@@ -409,4 +426,33 @@ func tlsConfigSetting(cfg *tls.Config, tlsOpt tlsConfig) {
 		setupLog.Error(err, "Failed to convert TLS cipher suite name to ID")
 	}
 	cfg.CipherSuites = cipherSuiteIDs
+}
+
+func checkRbacPermissions(reviewer *rbac.Reviewer, ctx context.Context) (admission.Warnings, error) {
+	notPossibleToCheck := "unable to check rbac rules:"
+
+	namespace, err := autodetect.GetOperatorNamespace()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", notPossibleToCheck, err)
+	}
+
+	serviceAccount, err := autodetect.GetOperatorServiceAccount()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", notPossibleToCheck, err)
+	}
+
+	rules := []*rbacv1.PolicyRule{
+		{
+			APIGroups: []string{"rbac.authorization.k8s.io"},
+			Resources: []string{"clusterrolebindings", "clusterroles"},
+			Verbs:     []string{"create", "delete", "get", "list", "patch", "update"},
+		},
+	}
+
+	if subjectAccessReviews, err := reviewer.CheckPolicyRules(ctx, serviceAccount, namespace, rules...); err != nil {
+		return nil, fmt.Errorf("%s: %w", notPossibleToCheck, err)
+	} else if allowed, deniedReviews := rbac.AllSubjectAccessReviewsAllowed(subjectAccessReviews); !allowed {
+		return rbac.WarningsGroupedByResource(deniedReviews), nil
+	}
+	return nil, nil
 }
