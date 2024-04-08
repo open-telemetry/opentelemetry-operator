@@ -248,7 +248,7 @@ func main() {
 	w, err := checkRbacPermissions(reviewer, ctx)
 	if err != nil {
 		createRBACPermissions = false
-		setupLog.Info("the operator has not permissions to create rbac resources", "error", err, "serviceAccount")
+		setupLog.Info("the operator has not permissions to create rbac resources", "error", err)
 	}
 	if w != nil {
 		createRBACPermissions = false
