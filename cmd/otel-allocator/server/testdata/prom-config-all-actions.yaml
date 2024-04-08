@@ -23,7 +23,7 @@ config:
       - action: replace
         source_labels: [city]
         separator: ","
-        regex: (s.*)(ttle$)
+        regex: (ci.*)(name$)
         replacement: "test_newest_1_$1"
         target_label: city
   - job_name: job-lowercase
@@ -36,13 +36,10 @@ config:
         regex: "prometheus-reference-app"
       - source_labels: [__meta_kubernetes_pod_label_test]
         action: lowercase
-        regex: "test$1replacement"
         target_label: "mytarget"
     metric_relabel_configs:
       - action: lowercase
         source_labels: [city]
-        separator: ","
-        regex: (s.*)(ttle$)
         target_label: city
   - job_name: job-uppercase
     scheme: http
@@ -54,13 +51,10 @@ config:
         regex: "prometheus-reference-app"
       - source_labels: [__meta_kubernetes_pod_label_test]
         action: uppercase
-        regex: "test$1replacement"
         target_label: "mytarget"
     metric_relabel_configs:
       - action: uppercase
         source_labels: [city]
-        regex: (s.*)(ttle$)
-        separator: ","
         target_label: city
   - job_name: job-keep
     scheme: http
@@ -74,9 +68,7 @@ config:
       - action: keep
         source_labels: [city]
         separator: ","
-        regex: (s.*)(ttle$)
-        replacement: "test_newest_1_$$1"
-        target_label: city
+        regex: (ci.*)(name$)
   - job_name: job-drop
     scheme: http
     kubernetes_sd_configs:
@@ -91,10 +83,7 @@ config:
     metric_relabel_configs:
       - action: drop
         source_labels: [city]
-        separator: ","
-        regex: (s.*)(ttle$)
-        replacement: "test_newest_1_$1"
-        target_label: city
+        regex: (ci.*)(name$)
   - job_name: job-keepequal
     scheme: http
     kubernetes_sd_configs:
@@ -138,10 +127,8 @@ config:
     metric_relabel_configs:
       - action: hashmod
         modulus: 5
-        separator: ","
         source_labels: [city]
-        regex: (s.*)(ttle$)
-        replacement: "test_newest_1_$1"
+        regex: (ci.*)(name$)
         target_label: city
   - job_name: job-labelmap
     scheme: http
@@ -154,14 +141,11 @@ config:
       - source_labels: [__meta_kubernetes_pod_label_hashmod]
         action: labelmap
         regex: "prometheus-reference-app"
-        replacement: "$1"
         target_label: city
     metric_relabel_configs:
       - action: labelmap
         source_labels: [city]
-        regex: (s.*)(ttle$)
-        separator: ","
-        replacement: $1
+        regex: (ci.*)(name$)
         target_label: city
   - job_name: job-labeldrop
     scheme: http
@@ -175,7 +159,7 @@ config:
         regex: "prometheus-reference-app"
     metric_relabel_configs:
       - action: labeldrop
-        regex: (s.*)(ttle$)
+        regex: (ci.*)(name$)
   - job_name: job-labelkeep
     scheme: http
     kubernetes_sd_configs:
@@ -188,33 +172,4 @@ config:
         regex: "prometheus-reference-app"
     metric_relabel_configs:
       - action: labelkeep
-        regex: (s.*)(ttle$$)
-  - job_name: job-nodename-nodeip
-    scheme: http
-    kubernetes_sd_configs:
-      - role: pod
-    relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_label_app]
-        action: keep
-        regex: "prometheus-reference-app"
-      - source_labels: [__meta_kubernetes_pod_label_test]
-        action: keep
-        regex: "$NODE_NAME"
-        target_label: city
-      - source_labels: [__meta_kubernetes_pod_label_test]
-        action: keep
-        regex: "$NODE_IP"
-        target_label: city
-    metric_relabel_configs:
-      - action: keep
-        source_labels: [city]
-        regex: $NODE_NAME
-        replacement: $1
-        separator: ","
-        target_label: city
-      - action: replace
-        source_labels: [city]
-        regex: (s.*)(ttle$$)
-        replacement: $NODE_IP
-        separator: ","
-        target_label: city
+        regex: (ci.*)(name$$)
