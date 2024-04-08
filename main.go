@@ -30,6 +30,7 @@ import (
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
@@ -289,6 +290,7 @@ func main() {
 				&otelv1alpha1.OpenTelemetryCollector{}: {},
 				&otelv1alpha1.OpAMPBridge{}:            {},
 				&otelv1alpha1.Instrumentation{}:        {},
+				&corev1.Pod{}:                          {},
 				&v1.Job{}:                              {},
 				&v1.CronJob{}:                          {},
 				&appsv1.ReplicaSet{}:                   {},
