@@ -23,10 +23,14 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -1764,4 +1768,305 @@ func TestInjectSdkOnly(t *testing.T) {
 			},
 		},
 	}, pod)
+}
+
+func TestParentResourceLabels(t *testing.T) {
+	ns := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-parent-resource-labels",
+		},
+	}
+	err := k8sClient.Create(context.Background(), &ns)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name              string
+		prepare           func()
+		podObjectMeta     metav1.ObjectMeta
+		expectedResources map[attribute.Key]string
+	}{
+		{
+			name:              "from orphan pod",
+			podObjectMeta:     metav1.ObjectMeta{},
+			expectedResources: map[attribute.Key]string{},
+		},
+		{
+			name: "from replicaset",
+			podObjectMeta: metav1.ObjectMeta{
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "apps/v1",
+						Kind:       "ReplicaSet",
+						Name:       "my-rs",
+						UID:        "my-rs-uid",
+					},
+				},
+			},
+			expectedResources: map[attribute.Key]string{
+				semconv.K8SReplicaSetNameKey: "my-rs",
+				semconv.K8SReplicaSetUIDKey:  "my-rs-uid",
+			},
+		},
+		{
+			name: "from deployment",
+			prepare: func() {
+				err := k8sClient.Create(context.Background(), &appsv1.ReplicaSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-deploy-rs",
+						Namespace: ns.Name,
+						OwnerReferences: []metav1.OwnerReference{
+							{ // from Deployment
+								APIVersion: "apps/v1",
+								Kind:       "Deployment",
+								Name:       "my-deploy",
+								UID:        "my-deploy-uid",
+							},
+						},
+					},
+					Spec: appsv1.ReplicaSetSpec{
+						Replicas: ptr.To[int32](0),
+						Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "my-deploy"}},
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": "my-deploy"}},
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "con", Image: "img:1"}},
+							},
+						},
+					},
+				})
+				require.NoError(t, err)
+			},
+			podObjectMeta: metav1.ObjectMeta{
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "apps/v1",
+						Kind:       "ReplicaSet",
+						Name:       "my-deploy-rs",
+						UID:        "my-deploy-rs-uid",
+					},
+				},
+			},
+			expectedResources: map[attribute.Key]string{
+				semconv.K8SReplicaSetNameKey: "my-deploy-rs",
+				semconv.K8SReplicaSetUIDKey:  "my-deploy-rs-uid",
+				semconv.K8SDeploymentNameKey: "my-deploy",
+				semconv.K8SDeploymentUIDKey:  "my-deploy-uid",
+			},
+		},
+		{
+			name: "from job",
+			podObjectMeta: metav1.ObjectMeta{
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "batch/v1",
+						Kind:       "Job",
+						Name:       "my-job",
+						UID:        "my-job-uid",
+					},
+				},
+			},
+			expectedResources: map[attribute.Key]string{
+				semconv.K8SJobNameKey: "my-job",
+				semconv.K8SJobUIDKey:  "my-job-uid",
+			},
+		},
+		{
+			name: "from cronjob",
+			prepare: func() {
+				err := k8sClient.Create(context.Background(), &batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-cronjob-job",
+						Namespace: ns.Name,
+						OwnerReferences: []metav1.OwnerReference{
+							{ // from CronJob
+								APIVersion: "batch/v1",
+								Kind:       "CronJob",
+								Name:       "my-cronjob",
+								UID:        "my-cronjob-uid",
+							},
+						},
+					},
+					Spec: batchv1.JobSpec{
+						Suspend: ptr.To[bool](true),
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								RestartPolicy: corev1.RestartPolicyNever,
+								Containers:    []corev1.Container{{Name: "con", Image: "img:1"}},
+							},
+						},
+					},
+				})
+				require.NoError(t, err)
+			},
+			podObjectMeta: metav1.ObjectMeta{
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "batch/v1",
+						Kind:       "Job",
+						Name:       "my-cronjob-job",
+						UID:        "my-cronjob-job-uid",
+					},
+				},
+			},
+			expectedResources: map[attribute.Key]string{
+				semconv.K8SJobNameKey:     "my-cronjob-job",
+				semconv.K8SJobUIDKey:      "my-cronjob-job-uid",
+				semconv.K8SCronJobNameKey: "my-cronjob",
+				semconv.K8SCronJobUIDKey:  "my-cronjob-uid",
+			},
+		},
+		{
+			name: "from statefulset",
+			podObjectMeta: metav1.ObjectMeta{
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "apps/v1",
+						Kind:       "StatefulSet",
+						Name:       "my-statefulset",
+						UID:        "my-statefulset-uid",
+					},
+				},
+			},
+			expectedResources: map[attribute.Key]string{
+				semconv.K8SStatefulSetNameKey: "my-statefulset",
+				semconv.K8SStatefulSetUIDKey:  "my-statefulset-uid",
+			},
+		},
+		{
+			name: "from daemonset",
+			podObjectMeta: metav1.ObjectMeta{
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "apps/v1",
+						Kind:       "DaemonSet",
+						Name:       "my-daemonset",
+						UID:        "my-daemonset-uid",
+					},
+				},
+			},
+			expectedResources: map[attribute.Key]string{
+				semconv.K8SDaemonSetNameKey: "my-daemonset",
+				semconv.K8SDaemonSetUIDKey:  "my-daemonset-uid",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.prepare != nil {
+				test.prepare()
+			}
+
+			k8sResources := map[attribute.Key]string{}
+			inj := sdkInjector{
+				client: k8sClient,
+				logger: logr.Discard(),
+			}
+			inj.addParentResourceLabels(context.Background(), true, ns, test.podObjectMeta, k8sResources)
+
+			for k, v := range test.expectedResources {
+				assert.Equal(t, v, k8sResources[k])
+			}
+		})
+	}
+}
+
+func TestChooseServiceName(t *testing.T) {
+	tests := []struct {
+		name                string
+		resources           map[string]string
+		index               int
+		expectedServiceName string
+	}{
+		{
+			name:                "first container",
+			resources:           map[string]string{},
+			index:               0,
+			expectedServiceName: "1st",
+		},
+		{
+			name:                "second container",
+			resources:           map[string]string{},
+			index:               1,
+			expectedServiceName: "2nd",
+		},
+		{
+			name: "from pod",
+			resources: map[string]string{
+				string(semconv.K8SPodNameKey): "my-pod",
+			},
+			index:               0,
+			expectedServiceName: "my-pod",
+		},
+		{
+			name: "from replicaset",
+			resources: map[string]string{
+				string(semconv.K8SReplicaSetNameKey): "my-rs",
+				string(semconv.K8SPodNameKey):        "my-rs-pod",
+			},
+			index:               0,
+			expectedServiceName: "my-rs",
+		},
+		{
+			name: "from deployment",
+			resources: map[string]string{
+				string(semconv.K8SDeploymentNameKey): "my-deploy",
+				string(semconv.K8SReplicaSetNameKey): "my-deploy-rs",
+				string(semconv.K8SPodNameKey):        "my-deploy-rs-pod",
+			},
+			index:               0,
+			expectedServiceName: "my-deploy",
+		},
+		{
+			name: "from cronjob",
+			resources: map[string]string{
+				string(semconv.K8SCronJobNameKey): "my-cronjob",
+				string(semconv.K8SJobNameKey):     "my-cronjob-job",
+				string(semconv.K8SPodNameKey):     "my-cronjob-job-pod",
+			},
+			index:               0,
+			expectedServiceName: "my-cronjob",
+		},
+		{
+			name: "from job",
+			resources: map[string]string{
+				string(semconv.K8SJobNameKey): "my-job",
+				string(semconv.K8SPodNameKey): "my-job-pod",
+			},
+			index:               0,
+			expectedServiceName: "my-job",
+		},
+		{
+			name: "from statefulset",
+			resources: map[string]string{
+				string(semconv.K8SStatefulSetNameKey): "my-statefulset",
+				string(semconv.K8SPodNameKey):         "my-statefulset-pod",
+			},
+			index:               0,
+			expectedServiceName: "my-statefulset",
+		},
+		{
+			name: "from daemonset",
+			resources: map[string]string{
+				string(semconv.K8SDaemonSetNameKey): "my-daemonset",
+				string(semconv.K8SPodNameKey):       "my-daemonset-pod",
+			},
+			index:               0,
+			expectedServiceName: "my-daemonset",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			serviceName := chooseServiceName(corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "1st"},
+						{Name: "2nd"},
+					},
+				},
+			}, test.resources, test.index)
+
+			assert.Equal(t, test.expectedServiceName, serviceName)
+		})
+	}
 }

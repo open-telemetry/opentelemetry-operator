@@ -23,56 +23,6 @@ spec:
       kind: OpenTelemetryCollector
       name: opentelemetrycollectors.core.opentelemetry.io
       version: v1alpha1
-    - description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
-        API.
-      displayName: OpenTelemetry Collector
-      kind: OpenTelemetryCollector
-      name: opentelemetrycollectors.opentelemetry.io
-      resources:
-      - kind: ConfigMaps
-        name: ""
-        version: v1
-      - kind: DaemonSets
-        name: ""
-        version: apps/v1
-      - kind: Deployment
-        name: ""
-        version: apps/v1
-      - kind: Pod
-        name: ""
-        version: v1
-      - kind: Service
-        name: ""
-        version: v1
-      - kind: StatefulSets
-        name: ""
-        version: apps/v1
-      specDescriptors:
-      - description: ObservabilitySpec defines how telemetry data gets handled.
-        displayName: Observability
-        path: observability
-      - description: Metrics defines the metrics configuration for operands.
-        displayName: Metrics Config
-        path: observability.metrics
-      - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
-          mode) should be created for the service managed by the OpenTelemetry Operator.
-          The operator.observability.prometheus feature gate must be enabled to use
-          this feature.
-        displayName: Create ServiceMonitors for OpenTelemetry Collector
-        path: observability.metrics.enableMetrics
-      - description: ObservabilitySpec defines how telemetry data gets handled.
-        displayName: Observability
-        path: targetAllocator.observability
-      - description: Metrics defines the metrics configuration for operands.
-        displayName: Metrics Config
-        path: targetAllocator.observability.metrics
-      - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
-          mode) should be created for the service managed by the OpenTelemetry Operator.
-          The operator.observability.prometheus feature gate must be enabled to use
-          this feature.
-        displayName: Create ServiceMonitors for OpenTelemetry Collector
-        path: targetAllocator.observability.metrics.enableMetrics
-      version: v1beta1
     - description: Instrumentation is the spec for OpenTelemetry instrumentation.
       displayName: OpenTelemetry Instrumentation
       kind: Instrumentation
@@ -168,9 +118,9 @@ spec:
       deployments: null
     strategy: ""
   installModes:
-  - supported: false
+  - supported: true
     type: OwnNamespace
-  - supported: false
+  - supported: true
     type: SingleNamespace
   - supported: false
     type: MultiNamespace

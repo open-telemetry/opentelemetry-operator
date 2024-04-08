@@ -174,7 +174,7 @@ type OpenTelemetryCollectorSpec struct {
 	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
+	// Config is the raw YAML to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
 	// +required
 	Config string `json:"config,omitempty"`
 	// VolumeMounts represents the mount points to use in the underlying collector deployment(s)
@@ -438,8 +438,8 @@ type OpenTelemetryCollectorStatus struct {
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
-// +kubebuilder:deprecatedversion:warning="OpenTelemetryCollector v1alpha1 is deprecated. Migrate to v1beta1."
 // +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 // +kubebuilder:resource:shortName=otelcol;otelcols
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector

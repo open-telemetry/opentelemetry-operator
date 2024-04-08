@@ -42,6 +42,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
@@ -556,6 +557,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					config.WithCollectorImage("default-collector"),
 					config.WithTargetAllocatorImage("default-ta-allocator"),
 					config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
+					config.WithPrometheusCRAvailability(prometheus.Available),
 				),
 			})
 

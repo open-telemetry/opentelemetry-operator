@@ -45,17 +45,6 @@ func TestHealthCheckEndpointMigration(t *testing.T) {
     endpoint: "localhost:13133"
   health_check/3:
     port: 13133
-
-receivers:
-  otlp: {}
-exporters:
-  debug: {}
-
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      exporters: [otlp]
 `,
 		},
 	}
@@ -68,26 +57,14 @@ service:
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
-	resV1beta1, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
-	res := convertTov1alpha1(t, resV1beta1)
 
 	// verify
-	assert.YAMLEq(t, `extensions:
+	assert.Equal(t, `extensions:
   health_check/2:
     endpoint: localhost:13133
   health_check/3:
     endpoint: 0.0.0.0:13133
-
-receivers:
-  otlp: {}
-exporters:
-  debug: {}
-
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      exporters: [otlp]
 `, res.Spec.Config)
 }
