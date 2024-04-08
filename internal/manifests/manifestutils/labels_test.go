@@ -147,7 +147,7 @@ func TestLabelsFilter(t *testing.T) {
 	}
 
 	// This requires the filter to be in regex match form and not the other simpler wildcard one.
-	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{".*.bar.io"})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{".bar.io"})
 
 	// verify
 	assert.Len(t, labels, 7)

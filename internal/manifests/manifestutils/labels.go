@@ -15,7 +15,6 @@
 package manifestutils
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -26,8 +25,9 @@ import (
 
 func IsFilteredSet(sourceSet string, filterSet []string) bool {
 	for _, pattern := range filterSet {
-		match, _ := regexp.MatchString(pattern, sourceSet)
-		return match
+		if strings.Contains(sourceSet, pattern) {
+			return true
+		}
 	}
 	return false
 }
