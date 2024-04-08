@@ -13,5 +13,6 @@ issues: [2770]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext: | Changed the approach from regexp.MatchString, which was representing a high resource cost and
-confusing the users to strings.Contains, which turned out to be simpler and more efficient.
+subtext: | 
+  Changed the approach from regexp.MatchString, which was representing a high resource cost 
+  and confusing the users to strings.Contains, which turned out to be simpler and more efficient.
