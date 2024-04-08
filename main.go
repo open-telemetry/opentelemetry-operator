@@ -290,6 +290,8 @@ func main() {
 				&otelv1alpha1.OpAMPBridge{}:            {},
 				&otelv1alpha1.Instrumentation{}:        {},
 				&v1.Job{}:                              {},
+				&v1.CronJob{}:                          {},
+				&appsv1.ReplicaSet{}:                   {},
 				&appsv1.Deployment{}:                   {},
 				&appsv1.DaemonSet{}:                    {},
 				&appsv1.StatefulSet{}:                  {},
