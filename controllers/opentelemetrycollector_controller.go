@@ -36,8 +36,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -79,7 +81,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 	for i := range hpaList.Items {
 		ownedObjects[hpaList.Items[i].GetUID()] = &hpaList.Items[i]
 	}
-	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability() == prometheus.Available {
 		servicemonitorList := &monitoringv1.ServiceMonitorList{}
 		err = r.List(ctx, servicemonitorList, listOps)
 		if err != nil {
@@ -129,25 +131,30 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 	return ownedObjects, nil
 }
 
-func (r *OpenTelemetryCollectorReconciler) getParams(instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
-	p := manifests.Params{
+func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) (manifests.Params, error) {
+	otelCol := v1beta1.OpenTelemetryCollector{}
+	err := instance.ConvertTo(&otelCol)
+	if err != nil {
+		return manifests.Params{}, err
+	}
+	params := manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
-		OtelCol:  instance,
+		OtelCol:  otelCol,
 		Log:      r.log,
 		Scheme:   r.scheme,
 		Recorder: r.recorder,
 	}
 
 	// generate the target allocator CR from the collector CR
-	targetAllocator, err := collector.TargetAllocator(p)
+	targetAllocator, err := collector.TargetAllocator(params)
 	if err != nil {
-		return p, err
+		return params, err
 	}
 	if targetAllocator != nil {
-		p.TargetAllocator = *targetAllocator
+		params.TargetAllocator = *targetAllocator
 	}
-	return p, nil
+	return params, nil
 }
 
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
@@ -180,7 +187,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.log.WithValues("opentelemetrycollector", req.NamespacedName)
 
-	var instance v1beta1.OpenTelemetryCollector
+	var instance v1alpha1.OpenTelemetryCollector
 	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
 			log.Error(err, "unable to fetch OpenTelemetryCollector")
@@ -196,7 +203,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, nil
 	}
 
-	if instance.Spec.ManagementState == v1beta1.ManagementStateUnmanaged {
+	if instance.Spec.ManagementState == v1alpha1.ManagementStateUnmanaged {
 		log.Info("Skipping reconciliation for unmanaged OpenTelemetryCollector resource", "name", req.String())
 		// Stop requeueing for unmanaged OpenTelemetryCollector custom resources
 		return ctrl.Result{}, nil
@@ -225,7 +232,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 // SetupWithManager tells the manager what our controller is interested in.
 func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&v1beta1.OpenTelemetryCollector{}).
+		For(&v1alpha1.OpenTelemetryCollector{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).
@@ -243,7 +250,7 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		builder.Owns(&rbacv1.ClusterRole{})
 	}
 
-	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability() == prometheus.Available {
 		builder.Owns(&monitoringv1.ServiceMonitor{})
 		builder.Owns(&monitoringv1.PodMonitor{})
 	}

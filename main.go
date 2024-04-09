@@ -46,9 +46,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -75,9 +76,6 @@ type tlsConfig struct {
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(otelv1beta1.AddToScheme(scheme))
-	utilruntime.Must(routev1.AddToScheme(scheme))
-	utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
@@ -224,6 +222,19 @@ func main() {
 	if err != nil {
 		setupLog.Error(err, "failed to autodetect config variables")
 	}
+	// Only add these to the scheme if they are available
+	if cfg.PrometheusCRAvailability() == prometheus.Available {
+		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
+		utilruntime.Must(monitoringv1.AddToScheme(scheme))
+	} else {
+		setupLog.Info("Prometheus CRDs are not installed, skipping adding to scheme.")
+	}
+	if cfg.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
+		setupLog.Info("Openshift CRDs are installed, adding to scheme.")
+		utilruntime.Must(routev1.Install(scheme))
+	} else {
+		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
+	}
 
 	var namespaces map[string]cache.Config
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
@@ -309,10 +320,6 @@ func main() {
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = otelv1alpha1.SetupCollectorWebhook(mgr, cfg, reviewer); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
-			os.Exit(1)
-		}
-		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
