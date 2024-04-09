@@ -24,6 +24,7 @@ jobs:
          - "1.29"
        group:
          - e2e
+         - e2e-automatic-rbac
          - e2e-autoscale
          - e2e-instrumentation
          - e2e-opampbridge

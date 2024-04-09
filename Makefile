@@ -207,6 +207,19 @@ generate: controller-gen
 e2e: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e
 
+# end-to-end-test for testing automatic RBAC creation
+.PHONY: e2e-automatic-rbac
+e2e-automatic-rbac: chainsaw
+	# Add extra needed permissions
+	kubectl apply -f hack/rbac-operator-permissions.yaml
+	kubectl rollout restart deployment opentelemetry-operator-controller-manager -n opentelemetry-operator-system
+	kubectl rollout status deployment opentelemetry-operator-controller-manager -n opentelemetry-operator-system
+	go run hack/check-operator-ready.go
+	$(CHAINSAW) test --test-dir ./tests/e2e-automatic-rbac
+	# Cleanup
+	kubectl delete -f hack/rbac-operator-permissions.yaml
+	kubectl rollout restart deployment opentelemetry-operator-controller-manager -n opentelemetry-operator-system
+
 # end-to-end-test for testing autoscale
 .PHONY: e2e-autoscale
 e2e-autoscale: chainsaw
