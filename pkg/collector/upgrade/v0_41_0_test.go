@@ -48,14 +48,12 @@ receivers:
    - https://*.test.com
    cors_allowed_headers:
    - ExampleHeader
-exporters:
-  debug: {}
 
 service:
  pipelines:
    metrics:
      receivers: [otlp]
-     exporters: [debug]
+     exporters: [nop]
 `,
 		},
 	}
@@ -68,11 +66,10 @@ service:
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
-	resV1beta1, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
+	res, err := up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
-	res := convertTov1alpha1(t, resV1beta1)
 
-	assert.YAMLEq(t, `receivers:
+	assert.Equal(t, `receivers:
   otlp:
     cors:
       allowed_headers:
@@ -80,13 +77,11 @@ service:
       allowed_origins:
       - https://foo.bar.com
       - https://*.test.com
-exporters:
-  debug: {}
 service:
   pipelines:
     metrics:
       exporters:
-      - debug
+      - nop
       receivers:
       - otlp
 `, res.Spec.Config)
@@ -108,36 +103,30 @@ receivers:
    - https://foo.bar.com
    - https://*.test.com
 
-exporters:
-  debug: {}
-
 service:
  pipelines:
    metrics:
      receivers: [otlp]
-     exporters: [debug]
+     exporters: [nop]
 `,
 		},
 	}
 
 	existing.Status.Version = "0.40.0"
-	resV1beta1, err = up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
+	res, err = up.ManagedInstance(context.Background(), existing)
 	assert.NoError(t, err)
-	res = convertTov1alpha1(t, resV1beta1)
 
-	assert.YAMLEq(t, `receivers:
+	assert.Equal(t, `receivers:
   otlp:
     cors:
       allowed_origins:
       - https://foo.bar.com
       - https://*.test.com
-exporters:
-  debug: {}
 service:
   pipelines:
     metrics:
       exporters:
-      - debug
+      - nop
       receivers:
       - otlp
 `, res.Spec.Config)

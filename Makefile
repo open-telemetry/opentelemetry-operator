@@ -39,8 +39,7 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
-# kubectl apply does not work on large CRDs.
-CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=0"
+CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=200"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -94,27 +93,25 @@ ensure-generate-is-noop: set-image-controller generate bundle
 	@git diff -s --exit-code docs/api.md || (echo "Build failed: the api.md file has been changed but the generated api.md file isn't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
 
 .PHONY: all
-all: manager
-.PHONY: ci
-ci: test
+all: manager targetallocator operator-opamp-bridge
 
-# Run tests
-# setup-envtest uses KUBEBUILDER_ASSETS which points to a directory with binaries (api-server, etcd and kubectl)
-.PHONY: test
-test: generate fmt vet ensure-generate-is-noop envtest
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
+# No lint here, as CI runs it separately
+.PHONY: ci
+ci: generate fmt vet test ensure-generate-is-noop
 
 # Build manager binary
 .PHONY: manager
-manager: generate fmt vet
+manager: generate
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o bin/manager_${ARCH} -ldflags "${COMMON_LDFLAGS} ${OPERATOR_LDFLAGS}" main.go
 
 # Build target allocator binary
+.PHONY: targetallocator
 targetallocator:
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/otel-allocator/bin/targetallocator_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/otel-allocator
 
 # Build opamp bridge binary
-operator-opamp-bridge:
+.PHONY: operator-opamp-bridge
+operator-opamp-bridge: generate
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/operator-opamp-bridge/bin/opampbridge_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/operator-opamp-bridge
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
@@ -175,6 +172,15 @@ release-artifacts: set-image-controller
 .PHONY: manifests
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+# Run tests
+# setup-envtest uses KUBEBUILDER_ASSETS which points to a directory with binaries (api-server, etcd and kubectl)
+.PHONY: test
+test: envtest
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
+
+.PHONY: precommit
+precommit: generate fmt vet lint test ensure-generate-is-noop reset
 
 # Run go fmt against code
 .PHONY: fmt
@@ -241,7 +247,7 @@ e2e-prometheuscr: chainsaw
 e2e-targetallocator: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator
 
-# end-to-end-test for Annotations/Labels Filters 
+# end-to-end-test for Annotations/Labels Filters
 .PHONY: e2e-metadata-filters
 e2e-metadata-filters: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-metadata-filters
@@ -510,8 +516,8 @@ chlog-insert-components:
 	@echo "* [Go - ${AUTO_INSTRUMENTATION_GO_VERSION}](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/${AUTO_INSTRUMENTATION_GO_VERSION})" >>components.md
 	@echo "* [ApacheHTTPD - ${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION})" >>components.md
 	@echo "* [Nginx - ${AUTO_INSTRUMENTATION_NGINX_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${AUTO_INSTRUMENTATION_NGINX_VERSION})" >>components.md
-	@sed -i '/<!-- next version -->/rcomponents.md' CHANGELOG.md
-	@sed -i '/<!-- next version -->/G' CHANGELOG.md
+	@sed -i '' '/<!-- next version -->/rcomponents.md' CHANGELOG.md
+	@sed -i '' '/<!-- next version -->/G' CHANGELOG.md
 	@rm components.md
 
 .PHONY: opm

@@ -117,10 +117,10 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 
 func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instrumentation) *v1alpha1.Instrumentation {
 	upgraded := inst.DeepCopy()
-	for annotation, config := range u.defaultAnnotationToConfig {
+	for annotation, instCfg := range u.defaultAnnotationToConfig {
 		autoInst := upgraded.Annotations[annotation]
 		if autoInst != "" {
-			if config.enabled {
+			if instCfg.enabled {
 				switch annotation {
 				case constants.AnnotationDefaultAutoInstrumentationApacheHttpd:
 					if inst.Spec.ApacheHttpd.Image == autoInst {
@@ -144,8 +144,7 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 					}
 				}
 			} else {
-				u.Logger.Error(nil, "autoinstrumentation not enabled for this language", "flag", config.id)
-				u.Recorder.Event(upgraded, "Warning", "InstrumentationUpgradeRejected", fmt.Sprintf("support for is not enabled for %s", config.id))
+				u.Logger.V(4).Info("autoinstrumentation not enabled for this language", "flag", instCfg.id)
 			}
 		}
 	}
@@ -177,8 +176,7 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 					}
 				}
 			} else {
-				u.Logger.Error(nil, "autoinstrumentation not enabled for this language", "flag", gate.ID())
-				u.Recorder.Event(upgraded, "Warning", "InstrumentationUpgradeRejected", fmt.Sprintf("support for is not enabled for %s", gate.ID()))
+				u.Logger.V(4).Info("autoinstrumentation not enabled for this language", "flag", gate.ID())
 			}
 		}
 	}

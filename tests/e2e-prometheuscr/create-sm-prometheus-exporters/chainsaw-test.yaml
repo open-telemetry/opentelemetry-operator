@@ -52,7 +52,7 @@ spec:
     try:
     - delete:
         ref:
-          apiVersion: opentelemetry.io/v1beta1
+          apiVersion: opentelemetry.io/v1alpha1
           kind: OpenTelemetryCollector
           name: simplest
           namespace: create-sm-prometheus

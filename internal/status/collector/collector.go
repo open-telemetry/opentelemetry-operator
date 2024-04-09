@@ -23,14 +23,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
-func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1beta1.OpenTelemetryCollector) error {
+func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.OpenTelemetryCollector) error {
 	if changed.Status.Version == "" {
 		// a version is not set, otherwise let the upgrade mechanism take care of it!
 		changed.Status.Version = version.OpenTelemetryCollector()
@@ -38,7 +38,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1be
 
 	mode := changed.Spec.Mode
 
-	if mode == v1beta1.ModeSidecar {
+	if mode == v1alpha1.ModeSidecar {
 		changed.Status.Scale.Replicas = 0
 		changed.Status.Scale.Selector = ""
 		return nil
@@ -66,7 +66,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1be
 	var statusImage string
 
 	switch mode { // nolint:exhaustive
-	case v1beta1.ModeDeployment:
+	case v1alpha1.ModeDeployment:
 		obj := &appsv1.Deployment{}
 		if err := cli.Get(ctx, objKey, obj); err != nil {
 			return fmt.Errorf("failed to get deployment status.replicas: %w", err)
@@ -76,7 +76,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1be
 		statusReplicas = strconv.Itoa(int(readyReplicas)) + "/" + strconv.Itoa(int(replicas))
 		statusImage = obj.Spec.Template.Spec.Containers[0].Image
 
-	case v1beta1.ModeStatefulSet:
+	case v1alpha1.ModeStatefulSet:
 		obj := &appsv1.StatefulSet{}
 		if err := cli.Get(ctx, objKey, obj); err != nil {
 			return fmt.Errorf("failed to get statefulSet status.replicas: %w", err)
@@ -86,7 +86,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1be
 		statusReplicas = strconv.Itoa(int(readyReplicas)) + "/" + strconv.Itoa(int(replicas))
 		statusImage = obj.Spec.Template.Spec.Containers[0].Image
 
-	case v1beta1.ModeDaemonSet:
+	case v1alpha1.ModeDaemonSet:
 		obj := &appsv1.DaemonSet{}
 		if err := cli.Get(ctx, objKey, obj); err != nil {
 			return fmt.Errorf("failed to get daemonSet status.replicas: %w", err)
