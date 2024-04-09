@@ -174,7 +174,7 @@ type OpenTelemetryCollectorSpec struct {
 	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image (Always, Never, IfNotPresent)
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
+	// Config is the raw YAML to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
 	// +required
 	Config string `json:"config,omitempty"`
 	// VolumeMounts represents the mount points to use in the underlying collector deployment(s)
@@ -186,7 +186,7 @@ type OpenTelemetryCollectorSpec struct {
 	// used to open additional ports that can't be inferred by the operator, like for custom receivers.
 	// +optional
 	// +listType=atomic
-	Ports []v1.ServicePort `json:"ports,omitempty"`
+	Ports []PortsSpec `json:"ports,omitempty"`
 	// ENV vars to set on the OpenTelemetry Collector's Pods. These can then in certain cases be
 	// consumed in the config file for the Collector.
 	// +optional
@@ -289,6 +289,16 @@ type OpenTelemetryCollectorSpec struct {
 	// This is only applicable to Deployment mode.
 	// +optional
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
+}
+
+// PortsSpec defines the OpenTelemetryCollector's container/service ports additional specifications.
+type PortsSpec struct {
+	// Allows defining which port to bind to the host in the Container.
+	// +optional
+	HostPort int32 `json:"hostPort,omitempty"`
+
+	// Maintain previous fields in new struct
+	v1.ServicePort `json:",inline"`
 }
 
 // OpenTelemetryTargetAllocator defines the configurations for the Prometheus target allocator.
@@ -438,8 +448,8 @@ type OpenTelemetryCollectorStatus struct {
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
-// +kubebuilder:deprecatedversion:warning="OpenTelemetryCollector v1alpha1 is deprecated. Migrate to v1beta1."
 // +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 // +kubebuilder:resource:shortName=otelcol;otelcols
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector

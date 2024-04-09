@@ -42,6 +42,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
@@ -59,11 +60,13 @@ const (
 )
 
 var (
-	extraPorts = v1.ServicePort{
-		Name:       "port-web",
-		Protocol:   "TCP",
-		Port:       8080,
-		TargetPort: intstr.FromInt32(8080),
+	extraPorts = v1alpha1.PortsSpec{
+		ServicePort: v1.ServicePort{
+			Name:       "port-web",
+			Protocol:   "TCP",
+			Port:       8080,
+			TargetPort: intstr.FromInt32(8080),
+		},
 	}
 )
 
@@ -179,7 +182,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.Service(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							assert.Contains(t, actual.Spec.Ports, extraPorts)
+							assert.Contains(t, actual.Spec.Ports, extraPorts.ServicePort)
 						},
 					},
 					wantErr:     assert.NoError,
@@ -556,6 +559,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					config.WithCollectorImage("default-collector"),
 					config.WithTargetAllocatorImage("default-ta-allocator"),
 					config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
+					config.WithPrometheusCRAvailability(prometheus.Available),
 				),
 			})
 
@@ -629,7 +633,7 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 		annotationName: annotationVal,
 	}
 	deploymentExtraPorts := opampBridgeParams()
-	deploymentExtraPorts.OpAMPBridge.Spec.Ports = append(deploymentExtraPorts.OpAMPBridge.Spec.Ports, extraPorts)
+	deploymentExtraPorts.OpAMPBridge.Spec.Ports = append(deploymentExtraPorts.OpAMPBridge.Spec.Ports, extraPorts.ServicePort)
 
 	type args struct {
 		params manifests.Params
@@ -695,7 +699,7 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.OpAMPBridgeService(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							assert.Contains(t, actual.Spec.Ports, extraPorts)
+							assert.Contains(t, actual.Spec.Ports, extraPorts.ServicePort)
 						},
 					},
 					wantErr:     assert.NoError,

@@ -35,7 +35,6 @@ var (
 		constants.AnnotationDefaultAutoInstrumentationJava:   featuregate.EnableJavaAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationNodeJS: featuregate.EnableNodeJSAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationGo:     featuregate.EnableGoAutoInstrumentationSupport,
-		constants.AnnotationDefaultAutoInstrumentationNginx:  featuregate.EnableNginxAutoInstrumentationSupport,
 	}
 )
 
@@ -62,6 +61,7 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 	defaultAnnotationToConfig := map[string]autoInstConfig{
 		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationNginx:       {constants.FlagNginx, cfg.EnableNginxAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationPython:      {constants.FlagPython, cfg.EnablePythonAutoInstrumentation()},
 	}
 
@@ -117,10 +117,10 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 
 func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instrumentation) *v1alpha1.Instrumentation {
 	upgraded := inst.DeepCopy()
-	for annotation, config := range u.defaultAnnotationToConfig {
+	for annotation, instCfg := range u.defaultAnnotationToConfig {
 		autoInst := upgraded.Annotations[annotation]
 		if autoInst != "" {
-			if config.enabled {
+			if instCfg.enabled {
 				switch annotation {
 				case constants.AnnotationDefaultAutoInstrumentationApacheHttpd:
 					if inst.Spec.ApacheHttpd.Image == autoInst {
@@ -132,6 +132,11 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 						upgraded.Spec.DotNet.Image = u.DefaultAutoInstDotNet
 						upgraded.Annotations[annotation] = u.DefaultAutoInstDotNet
 					}
+				case constants.AnnotationDefaultAutoInstrumentationNginx:
+					if inst.Spec.Nginx.Image == autoInst {
+						upgraded.Spec.Nginx.Image = u.DefaultAutoInstNginx
+						upgraded.Annotations[annotation] = u.DefaultAutoInstNginx
+					}
 				case constants.AnnotationDefaultAutoInstrumentationPython:
 					if inst.Spec.Python.Image == autoInst {
 						upgraded.Spec.Python.Image = u.DefaultAutoInstPython
@@ -139,8 +144,7 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 					}
 				}
 			} else {
-				u.Logger.Error(nil, "autoinstrumentation not enabled for this language", "flag", config.id)
-				u.Recorder.Event(upgraded, "Warning", "InstrumentationUpgradeRejected", fmt.Sprintf("support for is not enabled for %s", config.id))
+				u.Logger.V(4).Info("autoinstrumentation not enabled for this language", "flag", instCfg.id)
 			}
 		}
 	}
@@ -170,15 +174,9 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 						upgraded.Spec.Go.Image = u.DefaultAutoInstGo
 						upgraded.Annotations[annotation] = u.DefaultAutoInstGo
 					}
-				case constants.AnnotationDefaultAutoInstrumentationNginx:
-					if inst.Spec.Nginx.Image == autoInst {
-						upgraded.Spec.Nginx.Image = u.DefaultAutoInstNginx
-						upgraded.Annotations[annotation] = u.DefaultAutoInstNginx
-					}
 				}
 			} else {
-				u.Logger.Error(nil, "autoinstrumentation not enabled for this language", "flag", gate.ID())
-				u.Recorder.Event(upgraded, "Warning", "InstrumentationUpgradeRejected", fmt.Sprintf("support for is not enabled for %s", gate.ID()))
+				u.Logger.V(4).Info("autoinstrumentation not enabled for this language", "flag", gate.ID())
 			}
 		}
 	}

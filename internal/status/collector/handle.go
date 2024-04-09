@@ -22,7 +22,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
@@ -38,7 +38,9 @@ const (
 )
 
 // HandleReconcileStatus handles updating the status of the CRDs managed by the operator.
-func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifests.Params, otelcol v1beta1.OpenTelemetryCollector, err error) (ctrl.Result, error) {
+// TODO: make the status more useful https://github.com/open-telemetry/opentelemetry-operator/issues/1972
+// TODO: update status to use v1beta1 https://github.com/open-telemetry/opentelemetry-operator/milestone/4
+func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifests.Params, otelcol v1alpha1.OpenTelemetryCollector, err error) (ctrl.Result, error) {
 	log.V(2).Info("updating collector status")
 	if err != nil {
 		params.Recorder.Event(&otelcol, eventTypeWarning, reasonError, err.Error())

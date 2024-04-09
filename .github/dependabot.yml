@@ -39,6 +39,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Ignore minor version updates for kind node images
+      - dependency-name: "kindest/node*"
+        update-types: [ "version-update:semver-minor" ]
 
   - package-ecosystem: docker
     directory: /cmd/otel-allocator

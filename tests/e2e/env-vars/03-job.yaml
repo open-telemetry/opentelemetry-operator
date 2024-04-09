@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: my-job
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+        instrumentation.opentelemetry.io/inject-sdk: "true"
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: myapp
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
+          imagePullPolicy: IfNotPresent
+          command:
+            - echo
+            - ok

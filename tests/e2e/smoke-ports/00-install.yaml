@@ -1,0 +1,27 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: smoke-ports
+spec:
+  mode: daemonset
+  ports:
+  - appProtocol: grpc
+    name: otlp-grpc
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+    hostPort: 4317
+  config: |
+    receivers:
+      jaeger:
+        protocols:
+          grpc: {}
+    processors:
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          processors: []
+          exporters: [debug]

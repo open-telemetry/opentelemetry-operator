@@ -6,7 +6,7 @@
     "clean": "rimraf build/*",
     "prepare": "npm run compile",
     "compile": "tsc -p .",
-    "postcompile": "copyfiles -f 'build/src/**' build/workspace/ && copyfiles 'node_modules/**' build/workspace/"
+    "postcompile": "copyfiles -f 'build/src/**' build/workspace/ && copyfiles 'node_modules/**' package.json build/workspace/ && npm -C build/workspace prune --omit=dev --no-package-lock"
   },
   "devDependencies": {
     "copyfiles": "^2.4.1",

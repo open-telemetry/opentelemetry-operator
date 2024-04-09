@@ -22,6 +22,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
@@ -45,12 +46,14 @@ type options struct {
 	enableMultiInstrumentation          bool
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
+	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
 	targetAllocatorConfigMapEntry       string
 	operatorOpAMPBridgeConfigMapEntry   string
 	targetAllocatorImage                string
 	operatorOpAMPBridgeImage            string
 	openshiftRoutesAvailability         openshift.RoutesAvailability
+	prometheusCRAvailability            prometheus.Availability
 	labelsFilter                        []string
 	annotationsFilter                   []string
 }
@@ -98,6 +101,11 @@ func WithEnableApacheHttpdInstrumentation(s bool) Option {
 func WithEnableDotNetInstrumentation(s bool) Option {
 	return func(o *options) {
 		o.enableDotNetInstrumentation = s
+	}
+}
+func WithEnableNginxInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableNginxInstrumentation = s
 	}
 }
 func WithEnablePythonInstrumentation(s bool) Option {
@@ -171,6 +179,12 @@ func WithAutoInstrumentationNginxImage(s string) Option {
 func WithOpenShiftRoutesAvailability(os openshift.RoutesAvailability) Option {
 	return func(o *options) {
 		o.openshiftRoutesAvailability = os
+	}
+}
+
+func WithPrometheusCRAvailability(pcrd prometheus.Availability) Option {
+	return func(o *options) {
+		o.prometheusCRAvailability = pcrd
 	}
 }
 

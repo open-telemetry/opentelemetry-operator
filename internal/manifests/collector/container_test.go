@@ -55,11 +55,13 @@ func TestContainerNewDefault(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-				Ports: []corev1.ServicePort{
+				Ports: []v1beta1.PortsSpec{
 					{
-						Name:     "metrics",
-						Port:     8888,
-						Protocol: corev1.ProtocolTCP,
+						ServicePort: corev1.ServicePort{
+							Name:     "metrics",
+							Port:     8888,
+							Protocol: corev1.ProtocolTCP,
+						},
 					},
 				},
 			},
@@ -109,17 +111,19 @@ service:
 	tests := []struct {
 		description   string
 		specConfig    string
-		specPorts     []corev1.ServicePort
+		specPorts     []v1beta1.PortsSpec
 		expectedPorts []corev1.ContainerPort
 	}{
 		{
 			description: "couldn't build ports from spec config",
 			specConfig:  "",
-			specPorts: []corev1.ServicePort{
+			specPorts: []v1beta1.PortsSpec{
 				{
-					Name:     "metrics",
-					Port:     8888,
-					Protocol: corev1.ProtocolTCP,
+					ServicePort: corev1.ServicePort{
+						Name:     "metrics",
+						Port:     8888,
+						Protocol: corev1.ProtocolTCP,
+					},
 				},
 			},
 			expectedPorts: []corev1.ContainerPort{metricContainerPort},
@@ -138,15 +142,19 @@ service:
 		},
 		{
 			description: "ports in spec ContainerPorts",
-			specPorts: []corev1.ServicePort{
+			specPorts: []v1beta1.PortsSpec{
 				{
-					Name:     "metrics",
-					Port:     8888,
-					Protocol: corev1.ProtocolTCP,
+					ServicePort: corev1.ServicePort{
+						Name:     "metrics",
+						Port:     8888,
+						Protocol: corev1.ProtocolTCP,
+					},
 				},
 				{
-					Name: "testport1",
-					Port: 12345,
+					ServicePort: corev1.ServicePort{
+						Name: "testport1",
+						Port: 12345,
+					},
 				},
 			},
 			expectedPorts: []corev1.ContainerPort{
@@ -160,15 +168,19 @@ service:
 		{
 			description: "ports in spec Config and ContainerPorts",
 			specConfig:  goodConfig,
-			specPorts: []corev1.ServicePort{
+			specPorts: []v1beta1.PortsSpec{
 				{
-					Name: "testport1",
-					Port: 12345,
+					ServicePort: corev1.ServicePort{
+						Name: "testport1",
+						Port: 12345,
+					},
 				},
 				{
-					Name:     "testport2",
-					Port:     54321,
-					Protocol: corev1.ProtocolUDP,
+					ServicePort: corev1.ServicePort{
+						Name:     "testport2",
+						Port:     54321,
+						Protocol: corev1.ProtocolUDP,
+					},
 				},
 			},
 			expectedPorts: []corev1.ContainerPort{
@@ -191,14 +203,18 @@ service:
 		{
 			description: "duplicate port name",
 			specConfig:  goodConfig,
-			specPorts: []corev1.ServicePort{
+			specPorts: []v1beta1.PortsSpec{
 				{
-					Name: "testport1",
-					Port: 12345,
+					ServicePort: corev1.ServicePort{
+						Name: "testport1",
+						Port: 12345,
+					},
 				},
 				{
-					Name: "testport1",
-					Port: 11111,
+					ServicePort: corev1.ServicePort{
+						Name: "testport1",
+						Port: 11111,
+					},
 				},
 			},
 			expectedPorts: []corev1.ContainerPort{
@@ -225,15 +241,19 @@ service:
             receivers: [otlp]
             exporters: [prometheus, debug]
 `,
-			specPorts: []corev1.ServicePort{
+			specPorts: []v1beta1.PortsSpec{
 				{
-					Name:     "metrics",
-					Port:     8888,
-					Protocol: corev1.ProtocolTCP,
+					ServicePort: corev1.ServicePort{
+						Name:     "metrics",
+						Port:     8888,
+						Protocol: corev1.ProtocolTCP,
+					},
 				},
 				{
-					Name: "prometheus",
-					Port: 9090,
+					ServicePort: corev1.ServicePort{
+						Name: "prometheus",
+						Port: 9090,
+					},
 				},
 			},
 			expectedPorts: []corev1.ContainerPort{
@@ -261,19 +281,25 @@ service:
         metrics:
             exporters: [prometheus/prod, prometheus/dev, debug]
 `,
-			specPorts: []corev1.ServicePort{
+			specPorts: []v1beta1.PortsSpec{
 				{
-					Name:     "metrics",
-					Port:     8888,
-					Protocol: corev1.ProtocolTCP,
+					ServicePort: corev1.ServicePort{
+						Name:     "metrics",
+						Port:     8888,
+						Protocol: corev1.ProtocolTCP,
+					},
 				},
 				{
-					Name: "prometheus-dev",
-					Port: 9091,
+					ServicePort: corev1.ServicePort{
+						Name: "prometheus-dev",
+						Port: 9091,
+					},
 				},
 				{
-					Name: "prometheus-prod",
-					Port: 9090,
+					ServicePort: corev1.ServicePort{
+						Name: "prometheus-prod",
+						Port: 9090,
+					},
 				},
 			},
 			expectedPorts: []corev1.ContainerPort{
@@ -293,11 +319,13 @@ service:
 			specConfig: `exporters:
     prometheusremotewrite/prometheus:
         endpoint: http://prometheus-server.monitoring/api/v1/write`,
-			specPorts: []corev1.ServicePort{
+			specPorts: []v1beta1.PortsSpec{
 				{
-					Name:     "metrics",
-					Port:     8888,
-					Protocol: corev1.ProtocolTCP,
+					ServicePort: corev1.ServicePort{
+						Name:     "metrics",
+						Port:     8888,
+						Protocol: corev1.ProtocolTCP,
+					},
 				},
 			},
 			expectedPorts: []corev1.ContainerPort{metricContainerPort},
@@ -317,19 +345,25 @@ service:
   pipelines:
     metrics:
       exporters: [prometheus/prod, prometheus/dev, prometheusremotewrite/prometheus, debug]`,
-			specPorts: []corev1.ServicePort{
+			specPorts: []v1beta1.PortsSpec{
 				{
-					Name:     "metrics",
-					Port:     8888,
-					Protocol: corev1.ProtocolTCP,
+					ServicePort: corev1.ServicePort{
+						Name:     "metrics",
+						Port:     8888,
+						Protocol: corev1.ProtocolTCP,
+					},
 				},
 				{
-					Name: "prometheus-dev",
-					Port: 9091,
+					ServicePort: corev1.ServicePort{
+						Name: "prometheus-dev",
+						Port: 9091,
+					},
 				},
 				{
-					Name: "prometheus-prod",
-					Port: 9090,
+					ServicePort: corev1.ServicePort{
+						Name: "prometheus-prod",
+						Port: 9090,
+					},
 				},
 			},
 			expectedPorts: []corev1.ContainerPort{

@@ -77,7 +77,7 @@ func Test0_61_0Upgrade(t *testing.T) {
 				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 			}
 
-			_, err := versionUpgrade.ManagedInstance(context.Background(), convertTov1beta1(t, collectorInstance))
+			_, err := versionUpgrade.ManagedInstance(context.Background(), collectorInstance)
 			if (err != nil) != tc.expectErr {
 				t.Errorf("expect err: %t but got: %v", tc.expectErr, err)
 			}

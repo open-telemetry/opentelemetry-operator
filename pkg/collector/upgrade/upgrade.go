@@ -26,7 +26,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
@@ -48,7 +47,7 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		}),
 	}
-	list := &v1beta1.OpenTelemetryCollectorList{}
+	list := &v1alpha1.OpenTelemetryCollectorList{}
 	if err := u.Client.List(ctx, list, opts...); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
@@ -57,12 +56,12 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 		original := list.Items[i]
 		itemLogger := u.Log.WithValues("name", original.Name, "namespace", original.Namespace)
 
-		if original.Spec.ManagementState == v1beta1.ManagementStateUnmanaged {
+		if original.Spec.ManagementState == v1alpha1.ManagementStateUnmanaged {
 			itemLogger.Info("skipping upgrade because instance is not managed")
 			continue
 		}
 
-		if original.Spec.UpgradeStrategy == v1beta1.UpgradeStrategyNone {
+		if original.Spec.UpgradeStrategy == v1alpha1.UpgradeStrategyNone {
 			itemLogger.Info("skipping instance upgrade due to UpgradeStrategy")
 			continue
 		}
@@ -102,7 +101,7 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 }
 
 // ManagedInstance performs the necessary changes to bring the given otelcol instance to the current version.
-func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
+func (u VersionUpgrade) ManagedInstance(ctx context.Context, otelcol v1alpha1.OpenTelemetryCollector) (v1alpha1.OpenTelemetryCollector, error) {
 	// this is likely a new instance, assume it's already up to date
 	if otelcol.Status.Version == "" {
 		return otelcol, nil
@@ -134,35 +133,16 @@ func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenT
 
 	for _, available := range versions {
 		if available.GreaterThan(instanceV) {
-			if available.upgrade != nil {
-				otelcolV1alpha1 := &v1alpha1.OpenTelemetryCollector{}
-				if err := otelcolV1alpha1.ConvertFrom(&otelcol); err != nil {
-					return otelcol, err
-				}
+			upgraded, err := available.upgrade(u, &otelcol) //available.upgrade(params., &otelcol)
 
-				upgradedV1alpha1, err := available.upgrade(u, otelcolV1alpha1)
-				if err != nil {
-					u.Log.Error(err, "failed to upgrade managed otelcol instances", "name", otelcol.Name, "namespace", otelcol.Namespace)
-					return otelcol, err
-				}
-				upgradedV1alpha1.Status.Version = available.String()
-
-				if err := upgradedV1alpha1.ConvertTo(&otelcol); err != nil {
-					return otelcol, err
-				}
-				u.Log.V(1).Info("step upgrade", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", available.String())
-			} else {
-
-				upgraded, err := available.upgradeV1beta1(u, &otelcol) //available.upgrade(params., &otelcol)
-				if err != nil {
-					u.Log.Error(err, "failed to upgrade managed otelcol instances", "name", otelcol.Name, "namespace", otelcol.Namespace)
-					return otelcol, err
-				}
-
-				u.Log.V(1).Info("step upgrade", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", available.String())
-				upgraded.Status.Version = available.String()
-				otelcol = *upgraded
+			if err != nil {
+				u.Log.Error(err, "failed to upgrade managed otelcol instances", "name", otelcol.Name, "namespace", otelcol.Namespace)
+				return otelcol, err
 			}
+
+			u.Log.V(1).Info("step upgrade", "name", otelcol.Name, "namespace", otelcol.Namespace, "version", available.String())
+			upgraded.Status.Version = available.String()
+			otelcol = *upgraded
 		}
 	}
 	// Update with the latest known version, which is what we have from versions.txt
