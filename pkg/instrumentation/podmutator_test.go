@@ -629,13 +629,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnableJavaAutoInstrumentationSupport.IsEnabled()
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableJavaAutoInstrumentationSupport.ID(), false))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableJavaAutoInstrumentationSupport.ID(), originalVal))
-				})
-			},
+			config: config.New(config.WithEnableJavaInstrumentation(true)),
 		},
 		{
 			name: "nodejs injection, true",
