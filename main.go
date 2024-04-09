@@ -29,7 +29,6 @@ import (
 	"github.com/spf13/pflag"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	networkingv1 "k8s.io/api/networking/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -51,6 +50,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
+	autoRbac "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -243,27 +243,24 @@ func main() {
 	}
 
 	reviewer := rbac.NewReviewer(clientset)
-	createRBACPermissions = true
 	ctx := ctrl.SetupSignalHandler()
-	w, err := checkRbacPermissions(reviewer, ctx)
-	if err != nil {
-		createRBACPermissions = false
-		setupLog.Info("the operator has not permissions to create rbac resources", "error", err)
-	}
-	if w != nil {
-		createRBACPermissions = false
-		setupLog.Info("the operator has not permissions to create rbac resources", "permissions", w)
-	}
-
-	if createRBACPermissions {
-		setupLog.Info("the operator has permissions to create rbac resources")
-	}
 
 	// builds the operator's configuration
-	ad, err := autodetect.New(restConfig)
+	ad, err := autodetect.New(restConfig, ctx, reviewer)
 	if err != nil {
 		setupLog.Error(err, "failed to setup auto-detect routine")
 		os.Exit(1)
+	}
+
+	rbacAvailable, err := ad.RBACPermissions()
+	if err != nil {
+		createRBACPermissions = false
+		setupLog.Info("error checking if the operator has permissions to create RBAC resources", "reason", err)
+	} else if rbacAvailable == autoRbac.NotAvailable {
+		createRBACPermissions = false
+		setupLog.Info("The operator has not permissions to create RBAC resources, skipping.")
+	} else {
+		createRBACPermissions = true
 	}
 
 	cfg := config.New(
@@ -426,33 +423,4 @@ func tlsConfigSetting(cfg *tls.Config, tlsOpt tlsConfig) {
 		setupLog.Error(err, "Failed to convert TLS cipher suite name to ID")
 	}
 	cfg.CipherSuites = cipherSuiteIDs
-}
-
-func checkRbacPermissions(reviewer *rbac.Reviewer, ctx context.Context) (admission.Warnings, error) {
-	notPossibleToCheck := "unable to check rbac rules:"
-
-	namespace, err := autodetect.GetOperatorNamespace()
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", notPossibleToCheck, err)
-	}
-
-	serviceAccount, err := autodetect.GetOperatorServiceAccount()
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", notPossibleToCheck, err)
-	}
-
-	rules := []*rbacv1.PolicyRule{
-		{
-			APIGroups: []string{"rbac.authorization.k8s.io"},
-			Resources: []string{"clusterrolebindings", "clusterroles"},
-			Verbs:     []string{"create", "delete", "get", "list", "patch", "update"},
-		},
-	}
-
-	if subjectAccessReviews, err := reviewer.CheckPolicyRules(ctx, serviceAccount, namespace, rules...); err != nil {
-		return nil, fmt.Errorf("%s: %w", notPossibleToCheck, err)
-	} else if allowed, deniedReviews := rbac.AllSubjectAccessReviewsAllowed(subjectAccessReviews); !allowed {
-		return rbac.WarningsGroupedByResource(deniedReviews), nil
-	}
-	return nil, nil
 }

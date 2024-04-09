@@ -9,7 +9,7 @@ spec:
   - name: create-namespace
     try:
     - apply:
-        file: 01-install.yaml
+        file: 00-install.yaml
   - name: default-conf
     try:
     - apply:

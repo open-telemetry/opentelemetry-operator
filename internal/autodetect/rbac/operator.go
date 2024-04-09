@@ -12,26 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package autodetect
+package rbac
 
-import (
-	"fmt"
-	"os"
+const saEnvVar = "SERVICE_ACCOUNT_NAME"
+
+// Availability represents that the opeerator service account has permissions to create RBAC resources.
+type Availability int
+
+const (
+	// NotAvailable RBAC permissions are not available.
+	NotAvailable Availability = iota
+
+	// Available NotAvailable RBAC permissions are available.
+	Available
 )
 
-func GetOperatorNamespace() (string, error) {
-	nsBytes, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
-	if err != nil {
-		return "", err
-	}
-	return string(nsBytes), nil
-}
-
-func GetOperatorServiceAccount() (string, error) {
-	saEnvVar := "SERVICE_ACCOUNT_NAME"
-	sa := os.Getenv(saEnvVar)
-	if sa == "" {
-		return sa, fmt.Errorf("%s env variable not found", saEnvVar)
-	}
-	return sa, nil
+func (p Availability) String() string {
+	return [...]string{"NotAvailable", "Available"}[p]
 }

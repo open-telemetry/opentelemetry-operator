@@ -15,6 +15,7 @@
 package autodetect_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -61,7 +62,7 @@ func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 		}))
 		defer server.Close()
 
-		autoDetect, err := autodetect.New(&rest.Config{Host: server.URL})
+		autoDetect, err := autodetect.New(&rest.Config{Host: server.URL}, context.TODO(), nil)
 		require.NoError(t, err)
 
 		// test
@@ -104,7 +105,7 @@ func TestDetectPlatformBasedOnAvailableAPIGroupsPrometheus(t *testing.T) {
 		}))
 		defer server.Close()
 
-		autoDetect, err := autodetect.New(&rest.Config{Host: server.URL})
+		autoDetect, err := autodetect.New(&rest.Config{Host: server.URL}, nil, nil)
 		require.NoError(t, err)
 
 		// test
