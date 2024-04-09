@@ -177,7 +177,8 @@ Enum=tracecontext;baggage;b3;b3multi;jaeger;xray;ottrace;none<br/>
         <td><b><a href="#instrumentationspecselector">selector</a></b></td>
         <td>object</td>
         <td>
-          <br/>
+          Selector is the label selector for affected Pods.
+This selector only takes effect when annotation: instrumentation.opentelemetry.io/inject-xx equal true.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3767,7 +3768,8 @@ The value can be for instance parentbased_always_on, parentbased_always_off, par
 
 
 
-
+Selector is the label selector for affected Pods.
+This selector only takes effect when annotation: instrumentation.opentelemetry.io/inject-xx equal true.
 
 <table>
     <thead>
@@ -3782,14 +3784,14 @@ The value can be for instance parentbased_always_on, parentbased_always_off, par
         <td><b><a href="#instrumentationspecselectormatchexpressionsindex">matchExpressions</a></b></td>
         <td>[]object</td>
         <td>
-          <br/>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          <br/>
+          matchLabels is a map of {key,value} pairs.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3801,7 +3803,8 @@ The value can be for instance parentbased_always_on, parentbased_always_off, par
 
 
 
-
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
 
 <table>
     <thead>
@@ -3816,21 +3819,24 @@ The value can be for instance parentbased_always_on, parentbased_always_off, par
         <td><b>key</b></td>
         <td>string</td>
         <td>
-          <br/>
+          key is the label key that the selector applies to.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          <br/>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          <br/>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
