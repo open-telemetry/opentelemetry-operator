@@ -629,7 +629,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableJavaInstrumentation(true)),
+			config: config.New(config.WithEnableJavaInstrumentation(false)),
 		},
 		{
 			name: "nodejs injection, true",
