@@ -19561,7 +19561,7 @@ May also be set in PodSecurityContext.<br/>
 
 
 
-ServicePort contains information on service's port.
+PortsSpec defines the OpenTelemetryCollector's container/service ports additional specifications.
 
 <table>
     <thead>
@@ -19588,6 +19588,15 @@ ServicePort contains information on service's port.
           The application protocol for this port.
 This is used as a hint for implementations to offer richer behavior for protocols that they understand.
 This field follows standard Kubernetes label syntax.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>hostPort</b></td>
+        <td>integer</td>
+        <td>
+          Allows defining which port to bind to the host in the Container.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>
