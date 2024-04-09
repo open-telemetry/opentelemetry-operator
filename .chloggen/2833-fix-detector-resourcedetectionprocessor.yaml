@@ -8,7 +8,7 @@ component: collector
 note: "Use the k8snode detector instead of kubernetes for the automatic RBAC creation for the resourcedetector"
 
 # One or more tracking issues related to the change
-issues: []
+issues: [2833]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
