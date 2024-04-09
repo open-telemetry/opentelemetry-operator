@@ -107,25 +107,11 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
-// UpdateScrapeConfigResponse updates the scrape config response. The target allocator first marshals these
-// configurations such that the underlying prometheus marshaling is used. After that, the YAML is converted
-// in to a JSON format for consumers to use.
-func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.ScrapeConfig) error {
-	var configBytes []byte
-	configBytes, err := yaml.Marshal(configs)
-	if err != nil {
-		return err
-	}
-	var jsonConfig []byte
-	jsonConfig, err = yaml2.YAMLToJSON(configBytes)
-	if err != nil {
-		return err
-	}
-
+func RemoveRelabelAction(jsonConfig []byte) ([]byte, error) {
 	var jobToScrapeConfig map[string]interface{}
-	err = json.Unmarshal(jsonConfig, &jobToScrapeConfig)
+	err := json.Unmarshal(jsonConfig, &jobToScrapeConfig)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, scrapeConfig := range jobToScrapeConfig {
 		scrapeConfig := scrapeConfig.(map[string]interface{})
@@ -154,6 +140,28 @@ func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.Scrap
 	}
 
 	jsonConfigNew, err := json.Marshal(jobToScrapeConfig)
+	if err != nil {
+		return nil, err
+	}
+	return jsonConfigNew, nil
+}
+
+// UpdateScrapeConfigResponse updates the scrape config response. The target allocator first marshals these
+// configurations such that the underlying prometheus marshaling is used. After that, the YAML is converted
+// in to a JSON format for consumers to use.
+func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.ScrapeConfig) error {
+	var configBytes []byte
+	configBytes, err := yaml.Marshal(configs)
+	if err != nil {
+		return err
+	}
+	var jsonConfig []byte
+	jsonConfig, err = yaml2.YAMLToJSON(configBytes)
+	if err != nil {
+		return err
+	}
+
+	jsonConfigNew, err := RemoveRelabelAction(jsonConfig)
 	if err != nil {
 		return err
 	}

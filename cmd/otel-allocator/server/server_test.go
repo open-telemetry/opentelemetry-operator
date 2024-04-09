@@ -616,10 +616,22 @@ func TestServer_Readiness(t *testing.T) {
 func TestServer_ScrapeConfigRespose(t *testing.T) {
 	tests := []struct {
 		description  string
+		filePath     string
 		expectedCode int
 	}{
 		{
 			description:  "Jobs with all actions",
+			filePath:     "./testdata/prom-config-all-actions.yaml",
+			expectedCode: http.StatusOK,
+		},
+		{
+			description:  "Jobs with config combinations",
+			filePath:     "./testdata/prom-config-test.yaml",
+			expectedCode: http.StatusOK,
+		},
+		{
+			description:  "Jobs with no config",
+			filePath:     "./testdata/prom-no-config.yaml",
 			expectedCode: http.StatusOK,
 		},
 	}
@@ -629,7 +641,8 @@ func TestServer_ScrapeConfigRespose(t *testing.T) {
 			s := NewServer(logger, nil, listenAddr)
 
 			allocCfg := allocatorconfig.CreateDefaultConfig()
-			err := allocatorconfig.LoadFromFile("./testdata/prom-config-all-actions.yaml", &allocCfg)
+			// err := allocatorconfig.LoadFromFile("./testdata/prom-config-all-actions.yaml", &allocCfg)
+			err := allocatorconfig.LoadFromFile(tc.filePath, &allocCfg)
 
 			jobToScrapeConfig := make(map[string]*promconfig.ScrapeConfig)
 
