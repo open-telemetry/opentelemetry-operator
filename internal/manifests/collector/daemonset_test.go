@@ -227,7 +227,7 @@ func TestDaemonsetFilterLabels(t *testing.T) {
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
-	cfg := config.New(config.WithLabelFilters([]string{"foo", ".bar"}))
+	cfg := config.New(config.WithLabelFilters([]string{"foo*", ".*bar"}))
 
 	params := manifests.Params{
 		Config:  cfg,
@@ -258,7 +258,7 @@ func TestDaemonsetFilterAnnotations(t *testing.T) {
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
-	cfg := config.New(config.WithAnnotationFilters([]string{"foo", ".bar"}))
+	cfg := config.New(config.WithAnnotationFilters([]string{"foo*", ".*bar"}))
 
 	params := manifests.Params{
 		Config:  cfg,

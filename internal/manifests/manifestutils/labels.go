@@ -15,7 +15,10 @@
 package manifestutils
 
 import (
+	"regexp"
 	"strings"
+
+	"github.com/go-logr/logr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -23,9 +26,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var logger logr.Logger
+
 func IsFilteredSet(sourceSet string, filterSet []string) bool {
-	for _, pattern := range filterSet {
-		if strings.Contains(sourceSet, pattern) {
+	for _, basePattern := range filterSet {
+		pattern, compileErr := regexp.Compile(basePattern)
+		match := pattern.MatchString(sourceSet)
+		if compileErr != nil {
+			logger.Error(compileErr, "could not compile the regexp pattern")
+		}
+		if match {
 			return true
 		}
 	}

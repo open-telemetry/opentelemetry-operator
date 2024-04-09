@@ -175,7 +175,7 @@ func TestAnnotationsSingleFilter(t *testing.T) {
 	}
 
 	// This requires the filter to be in regex match form and not the other simpler wildcard one.
-	annotations, err := Annotations(otelcol, []string{".bar.io"})
+	annotations, err := Annotations(otelcol, []string{".*bar.io"})
 
 	// verify
 	require.NoError(t, err)
@@ -188,10 +188,10 @@ func TestAnnotationsFilter(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: map[string]string{
-				"test.bar.io":  "foo",
-				"test.otel.io": "true",
-				"test.io/port": "1234",
-				"test.io/path": "/test",
+				"test.bar.io":             "foo",
+				"test.io/port":            "1234",
+				"test.io/path":            "/test",
+				"config.otel.test/filter": "true",
 			},
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
@@ -200,12 +200,13 @@ func TestAnnotationsFilter(t *testing.T) {
 	}
 
 	// This requires the filter to be in regex match form and not the other simpler wildcard one.
-	annotations, err := Annotations(otelcol, []string{".bar.io", "otel.io"})
+	annotations, err := Annotations(otelcol, []string{".*bar.io", ".*otel/io", "config.*otel.test.*"})
 
 	// verify
 	require.NoError(t, err)
 	assert.Len(t, annotations, 6)
 	assert.NotContains(t, annotations, "test.bar.io")
-	assert.NotContains(t, annotations, "test.otel.io")
+	assert.NotContains(t, annotations, "test.otel/io")
+	assert.NotContains(t, annotations, "config.otel.test/filter")
 	assert.Equal(t, "1234", annotations["test.io/port"])
 }
