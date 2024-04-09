@@ -60,11 +60,13 @@ const (
 )
 
 var (
-	extraPorts = v1.ServicePort{
-		Name:       "port-web",
-		Protocol:   "TCP",
-		Port:       8080,
-		TargetPort: intstr.FromInt32(8080),
+	extraPorts = v1alpha1.PortsSpec{
+		ServicePort: v1.ServicePort{
+			Name:       "port-web",
+			Protocol:   "TCP",
+			Port:       8080,
+			TargetPort: intstr.FromInt32(8080),
+		},
 	}
 )
 
@@ -180,7 +182,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.Service(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							assert.Contains(t, actual.Spec.Ports, extraPorts)
+							assert.Contains(t, actual.Spec.Ports, extraPorts.ServicePort)
 						},
 					},
 					wantErr:     assert.NoError,
@@ -631,7 +633,7 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 		annotationName: annotationVal,
 	}
 	deploymentExtraPorts := opampBridgeParams()
-	deploymentExtraPorts.OpAMPBridge.Spec.Ports = append(deploymentExtraPorts.OpAMPBridge.Spec.Ports, extraPorts)
+	deploymentExtraPorts.OpAMPBridge.Spec.Ports = append(deploymentExtraPorts.OpAMPBridge.Spec.Ports, extraPorts.ServicePort)
 
 	type args struct {
 		params manifests.Params
@@ -697,7 +699,7 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.OpAMPBridgeService(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							assert.Contains(t, actual.Spec.Ports, extraPorts)
+							assert.Contains(t, actual.Spec.Ports, extraPorts.ServicePort)
 						},
 					},
 					wantErr:     assert.NoError,
