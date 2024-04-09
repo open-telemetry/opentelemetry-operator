@@ -641,8 +641,8 @@ func TestServer_ScrapeConfigRespose(t *testing.T) {
 			s := NewServer(logger, nil, listenAddr)
 
 			allocCfg := allocatorconfig.CreateDefaultConfig()
-			// err := allocatorconfig.LoadFromFile("./testdata/prom-config-all-actions.yaml", &allocCfg)
 			err := allocatorconfig.LoadFromFile(tc.filePath, &allocCfg)
+			require.NoError(t, err)
 
 			jobToScrapeConfig := make(map[string]*promconfig.ScrapeConfig)
 
