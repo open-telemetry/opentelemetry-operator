@@ -40,14 +40,24 @@ func TestK8sAttributesRBAC(t *testing.T) {
 					Resources: []string{"pods", "namespaces"},
 					Verbs:     []string{"get", "watch", "list"},
 				},
+				{
+					APIGroups: []string{"apps"},
+					Resources: []string{"replicasets"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+				{
+					APIGroups: []string{"extensions"},
+					Resources: []string{"replicasets"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
 			},
 		},
 		{
-			name: "extract k8s.deployment.uid",
+			name: "extract k8s.node",
 			config: map[interface{}]interface{}{
 				"extract": map[interface{}]interface{}{
 					"metadata": []interface{}{
-						"k8s.deployment.uid",
+						"k8s.node",
 					},
 				},
 			},
@@ -67,31 +77,9 @@ func TestK8sAttributesRBAC(t *testing.T) {
 					Resources: []string{"replicasets"},
 					Verbs:     []string{"get", "watch", "list"},
 				},
-			},
-		},
-		{
-			name: "extract k8s.deployment.name",
-			config: map[interface{}]interface{}{
-				"extract": map[interface{}]interface{}{
-					"metadata": []interface{}{
-						"k8s.deployment.name",
-					},
-				},
-			},
-			expectedRules: []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{""},
-					Resources: []string{"pods", "namespaces"},
-					Verbs:     []string{"get", "watch", "list"},
-				},
-				{
-					APIGroups: []string{"apps"},
-					Resources: []string{"replicasets"},
-					Verbs:     []string{"get", "watch", "list"},
-				},
-				{
-					APIGroups: []string{"extensions"},
-					Resources: []string{"replicasets"},
+					Resources: []string{"nodes"},
 					Verbs:     []string{"get", "watch", "list"},
 				},
 			},
