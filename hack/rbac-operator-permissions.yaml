@@ -4,7 +4,7 @@ metadata:
   name: generate-processors-rbac
 rules:
 - apiGroups:
-  - 
+  - ""
   resources:
   - namespaces
   verbs:
@@ -16,7 +16,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - 
+  - ""
   resources:
   - nodes
   verbs:
