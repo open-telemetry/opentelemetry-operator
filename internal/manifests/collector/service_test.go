@@ -30,11 +30,11 @@ import (
 
 func TestExtractPortNumbersAndNames(t *testing.T) {
 	t.Run("should return extracted port names and numbers", func(t *testing.T) {
-		ports := []v1.ServicePort{
-			{Name: "web", Port: 8080},
-			{Name: "tcp", Port: 9200},
-			{Name: "web-explicit", Port: 80, Protocol: v1.ProtocolTCP},
-			{Name: "syslog-udp", Port: 514, Protocol: v1.ProtocolUDP},
+		ports := []v1beta1.PortsSpec{
+			{ServicePort: v1.ServicePort{Name: "web", Port: 8080}},
+			{ServicePort: v1.ServicePort{Name: "tcp", Port: 9200}},
+			{ServicePort: v1.ServicePort{Name: "web-explicit", Port: 80, Protocol: v1.ProtocolTCP}},
+			{ServicePort: v1.ServicePort{Name: "syslog-udp", Port: 514, Protocol: v1.ProtocolUDP}},
 		}
 		expectedPortNames := map[string]bool{"web": true, "tcp": true, "web-explicit": true, "syslog-udp": true}
 		expectedPortNumbers := map[PortNumberKey]bool{
@@ -55,14 +55,14 @@ func TestFilterPort(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		candidate   v1.ServicePort
+		candidate   v1beta1.PortsSpec
 		portNumbers map[PortNumberKey]bool
 		portNames   map[string]bool
-		expected    v1.ServicePort
+		expected    v1beta1.PortsSpec
 	}{
 		{
 			name:      "should filter out duplicate port",
-			candidate: v1.ServicePort{Name: "web", Port: 8080},
+			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080}},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKeyByPort(8080): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"test": true, "metrics": true},
@@ -70,7 +70,7 @@ func TestFilterPort(t *testing.T) {
 
 		{
 			name:      "should filter out duplicate port, protocol specified (TCP)",
-			candidate: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolTCP},
+			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolTCP}},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKeyByPort(8080): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"test": true, "metrics": true},
@@ -78,7 +78,7 @@ func TestFilterPort(t *testing.T) {
 
 		{
 			name:      "should filter out duplicate port, protocol specified (UDP)",
-			candidate: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolUDP},
+			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolUDP}},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKey(8080, v1.ProtocolUDP): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"test": true, "metrics": true},
@@ -86,52 +86,52 @@ func TestFilterPort(t *testing.T) {
 
 		{
 			name:      "should not filter unique port",
-			candidate: v1.ServicePort{Name: "web", Port: 8090},
+			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8090}},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKeyByPort(8080): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"test": true, "metrics": true},
-			expected:  v1.ServicePort{Name: "web", Port: 8090},
+			expected:  v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8090}},
 		},
 
 		{
 			name:      "should not filter same port with different protocols",
-			candidate: v1.ServicePort{Name: "web", Port: 8080},
+			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080}},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKey(8080, v1.ProtocolUDP): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"test": true, "metrics": true},
-			expected:  v1.ServicePort{Name: "web", Port: 8080},
+			expected:  v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080}},
 		},
 
 		{
 			name:      "should not filter same port with different protocols, candidate has specified port (TCP vs UDP)",
-			candidate: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolTCP},
+			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolTCP}},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKey(8080, v1.ProtocolUDP): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"test": true, "metrics": true},
-			expected:  v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolTCP},
+			expected:  v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolTCP}},
 		},
 
 		{
 			name:      "should not filter same port with different protocols, candidate has specified port (UDP vs TCP)",
-			candidate: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolUDP},
+			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolUDP}},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKeyByPort(8080): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"test": true, "metrics": true},
-			expected:  v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolUDP},
+			expected:  v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolUDP}},
 		},
 
 		{
 			name:      "should change the duplicate portName",
-			candidate: v1.ServicePort{Name: "web", Port: 8090},
+			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8090}},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKeyByPort(8080): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"web": true, "metrics": true},
-			expected:  v1.ServicePort{Name: "port-8090", Port: 8090},
+			expected:  v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "port-8090", Port: 8090}},
 		},
 
 		{
 			name:      "should return nil if fallback name clashes with existing portName",
-			candidate: v1.ServicePort{Name: "web", Port: 8090},
+			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8090}},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKeyByPort(8080): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"web": true, "port-8090": true},
@@ -140,7 +140,7 @@ func TestFilterPort(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			actual := filterPort(logger, test.candidate, test.portNumbers, test.portNames)
-			if test.expected != (v1.ServicePort{}) {
+			if test.expected != (v1beta1.PortsSpec{}) {
 				assert.Equal(t, test.expected, *actual)
 				return
 			}
@@ -168,12 +168,13 @@ func TestDesiredService(t *testing.T) {
 	t.Run("should return service with port mentioned in OtelCol.Spec.Ports and inferred ports", func(t *testing.T) {
 
 		grpc := "grpc"
-		jaegerPorts := v1.ServicePort{
-			Name:        "jaeger-grpc",
-			Protocol:    "TCP",
-			Port:        14250,
-			AppProtocol: &grpc,
-		}
+		jaegerPorts := v1beta1.PortsSpec{
+			ServicePort: v1.ServicePort{
+				Name:        "jaeger-grpc",
+				Protocol:    "TCP",
+				Port:        14250,
+				AppProtocol: &grpc,
+			}}
 		params := deploymentParams()
 		ports := append(params.OtelCol.Spec.Ports, jaegerPorts)
 		expected := service("test-collector", ports)
@@ -186,12 +187,13 @@ func TestDesiredService(t *testing.T) {
 
 	t.Run("on OpenShift gRPC appProtocol should be h2c", func(t *testing.T) {
 		h2c := "h2c"
-		jaegerPort := v1.ServicePort{
-			Name:        "jaeger-grpc",
-			Protocol:    "TCP",
-			Port:        14250,
-			AppProtocol: &h2c,
-		}
+		jaegerPort := v1beta1.PortsSpec{
+			ServicePort: v1.ServicePort{
+				Name:        "jaeger-grpc",
+				Protocol:    "TCP",
+				Port:        14250,
+				AppProtocol: &h2c,
+			}}
 
 		params := deploymentParams()
 
@@ -208,12 +210,13 @@ func TestDesiredService(t *testing.T) {
 	t.Run("should return service with local internal traffic policy", func(t *testing.T) {
 
 		grpc := "grpc"
-		jaegerPorts := v1.ServicePort{
-			Name:        "jaeger-grpc",
-			Protocol:    "TCP",
-			Port:        14250,
-			AppProtocol: &grpc,
-		}
+		jaegerPorts := v1beta1.PortsSpec{
+			ServicePort: v1.ServicePort{
+				Name:        "jaeger-grpc",
+				Protocol:    "TCP",
+				Port:        14250,
+				AppProtocol: &grpc,
+			}}
 		p := paramsWithMode(v1beta1.ModeDaemonSet)
 		ports := append(p.OtelCol.Spec.Ports, jaegerPorts)
 		expected := serviceWithInternalTrafficPolicy("test-collector", ports, v1.ServiceInternalTrafficPolicyLocal)
@@ -277,13 +280,18 @@ func TestMonitoringService(t *testing.T) {
 	})
 }
 
-func service(name string, ports []v1.ServicePort) v1.Service {
+func service(name string, ports []v1beta1.PortsSpec) v1.Service {
 	return serviceWithInternalTrafficPolicy(name, ports, v1.ServiceInternalTrafficPolicyCluster)
 }
 
-func serviceWithInternalTrafficPolicy(name string, ports []v1.ServicePort, internalTrafficPolicy v1.ServiceInternalTrafficPolicyType) v1.Service {
+func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, internalTrafficPolicy v1.ServiceInternalTrafficPolicyType) v1.Service {
 	params := deploymentParams()
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+
+	svcPorts := []v1.ServicePort{}
+	for _, p := range ports {
+		svcPorts = append(svcPorts, p.ServicePort)
+	}
 
 	return v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -296,7 +304,7 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1.ServicePort, inter
 			InternalTrafficPolicy: &internalTrafficPolicy,
 			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			ClusterIP:             "",
-			Ports:                 ports,
+			Ports:                 svcPorts,
 		},
 	}
 }
