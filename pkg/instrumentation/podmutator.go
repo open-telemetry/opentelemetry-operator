@@ -241,7 +241,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if featuregate.EnableNodeJSAutoInstrumentationSupport.IsEnabled() || inst == nil {
+	if pm.config.EnableNodeJSAutoInstrumentation() || inst == nil {
 		insts.NodeJS.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for NodeJS auto instrumentation is not enabled")

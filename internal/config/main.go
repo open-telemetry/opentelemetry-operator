@@ -49,6 +49,7 @@ type Config struct {
 	enableDotNetInstrumentation         bool
 	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
+	enableNodeJSInstrumentation         bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
@@ -89,6 +90,7 @@ func New(opts ...Option) Config {
 		enableDotNetInstrumentation:         o.enableDotNetInstrumentation,
 		enableNginxInstrumentation:          o.enableNginxInstrumentation,
 		enablePythonInstrumentation:         o.enablePythonInstrumentation,
+		enableNodeJSInstrumentation:         o.enableNodeJSInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
@@ -154,6 +156,11 @@ func (c *Config) EnableNginxAutoInstrumentation() bool {
 // EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
 func (c *Config) EnablePythonAutoInstrumentation() bool {
 	return c.enablePythonInstrumentation
+}
+
+// EnableNodeJSAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+func (c *Config) EnableNodeJSAutoInstrumentation() bool {
+	return c.enableNodeJSInstrumentation
 }
 
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.

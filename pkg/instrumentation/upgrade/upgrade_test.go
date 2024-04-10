@@ -76,6 +76,7 @@ func TestUpgrade(t *testing.T) {
 			config.WithEnableDotNetInstrumentation(true),
 			config.WithEnableNginxInstrumentation(true),
 			config.WithEnablePythonInstrumentation(true),
+			config.WithEnableNodeJSInstrumentation(true),
 		),
 	).Default(context.Background(), inst)
 	assert.Nil(t, err)
@@ -101,6 +102,7 @@ func TestUpgrade(t *testing.T) {
 		config.WithEnableDotNetInstrumentation(true),
 		config.WithEnableNginxInstrumentation(true),
 		config.WithEnablePythonInstrumentation(true),
+		config.WithEnableNodeJSInstrumentation(true),
 	)
 	up := NewInstrumentationUpgrade(k8sClient, ctrl.Log.WithName("instrumentation-upgrade"), &record.FakeRecorder{}, cfg)
 
