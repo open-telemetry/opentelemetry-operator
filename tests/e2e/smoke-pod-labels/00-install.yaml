@@ -3,7 +3,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: testlabel
 spec:
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.94.0
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.94.0
   config: |
     receivers:
       otlp:
