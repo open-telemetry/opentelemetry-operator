@@ -62,11 +62,6 @@ func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
 			Resources: []string{"replicasets"},
 			Verbs:     []string{"get", "watch", "list"},
 		},
-		{
-			APIGroups: []string{"extensions"},
-			Resources: []string{"replicasets"},
-			Verbs:     []string{"get", "watch", "list"},
-		},
 	}
 
 	extractCfg, ok := o.config["extract"]

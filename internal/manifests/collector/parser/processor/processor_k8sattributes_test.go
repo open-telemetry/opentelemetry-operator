@@ -45,11 +45,6 @@ func TestK8sAttributesRBAC(t *testing.T) {
 					Resources: []string{"replicasets"},
 					Verbs:     []string{"get", "watch", "list"},
 				},
-				{
-					APIGroups: []string{"extensions"},
-					Resources: []string{"replicasets"},
-					Verbs:     []string{"get", "watch", "list"},
-				},
 			},
 		},
 		{
@@ -69,11 +64,6 @@ func TestK8sAttributesRBAC(t *testing.T) {
 				},
 				{
 					APIGroups: []string{"apps"},
-					Resources: []string{"replicasets"},
-					Verbs:     []string{"get", "watch", "list"},
-				},
-				{
-					APIGroups: []string{"extensions"},
 					Resources: []string{"replicasets"},
 					Verbs:     []string{"get", "watch", "list"},
 				},
