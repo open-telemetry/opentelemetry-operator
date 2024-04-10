@@ -32,7 +32,7 @@ func TestPodAnnotations(t *testing.T) {
 	instance.Spec.PodAnnotations = map[string]string{
 		"key": "value",
 	}
-	annotations := Annotations(instance, nil, []string{".*\\.bar\\.io"})
+	annotations := Annotations(logger, instance, nil, []string{".*\\.bar\\.io"})
 	assert.Subset(t, annotations, instance.Spec.PodAnnotations)
 }
 
@@ -51,7 +51,7 @@ func TestConfigMapHash(t *testing.T) {
 	expectedConfig := expectedConfigMap.Data[targetAllocatorFilename]
 	require.NotEmpty(t, expectedConfig)
 	expectedHash := sha256.Sum256([]byte(expectedConfig))
-	annotations := Annotations(targetAllocator, expectedConfigMap, []string{".*\\.bar\\.io"})
+	annotations := Annotations(logger, targetAllocator, expectedConfigMap, []string{".*\\.bar\\.io"})
 	require.Contains(t, annotations, configMapHashAnnotationKey)
 	cmHash := annotations[configMapHashAnnotationKey]
 	assert.Equal(t, fmt.Sprintf("%x", expectedHash), cmHash)
@@ -59,6 +59,6 @@ func TestConfigMapHash(t *testing.T) {
 
 func TestInvalidConfigNoHash(t *testing.T) {
 	instance := targetAllocatorInstance()
-	annotations := Annotations(instance, nil, []string{".*\\.bar\\.io"})
+	annotations := Annotations(logger, instance, nil, []string{".*\\.bar\\.io"})
 	require.NotContains(t, annotations, configMapHashAnnotationKey)
 }

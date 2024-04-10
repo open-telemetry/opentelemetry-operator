@@ -26,9 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var logger logr.Logger
-
-func IsFilteredSet(sourceSet string, filterSet []string) bool {
+func IsFilteredSet(logger logr.Logger, sourceSet string, filterSet []string) bool {
 	for _, basePattern := range filterSet {
 		pattern, compileErr := regexp.Compile(basePattern)
 		match := pattern.MatchString(sourceSet)
@@ -43,13 +41,13 @@ func IsFilteredSet(sourceSet string, filterSet []string) bool {
 }
 
 // Labels return the common labels to all objects that are part of a managed CR.
-func Labels(instance metav1.ObjectMeta, name string, image string, component string, filterLabels []string) map[string]string {
+func Labels(logger logr.Logger, instance metav1.ObjectMeta, name string, image string, component string, filterLabels []string) map[string]string {
 	var versionLabel string
 	// new map every time, so that we don't touch the instance's label
 	base := map[string]string{}
 	if nil != instance.Labels {
 		for k, v := range instance.Labels {
-			if !IsFilteredSet(k, filterLabels) {
+			if !IsFilteredSet(logger, k, filterLabels) {
 				base[k] = v
 			}
 		}

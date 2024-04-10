@@ -39,7 +39,7 @@ func ServiceAccount(params manifests.Params) *corev1.ServiceAccount {
 		return nil
 	}
 	name := naming.TargetAllocatorServiceAccount(params.TargetAllocator.Name)
-	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	labels := manifestutils.Labels(params.Log, params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{

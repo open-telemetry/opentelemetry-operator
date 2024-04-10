@@ -19,11 +19,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
+
+var logger = logf.Log.WithName("unit-tests")
 
 func TestDefaultAnnotations(t *testing.T) {
 	// prepare
@@ -45,9 +48,9 @@ func TestDefaultAnnotations(t *testing.T) {
 	}
 
 	// test
-	annotations, err := Annotations(otelcol, []string{})
+	annotations, err := Annotations(logger, otelcol, []string{})
 	require.NoError(t, err)
-	podAnnotations, err := PodAnnotations(otelcol, []string{})
+	podAnnotations, err := PodAnnotations(logger, otelcol, []string{})
 	require.NoError(t, err)
 
 	//verify
@@ -79,9 +82,9 @@ func TestNonDefaultPodAnnotation(t *testing.T) {
 	}
 
 	// test
-	annotations, err := Annotations(otelcol, []string{})
+	annotations, err := Annotations(logger, otelcol, []string{})
 	require.NoError(t, err)
-	podAnnotations, err := PodAnnotations(otelcol, []string{})
+	podAnnotations, err := PodAnnotations(logger, otelcol, []string{})
 	require.NoError(t, err)
 
 	//verify
@@ -121,9 +124,9 @@ func TestUserAnnotations(t *testing.T) {
 	}
 
 	// test
-	annotations, err := Annotations(otelcol, []string{})
+	annotations, err := Annotations(logger, otelcol, []string{})
 	require.NoError(t, err)
-	podAnnotations, err := PodAnnotations(otelcol, []string{})
+	podAnnotations, err := PodAnnotations(logger, otelcol, []string{})
 	require.NoError(t, err)
 
 	//verify
@@ -148,9 +151,9 @@ func TestAnnotationsPropagateDown(t *testing.T) {
 	}
 
 	// test
-	annotations, err := Annotations(otelcol, []string{})
+	annotations, err := Annotations(logger, otelcol, []string{})
 	require.NoError(t, err)
-	podAnnotations, err := PodAnnotations(otelcol, []string{})
+	podAnnotations, err := PodAnnotations(logger, otelcol, []string{})
 	require.NoError(t, err)
 
 	// verify
@@ -175,7 +178,7 @@ func TestAnnotationsSingleFilter(t *testing.T) {
 	}
 
 	// This requires the filter to be in regex match form and not the other simpler wildcard one.
-	annotations, err := Annotations(otelcol, []string{".*bar.io"})
+	annotations, err := Annotations(logger, otelcol, []string{".*bar.io"})
 
 	// verify
 	require.NoError(t, err)
@@ -200,7 +203,7 @@ func TestAnnotationsFilter(t *testing.T) {
 	}
 
 	// This requires the filter to be in regex match form and not the other simpler wildcard one.
-	annotations, err := Annotations(otelcol, []string{".*bar.io", ".*otel/io", "config.*otel.test.*"})
+	annotations, err := Annotations(logger, otelcol, []string{".*bar.io", ".*otel/io", "config.*otel.test.*"})
 
 	// verify
 	require.NoError(t, err)

@@ -15,22 +15,24 @@
 package collector
 
 import (
-	"context"
 	"fmt"
-	"strconv"
 
-	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"context"
+	"strconv"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+
+	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.OpenTelemetryCollector) error {
+func UpdateCollectorStatus(logger logr.Logger, ctx context.Context, cli client.Client, changed *v1alpha1.OpenTelemetryCollector) error {
 	if changed.Status.Version == "" {
 		// a version is not set, otherwise let the upgrade mechanism take care of it!
 		changed.Status.Version = version.OpenTelemetryCollector()
@@ -47,7 +49,7 @@ func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1al
 	name := naming.Collector(changed.Name)
 
 	// Set the scale selector
-	labels := manifestutils.Labels(changed.ObjectMeta, name, changed.Spec.Image, collector.ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(logger, changed.ObjectMeta, name, changed.Spec.Image, collector.ComponentOpenTelemetryCollector, []string{})
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
 	if err != nil {
 		return fmt.Errorf("failed to get selector for labelSelector: %w", err)

@@ -24,9 +24,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
+
+var logger = logf.Log.WithName("unit-tests")
 
 func TestUpdateCollectorStatusUnsupported(t *testing.T) {
 	ctx := context.TODO()
@@ -42,7 +45,7 @@ func TestUpdateCollectorStatusUnsupported(t *testing.T) {
 		},
 	}
 
-	err := UpdateCollectorStatus(ctx, cli, changed)
+	err := UpdateCollectorStatus(logger, ctx, cli, changed)
 	assert.NoError(t, err)
 
 	assert.Equal(t, int32(0), changed.Status.Scale.Replicas, "expected replicas to be 0")
@@ -89,7 +92,7 @@ func TestUpdateCollectorStatusDeploymentMode(t *testing.T) {
 		},
 	}
 
-	err := UpdateCollectorStatus(ctx, cli, changed)
+	err := UpdateCollectorStatus(logger, ctx, cli, changed)
 	assert.NoError(t, err)
 
 	assert.Equal(t, int32(1), changed.Status.Scale.Replicas, "expected replicas to be 1")
@@ -137,7 +140,7 @@ func TestUpdateCollectorStatusStatefulset(t *testing.T) {
 		},
 	}
 
-	err := UpdateCollectorStatus(ctx, cli, changed)
+	err := UpdateCollectorStatus(logger, ctx, cli, changed)
 	assert.NoError(t, err)
 
 	assert.Equal(t, int32(1), changed.Status.Scale.Replicas, "expected replicas to be 1")
@@ -184,7 +187,7 @@ func TestUpdateCollectorStatusDaemonsetMode(t *testing.T) {
 		},
 	}
 
-	err := UpdateCollectorStatus(ctx, cli, changed)
+	err := UpdateCollectorStatus(logger, ctx, cli, changed)
 	assert.NoError(t, err)
 
 	assert.Contains(t, changed.Status.Scale.Selector, "customLabel=customValue", "expected selector to contain customlabel=customValue")

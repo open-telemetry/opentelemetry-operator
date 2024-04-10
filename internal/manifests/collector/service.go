@@ -61,7 +61,7 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 
 	name := naming.MonitoringService(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(params.Log, params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[monitoringLabel] = valueExists
 
 	out, err := params.OtelCol.Spec.Config.Yaml()
@@ -100,7 +100,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 
 func Service(params manifests.Params) (*corev1.Service, error) {
 	name := naming.Service(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(params.Log, params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	out, err := params.OtelCol.Spec.Config.Yaml()
 	if err != nil {

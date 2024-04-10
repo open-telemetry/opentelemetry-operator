@@ -18,6 +18,8 @@ import (
 	"crypto/sha256"
 	"fmt"
 
+	"github.com/go-logr/logr"
+
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -27,7 +29,7 @@ import (
 const configMapHashAnnotationKey = "opentelemetry-targetallocator-config/hash"
 
 // Annotations returns the annotations for the TargetAllocator Pod.
-func Annotations(instance v1beta1.TargetAllocator, configMap *v1.ConfigMap, filterAnnotations []string) map[string]string {
+func Annotations(logger logr.Logger, instance v1beta1.TargetAllocator, configMap *v1.ConfigMap, filterAnnotations []string) map[string]string {
 	// Make a copy of PodAnnotations to be safe
 	annotations := make(map[string]string, len(instance.Spec.PodAnnotations))
 	for key, value := range instance.Spec.PodAnnotations {
@@ -35,7 +37,7 @@ func Annotations(instance v1beta1.TargetAllocator, configMap *v1.ConfigMap, filt
 	}
 	if nil != instance.ObjectMeta.Annotations {
 		for k, v := range instance.ObjectMeta.Annotations {
-			if !manifestutils.IsFilteredSet(k, filterAnnotations) {
+			if !manifestutils.IsFilteredSet(logger, k, filterAnnotations) {
 				annotations[k] = v
 			}
 		}

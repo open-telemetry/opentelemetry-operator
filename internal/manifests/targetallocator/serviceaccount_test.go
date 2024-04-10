@@ -73,7 +73,7 @@ func TestServiceAccountDefault(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "my-instance-targetallocator",
 			Namespace:   params.OtelCol.Namespace,
-			Labels:      manifestutils.Labels(params.TargetAllocator.ObjectMeta, "my-instance-targetallocator", params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil),
+			Labels:      manifestutils.Labels(params.Log, params.TargetAllocator.ObjectMeta, "my-instance-targetallocator", params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil),
 			Annotations: params.OtelCol.Annotations,
 		},
 	}

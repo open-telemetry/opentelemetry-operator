@@ -42,13 +42,13 @@ func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget
 	}
 
 	name := naming.TAPodDisruptionBudget(params.TargetAllocator.Name)
-	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	labels := manifestutils.Labels(params.Log, params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 	configMap, err := ConfigMap(params)
 	if err != nil {
 		params.Log.Info("failed to construct target allocator config map for annotations")
 		configMap = nil
 	}
-	annotations := Annotations(params.TargetAllocator, configMap, params.Config.AnnotationsFilter())
+	annotations := Annotations(params.Log, params.TargetAllocator, configMap, params.Config.AnnotationsFilter())
 
 	objectMeta := metav1.ObjectMeta{
 		Name:        name,

@@ -40,7 +40,7 @@ func ServiceAccount(params manifests.Params) (*corev1.ServiceAccount, error) {
 	}
 
 	name := naming.ServiceAccount(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(params.Log, params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{

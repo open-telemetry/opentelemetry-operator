@@ -50,7 +50,7 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 		return nil, nil
 	}
 	name := naming.ServiceMonitor(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels := manifestutils.Labels(params.Log, params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	selectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
 	selectorLabels[monitoringLabel] = valueExists
 
