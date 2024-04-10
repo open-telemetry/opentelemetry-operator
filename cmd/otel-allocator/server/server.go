@@ -107,7 +107,12 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
-func RemoveRelabelAction(jsonConfig []byte) ([]byte, error) {
+// This is needed specifically for keepequal/dropequal actions because even though the user doesn't specify the
+// regex field for these actions the unmarshalling implementations of prometheus adds back the default regex fields
+// which in turn causes the receiver to error out since the unmarshaling of the json response doesn't expect anything in the regex fields
+// for these actions. Adding this as a fix until the original issue with prometheus unmarshaling is fixed -
+// https://github.com/prometheus/prometheus/issues/12534
+func RemoveRegexFromRelabelAction(jsonConfig []byte) ([]byte, error) {
 	var jobToScrapeConfig map[string]interface{}
 	err := json.Unmarshal(jsonConfig, &jobToScrapeConfig)
 	if err != nil {
@@ -161,7 +166,7 @@ func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.Scrap
 		return err
 	}
 
-	jsonConfigNew, err := RemoveRelabelAction(jsonConfig)
+	jsonConfigNew, err := RemoveRegexFromRelabelAction(jsonConfig)
 	if err != nil {
 		return err
 	}
