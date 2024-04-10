@@ -16,6 +16,7 @@
 package config
 
 import (
+	"context"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -24,6 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
+	autoRbac "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
@@ -43,7 +45,7 @@ type Config struct {
 	autoInstrumentationPythonImage      string
 	collectorImage                      string
 	collectorConfigMapEntry             string
-	createRBACPermissions               bool
+	createRBACPermissions               autoRbac.Availability
 	enableMultiInstrumentation          bool
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
@@ -57,10 +59,11 @@ type Config struct {
 	operatorOpAMPBridgeConfigMapEntry   string
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationJavaImage        string
-	openshiftRoutesAvailability         openshift.RoutesAvailability
-	prometheusCRAvailability            prometheus.Availability
-	labelsFilter                        []string
-	annotationsFilter                   []string
+
+	openshiftRoutesAvailability openshift.RoutesAvailability
+	prometheusCRAvailability    prometheus.Availability
+	labelsFilter                []string
+	annotationsFilter           []string
 }
 
 // New constructs a new configuration based on the given options.
@@ -83,7 +86,6 @@ func New(opts ...Option) Config {
 		autoDetect:                          o.autoDetect,
 		collectorImage:                      o.collectorImage,
 		collectorConfigMapEntry:             o.collectorConfigMapEntry,
-		createRBACPermissions:               o.createRBACPermissions,
 		enableMultiInstrumentation:          o.enableMultiInstrumentation,
 		enableApacheHttpdInstrumentation:    o.enableApacheHttpdInstrumentation,
 		enableDotNetInstrumentation:         o.enableDotNetInstrumentation,
@@ -123,6 +125,13 @@ func (c *Config) AutoDetect() error {
 		return err
 	}
 	c.prometheusCRAvailability = pcrd
+
+	rAuto, err := c.autoDetect.RBACPermissions(context.Background())
+	if err != nil {
+		return err
+	}
+	c.createRBACPermissions = rAuto
+
 	return nil
 }
 
@@ -162,7 +171,7 @@ func (c *Config) CollectorConfigMapEntry() string {
 }
 
 // CreateRBACPermissions is true when the operator can create RBAC permissions for SAs running a collector instance. Immutable.
-func (c *Config) CreateRBACPermissions() bool {
+func (c *Config) CreateRBACPermissions() autoRbac.Availability {
 	return c.createRBACPermissions
 }
 

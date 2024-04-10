@@ -14,8 +14,6 @@
 
 package rbac
 
-const saEnvVar = "SERVICE_ACCOUNT_NAME"
-
 // Availability represents that the opeerator service account has permissions to create RBAC resources.
 type Availability int
 

@@ -50,7 +50,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
-	autoRbac "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -246,28 +245,16 @@ func main() {
 	ctx := ctrl.SetupSignalHandler()
 
 	// builds the operator's configuration
-	ad, err := autodetect.New(restConfig, ctx, reviewer)
+	ad, err := autodetect.New(restConfig, reviewer)
 	if err != nil {
 		setupLog.Error(err, "failed to setup auto-detect routine")
 		os.Exit(1)
-	}
-
-	rbacAvailable, err := ad.RBACPermissions()
-	if err != nil {
-		createRBACPermissions = false
-		setupLog.Info("error checking if the operator has permissions to create RBAC resources", "reason", err)
-	} else if rbacAvailable == autoRbac.NotAvailable {
-		createRBACPermissions = false
-		setupLog.Info("The operator has not permissions to create RBAC resources, skipping.")
-	} else {
-		createRBACPermissions = true
 	}
 
 	cfg := config.New(
 		config.WithLogger(ctrl.Log.WithName("config")),
 		config.WithVersion(v),
 		config.WithCollectorImage(collectorImage),
-		config.WithCreateRBACPermissions(createRBACPermissions),
 		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
 		config.WithEnableApacheHttpdInstrumentation(enableApacheHttpdInstrumentation),
 		config.WithEnableDotNetInstrumentation(enableDotNetInstrumentation),

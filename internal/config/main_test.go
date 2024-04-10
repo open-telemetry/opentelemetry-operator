@@ -15,6 +15,7 @@
 package config_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -52,7 +53,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		PrometheusCRsAvailabilityFunc: func() (prometheus.Availability, error) {
 			return prometheus.Available, nil
 		},
-		RBACPermissionsFunc: func() (rbac.Availability, error) {
+		RBACPermissionsFunc: func(ctx context.Context) (rbac.Availability, error) {
 			return rbac.Available, nil
 		},
 	}
@@ -78,7 +79,7 @@ var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
-	RBACPermissionsFunc             func() (rbac.Availability, error)
+	RBACPermissionsFunc             func(ctx context.Context) (rbac.Availability, error)
 }
 
 func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error) {
@@ -95,9 +96,9 @@ func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, e
 	return prometheus.NotAvailable, nil
 }
 
-func (m *mockAutoDetect) RBACPermissions() (rbac.Availability, error) {
+func (m *mockAutoDetect) RBACPermissions(ctx context.Context) (rbac.Availability, error) {
 	if m.RBACPermissionsFunc != nil {
-		return m.RBACPermissionsFunc()
+		return m.RBACPermissionsFunc(ctx)
 	}
 	return rbac.NotAvailable, nil
 }

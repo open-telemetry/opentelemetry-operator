@@ -34,17 +34,16 @@ var _ AutoDetect = (*autoDetect)(nil)
 type AutoDetect interface {
 	OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailability() (prometheus.Availability, error)
-	RBACPermissions() (autoRbac.Availability, error)
+	RBACPermissions(ctx context.Context) (autoRbac.Availability, error)
 }
 
 type autoDetect struct {
-	ctx      context.Context
 	dcl      discovery.DiscoveryInterface
 	reviewer *rbac.Reviewer
 }
 
 // New creates a new auto-detection worker, using the given client when talking to the current cluster.
-func New(restConfig *rest.Config, ctx context.Context, reviewer *rbac.Reviewer) (AutoDetect, error) {
+func New(restConfig *rest.Config, reviewer *rbac.Reviewer) (AutoDetect, error) {
 	dcl, err := discovery.NewDiscoveryClientForConfig(restConfig)
 	if err != nil {
 		// it's pretty much impossible to get into this problem, as most of the
@@ -54,7 +53,6 @@ func New(restConfig *rest.Config, ctx context.Context, reviewer *rbac.Reviewer) 
 	}
 
 	return &autoDetect{
-		ctx:      ctx,
 		dcl:      dcl,
 		reviewer: reviewer,
 	}, nil
@@ -94,8 +92,8 @@ func (a *autoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability
 	return openshift.RoutesNotAvailable, nil
 }
 
-func (a *autoDetect) RBACPermissions() (autoRbac.Availability, error) {
-	w, err := autoRbac.CheckRbacPermissions(a.reviewer, a.ctx)
+func (a *autoDetect) RBACPermissions(ctx context.Context) (autoRbac.Availability, error) {
+	w, err := autoRbac.CheckRbacPermissions(ctx, a.reviewer)
 	if err != nil {
 		return autoRbac.NotAvailable, err
 	}

@@ -25,8 +25,19 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
+const (
+	SA_ENV_VAR          = "SERVICE_ACCOUNT_NAME"
+	NAMESPACE_ENV_VAR   = "NAMESPACE"
+	NAMESPACE_FILE_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+)
+
 func getOperatorNamespace() (string, error) {
-	nsBytes, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	namespace := os.Getenv(NAMESPACE_ENV_VAR)
+	if namespace != "" {
+		return namespace, nil
+	}
+
+	nsBytes, err := os.ReadFile(NAMESPACE_FILE_PATH)
 	if err != nil {
 		return "", err
 	}
@@ -34,24 +45,22 @@ func getOperatorNamespace() (string, error) {
 }
 
 func getOperatorServiceAccount() (string, error) {
-	sa := os.Getenv(saEnvVar)
+	sa := os.Getenv(SA_ENV_VAR)
 	if sa == "" {
-		return sa, fmt.Errorf("%s env variable not found", saEnvVar)
+		return sa, fmt.Errorf("%s env variable not found", SA_ENV_VAR)
 	}
 	return sa, nil
 }
 
-func CheckRbacPermissions(reviewer *rbac.Reviewer, ctx context.Context) (admission.Warnings, error) {
-	notPossibleToCheck := "unable to check rbac rules:"
-
+func CheckRbacPermissions(ctx context.Context, reviewer *rbac.Reviewer) (admission.Warnings, error) {
 	namespace, err := getOperatorNamespace()
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", notPossibleToCheck, err)
+		return nil, fmt.Errorf("%s: %w", "not possible to check RBAC rules", err)
 	}
 
 	serviceAccount, err := getOperatorServiceAccount()
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", notPossibleToCheck, err)
+		return nil, fmt.Errorf("%s: %w", "not possible to check RBAC rules", err)
 	}
 
 	rules := []*rbacv1.PolicyRule{
@@ -63,7 +72,7 @@ func CheckRbacPermissions(reviewer *rbac.Reviewer, ctx context.Context) (admissi
 	}
 
 	if subjectAccessReviews, err := reviewer.CheckPolicyRules(ctx, serviceAccount, namespace, rules...); err != nil {
-		return nil, fmt.Errorf("%s: %w", notPossibleToCheck, err)
+		return nil, fmt.Errorf("%s: %w", "unable to check rbac rules", err)
 	} else if allowed, deniedReviews := rbac.AllSubjectAccessReviewsAllowed(subjectAccessReviews); !allowed {
 		return rbac.WarningsGroupedByResource(deniedReviews), nil
 	}
