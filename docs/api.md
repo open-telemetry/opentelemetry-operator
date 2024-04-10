@@ -20958,7 +20958,7 @@ PodSecurityContext, the value specified in SecurityContext takes precedence.<br/
 
 
 
-ServicePort contains information on service's port.
+PortsSpec defines the OpenTelemetryCollector's container/service ports additional specifications.
 
 <table>
     <thead>
@@ -21000,6 +21000,15 @@ RFC-6335 and https://www.iana.org/assignments/service-names).
 
 * Other protocols should use implementation-defined prefixed names such as
 mycompany.com/my-custom-protocol.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>hostPort</b></td>
+        <td>integer</td>
+        <td>
+          Allows defining which port to bind to the host in the Container.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
         </td>
         <td>false</td>
       </tr><tr>

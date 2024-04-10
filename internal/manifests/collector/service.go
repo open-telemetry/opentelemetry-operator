@@ -136,7 +136,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 		// in the first case, we remove the port we inferred from the list
 		// in the second case, we rename our inferred port to something like "port-%d"
 		portNumbers, portNames := extractPortNumbersAndNames(params.OtelCol.Spec.Ports)
-		var resultingInferredPorts []corev1.ServicePort
+		var resultingInferredPorts []v1beta1.PortsSpec
 		for _, inferred := range ports {
 			if filtered := filterPort(params.Log, inferred, portNumbers, portNames); filtered != nil {
 				resultingInferredPorts = append(resultingInferredPorts, *filtered)
@@ -158,6 +158,11 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 		trafficPolicy = corev1.ServiceInternalTrafficPolicyLocal
 	}
 
+	svcPorts := []corev1.ServicePort{}
+	for _, p := range ports {
+		svcPorts = append(svcPorts, p.ServicePort)
+	}
+
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        naming.Service(params.OtelCol.Name),
@@ -169,7 +174,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 			InternalTrafficPolicy: &trafficPolicy,
 			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			ClusterIP:             "",
-			Ports:                 ports,
+			Ports:                 svcPorts,
 		},
 	}, nil
 }
@@ -191,7 +196,7 @@ func newPortNumberKey(port int32, protocol corev1.Protocol) PortNumberKey {
 	return PortNumberKey{Port: port, Protocol: protocol}
 }
 
-func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers map[PortNumberKey]bool, portNames map[string]bool) *corev1.ServicePort {
+func filterPort(logger logr.Logger, candidate v1beta1.PortsSpec, portNumbers map[PortNumberKey]bool, portNames map[string]bool) *v1beta1.PortsSpec {
 	if portNumbers[newPortNumberKey(candidate.Port, candidate.Protocol)] {
 		return nil
 	}
@@ -217,7 +222,7 @@ func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers ma
 	return &candidate
 }
 
-func extractPortNumbersAndNames(ports []corev1.ServicePort) (map[PortNumberKey]bool, map[string]bool) {
+func extractPortNumbersAndNames(ports []v1beta1.PortsSpec) (map[PortNumberKey]bool, map[string]bool) {
 	numbers := map[PortNumberKey]bool{}
 	names := map[string]bool{}
 
