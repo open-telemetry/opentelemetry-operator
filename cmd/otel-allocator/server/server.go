@@ -107,7 +107,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
-// This is needed specifically for keepequal/dropequal actions because even though the user doesn't specify the
+// RemoveRegexFromRelabelAction is needed specifically for keepequal/dropequal actions because even though the user doesn't specify the
 // regex field for these actions the unmarshalling implementations of prometheus adds back the default regex fields
 // which in turn causes the receiver to error out since the unmarshaling of the json response doesn't expect anything in the regex fields
 // for these actions. Adding this as a fix until the original issue with prometheus unmarshaling is fixed -
