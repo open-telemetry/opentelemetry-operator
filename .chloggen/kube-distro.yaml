@@ -13,4 +13,8 @@ issues: [2835]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: |
+  Previously, the default distribution used for the operator was core.
+  We now have access to a purpose built distribution for Kubernetes. This distro
+  contains everything that core had plus components that are helpful in a Kubernetes
+  environment.
