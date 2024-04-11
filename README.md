@@ -56,7 +56,7 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
+          processors: [memory_limiter, batch]
           exporters: [debug]
 EOF
 ```
