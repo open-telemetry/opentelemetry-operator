@@ -3,23 +3,25 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
+  image: otel/opentelemetry-collector-contrib:latest
   config: |
     receivers:
-      jaeger:
-        protocols:
-          grpc:
       otlp:
         protocols:
-          grpc:
-          http:
+          grpc: {}
+          http: {}
     processors:
-
+      k8sattributes: {}
+      batch: {}
     exporters:
       debug:
-
     service:
       pipelines:
-        traces:
-          receivers: [jaeger,otlp]
-          processors: []
-          exporters: [debug]
+        metrics:
+          receivers:
+            - otlp
+          processors:
+            - k8sattributes
+            - batch
+          exporters:
+            - debug

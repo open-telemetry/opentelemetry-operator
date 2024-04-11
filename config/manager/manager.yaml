@@ -34,6 +34,7 @@ spec:
         - "--zap-time-encoding=rfc3339nano"
         - "--feature-gates=+operator.autoinstrumentation.go"
         - "--enable-nginx-instrumentation=true"
+        - "--create-rbac-permissions=true"
         image: controller
         name: manager
         livenessProbe:
