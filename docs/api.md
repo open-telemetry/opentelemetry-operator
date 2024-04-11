@@ -105,7 +105,9 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         <td><b><a href="#instrumentationspecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines common env vars.<br/>
+          Env defines common env vars. There are four layers for env vars' definitions and
+the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -119,7 +121,10 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         <td><b><a href="#instrumentationspecgo">go</a></b></td>
         <td>object</td>
         <td>
-          Go defines configuration for Go auto-instrumentation.<br/>
+          Go defines configuration for Go auto-instrumentation.
+When using Go auto-instrumentation you must provide a value for the OTEL_GO_AUTO_TARGET_EXE env var via the
+Instrumentation env vars or via the instrumentation.opentelemetry.io/otel-go-auto-target-exe pod annotation.
+Failure to set this value causes instrumentation injection to abort, leaving the original pod unchanged.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -199,7 +204,7 @@ ApacheHttpd defines configuration for Apache HTTPD auto-instrumentation.
         <td>
           Attrs defines Apache HTTPD agent specific attributes. The precedence is:
 `agent default attributes` > `instrument spec attributes` .
-Attributes are documented at https://github.<br/>
+Attributes are documented at https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -214,7 +219,9 @@ Needed only if different from default "/usr/local/apache2/conf"<br/>
         <td><b><a href="#instrumentationspecapachehttpdenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines Apache HTTPD specific env vars.<br/>
+          Env defines Apache HTTPD specific env vars. There are four layers for env vars' definitions and
+the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -279,7 +286,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -321,7 +334,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -329,7 +342,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -392,7 +405,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -427,7 +440,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -535,7 +548,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -577,7 +596,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -585,7 +604,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -648,7 +667,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -683,7 +702,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -787,7 +806,10 @@ that are used by this container.
 
 
 This is an alpha field and requires enabling the
-DynamicResourceAllocation feature gate.<br/>
+DynamicResourceAllocation feature gate.
+
+
+This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -802,7 +824,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -858,7 +883,9 @@ DotNet defines configuration for DotNet auto-instrumentation.
         <td><b><a href="#instrumentationspecdotnetenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines DotNet specific env vars.<br/>
+          Env defines DotNet specific env vars. There are four layers for env vars' definitions and
+the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -916,7 +943,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -958,7 +991,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -966,7 +999,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1029,7 +1062,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -1064,7 +1097,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -1168,7 +1201,10 @@ that are used by this container.
 
 
 This is an alpha field and requires enabling the
-DynamicResourceAllocation feature gate.<br/>
+DynamicResourceAllocation feature gate.
+
+
+This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1183,7 +1219,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1248,7 +1287,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1290,7 +1335,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1298,7 +1343,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1361,7 +1406,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -1396,7 +1441,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -1508,6 +1553,9 @@ Exporter defines exporter configuration.
 
 
 Go defines configuration for Go auto-instrumentation.
+When using Go auto-instrumentation you must provide a value for the OTEL_GO_AUTO_TARGET_EXE env var via the
+Instrumentation env vars or via the instrumentation.opentelemetry.io/otel-go-auto-target-exe pod annotation.
+Failure to set this value causes instrumentation injection to abort, leaving the original pod unchanged.
 
 <table>
     <thead>
@@ -1522,7 +1570,9 @@ Go defines configuration for Go auto-instrumentation.
         <td><b><a href="#instrumentationspecgoenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines Go specific env vars.<br/>
+          Env defines Go specific env vars. There are four layers for env vars' definitions and
+the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1580,7 +1630,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1622,7 +1678,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1630,7 +1686,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1693,7 +1749,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -1728,7 +1784,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -1832,7 +1888,10 @@ that are used by this container.
 
 
 This is an alpha field and requires enabling the
-DynamicResourceAllocation feature gate.<br/>
+DynamicResourceAllocation feature gate.
+
+
+This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1847,7 +1906,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1903,7 +1965,9 @@ Java defines configuration for java auto-instrumentation.
         <td><b><a href="#instrumentationspecjavaenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines java specific env vars.<br/>
+          Env defines java specific env vars. There are four layers for env vars' definitions and
+the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1961,7 +2025,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2003,7 +2073,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2011,7 +2081,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2074,7 +2144,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -2109,7 +2179,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -2213,7 +2283,10 @@ that are used by this container.
 
 
 This is an alpha field and requires enabling the
-DynamicResourceAllocation feature gate.<br/>
+DynamicResourceAllocation feature gate.
+
+
+This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2228,7 +2301,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2286,7 +2362,7 @@ Nginx defines configuration for Nginx auto-instrumentation.
         <td>
           Attrs defines Nginx agent specific attributes. The precedence order is:
 `agent default attributes` > `instrument spec attributes` .
-Attributes are documented at https://github.<br/>
+Attributes are documented at https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2301,7 +2377,9 @@ Needed only if different from default "/etx/nginx/nginx.conf"<br/>
         <td><b><a href="#instrumentationspecnginxenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines Nginx specific env vars.<br/>
+          Env defines Nginx specific env vars. There are four layers for env vars' definitions and
+the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2359,7 +2437,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2401,7 +2485,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2409,7 +2493,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2472,7 +2556,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -2507,7 +2591,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -2615,7 +2699,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2657,7 +2747,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2665,7 +2755,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2728,7 +2818,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -2763,7 +2853,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -2867,7 +2957,10 @@ that are used by this container.
 
 
 This is an alpha field and requires enabling the
-DynamicResourceAllocation feature gate.<br/>
+DynamicResourceAllocation feature gate.
+
+
+This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2882,7 +2975,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2938,7 +3034,9 @@ NodeJS defines configuration for nodejs auto-instrumentation.
         <td><b><a href="#instrumentationspecnodejsenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines nodejs specific env vars.<br/>
+          Env defines nodejs specific env vars. There are four layers for env vars' definitions and
+the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2996,7 +3094,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3038,7 +3142,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3046,7 +3150,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3109,7 +3213,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -3144,7 +3248,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -3248,7 +3352,10 @@ that are used by this container.
 
 
 This is an alpha field and requires enabling the
-DynamicResourceAllocation feature gate.<br/>
+DynamicResourceAllocation feature gate.
+
+
+This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3263,7 +3370,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3319,7 +3429,9 @@ Python defines configuration for python auto-instrumentation.
         <td><b><a href="#instrumentationspecpythonenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
-          Env defines python specific env vars.<br/>
+          Env defines python specific env vars. There are four layers for env vars' definitions and
+the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3377,7 +3489,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3419,7 +3537,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3427,7 +3545,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3490,7 +3608,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -3525,7 +3643,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -3629,7 +3747,10 @@ that are used by this container.
 
 
 This is an alpha field and requires enabling the
-DynamicResourceAllocation feature gate.<br/>
+DynamicResourceAllocation feature gate.
+
+
+This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3644,7 +3765,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3737,7 +3861,8 @@ Sampler defines sampling configuration.
         <td>
           Argument defines sampler argument.
 The value depends on the sampler type.
-For instance for parentbased_traceidratio sampler type it is a number in range [0..1] e.g. 0.25.<br/>
+For instance for parentbased_traceidratio sampler type it is a number in range [0..1] e.g. 0.25.
+The value will be set in the OTEL_TRACES_SAMPLER_ARG env var.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3978,7 +4103,8 @@ the operator will not automatically create a ServiceAccount for the OpAMPBridge.
         <td>
           TopologySpreadConstraints embedded kubernetes pod configuration option,
 controls how pods are spread across your cluster among failure-domains
-such as regions, zones, nodes, and other user-defined top<br/>
+such as regions, zones, nodes, and other user-defined topology domains
+https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4071,7 +4197,13 @@ Describes node affinity scheduling rules for the pod.
         <td>
           The scheduler will prefer to schedule pods to nodes that satisfy
 the affinity expressions specified by this field, but it may choose
-a node that violates one or more of the expressions.<br/>
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node matches the corresponding matchExpressions; the
+node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4079,7 +4211,10 @@ a node that violates one or more of the expressions.<br/>
         <td>object</td>
         <td>
           If the affinity requirements specified by this field are not met at
-scheduling time, the pod will not be scheduled onto the node.<br/>
+scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to an update), the system
+may or may not try to eventually evict the pod from its node.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4195,7 +4330,9 @@ Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         <td>
           An array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4240,7 +4377,9 @@ Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         <td>
           An array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4254,6 +4393,9 @@ the values array must be empty.<br/>
 
 If the affinity requirements specified by this field are not met at
 scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to an update), the system
+may or may not try to eventually evict the pod from its node.
 
 <table>
     <thead>
@@ -4349,7 +4491,9 @@ Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         <td>
           An array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4394,7 +4538,9 @@ Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         <td>
           An array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4423,7 +4569,13 @@ Describes pod affinity scheduling rules (e.g. co-locate this pod in the same nod
         <td>
           The scheduler will prefer to schedule pods to nodes that satisfy
 the affinity expressions specified by this field, but it may choose
-a node that violates one or more of the expressions.<br/>
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4431,7 +4583,12 @@ a node that violates one or more of the expressions.<br/>
         <td>[]object</td>
         <td>
           If the affinity requirements specified by this field are not met at
-scheduling time, the pod will not be scheduled onto the node.<br/>
+scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to a pod label update), the
+system may or may not try to eventually evict the pod from its node.
+When there are multiple elements, the lists of nodes corresponding to each
+podAffinityTerm are intersected, i.e. all terms must be satisfied.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4497,7 +4654,9 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td>
           This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
 the labelSelector in the specified namespaces, where co-located is defined as running on a node
-whose <br/>
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -4513,7 +4672,14 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4521,7 +4687,14 @@ be taken into consideration.<br/>
         <td>[]string</td>
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4530,7 +4703,9 @@ be taken into consideration.<br/>
         <td>
           A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
-and the ones listed in the namespaces field.<br/>
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4539,7 +4714,8 @@ and the ones listed in the namespaces field.<br/>
         <td>
           namespaces specifies a static list of namespace names that the term applies to.
 The term is applied to the union of the namespaces listed in this field
-and the ones selected by namespaceSelector.<br/>
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4574,7 +4750,9 @@ If it's null, this PodAffinityTerm matches with no Pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4619,7 +4797,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4634,6 +4813,8 @@ the values array must be empty.<br/>
 A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
 and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -4655,7 +4836,9 @@ and the ones listed in the namespaces field.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4700,7 +4883,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4715,7 +4899,9 @@ the values array must be empty.<br/>
 Defines a set of pods (namely those matching the labelSelector
 relative to the given namespace(s)) that this pod should be
 co-located (affinity) or not co-located (anti-affinity) with,
-where co-locate
+where co-located is defined as running on a node whose value of
+the label with key <topologyKey> matches that of any node on which
+a pod of the set of pods is running
 
 <table>
     <thead>
@@ -4732,7 +4918,9 @@ where co-locate
         <td>
           This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
 the labelSelector in the specified namespaces, where co-located is defined as running on a node
-whose <br/>
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -4748,7 +4936,14 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4756,7 +4951,14 @@ be taken into consideration.<br/>
         <td>[]string</td>
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4765,7 +4967,9 @@ be taken into consideration.<br/>
         <td>
           A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
-and the ones listed in the namespaces field.<br/>
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4774,7 +4978,8 @@ and the ones listed in the namespaces field.<br/>
         <td>
           namespaces specifies a static list of namespace names that the term applies to.
 The term is applied to the union of the namespaces listed in this field
-and the ones selected by namespaceSelector.<br/>
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4809,7 +5014,9 @@ If it's null, this PodAffinityTerm matches with no Pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4854,7 +5061,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4869,6 +5077,8 @@ the values array must be empty.<br/>
 A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
 and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -4890,7 +5100,9 @@ and the ones listed in the namespaces field.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4935,7 +5147,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4964,7 +5177,13 @@ Describes pod anti-affinity scheduling rules (e.g. avoid putting this pod in the
         <td>
           The scheduler will prefer to schedule pods to nodes that satisfy
 the anti-affinity expressions specified by this field, but it may choose
-a node that violates one or more of the expressions.<br/>
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling anti-affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4972,7 +5191,12 @@ a node that violates one or more of the expressions.<br/>
         <td>[]object</td>
         <td>
           If the anti-affinity requirements specified by this field are not met at
-scheduling time, the pod will not be scheduled onto the node.<br/>
+scheduling time, the pod will not be scheduled onto the node.
+If the anti-affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to a pod label update), the
+system may or may not try to eventually evict the pod from its node.
+When there are multiple elements, the lists of nodes corresponding to each
+podAffinityTerm are intersected, i.e. all terms must be satisfied.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5038,7 +5262,9 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td>
           This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
 the labelSelector in the specified namespaces, where co-located is defined as running on a node
-whose <br/>
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -5054,7 +5280,14 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5062,7 +5295,14 @@ be taken into consideration.<br/>
         <td>[]string</td>
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5071,7 +5311,9 @@ be taken into consideration.<br/>
         <td>
           A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
-and the ones listed in the namespaces field.<br/>
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5080,7 +5322,8 @@ and the ones listed in the namespaces field.<br/>
         <td>
           namespaces specifies a static list of namespace names that the term applies to.
 The term is applied to the union of the namespaces listed in this field
-and the ones selected by namespaceSelector.<br/>
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5115,7 +5358,9 @@ If it's null, this PodAffinityTerm matches with no Pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5160,7 +5405,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5175,6 +5421,8 @@ the values array must be empty.<br/>
 A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
 and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -5196,7 +5444,9 @@ and the ones listed in the namespaces field.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5241,7 +5491,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5256,7 +5507,9 @@ the values array must be empty.<br/>
 Defines a set of pods (namely those matching the labelSelector
 relative to the given namespace(s)) that this pod should be
 co-located (affinity) or not co-located (anti-affinity) with,
-where co-locate
+where co-located is defined as running on a node whose value of
+the label with key <topologyKey> matches that of any node on which
+a pod of the set of pods is running
 
 <table>
     <thead>
@@ -5273,7 +5526,9 @@ where co-locate
         <td>
           This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
 the labelSelector in the specified namespaces, where co-located is defined as running on a node
-whose <br/>
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -5289,7 +5544,14 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5297,7 +5559,14 @@ be taken into consideration.<br/>
         <td>[]string</td>
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5306,7 +5575,9 @@ be taken into consideration.<br/>
         <td>
           A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
-and the ones listed in the namespaces field.<br/>
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5315,7 +5586,8 @@ and the ones listed in the namespaces field.<br/>
         <td>
           namespaces specifies a static list of namespace names that the term applies to.
 The term is applied to the union of the namespaces listed in this field
-and the ones selected by namespaceSelector.<br/>
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5350,7 +5622,9 @@ If it's null, this PodAffinityTerm matches with no Pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5395,7 +5669,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5410,6 +5685,8 @@ the values array must be empty.<br/>
 A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
 and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -5431,7 +5708,9 @@ and the ones listed in the namespaces field.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5476,7 +5755,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5512,7 +5792,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5554,7 +5840,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5562,7 +5848,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5625,7 +5911,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -5660,7 +5946,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -5877,7 +6163,13 @@ Some volume types allow the Kubelet to change the ownership of that volume
 to be owned by the pod:
 
 
-1.<br/>
+1. The owning GID will be the FSGroup
+2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
+3. The permission bits are OR'd with rw-rw----
+
+
+If unset, the Kubelet will not modify the ownership and permissions of any volume.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -5887,7 +6179,12 @@ to be owned by the pod:
         <td>string</td>
         <td>
           fsGroupChangePolicy defines behavior of changing ownership and permission of the volume
-before being exposed inside Pod.<br/>
+before being exposed inside Pod. This field will only apply to
+volume types which support fsGroup based ownership(and permissions).
+It will have no effect on ephemeral volume types such as: secret, configmaps
+and emptydir.
+Valid values are "OnRootMismatch" and "Always". If not specified, "Always" is used.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5896,7 +6193,10 @@ before being exposed inside Pod.<br/>
         <td>
           The GID to run the entrypoint of the container process.
 Uses runtime default if unset.
-May also be set in SecurityContext.<br/>
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence
+for that container.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -5905,7 +6205,12 @@ May also be set in SecurityContext.<br/>
         <td><b>runAsNonRoot</b></td>
         <td>boolean</td>
         <td>
-          Indicates that the container must run as a non-root user.<br/>
+          Indicates that the container must run as a non-root user.
+If true, the Kubelet will validate the image at runtime to ensure that it
+does not run as UID 0 (root) and fail to start the container if it does.
+If unset or false, no such validation will be performed.
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5914,7 +6219,10 @@ May also be set in SecurityContext.<br/>
         <td>
           The UID to run the entrypoint of the container process.
 Defaults to user specified in image metadata if unspecified.
-May also be set in SecurityContext.<br/>
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence
+for that container.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -5925,7 +6233,10 @@ May also be set in SecurityContext.<br/>
         <td>
           The SELinux context to be applied to all containers.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in SecurityContext.<br/>
+container.  May also be set in SecurityContext.  If set in
+both SecurityContext and PodSecurityContext, the value specified in SecurityContext
+takes precedence for that container.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5942,7 +6253,11 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         <td>
           A list of groups applied to the first process run in each container, in addition
 to the container's primary GID, the fsGroup (if specified), and group memberships
-defined in the container image for th<br/>
+defined in the container image for the uid of the container process. If unspecified,
+no additional groups are added to any container. Note that group memberships
+defined in the container image for the uid of the container process are still effective,
+even if they are not included in this list.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5951,7 +6266,7 @@ defined in the container image for th<br/>
         <td>
           Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported
 sysctls (by the container runtime) might fail to launch.
-Note that this field cannot be set when spec.os.<br/>
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5959,7 +6274,9 @@ Note that this field cannot be set when spec.os.<br/>
         <td>object</td>
         <td>
           The Windows specific settings applied to all containers.
-If unspecified, the options within a container's SecurityContext will be used.<br/>
+If unspecified, the options within a container's SecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5973,7 +6290,10 @@ If unspecified, the options within a container's SecurityContext will be used.<b
 
 The SELinux context to be applied to all containers.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in SecurityContext.
+container.  May also be set in SecurityContext.  If set in
+both SecurityContext and PodSecurityContext, the value specified in SecurityContext
+takes precedence for that container.
+Note that this field cannot be set when spec.os.name is windows.
 
 <table>
     <thead>
@@ -6041,7 +6361,9 @@ Note that this field cannot be set when spec.os.name is windows.
 Valid options are:
 
 
-Localhost - a profile defined in a file on the node should be used.<br/>
+Localhost - a profile defined in a file on the node should be used.
+RuntimeDefault - the container runtime default profile should be used.
+Unconfined - no profile should be applied.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -6049,7 +6371,9 @@ Localhost - a profile defined in a file on the node should be used.<br/>
         <td>string</td>
         <td>
           localhostProfile indicates a profile defined in a file on the node should be used.
-The profile must be preconfigured on the node to work.<br/>
+The profile must be preconfigured on the node to work.
+Must be a descending path, relative to the kubelet's configured seccomp profile location.
+Must be set if type is "Localhost". Must NOT be set for any other type.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6097,6 +6421,8 @@ Sysctl defines a kernel parameter to be set
 
 The Windows specific settings applied to all containers.
 If unspecified, the options within a container's SecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.
 
 <table>
     <thead>
@@ -6127,7 +6453,10 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td><b>hostProcess</b></td>
         <td>boolean</td>
         <td>
-          HostProcess determines if a container should be run as a 'Host Process' container.<br/>
+          HostProcess determines if a container should be run as a 'Host Process' container.
+All of a Pod's containers must have the same effective HostProcess value
+(it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
+In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6136,7 +6465,8 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td>
           The UserName in Windows to run the entrypoint of the container process.
 Defaults to the user specified in image metadata if unspecified.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext. If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6174,7 +6504,22 @@ ServicePort contains information on service's port.
         <td>
           The application protocol for this port.
 This is used as a hint for implementations to offer richer behavior for protocols that they understand.
-This field follows standard Kubernetes label syntax.<br/>
+This field follows standard Kubernetes label syntax.
+Valid values are either:
+
+
+* Un-prefixed protocol names - reserved for IANA standard service names (as per
+RFC-6335 and https://www.iana.org/assignments/service-names).
+
+
+* Kubernetes-defined prefixed names:
+  * 'kubernetes.io/h2c' - HTTP/2 prior knowledge over cleartext as described in https://www.rfc-editor.org/rfc/rfc9113.html#name-starting-http-2-with-prior-
+  * 'kubernetes.io/ws'  - WebSocket over cleartext as described in https://www.rfc-editor.org/rfc/rfc6455
+  * 'kubernetes.io/wss' - WebSocket over TLS as described in https://www.rfc-editor.org/rfc/rfc6455
+
+
+* Other protocols should use implementation-defined prefixed names such as
+mycompany.com/my-custom-protocol.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6182,7 +6527,10 @@ This field follows standard Kubernetes label syntax.<br/>
         <td>string</td>
         <td>
           The name of this port within the service. This must be a DNS_LABEL.
-All ports within a ServiceSpec must have unique names.<br/>
+All ports within a ServiceSpec must have unique names. When considering
+the endpoints for a Service, this must match the 'name' field in the
+EndpointPort.
+Optional if only one ServicePort is defined on this service.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6190,7 +6538,14 @@ All ports within a ServiceSpec must have unique names.<br/>
         <td>integer</td>
         <td>
           The port on each node on which this service is exposed when type is
-NodePort or LoadBalancer.  Usually assigned by the system.<br/>
+NodePort or LoadBalancer.  Usually assigned by the system. If a value is
+specified, in-range, and not in use it will be used, otherwise the
+operation will fail.  If not specified, a port will be allocated if this
+Service requires one.  If this field is specified when creating a
+Service which does not need it, creation will fail. This field will be
+wiped when updating a Service to no longer need it (e.g. changing type
+from NodePort to ClusterIP).
+More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -6210,7 +6565,13 @@ Default is TCP.<br/>
         <td>int or string</td>
         <td>
           Number or name of the port to access on the pods targeted by the service.
-Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
+If this is a string, it will be looked up as a named port in the
+target Pod's container ports. If this is not specified, the value
+of the 'port' field is used (an identity map).
+This field is ignored for services with clusterIP=None, and should be
+omitted or set equal to the 'port' field.
+More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6242,7 +6603,10 @@ that are used by this container.
 
 
 This is an alpha field and requires enabling the
-DynamicResourceAllocation feature gate.<br/>
+DynamicResourceAllocation feature gate.
+
+
+This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6257,7 +6621,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6315,7 +6682,11 @@ SecurityContext will be set as the container security context.
         <td>
           AllowPrivilegeEscalation controls whether a process can gain more
 privileges than its parent process. This bool directly controls if
-the no_new_privs flag will be set on the container process.<br/>
+the no_new_privs flag will be set on the container process.
+AllowPrivilegeEscalation is true always when the container is:
+1) run as Privileged
+2) has CAP_SYS_ADMIN
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6343,7 +6714,9 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         <td>
           procMount denotes the type of proc mount to use for the containers.
 The default is DefaultProcMount which uses the container runtime defaults for
-readonly paths and masked paths.<br/>
+readonly paths and masked paths.
+This requires the ProcMountType feature flag to be enabled.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6361,7 +6734,9 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         <td>
           The GID to run the entrypoint of the container process.
 Uses runtime default if unset.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -6370,7 +6745,12 @@ May also be set in PodSecurityContext.<br/>
         <td><b>runAsNonRoot</b></td>
         <td>boolean</td>
         <td>
-          Indicates that the container must run as a non-root user.<br/>
+          Indicates that the container must run as a non-root user.
+If true, the Kubelet will validate the image at runtime to ensure that it
+does not run as UID 0 (root) and fail to start the container if it does.
+If unset or false, no such validation will be performed.
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6379,7 +6759,9 @@ May also be set in PodSecurityContext.<br/>
         <td>
           The UID to run the entrypoint of the container process.
 Defaults to user specified in image metadata if unspecified.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -6390,7 +6772,9 @@ May also be set in PodSecurityContext.<br/>
         <td>
           The SELinux context to be applied to the container.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in PodSecurityContext.<br/>
+container.  May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6399,7 +6783,8 @@ container.  May also be set in PodSecurityContext.<br/>
         <td>
           The seccomp options to use by this container. If seccomp options are
 provided at both the pod & container level, the container options
-override the pod options.<br/>
+override the pod options.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6407,7 +6792,9 @@ override the pod options.<br/>
         <td>object</td>
         <td>
           The Windows specific settings applied to all containers.
-If unspecified, the options from the PodSecurityContext will be used.<br/>
+If unspecified, the options from the PodSecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6457,7 +6844,9 @@ Note that this field cannot be set when spec.os.name is windows.
 
 The SELinux context to be applied to the container.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in PodSecurityContext.
+container.  May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.
 
 <table>
     <thead>
@@ -6508,6 +6897,7 @@ container.  May also be set in PodSecurityContext.
 The seccomp options to use by this container. If seccomp options are
 provided at both the pod & container level, the container options
 override the pod options.
+Note that this field cannot be set when spec.os.name is windows.
 
 <table>
     <thead>
@@ -6526,7 +6916,9 @@ override the pod options.
 Valid options are:
 
 
-Localhost - a profile defined in a file on the node should be used.<br/>
+Localhost - a profile defined in a file on the node should be used.
+RuntimeDefault - the container runtime default profile should be used.
+Unconfined - no profile should be applied.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -6534,7 +6926,9 @@ Localhost - a profile defined in a file on the node should be used.<br/>
         <td>string</td>
         <td>
           localhostProfile indicates a profile defined in a file on the node should be used.
-The profile must be preconfigured on the node to work.<br/>
+The profile must be preconfigured on the node to work.
+Must be a descending path, relative to the kubelet's configured seccomp profile location.
+Must be set if type is "Localhost". Must NOT be set for any other type.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6548,6 +6942,8 @@ The profile must be preconfigured on the node to work.<br/>
 
 The Windows specific settings applied to all containers.
 If unspecified, the options from the PodSecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.
 
 <table>
     <thead>
@@ -6578,7 +6974,10 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td><b>hostProcess</b></td>
         <td>boolean</td>
         <td>
-          HostProcess determines if a container should be run as a 'Host Process' container.<br/>
+          HostProcess determines if a container should be run as a 'Host Process' container.
+All of a Pod's containers must have the same effective HostProcess value
+(it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
+In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6587,7 +6986,8 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td>
           The UserName in Windows to run the entrypoint of the container process.
 Defaults to the user specified in image metadata if unspecified.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext. If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6632,7 +7032,9 @@ If the key is empty, operator must be Exists; this combination means to match al
         <td>string</td>
         <td>
           Operator represents a key's relationship to the value.
-Valid operators are Exists and Equal. Defaults to Equal.<br/>
+Valid operators are Exists and Equal. Defaults to Equal.
+Exists is equivalent to wildcard for value, so that a pod can
+tolerate all taints of a particular category.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6640,7 +7042,9 @@ Valid operators are Exists and Equal. Defaults to Equal.<br/>
         <td>integer</td>
         <td>
           TolerationSeconds represents the period of time the toleration (which must be
-of effect NoExecute, otherwise this field is ignored) tolerates the taint.<br/>
+of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+it is not set, which means tolerate the taint forever (do not evict). Zero and
+negative values will be treated as 0 (evict immediately) by the system.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -6677,7 +7081,23 @@ TopologySpreadConstraint specifies how to spread matching pods among the given t
         <td><b>maxSkew</b></td>
         <td>integer</td>
         <td>
-          MaxSkew describes the degree to which pods may be unevenly distributed.<br/>
+          MaxSkew describes the degree to which pods may be unevenly distributed.
+When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
+between the number of matching pods in the target topology and the global minimum.
+The global minimum is the minimum number of matching pods in an eligible domain
+or zero if the number of eligible domains is less than MinDomains.
+For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same
+labelSelector spread as 2/2/1:
+In this case, the global minimum is 1.
+| zone1 | zone2 | zone3 |
+|  P P  |  P P  |   P   |
+- if MaxSkew is 1, incoming pod can only be scheduled to zone3 to become 2/2/2;
+scheduling it onto zone1(zone2) would make the ActualSkew(3-1) on zone1(zone2)
+violate MaxSkew(1).
+- if MaxSkew is 2, incoming pod can be scheduled onto any zone.
+When `whenUnsatisfiable=ScheduleAnyway`, it is used to give higher precedence
+to topologies that satisfy it.
+It's a required field. Default value is 1 and 0 is not allowed.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -6687,7 +7107,15 @@ TopologySpreadConstraint specifies how to spread matching pods among the given t
         <td>string</td>
         <td>
           TopologyKey is the key of node labels. Nodes that have a label with this key
-and identical values are considered to be in the same topology.<br/>
+and identical values are considered to be in the same topology.
+We consider each <key, value> as a "bucket", and try to put balanced number
+of pods into each bucket.
+We define a domain as a particular instance of a topology.
+Also, we define an eligible domain as a domain whose nodes meet the requirements of
+nodeAffinityPolicy and nodeTaintsPolicy.
+e.g. If TopologyKey is "kubernetes.io/hostname", each Node is a domain of that topology.
+And, if TopologyKey is "topology.kubernetes.io/zone", each zone is a domain of that topology.
+It's a required field.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -6696,7 +7124,22 @@ and identical values are considered to be in the same topology.<br/>
         <td>
           WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
 the spread constraint.
-- DoNotSchedule (default) tells the scheduler not to schedule it.<br/>
+- DoNotSchedule (default) tells the scheduler not to schedule it.
+- ScheduleAnyway tells the scheduler to schedule the pod in any location,
+  but giving higher precedence to topologies that would help reduce the
+  skew.
+A constraint is considered "Unsatisfiable" for an incoming pod
+if and only if every possible node assignment for that pod would violate
+"MaxSkew" on some topology.
+For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same
+labelSelector spread as 3/1/1:
+| zone1 | zone2 | zone3 |
+| P P P |   P   |   P   |
+If WhenUnsatisfiable is set to DoNotSchedule, incoming pod can only be scheduled
+to zone2(zone3) to become 3/2/1(3/1/2) as ActualSkew(2-1) on zone2(zone3) satisfies
+MaxSkew(1). In other words, the cluster can still be imbalanced, but scheduler
+won't make it *more* imbalanced.
+It's a required field.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -6713,14 +7156,42 @@ in their corresponding topology domain.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select the pods over which
-spreading will be calculated.<br/>
+spreading will be calculated. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are ANDed with labelSelector
+to select the group of existing pods over which spreading will be calculated
+for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+MatchLabelKeys cannot be set when LabelSelector isn't set.
+Keys that don't exist in the incoming pod labels will
+be ignored. A null or empty list means only match against labelSelector.
+
+
+This is a beta field and requires the MatchLabelKeysInPodTopologySpread feature gate to be enabled (enabled by default).<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>minDomains</b></td>
         <td>integer</td>
         <td>
-          MinDomains indicates a minimum number of eligible domains.<br/>
+          MinDomains indicates a minimum number of eligible domains.
+When the number of eligible domains with matching topology keys is less than minDomains,
+Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
+And when the number of eligible domains with matching topology keys equals or greater than minDomains,
+this value has no effect on scheduling.
+As a result, when the number of eligible domains is less than minDomains,
+scheduler won't schedule more than maxSkew Pods to those domains.
+If value is nil, the constraint behaves as if MinDomains is equal to 1.
+Valid values are integers greater than 0.
+When value is not nil, WhenUnsatisfiable must be DoNotSchedule.
+
+
+For example, in a 3-zone cluster, MaxSkew is set to 2, MinDomains is set to 5 and pods with the same
+labelSelector spread as 2/2/2:
+| zone1 | zone2 | zone3 |
+|  P P  |  P P  |  P P  |
+The number of domains is less than 5(MinDomains), so "global minimum" is treated as 0.
+In this situation, new pod with the same labelSelector cannot be scheduled,
+because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
+it will violate MaxSkew.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -6730,7 +7201,13 @@ spreading will be calculated.<br/>
         <td>string</td>
         <td>
           NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
-when calculating pod topology spread skew.<br/>
+when calculating pod topology spread skew. Options are:
+- Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
+- Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+
+
+If this value is nil, the behavior is equivalent to the Honor policy.
+This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6738,7 +7215,14 @@ when calculating pod topology spread skew.<br/>
         <td>string</td>
         <td>
           NodeTaintsPolicy indicates how we will treat node taints when calculating
-pod topology spread skew.<br/>
+pod topology spread skew. Options are:
+- Honor: nodes without taints, along with tainted nodes for which the incoming pod
+has a toleration, are included.
+- Ignore: node taints are ignored. All nodes are included.
+
+
+If this value is nil, the behavior is equivalent to the Ignore policy.
+This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6774,7 +7258,9 @@ in their corresponding topology domain.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6819,7 +7305,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6887,7 +7374,10 @@ Defaults to "" (volume's root).<br/>
         <td><b>subPathExpr</b></td>
         <td>string</td>
         <td>
-          Expanded path within the volume from which the container's volume should be mounted.<br/>
+          Expanded path within the volume from which the container's volume should be mounted.
+Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
+Defaults to "" (volume's root).
+SubPathExpr and SubPath are mutually exclusive.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6925,7 +7415,7 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>
           awsElasticBlockStore represents an AWS Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://kubernetes.<br/>
+More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6990,7 +7480,34 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir<br/>
         <td><b><a href="#opampbridgespecvolumesindexephemeral">ephemeral</a></b></td>
         <td>object</td>
         <td>
-          ephemeral represents a volume that is handled by a cluster storage driver.<br/>
+          ephemeral represents a volume that is handled by a cluster storage driver.
+The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts,
+and deleted when the pod is removed.
+
+
+Use this if:
+a) the volume is only needed while the pod runs,
+b) features of normal volumes like restoring from snapshot or capacity
+   tracking are needed,
+c) the storage driver is specified through a storage class, and
+d) the storage driver supports dynamic volume provisioning through
+   a PersistentVolumeClaim (see EphemeralVolumeSource for more
+   information on the connection between this volume type
+   and PersistentVolumeClaim).
+
+
+Use PersistentVolumeClaim or one of the vendor-specific
+APIs for volumes that persist for longer than the lifecycle
+of an individual pod.
+
+
+Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to
+be used that way - see the documentation of the driver for
+more information.
+
+
+A pod can use both types of ephemeral volumes and
+persistent volumes at the same time.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7021,7 +7538,7 @@ provisioned/attached using an exec based plugin.<br/>
         <td>
           gcePersistentDisk represents a GCE Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://kubernetes.<br/>
+More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7029,7 +7546,9 @@ More info: https://kubernetes.<br/>
         <td>object</td>
         <td>
           gitRepo represents a git repository at a particular revision.
-DEPRECATED: GitRepo is deprecated.<br/>
+DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an
+EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir
+into the Pod's container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7045,7 +7564,13 @@ More info: https://examples.k8s.io/volumes/glusterfs/README.md<br/>
         <td>object</td>
         <td>
           hostPath represents a pre-existing file or directory on the host
-machine that is directly exposed to the container.<br/>
+machine that is directly exposed to the container. This is generally
+used for system agents or other privileged things that are allowed
+to see the host machine. Most containers will NOT need this.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
+---
+TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not
+mount host directories as read/write.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7071,7 +7596,7 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs<br/>
         <td>
           persistentVolumeClaimVolumeSource represents a reference to a
 PersistentVolumeClaim in the same namespace.
-More info: https://kubernetes.<br/>
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7150,7 +7675,7 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#secret<br/>
 
 awsElasticBlockStore represents an AWS Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://kubernetes.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
 
 <table>
     <thead>
@@ -7175,7 +7700,9 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockst
         <td>
           fsType is the filesystem type of the volume that you want to mount.
 Tip: Ensure that the filesystem type is supported by the host operating system.
-Examples: "ext4", "xfs", "ntfs".<br/>
+Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
+TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7184,7 +7711,8 @@ Examples: "ext4", "xfs", "ntfs".<br/>
         <td>
           partition is the partition in the volume that you want to mount.
 If omitted, the default is to mount by volume name.
-Examples: For volume /dev/sda1, you specify the partition as "1".<br/>
+Examples: For volume /dev/sda1, you specify the partition as "1".
+Similarly, the volume partition for /dev/sda is "0" (or you can leave the property empty).<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -7251,7 +7779,7 @@ Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.<br/>
         <td><b>kind</b></td>
         <td>string</td>
         <td>
-          kind expected values are Shared: multiple blob disks per storage account  Dedicated: single blob disk per storage account  Managed: azure managed data disk (only in managed availability set).<br/>
+          kind expected values are Shared: multiple blob disks per storage account  Dedicated: single blob disk per storage account  Managed: azure managed data disk (only in managed availability set). defaults to shared<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7437,7 +7965,8 @@ More info: https://examples.k8s.io/mysql-cinder-pd/README.md<br/>
         <td>
           fsType is the filesystem type to mount.
 Must be a filesystem type supported by the host operating system.
-Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.<br/>
+Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+More info: https://examples.k8s.io/mysql-cinder-pd/README.md<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7512,7 +8041,12 @@ configMap represents a configMap that should populate this volume
         <td>integer</td>
         <td>
           defaultMode is optional: mode bits used to set permissions on created files by default.
-Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+Defaults to 0644.
+Directories within the path are not affected by this setting.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -7523,7 +8057,11 @@ Must be an octal value between 0000 and 0777 or a decimal value between 0 and 51
         <td>
           items if unspecified, each key-value pair in the Data field of the referenced
 ConfigMap will be projected into the volume as a file whose name is the
-key and content is the value.<br/>
+key and content is the value. If specified, the listed keys will be
+projected into the specified paths, and unlisted keys will not be
+present. If a key is specified which is not present in the ConfigMap,
+the volume setup will error unless it is marked optional. Paths must be
+relative and may not contain the '..' path or start with '..'.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7584,7 +8122,11 @@ May not start with the string '..'.<br/>
         <td>integer</td>
         <td>
           mode is Optional: mode bits used to set permissions on this file.
-Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+If not specified, the volume defaultMode will be used.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -7632,7 +8174,9 @@ which will determine the default filesystem to apply.<br/>
         <td>
           nodePublishSecretRef is a reference to the secret object containing
 sensitive information to pass to the CSI driver to complete the CSI
-NodePublishVolume and NodeUnpublishVolume calls.<br/>
+NodePublishVolume and NodeUnpublishVolume calls.
+This field is optional, and  may be empty if no secret is required. If the
+secret object contains more than one secret, all secret references are passed.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7663,6 +8207,8 @@ driver. Consult your driver's documentation for supported values.<br/>
 nodePublishSecretRef is a reference to the secret object containing
 sensitive information to pass to the CSI driver to complete the CSI
 NodePublishVolume and NodeUnpublishVolume calls.
+This field is optional, and  may be empty if no secret is required. If the
+secret object contains more than one secret, all secret references are passed.
 
 <table>
     <thead>
@@ -7707,7 +8253,13 @@ downwardAPI represents downward API about the pod that should populate this volu
         <td>integer</td>
         <td>
           Optional: mode bits to use on created files by default. Must be a
-Optional: mode bits used to set permissions on created files by default.<br/>
+Optional: mode bits used to set permissions on created files by default.
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+Defaults to 0644.
+Directories within the path are not affected by this setting.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -7758,7 +8310,11 @@ DownwardAPIVolumeFile represents information to create the file containing the p
         <td>integer</td>
         <td>
           Optional: mode bits used to set permissions on this file, must be an octal value
-between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+If not specified, the volume defaultMode will be used.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -7874,7 +8430,8 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir
         <td>
           medium represents what type of storage medium should back this directory.
 The default is "" which means to use the node's default medium.
-Must be an empty string (default) or Memory.<br/>
+Must be an empty string (default) or Memory.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7882,7 +8439,11 @@ Must be an empty string (default) or Memory.<br/>
         <td>int or string</td>
         <td>
           sizeLimit is the total amount of local storage required for this EmptyDir volume.
-The size limit is also applicable for memory medium.<br/>
+The size limit is also applicable for memory medium.
+The maximum usage on memory medium EmptyDir would be the minimum value between
+the SizeLimit specified here and the sum of memory limits of all containers in a pod.
+The default is nil which means that the limit is undefined.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -7895,6 +8456,33 @@ The size limit is also applicable for memory medium.<br/>
 
 
 ephemeral represents a volume that is handled by a cluster storage driver.
+The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts,
+and deleted when the pod is removed.
+
+
+Use this if:
+a) the volume is only needed while the pod runs,
+b) features of normal volumes like restoring from snapshot or capacity
+   tracking are needed,
+c) the storage driver is specified through a storage class, and
+d) the storage driver supports dynamic volume provisioning through
+   a PersistentVolumeClaim (see EphemeralVolumeSource for more
+   information on the connection between this volume type
+   and PersistentVolumeClaim).
+
+
+Use PersistentVolumeClaim or one of the vendor-specific
+APIs for volumes that persist for longer than the lifecycle
+of an individual pod.
+
+
+Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to
+be used that way - see the documentation of the driver for
+more information.
+
+
+A pod can use both types of ephemeral volumes and
+persistent volumes at the same time.
 
 <table>
     <thead>
@@ -7911,7 +8499,28 @@ ephemeral represents a volume that is handled by a cluster storage driver.
         <td>
           Will be used to create a stand-alone PVC to provision the volume.
 The pod in which this EphemeralVolumeSource is embedded will be the
-owner of the PVC, i.e.<br/>
+owner of the PVC, i.e. the PVC will be deleted together with the
+pod.  The name of the PVC will be `<pod name>-<volume name>` where
+`<volume name>` is the name from the `PodSpec.Volumes` array
+entry. Pod validation will reject the pod if the concatenated name
+is not valid for a PVC (for example, too long).
+
+
+An existing PVC with that name that is not owned by the pod
+will *not* be used for the pod to avoid using an unrelated
+volume by mistake. Starting the pod is then blocked until
+the unrelated PVC is removed. If such a pre-created PVC is
+meant to be used by the pod, the PVC has to updated with an
+owner reference to the pod once the pod exists. Normally
+this should not be necessary, but it may be useful when
+manually reconstructing a broken cluster.
+
+
+This field is read-only and no changes will be made by Kubernetes
+to the PVC after it has been created.
+
+
+Required, must not be nil.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -7925,7 +8534,28 @@ owner of the PVC, i.e.<br/>
 
 Will be used to create a stand-alone PVC to provision the volume.
 The pod in which this EphemeralVolumeSource is embedded will be the
-owner of the PVC, i.e.
+owner of the PVC, i.e. the PVC will be deleted together with the
+pod.  The name of the PVC will be `<pod name>-<volume name>` where
+`<volume name>` is the name from the `PodSpec.Volumes` array
+entry. Pod validation will reject the pod if the concatenated name
+is not valid for a PVC (for example, too long).
+
+
+An existing PVC with that name that is not owned by the pod
+will *not* be used for the pod to avoid using an unrelated
+volume by mistake. Starting the pod is then blocked until
+the unrelated PVC is removed. If such a pre-created PVC is
+meant to be used by the pod, the PVC has to updated with an
+owner reference to the pod once the pod exists. Normally
+this should not be necessary, but it may be useful when
+manually reconstructing a broken cluster.
+
+
+This field is read-only and no changes will be made by Kubernetes
+to the PVC after it has been created.
+
+
+Required, must not be nil.
 
 <table>
     <thead>
@@ -7942,7 +8572,8 @@ owner of the PVC, i.e.
         <td>
           The specification for the PersistentVolumeClaim. The entire content is
 copied unchanged into the PVC that gets created from this
-template.<br/>
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -7965,7 +8596,8 @@ validation.<br/>
 
 The specification for the PersistentVolumeClaim. The entire content is
 copied unchanged into the PVC that gets created from this
-template.
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.
 
 <table>
     <thead>
@@ -7989,7 +8621,13 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access
         <td>object</td>
         <td>
           dataSource field can be used to specify either:
-* An existing VolumeSnapshot object (snapshot.storage.k8s.<br/>
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7997,14 +8635,32 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access
         <td>object</td>
         <td>
           dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
-volume is desired.<br/>
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opampbridgespecvolumesindexephemeralvolumeclaimtemplatespecresources">resources</a></b></td>
         <td>object</td>
         <td>
-          resources represents the minimum resources the volume should have.<br/>
+          resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8026,7 +8682,18 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-
         <td><b>volumeAttributesClassName</b></td>
         <td>string</td>
         <td>
-          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.<br/>
+          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
+If specified, the CSI driver will create or update the volume with the attributes defined
+in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
+it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
+will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
+If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
+will be set by the persistentvolume controller if it exists.
+If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
+set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
+exists.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+(Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8054,7 +8721,13 @@ Value of Filesystem is implied when not included in claim spec.<br/>
 
 
 dataSource field can be used to specify either:
-* An existing VolumeSnapshot object (snapshot.storage.k8s.
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.
 
 <table>
     <thead>
@@ -8098,7 +8771,21 @@ For any other third-party types, APIGroup is required.<br/>
 
 
 dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
-volume is desired.
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.
 
 <table>
     <thead>
@@ -8137,7 +8824,8 @@ For any other third-party types, APIGroup is required.<br/>
         <td>string</td>
         <td>
           Namespace is the namespace of resource being referenced
-Note that when a namespace is specified, a gateway.networking.k8s.<br/>
+Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
+(Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8150,6 +8838,10 @@ Note that when a namespace is specified, a gateway.networking.k8s.<br/>
 
 
 resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
 
 <table>
     <thead>
@@ -8172,7 +8864,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8206,7 +8901,9 @@ selector is a label query over volumes to consider for binding.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8251,7 +8948,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8337,7 +9035,8 @@ fc represents a Fibre Channel resource that is attached to a kubelet's host mach
         <td>
           fsType is the filesystem type to mount.
 Must be a filesystem type supported by the host operating system.
-Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.<br/>
+Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8430,7 +9129,9 @@ the ReadOnly setting in VolumeMounts.<br/>
         <td>
           secretRef is Optional: secretRef is reference to the secret object containing
 sensitive information to pass to the plugin scripts. This may be
-empty if no secret object is specified.<br/>
+empty if no secret object is specified. If the secret object
+contains more than one secret, all secrets are passed to the plugin
+scripts.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8444,7 +9145,9 @@ empty if no secret object is specified.<br/>
 
 secretRef is Optional: secretRef is reference to the secret object containing
 sensitive information to pass to the plugin scripts. This may be
-empty if no secret object is specified.
+empty if no secret object is specified. If the secret object
+contains more than one secret, all secrets are passed to the plugin
+scripts.
 
 <table>
     <thead>
@@ -8510,7 +9213,7 @@ should be considered as deprecated<br/>
 
 gcePersistentDisk represents a GCE Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://kubernetes.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
 
 <table>
     <thead>
@@ -8535,7 +9238,9 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
         <td>
           fsType is filesystem type of the volume that you want to mount.
 Tip: Ensure that the filesystem type is supported by the host operating system.
-Examples: "ext4", "xfs", "ntfs".<br/>
+Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
+TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8544,7 +9249,9 @@ Examples: "ext4", "xfs", "ntfs".<br/>
         <td>
           partition is the partition in the volume that you want to mount.
 If omitted, the default is to mount by volume name.
-Examples: For volume /dev/sda1, you specify the partition as "1".<br/>
+Examples: For volume /dev/sda1, you specify the partition as "1".
+Similarly, the volume partition for /dev/sda is "0" (or you can leave the property empty).
+More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -8568,7 +9275,9 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
 
 
 gitRepo represents a git repository at a particular revision.
-DEPRECATED: GitRepo is deprecated.
+DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an
+EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir
+into the Pod's container.
 
 <table>
     <thead>
@@ -8592,7 +9301,8 @@ DEPRECATED: GitRepo is deprecated.
         <td>
           directory is the target directory name.
 Must not contain or start with '..'.  If '.' is supplied, the volume directory will be the
-git repository.<br/>
+git repository.  Otherwise, if specified, the volume will contain the git repository in
+the subdirectory with the given name.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8658,7 +9368,13 @@ More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod<br/>
 
 
 hostPath represents a pre-existing file or directory on the host
-machine that is directly exposed to the container.
+machine that is directly exposed to the container. This is generally
+used for system agents or other privileged things that are allowed
+to see the host machine. Most containers will NOT need this.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
+---
+TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not
+mount host directories as read/write.
 
 <table>
     <thead>
@@ -8753,14 +9469,18 @@ is other than default (typically TCP ports 860 and 3260).<br/>
         <td>
           fsType is the filesystem type of the volume that you want to mount.
 Tip: Ensure that the filesystem type is supported by the host operating system.
-Examples: "ext4", "xfs", "ntfs".<br/>
+Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#iscsi
+TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>initiatorName</b></td>
         <td>string</td>
         <td>
-          initiatorName is the custom iSCSI Initiator Name.<br/>
+          initiatorName is the custom iSCSI Initiator Name.
+If initiatorName is specified with iscsiInterface simultaneously, new iSCSI interface
+<target portal>:<volume name> will be created for the connection.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8880,7 +9600,7 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs<br/>
 
 persistentVolumeClaimVolumeSource represents a reference to a
 PersistentVolumeClaim in the same namespace.
-More info: https://kubernetes.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims
 
 <table>
     <thead>
@@ -9012,7 +9732,11 @@ projected items for all in one resources secrets, configmaps, and downward API
         <td>integer</td>
         <td>
           defaultMode are the mode bits used to set permissions on created files by default.
-Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+Directories within the path are not affected by this setting.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -9052,7 +9776,18 @@ Projection that may be projected along with other supported volume types
 of ClusterTrustBundle objects in an auto-updating file.
 
 
-Alpha, gated by the ClusterTrustBundleProjection feature gate.<br/>
+Alpha, gated by the ClusterTrustBundleProjection feature gate.
+
+
+ClusterTrustBundle objects can either be selected by name, or by the
+combination of signer name and a label selector.
+
+
+Kubelet performs aggressive normalization of the PEM contents written
+into the pod filesystem.  Esoteric PEM features such as inter-block
+comments and block headers are stripped.  Certificates are deduplicated.
+The ordering of certificates within the file is arbitrary, and Kubelet
+may change the order over time.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9098,6 +9833,17 @@ of ClusterTrustBundle objects in an auto-updating file.
 
 Alpha, gated by the ClusterTrustBundleProjection feature gate.
 
+
+ClusterTrustBundle objects can either be selected by name, or by the
+combination of signer name and a label selector.
+
+
+Kubelet performs aggressive normalization of the PEM contents written
+into the pod filesystem.  Esoteric PEM features such as inter-block
+comments and block headers are stripped.  Certificates are deduplicated.
+The ordering of certificates within the file is arbitrary, and Kubelet
+may change the order over time.
+
 <table>
     <thead>
         <tr>
@@ -9120,7 +9866,8 @@ Alpha, gated by the ClusterTrustBundleProjection feature gate.
         <td>
           Select all ClusterTrustBundles that match this label selector.  Only has
 effect if signerName is set.  Mutually-exclusive with name.  If unset,
-interpreted as "match nothing".<br/>
+interpreted as "match nothing".  If set but empty, interpreted as "match
+everything".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9137,7 +9884,9 @@ with signerName and labelSelector.<br/>
         <td>
           If true, don't block pod startup if the referenced ClusterTrustBundle(s)
 aren't available.  If using name, then the named ClusterTrustBundle is
-allowed not to exist.<br/>
+allowed not to exist.  If using signerName, then the combination of
+signerName and labelSelector is allowed to match zero
+ClusterTrustBundles.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9160,7 +9909,8 @@ ClusterTrustBundles will be unified and deduplicated.<br/>
 
 Select all ClusterTrustBundles that match this label selector.  Only has
 effect if signerName is set.  Mutually-exclusive with name.  If unset,
-interpreted as "match nothing".
+interpreted as "match nothing".  If set but empty, interpreted as "match
+everything".
 
 <table>
     <thead>
@@ -9182,7 +9932,9 @@ interpreted as "match nothing".
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9227,7 +9979,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9256,7 +10009,11 @@ configMap information about the configMap data to project
         <td>
           items if unspecified, each key-value pair in the Data field of the referenced
 ConfigMap will be projected into the volume as a file whose name is the
-key and content is the value.<br/>
+key and content is the value. If specified, the listed keys will be
+projected into the specified paths, and unlisted keys will not be
+present. If a key is specified which is not present in the ConfigMap,
+the volume setup will error unless it is marked optional. Paths must be
+relative and may not contain the '..' path or start with '..'.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9317,7 +10074,11 @@ May not start with the string '..'.<br/>
         <td>integer</td>
         <td>
           mode is Optional: mode bits used to set permissions on this file.
-Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+If not specified, the volume defaultMode will be used.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -9388,7 +10149,11 @@ DownwardAPIVolumeFile represents information to create the file containing the p
         <td>integer</td>
         <td>
           Optional: mode bits used to set permissions on this file, must be an octal value
-between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+If not specified, the volume defaultMode will be used.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -9503,7 +10268,11 @@ secret information about the secret data to project
         <td>
           items if unspecified, each key-value pair in the Data field of the referenced
 Secret will be projected into the volume as a file whose name is the
-key and content is the value.<br/>
+key and content is the value. If specified, the listed keys will be
+projected into the specified paths, and unlisted keys will not be
+present. If a key is specified which is not present in the Secret,
+the volume setup will error unless it is marked optional. Paths must be
+relative and may not contain the '..' path or start with '..'.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9564,7 +10333,11 @@ May not start with the string '..'.<br/>
         <td>integer</td>
         <td>
           mode is Optional: mode bits used to set permissions on this file.
-Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+If not specified, the volume defaultMode will be used.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -9603,7 +10376,8 @@ token into.<br/>
         <td>
           audience is the intended audience of the token. A recipient of a token
 must identify itself with an identifier specified in the audience of the
-token, and otherwise should reject the token.<br/>
+token, and otherwise should reject the token. The audience defaults to the
+identifier of the apiserver.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9612,7 +10386,10 @@ token, and otherwise should reject the token.<br/>
         <td>
           expirationSeconds is the requested duration of validity of the service
 account token. As the token approaches expiration, the kubelet volume
-plugin will proactively rotate the service account token.<br/>
+plugin will proactively rotate the service account token. The kubelet will
+start trying to rotate the token if the token is older than 80 percent of
+its time to live or if the token is older than 24 hours.Defaults to 1 hour
+and must be at least 10 minutes.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -9728,7 +10505,9 @@ More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it<br/>
         <td>
           fsType is the filesystem type of the volume that you want to mount.
 Tip: Ensure that the filesystem type is supported by the host operating system.
-Examples: "ext4", "xfs", "ntfs".<br/>
+Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd
+TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9962,7 +10741,12 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#secret
         <td>integer</td>
         <td>
           defaultMode is Optional: mode bits used to set permissions on created files by default.
-Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values
+for mode bits. Defaults to 0644.
+Directories within the path are not affected by this setting.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -9973,7 +10757,11 @@ Must be an octal value between 0000 and 0777 or a decimal value between 0 and 51
         <td>
           items If unspecified, each key-value pair in the Data field of the referenced
 Secret will be projected into the volume as a file whose name is the
-key and content is the value.<br/>
+key and content is the value. If specified, the listed keys will be
+projected into the specified paths, and unlisted keys will not be
+present. If a key is specified which is not present in the Secret,
+the volume setup will error unless it is marked optional. Paths must be
+relative and may not contain the '..' path or start with '..'.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10033,7 +10821,11 @@ May not start with the string '..'.<br/>
         <td>integer</td>
         <td>
           mode is Optional: mode bits used to set permissions on this file.
-Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+If not specified, the volume defaultMode will be used.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -10096,7 +10888,11 @@ names are only unique within a namespace.<br/>
         <td>string</td>
         <td>
           volumeNamespace specifies the scope of the volume within StorageOS.  If no
-namespace is specified then the Pod's namespace will be used.<br/>
+namespace is specified then the Pod's namespace will be used.  This allows the
+Kubernetes name scoping to be mirrored within StorageOS for tighter integration.
+Set VolumeName to any name to override the default behaviour.
+Set to "default" if you are not using namespaces within StorageOS.
+Namespaces that do not pre-exist within StorageOS will be created.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10283,7 +11079,20 @@ OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
         <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindex">additionalContainers</a></b></td>
         <td>[]object</td>
         <td>
-          AdditionalContainers allows injecting additional containers into the Collector's pod definition.<br/>
+          AdditionalContainers allows injecting additional containers into the Collector's pod definition.
+These sidecar containers can be used for authentication proxies, log shipping sidecars, agents for shipping
+metrics to their cloud, or in general sidecars that do not support automatic injection. This option only
+applies to Deployment, DaemonSet, and StatefulSet deployment modes of the collector. It does not apply to the sidecar
+deployment mode. More info about sidecars:
+https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/
+
+
+Container names managed by the operator:
+* `otc-container`
+
+
+Overriding containers managed by the operator is outside the scope of what the maintainers will support and by
+doing so, you wil accept the risk of it breaking things.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10320,7 +11129,8 @@ for the OpenTelemetryCollector workload.<br/>
         <td>[]object</td>
         <td>
           ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetryCollector
-object, which shall be mounted into the Collector Pods.<br/>
+object, which shall be mounted into the Collector Pods.
+Each ConfigMap will be added to the Collector's Deployments as a volume named `configmap-<configmap-name>`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10328,7 +11138,8 @@ object, which shall be mounted into the Collector Pods.<br/>
         <td>object</td>
         <td>
           UpdateStrategy represents the strategy the operator will take replacing existing Deployment pods with new pods
-https://kubernetes.<br/>
+https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/#DeploymentSpec
+This is only applicable to Deployment mode.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10381,7 +11192,11 @@ Valid modes are: deployment, daemonset and statefulset.<br/>
         <td><b><a href="#opentelemetrycollectorspecinitcontainersindex">initContainers</a></b></td>
         <td>[]object</td>
         <td>
-          InitContainers allows injecting initContainers to the Collector's pod definition.<br/>
+          InitContainers allows injecting initContainers to the Collector's pod definition.
+These init containers can be used to fetch secrets for injection into the
+configuration from external sources, run added checks, etc. Any errors during the execution of
+an initContainer will lead to a restart of the Pod. More info:
+https://kubernetes.io/docs/concepts/workloads/pods/init-containers/<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10395,7 +11210,8 @@ Valid modes are: deployment, daemonset and statefulset.<br/>
         <td><b><a href="#opentelemetrycollectorspeclivenessprobe">livenessProbe</a></b></td>
         <td>object</td>
         <td>
-          Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.<br/>
+          Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
+It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10475,7 +11291,10 @@ for the OpenTelemetryCollector workload.<br/>
         <td>
           PodSecurityContext configures the pod security context for the
 opentelemetry-collector pod, when running as a deployment, daemonset,
-or statefulset.<br/>
+or statefulset.
+
+
+In sidecar mode, the opentelemetry-operator will ignore this setting.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10483,7 +11302,8 @@ or statefulset.<br/>
         <td>[]object</td>
         <td>
           Ports allows a set of ports to be exposed by the underlying v1.Service. By default, the operator
-will attempt to infer the required ports by parsing the .Spec.<br/>
+will attempt to infer the required ports by parsing the .Spec.Config property but this property can be
+used to open additional ports that can't be inferred by the operator, like for custom receivers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10516,7 +11336,16 @@ default.<br/>
         <td>object</td>
         <td>
           SecurityContext configures the container security context for
-the opentelemetry-collector container.<br/>
+the opentelemetry-collector container.
+
+
+In deployment, daemonset, or statefulset mode, this controls
+the security context settings for the primary application
+container.
+
+
+In sidecar mode, this controls the security context for the
+injected sidecar container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10564,7 +11393,9 @@ This is only relevant to daemonset, statefulset, and deployment mode<br/>
         <td>
           TopologySpreadConstraints embedded kubernetes pod configuration option,
 controls how pods are spread across your cluster among failure-domains
-such as regions, zones, nodes, and other user-defined top<br/>
+such as regions, zones, nodes, and other user-defined topology domains
+https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+This is only relevant to statefulset, and deployment mode<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10572,7 +11403,8 @@ such as regions, zones, nodes, and other user-defined top<br/>
         <td>object</td>
         <td>
           UpdateStrategy represents the strategy the operator will take replacing existing DaemonSet pods with new pods
-https://kubernetes.<br/>
+https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec
+This is only applicable to Daemonset mode.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10640,7 +11472,12 @@ Cannot be updated.<br/>
         <td>
           Arguments to the entrypoint.
 The container image's CMD is used if this is not provided.
-Variable references $(VAR_NAME) are expanded using the container's environment.<br/>
+Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will
+produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless
+of whether the variable exists or not. Cannot be updated.
+More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10649,7 +11486,12 @@ Variable references $(VAR_NAME) are expanded using the container's environment.<
         <td>
           Entrypoint array. Not executed within a shell.
 The container image's ENTRYPOINT is used if this is not provided.
-Variable references $(VAR_NAME) are expanded using the container's environment.<br/>
+Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will
+produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless
+of whether the variable exists or not. Cannot be updated.
+More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10665,7 +11507,11 @@ Cannot be updated.<br/>
         <td>[]object</td>
         <td>
           List of sources to populate environment variables in the container.
-The keys defined within a source must be a C_IDENTIFIER.<br/>
+The keys defined within a source must be a C_IDENTIFIER. All invalid keys
+will be reported as an event when the container is starting. When a key exists in multiple
+sources, the value associated with the last source will take precedence.
+Values defined by an Env with a duplicate key will take precedence.
+Cannot be updated.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10673,7 +11519,9 @@ The keys defined within a source must be a C_IDENTIFIER.<br/>
         <td>string</td>
         <td>
           Container image name.
-More info: https://kubernetes.<br/>
+More info: https://kubernetes.io/docs/concepts/containers/images
+This field is optional to allow higher level config management to default or override
+container images in workload controllers like Deployments and StatefulSets.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10684,7 +11532,7 @@ More info: https://kubernetes.<br/>
 One of Always, Never, IfNotPresent.
 Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
 Cannot be updated.
-More info: https://kubernetes.<br/>
+More info: https://kubernetes.io/docs/concepts/containers/images#updating-images<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10711,7 +11559,11 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td>
           List of ports to expose from the container. Not specifying a port here
 DOES NOT prevent that port from being exposed. Any port which is
-listening on the default "0.0.0.<br/>
+listening on the default "0.0.0.0" address inside a container will be
+accessible from the network.
+Modifying this array with strategic merge patch may corrupt the data.
+For more information See https://github.com/kubernetes/kubernetes/issues/108255.
+Cannot be updated.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10721,7 +11573,7 @@ listening on the default "0.0.0.<br/>
           Periodic probe of container service readiness.
 Container will be removed from service endpoints if the probe fails.
 Cannot be updated.
-More info: https://kubernetes.<br/>
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10745,7 +11597,20 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td>string</td>
         <td>
           RestartPolicy defines the restart behavior of individual containers in a pod.
-This field may only be set for init containers, and the only allowed value is "Always".<br/>
+This field may only be set for init containers, and the only allowed value is "Always".
+For non-init containers or when this field is not specified,
+the restart behavior is defined by the Pod's restart policy and the container type.
+Setting the RestartPolicy as "Always" for the init container will have the following effect:
+this init container will be continually restarted on
+exit until all regular containers have terminated. Once all regular
+containers have completed, all init containers with restartPolicy "Always"
+will be shut down. This lifecycle differs from normal init containers and
+is often referred to as a "sidecar" container. Although this init
+container still starts in the init container sequence, it does not wait
+for the container to complete before proceeding to the next init
+container. Instead, the next init container starts immediately after this
+init container is started, or after any startupProbe has successfully
+completed.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10753,7 +11618,8 @@ This field may only be set for init containers, and the only allowed value is "A
         <td>object</td>
         <td>
           SecurityContext defines the security options the container should be run with.
-If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.<br/>
+If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.
+More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10761,7 +11627,12 @@ If set, the fields of SecurityContext override the equivalent fields of PodSecur
         <td>object</td>
         <td>
           StartupProbe indicates that the Pod has successfully initialized.
-If specified, no other probes are executed until this completes successfully.<br/>
+If specified, no other probes are executed until this completes successfully.
+If this probe fails, the Pod will be restarted, just as if the livenessProbe failed.
+This can be used to provide different probe parameters at the beginning of a Pod's lifecycle,
+when it might take a long time to load data or warm a cache, than during steady-state operation.
+This cannot be updated.
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10779,7 +11650,11 @@ Default is false.<br/>
         <td>
           Whether the container runtime should close the stdin channel after it has been opened by
 a single attach. When stdin is true the stdin stream will remain open across multiple attach
-sessions.<br/>
+sessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the
+first client attaches to stdin, and then remains open and accepts data until the client disconnects,
+at which time stdin is closed and remains closed until the container is restarted. If this
+flag is false, a container processes that reads from stdin will never receive an EOF.
+Default is false<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10787,7 +11662,12 @@ sessions.<br/>
         <td>string</td>
         <td>
           Optional: Path at which the file to which the container's termination message
-will be written is mounted into the container's filesystem.<br/>
+will be written is mounted into the container's filesystem.
+Message written is intended to be brief final status, such as an assertion failure message.
+Will be truncated by the node if greater than 4096 bytes. The total message length across
+all containers will be limited to 12kb.
+Defaults to /dev/termination-log.
+Cannot be updated.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10795,7 +11675,12 @@ will be written is mounted into the container's filesystem.<br/>
         <td>string</td>
         <td>
           Indicate how the termination message should be populated. File will use the contents of
-terminationMessagePath to populate the container status message on both success and failure.<br/>
+terminationMessagePath to populate the container status message on both success and failure.
+FallbackToLogsOnError will use the last chunk of container log output if the termination
+message file is empty and the container exited with an error.
+The log output is limited to 2048 bytes or 80 lines, whichever is smaller.
+Defaults to File.
+Cannot be updated.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10864,7 +11749,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10906,7 +11797,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10914,7 +11805,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10977,7 +11868,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -11012,7 +11903,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -11226,7 +12117,9 @@ Cannot be updated.
         <td>object</td>
         <td>
           PostStart is called immediately after a container is created. If the handler fails,
-the container is terminated and restarted according to its restart policy.<br/>
+the container is terminated and restarted according to its restart policy.
+Other management of the container blocks until the hook completes.
+More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11235,7 +12128,13 @@ the container is terminated and restarted according to its restart policy.<br/>
         <td>
           PreStop is called immediately before a container is terminated due to an
 API request or management event such as liveness/startup probe failure,
-preemption, resource contention, etc.<br/>
+preemption, resource contention, etc. The handler is not called if the
+container crashes or exits. The Pod's termination grace period countdown begins before the
+PreStop hook is executed. Regardless of the outcome of the handler, the
+container will eventually terminate within the Pod's termination grace
+period (unless delayed by finalizers). Other management of the container blocks until the hook completes
+or until the termination grace period is reached.
+More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11249,6 +12148,8 @@ preemption, resource contention, etc.<br/>
 
 PostStart is called immediately after a container is created. If the handler fails,
 the container is terminated and restarted according to its restart policy.
+Other management of the container blocks until the hook completes.
+More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
 
 <table>
     <thead>
@@ -11285,7 +12186,8 @@ the container is terminated and restarted according to its restart policy.
         <td>object</td>
         <td>
           Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility.<br/>
+for the backward compatibility. There are no validation of this field and
+lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11313,7 +12215,10 @@ Exec specifies the action to take.
         <td>[]string</td>
         <td>
           Command is the command line to execute inside the container, the working directory for the
-command  is root ('/') in the container's filesystem.<br/>
+command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+a shell, you need to explicitly call out to that shell.
+Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11449,7 +12354,8 @@ Sleep represents the duration that the container should sleep before being termi
 
 
 Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility.
+for the backward compatibility. There are no validation of this field and
+lifecycle hooks will fail in runtime when tcp handler is specified.
 
 <table>
     <thead>
@@ -11487,7 +12393,13 @@ Name must be an IANA_SVC_NAME.<br/>
 
 PreStop is called immediately before a container is terminated due to an
 API request or management event such as liveness/startup probe failure,
-preemption, resource contention, etc.
+preemption, resource contention, etc. The handler is not called if the
+container crashes or exits. The Pod's termination grace period countdown begins before the
+PreStop hook is executed. Regardless of the outcome of the handler, the
+container will eventually terminate within the Pod's termination grace
+period (unless delayed by finalizers). Other management of the container blocks until the hook completes
+or until the termination grace period is reached.
+More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
 
 <table>
     <thead>
@@ -11524,7 +12436,8 @@ preemption, resource contention, etc.
         <td>object</td>
         <td>
           Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility.<br/>
+for the backward compatibility. There are no validation of this field and
+lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11552,7 +12465,10 @@ Exec specifies the action to take.
         <td>[]string</td>
         <td>
           Command is the command line to execute inside the container, the working directory for the
-command  is root ('/') in the container's filesystem.<br/>
+command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+a shell, you need to explicitly call out to that shell.
+Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11688,7 +12604,8 @@ Sleep represents the duration that the container should sleep before being termi
 
 
 Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility.
+for the backward compatibility. There are no validation of this field and
+lifecycle hooks will fail in runtime when tcp handler is specified.
 
 <table>
     <thead>
@@ -11810,7 +12727,16 @@ Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
         <td><b>terminationGracePeriodSeconds</b></td>
         <td>integer</td>
         <td>
-          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
+The grace period is the duration in seconds after the processes running in the pod are sent
+a termination signal and the time when the processes are forcibly halted with a kill signal.
+Set this value longer than the expected cleanup time for your process.
+If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this
+value overrides the value provided by the pod spec.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down).
+This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
+Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -11851,7 +12777,10 @@ Exec specifies the action to take.
         <td>[]string</td>
         <td>
           Command is the command line to execute inside the container, the working directory for the
-command  is root ('/') in the container's filesystem.<br/>
+command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+a shell, you need to explicitly call out to that shell.
+Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11888,7 +12817,10 @@ GRPC specifies an action involving a GRPC port.
         <td>string</td>
         <td>
           Service is the name of the service to place in the gRPC HealthCheckRequest
-(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).<br/>
+(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
+
+
+If this is not specified, the default behavior is defined by gRPC.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12101,7 +13033,7 @@ Defaults to "TCP".<br/>
 Periodic probe of container service readiness.
 Container will be removed from service endpoints if the probe fails.
 Cannot be updated.
-More info: https://kubernetes.
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 
 <table>
     <thead>
@@ -12184,7 +13116,16 @@ Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
         <td><b>terminationGracePeriodSeconds</b></td>
         <td>integer</td>
         <td>
-          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
+The grace period is the duration in seconds after the processes running in the pod are sent
+a termination signal and the time when the processes are forcibly halted with a kill signal.
+Set this value longer than the expected cleanup time for your process.
+If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this
+value overrides the value provided by the pod spec.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down).
+This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
+Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -12225,7 +13166,10 @@ Exec specifies the action to take.
         <td>[]string</td>
         <td>
           Command is the command line to execute inside the container, the working directory for the
-command  is root ('/') in the container's filesystem.<br/>
+command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+a shell, you need to explicitly call out to that shell.
+Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12262,7 +13206,10 @@ GRPC specifies an action involving a GRPC port.
         <td>string</td>
         <td>
           Service is the name of the service to place in the gRPC HealthCheckRequest
-(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).<br/>
+(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
+
+
+If this is not specified, the default behavior is defined by gRPC.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12462,7 +13409,10 @@ that are used by this container.
 
 
 This is an alpha field and requires enabling the
-DynamicResourceAllocation feature gate.<br/>
+DynamicResourceAllocation feature gate.
+
+
+This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12477,7 +13427,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12520,6 +13473,7 @@ inside a container.<br/>
 
 SecurityContext defines the security options the container should be run with.
 If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.
+More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
 
 <table>
     <thead>
@@ -12536,7 +13490,11 @@ If set, the fields of SecurityContext override the equivalent fields of PodSecur
         <td>
           AllowPrivilegeEscalation controls whether a process can gain more
 privileges than its parent process. This bool directly controls if
-the no_new_privs flag will be set on the container process.<br/>
+the no_new_privs flag will be set on the container process.
+AllowPrivilegeEscalation is true always when the container is:
+1) run as Privileged
+2) has CAP_SYS_ADMIN
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12564,7 +13522,9 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         <td>
           procMount denotes the type of proc mount to use for the containers.
 The default is DefaultProcMount which uses the container runtime defaults for
-readonly paths and masked paths.<br/>
+readonly paths and masked paths.
+This requires the ProcMountType feature flag to be enabled.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12582,7 +13542,9 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         <td>
           The GID to run the entrypoint of the container process.
 Uses runtime default if unset.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -12591,7 +13553,12 @@ May also be set in PodSecurityContext.<br/>
         <td><b>runAsNonRoot</b></td>
         <td>boolean</td>
         <td>
-          Indicates that the container must run as a non-root user.<br/>
+          Indicates that the container must run as a non-root user.
+If true, the Kubelet will validate the image at runtime to ensure that it
+does not run as UID 0 (root) and fail to start the container if it does.
+If unset or false, no such validation will be performed.
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12600,7 +13567,9 @@ May also be set in PodSecurityContext.<br/>
         <td>
           The UID to run the entrypoint of the container process.
 Defaults to user specified in image metadata if unspecified.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -12611,7 +13580,9 @@ May also be set in PodSecurityContext.<br/>
         <td>
           The SELinux context to be applied to the container.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in PodSecurityContext.<br/>
+container.  May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12620,7 +13591,8 @@ container.  May also be set in PodSecurityContext.<br/>
         <td>
           The seccomp options to use by this container. If seccomp options are
 provided at both the pod & container level, the container options
-override the pod options.<br/>
+override the pod options.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12628,7 +13600,9 @@ override the pod options.<br/>
         <td>object</td>
         <td>
           The Windows specific settings applied to all containers.
-If unspecified, the options from the PodSecurityContext will be used.<br/>
+If unspecified, the options from the PodSecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12678,7 +13652,9 @@ Note that this field cannot be set when spec.os.name is windows.
 
 The SELinux context to be applied to the container.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in PodSecurityContext.
+container.  May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.
 
 <table>
     <thead>
@@ -12729,6 +13705,7 @@ container.  May also be set in PodSecurityContext.
 The seccomp options to use by this container. If seccomp options are
 provided at both the pod & container level, the container options
 override the pod options.
+Note that this field cannot be set when spec.os.name is windows.
 
 <table>
     <thead>
@@ -12747,7 +13724,9 @@ override the pod options.
 Valid options are:
 
 
-Localhost - a profile defined in a file on the node should be used.<br/>
+Localhost - a profile defined in a file on the node should be used.
+RuntimeDefault - the container runtime default profile should be used.
+Unconfined - no profile should be applied.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -12755,7 +13734,9 @@ Localhost - a profile defined in a file on the node should be used.<br/>
         <td>string</td>
         <td>
           localhostProfile indicates a profile defined in a file on the node should be used.
-The profile must be preconfigured on the node to work.<br/>
+The profile must be preconfigured on the node to work.
+Must be a descending path, relative to the kubelet's configured seccomp profile location.
+Must be set if type is "Localhost". Must NOT be set for any other type.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12769,6 +13750,8 @@ The profile must be preconfigured on the node to work.<br/>
 
 The Windows specific settings applied to all containers.
 If unspecified, the options from the PodSecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.
 
 <table>
     <thead>
@@ -12799,7 +13782,10 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td><b>hostProcess</b></td>
         <td>boolean</td>
         <td>
-          HostProcess determines if a container should be run as a 'Host Process' container.<br/>
+          HostProcess determines if a container should be run as a 'Host Process' container.
+All of a Pod's containers must have the same effective HostProcess value
+(it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
+In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12808,7 +13794,8 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td>
           The UserName in Windows to run the entrypoint of the container process.
 Defaults to the user specified in image metadata if unspecified.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext. If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12822,6 +13809,11 @@ May also be set in PodSecurityContext.<br/>
 
 StartupProbe indicates that the Pod has successfully initialized.
 If specified, no other probes are executed until this completes successfully.
+If this probe fails, the Pod will be restarted, just as if the livenessProbe failed.
+This can be used to provide different probe parameters at the beginning of a Pod's lifecycle,
+when it might take a long time to load data or warm a cache, than during steady-state operation.
+This cannot be updated.
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 
 <table>
     <thead>
@@ -12904,7 +13896,16 @@ Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
         <td><b>terminationGracePeriodSeconds</b></td>
         <td>integer</td>
         <td>
-          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
+The grace period is the duration in seconds after the processes running in the pod are sent
+a termination signal and the time when the processes are forcibly halted with a kill signal.
+Set this value longer than the expected cleanup time for your process.
+If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this
+value overrides the value provided by the pod spec.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down).
+This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
+Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -12945,7 +13946,10 @@ Exec specifies the action to take.
         <td>[]string</td>
         <td>
           Command is the command line to execute inside the container, the working directory for the
-command  is root ('/') in the container's filesystem.<br/>
+command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+a shell, you need to explicitly call out to that shell.
+Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12982,7 +13986,10 @@ GRPC specifies an action involving a GRPC port.
         <td>string</td>
         <td>
           Service is the name of the service to place in the gRPC HealthCheckRequest
-(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).<br/>
+(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
+
+
+If this is not specified, the default behavior is defined by gRPC.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13214,7 +14221,10 @@ Defaults to "" (volume's root).<br/>
         <td><b>subPathExpr</b></td>
         <td>string</td>
         <td>
-          Expanded path within the volume from which the container's volume should be mounted.<br/>
+          Expanded path within the volume from which the container's volume should be mounted.
+Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
+Defaults to "" (volume's root).
+SubPathExpr and SubPath are mutually exclusive.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13284,7 +14294,13 @@ Describes node affinity scheduling rules for the pod.
         <td>
           The scheduler will prefer to schedule pods to nodes that satisfy
 the affinity expressions specified by this field, but it may choose
-a node that violates one or more of the expressions.<br/>
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node matches the corresponding matchExpressions; the
+node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13292,7 +14308,10 @@ a node that violates one or more of the expressions.<br/>
         <td>object</td>
         <td>
           If the affinity requirements specified by this field are not met at
-scheduling time, the pod will not be scheduled onto the node.<br/>
+scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to an update), the system
+may or may not try to eventually evict the pod from its node.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13408,7 +14427,9 @@ Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         <td>
           An array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13453,7 +14474,9 @@ Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         <td>
           An array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13467,6 +14490,9 @@ the values array must be empty.<br/>
 
 If the affinity requirements specified by this field are not met at
 scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to an update), the system
+may or may not try to eventually evict the pod from its node.
 
 <table>
     <thead>
@@ -13562,7 +14588,9 @@ Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         <td>
           An array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13607,7 +14635,9 @@ Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         <td>
           An array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13636,7 +14666,13 @@ Describes pod affinity scheduling rules (e.g. co-locate this pod in the same nod
         <td>
           The scheduler will prefer to schedule pods to nodes that satisfy
 the affinity expressions specified by this field, but it may choose
-a node that violates one or more of the expressions.<br/>
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13644,7 +14680,12 @@ a node that violates one or more of the expressions.<br/>
         <td>[]object</td>
         <td>
           If the affinity requirements specified by this field are not met at
-scheduling time, the pod will not be scheduled onto the node.<br/>
+scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to a pod label update), the
+system may or may not try to eventually evict the pod from its node.
+When there are multiple elements, the lists of nodes corresponding to each
+podAffinityTerm are intersected, i.e. all terms must be satisfied.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13710,7 +14751,9 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td>
           This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
 the labelSelector in the specified namespaces, where co-located is defined as running on a node
-whose <br/>
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -13726,7 +14769,14 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13734,7 +14784,14 @@ be taken into consideration.<br/>
         <td>[]string</td>
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13743,7 +14800,9 @@ be taken into consideration.<br/>
         <td>
           A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
-and the ones listed in the namespaces field.<br/>
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13752,7 +14811,8 @@ and the ones listed in the namespaces field.<br/>
         <td>
           namespaces specifies a static list of namespace names that the term applies to.
 The term is applied to the union of the namespaces listed in this field
-and the ones selected by namespaceSelector.<br/>
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13787,7 +14847,9 @@ If it's null, this PodAffinityTerm matches with no Pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13832,7 +14894,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13847,6 +14910,8 @@ the values array must be empty.<br/>
 A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
 and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -13868,7 +14933,9 @@ and the ones listed in the namespaces field.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13913,7 +14980,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -13928,7 +14996,9 @@ the values array must be empty.<br/>
 Defines a set of pods (namely those matching the labelSelector
 relative to the given namespace(s)) that this pod should be
 co-located (affinity) or not co-located (anti-affinity) with,
-where co-locate
+where co-located is defined as running on a node whose value of
+the label with key <topologyKey> matches that of any node on which
+a pod of the set of pods is running
 
 <table>
     <thead>
@@ -13945,7 +15015,9 @@ where co-locate
         <td>
           This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
 the labelSelector in the specified namespaces, where co-located is defined as running on a node
-whose <br/>
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -13961,7 +15033,14 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13969,7 +15048,14 @@ be taken into consideration.<br/>
         <td>[]string</td>
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13978,7 +15064,9 @@ be taken into consideration.<br/>
         <td>
           A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
-and the ones listed in the namespaces field.<br/>
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13987,7 +15075,8 @@ and the ones listed in the namespaces field.<br/>
         <td>
           namespaces specifies a static list of namespace names that the term applies to.
 The term is applied to the union of the namespaces listed in this field
-and the ones selected by namespaceSelector.<br/>
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14022,7 +15111,9 @@ If it's null, this PodAffinityTerm matches with no Pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14067,7 +15158,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14082,6 +15174,8 @@ the values array must be empty.<br/>
 A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
 and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -14103,7 +15197,9 @@ and the ones listed in the namespaces field.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14148,7 +15244,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14177,7 +15274,13 @@ Describes pod anti-affinity scheduling rules (e.g. avoid putting this pod in the
         <td>
           The scheduler will prefer to schedule pods to nodes that satisfy
 the anti-affinity expressions specified by this field, but it may choose
-a node that violates one or more of the expressions.<br/>
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling anti-affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14185,7 +15288,12 @@ a node that violates one or more of the expressions.<br/>
         <td>[]object</td>
         <td>
           If the anti-affinity requirements specified by this field are not met at
-scheduling time, the pod will not be scheduled onto the node.<br/>
+scheduling time, the pod will not be scheduled onto the node.
+If the anti-affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to a pod label update), the
+system may or may not try to eventually evict the pod from its node.
+When there are multiple elements, the lists of nodes corresponding to each
+podAffinityTerm are intersected, i.e. all terms must be satisfied.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14251,7 +15359,9 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td>
           This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
 the labelSelector in the specified namespaces, where co-located is defined as running on a node
-whose <br/>
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -14267,7 +15377,14 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14275,7 +15392,14 @@ be taken into consideration.<br/>
         <td>[]string</td>
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14284,7 +15408,9 @@ be taken into consideration.<br/>
         <td>
           A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
-and the ones listed in the namespaces field.<br/>
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14293,7 +15419,8 @@ and the ones listed in the namespaces field.<br/>
         <td>
           namespaces specifies a static list of namespace names that the term applies to.
 The term is applied to the union of the namespaces listed in this field
-and the ones selected by namespaceSelector.<br/>
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14328,7 +15455,9 @@ If it's null, this PodAffinityTerm matches with no Pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14373,7 +15502,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14388,6 +15518,8 @@ the values array must be empty.<br/>
 A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
 and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -14409,7 +15541,9 @@ and the ones listed in the namespaces field.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14454,7 +15588,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14469,7 +15604,9 @@ the values array must be empty.<br/>
 Defines a set of pods (namely those matching the labelSelector
 relative to the given namespace(s)) that this pod should be
 co-located (affinity) or not co-located (anti-affinity) with,
-where co-locate
+where co-located is defined as running on a node whose value of
+the label with key <topologyKey> matches that of any node on which
+a pod of the set of pods is running
 
 <table>
     <thead>
@@ -14486,7 +15623,9 @@ where co-locate
         <td>
           This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
 the labelSelector in the specified namespaces, where co-located is defined as running on a node
-whose <br/>
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -14502,7 +15641,14 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14510,7 +15656,14 @@ be taken into consideration.<br/>
         <td>[]string</td>
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14519,7 +15672,9 @@ be taken into consideration.<br/>
         <td>
           A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
-and the ones listed in the namespaces field.<br/>
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14528,7 +15683,8 @@ and the ones listed in the namespaces field.<br/>
         <td>
           namespaces specifies a static list of namespace names that the term applies to.
 The term is applied to the union of the namespaces listed in this field
-and the ones selected by namespaceSelector.<br/>
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14563,7 +15719,9 @@ If it's null, this PodAffinityTerm matches with no Pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14608,7 +15766,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14623,6 +15782,8 @@ the values array must be empty.<br/>
 A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
 and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -14644,7 +15805,9 @@ and the ones listed in the namespaces field.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14689,7 +15852,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14735,7 +15899,8 @@ in both Up and Down directions (scaleUp and scaleDown fields respectively).<br/>
         <td>[]object</td>
         <td>
           Metrics is meant to provide a customizable way to configure HPA metrics.
-currently the only supported custom metrics is type=Pod.<br/>
+currently the only supported custom metrics is type=Pod.
+Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these common resource metrics.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14793,14 +15958,19 @@ in both Up and Down directions (scaleUp and scaleDown fields respectively).
         <td>
           scaleDown is scaling policy for scaling Down.
 If not set, the default value is to allow to scale down to minReplicas pods, with a
-300 second stabilization window (i.e.<br/>
+300 second stabilization window (i.e., the highest recommendation for
+the last 300sec is used).<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecautoscalerbehaviorscaleup">scaleUp</a></b></td>
         <td>object</td>
         <td>
-          scaleUp is scaling policy for scaling Up.<br/>
+          scaleUp is scaling policy for scaling Up.
+If not set, the default value is the higher of:
+  * increase no more than 4 pods per 60 seconds
+  * double the number of pods per 60 seconds
+No stabilization is used.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14814,7 +15984,8 @@ If not set, the default value is to allow to scale down to minReplicas pods, wit
 
 scaleDown is scaling policy for scaling Down.
 If not set, the default value is to allow to scale down to minReplicas pods, with a
-300 second stabilization window (i.e.
+300 second stabilization window (i.e., the highest recommendation for
+the last 300sec is used).
 
 <table>
     <thead>
@@ -14846,7 +16017,11 @@ If not set, the default value Max is used.<br/>
         <td>integer</td>
         <td>
           stabilizationWindowSeconds is the number of seconds for which past recommendations should be
-considered while scaling up or scaling down.<br/>
+considered while scaling up or scaling down.
+StabilizationWindowSeconds must be greater than or equal to zero and less than or equal to 3600 (one hour).
+If not set, use the default values:
+- For scale up: 0 (i.e. no stabilization is done).
+- For scale down: 300 (i.e. the stabilization window is 300 seconds long).<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -14908,6 +16083,10 @@ It must be greater than zero<br/>
 
 
 scaleUp is scaling policy for scaling Up.
+If not set, the default value is the higher of:
+  * increase no more than 4 pods per 60 seconds
+  * double the number of pods per 60 seconds
+No stabilization is used.
 
 <table>
     <thead>
@@ -14939,7 +16118,11 @@ If not set, the default value Max is used.<br/>
         <td>integer</td>
         <td>
           stabilizationWindowSeconds is the number of seconds for which past recommendations should be
-considered while scaling up or scaling down.<br/>
+considered while scaling up or scaling down.
+StabilizationWindowSeconds must be greater than or equal to zero and less than or equal to 3600 (one hour).
+If not set, use the default values:
+- For scale up: 0 (i.e. no stabilization is done).
+- For scale down: 300 (i.e. the stabilization window is 300 seconds long).<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -15025,7 +16208,9 @@ See https://pkg.go.dev/k8s.io/api/autoscaling/v2#MetricSpec for reference.
         <td>object</td>
         <td>
           PodsMetricSource indicates how to scale on a metric describing each pod in
-the current scale target (for example, transactions-processed-per-second).<br/>
+the current scale target (for example, transactions-processed-per-second).
+The values will be averaged together before being compared to the target
+value.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -15039,6 +16224,8 @@ the current scale target (for example, transactions-processed-per-second).<br/>
 
 PodsMetricSource indicates how to scale on a metric describing each pod in
 the current scale target (for example, transactions-processed-per-second).
+The values will be averaged together before being compared to the target
+value.
 
 <table>
     <thead>
@@ -15095,7 +16282,8 @@ metric identifies the target metric by name and selector
         <td>object</td>
         <td>
           selector is the string-encoded form of a standard kubernetes label selector for the given metric
-When set, it is passed as an additional parameter to the metrics server for more specific metrics scopi<br/>
+When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping.
+When unset, just the metricName will be used to gather metrics.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -15108,7 +16296,8 @@ When set, it is passed as an additional parameter to the metrics server for more
 
 
 selector is the string-encoded form of a standard kubernetes label selector for the given metric
-When set, it is passed as an additional parameter to the metrics server for more specific metrics scopi
+When set, it is passed as an additional parameter to the metrics server for more specific metrics scoping.
+When unset, just the metricName will be used to gather metrics.
 
 <table>
     <thead>
@@ -15130,7 +16319,9 @@ When set, it is passed as an additional parameter to the metrics server for more
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -15175,7 +16366,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -15211,7 +16403,8 @@ target specifies the target value for the given metric
         <td>
           averageUtilization is the target value of the average of the
 resource metric across all relevant pods, represented as a percentage of
-the requested value of the resource for the pods.<br/>
+the requested value of the resource for the pods.
+Currently only valid for Resource metric source type<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -15275,7 +16468,8 @@ metric across all relevant pods (as a quantity)<br/>
 
 
 UpdateStrategy represents the strategy the operator will take replacing existing Deployment pods with new pods
-https://kubernetes.
+https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/#DeploymentSpec
+This is only applicable to Deployment mode.
 
 <table>
     <thead>
@@ -15334,7 +16528,15 @@ to be.
         <td>
           The maximum number of pods that can be scheduled above the desired number of
 pods.
-Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).<br/>
+Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).
+This can not be 0 if MaxUnavailable is 0.
+Absolute number is calculated from percentage by rounding up.
+Defaults to 25%.
+Example: when this is set to 30%, the new ReplicaSet can be scaled up immediately when
+the rolling update starts, such that the total number of old and new pods do not exceed
+130% of desired pods. Once old pods have been killed,
+new ReplicaSet can be scaled up further, ensuring that total number of pods running
+at any time during the update is at most 130% of desired pods.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -15342,7 +16544,15 @@ Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%
         <td>int or string</td>
         <td>
           The maximum number of pods that can be unavailable during the update.
-Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).<br/>
+Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).
+Absolute number is calculated from percentage by rounding down.
+This can not be 0 if MaxSurge is 0.
+Defaults to 25%.
+Example: when this is set to 30%, the old ReplicaSet can be scaled down to 70% of desired pods
+immediately when the rolling update starts. Once new pods are ready, old ReplicaSet
+can be scaled down further, followed by scaling up the new ReplicaSet, ensuring
+that the total number of pods available at all times during the update is at
+least 70% of desired pods.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -15378,7 +16588,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -15420,7 +16636,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -15428,7 +16644,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -15491,7 +16707,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -15526,7 +16742,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -15773,7 +16989,9 @@ type "route" is used.<br/>
         <td>enum</td>
         <td>
           RuleType defines how Ingress exposes collector receivers.
-IngressRuleTypePath ("path") exposes each receiver port on a unique path on single domain defined in Hostname.<br/>
+IngressRuleTypePath ("path") exposes each receiver port on a unique path on single domain defined in Hostname.
+IngressRuleTypeSubdomain ("subdomain") exposes each receiver port on a unique subdomain of Hostname.
+Default is IngressRuleTypePath ("path").<br/>
           <br/>
             <i>Enum</i>: path, subdomain<br/>
         </td>
@@ -15850,7 +17068,9 @@ IngressTLS describes the transport layer security associated with an ingress.
         <td>[]string</td>
         <td>
           hosts is a list of hosts included in the TLS certificate. The values in
-this list must match the name/s used in the tlsSecret.<br/>
+this list must match the name/s used in the tlsSecret. Defaults to the
+wildcard host setting for the loadbalancer controller fulfilling this
+Ingress, if left unspecified.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -15859,7 +17079,9 @@ this list must match the name/s used in the tlsSecret.<br/>
         <td>
           secretName is the name of the secret used to terminate TLS traffic on
 port 443. Field is left optional to allow TLS routing based on SNI
-hostname alone.<br/>
+hostname alone. If the SNI host in a listener conflicts with the "Host"
+header field used by an IngressRule, the SNI host is used for termination
+and value of the "Host" header is used for routing.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -15897,7 +17119,12 @@ Cannot be updated.<br/>
         <td>
           Arguments to the entrypoint.
 The container image's CMD is used if this is not provided.
-Variable references $(VAR_NAME) are expanded using the container's environment.<br/>
+Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will
+produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless
+of whether the variable exists or not. Cannot be updated.
+More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -15906,7 +17133,12 @@ Variable references $(VAR_NAME) are expanded using the container's environment.<
         <td>
           Entrypoint array. Not executed within a shell.
 The container image's ENTRYPOINT is used if this is not provided.
-Variable references $(VAR_NAME) are expanded using the container's environment.<br/>
+Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will
+produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless
+of whether the variable exists or not. Cannot be updated.
+More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -15922,7 +17154,11 @@ Cannot be updated.<br/>
         <td>[]object</td>
         <td>
           List of sources to populate environment variables in the container.
-The keys defined within a source must be a C_IDENTIFIER.<br/>
+The keys defined within a source must be a C_IDENTIFIER. All invalid keys
+will be reported as an event when the container is starting. When a key exists in multiple
+sources, the value associated with the last source will take precedence.
+Values defined by an Env with a duplicate key will take precedence.
+Cannot be updated.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -15930,7 +17166,9 @@ The keys defined within a source must be a C_IDENTIFIER.<br/>
         <td>string</td>
         <td>
           Container image name.
-More info: https://kubernetes.<br/>
+More info: https://kubernetes.io/docs/concepts/containers/images
+This field is optional to allow higher level config management to default or override
+container images in workload controllers like Deployments and StatefulSets.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -15941,7 +17179,7 @@ More info: https://kubernetes.<br/>
 One of Always, Never, IfNotPresent.
 Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
 Cannot be updated.
-More info: https://kubernetes.<br/>
+More info: https://kubernetes.io/docs/concepts/containers/images#updating-images<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -15968,7 +17206,11 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td>
           List of ports to expose from the container. Not specifying a port here
 DOES NOT prevent that port from being exposed. Any port which is
-listening on the default "0.0.0.<br/>
+listening on the default "0.0.0.0" address inside a container will be
+accessible from the network.
+Modifying this array with strategic merge patch may corrupt the data.
+For more information See https://github.com/kubernetes/kubernetes/issues/108255.
+Cannot be updated.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -15978,7 +17220,7 @@ listening on the default "0.0.0.<br/>
           Periodic probe of container service readiness.
 Container will be removed from service endpoints if the probe fails.
 Cannot be updated.
-More info: https://kubernetes.<br/>
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16002,7 +17244,20 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td>string</td>
         <td>
           RestartPolicy defines the restart behavior of individual containers in a pod.
-This field may only be set for init containers, and the only allowed value is "Always".<br/>
+This field may only be set for init containers, and the only allowed value is "Always".
+For non-init containers or when this field is not specified,
+the restart behavior is defined by the Pod's restart policy and the container type.
+Setting the RestartPolicy as "Always" for the init container will have the following effect:
+this init container will be continually restarted on
+exit until all regular containers have terminated. Once all regular
+containers have completed, all init containers with restartPolicy "Always"
+will be shut down. This lifecycle differs from normal init containers and
+is often referred to as a "sidecar" container. Although this init
+container still starts in the init container sequence, it does not wait
+for the container to complete before proceeding to the next init
+container. Instead, the next init container starts immediately after this
+init container is started, or after any startupProbe has successfully
+completed.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16010,7 +17265,8 @@ This field may only be set for init containers, and the only allowed value is "A
         <td>object</td>
         <td>
           SecurityContext defines the security options the container should be run with.
-If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.<br/>
+If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.
+More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16018,7 +17274,12 @@ If set, the fields of SecurityContext override the equivalent fields of PodSecur
         <td>object</td>
         <td>
           StartupProbe indicates that the Pod has successfully initialized.
-If specified, no other probes are executed until this completes successfully.<br/>
+If specified, no other probes are executed until this completes successfully.
+If this probe fails, the Pod will be restarted, just as if the livenessProbe failed.
+This can be used to provide different probe parameters at the beginning of a Pod's lifecycle,
+when it might take a long time to load data or warm a cache, than during steady-state operation.
+This cannot be updated.
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16036,7 +17297,11 @@ Default is false.<br/>
         <td>
           Whether the container runtime should close the stdin channel after it has been opened by
 a single attach. When stdin is true the stdin stream will remain open across multiple attach
-sessions.<br/>
+sessions. If stdinOnce is set to true, stdin is opened on container start, is empty until the
+first client attaches to stdin, and then remains open and accepts data until the client disconnects,
+at which time stdin is closed and remains closed until the container is restarted. If this
+flag is false, a container processes that reads from stdin will never receive an EOF.
+Default is false<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16044,7 +17309,12 @@ sessions.<br/>
         <td>string</td>
         <td>
           Optional: Path at which the file to which the container's termination message
-will be written is mounted into the container's filesystem.<br/>
+will be written is mounted into the container's filesystem.
+Message written is intended to be brief final status, such as an assertion failure message.
+Will be truncated by the node if greater than 4096 bytes. The total message length across
+all containers will be limited to 12kb.
+Defaults to /dev/termination-log.
+Cannot be updated.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16052,7 +17322,12 @@ will be written is mounted into the container's filesystem.<br/>
         <td>string</td>
         <td>
           Indicate how the termination message should be populated. File will use the contents of
-terminationMessagePath to populate the container status message on both success and failure.<br/>
+terminationMessagePath to populate the container status message on both success and failure.
+FallbackToLogsOnError will use the last chunk of container log output if the termination
+message file is empty and the container exited with an error.
+The log output is limited to 2048 bytes or 80 lines, whichever is smaller.
+Defaults to File.
+Cannot be updated.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16121,7 +17396,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16163,7 +17444,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16171,7 +17452,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16234,7 +17515,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -16269,7 +17550,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -16483,7 +17764,9 @@ Cannot be updated.
         <td>object</td>
         <td>
           PostStart is called immediately after a container is created. If the handler fails,
-the container is terminated and restarted according to its restart policy.<br/>
+the container is terminated and restarted according to its restart policy.
+Other management of the container blocks until the hook completes.
+More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16492,7 +17775,13 @@ the container is terminated and restarted according to its restart policy.<br/>
         <td>
           PreStop is called immediately before a container is terminated due to an
 API request or management event such as liveness/startup probe failure,
-preemption, resource contention, etc.<br/>
+preemption, resource contention, etc. The handler is not called if the
+container crashes or exits. The Pod's termination grace period countdown begins before the
+PreStop hook is executed. Regardless of the outcome of the handler, the
+container will eventually terminate within the Pod's termination grace
+period (unless delayed by finalizers). Other management of the container blocks until the hook completes
+or until the termination grace period is reached.
+More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -16506,6 +17795,8 @@ preemption, resource contention, etc.<br/>
 
 PostStart is called immediately after a container is created. If the handler fails,
 the container is terminated and restarted according to its restart policy.
+Other management of the container blocks until the hook completes.
+More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
 
 <table>
     <thead>
@@ -16542,7 +17833,8 @@ the container is terminated and restarted according to its restart policy.
         <td>object</td>
         <td>
           Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility.<br/>
+for the backward compatibility. There are no validation of this field and
+lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -16570,7 +17862,10 @@ Exec specifies the action to take.
         <td>[]string</td>
         <td>
           Command is the command line to execute inside the container, the working directory for the
-command  is root ('/') in the container's filesystem.<br/>
+command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+a shell, you need to explicitly call out to that shell.
+Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -16706,7 +18001,8 @@ Sleep represents the duration that the container should sleep before being termi
 
 
 Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility.
+for the backward compatibility. There are no validation of this field and
+lifecycle hooks will fail in runtime when tcp handler is specified.
 
 <table>
     <thead>
@@ -16744,7 +18040,13 @@ Name must be an IANA_SVC_NAME.<br/>
 
 PreStop is called immediately before a container is terminated due to an
 API request or management event such as liveness/startup probe failure,
-preemption, resource contention, etc.
+preemption, resource contention, etc. The handler is not called if the
+container crashes or exits. The Pod's termination grace period countdown begins before the
+PreStop hook is executed. Regardless of the outcome of the handler, the
+container will eventually terminate within the Pod's termination grace
+period (unless delayed by finalizers). Other management of the container blocks until the hook completes
+or until the termination grace period is reached.
+More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
 
 <table>
     <thead>
@@ -16781,7 +18083,8 @@ preemption, resource contention, etc.
         <td>object</td>
         <td>
           Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility.<br/>
+for the backward compatibility. There are no validation of this field and
+lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -16809,7 +18112,10 @@ Exec specifies the action to take.
         <td>[]string</td>
         <td>
           Command is the command line to execute inside the container, the working directory for the
-command  is root ('/') in the container's filesystem.<br/>
+command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+a shell, you need to explicitly call out to that shell.
+Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -16945,7 +18251,8 @@ Sleep represents the duration that the container should sleep before being termi
 
 
 Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility.
+for the backward compatibility. There are no validation of this field and
+lifecycle hooks will fail in runtime when tcp handler is specified.
 
 <table>
     <thead>
@@ -17067,7 +18374,16 @@ Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
         <td><b>terminationGracePeriodSeconds</b></td>
         <td>integer</td>
         <td>
-          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
+The grace period is the duration in seconds after the processes running in the pod are sent
+a termination signal and the time when the processes are forcibly halted with a kill signal.
+Set this value longer than the expected cleanup time for your process.
+If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this
+value overrides the value provided by the pod spec.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down).
+This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
+Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -17108,7 +18424,10 @@ Exec specifies the action to take.
         <td>[]string</td>
         <td>
           Command is the command line to execute inside the container, the working directory for the
-command  is root ('/') in the container's filesystem.<br/>
+command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+a shell, you need to explicitly call out to that shell.
+Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -17145,7 +18464,10 @@ GRPC specifies an action involving a GRPC port.
         <td>string</td>
         <td>
           Service is the name of the service to place in the gRPC HealthCheckRequest
-(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).<br/>
+(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
+
+
+If this is not specified, the default behavior is defined by gRPC.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -17358,7 +18680,7 @@ Defaults to "TCP".<br/>
 Periodic probe of container service readiness.
 Container will be removed from service endpoints if the probe fails.
 Cannot be updated.
-More info: https://kubernetes.
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 
 <table>
     <thead>
@@ -17441,7 +18763,16 @@ Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
         <td><b>terminationGracePeriodSeconds</b></td>
         <td>integer</td>
         <td>
-          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
+The grace period is the duration in seconds after the processes running in the pod are sent
+a termination signal and the time when the processes are forcibly halted with a kill signal.
+Set this value longer than the expected cleanup time for your process.
+If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this
+value overrides the value provided by the pod spec.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down).
+This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
+Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -17482,7 +18813,10 @@ Exec specifies the action to take.
         <td>[]string</td>
         <td>
           Command is the command line to execute inside the container, the working directory for the
-command  is root ('/') in the container's filesystem.<br/>
+command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+a shell, you need to explicitly call out to that shell.
+Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -17519,7 +18853,10 @@ GRPC specifies an action involving a GRPC port.
         <td>string</td>
         <td>
           Service is the name of the service to place in the gRPC HealthCheckRequest
-(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).<br/>
+(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
+
+
+If this is not specified, the default behavior is defined by gRPC.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -17719,7 +19056,10 @@ that are used by this container.
 
 
 This is an alpha field and requires enabling the
-DynamicResourceAllocation feature gate.<br/>
+DynamicResourceAllocation feature gate.
+
+
+This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -17734,7 +19074,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -17777,6 +19120,7 @@ inside a container.<br/>
 
 SecurityContext defines the security options the container should be run with.
 If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.
+More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
 
 <table>
     <thead>
@@ -17793,7 +19137,11 @@ If set, the fields of SecurityContext override the equivalent fields of PodSecur
         <td>
           AllowPrivilegeEscalation controls whether a process can gain more
 privileges than its parent process. This bool directly controls if
-the no_new_privs flag will be set on the container process.<br/>
+the no_new_privs flag will be set on the container process.
+AllowPrivilegeEscalation is true always when the container is:
+1) run as Privileged
+2) has CAP_SYS_ADMIN
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -17821,7 +19169,9 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         <td>
           procMount denotes the type of proc mount to use for the containers.
 The default is DefaultProcMount which uses the container runtime defaults for
-readonly paths and masked paths.<br/>
+readonly paths and masked paths.
+This requires the ProcMountType feature flag to be enabled.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -17839,7 +19189,9 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         <td>
           The GID to run the entrypoint of the container process.
 Uses runtime default if unset.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -17848,7 +19200,12 @@ May also be set in PodSecurityContext.<br/>
         <td><b>runAsNonRoot</b></td>
         <td>boolean</td>
         <td>
-          Indicates that the container must run as a non-root user.<br/>
+          Indicates that the container must run as a non-root user.
+If true, the Kubelet will validate the image at runtime to ensure that it
+does not run as UID 0 (root) and fail to start the container if it does.
+If unset or false, no such validation will be performed.
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -17857,7 +19214,9 @@ May also be set in PodSecurityContext.<br/>
         <td>
           The UID to run the entrypoint of the container process.
 Defaults to user specified in image metadata if unspecified.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -17868,7 +19227,9 @@ May also be set in PodSecurityContext.<br/>
         <td>
           The SELinux context to be applied to the container.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in PodSecurityContext.<br/>
+container.  May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -17877,7 +19238,8 @@ container.  May also be set in PodSecurityContext.<br/>
         <td>
           The seccomp options to use by this container. If seccomp options are
 provided at both the pod & container level, the container options
-override the pod options.<br/>
+override the pod options.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -17885,7 +19247,9 @@ override the pod options.<br/>
         <td>object</td>
         <td>
           The Windows specific settings applied to all containers.
-If unspecified, the options from the PodSecurityContext will be used.<br/>
+If unspecified, the options from the PodSecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -17935,7 +19299,9 @@ Note that this field cannot be set when spec.os.name is windows.
 
 The SELinux context to be applied to the container.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in PodSecurityContext.
+container.  May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.
 
 <table>
     <thead>
@@ -17986,6 +19352,7 @@ container.  May also be set in PodSecurityContext.
 The seccomp options to use by this container. If seccomp options are
 provided at both the pod & container level, the container options
 override the pod options.
+Note that this field cannot be set when spec.os.name is windows.
 
 <table>
     <thead>
@@ -18004,7 +19371,9 @@ override the pod options.
 Valid options are:
 
 
-Localhost - a profile defined in a file on the node should be used.<br/>
+Localhost - a profile defined in a file on the node should be used.
+RuntimeDefault - the container runtime default profile should be used.
+Unconfined - no profile should be applied.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -18012,7 +19381,9 @@ Localhost - a profile defined in a file on the node should be used.<br/>
         <td>string</td>
         <td>
           localhostProfile indicates a profile defined in a file on the node should be used.
-The profile must be preconfigured on the node to work.<br/>
+The profile must be preconfigured on the node to work.
+Must be a descending path, relative to the kubelet's configured seccomp profile location.
+Must be set if type is "Localhost". Must NOT be set for any other type.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -18026,6 +19397,8 @@ The profile must be preconfigured on the node to work.<br/>
 
 The Windows specific settings applied to all containers.
 If unspecified, the options from the PodSecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.
 
 <table>
     <thead>
@@ -18056,7 +19429,10 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td><b>hostProcess</b></td>
         <td>boolean</td>
         <td>
-          HostProcess determines if a container should be run as a 'Host Process' container.<br/>
+          HostProcess determines if a container should be run as a 'Host Process' container.
+All of a Pod's containers must have the same effective HostProcess value
+(it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
+In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -18065,7 +19441,8 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td>
           The UserName in Windows to run the entrypoint of the container process.
 Defaults to the user specified in image metadata if unspecified.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext. If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -18079,6 +19456,11 @@ May also be set in PodSecurityContext.<br/>
 
 StartupProbe indicates that the Pod has successfully initialized.
 If specified, no other probes are executed until this completes successfully.
+If this probe fails, the Pod will be restarted, just as if the livenessProbe failed.
+This can be used to provide different probe parameters at the beginning of a Pod's lifecycle,
+when it might take a long time to load data or warm a cache, than during steady-state operation.
+This cannot be updated.
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 
 <table>
     <thead>
@@ -18161,7 +19543,16 @@ Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
         <td><b>terminationGracePeriodSeconds</b></td>
         <td>integer</td>
         <td>
-          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
+The grace period is the duration in seconds after the processes running in the pod are sent
+a termination signal and the time when the processes are forcibly halted with a kill signal.
+Set this value longer than the expected cleanup time for your process.
+If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this
+value overrides the value provided by the pod spec.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down).
+This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
+Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -18202,7 +19593,10 @@ Exec specifies the action to take.
         <td>[]string</td>
         <td>
           Command is the command line to execute inside the container, the working directory for the
-command  is root ('/') in the container's filesystem.<br/>
+command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+a shell, you need to explicitly call out to that shell.
+Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -18239,7 +19633,10 @@ GRPC specifies an action involving a GRPC port.
         <td>string</td>
         <td>
           Service is the name of the service to place in the gRPC HealthCheckRequest
-(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).<br/>
+(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
+
+
+If this is not specified, the default behavior is defined by gRPC.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -18471,7 +19868,10 @@ Defaults to "" (volume's root).<br/>
         <td><b>subPathExpr</b></td>
         <td>string</td>
         <td>
-          Expanded path within the volume from which the container's volume should be mounted.<br/>
+          Expanded path within the volume from which the container's volume should be mounted.
+Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
+Defaults to "" (volume's root).
+SubPathExpr and SubPath are mutually exclusive.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -18499,7 +19899,9 @@ Actions that the management system should take in response to container lifecycl
         <td>object</td>
         <td>
           PostStart is called immediately after a container is created. If the handler fails,
-the container is terminated and restarted according to its restart policy.<br/>
+the container is terminated and restarted according to its restart policy.
+Other management of the container blocks until the hook completes.
+More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -18508,7 +19910,13 @@ the container is terminated and restarted according to its restart policy.<br/>
         <td>
           PreStop is called immediately before a container is terminated due to an
 API request or management event such as liveness/startup probe failure,
-preemption, resource contention, etc.<br/>
+preemption, resource contention, etc. The handler is not called if the
+container crashes or exits. The Pod's termination grace period countdown begins before the
+PreStop hook is executed. Regardless of the outcome of the handler, the
+container will eventually terminate within the Pod's termination grace
+period (unless delayed by finalizers). Other management of the container blocks until the hook completes
+or until the termination grace period is reached.
+More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -18522,6 +19930,8 @@ preemption, resource contention, etc.<br/>
 
 PostStart is called immediately after a container is created. If the handler fails,
 the container is terminated and restarted according to its restart policy.
+Other management of the container blocks until the hook completes.
+More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
 
 <table>
     <thead>
@@ -18558,7 +19968,8 @@ the container is terminated and restarted according to its restart policy.
         <td>object</td>
         <td>
           Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility.<br/>
+for the backward compatibility. There are no validation of this field and
+lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -18586,7 +19997,10 @@ Exec specifies the action to take.
         <td>[]string</td>
         <td>
           Command is the command line to execute inside the container, the working directory for the
-command  is root ('/') in the container's filesystem.<br/>
+command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+a shell, you need to explicitly call out to that shell.
+Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -18722,7 +20136,8 @@ Sleep represents the duration that the container should sleep before being termi
 
 
 Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility.
+for the backward compatibility. There are no validation of this field and
+lifecycle hooks will fail in runtime when tcp handler is specified.
 
 <table>
     <thead>
@@ -18760,7 +20175,13 @@ Name must be an IANA_SVC_NAME.<br/>
 
 PreStop is called immediately before a container is terminated due to an
 API request or management event such as liveness/startup probe failure,
-preemption, resource contention, etc.
+preemption, resource contention, etc. The handler is not called if the
+container crashes or exits. The Pod's termination grace period countdown begins before the
+PreStop hook is executed. Regardless of the outcome of the handler, the
+container will eventually terminate within the Pod's termination grace
+period (unless delayed by finalizers). Other management of the container blocks until the hook completes
+or until the termination grace period is reached.
+More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks
 
 <table>
     <thead>
@@ -18797,7 +20218,8 @@ preemption, resource contention, etc.
         <td>object</td>
         <td>
           Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility.<br/>
+for the backward compatibility. There are no validation of this field and
+lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -18825,7 +20247,10 @@ Exec specifies the action to take.
         <td>[]string</td>
         <td>
           Command is the command line to execute inside the container, the working directory for the
-command  is root ('/') in the container's filesystem.<br/>
+command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+a shell, you need to explicitly call out to that shell.
+Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -18961,7 +20386,8 @@ Sleep represents the duration that the container should sleep before being termi
 
 
 Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility.
+for the backward compatibility. There are no validation of this field and
+lifecycle hooks will fail in runtime when tcp handler is specified.
 
 <table>
     <thead>
@@ -18998,6 +20424,7 @@ Name must be an IANA_SVC_NAME.<br/>
 
 
 Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
+It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 
 <table>
     <thead>
@@ -19024,7 +20451,7 @@ Defaults to 3. Minimum value is 1.<br/>
         <td>
           Number of seconds after the container has started before liveness probes are initiated.
 Defaults to 0 seconds. Minimum value is 0.
-More info: https://kubernetes.<br/>
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -19053,7 +20480,16 @@ Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
         <td><b>terminationGracePeriodSeconds</b></td>
         <td>integer</td>
         <td>
-          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.<br/>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
+The grace period is the duration in seconds after the processes running in the pod are sent
+a termination signal and the time when the processes are forcibly halted with a kill signal.
+Set this value longer than the expected cleanup time for your process.
+If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this
+value overrides the value provided by the pod spec.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down).
+This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
+Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -19129,7 +20565,7 @@ Metrics defines the metrics configuration for operands.
         <td>boolean</td>
         <td>
           EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.<br/>
+The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19159,7 +20595,8 @@ for the OpenTelemetryCollector workload.
         <td>
           An eviction is allowed if at most "maxUnavailable" pods selected by
 "selector" are unavailable after the eviction, i.e. even in absence of
-the evicted pod.<br/>
+the evicted pod. For example, one can prevent all voluntary evictions
+by specifying 0. This is a mutually exclusive setting with "minAvailable".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19168,7 +20605,8 @@ the evicted pod.<br/>
         <td>
           An eviction is allowed if at least "minAvailable" pods selected by
 "selector" will still be available after the eviction, i.e. even in the
-absence of the evicted pod.<br/>
+absence of the evicted pod.  So for example you can prevent all voluntary
+evictions by specifying "100%".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19183,6 +20621,9 @@ absence of the evicted pod.<br/>
 PodSecurityContext configures the pod security context for the
 opentelemetry-collector pod, when running as a deployment, daemonset,
 or statefulset.
+
+
+In sidecar mode, the opentelemetry-operator will ignore this setting.
 
 <table>
     <thead>
@@ -19202,7 +20643,13 @@ Some volume types allow the Kubelet to change the ownership of that volume
 to be owned by the pod:
 
 
-1.<br/>
+1. The owning GID will be the FSGroup
+2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
+3. The permission bits are OR'd with rw-rw----
+
+
+If unset, the Kubelet will not modify the ownership and permissions of any volume.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -19212,7 +20659,12 @@ to be owned by the pod:
         <td>string</td>
         <td>
           fsGroupChangePolicy defines behavior of changing ownership and permission of the volume
-before being exposed inside Pod.<br/>
+before being exposed inside Pod. This field will only apply to
+volume types which support fsGroup based ownership(and permissions).
+It will have no effect on ephemeral volume types such as: secret, configmaps
+and emptydir.
+Valid values are "OnRootMismatch" and "Always". If not specified, "Always" is used.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19221,7 +20673,10 @@ before being exposed inside Pod.<br/>
         <td>
           The GID to run the entrypoint of the container process.
 Uses runtime default if unset.
-May also be set in SecurityContext.<br/>
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence
+for that container.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -19230,7 +20685,12 @@ May also be set in SecurityContext.<br/>
         <td><b>runAsNonRoot</b></td>
         <td>boolean</td>
         <td>
-          Indicates that the container must run as a non-root user.<br/>
+          Indicates that the container must run as a non-root user.
+If true, the Kubelet will validate the image at runtime to ensure that it
+does not run as UID 0 (root) and fail to start the container if it does.
+If unset or false, no such validation will be performed.
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19239,7 +20699,10 @@ May also be set in SecurityContext.<br/>
         <td>
           The UID to run the entrypoint of the container process.
 Defaults to user specified in image metadata if unspecified.
-May also be set in SecurityContext.<br/>
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence
+for that container.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -19250,7 +20713,10 @@ May also be set in SecurityContext.<br/>
         <td>
           The SELinux context to be applied to all containers.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in SecurityContext.<br/>
+container.  May also be set in SecurityContext.  If set in
+both SecurityContext and PodSecurityContext, the value specified in SecurityContext
+takes precedence for that container.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19267,7 +20733,11 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         <td>
           A list of groups applied to the first process run in each container, in addition
 to the container's primary GID, the fsGroup (if specified), and group memberships
-defined in the container image for th<br/>
+defined in the container image for the uid of the container process. If unspecified,
+no additional groups are added to any container. Note that group memberships
+defined in the container image for the uid of the container process are still effective,
+even if they are not included in this list.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19276,7 +20746,7 @@ defined in the container image for th<br/>
         <td>
           Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported
 sysctls (by the container runtime) might fail to launch.
-Note that this field cannot be set when spec.os.<br/>
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19284,7 +20754,9 @@ Note that this field cannot be set when spec.os.<br/>
         <td>object</td>
         <td>
           The Windows specific settings applied to all containers.
-If unspecified, the options within a container's SecurityContext will be used.<br/>
+If unspecified, the options within a container's SecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19298,7 +20770,10 @@ If unspecified, the options within a container's SecurityContext will be used.<b
 
 The SELinux context to be applied to all containers.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in SecurityContext.
+container.  May also be set in SecurityContext.  If set in
+both SecurityContext and PodSecurityContext, the value specified in SecurityContext
+takes precedence for that container.
+Note that this field cannot be set when spec.os.name is windows.
 
 <table>
     <thead>
@@ -19366,7 +20841,9 @@ Note that this field cannot be set when spec.os.name is windows.
 Valid options are:
 
 
-Localhost - a profile defined in a file on the node should be used.<br/>
+Localhost - a profile defined in a file on the node should be used.
+RuntimeDefault - the container runtime default profile should be used.
+Unconfined - no profile should be applied.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -19374,7 +20851,9 @@ Localhost - a profile defined in a file on the node should be used.<br/>
         <td>string</td>
         <td>
           localhostProfile indicates a profile defined in a file on the node should be used.
-The profile must be preconfigured on the node to work.<br/>
+The profile must be preconfigured on the node to work.
+Must be a descending path, relative to the kubelet's configured seccomp profile location.
+Must be set if type is "Localhost". Must NOT be set for any other type.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19422,6 +20901,8 @@ Sysctl defines a kernel parameter to be set
 
 The Windows specific settings applied to all containers.
 If unspecified, the options within a container's SecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.
 
 <table>
     <thead>
@@ -19452,7 +20933,10 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td><b>hostProcess</b></td>
         <td>boolean</td>
         <td>
-          HostProcess determines if a container should be run as a 'Host Process' container.<br/>
+          HostProcess determines if a container should be run as a 'Host Process' container.
+All of a Pod's containers must have the same effective HostProcess value
+(it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
+In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19461,7 +20945,8 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td>
           The UserName in Windows to run the entrypoint of the container process.
 Defaults to the user specified in image metadata if unspecified.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext. If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19499,7 +20984,22 @@ PortsSpec defines the OpenTelemetryCollector's container/service ports additiona
         <td>
           The application protocol for this port.
 This is used as a hint for implementations to offer richer behavior for protocols that they understand.
-This field follows standard Kubernetes label syntax.<br/>
+This field follows standard Kubernetes label syntax.
+Valid values are either:
+
+
+* Un-prefixed protocol names - reserved for IANA standard service names (as per
+RFC-6335 and https://www.iana.org/assignments/service-names).
+
+
+* Kubernetes-defined prefixed names:
+  * 'kubernetes.io/h2c' - HTTP/2 prior knowledge over cleartext as described in https://www.rfc-editor.org/rfc/rfc9113.html#name-starting-http-2-with-prior-
+  * 'kubernetes.io/ws'  - WebSocket over cleartext as described in https://www.rfc-editor.org/rfc/rfc6455
+  * 'kubernetes.io/wss' - WebSocket over TLS as described in https://www.rfc-editor.org/rfc/rfc6455
+
+
+* Other protocols should use implementation-defined prefixed names such as
+mycompany.com/my-custom-protocol.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19516,7 +21016,10 @@ This field follows standard Kubernetes label syntax.<br/>
         <td>string</td>
         <td>
           The name of this port within the service. This must be a DNS_LABEL.
-All ports within a ServiceSpec must have unique names.<br/>
+All ports within a ServiceSpec must have unique names. When considering
+the endpoints for a Service, this must match the 'name' field in the
+EndpointPort.
+Optional if only one ServicePort is defined on this service.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19524,7 +21027,14 @@ All ports within a ServiceSpec must have unique names.<br/>
         <td>integer</td>
         <td>
           The port on each node on which this service is exposed when type is
-NodePort or LoadBalancer.  Usually assigned by the system.<br/>
+NodePort or LoadBalancer.  Usually assigned by the system. If a value is
+specified, in-range, and not in use it will be used, otherwise the
+operation will fail.  If not specified, a port will be allocated if this
+Service requires one.  If this field is specified when creating a
+Service which does not need it, creation will fail. This field will be
+wiped when updating a Service to no longer need it (e.g. changing type
+from NodePort to ClusterIP).
+More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -19544,7 +21054,13 @@ Default is TCP.<br/>
         <td>int or string</td>
         <td>
           Number or name of the port to access on the pods targeted by the service.
-Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.<br/>
+Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
+If this is a string, it will be looked up as a named port in the
+target Pod's container ports. If this is not specified, the value
+of the 'port' field is used (an identity map).
+This field is ignored for services with clusterIP=None, and should be
+omitted or set equal to the 'port' field.
+More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19576,7 +21092,10 @@ that are used by this container.
 
 
 This is an alpha field and requires enabling the
-DynamicResourceAllocation feature gate.<br/>
+DynamicResourceAllocation feature gate.
+
+
+This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19591,7 +21110,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19635,6 +21157,15 @@ inside a container.<br/>
 SecurityContext configures the container security context for
 the opentelemetry-collector container.
 
+
+In deployment, daemonset, or statefulset mode, this controls
+the security context settings for the primary application
+container.
+
+
+In sidecar mode, this controls the security context for the
+injected sidecar container.
+
 <table>
     <thead>
         <tr>
@@ -19650,7 +21181,11 @@ the opentelemetry-collector container.
         <td>
           AllowPrivilegeEscalation controls whether a process can gain more
 privileges than its parent process. This bool directly controls if
-the no_new_privs flag will be set on the container process.<br/>
+the no_new_privs flag will be set on the container process.
+AllowPrivilegeEscalation is true always when the container is:
+1) run as Privileged
+2) has CAP_SYS_ADMIN
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19678,7 +21213,9 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         <td>
           procMount denotes the type of proc mount to use for the containers.
 The default is DefaultProcMount which uses the container runtime defaults for
-readonly paths and masked paths.<br/>
+readonly paths and masked paths.
+This requires the ProcMountType feature flag to be enabled.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19696,7 +21233,9 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         <td>
           The GID to run the entrypoint of the container process.
 Uses runtime default if unset.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -19705,7 +21244,12 @@ May also be set in PodSecurityContext.<br/>
         <td><b>runAsNonRoot</b></td>
         <td>boolean</td>
         <td>
-          Indicates that the container must run as a non-root user.<br/>
+          Indicates that the container must run as a non-root user.
+If true, the Kubelet will validate the image at runtime to ensure that it
+does not run as UID 0 (root) and fail to start the container if it does.
+If unset or false, no such validation will be performed.
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19714,7 +21258,9 @@ May also be set in PodSecurityContext.<br/>
         <td>
           The UID to run the entrypoint of the container process.
 Defaults to user specified in image metadata if unspecified.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -19725,7 +21271,9 @@ May also be set in PodSecurityContext.<br/>
         <td>
           The SELinux context to be applied to the container.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in PodSecurityContext.<br/>
+container.  May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19734,7 +21282,8 @@ container.  May also be set in PodSecurityContext.<br/>
         <td>
           The seccomp options to use by this container. If seccomp options are
 provided at both the pod & container level, the container options
-override the pod options.<br/>
+override the pod options.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19742,7 +21291,9 @@ override the pod options.<br/>
         <td>object</td>
         <td>
           The Windows specific settings applied to all containers.
-If unspecified, the options from the PodSecurityContext will be used.<br/>
+If unspecified, the options from the PodSecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19792,7 +21343,9 @@ Note that this field cannot be set when spec.os.name is windows.
 
 The SELinux context to be applied to the container.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in PodSecurityContext.
+container.  May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.
 
 <table>
     <thead>
@@ -19843,6 +21396,7 @@ container.  May also be set in PodSecurityContext.
 The seccomp options to use by this container. If seccomp options are
 provided at both the pod & container level, the container options
 override the pod options.
+Note that this field cannot be set when spec.os.name is windows.
 
 <table>
     <thead>
@@ -19861,7 +21415,9 @@ override the pod options.
 Valid options are:
 
 
-Localhost - a profile defined in a file on the node should be used.<br/>
+Localhost - a profile defined in a file on the node should be used.
+RuntimeDefault - the container runtime default profile should be used.
+Unconfined - no profile should be applied.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -19869,7 +21425,9 @@ Localhost - a profile defined in a file on the node should be used.<br/>
         <td>string</td>
         <td>
           localhostProfile indicates a profile defined in a file on the node should be used.
-The profile must be preconfigured on the node to work.<br/>
+The profile must be preconfigured on the node to work.
+Must be a descending path, relative to the kubelet's configured seccomp profile location.
+Must be set if type is "Localhost". Must NOT be set for any other type.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19883,6 +21441,8 @@ The profile must be preconfigured on the node to work.<br/>
 
 The Windows specific settings applied to all containers.
 If unspecified, the options from the PodSecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.
 
 <table>
     <thead>
@@ -19913,7 +21473,10 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td><b>hostProcess</b></td>
         <td>boolean</td>
         <td>
-          HostProcess determines if a container should be run as a 'Host Process' container.<br/>
+          HostProcess determines if a container should be run as a 'Host Process' container.
+All of a Pod's containers must have the same effective HostProcess value
+(it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
+In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19922,7 +21485,8 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td>
           The UserName in Windows to run the entrypoint of the container process.
 Defaults to the user specified in image metadata if unspecified.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext. If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19984,7 +21548,8 @@ consumed in the config file for the TargetAllocator.<br/>
         <td>string</td>
         <td>
           FilterStrategy determines how to filter targets before allocating them among the collectors.
-The only current option is relabel-config (drops targets based on prom relabel_config).<br/>
+The only current option is relabel-config (drops targets based on prom relabel_config).
+The default is relabel-config.<br/>
           <br/>
             <i>Default</i>: relabel-config<br/>
         </td>
@@ -20030,7 +21595,8 @@ targetallocator.<br/>
         <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscr">prometheusCR</a></b></td>
         <td>object</td>
         <td>
-          PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.<br/>
+          PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
+All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -20038,7 +21604,8 @@ targetallocator.<br/>
         <td>integer</td>
         <td>
           Replicas is the number of pod instances for the underlying TargetAllocator. This should only be set to a value
-other than 1 if a strategy that allows for high availability is chosen.<br/>
+other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
+that can be run in a high availability mode is consistent-hashing.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -20080,7 +21647,8 @@ controls how pods can be scheduled with matching taints<br/>
         <td>
           TopologySpreadConstraints embedded kubernetes pod configuration option,
 controls how pods are spread across your cluster among failure-domains
-such as regions, zones, nodes, and other user-defined top<br/>
+such as regions, zones, nodes, and other user-defined topology domains
+https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20150,7 +21718,13 @@ Describes node affinity scheduling rules for the pod.
         <td>
           The scheduler will prefer to schedule pods to nodes that satisfy
 the affinity expressions specified by this field, but it may choose
-a node that violates one or more of the expressions.<br/>
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node matches the corresponding matchExpressions; the
+node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -20158,7 +21732,10 @@ a node that violates one or more of the expressions.<br/>
         <td>object</td>
         <td>
           If the affinity requirements specified by this field are not met at
-scheduling time, the pod will not be scheduled onto the node.<br/>
+scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to an update), the system
+may or may not try to eventually evict the pod from its node.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20274,7 +21851,9 @@ Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         <td>
           An array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20319,7 +21898,9 @@ Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         <td>
           An array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20333,6 +21914,9 @@ the values array must be empty.<br/>
 
 If the affinity requirements specified by this field are not met at
 scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to an update), the system
+may or may not try to eventually evict the pod from its node.
 
 <table>
     <thead>
@@ -20428,7 +22012,9 @@ Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         <td>
           An array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20473,7 +22059,9 @@ Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.<br/>
         <td>
           An array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. If the operator is Gt or Lt, the values
+array must have a single element, which will be interpreted as an integer.
+This array is replaced during a strategic merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20502,7 +22090,13 @@ Describes pod affinity scheduling rules (e.g. co-locate this pod in the same nod
         <td>
           The scheduler will prefer to schedule pods to nodes that satisfy
 the affinity expressions specified by this field, but it may choose
-a node that violates one or more of the expressions.<br/>
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -20510,7 +22104,12 @@ a node that violates one or more of the expressions.<br/>
         <td>[]object</td>
         <td>
           If the affinity requirements specified by this field are not met at
-scheduling time, the pod will not be scheduled onto the node.<br/>
+scheduling time, the pod will not be scheduled onto the node.
+If the affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to a pod label update), the
+system may or may not try to eventually evict the pod from its node.
+When there are multiple elements, the lists of nodes corresponding to each
+podAffinityTerm are intersected, i.e. all terms must be satisfied.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20576,7 +22175,9 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td>
           This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
 the labelSelector in the specified namespaces, where co-located is defined as running on a node
-whose <br/>
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -20592,7 +22193,14 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -20600,7 +22208,14 @@ be taken into consideration.<br/>
         <td>[]string</td>
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -20609,7 +22224,9 @@ be taken into consideration.<br/>
         <td>
           A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
-and the ones listed in the namespaces field.<br/>
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -20618,7 +22235,8 @@ and the ones listed in the namespaces field.<br/>
         <td>
           namespaces specifies a static list of namespace names that the term applies to.
 The term is applied to the union of the namespaces listed in this field
-and the ones selected by namespaceSelector.<br/>
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20653,7 +22271,9 @@ If it's null, this PodAffinityTerm matches with no Pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20698,7 +22318,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20713,6 +22334,8 @@ the values array must be empty.<br/>
 A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
 and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -20734,7 +22357,9 @@ and the ones listed in the namespaces field.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20779,7 +22404,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20794,7 +22420,9 @@ the values array must be empty.<br/>
 Defines a set of pods (namely those matching the labelSelector
 relative to the given namespace(s)) that this pod should be
 co-located (affinity) or not co-located (anti-affinity) with,
-where co-locate
+where co-located is defined as running on a node whose value of
+the label with key <topologyKey> matches that of any node on which
+a pod of the set of pods is running
 
 <table>
     <thead>
@@ -20811,7 +22439,9 @@ where co-locate
         <td>
           This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
 the labelSelector in the specified namespaces, where co-located is defined as running on a node
-whose <br/>
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -20827,7 +22457,14 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -20835,7 +22472,14 @@ be taken into consideration.<br/>
         <td>[]string</td>
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -20844,7 +22488,9 @@ be taken into consideration.<br/>
         <td>
           A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
-and the ones listed in the namespaces field.<br/>
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -20853,7 +22499,8 @@ and the ones listed in the namespaces field.<br/>
         <td>
           namespaces specifies a static list of namespace names that the term applies to.
 The term is applied to the union of the namespaces listed in this field
-and the ones selected by namespaceSelector.<br/>
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20888,7 +22535,9 @@ If it's null, this PodAffinityTerm matches with no Pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20933,7 +22582,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -20948,6 +22598,8 @@ the values array must be empty.<br/>
 A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
 and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -20969,7 +22621,9 @@ and the ones listed in the namespaces field.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21014,7 +22668,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21043,7 +22698,13 @@ Describes pod anti-affinity scheduling rules (e.g. avoid putting this pod in the
         <td>
           The scheduler will prefer to schedule pods to nodes that satisfy
 the anti-affinity expressions specified by this field, but it may choose
-a node that violates one or more of the expressions.<br/>
+a node that violates one or more of the expressions. The node that is
+most preferred is the one with the greatest sum of weights, i.e.
+for each node that meets all of the scheduling requirements (resource
+request, requiredDuringScheduling anti-affinity expressions, etc.),
+compute a sum by iterating through the elements of this field and adding
+"weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21051,7 +22712,12 @@ a node that violates one or more of the expressions.<br/>
         <td>[]object</td>
         <td>
           If the anti-affinity requirements specified by this field are not met at
-scheduling time, the pod will not be scheduled onto the node.<br/>
+scheduling time, the pod will not be scheduled onto the node.
+If the anti-affinity requirements specified by this field cease to be met
+at some point during pod execution (e.g. due to a pod label update), the
+system may or may not try to eventually evict the pod from its node.
+When there are multiple elements, the lists of nodes corresponding to each
+podAffinityTerm are intersected, i.e. all terms must be satisfied.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21117,7 +22783,9 @@ Required. A pod affinity term, associated with the corresponding weight.
         <td>
           This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
 the labelSelector in the specified namespaces, where co-located is defined as running on a node
-whose <br/>
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -21133,7 +22801,14 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21141,7 +22816,14 @@ be taken into consideration.<br/>
         <td>[]string</td>
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21150,7 +22832,9 @@ be taken into consideration.<br/>
         <td>
           A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
-and the ones listed in the namespaces field.<br/>
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21159,7 +22843,8 @@ and the ones listed in the namespaces field.<br/>
         <td>
           namespaces specifies a static list of namespace names that the term applies to.
 The term is applied to the union of the namespaces listed in this field
-and the ones selected by namespaceSelector.<br/>
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21194,7 +22879,9 @@ If it's null, this PodAffinityTerm matches with no Pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21239,7 +22926,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21254,6 +22942,8 @@ the values array must be empty.<br/>
 A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
 and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -21275,7 +22965,9 @@ and the ones listed in the namespaces field.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21320,7 +23012,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21335,7 +23028,9 @@ the values array must be empty.<br/>
 Defines a set of pods (namely those matching the labelSelector
 relative to the given namespace(s)) that this pod should be
 co-located (affinity) or not co-located (anti-affinity) with,
-where co-locate
+where co-located is defined as running on a node whose value of
+the label with key <topologyKey> matches that of any node on which
+a pod of the set of pods is running
 
 <table>
     <thead>
@@ -21352,7 +23047,9 @@ where co-locate
         <td>
           This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching
 the labelSelector in the specified namespaces, where co-located is defined as running on a node
-whose <br/>
+whose value of the label with key topologyKey matches that of any node on which any of the
+selected pods is running.
+Empty topologyKey is not allowed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -21368,7 +23065,14 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21376,7 +23080,14 @@ be taken into consideration.<br/>
         <td>[]string</td>
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
-be taken into consideration.<br/>
+be taken into consideration. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+to select the group of existing pods which pods will be taken into consideration
+for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
+pod labels will be ignored. The default value is empty.
+The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
+Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21385,7 +23096,9 @@ be taken into consideration.<br/>
         <td>
           A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
-and the ones listed in the namespaces field.<br/>
+and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21394,7 +23107,8 @@ and the ones listed in the namespaces field.<br/>
         <td>
           namespaces specifies a static list of namespace names that the term applies to.
 The term is applied to the union of the namespaces listed in this field
-and the ones selected by namespaceSelector.<br/>
+and the ones selected by namespaceSelector.
+null or empty namespaces list and null namespaceSelector means "this pod's namespace".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21429,7 +23143,9 @@ If it's null, this PodAffinityTerm matches with no Pods.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21474,7 +23190,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21489,6 +23206,8 @@ the values array must be empty.<br/>
 A label query over the set of namespaces that the term applies to.
 The term is applied to the union of the namespaces selected by this field
 and the ones listed in the namespaces field.
+null selector and null or empty namespaces list means "this pod's namespace".
+An empty selector ({}) matches all namespaces.
 
 <table>
     <thead>
@@ -21510,7 +23229,9 @@ and the ones listed in the namespaces field.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21555,7 +23276,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21591,7 +23313,13 @@ EnvVar represents an environment variable present in a Container.
         <td>
           Variable references $(VAR_NAME) are expanded
 using the previously defined environment variables in the container and
-any service environment variables.<br/>
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21633,7 +23361,7 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>object</td>
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21641,7 +23369,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.<br/>
         <td>object</td>
         <td>
           Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.<br/>
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21704,7 +23432,7 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
 
 
 Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
-spec.nodeName, spec.serviceAccountName, status.hostIP, status.
+spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
 
 <table>
     <thead>
@@ -21739,7 +23467,7 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.
 
 
 Selects a resource of the container: only resources limits and requests
-(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.
+(limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
 
 <table>
     <thead>
@@ -21874,7 +23602,7 @@ Metrics defines the metrics configuration for operands.
         <td>boolean</td>
         <td>
           EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.<br/>
+The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21904,7 +23632,8 @@ for the target allocator workload.
         <td>
           An eviction is allowed if at most "maxUnavailable" pods selected by
 "selector" are unavailable after the eviction, i.e. even in absence of
-the evicted pod.<br/>
+the evicted pod. For example, one can prevent all voluntary evictions
+by specifying 0. This is a mutually exclusive setting with "minAvailable".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21913,7 +23642,8 @@ the evicted pod.<br/>
         <td>
           An eviction is allowed if at least "minAvailable" pods selected by
 "selector" will still be available after the eviction, i.e. even in the
-absence of the evicted pod.<br/>
+absence of the evicted pod.  So for example you can prevent all voluntary
+evictions by specifying "100%".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21946,7 +23676,13 @@ Some volume types allow the Kubelet to change the ownership of that volume
 to be owned by the pod:
 
 
-1.<br/>
+1. The owning GID will be the FSGroup
+2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
+3. The permission bits are OR'd with rw-rw----
+
+
+If unset, the Kubelet will not modify the ownership and permissions of any volume.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -21956,7 +23692,12 @@ to be owned by the pod:
         <td>string</td>
         <td>
           fsGroupChangePolicy defines behavior of changing ownership and permission of the volume
-before being exposed inside Pod.<br/>
+before being exposed inside Pod. This field will only apply to
+volume types which support fsGroup based ownership(and permissions).
+It will have no effect on ephemeral volume types such as: secret, configmaps
+and emptydir.
+Valid values are "OnRootMismatch" and "Always". If not specified, "Always" is used.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21965,7 +23706,10 @@ before being exposed inside Pod.<br/>
         <td>
           The GID to run the entrypoint of the container process.
 Uses runtime default if unset.
-May also be set in SecurityContext.<br/>
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence
+for that container.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -21974,7 +23718,12 @@ May also be set in SecurityContext.<br/>
         <td><b>runAsNonRoot</b></td>
         <td>boolean</td>
         <td>
-          Indicates that the container must run as a non-root user.<br/>
+          Indicates that the container must run as a non-root user.
+If true, the Kubelet will validate the image at runtime to ensure that it
+does not run as UID 0 (root) and fail to start the container if it does.
+If unset or false, no such validation will be performed.
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -21983,7 +23732,10 @@ May also be set in SecurityContext.<br/>
         <td>
           The UID to run the entrypoint of the container process.
 Defaults to user specified in image metadata if unspecified.
-May also be set in SecurityContext.<br/>
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence
+for that container.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -21994,7 +23746,10 @@ May also be set in SecurityContext.<br/>
         <td>
           The SELinux context to be applied to all containers.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in SecurityContext.<br/>
+container.  May also be set in SecurityContext.  If set in
+both SecurityContext and PodSecurityContext, the value specified in SecurityContext
+takes precedence for that container.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22011,7 +23766,11 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         <td>
           A list of groups applied to the first process run in each container, in addition
 to the container's primary GID, the fsGroup (if specified), and group memberships
-defined in the container image for th<br/>
+defined in the container image for the uid of the container process. If unspecified,
+no additional groups are added to any container. Note that group memberships
+defined in the container image for the uid of the container process are still effective,
+even if they are not included in this list.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22020,7 +23779,7 @@ defined in the container image for th<br/>
         <td>
           Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported
 sysctls (by the container runtime) might fail to launch.
-Note that this field cannot be set when spec.os.<br/>
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22028,7 +23787,9 @@ Note that this field cannot be set when spec.os.<br/>
         <td>object</td>
         <td>
           The Windows specific settings applied to all containers.
-If unspecified, the options within a container's SecurityContext will be used.<br/>
+If unspecified, the options within a container's SecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -22042,7 +23803,10 @@ If unspecified, the options within a container's SecurityContext will be used.<b
 
 The SELinux context to be applied to all containers.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in SecurityContext.
+container.  May also be set in SecurityContext.  If set in
+both SecurityContext and PodSecurityContext, the value specified in SecurityContext
+takes precedence for that container.
+Note that this field cannot be set when spec.os.name is windows.
 
 <table>
     <thead>
@@ -22110,7 +23874,9 @@ Note that this field cannot be set when spec.os.name is windows.
 Valid options are:
 
 
-Localhost - a profile defined in a file on the node should be used.<br/>
+Localhost - a profile defined in a file on the node should be used.
+RuntimeDefault - the container runtime default profile should be used.
+Unconfined - no profile should be applied.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -22118,7 +23884,9 @@ Localhost - a profile defined in a file on the node should be used.<br/>
         <td>string</td>
         <td>
           localhostProfile indicates a profile defined in a file on the node should be used.
-The profile must be preconfigured on the node to work.<br/>
+The profile must be preconfigured on the node to work.
+Must be a descending path, relative to the kubelet's configured seccomp profile location.
+Must be set if type is "Localhost". Must NOT be set for any other type.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -22166,6 +23934,8 @@ Sysctl defines a kernel parameter to be set
 
 The Windows specific settings applied to all containers.
 If unspecified, the options within a container's SecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.
 
 <table>
     <thead>
@@ -22196,7 +23966,10 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td><b>hostProcess</b></td>
         <td>boolean</td>
         <td>
-          HostProcess determines if a container should be run as a 'Host Process' container.<br/>
+          HostProcess determines if a container should be run as a 'Host Process' container.
+All of a Pod's containers must have the same effective HostProcess value
+(it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
+In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22205,7 +23978,8 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td>
           The UserName in Windows to run the entrypoint of the container process.
 Defaults to the user specified in image metadata if unspecified.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext. If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -22218,6 +23992,7 @@ May also be set in PodSecurityContext.<br/>
 
 
 PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
+All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
 
 <table>
     <thead>
@@ -22241,7 +24016,8 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
         <td>
           PodMonitors to be selected for target discovery.
 This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-PodMonitor's meta labels.<br/>
+PodMonitor's meta labels. The requirements are ANDed.
+Empty or nil map matches all pod monitors.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22263,7 +24039,8 @@ Default: "30s"<br/>
         <td>
           ServiceMonitors to be selected for target discovery.
 This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-ServiceMonitor's meta labels.<br/>
+ServiceMonitor's meta labels. The requirements are ANDed.
+Empty or nil map matches all service monitors.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -22295,7 +24072,10 @@ that are used by this container.
 
 
 This is an alpha field and requires enabling the
-DynamicResourceAllocation feature gate.<br/>
+DynamicResourceAllocation feature gate.
+
+
+This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22310,7 +24090,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -22369,7 +24152,11 @@ the targetallocator.
         <td>
           AllowPrivilegeEscalation controls whether a process can gain more
 privileges than its parent process. This bool directly controls if
-the no_new_privs flag will be set on the container process.<br/>
+the no_new_privs flag will be set on the container process.
+AllowPrivilegeEscalation is true always when the container is:
+1) run as Privileged
+2) has CAP_SYS_ADMIN
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22397,7 +24184,9 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         <td>
           procMount denotes the type of proc mount to use for the containers.
 The default is DefaultProcMount which uses the container runtime defaults for
-readonly paths and masked paths.<br/>
+readonly paths and masked paths.
+This requires the ProcMountType feature flag to be enabled.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22415,7 +24204,9 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         <td>
           The GID to run the entrypoint of the container process.
 Uses runtime default if unset.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -22424,7 +24215,12 @@ May also be set in PodSecurityContext.<br/>
         <td><b>runAsNonRoot</b></td>
         <td>boolean</td>
         <td>
-          Indicates that the container must run as a non-root user.<br/>
+          Indicates that the container must run as a non-root user.
+If true, the Kubelet will validate the image at runtime to ensure that it
+does not run as UID 0 (root) and fail to start the container if it does.
+If unset or false, no such validation will be performed.
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22433,7 +24229,9 @@ May also be set in PodSecurityContext.<br/>
         <td>
           The UID to run the entrypoint of the container process.
 Defaults to user specified in image metadata if unspecified.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -22444,7 +24242,9 @@ May also be set in PodSecurityContext.<br/>
         <td>
           The SELinux context to be applied to the container.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in PodSecurityContext.<br/>
+container.  May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22453,7 +24253,8 @@ container.  May also be set in PodSecurityContext.<br/>
         <td>
           The seccomp options to use by this container. If seccomp options are
 provided at both the pod & container level, the container options
-override the pod options.<br/>
+override the pod options.
+Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22461,7 +24262,9 @@ override the pod options.<br/>
         <td>object</td>
         <td>
           The Windows specific settings applied to all containers.
-If unspecified, the options from the PodSecurityContext will be used.<br/>
+If unspecified, the options from the PodSecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -22511,7 +24314,9 @@ Note that this field cannot be set when spec.os.name is windows.
 
 The SELinux context to be applied to the container.
 If unspecified, the container runtime will allocate a random SELinux context for each
-container.  May also be set in PodSecurityContext.
+container.  May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.
 
 <table>
     <thead>
@@ -22562,6 +24367,7 @@ container.  May also be set in PodSecurityContext.
 The seccomp options to use by this container. If seccomp options are
 provided at both the pod & container level, the container options
 override the pod options.
+Note that this field cannot be set when spec.os.name is windows.
 
 <table>
     <thead>
@@ -22580,7 +24386,9 @@ override the pod options.
 Valid options are:
 
 
-Localhost - a profile defined in a file on the node should be used.<br/>
+Localhost - a profile defined in a file on the node should be used.
+RuntimeDefault - the container runtime default profile should be used.
+Unconfined - no profile should be applied.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -22588,7 +24396,9 @@ Localhost - a profile defined in a file on the node should be used.<br/>
         <td>string</td>
         <td>
           localhostProfile indicates a profile defined in a file on the node should be used.
-The profile must be preconfigured on the node to work.<br/>
+The profile must be preconfigured on the node to work.
+Must be a descending path, relative to the kubelet's configured seccomp profile location.
+Must be set if type is "Localhost". Must NOT be set for any other type.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -22602,6 +24412,8 @@ The profile must be preconfigured on the node to work.<br/>
 
 The Windows specific settings applied to all containers.
 If unspecified, the options from the PodSecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.
 
 <table>
     <thead>
@@ -22632,7 +24444,10 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td><b>hostProcess</b></td>
         <td>boolean</td>
         <td>
-          HostProcess determines if a container should be run as a 'Host Process' container.<br/>
+          HostProcess determines if a container should be run as a 'Host Process' container.
+All of a Pod's containers must have the same effective HostProcess value
+(it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
+In addition, if HostProcess is true then HostNetwork must also be set to true.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22641,7 +24456,8 @@ GMSA credential spec named by the GMSACredentialSpecName field.<br/>
         <td>
           The UserName in Windows to run the entrypoint of the container process.
 Defaults to the user specified in image metadata if unspecified.
-May also be set in PodSecurityContext.<br/>
+May also be set in PodSecurityContext. If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -22686,7 +24502,9 @@ If the key is empty, operator must be Exists; this combination means to match al
         <td>string</td>
         <td>
           Operator represents a key's relationship to the value.
-Valid operators are Exists and Equal. Defaults to Equal.<br/>
+Valid operators are Exists and Equal. Defaults to Equal.
+Exists is equivalent to wildcard for value, so that a pod can
+tolerate all taints of a particular category.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22694,7 +24512,9 @@ Valid operators are Exists and Equal. Defaults to Equal.<br/>
         <td>integer</td>
         <td>
           TolerationSeconds represents the period of time the toleration (which must be
-of effect NoExecute, otherwise this field is ignored) tolerates the taint.<br/>
+of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+it is not set, which means tolerate the taint forever (do not evict). Zero and
+negative values will be treated as 0 (evict immediately) by the system.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -22731,7 +24551,23 @@ TopologySpreadConstraint specifies how to spread matching pods among the given t
         <td><b>maxSkew</b></td>
         <td>integer</td>
         <td>
-          MaxSkew describes the degree to which pods may be unevenly distributed.<br/>
+          MaxSkew describes the degree to which pods may be unevenly distributed.
+When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
+between the number of matching pods in the target topology and the global minimum.
+The global minimum is the minimum number of matching pods in an eligible domain
+or zero if the number of eligible domains is less than MinDomains.
+For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same
+labelSelector spread as 2/2/1:
+In this case, the global minimum is 1.
+| zone1 | zone2 | zone3 |
+|  P P  |  P P  |   P   |
+- if MaxSkew is 1, incoming pod can only be scheduled to zone3 to become 2/2/2;
+scheduling it onto zone1(zone2) would make the ActualSkew(3-1) on zone1(zone2)
+violate MaxSkew(1).
+- if MaxSkew is 2, incoming pod can be scheduled onto any zone.
+When `whenUnsatisfiable=ScheduleAnyway`, it is used to give higher precedence
+to topologies that satisfy it.
+It's a required field. Default value is 1 and 0 is not allowed.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -22741,7 +24577,15 @@ TopologySpreadConstraint specifies how to spread matching pods among the given t
         <td>string</td>
         <td>
           TopologyKey is the key of node labels. Nodes that have a label with this key
-and identical values are considered to be in the same topology.<br/>
+and identical values are considered to be in the same topology.
+We consider each <key, value> as a "bucket", and try to put balanced number
+of pods into each bucket.
+We define a domain as a particular instance of a topology.
+Also, we define an eligible domain as a domain whose nodes meet the requirements of
+nodeAffinityPolicy and nodeTaintsPolicy.
+e.g. If TopologyKey is "kubernetes.io/hostname", each Node is a domain of that topology.
+And, if TopologyKey is "topology.kubernetes.io/zone", each zone is a domain of that topology.
+It's a required field.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -22750,7 +24594,22 @@ and identical values are considered to be in the same topology.<br/>
         <td>
           WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
 the spread constraint.
-- DoNotSchedule (default) tells the scheduler not to schedule it.<br/>
+- DoNotSchedule (default) tells the scheduler not to schedule it.
+- ScheduleAnyway tells the scheduler to schedule the pod in any location,
+  but giving higher precedence to topologies that would help reduce the
+  skew.
+A constraint is considered "Unsatisfiable" for an incoming pod
+if and only if every possible node assignment for that pod would violate
+"MaxSkew" on some topology.
+For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same
+labelSelector spread as 3/1/1:
+| zone1 | zone2 | zone3 |
+| P P P |   P   |   P   |
+If WhenUnsatisfiable is set to DoNotSchedule, incoming pod can only be scheduled
+to zone2(zone3) to become 3/2/1(3/1/2) as ActualSkew(2-1) on zone2(zone3) satisfies
+MaxSkew(1). In other words, the cluster can still be imbalanced, but scheduler
+won't make it *more* imbalanced.
+It's a required field.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -22767,14 +24626,42 @@ in their corresponding topology domain.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select the pods over which
-spreading will be calculated.<br/>
+spreading will be calculated. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are ANDed with labelSelector
+to select the group of existing pods over which spreading will be calculated
+for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+MatchLabelKeys cannot be set when LabelSelector isn't set.
+Keys that don't exist in the incoming pod labels will
+be ignored. A null or empty list means only match against labelSelector.
+
+
+This is a beta field and requires the MatchLabelKeysInPodTopologySpread feature gate to be enabled (enabled by default).<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>minDomains</b></td>
         <td>integer</td>
         <td>
-          MinDomains indicates a minimum number of eligible domains.<br/>
+          MinDomains indicates a minimum number of eligible domains.
+When the number of eligible domains with matching topology keys is less than minDomains,
+Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
+And when the number of eligible domains with matching topology keys equals or greater than minDomains,
+this value has no effect on scheduling.
+As a result, when the number of eligible domains is less than minDomains,
+scheduler won't schedule more than maxSkew Pods to those domains.
+If value is nil, the constraint behaves as if MinDomains is equal to 1.
+Valid values are integers greater than 0.
+When value is not nil, WhenUnsatisfiable must be DoNotSchedule.
+
+
+For example, in a 3-zone cluster, MaxSkew is set to 2, MinDomains is set to 5 and pods with the same
+labelSelector spread as 2/2/2:
+| zone1 | zone2 | zone3 |
+|  P P  |  P P  |  P P  |
+The number of domains is less than 5(MinDomains), so "global minimum" is treated as 0.
+In this situation, new pod with the same labelSelector cannot be scheduled,
+because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
+it will violate MaxSkew.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -22784,7 +24671,13 @@ spreading will be calculated.<br/>
         <td>string</td>
         <td>
           NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
-when calculating pod topology spread skew.<br/>
+when calculating pod topology spread skew. Options are:
+- Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
+- Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+
+
+If this value is nil, the behavior is equivalent to the Honor policy.
+This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22792,7 +24685,14 @@ when calculating pod topology spread skew.<br/>
         <td>string</td>
         <td>
           NodeTaintsPolicy indicates how we will treat node taints when calculating
-pod topology spread skew.<br/>
+pod topology spread skew. Options are:
+- Honor: nodes without taints, along with tainted nodes for which the incoming pod
+has a toleration, are included.
+- Ignore: node taints are ignored. All nodes are included.
+
+
+If this value is nil, the behavior is equivalent to the Ignore policy.
+This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -22828,7 +24728,9 @@ in their corresponding topology domain.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -22873,7 +24775,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -22918,7 +24821,9 @@ If the key is empty, operator must be Exists; this combination means to match al
         <td>string</td>
         <td>
           Operator represents a key's relationship to the value.
-Valid operators are Exists and Equal. Defaults to Equal.<br/>
+Valid operators are Exists and Equal. Defaults to Equal.
+Exists is equivalent to wildcard for value, so that a pod can
+tolerate all taints of a particular category.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -22926,7 +24831,9 @@ Valid operators are Exists and Equal. Defaults to Equal.<br/>
         <td>integer</td>
         <td>
           TolerationSeconds represents the period of time the toleration (which must be
-of effect NoExecute, otherwise this field is ignored) tolerates the taint.<br/>
+of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+it is not set, which means tolerate the taint forever (do not evict). Zero and
+negative values will be treated as 0 (evict immediately) by the system.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -22963,7 +24870,23 @@ TopologySpreadConstraint specifies how to spread matching pods among the given t
         <td><b>maxSkew</b></td>
         <td>integer</td>
         <td>
-          MaxSkew describes the degree to which pods may be unevenly distributed.<br/>
+          MaxSkew describes the degree to which pods may be unevenly distributed.
+When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference
+between the number of matching pods in the target topology and the global minimum.
+The global minimum is the minimum number of matching pods in an eligible domain
+or zero if the number of eligible domains is less than MinDomains.
+For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same
+labelSelector spread as 2/2/1:
+In this case, the global minimum is 1.
+| zone1 | zone2 | zone3 |
+|  P P  |  P P  |   P   |
+- if MaxSkew is 1, incoming pod can only be scheduled to zone3 to become 2/2/2;
+scheduling it onto zone1(zone2) would make the ActualSkew(3-1) on zone1(zone2)
+violate MaxSkew(1).
+- if MaxSkew is 2, incoming pod can be scheduled onto any zone.
+When `whenUnsatisfiable=ScheduleAnyway`, it is used to give higher precedence
+to topologies that satisfy it.
+It's a required field. Default value is 1 and 0 is not allowed.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -22973,7 +24896,15 @@ TopologySpreadConstraint specifies how to spread matching pods among the given t
         <td>string</td>
         <td>
           TopologyKey is the key of node labels. Nodes that have a label with this key
-and identical values are considered to be in the same topology.<br/>
+and identical values are considered to be in the same topology.
+We consider each <key, value> as a "bucket", and try to put balanced number
+of pods into each bucket.
+We define a domain as a particular instance of a topology.
+Also, we define an eligible domain as a domain whose nodes meet the requirements of
+nodeAffinityPolicy and nodeTaintsPolicy.
+e.g. If TopologyKey is "kubernetes.io/hostname", each Node is a domain of that topology.
+And, if TopologyKey is "topology.kubernetes.io/zone", each zone is a domain of that topology.
+It's a required field.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -22982,7 +24913,22 @@ and identical values are considered to be in the same topology.<br/>
         <td>
           WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy
 the spread constraint.
-- DoNotSchedule (default) tells the scheduler not to schedule it.<br/>
+- DoNotSchedule (default) tells the scheduler not to schedule it.
+- ScheduleAnyway tells the scheduler to schedule the pod in any location,
+  but giving higher precedence to topologies that would help reduce the
+  skew.
+A constraint is considered "Unsatisfiable" for an incoming pod
+if and only if every possible node assignment for that pod would violate
+"MaxSkew" on some topology.
+For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same
+labelSelector spread as 3/1/1:
+| zone1 | zone2 | zone3 |
+| P P P |   P   |   P   |
+If WhenUnsatisfiable is set to DoNotSchedule, incoming pod can only be scheduled
+to zone2(zone3) to become 3/2/1(3/1/2) as ActualSkew(2-1) on zone2(zone3) satisfies
+MaxSkew(1). In other words, the cluster can still be imbalanced, but scheduler
+won't make it *more* imbalanced.
+It's a required field.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -22999,14 +24945,42 @@ in their corresponding topology domain.<br/>
         <td>[]string</td>
         <td>
           MatchLabelKeys is a set of pod label keys to select the pods over which
-spreading will be calculated.<br/>
+spreading will be calculated. The keys are used to lookup values from the
+incoming pod labels, those key-value labels are ANDed with labelSelector
+to select the group of existing pods over which spreading will be calculated
+for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
+MatchLabelKeys cannot be set when LabelSelector isn't set.
+Keys that don't exist in the incoming pod labels will
+be ignored. A null or empty list means only match against labelSelector.
+
+
+This is a beta field and requires the MatchLabelKeysInPodTopologySpread feature gate to be enabled (enabled by default).<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>minDomains</b></td>
         <td>integer</td>
         <td>
-          MinDomains indicates a minimum number of eligible domains.<br/>
+          MinDomains indicates a minimum number of eligible domains.
+When the number of eligible domains with matching topology keys is less than minDomains,
+Pod Topology Spread treats "global minimum" as 0, and then the calculation of Skew is performed.
+And when the number of eligible domains with matching topology keys equals or greater than minDomains,
+this value has no effect on scheduling.
+As a result, when the number of eligible domains is less than minDomains,
+scheduler won't schedule more than maxSkew Pods to those domains.
+If value is nil, the constraint behaves as if MinDomains is equal to 1.
+Valid values are integers greater than 0.
+When value is not nil, WhenUnsatisfiable must be DoNotSchedule.
+
+
+For example, in a 3-zone cluster, MaxSkew is set to 2, MinDomains is set to 5 and pods with the same
+labelSelector spread as 2/2/2:
+| zone1 | zone2 | zone3 |
+|  P P  |  P P  |  P P  |
+The number of domains is less than 5(MinDomains), so "global minimum" is treated as 0.
+In this situation, new pod with the same labelSelector cannot be scheduled,
+because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones,
+it will violate MaxSkew.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -23016,7 +24990,13 @@ spreading will be calculated.<br/>
         <td>string</td>
         <td>
           NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector
-when calculating pod topology spread skew.<br/>
+when calculating pod topology spread skew. Options are:
+- Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
+- Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
+
+
+If this value is nil, the behavior is equivalent to the Honor policy.
+This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23024,7 +25004,14 @@ when calculating pod topology spread skew.<br/>
         <td>string</td>
         <td>
           NodeTaintsPolicy indicates how we will treat node taints when calculating
-pod topology spread skew.<br/>
+pod topology spread skew. Options are:
+- Honor: nodes without taints, along with tainted nodes for which the incoming pod
+has a toleration, are included.
+- Ignore: node taints are ignored. All nodes are included.
+
+
+If this value is nil, the behavior is equivalent to the Ignore policy.
+This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -23060,7 +25047,9 @@ in their corresponding topology domain.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -23105,7 +25094,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -23118,7 +25108,8 @@ the values array must be empty.<br/>
 
 
 UpdateStrategy represents the strategy the operator will take replacing existing DaemonSet pods with new pods
-https://kubernetes.
+https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec
+This is only applicable to Daemonset mode.
 
 <table>
     <thead>
@@ -23136,7 +25127,8 @@ https://kubernetes.
           Rolling update config params. Present only if type = "RollingUpdate".
 ---
 TODO: Update this to follow our convention for oneOf, whatever we decide it
-to be. Same as Deployment `strategy.<br/>
+to be. Same as Deployment `strategy.rollingUpdate`.
+See https://github.com/kubernetes/kubernetes/issues/35345<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23158,7 +25150,8 @@ to be. Same as Deployment `strategy.<br/>
 Rolling update config params. Present only if type = "RollingUpdate".
 ---
 TODO: Update this to follow our convention for oneOf, whatever we decide it
-to be. Same as Deployment `strategy.
+to be. Same as Deployment `strategy.rollingUpdate`.
+See https://github.com/kubernetes/kubernetes/issues/35345
 
 <table>
     <thead>
@@ -23174,7 +25167,19 @@ to be. Same as Deployment `strategy.
         <td>int or string</td>
         <td>
           The maximum number of nodes with an existing available DaemonSet pod that
-can have an updated DaemonSet pod during during an update.<br/>
+can have an updated DaemonSet pod during during an update.
+Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).
+This can not be 0 if MaxUnavailable is 0.
+Absolute number is calculated from percentage by rounding up to a minimum of 1.
+Default value is 0.
+Example: when this is set to 30%, at most 30% of the total number of nodes
+that should be running the daemon pod (i.e. status.desiredNumberScheduled)
+can have their a new pod created before the old pod is marked as deleted.
+The update starts by launching new pods on 30% of nodes. Once an updated
+pod is available (Ready for at least minReadySeconds) the old DaemonSet pod
+on that node is marked deleted. If the old pod becomes unavailable for any
+reason (Ready transitions to false, is evicted, or is drained) an updated
+pod is immediatedly created on that node without considering surge limits.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23182,7 +25187,19 @@ can have an updated DaemonSet pod during during an update.<br/>
         <td>int or string</td>
         <td>
           The maximum number of DaemonSet pods that can be unavailable during the
-update.<br/>
+update. Value can be an absolute number (ex: 5) or a percentage of total
+number of DaemonSet pods at the start of the update (ex: 10%). Absolute
+number is calculated from percentage by rounding up.
+This cannot be 0 if MaxSurge is 0
+Default value is 1.
+Example: when this is set to 30%, at most 30% of the total number of nodes
+that should be running the daemon pod (i.e. status.desiredNumberScheduled)
+can have their pods stopped for an update at any given time. The update
+starts by stopping at most 30% of those DaemonSet pods and then brings
+up new DaemonSet pods in their place. Once the new pods are available,
+it then proceeds onto other DaemonSet pods, thus ensuring that at least
+70% of original number of DaemonSet pods are available at all times during
+the update.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -23211,7 +25228,8 @@ PersistentVolumeClaim is a user's request for and claim to a persistent volume
         <td>
           APIVersion defines the versioned schema of this representation of an object.
 Servers should convert recognized schemas to the latest internal value, and
-may reject unrecognized values.<br/>
+may reject unrecognized values.
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23221,7 +25239,8 @@ may reject unrecognized values.<br/>
           Kind is a string value representing the REST resource this object represents.
 Servers may infer this from the endpoint the client submits requests to.
 Cannot be updated.
-In CamelCase.<br/>
+In CamelCase.
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23339,7 +25358,13 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access
         <td>object</td>
         <td>
           dataSource field can be used to specify either:
-* An existing VolumeSnapshot object (snapshot.storage.k8s.<br/>
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23347,14 +25372,32 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access
         <td>object</td>
         <td>
           dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
-volume is desired.<br/>
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecvolumeclaimtemplatesindexspecresources">resources</a></b></td>
         <td>object</td>
         <td>
-          resources represents the minimum resources the volume should have.<br/>
+          resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23376,7 +25419,18 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-
         <td><b>volumeAttributesClassName</b></td>
         <td>string</td>
         <td>
-          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.<br/>
+          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
+If specified, the CSI driver will create or update the volume with the attributes defined
+in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
+it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
+will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
+If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
+will be set by the persistentvolume controller if it exists.
+If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
+set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
+exists.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+(Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23404,7 +25458,13 @@ Value of Filesystem is implied when not included in claim spec.<br/>
 
 
 dataSource field can be used to specify either:
-* An existing VolumeSnapshot object (snapshot.storage.k8s.
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.
 
 <table>
     <thead>
@@ -23448,7 +25508,21 @@ For any other third-party types, APIGroup is required.<br/>
 
 
 dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
-volume is desired.
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.
 
 <table>
     <thead>
@@ -23487,7 +25561,8 @@ For any other third-party types, APIGroup is required.<br/>
         <td>string</td>
         <td>
           Namespace is the namespace of resource being referenced
-Note that when a namespace is specified, a gateway.networking.k8s.<br/>
+Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
+(Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -23500,6 +25575,10 @@ Note that when a namespace is specified, a gateway.networking.k8s.<br/>
 
 
 resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
 
 <table>
     <thead>
@@ -23522,7 +25601,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -23556,7 +25638,9 @@ selector is a label query over volumes to consider for binding.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -23601,7 +25685,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -23639,7 +25724,27 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access
         <td>map[string]string</td>
         <td>
           allocatedResourceStatuses stores status of resource being resized for the given PVC.
-Key names follow standard Kubernetes label syntax.<br/>
+Key names follow standard Kubernetes label syntax. Valid values are either:
+	* Un-prefixed keys:
+		- storage - the capacity of the volume.
+	* Custom resources must use implementation-defined prefixed names such as "example.com/my-custom-resource"
+Apart from above values - keys that are unprefixed or have kubernetes.io prefix are considered
+reserved and hence may not be used.
+
+
+ClaimResourceStatus can be in any of following states:
+	- ControllerResizeInProgress:
+		State set when resize controller starts resizing the volume in control-plane.
+	- ControllerResizeFailed:
+		State set when resize has failed in resize controller with a terminal error.
+	- NodeResizePending:
+		State set when resize controller has finished resizing the volume but further resizing of
+		volume is needed on the node.
+	- NodeResizeInProgress:
+		State set when kubelet starts resizing the volume.
+	- NodeResizeFailed:
+		State set when resizing has failed in kubelet with a terminal error. Transient errors don't set
+		NodeResizeFailed.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23647,7 +25752,25 @@ Key names follow standard Kubernetes label syntax.<br/>
         <td>map[string]int or string</td>
         <td>
           allocatedResources tracks the resources allocated to a PVC including its capacity.
-Key names follow standard Kubernetes label syntax.<br/>
+Key names follow standard Kubernetes label syntax. Valid values are either:
+	* Un-prefixed keys:
+		- storage - the capacity of the volume.
+	* Custom resources must use implementation-defined prefixed names such as "example.com/my-custom-resource"
+Apart from above values - keys that are unprefixed or have kubernetes.io prefix are considered
+reserved and hence may not be used.
+
+
+Capacity reported here may be larger than the actual capacity when a volume expansion operation
+is requested.
+For storage quota, the larger value from allocatedResources and PVC.spec.resources is used.
+If allocatedResources is not set, PVC.spec.resources alone is used for quota calculation.
+If a volume expansion capacity request is lowered, allocatedResources is only
+lowered if there are no expansion operations in progress and if the actual volume capacity
+is equal or lower than the requested capacity.
+
+
+A controller that receives PVC update with previously unknown resourceName
+should ignore the update for the purpose it was designed.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23669,7 +25792,9 @@ resized then the Condition will be set to 'ResizeStarted'.<br/>
         <td><b>currentVolumeAttributesClassName</b></td>
         <td>string</td>
         <td>
-          currentVolumeAttributesClassName is the current name of the VolumeAttributesClass the PVC is using.<br/>
+          currentVolumeAttributesClassName is the current name of the VolumeAttributesClass the PVC is using.
+When unset, there is no VolumeAttributeClass applied to this PersistentVolumeClaim
+This is an alpha field and requires enabling VolumeAttributesClass feature.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23677,7 +25802,8 @@ resized then the Condition will be set to 'ResizeStarted'.<br/>
         <td>object</td>
         <td>
           ModifyVolumeStatus represents the status object of ControllerModifyVolume operation.
-When this is unset, there is no ModifyVolume operation being attempted.<br/>
+When this is unset, there is no ModifyVolume operation being attempted.
+This is an alpha field and requires enabling VolumeAttributesClass feature.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23751,7 +25877,8 @@ PersistentVolumeClaimCondition contains details about state of pvc
         <td>string</td>
         <td>
           reason is a unique, this should be a short, machine understandable string that gives the reason
-for condition's last transition.<br/>
+for condition's last transition. If it reports "ResizeStarted" that means the underlying
+persistent volume is being resized.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -23765,6 +25892,7 @@ for condition's last transition.<br/>
 
 ModifyVolumeStatus represents the status object of ControllerModifyVolume operation.
 When this is unset, there is no ModifyVolume operation being attempted.
+This is an alpha field and requires enabling VolumeAttributesClass feature.
 
 <table>
     <thead>
@@ -23779,7 +25907,16 @@ When this is unset, there is no ModifyVolume operation being attempted.
         <td><b>status</b></td>
         <td>string</td>
         <td>
-          status is the status of the ControllerModifyVolume operation.<br/>
+          status is the status of the ControllerModifyVolume operation. It can be in any of following states:
+ - Pending
+   Pending indicates that the PersistentVolumeClaim cannot be modified due to unmet requirements, such as
+   the specified VolumeAttributesClass not existing.
+ - InProgress
+   InProgress indicates that the volume is being modified.
+ - Infeasible
+  Infeasible indicates that the request has been rejected as invalid by the CSI driver. To
+	  resolve the error, a valid VolumeAttributesClass needs to be specified.
+Note: New statuses can be added in the future. Consumers should check for unknown statuses and fail appropriately.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -23854,7 +25991,10 @@ Defaults to "" (volume's root).<br/>
         <td><b>subPathExpr</b></td>
         <td>string</td>
         <td>
-          Expanded path within the volume from which the container's volume should be mounted.<br/>
+          Expanded path within the volume from which the container's volume should be mounted.
+Behaves similarly to SubPath but environment variable references $(VAR_NAME) are expanded using the container's environment.
+Defaults to "" (volume's root).
+SubPathExpr and SubPath are mutually exclusive.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -23892,7 +26032,7 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>
           awsElasticBlockStore represents an AWS Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://kubernetes.<br/>
+More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23957,7 +26097,34 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir<br/>
         <td><b><a href="#opentelemetrycollectorspecvolumesindexephemeral">ephemeral</a></b></td>
         <td>object</td>
         <td>
-          ephemeral represents a volume that is handled by a cluster storage driver.<br/>
+          ephemeral represents a volume that is handled by a cluster storage driver.
+The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts,
+and deleted when the pod is removed.
+
+
+Use this if:
+a) the volume is only needed while the pod runs,
+b) features of normal volumes like restoring from snapshot or capacity
+   tracking are needed,
+c) the storage driver is specified through a storage class, and
+d) the storage driver supports dynamic volume provisioning through
+   a PersistentVolumeClaim (see EphemeralVolumeSource for more
+   information on the connection between this volume type
+   and PersistentVolumeClaim).
+
+
+Use PersistentVolumeClaim or one of the vendor-specific
+APIs for volumes that persist for longer than the lifecycle
+of an individual pod.
+
+
+Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to
+be used that way - see the documentation of the driver for
+more information.
+
+
+A pod can use both types of ephemeral volumes and
+persistent volumes at the same time.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23988,7 +26155,7 @@ provisioned/attached using an exec based plugin.<br/>
         <td>
           gcePersistentDisk represents a GCE Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://kubernetes.<br/>
+More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23996,7 +26163,9 @@ More info: https://kubernetes.<br/>
         <td>object</td>
         <td>
           gitRepo represents a git repository at a particular revision.
-DEPRECATED: GitRepo is deprecated.<br/>
+DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an
+EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir
+into the Pod's container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24012,7 +26181,13 @@ More info: https://examples.k8s.io/volumes/glusterfs/README.md<br/>
         <td>object</td>
         <td>
           hostPath represents a pre-existing file or directory on the host
-machine that is directly exposed to the container.<br/>
+machine that is directly exposed to the container. This is generally
+used for system agents or other privileged things that are allowed
+to see the host machine. Most containers will NOT need this.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
+---
+TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not
+mount host directories as read/write.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24038,7 +26213,7 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs<br/>
         <td>
           persistentVolumeClaimVolumeSource represents a reference to a
 PersistentVolumeClaim in the same namespace.
-More info: https://kubernetes.<br/>
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24117,7 +26292,7 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#secret<br/>
 
 awsElasticBlockStore represents an AWS Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://kubernetes.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
 
 <table>
     <thead>
@@ -24142,7 +26317,9 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockst
         <td>
           fsType is the filesystem type of the volume that you want to mount.
 Tip: Ensure that the filesystem type is supported by the host operating system.
-Examples: "ext4", "xfs", "ntfs".<br/>
+Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
+TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24151,7 +26328,8 @@ Examples: "ext4", "xfs", "ntfs".<br/>
         <td>
           partition is the partition in the volume that you want to mount.
 If omitted, the default is to mount by volume name.
-Examples: For volume /dev/sda1, you specify the partition as "1".<br/>
+Examples: For volume /dev/sda1, you specify the partition as "1".
+Similarly, the volume partition for /dev/sda is "0" (or you can leave the property empty).<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -24218,7 +26396,7 @@ Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.<br/>
         <td><b>kind</b></td>
         <td>string</td>
         <td>
-          kind expected values are Shared: multiple blob disks per storage account  Dedicated: single blob disk per storage account  Managed: azure managed data disk (only in managed availability set).<br/>
+          kind expected values are Shared: multiple blob disks per storage account  Dedicated: single blob disk per storage account  Managed: azure managed data disk (only in managed availability set). defaults to shared<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24404,7 +26582,8 @@ More info: https://examples.k8s.io/mysql-cinder-pd/README.md<br/>
         <td>
           fsType is the filesystem type to mount.
 Must be a filesystem type supported by the host operating system.
-Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.<br/>
+Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+More info: https://examples.k8s.io/mysql-cinder-pd/README.md<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24479,7 +26658,12 @@ configMap represents a configMap that should populate this volume
         <td>integer</td>
         <td>
           defaultMode is optional: mode bits used to set permissions on created files by default.
-Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+Defaults to 0644.
+Directories within the path are not affected by this setting.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -24490,7 +26674,11 @@ Must be an octal value between 0000 and 0777 or a decimal value between 0 and 51
         <td>
           items if unspecified, each key-value pair in the Data field of the referenced
 ConfigMap will be projected into the volume as a file whose name is the
-key and content is the value.<br/>
+key and content is the value. If specified, the listed keys will be
+projected into the specified paths, and unlisted keys will not be
+present. If a key is specified which is not present in the ConfigMap,
+the volume setup will error unless it is marked optional. Paths must be
+relative and may not contain the '..' path or start with '..'.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24551,7 +26739,11 @@ May not start with the string '..'.<br/>
         <td>integer</td>
         <td>
           mode is Optional: mode bits used to set permissions on this file.
-Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+If not specified, the volume defaultMode will be used.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -24599,7 +26791,9 @@ which will determine the default filesystem to apply.<br/>
         <td>
           nodePublishSecretRef is a reference to the secret object containing
 sensitive information to pass to the CSI driver to complete the CSI
-NodePublishVolume and NodeUnpublishVolume calls.<br/>
+NodePublishVolume and NodeUnpublishVolume calls.
+This field is optional, and  may be empty if no secret is required. If the
+secret object contains more than one secret, all secret references are passed.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24630,6 +26824,8 @@ driver. Consult your driver's documentation for supported values.<br/>
 nodePublishSecretRef is a reference to the secret object containing
 sensitive information to pass to the CSI driver to complete the CSI
 NodePublishVolume and NodeUnpublishVolume calls.
+This field is optional, and  may be empty if no secret is required. If the
+secret object contains more than one secret, all secret references are passed.
 
 <table>
     <thead>
@@ -24674,7 +26870,13 @@ downwardAPI represents downward API about the pod that should populate this volu
         <td>integer</td>
         <td>
           Optional: mode bits to use on created files by default. Must be a
-Optional: mode bits used to set permissions on created files by default.<br/>
+Optional: mode bits used to set permissions on created files by default.
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+Defaults to 0644.
+Directories within the path are not affected by this setting.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -24725,7 +26927,11 @@ DownwardAPIVolumeFile represents information to create the file containing the p
         <td>integer</td>
         <td>
           Optional: mode bits used to set permissions on this file, must be an octal value
-between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+If not specified, the volume defaultMode will be used.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -24841,7 +27047,8 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir
         <td>
           medium represents what type of storage medium should back this directory.
 The default is "" which means to use the node's default medium.
-Must be an empty string (default) or Memory.<br/>
+Must be an empty string (default) or Memory.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24849,7 +27056,11 @@ Must be an empty string (default) or Memory.<br/>
         <td>int or string</td>
         <td>
           sizeLimit is the total amount of local storage required for this EmptyDir volume.
-The size limit is also applicable for memory medium.<br/>
+The size limit is also applicable for memory medium.
+The maximum usage on memory medium EmptyDir would be the minimum value between
+the SizeLimit specified here and the sum of memory limits of all containers in a pod.
+The default is nil which means that the limit is undefined.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -24862,6 +27073,33 @@ The size limit is also applicable for memory medium.<br/>
 
 
 ephemeral represents a volume that is handled by a cluster storage driver.
+The volume's lifecycle is tied to the pod that defines it - it will be created before the pod starts,
+and deleted when the pod is removed.
+
+
+Use this if:
+a) the volume is only needed while the pod runs,
+b) features of normal volumes like restoring from snapshot or capacity
+   tracking are needed,
+c) the storage driver is specified through a storage class, and
+d) the storage driver supports dynamic volume provisioning through
+   a PersistentVolumeClaim (see EphemeralVolumeSource for more
+   information on the connection between this volume type
+   and PersistentVolumeClaim).
+
+
+Use PersistentVolumeClaim or one of the vendor-specific
+APIs for volumes that persist for longer than the lifecycle
+of an individual pod.
+
+
+Use CSI for light-weight local ephemeral volumes if the CSI driver is meant to
+be used that way - see the documentation of the driver for
+more information.
+
+
+A pod can use both types of ephemeral volumes and
+persistent volumes at the same time.
 
 <table>
     <thead>
@@ -24878,7 +27116,28 @@ ephemeral represents a volume that is handled by a cluster storage driver.
         <td>
           Will be used to create a stand-alone PVC to provision the volume.
 The pod in which this EphemeralVolumeSource is embedded will be the
-owner of the PVC, i.e.<br/>
+owner of the PVC, i.e. the PVC will be deleted together with the
+pod.  The name of the PVC will be `<pod name>-<volume name>` where
+`<volume name>` is the name from the `PodSpec.Volumes` array
+entry. Pod validation will reject the pod if the concatenated name
+is not valid for a PVC (for example, too long).
+
+
+An existing PVC with that name that is not owned by the pod
+will *not* be used for the pod to avoid using an unrelated
+volume by mistake. Starting the pod is then blocked until
+the unrelated PVC is removed. If such a pre-created PVC is
+meant to be used by the pod, the PVC has to updated with an
+owner reference to the pod once the pod exists. Normally
+this should not be necessary, but it may be useful when
+manually reconstructing a broken cluster.
+
+
+This field is read-only and no changes will be made by Kubernetes
+to the PVC after it has been created.
+
+
+Required, must not be nil.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -24892,7 +27151,28 @@ owner of the PVC, i.e.<br/>
 
 Will be used to create a stand-alone PVC to provision the volume.
 The pod in which this EphemeralVolumeSource is embedded will be the
-owner of the PVC, i.e.
+owner of the PVC, i.e. the PVC will be deleted together with the
+pod.  The name of the PVC will be `<pod name>-<volume name>` where
+`<volume name>` is the name from the `PodSpec.Volumes` array
+entry. Pod validation will reject the pod if the concatenated name
+is not valid for a PVC (for example, too long).
+
+
+An existing PVC with that name that is not owned by the pod
+will *not* be used for the pod to avoid using an unrelated
+volume by mistake. Starting the pod is then blocked until
+the unrelated PVC is removed. If such a pre-created PVC is
+meant to be used by the pod, the PVC has to updated with an
+owner reference to the pod once the pod exists. Normally
+this should not be necessary, but it may be useful when
+manually reconstructing a broken cluster.
+
+
+This field is read-only and no changes will be made by Kubernetes
+to the PVC after it has been created.
+
+
+Required, must not be nil.
 
 <table>
     <thead>
@@ -24909,7 +27189,8 @@ owner of the PVC, i.e.
         <td>
           The specification for the PersistentVolumeClaim. The entire content is
 copied unchanged into the PVC that gets created from this
-template.<br/>
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -24932,7 +27213,8 @@ validation.<br/>
 
 The specification for the PersistentVolumeClaim. The entire content is
 copied unchanged into the PVC that gets created from this
-template.
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.
 
 <table>
     <thead>
@@ -24956,7 +27238,13 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access
         <td>object</td>
         <td>
           dataSource field can be used to specify either:
-* An existing VolumeSnapshot object (snapshot.storage.k8s.<br/>
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24964,14 +27252,32 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access
         <td>object</td>
         <td>
           dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
-volume is desired.<br/>
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecvolumesindexephemeralvolumeclaimtemplatespecresources">resources</a></b></td>
         <td>object</td>
         <td>
-          resources represents the minimum resources the volume should have.<br/>
+          resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24993,7 +27299,18 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-
         <td><b>volumeAttributesClassName</b></td>
         <td>string</td>
         <td>
-          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.<br/>
+          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
+If specified, the CSI driver will create or update the volume with the attributes defined
+in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
+it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
+will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
+If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
+will be set by the persistentvolume controller if it exists.
+If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
+set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
+exists.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+(Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -25021,7 +27338,13 @@ Value of Filesystem is implied when not included in claim spec.<br/>
 
 
 dataSource field can be used to specify either:
-* An existing VolumeSnapshot object (snapshot.storage.k8s.
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.
 
 <table>
     <thead>
@@ -25065,7 +27388,21 @@ For any other third-party types, APIGroup is required.<br/>
 
 
 dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
-volume is desired.
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.
 
 <table>
     <thead>
@@ -25104,7 +27441,8 @@ For any other third-party types, APIGroup is required.<br/>
         <td>string</td>
         <td>
           Namespace is the namespace of resource being referenced
-Note that when a namespace is specified, a gateway.networking.k8s.<br/>
+Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
+(Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -25117,6 +27455,10 @@ Note that when a namespace is specified, a gateway.networking.k8s.<br/>
 
 
 resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
 
 <table>
     <thead>
@@ -25139,7 +27481,10 @@ More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-co
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required.<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -25173,7 +27518,9 @@ selector is a label query over volumes to consider for binding.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -25218,7 +27565,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -25304,7 +27652,8 @@ fc represents a Fibre Channel resource that is attached to a kubelet's host mach
         <td>
           fsType is the filesystem type to mount.
 Must be a filesystem type supported by the host operating system.
-Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.<br/>
+Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -25397,7 +27746,9 @@ the ReadOnly setting in VolumeMounts.<br/>
         <td>
           secretRef is Optional: secretRef is reference to the secret object containing
 sensitive information to pass to the plugin scripts. This may be
-empty if no secret object is specified.<br/>
+empty if no secret object is specified. If the secret object
+contains more than one secret, all secrets are passed to the plugin
+scripts.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -25411,7 +27762,9 @@ empty if no secret object is specified.<br/>
 
 secretRef is Optional: secretRef is reference to the secret object containing
 sensitive information to pass to the plugin scripts. This may be
-empty if no secret object is specified.
+empty if no secret object is specified. If the secret object
+contains more than one secret, all secrets are passed to the plugin
+scripts.
 
 <table>
     <thead>
@@ -25477,7 +27830,7 @@ should be considered as deprecated<br/>
 
 gcePersistentDisk represents a GCE Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://kubernetes.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
 
 <table>
     <thead>
@@ -25502,7 +27855,9 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
         <td>
           fsType is filesystem type of the volume that you want to mount.
 Tip: Ensure that the filesystem type is supported by the host operating system.
-Examples: "ext4", "xfs", "ntfs".<br/>
+Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
+TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -25511,7 +27866,9 @@ Examples: "ext4", "xfs", "ntfs".<br/>
         <td>
           partition is the partition in the volume that you want to mount.
 If omitted, the default is to mount by volume name.
-Examples: For volume /dev/sda1, you specify the partition as "1".<br/>
+Examples: For volume /dev/sda1, you specify the partition as "1".
+Similarly, the volume partition for /dev/sda is "0" (or you can leave the property empty).
+More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -25535,7 +27892,9 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
 
 
 gitRepo represents a git repository at a particular revision.
-DEPRECATED: GitRepo is deprecated.
+DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an
+EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir
+into the Pod's container.
 
 <table>
     <thead>
@@ -25559,7 +27918,8 @@ DEPRECATED: GitRepo is deprecated.
         <td>
           directory is the target directory name.
 Must not contain or start with '..'.  If '.' is supplied, the volume directory will be the
-git repository.<br/>
+git repository.  Otherwise, if specified, the volume will contain the git repository in
+the subdirectory with the given name.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -25625,7 +27985,13 @@ More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod<br/>
 
 
 hostPath represents a pre-existing file or directory on the host
-machine that is directly exposed to the container.
+machine that is directly exposed to the container. This is generally
+used for system agents or other privileged things that are allowed
+to see the host machine. Most containers will NOT need this.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
+---
+TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not
+mount host directories as read/write.
 
 <table>
     <thead>
@@ -25720,14 +28086,18 @@ is other than default (typically TCP ports 860 and 3260).<br/>
         <td>
           fsType is the filesystem type of the volume that you want to mount.
 Tip: Ensure that the filesystem type is supported by the host operating system.
-Examples: "ext4", "xfs", "ntfs".<br/>
+Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#iscsi
+TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>initiatorName</b></td>
         <td>string</td>
         <td>
-          initiatorName is the custom iSCSI Initiator Name.<br/>
+          initiatorName is the custom iSCSI Initiator Name.
+If initiatorName is specified with iscsiInterface simultaneously, new iSCSI interface
+<target portal>:<volume name> will be created for the connection.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -25847,7 +28217,7 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs<br/>
 
 persistentVolumeClaimVolumeSource represents a reference to a
 PersistentVolumeClaim in the same namespace.
-More info: https://kubernetes.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims
 
 <table>
     <thead>
@@ -25979,7 +28349,11 @@ projected items for all in one resources secrets, configmaps, and downward API
         <td>integer</td>
         <td>
           defaultMode are the mode bits used to set permissions on created files by default.
-Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+Directories within the path are not affected by this setting.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -26019,7 +28393,18 @@ Projection that may be projected along with other supported volume types
 of ClusterTrustBundle objects in an auto-updating file.
 
 
-Alpha, gated by the ClusterTrustBundleProjection feature gate.<br/>
+Alpha, gated by the ClusterTrustBundleProjection feature gate.
+
+
+ClusterTrustBundle objects can either be selected by name, or by the
+combination of signer name and a label selector.
+
+
+Kubelet performs aggressive normalization of the PEM contents written
+into the pod filesystem.  Esoteric PEM features such as inter-block
+comments and block headers are stripped.  Certificates are deduplicated.
+The ordering of certificates within the file is arbitrary, and Kubelet
+may change the order over time.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26065,6 +28450,17 @@ of ClusterTrustBundle objects in an auto-updating file.
 
 Alpha, gated by the ClusterTrustBundleProjection feature gate.
 
+
+ClusterTrustBundle objects can either be selected by name, or by the
+combination of signer name and a label selector.
+
+
+Kubelet performs aggressive normalization of the PEM contents written
+into the pod filesystem.  Esoteric PEM features such as inter-block
+comments and block headers are stripped.  Certificates are deduplicated.
+The ordering of certificates within the file is arbitrary, and Kubelet
+may change the order over time.
+
 <table>
     <thead>
         <tr>
@@ -26087,7 +28483,8 @@ Alpha, gated by the ClusterTrustBundleProjection feature gate.
         <td>
           Select all ClusterTrustBundles that match this label selector.  Only has
 effect if signerName is set.  Mutually-exclusive with name.  If unset,
-interpreted as "match nothing".<br/>
+interpreted as "match nothing".  If set but empty, interpreted as "match
+everything".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26104,7 +28501,9 @@ with signerName and labelSelector.<br/>
         <td>
           If true, don't block pod startup if the referenced ClusterTrustBundle(s)
 aren't available.  If using name, then the named ClusterTrustBundle is
-allowed not to exist.<br/>
+allowed not to exist.  If using signerName, then the combination of
+signerName and labelSelector is allowed to match zero
+ClusterTrustBundles.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26127,7 +28526,8 @@ ClusterTrustBundles will be unified and deduplicated.<br/>
 
 Select all ClusterTrustBundles that match this label selector.  Only has
 effect if signerName is set.  Mutually-exclusive with name.  If unset,
-interpreted as "match nothing".
+interpreted as "match nothing".  If set but empty, interpreted as "match
+everything".
 
 <table>
     <thead>
@@ -26149,7 +28549,9 @@ interpreted as "match nothing".
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -26194,7 +28596,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -26223,7 +28626,11 @@ configMap information about the configMap data to project
         <td>
           items if unspecified, each key-value pair in the Data field of the referenced
 ConfigMap will be projected into the volume as a file whose name is the
-key and content is the value.<br/>
+key and content is the value. If specified, the listed keys will be
+projected into the specified paths, and unlisted keys will not be
+present. If a key is specified which is not present in the ConfigMap,
+the volume setup will error unless it is marked optional. Paths must be
+relative and may not contain the '..' path or start with '..'.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26284,7 +28691,11 @@ May not start with the string '..'.<br/>
         <td>integer</td>
         <td>
           mode is Optional: mode bits used to set permissions on this file.
-Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+If not specified, the volume defaultMode will be used.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -26355,7 +28766,11 @@ DownwardAPIVolumeFile represents information to create the file containing the p
         <td>integer</td>
         <td>
           Optional: mode bits used to set permissions on this file, must be an octal value
-between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+If not specified, the volume defaultMode will be used.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -26470,7 +28885,11 @@ secret information about the secret data to project
         <td>
           items if unspecified, each key-value pair in the Data field of the referenced
 Secret will be projected into the volume as a file whose name is the
-key and content is the value.<br/>
+key and content is the value. If specified, the listed keys will be
+projected into the specified paths, and unlisted keys will not be
+present. If a key is specified which is not present in the Secret,
+the volume setup will error unless it is marked optional. Paths must be
+relative and may not contain the '..' path or start with '..'.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26531,7 +28950,11 @@ May not start with the string '..'.<br/>
         <td>integer</td>
         <td>
           mode is Optional: mode bits used to set permissions on this file.
-Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+If not specified, the volume defaultMode will be used.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -26570,7 +28993,8 @@ token into.<br/>
         <td>
           audience is the intended audience of the token. A recipient of a token
 must identify itself with an identifier specified in the audience of the
-token, and otherwise should reject the token.<br/>
+token, and otherwise should reject the token. The audience defaults to the
+identifier of the apiserver.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26579,7 +29003,10 @@ token, and otherwise should reject the token.<br/>
         <td>
           expirationSeconds is the requested duration of validity of the service
 account token. As the token approaches expiration, the kubelet volume
-plugin will proactively rotate the service account token.<br/>
+plugin will proactively rotate the service account token. The kubelet will
+start trying to rotate the token if the token is older than 80 percent of
+its time to live or if the token is older than 24 hours.Defaults to 1 hour
+and must be at least 10 minutes.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -26695,7 +29122,9 @@ More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it<br/>
         <td>
           fsType is the filesystem type of the volume that you want to mount.
 Tip: Ensure that the filesystem type is supported by the host operating system.
-Examples: "ext4", "xfs", "ntfs".<br/>
+Examples: "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+More info: https://kubernetes.io/docs/concepts/storage/volumes#rbd
+TODO: how do we prevent errors in the filesystem from compromising the machine<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26929,7 +29358,12 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#secret
         <td>integer</td>
         <td>
           defaultMode is Optional: mode bits used to set permissions on created files by default.
-Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values
+for mode bits. Defaults to 0644.
+Directories within the path are not affected by this setting.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -26940,7 +29374,11 @@ Must be an octal value between 0000 and 0777 or a decimal value between 0 and 51
         <td>
           items If unspecified, each key-value pair in the Data field of the referenced
 Secret will be projected into the volume as a file whose name is the
-key and content is the value.<br/>
+key and content is the value. If specified, the listed keys will be
+projected into the specified paths, and unlisted keys will not be
+present. If a key is specified which is not present in the Secret,
+the volume setup will error unless it is marked optional. Paths must be
+relative and may not contain the '..' path or start with '..'.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -27000,7 +29438,11 @@ May not start with the string '..'.<br/>
         <td>integer</td>
         <td>
           mode is Optional: mode bits used to set permissions on this file.
-Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.<br/>
+Must be an octal value between 0000 and 0777 or a decimal value between 0 and 511.
+YAML accepts both octal and decimal values, JSON requires decimal values for mode bits.
+If not specified, the volume defaultMode will be used.
+This might be in conflict with other options that affect the file
+mode, like fsGroup, and the result can be other mode bits set.<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -27063,7 +29505,11 @@ names are only unique within a namespace.<br/>
         <td>string</td>
         <td>
           volumeNamespace specifies the scope of the volume within StorageOS.  If no
-namespace is specified then the Pod's namespace will be used.<br/>
+namespace is specified then the Pod's namespace will be used.  This allows the
+Kubernetes name scoping to be mirrored within StorageOS for tighter integration.
+Set VolumeName to any name to override the default behaviour.
+Set to "default" if you are not using namespaces within StorageOS.
+Namespaces that do not pre-exist within StorageOS will be created.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -27248,7 +29694,8 @@ deployment or statefulSet pods.<br/>
         <td>string</td>
         <td>
           StatusReplicas is the number of pods targeted by this OpenTelemetryCollector's with a Ready Condition /
-Total number of non-terminated pods targeted by this OpenTelemetryCollector's (their labels matc<br/>
+Total number of non-terminated pods targeted by this OpenTelemetryCollector's (their labels match the selector).
+Deployment, Daemonset, StatefulSet.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
