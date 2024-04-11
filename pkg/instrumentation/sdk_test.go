@@ -577,7 +577,7 @@ func TestInjectJava(t *testing.T) {
 						},
 						{
 							Name:  "JAVA_TOOL_OPTIONS",
-							Value: javaJVMArgument,
+							Value: javaAgent,
 						},
 						{
 							Name:  "OTEL_SERVICE_NAME",
