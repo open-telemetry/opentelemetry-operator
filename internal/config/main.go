@@ -72,12 +72,14 @@ func New(opts ...Option) Config {
 	o := options{
 		prometheusCRAvailability:          prometheus.NotAvailable,
 		openshiftRoutesAvailability:       openshift.RoutesNotAvailable,
+		createRBACPermissions:             autoRbac.NotAvailable,
 		collectorConfigMapEntry:           defaultCollectorConfigMapEntry,
 		targetAllocatorConfigMapEntry:     defaultTargetAllocatorConfigMapEntry,
 		operatorOpAMPBridgeConfigMapEntry: defaultOperatorOpAMPBridgeConfigMapEntry,
 		logger:                            logf.Log.WithName("config"),
 		version:                           version.Get(),
 	}
+
 	for _, opt := range opts {
 		opt(&o)
 	}
@@ -119,18 +121,21 @@ func (c *Config) AutoDetect() error {
 		return err
 	}
 	c.openshiftRoutesAvailability = ora
+	c.logger.V(2).Info("openshift routes detected", "availability", ora)
 
 	pcrd, err := c.autoDetect.PrometheusCRsAvailability()
 	if err != nil {
 		return err
 	}
 	c.prometheusCRAvailability = pcrd
+	c.logger.V(2).Info("prometheus cr detected", "availability", pcrd)
 
 	rAuto, err := c.autoDetect.RBACPermissions(context.Background())
 	if err != nil {
-		return err
+		c.logger.V(2).Info("the rbac permissions are not set for the operator", "reason", err)
 	}
 	c.createRBACPermissions = rAuto
+	c.logger.V(2).Info("create rbac permissions detected", "availability", rAuto)
 
 	return nil
 }

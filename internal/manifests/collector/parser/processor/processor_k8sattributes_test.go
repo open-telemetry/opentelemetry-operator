@@ -123,7 +123,7 @@ func TestK8sAttributesRBAC(t *testing.T) {
 					Resources: []string{"pods", "namespaces"},
 					Verbs:     []string{"get", "watch", "list"},
 				},
-				rbacv1.PolicyRule{
+				{
 					APIGroups: []string{""},
 					Resources: []string{"nodes"},
 					Verbs:     []string{"get", "watch", "list"},

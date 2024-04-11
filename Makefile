@@ -147,9 +147,12 @@ add-image-targetallocator:
 add-image-opampbridge:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--operator-opamp-bridge-image=$(OPERATOROPAMPBRIDGE_IMG)
 
-.PHONY: enable-operator-featuregates
-enable-operator-featuregates: OPERATOR_ARG = --feature-gates=$(FEATUREGATES)
-enable-operator-featuregates: add-operator-arg
+.PHONY: add-rbac-permissions-to-operator
+add-rbac-permissions-to-operator: manifests kustomize
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/namespaces.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/nodes.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/rbac.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/replicaset.yaml
 
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
@@ -210,15 +213,7 @@ e2e: chainsaw
 # end-to-end-test for testing automatic RBAC creation
 .PHONY: e2e-automatic-rbac
 e2e-automatic-rbac: chainsaw
-	# Add extra needed permissions
-	kubectl apply -f hack/rbac-operator-permissions.yaml
-	kubectl rollout restart deployment opentelemetry-operator-controller-manager -n opentelemetry-operator-system
-	kubectl rollout status deployment opentelemetry-operator-controller-manager -n opentelemetry-operator-system
-	go run hack/check-operator-ready.go
 	$(CHAINSAW) test --test-dir ./tests/e2e-automatic-rbac
-	# Cleanup
-	kubectl delete -f hack/rbac-operator-permissions.yaml
-	kubectl rollout restart deployment opentelemetry-operator-controller-manager -n opentelemetry-operator-system
 
 # end-to-end-test for testing autoscale
 .PHONY: e2e-autoscale
@@ -275,9 +270,6 @@ e2e-upgrade: undeploy chainsaw
 .PHONY: prepare-e2e
 prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
 
-.PHONY: prepare-e2e-with-featuregates
-prepare-e2e-with-featuregates: chainsaw enable-operator-featuregates prepare-e2e
-
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
 	$(OPERATOR_SDK) scorecard -w=5m bundle || (echo "scorecard test failed" && exit 1)
@@ -322,10 +314,6 @@ endif
 .PHONY: install-metrics-server
 install-metrics-server:
 	./hack/install-metrics-server.sh
-
-.PHONY: install-prometheus-operator
-install-prometheus-operator:
-	./hack/install-prometheus-operator.sh
 
 # This only installs the CRDs Target Allocator supports
 .PHONY: install-targetallocator-prometheus-crds

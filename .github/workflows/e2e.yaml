@@ -24,7 +24,6 @@ jobs:
          - "1.29"
        group:
          - e2e
-         - e2e-automatic-rbac
          - e2e-autoscale
          - e2e-instrumentation
          - e2e-opampbridge
@@ -39,7 +38,8 @@ jobs:
            setup: "add-operator-arg OPERATOR_ARG=--enable-multi-instrumentation prepare-e2e"
          - group: e2e-metadata-filters
            setup: "add-operator-arg OPERATOR_ARG='--annotations-filter=*filter.out --labels=*filter.out' prepare-e2e"
-
+         - group: e2e-automatic-rbac
+           setup: "add-rbac-permissions-to-operator prepare-e2e"
     steps:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v4
