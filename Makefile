@@ -171,7 +171,7 @@ release-artifacts: set-image-controller
 # Generate manifests e.g. CRD, RBAC etc.
 .PHONY: manifests
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=$(MANIFEST_DIR)
 
 # Run tests
 # setup-envtest uses KUBEBUILDER_ASSETS which points to a directory with binaries (api-server, etcd and kubectl)
@@ -475,8 +475,11 @@ bundle-push:
 api-docs: crdoc kustomize
 	@{ \
 	set -e ;\
+	TMP_MANIFEST_DIR=$$(mktemp -d) ; \
+	cp -r config/crd/* $$TMP_MANIFEST_DIR; \
+	$(MAKE) CRD_OPTIONS=$(CRD_OPTIONS),maxDescLen=1200 MANIFEST_DIR=$$TMP_MANIFEST_DIR/bases manifests ;\
 	TMP_DIR=$$(mktemp -d) ; \
-	$(KUSTOMIZE) build config/crd -o $$TMP_DIR/crd-output.yaml ;\
+	$(KUSTOMIZE) build $$TMP_MANIFEST_DIR -o $$TMP_DIR/crd-output.yaml ;\
 	$(CRDOC) --resources $$TMP_DIR/crd-output.yaml --output docs/api.md ;\
 	}
 
