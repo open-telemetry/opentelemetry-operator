@@ -519,8 +519,8 @@ chlog-insert-components:
 	@echo "* [Go - ${AUTO_INSTRUMENTATION_GO_VERSION}](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/${AUTO_INSTRUMENTATION_GO_VERSION})" >>components.md
 	@echo "* [ApacheHTTPD - ${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION})" >>components.md
 	@echo "* [Nginx - ${AUTO_INSTRUMENTATION_NGINX_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${AUTO_INSTRUMENTATION_NGINX_VERSION})" >>components.md
-	@sed -i '' '/<!-- next version -->/rcomponents.md' CHANGELOG.md
-	@sed -i '' '/<!-- next version -->/G' CHANGELOG.md
+	@sed -i '/<!-- next version -->/r ./components.md' CHANGELOG.md
+	@sed -i '/<!-- next version -->/G' CHANGELOG.md
 	@rm components.md
 
 .PHONY: opm
