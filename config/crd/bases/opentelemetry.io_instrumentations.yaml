@@ -917,6 +917,25 @@ spec:
                       - name
                       type: object
                     type: array
+                  extensions:
+                    description: |-
+                      Extensions defines java specific extensions.
+                      All extensions are copied to a single directory; if a JAR with the same name exists, it will be overwritten.
+                    items:
+                      properties:
+                        dir:
+                          description: Dir is a directory with extensions auto-instrumentation
+                            JAR.
+                          type: string
+                        image:
+                          description: Image is a container image with extensions
+                            auto-instrumentation JAR.
+                          type: string
+                      required:
+                      - dir
+                      - image
+                      type: object
+                    type: array
                   image:
                     description: Image is a container image with javaagent auto-instrumentation
                       JAR.
