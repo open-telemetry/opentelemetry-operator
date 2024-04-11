@@ -1971,6 +1971,14 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecjavaextensionsindex">extensions</a></b></td>
+        <td>[]object</td>
+        <td>
+          Extensions defines java specific extensions.
+All extensions are copied to a single directory; if a JAR with the same name exists, it will be overwritten.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
@@ -2254,6 +2262,40 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
           Specify whether the Secret or its key must be defined<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.java.extensions[index]
+<sup><sup>[↩ Parent](#instrumentationspecjava)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>dir</b></td>
+        <td>string</td>
+        <td>
+          Dir is a directory with extensions auto-instrumentation JAR.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>image</b></td>
+        <td>string</td>
+        <td>
+          Image is a container image with extensions auto-instrumentation JAR.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
