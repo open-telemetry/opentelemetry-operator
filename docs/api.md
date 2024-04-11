@@ -1910,7 +1910,8 @@ Java defines configuration for java auto-instrumentation.
         <td><b><a href="#instrumentationspecjavaextensionsindex">extensions</a></b></td>
         <td>[]object</td>
         <td>
-          <br/>
+          Extensions defines java specific extensions.
+All extensions are copied to a single directory; if a JAR with the same name exists, it will be overwritten.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2215,14 +2216,14 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         <td><b>dir</b></td>
         <td>string</td>
         <td>
-          <br/>
+          Dir is a directory with extensions auto-instrumentation JAR.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
-          <br/>
+          Image is a container image with extensions auto-instrumentation JAR.<br/>
         </td>
         <td>true</td>
       </tr></tbody>
