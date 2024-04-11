@@ -50,15 +50,19 @@ func (o *K8sAttributesParser) ParserName() string {
 }
 
 func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
-	var prs []rbacv1.PolicyRule
-
-	// This one needs to be added always
-	policy := rbacv1.PolicyRule{
-		APIGroups: []string{""},
-		Resources: []string{"pods", "namespaces"},
-		Verbs:     []string{"get", "watch", "list"},
+	// These policies need to be added always
+	var prs []rbacv1.PolicyRule = []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{""},
+			Resources: []string{"pods", "namespaces"},
+			Verbs:     []string{"get", "watch", "list"},
+		},
+		{
+			APIGroups: []string{"apps"},
+			Resources: []string{"replicasets"},
+			Verbs:     []string{"get", "watch", "list"},
+		},
 	}
-	prs = append(prs, policy)
 
 	extractCfg, ok := o.config["extract"]
 	if !ok {
@@ -77,20 +81,7 @@ func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
 
 	for _, m := range metadata {
 		metadataField := fmt.Sprint(m)
-		if metadataField == "k8s.deployment.uid" || metadataField == "k8s.deployment.name" {
-			prs = append(prs,
-				rbacv1.PolicyRule{
-					APIGroups: []string{"apps"},
-					Resources: []string{"replicasets"},
-					Verbs:     []string{"get", "watch", "list"},
-				},
-				rbacv1.PolicyRule{
-					APIGroups: []string{"extensions"},
-					Resources: []string{"replicasets"},
-					Verbs:     []string{"get", "watch", "list"},
-				},
-			)
-		} else if strings.Contains(metadataField, "k8s.node") {
+		if strings.Contains(metadataField, "k8s.node") {
 			prs = append(prs,
 				rbacv1.PolicyRule{
 					APIGroups: []string{""},
