@@ -497,7 +497,7 @@ spec:
                 - --zap-time-encoding=rfc3339nano
                 - --feature-gates=+operator.autoinstrumentation.go
                 - --enable-nginx-instrumentation=true
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.97.1-12-gff13fe5
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.98.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
