@@ -1238,9 +1238,6 @@ spec:
                     type: integer
                 type: object
               config:
-                description: Config is the raw YAML to be used as the collector's
-                  configuration. Refer to the OpenTelemetry Collector documentation
-                  for details.
                 type: string
               configmaps:
                 items:
@@ -2304,8 +2301,6 @@ spec:
                     appProtocol:
                       type: string
                     hostPort:
-                      description: Allows defining which port to bind to the host
-                        in the Container.
                       format: int32
                       type: integer
                     name:
@@ -6600,6 +6595,9 @@ spec:
                   properties:
                     appProtocol:
                       type: string
+                    hostPort:
+                      format: int32
+                      type: integer
                     name:
                       type: string
                     nodePort:
