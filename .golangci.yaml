@@ -23,7 +23,7 @@ linters-settings:
       - kilometres
   govet:
     # report about shadowed variables
-    check-shadowing: true
+    shadow: true
 
     # settings per analyzer
     settings:

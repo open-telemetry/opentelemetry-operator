@@ -150,10 +150,9 @@ func TestRemoveSidecar(t *testing.T) {
 	}
 
 	// test
-	changed, err := remove(pod)
+	changed := remove(pod)
 
 	// verify
-	assert.NoError(t, err)
 	assert.Len(t, changed.Spec.Containers, 1)
 }
 
@@ -168,10 +167,9 @@ func TestRemoveNonExistingSidecar(t *testing.T) {
 	}
 
 	// test
-	changed, err := remove(pod)
+	changed := remove(pod)
 
 	// verify
-	assert.NoError(t, err)
 	assert.Len(t, changed.Spec.Containers, 1)
 }
 
