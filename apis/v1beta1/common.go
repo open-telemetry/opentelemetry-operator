@@ -225,5 +225,5 @@ type OpenTelemetryCommonFields struct {
 	AdditionalContainers []v1.Container `json:"additionalContainers,omitempty"`
 	//PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
 	//https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1PodDNSConfig.md
-	PodDNSConfig *v1.PodDNSConfig `json:"podDnsConfig,omitempty"`
+	PodDNSConfig v1.PodDNSConfig `json:"podDnsConfig,omitempty"`
 }
