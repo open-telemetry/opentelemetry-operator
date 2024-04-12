@@ -59,7 +59,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 					Containers:                []corev1.Container{Container(params.Config, params.Log, params.OpAMPBridge)},
 					Volumes:                   Volumes(params.Config, params.OpAMPBridge),
 					DNSPolicy:                 getDNSPolicy(params.OpAMPBridge),
-					DNSConfig:                 params.OpAMPBridge.Spec.PodDNSConfig,
+					DNSConfig:                 &params.OpAMPBridge.Spec.PodDNSConfig,
 					HostNetwork:               params.OpAMPBridge.Spec.HostNetwork,
 					Tolerations:               params.OpAMPBridge.Spec.Tolerations,
 					NodeSelector:              params.OpAMPBridge.Spec.NodeSelector,

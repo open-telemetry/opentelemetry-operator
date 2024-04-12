@@ -717,7 +717,7 @@ func TestDeploymentDNSConfig(t *testing.T) {
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				PodDNSConfig: v1.PodDNSConfig{
 					Nameservers: []string{"8.8.8.8"},
-					Searches: []string{"my.dns.search.suffix"},
+					Searches:    []string{"my.dns.search.suffix"},
 				},
 			},
 		},
