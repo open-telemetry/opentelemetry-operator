@@ -4,7 +4,7 @@ Steps to release a new version of the OpenTelemetry Operator:
 
 1. Create a `Prepare relese x.y.z` pull request with the following content:
    1. Set the version you're releasing as an environment variable for convenience: `export VERSION=0.n+1.0`
-   2. Update `versions.txt`
+   1. Update `versions.txt`
       - Operator, target allocator and opamp-bridge should be `$VERSION`.
       - OpenTelemetry Collector should be the latest collector version. The `major.minor` should typically match, with the patch portion being possibly different.
       - The `autoinstrumentation-*` versions should match the latest supported versions in `autoinstrumentation/`.
