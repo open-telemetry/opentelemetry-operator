@@ -16,6 +16,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
@@ -106,6 +107,50 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
+// RemoveRegexFromRelabelAction is needed specifically for keepequal/dropequal actions because even though the user doesn't specify the
+// regex field for these actions the unmarshalling implementations of prometheus adds back the default regex fields
+// which in turn causes the receiver to error out since the unmarshaling of the json response doesn't expect anything in the regex fields
+// for these actions. Adding this as a fix until the original issue with prometheus unmarshaling is fixed -
+// https://github.com/prometheus/prometheus/issues/12534
+func RemoveRegexFromRelabelAction(jsonConfig []byte) ([]byte, error) {
+	var jobToScrapeConfig map[string]interface{}
+	err := json.Unmarshal(jsonConfig, &jobToScrapeConfig)
+	if err != nil {
+		return nil, err
+	}
+	for _, scrapeConfig := range jobToScrapeConfig {
+		scrapeConfig := scrapeConfig.(map[string]interface{})
+		if scrapeConfig["relabel_configs"] != nil {
+			relabelConfigs := scrapeConfig["relabel_configs"].([]interface{})
+			for _, relabelConfig := range relabelConfigs {
+				relabelConfig := relabelConfig.(map[string]interface{})
+				// Dropping regex key from the map since unmarshalling this on the client(metrics_receiver.go) results in error
+				// because of the bug here - https://github.com/prometheus/prometheus/issues/12534
+				if relabelConfig["action"] == "keepequal" || relabelConfig["action"] == "dropequal" {
+					delete(relabelConfig, "regex")
+				}
+			}
+		}
+		if scrapeConfig["metric_relabel_configs"] != nil {
+			metricRelabelConfigs := scrapeConfig["metric_relabel_configs"].([]interface{})
+			for _, metricRelabelConfig := range metricRelabelConfigs {
+				metricRelabelConfig := metricRelabelConfig.(map[string]interface{})
+				// Dropping regex key from the map since unmarshalling this on the client(metrics_receiver.go) results in error
+				// because of the bug here - https://github.com/prometheus/prometheus/issues/12534
+				if metricRelabelConfig["action"] == "keepequal" || metricRelabelConfig["action"] == "dropequal" {
+					delete(metricRelabelConfig, "regex")
+				}
+			}
+		}
+	}
+
+	jsonConfigNew, err := json.Marshal(jobToScrapeConfig)
+	if err != nil {
+		return nil, err
+	}
+	return jsonConfigNew, nil
+}
+
 // UpdateScrapeConfigResponse updates the scrape config response. The target allocator first marshals these
 // configurations such that the underlying prometheus marshaling is used. After that, the YAML is converted
 // in to a JSON format for consumers to use.
@@ -120,8 +165,14 @@ func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.Scrap
 	if err != nil {
 		return err
 	}
+
+	jsonConfigNew, err := RemoveRegexFromRelabelAction(jsonConfig)
+	if err != nil {
+		return err
+	}
+
 	s.mtx.Lock()
-	s.scrapeConfigResponse = jsonConfig
+	s.scrapeConfigResponse = jsonConfigNew
 	s.mtx.Unlock()
 	return nil
 }
