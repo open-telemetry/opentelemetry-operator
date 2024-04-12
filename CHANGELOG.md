@@ -11,6 +11,7 @@
 
 ### 🧰 Bug fixes 🧰
 
+- `target allocator`: Fix for keepequal/dropequal action (#2793)
 - `collector`: Create automatically the RBAC permissions to manage replicasets when using the k8sattributesprocessor (#2823)
 - `documentation`: The description for some fields was truncated in the documentation. (#2563)
 
