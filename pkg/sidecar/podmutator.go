@@ -66,7 +66,7 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	// is the annotation value 'false'? if so, we need a pod without the sidecar (ie, remove if exists)
 	if strings.EqualFold(annValue, "false") {
 		logger.V(1).Info("pod explicitly refuses sidecar injection, attempting to remove sidecar if it exists")
-		return remove(pod)
+		return remove(pod), nil
 	}
 
 	// from this point and on, a sidecar is wanted

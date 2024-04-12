@@ -21,13 +21,11 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-
 	"github.com/stretchr/testify/assert"
-
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
 func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
