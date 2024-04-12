@@ -15,8 +15,6 @@ linters-settings:
     - standard
     - default
     - prefix(github.com/open-telemetry/opentelemetry-operator)
-  maligned:
-    suggest-new: true
   misspell:
     locale: US
     ignore-words:
@@ -27,9 +25,6 @@ linters-settings:
       - kilometre
       - kilometres
   govet:
-    # report about shadowed variables
-    shadow: true
-
     # settings per analyzer
     settings:
       printf: # analyzer name, run `go tool vet help` to see all analyzers
@@ -46,7 +41,7 @@ linters-settings:
   gofmt:
     simplify: true
   revive:
-    min-confidence: 0.8
+    confidence: 0.8
   
   depguard:
     rules:
