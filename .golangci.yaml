@@ -10,6 +10,11 @@ linters-settings:
     template-path: header.txt
   goimports:
     local-prefixes: github.com/open-telemetry/opentelemetry-operator
+  gci:
+    sections:
+    - standard
+    - default
+    - prefix(github.com/open-telemetry/opentelemetry-operator)
   maligned:
     suggest-new: true
   misspell:
@@ -52,6 +57,12 @@ linters-settings:
           - pkg: github.com/pkg/errors
             desc: "Use 'errors' or 'fmt' instead of github.com/pkg/errors"
 
+issues:
+  exclude-rules:
+    - linters:
+        - gci
+      source: "// \\+kubebuilder"
+
 linters:
   enable:
     - goheader
@@ -71,3 +82,4 @@ linters:
     - depguard
     - errcheck
     - errorlint
+    - gci

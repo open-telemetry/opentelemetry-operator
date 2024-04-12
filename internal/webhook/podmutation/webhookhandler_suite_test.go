@@ -42,7 +42,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
-	// +kubebuilder:scaffold:imports
 )
 
 var (
