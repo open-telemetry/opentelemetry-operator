@@ -57,11 +57,6 @@ config:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
 filter_strategy: relabel-config
-label_selector:
-  app.kubernetes.io/component: opentelemetry-collector
-  app.kubernetes.io/instance: default.my-instance
-  app.kubernetes.io/managed-by: opentelemetry-operator
-  app.kubernetes.io/part-of: opentelemetry
 prometheus_cr:
   pod_monitor_selector: null
   service_monitor_selector: null
@@ -106,13 +101,6 @@ config:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
 filter_strategy: relabel-config
-label_selector:
-  app.kubernetes.io/component: opentelemetry-collector
-  app.kubernetes.io/instance: default.my-instance
-  app.kubernetes.io/managed-by: opentelemetry-operator
-  app.kubernetes.io/part-of: opentelemetry
-pod_monitor_selector:
-  release: my-instance
 prometheus_cr:
   pod_monitor_selector:
     matchlabels:
@@ -122,8 +110,6 @@ prometheus_cr:
     matchlabels:
       release: my-instance
     matchexpressions: []
-service_monitor_selector:
-  release: my-instance
 `,
 		}
 		targetAllocator := targetAllocatorInstance()
@@ -172,11 +158,6 @@ config:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
 filter_strategy: relabel-config
-label_selector:
-  app.kubernetes.io/component: opentelemetry-collector
-  app.kubernetes.io/instance: default.my-instance
-  app.kubernetes.io/managed-by: opentelemetry-operator
-  app.kubernetes.io/part-of: opentelemetry
 prometheus_cr:
   pod_monitor_selector: null
   scrape_interval: 30s
