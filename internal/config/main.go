@@ -75,6 +75,7 @@ func New(opts ...Option) Config {
 		operatorOpAMPBridgeConfigMapEntry: defaultOperatorOpAMPBridgeConfigMapEntry,
 		logger:                            logf.Log.WithName("config"),
 		version:                           version.Get(),
+		enableJavaInstrumentation:         true,
 	}
 	for _, opt := range opts {
 		opt(&o)
