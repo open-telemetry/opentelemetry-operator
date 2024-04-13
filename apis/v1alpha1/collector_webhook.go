@@ -32,7 +32,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
@@ -365,7 +364,7 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 	if err != nil {
 		return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 	}
-	err = ta.ValidatePromConfig(promCfg, r.Spec.TargetAllocator.Enabled, featuregate.EnableTargetAllocatorRewrite.IsEnabled())
+	err = ta.ValidatePromConfig(promCfg, r.Spec.TargetAllocator.Enabled)
 	if err != nil {
 		return nil, fmt.Errorf("the OpenTelemetry Spec Prometheus configuration is incorrect, %w", err)
 	}
