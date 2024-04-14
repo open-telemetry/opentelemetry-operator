@@ -245,6 +245,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(),
 		},
 		{
 			name: "javaagent injection multiple containers, true",
@@ -540,6 +541,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(),
 		},
 		{
 			name: "javaagent injection feature gate disabled",
