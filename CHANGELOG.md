@@ -2,6 +2,31 @@
 
 <!-- next version -->
 
+## 0.98.0
+
+### 💡 Enhancements 💡
+
+- `operator`: Add support for adding/extending otc-collector container ports. (#2763)
+- `auto-instrumentation`: Support Java auto-instrumentation extensions. (#1785)
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: Fix for keepequal/dropequal action (#2793)
+- `collector`: Create automatically the RBAC permissions to manage replicasets when using the k8sattributesprocessor (#2823)
+- `documentation`: The description for some fields was truncated in the documentation. (#2563)
+
+### Components
+
+* [OpenTelemetry Collector - v0.98.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.98.0)
+* [OpenTelemetry Contrib - v0.98.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.98.0)
+* [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/{AUTO_INSTRUMENTATION_DOTNET_VERSION})
+* [Node.JS - v0.49.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.49.1)
+* [Python - v0.44b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.44b0)
+* [Go - v0.10.1-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.10.1-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.97.1
 
 ### 🧰 Bug fixes 🧰

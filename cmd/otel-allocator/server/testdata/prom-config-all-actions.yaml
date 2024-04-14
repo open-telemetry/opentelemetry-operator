@@ -1,0 +1,175 @@
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/instance: default.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+prometheus_cr:
+  scrape_interval: 60s
+config:
+  scrape_configs:
+  - job_name: job-replace
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: "prometheus-reference-app"
+      - source_labels: [__meta_kubernetes_pod_label_test]
+        action: replace
+        regex: "test$1replacement"
+        replacement: "myreplacement$$1"
+        target_label: "mytarget"
+    metric_relabel_configs:
+      - action: replace
+        source_labels: [city]
+        separator: ","
+        regex: (ci.*)(name$)
+        replacement: "test_newest_1_$1"
+        target_label: city
+  - job_name: job-lowercase
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: "prometheus-reference-app"
+      - source_labels: [__meta_kubernetes_pod_label_test]
+        action: lowercase
+        target_label: "mytarget"
+    metric_relabel_configs:
+      - action: lowercase
+        source_labels: [city]
+        target_label: city
+  - job_name: job-uppercase
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: "prometheus-reference-app"
+      - source_labels: [__meta_kubernetes_pod_label_test]
+        action: uppercase
+        target_label: "mytarget"
+    metric_relabel_configs:
+      - action: uppercase
+        source_labels: [city]
+        target_label: city
+  - job_name: job-keep
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: "prometheus-reference-app"
+    metric_relabel_configs:
+      - action: keep
+        source_labels: [city]
+        separator: ","
+        regex: (ci.*)(name$)
+  - job_name: job-drop
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: "prometheus-reference-app"
+      - source_labels: [__meta_kubernetes_pod_label_droplabel]
+        action: drop
+        regex: "prometheus-reference-app"
+    metric_relabel_configs:
+      - action: drop
+        source_labels: [city]
+        regex: (ci.*)(name$)
+  - job_name: job-keepequal
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keepequal
+        target_label: __meta_kubernetes_pod_label_mylabel
+    metric_relabel_configs:
+      - action: keepequal
+        source_labels: [city]
+        target_label: city
+  - job_name: job-dropequal
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: "prometheus-reference-app"
+      - source_labels: [__meta_kubernetes_pod_label_dropequallabel]
+        action: dropequal
+        target_label: "test"
+    metric_relabel_configs:
+      - action: dropequal
+        source_labels: [citytest]
+        target_label: city
+  - job_name: job-hashmod
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: "prometheus-reference-app"
+      - source_labels: [__meta_kubernetes_pod_label_hashmod]
+        action: hashmod
+        modulus: 5
+        regex: "prometheus-reference-app"
+        target_label: city
+    metric_relabel_configs:
+      - action: hashmod
+        modulus: 5
+        source_labels: [city]
+        regex: (ci.*)(name$)
+        target_label: city
+  - job_name: job-labelmap
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: "prometheus-reference-app"
+      - source_labels: [__meta_kubernetes_pod_label_hashmod]
+        action: labelmap
+        regex: "prometheus-reference-app"
+        target_label: city
+    metric_relabel_configs:
+      - action: labelmap
+        source_labels: [city]
+        regex: (ci.*)(name$)
+        target_label: city
+  - job_name: job-labeldrop
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: "prometheus-reference-app"
+      - action: labeldrop
+        regex: "prometheus-reference-app"
+    metric_relabel_configs:
+      - action: labeldrop
+        regex: (ci.*)(name$)
+  - job_name: job-labelkeep
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: "prometheus-reference-app"
+      - action: labelkeep
+        regex: "prometheus-reference-app"
+    metric_relabel_configs:
+      - action: labelkeep
+        regex: (ci.*)(name$$)

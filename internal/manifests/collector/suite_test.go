@@ -78,15 +78,19 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 
 					Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
-					Ports: []v1.ServicePort{{
-						Name: "web",
-						Port: 80,
-						TargetPort: intstr.IntOrString{
-							Type:   intstr.Int,
-							IntVal: 80,
+					Ports: []v1beta1.PortsSpec{
+						{
+							ServicePort: v1.ServicePort{
+								Name: "web",
+								Port: 80,
+								TargetPort: intstr.IntOrString{
+									Type:   intstr.Int,
+									IntVal: 80,
+								},
+								NodePort: 0,
+							},
 						},
-						NodePort: 0,
-					}},
+					},
 					Replicas: &replicas,
 				},
 				Config: cfg,
@@ -139,15 +143,19 @@ func newParams(taContainerImage string, file string, options ...config.Option) (
 			},
 			Spec: v1beta1.OpenTelemetryCollectorSpec{
 				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-					Ports: []v1.ServicePort{{
-						Name: "web",
-						Port: 80,
-						TargetPort: intstr.IntOrString{
-							Type:   intstr.Int,
-							IntVal: 80,
+					Ports: []v1beta1.PortsSpec{
+						{
+							ServicePort: v1.ServicePort{
+								Name: "web",
+								Port: 80,
+								TargetPort: intstr.IntOrString{
+									Type:   intstr.Int,
+									IntVal: 80,
+								},
+								NodePort: 0,
+							},
 						},
-						NodePort: 0,
-					}},
+					},
 
 					Replicas: &replicas,
 				},

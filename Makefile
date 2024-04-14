@@ -39,7 +39,9 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
-CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=200"
+MANIFEST_DIR ?= config/crd/bases
+# kubectl apply does not work on large CRDs.
+CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=0"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -171,7 +173,7 @@ release-artifacts: set-image-controller
 # Generate manifests e.g. CRD, RBAC etc.
 .PHONY: manifests
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=${MANIFEST_DIR}
 
 # Run tests
 # setup-envtest uses KUBEBUILDER_ASSETS which points to a directory with binaries (api-server, etcd and kubectl)
@@ -377,7 +379,7 @@ CHAINSAW ?= $(LOCALBIN)/chainsaw
 
 KUSTOMIZE_VERSION ?= v5.0.3
 CONTROLLER_TOOLS_VERSION ?= v0.14.0
-GOLANGCI_LINT_VERSION ?= v1.54.0
+GOLANGCI_LINT_VERSION ?= v1.57.2
 KIND_VERSION ?= v0.20.0
 CHAINSAW_VERSION ?= v0.1.7
 
@@ -475,8 +477,11 @@ bundle-push:
 api-docs: crdoc kustomize
 	@{ \
 	set -e ;\
+	TMP_MANIFEST_DIR=$$(mktemp -d) ; \
+	cp -r config/crd/* $$TMP_MANIFEST_DIR; \
+	$(MAKE) CRD_OPTIONS=$(CRD_OPTIONS),maxDescLen=1200 MANIFEST_DIR=$$TMP_MANIFEST_DIR/bases manifests ;\
 	TMP_DIR=$$(mktemp -d) ; \
-	$(KUSTOMIZE) build config/crd -o $$TMP_DIR/crd-output.yaml ;\
+	$(KUSTOMIZE) build $$TMP_MANIFEST_DIR -o $$TMP_DIR/crd-output.yaml ;\
 	$(CRDOC) --resources $$TMP_DIR/crd-output.yaml --output docs/api.md ;\
 	}
 
@@ -516,8 +521,8 @@ chlog-insert-components:
 	@echo "* [Go - ${AUTO_INSTRUMENTATION_GO_VERSION}](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/${AUTO_INSTRUMENTATION_GO_VERSION})" >>components.md
 	@echo "* [ApacheHTTPD - ${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION})" >>components.md
 	@echo "* [Nginx - ${AUTO_INSTRUMENTATION_NGINX_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${AUTO_INSTRUMENTATION_NGINX_VERSION})" >>components.md
-	@sed -i '' '/<!-- next version -->/rcomponents.md' CHANGELOG.md
-	@sed -i '' '/<!-- next version -->/G' CHANGELOG.md
+	@sed -i '/<!-- next version -->/r ./components.md' CHANGELOG.md
+	@sed -i '/<!-- next version -->/G' CHANGELOG.md
 	@rm components.md
 
 .PHONY: opm

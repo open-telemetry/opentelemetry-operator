@@ -38,9 +38,6 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	taConfig := make(map[interface{}]interface{})
 	prometheusCRConfig := make(map[interface{}]interface{})
 	taConfig["collector_selector"] = taSpec.CollectorSelector
-	// The below instruction is here for compatibility with the previous target allocator version
-	// TODO: Drop it after 3 more versions
-	taConfig["label_selector"] = taSpec.CollectorSelector.MatchLabels
 
 	// Add scrape configs if present
 	if instance.Spec.ScrapeConfigs != nil {
@@ -62,19 +59,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 
 	prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
 
-	// The below instruction is here for compatibility with the previous target allocator version
-	// TODO: Drop it after 3 more versions
-	if taSpec.PrometheusCR.ServiceMonitorSelector != nil {
-		taConfig["service_monitor_selector"] = &taSpec.PrometheusCR.ServiceMonitorSelector.MatchLabels
-	}
-
 	prometheusCRConfig["pod_monitor_selector"] = taSpec.PrometheusCR.PodMonitorSelector
-
-	// The below instruction is here for compatibility with the previous target allocator version
-	// TODO: Drop it after 3 more versions
-	if taSpec.PrometheusCR.PodMonitorSelector != nil {
-		taConfig["pod_monitor_selector"] = &taSpec.PrometheusCR.PodMonitorSelector.MatchLabels
-	}
 
 	if len(prometheusCRConfig) > 0 {
 		taConfig["prometheus_cr"] = prometheusCRConfig

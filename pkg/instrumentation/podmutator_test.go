@@ -184,7 +184,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaJVMArgument,
+									Value: javaAgent,
 								},
 								{
 									Name:  "OTEL_TRACES_EXPORTER",
@@ -388,7 +388,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaJVMArgument,
+									Value: javaAgent,
 								},
 								{
 									Name:  "OTEL_TRACES_EXPORTER",
@@ -479,7 +479,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaJVMArgument,
+									Value: javaAgent,
 								},
 								{
 									Name:  "OTEL_TRACES_EXPORTER",
@@ -3815,7 +3815,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaJVMArgument,
+									Value: javaAgent,
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -3878,7 +3878,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaJVMArgument,
+									Value: javaAgent,
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -4599,7 +4599,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaJVMArgument,
+									Value: javaAgent,
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -4662,7 +4662,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaJVMArgument,
+									Value: javaAgent,
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",

@@ -34,6 +34,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
+	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
@@ -608,6 +609,63 @@ func TestServer_Readiness(t *testing.T) {
 			result := w.Result()
 
 			assert.Equal(t, tc.expectedCode, result.StatusCode)
+		})
+	}
+}
+
+func TestServer_ScrapeConfigRespose(t *testing.T) {
+	tests := []struct {
+		description  string
+		filePath     string
+		expectedCode int
+	}{
+		{
+			description:  "Jobs with all actions",
+			filePath:     "./testdata/prom-config-all-actions.yaml",
+			expectedCode: http.StatusOK,
+		},
+		{
+			description:  "Jobs with config combinations",
+			filePath:     "./testdata/prom-config-test.yaml",
+			expectedCode: http.StatusOK,
+		},
+		{
+			description:  "Jobs with no config",
+			filePath:     "./testdata/prom-no-config.yaml",
+			expectedCode: http.StatusOK,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			s := NewServer(logger, nil, listenAddr)
+
+			allocCfg := allocatorconfig.CreateDefaultConfig()
+			err := allocatorconfig.LoadFromFile(tc.filePath, &allocCfg)
+			require.NoError(t, err)
+
+			jobToScrapeConfig := make(map[string]*promconfig.ScrapeConfig)
+
+			for _, scrapeConfig := range allocCfg.PromConfig.ScrapeConfigs {
+				jobToScrapeConfig[scrapeConfig.JobName] = scrapeConfig
+			}
+
+			assert.NoError(t, s.UpdateScrapeConfigResponse(jobToScrapeConfig))
+
+			request := httptest.NewRequest("GET", "/scrape_configs", nil)
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, tc.expectedCode, result.StatusCode)
+			bodyBytes, err := io.ReadAll(result.Body)
+			require.NoError(t, err)
+
+			// Checking to make sure yaml unmarshaling doesn't result in errors for responses containing any supported prometheus relabel action
+			scrapeConfigs := map[string]*promconfig.ScrapeConfig{}
+			err = yaml.Unmarshal(bodyBytes, scrapeConfigs)
+			require.NoError(t, err)
 		})
 	}
 }
