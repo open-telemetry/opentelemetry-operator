@@ -20,13 +20,12 @@ import (
 	"time"
 
 	commonconfig "github.com/prometheus/common/config"
-	promconfig "github.com/prometheus/prometheus/config"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/prometheus/common/model"
+	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/file"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var defaultScrapeProtocols = []promconfig.ScrapeProtocol{
@@ -237,6 +236,7 @@ func TestValidateConfig(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			err := ValidateConfig(&tc.fileConfig)
 			assert.Equal(t, tc.expectedErr, err)

@@ -21,6 +21,7 @@ import (
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/require"
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	go_yaml "gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -30,8 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -1373,11 +1372,6 @@ config:
       - __meta_service_name
       target_label: instance
 filter_strategy: relabel-config
-label_selector:
-  app.kubernetes.io/component: opentelemetry-collector
-  app.kubernetes.io/instance: test.test
-  app.kubernetes.io/managed-by: opentelemetry-operator
-  app.kubernetes.io/part-of: opentelemetry
 prometheus_cr:
   pod_monitor_selector: null
   service_monitor_selector: null
@@ -1413,7 +1407,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "ba38217bad7e399f1210b90a464252159a8c4e17060c246799b8e4cb29a6f18f",
+									"opentelemetry-targetallocator-config/hash": "dd0ff440929239a362ebc85256b89e109d37bd2c77b400bd2039582cbda56be5",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1772,11 +1766,6 @@ config:
       - __meta_service_name
       target_label: instance
 filter_strategy: relabel-config
-label_selector:
-  app.kubernetes.io/component: opentelemetry-collector
-  app.kubernetes.io/instance: test.test
-  app.kubernetes.io/managed-by: opentelemetry-operator
-  app.kubernetes.io/part-of: opentelemetry
 prometheus_cr:
   pod_monitor_selector: null
   service_monitor_selector: null
@@ -1812,7 +1801,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "ba38217bad7e399f1210b90a464252159a8c4e17060c246799b8e4cb29a6f18f",
+									"opentelemetry-targetallocator-config/hash": "dd0ff440929239a362ebc85256b89e109d37bd2c77b400bd2039582cbda56be5",
 								},
 							},
 							Spec: corev1.PodSpec{
