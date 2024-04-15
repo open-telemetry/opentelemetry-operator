@@ -184,3 +184,29 @@ service:
 
 	assert.Equal(t, expected, yamlCollector)
 }
+
+func TestGetTelemetryFromYAML(t *testing.T) {
+	collectorYaml, err := os.ReadFile("./testdata/otelcol-demo.yaml")
+	require.NoError(t, err)
+
+	cfg := &Config{}
+	err = go_yaml.Unmarshal(collectorYaml, cfg)
+	require.NoError(t, err)
+	telemetry := &Telemetry{
+		Metrics: MetricsConfig{
+			Level:   "detailed",
+			Address: "0.0.0.0:8888",
+		},
+	}
+	assert.Equal(t, telemetry, cfg.Service.GetTelemetry())
+}
+
+func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
+	collectorYaml, err := os.ReadFile("./testdata/otelcol-couchbase.yaml")
+	require.NoError(t, err)
+
+	cfg := &Config{}
+	err = go_yaml.Unmarshal(collectorYaml, cfg)
+	require.NoError(t, err)
+	assert.Nil(t, cfg.Service.GetTelemetry())
+}

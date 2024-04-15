@@ -64,18 +64,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[monitoringLabel] = valueExists
 
-	out, err := params.OtelCol.Spec.Config.Yaml()
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := adapters.ConfigFromString(out)
-	if err != nil {
-		params.Log.Error(err, "couldn't extract the configuration")
-		return nil, err
-	}
-
-	metricsPort, err := adapters.ConfigToMetricsPort(params.Log, c)
+	metricsPort, err := adapters.ConfigToMetricsPort(params.OtelCol.Spec.Config.Service)
 	if err != nil {
 		return nil, err
 	}

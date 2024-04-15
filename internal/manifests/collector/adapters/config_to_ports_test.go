@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
@@ -210,34 +211,33 @@ func TestParserFailed(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, mockParserCalled)
 }
-
 func TestConfigToMetricsPort(t *testing.T) {
-	t.Run("custom port specified", func(t *testing.T) {
-		config := map[interface{}]interface{}{
-			"service": map[interface{}]interface{}{
-				"telemetry": map[interface{}]interface{}{
-					"metrics": map[interface{}]interface{}{
-						"address": "0.0.0.0:9090",
+
+	for _, tt := range []struct {
+		desc         string
+		expectedPort int32
+		config       v1beta1.Service
+	}{
+		{
+			"custom port",
+			9090,
+			v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "0.0.0.0:9090",
+						},
 					},
 				},
 			},
-		}
-
-		port, err := adapters.ConfigToMetricsPort(logger, config)
-		assert.NoError(t, err)
-		assert.Equal(t, int32(9090), port)
-	})
-
-	for _, tt := range []struct {
-		desc   string
-		config map[interface{}]interface{}
-	}{
+		},
 		{
 			"bad address",
-			map[interface{}]interface{}{
-				"service": map[interface{}]interface{}{
-					"telemetry": map[interface{}]interface{}{
-						"metrics": map[interface{}]interface{}{
+			8888,
+			v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
 							"address": "0.0.0.0",
 						},
 					},
@@ -246,10 +246,11 @@ func TestConfigToMetricsPort(t *testing.T) {
 		},
 		{
 			"missing address",
-			map[interface{}]interface{}{
-				"service": map[interface{}]interface{}{
-					"telemetry": map[interface{}]interface{}{
-						"metrics": map[interface{}]interface{}{
+			8888,
+			v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
 							"level": "detailed",
 						},
 					},
@@ -258,24 +259,22 @@ func TestConfigToMetricsPort(t *testing.T) {
 		},
 		{
 			"missing metrics",
-			map[interface{}]interface{}{
-				"service": map[interface{}]interface{}{
-					"telemetry": map[interface{}]interface{}{},
-				},
+			8888,
+			v1beta1.Service{
+				Telemetry: &v1beta1.AnyConfig{},
 			},
 		},
 		{
 			"missing telemetry",
-			map[interface{}]interface{}{
-				"service": map[interface{}]interface{}{},
-			},
+			8888,
+			v1beta1.Service{},
 		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			// these are acceptable failures, we return to the collector's default metric port
-			port, err := adapters.ConfigToMetricsPort(logger, tt.config)
+			port, err := adapters.ConfigToMetricsPort(tt.config)
 			assert.NoError(t, err)
-			assert.Equal(t, int32(8888), port)
+			assert.Equal(t, tt.expectedPort, port)
 		})
 	}
 }
