@@ -25,6 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/distros"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
 var _ conversion.Convertible = &OpenTelemetryCollector{}
@@ -94,7 +96,7 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 				PodSecurityContext:            copy.Spec.PodSecurityContext,
 				PodAnnotations:                copy.Spec.PodAnnotations,
 				ServiceAccount:                copy.Spec.ServiceAccount,
-				Image:                         copy.Spec.Image,
+				Image:                         tov1beta1Image(copy.Spec.Image, *cfg),
 				ImagePullPolicy:               copy.Spec.ImagePullPolicy,
 				VolumeMounts:                  copy.Spec.VolumeMounts,
 				Ports:                         tov1beta1Ports(copy.Spec.Ports),
@@ -270,6 +272,34 @@ func tov1beta1ConfigMaps(in []ConfigMapsSpec) []v1beta1.ConfigMapsSpec {
 	return mapsSpecs
 }
 
+func tov1beta1Image(image string, otelcolConfig v1beta1.Config) string {
+	if image != "" {
+		return image
+	}
+
+	config := distros.OtelcolConfig{
+		Receivers: otelcolConfig.Receivers.Object,
+		Exporters: otelcolConfig.Exporters.Object,
+	}
+	if otelcolConfig.Connectors != nil {
+		config.Connectors = otelcolConfig.Connectors.Object
+	}
+	if otelcolConfig.Processors != nil {
+		config.Connectors = otelcolConfig.Processors.Object
+	}
+	if otelcolConfig.Extensions != nil {
+		config.Connectors = otelcolConfig.Extensions.Object
+	}
+
+	if distros.IsValidConfigK8sDistro(config) {
+		return ""
+	}
+
+	return fmt.Sprintf(
+		"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s",
+		version.OpenTelemetryCollector())
+}
+
 func tov1alpha1Ports(in []v1beta1.PortsSpec) []PortsSpec {
 	var ports []PortsSpec
 
@@ -323,7 +353,7 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			TargetAllocator:      tov1alpha1TA(copy.Spec.TargetAllocator),
 			Mode:                 Mode(copy.Spec.Mode),
 			ServiceAccount:       copy.Spec.ServiceAccount,
-			Image:                copy.Spec.Image,
+			Image:                tov1alpha1Image(copy.Spec.Image, copy.Spec.Config),
 			UpgradeStrategy:      UpgradeStrategy(copy.Spec.UpgradeStrategy),
 			ImagePullPolicy:      copy.Spec.ImagePullPolicy,
 			Config:               configYaml,
@@ -504,4 +534,32 @@ func tov1beta1TAAllocationStrategy(strategy OpenTelemetryTargetAllocatorAllocati
 		return v1beta1.TargetAllocatorAllocationStrategyLeastWeighted
 	}
 	return ""
+}
+
+func tov1alpha1Image(image string, otelcolConfig v1beta1.Config) string {
+	if image != "" {
+		return image
+	}
+
+	config := distros.OtelcolConfig{
+		Receivers: otelcolConfig.Receivers.Object,
+		Exporters: otelcolConfig.Exporters.Object,
+	}
+	if otelcolConfig.Connectors != nil {
+		config.Connectors = otelcolConfig.Connectors.Object
+	}
+	if otelcolConfig.Processors != nil {
+		config.Connectors = otelcolConfig.Processors.Object
+	}
+	if otelcolConfig.Extensions != nil {
+		config.Connectors = otelcolConfig.Extensions.Object
+	}
+
+	if distros.IsValidConfigCoreDistro(config) {
+		return ""
+	}
+
+	return fmt.Sprintf(
+		"ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:%s",
+		version.OpenTelemetryCollector())
 }
