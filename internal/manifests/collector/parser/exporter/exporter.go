@@ -38,7 +38,7 @@ func BuilderFor(name string) parser.Builder {
 }
 
 // For returns a new parser for the given exporter name + config.
-func For(logger logr.Logger, name string, config map[interface{}]interface{}) (parser.ComponentPortParser, error) {
+func For(logger logr.Logger, name string, config map[string]interface{}) (parser.ComponentPortParser, error) {
 	builder := BuilderFor(name)
 	if builder == nil {
 		return nil, fmt.Errorf("no builders for %s", name)
@@ -61,7 +61,7 @@ var (
 	endpointKey = "endpoint"
 )
 
-func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[interface{}]interface{}) *corev1.ServicePort {
+func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[string]interface{}) *corev1.ServicePort {
 	endpoint := getAddressFromConfig(logger, name, endpointKey, config)
 
 	switch e := endpoint.(type) {
@@ -85,7 +85,7 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 	return nil
 }
 
-func getAddressFromConfig(logger logr.Logger, name, key string, config map[interface{}]interface{}) interface{} {
+func getAddressFromConfig(logger logr.Logger, name, key string, config map[string]interface{}) interface{} {
 	endpoint, ok := config[key]
 	if !ok {
 		logger.V(2).Info("%s exporter doesn't have an %s", name, key)

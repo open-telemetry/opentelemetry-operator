@@ -23,7 +23,7 @@ import (
 const parserNameCollectd = "__collectd"
 
 // NewCollectdReceiverParser builds a new parser for Collectd receivers, from the contrib repository.
-func NewCollectdReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewCollectdReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:      logger,
 		name:        name,

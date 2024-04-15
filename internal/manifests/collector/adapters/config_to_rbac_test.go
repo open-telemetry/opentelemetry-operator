@@ -19,8 +19,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 	rbacv1 "k8s.io/api/rbac/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 func TestConfigRBAC(t *testing.T) {
@@ -87,12 +90,12 @@ service:
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			config, err := ConfigFromString(tt.config)
-			require.NoError(t, err, tt.desc)
-			require.NotEmpty(t, config, tt.desc)
+			cfg := v1beta1.Config{}
+			err := yaml.Unmarshal([]byte(tt.config), &cfg)
+			require.NoError(t, err)
 
 			// test
-			rules := ConfigToRBAC(logger, config)
+			rules := ConfigToRBAC(logger, cfg)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedRules, rules, tt.desc)
 		})

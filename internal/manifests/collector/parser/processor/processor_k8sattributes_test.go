@@ -28,7 +28,7 @@ func TestK8sAttributesRBAC(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		config        map[interface{}]interface{}
+		config        map[string]interface{}
 		expectedRules []rbacv1.PolicyRule
 	}{
 		{
@@ -49,8 +49,8 @@ func TestK8sAttributesRBAC(t *testing.T) {
 		},
 		{
 			name: "extract k8s.node",
-			config: map[interface{}]interface{}{
-				"extract": map[interface{}]interface{}{
+			config: map[string]interface{}{
+				"extract": map[string]interface{}{
 					"metadata": []interface{}{
 						"k8s.node",
 					},

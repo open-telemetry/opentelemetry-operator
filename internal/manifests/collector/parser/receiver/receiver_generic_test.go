@@ -30,7 +30,7 @@ var logger = logf.Log.WithName("unit-tests")
 func TestParseEndpoint(t *testing.T) {
 	// prepare
 	// there's no parser registered to handle "myreceiver", so, it falls back to the generic parser
-	builder := receiver.NewGenericReceiverParser(logger, "myreceiver", map[interface{}]interface{}{
+	builder := receiver.NewGenericReceiverParser(logger, "myreceiver", map[string]interface{}{
 		"endpoint": "0.0.0.0:1234",
 	})
 
@@ -46,7 +46,7 @@ func TestParseEndpoint(t *testing.T) {
 func TestFailedToParseEndpoint(t *testing.T) {
 	// prepare
 	// there's no parser registered to handle "myreceiver", so, it falls back to the generic parser
-	builder := receiver.NewGenericReceiverParser(logger, "myreceiver", map[interface{}]interface{}{
+	builder := receiver.NewGenericReceiverParser(logger, "myreceiver", map[string]interface{}{
 		"endpoint": "0.0.0.0",
 	})
 
@@ -60,7 +60,7 @@ func TestFailedToParseEndpoint(t *testing.T) {
 
 func TestDownstreamParsers(t *testing.T) {
 	for _, tt := range []struct {
-		builder      func(logr.Logger, string, map[interface{}]interface{}) parser.ComponentPortParser
+		builder      func(logr.Logger, string, map[string]interface{}) parser.ComponentPortParser
 		desc         string
 		receiverName string
 		parserName   string
@@ -85,7 +85,7 @@ func TestDownstreamParsers(t *testing.T) {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
 				// test
-				builder := tt.builder(logger, tt.receiverName, map[interface{}]interface{}{})
+				builder := tt.builder(logger, tt.receiverName, map[string]interface{}{})
 
 				// verify
 				assert.Equal(t, tt.parserName, builder.ParserName())
@@ -93,7 +93,7 @@ func TestDownstreamParsers(t *testing.T) {
 
 			t.Run("assigns the expected port", func(t *testing.T) {
 				// prepare
-				builder := tt.builder(logger, tt.receiverName, map[interface{}]interface{}{})
+				builder := tt.builder(logger, tt.receiverName, map[string]interface{}{})
 
 				// test
 				ports, err := builder.Ports()
@@ -107,7 +107,7 @@ func TestDownstreamParsers(t *testing.T) {
 
 			t.Run("allows port to be overridden", func(t *testing.T) {
 				// prepare
-				builder := tt.builder(logger, tt.receiverName, map[interface{}]interface{}{
+				builder := tt.builder(logger, tt.receiverName, map[string]interface{}{
 					"endpoint": "0.0.0.0:65535",
 				})
 

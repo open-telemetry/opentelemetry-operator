@@ -23,7 +23,7 @@ import (
 const parserNameWavefront = "__wavefront"
 
 // NewWavefrontReceiverParser builds a new parser for Wavefront receivers, from the contrib repository.
-func NewWavefrontReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewWavefrontReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:      logger,
 		name:        name,

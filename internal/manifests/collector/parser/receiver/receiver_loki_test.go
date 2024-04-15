@@ -27,7 +27,7 @@ func TestLokiSelfRegisters(t *testing.T) {
 
 func TestLokiIsFoundByName(t *testing.T) {
 	// test
-	p, err := For(logger, "loki", map[interface{}]interface{}{})
+	p, err := For(logger, "loki", map[string]interface{}{})
 	assert.NoError(t, err)
 
 	// verify
@@ -36,12 +36,12 @@ func TestLokiIsFoundByName(t *testing.T) {
 
 func TestLokiPortsOverridden(t *testing.T) {
 	// prepare
-	builder := NewLokiReceiverParser(logger, "loki", map[interface{}]interface{}{
-		"protocols": map[interface{}]interface{}{
-			"grpc": map[interface{}]interface{}{
+	builder := NewLokiReceiverParser(logger, "loki", map[string]interface{}{
+		"protocols": map[string]interface{}{
+			"grpc": map[string]interface{}{
 				"endpoint": "0.0.0.0:1234",
 			},
-			"http": map[interface{}]interface{}{
+			"http": map[string]interface{}{
 				"endpoint": "0.0.0.0:1235",
 			},
 		},
@@ -75,10 +75,10 @@ func TestLokiPortsOverridden(t *testing.T) {
 
 func TestLokiExposeDefaultPorts(t *testing.T) {
 	// prepare
-	builder := NewLokiReceiverParser(logger, "loki", map[interface{}]interface{}{
-		"protocols": map[interface{}]interface{}{
-			"grpc": map[interface{}]interface{}{},
-			"http": map[interface{}]interface{}{},
+	builder := NewLokiReceiverParser(logger, "loki", map[string]interface{}{
+		"protocols": map[string]interface{}{
+			"grpc": map[string]interface{}{},
+			"http": map[string]interface{}{},
 		},
 	})
 

@@ -15,7 +15,6 @@
 package adapters
 
 import (
-	"fmt"
 	"net"
 	"sort"
 	"strconv"
@@ -42,101 +41,59 @@ func (c ComponentType) String() string {
 	return [...]string{"receiver", "exporter", "processor"}[c]
 }
 
-// ConfigToComponentPorts converts the incoming configuration object into a set of service ports required by the exporters.
-func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[interface{}]interface{}) ([]v1beta1.PortsSpec, error) {
-	// now, we gather which ports we might need to open
-	// for that, we get all the exporters and check their `endpoint` properties,
-	// extracting the port from it. The port name has to be a "DNS_LABEL", so, we try to make it follow the pattern:
-	// ${instance.Name}-${exporter.name}-${exporter.qualifier}
-	// the exporter-name is typically the node name from the exporters map
-	// the exporter-qualifier is what comes after the slash in the exporter name, but typically nil
-	// examples:
-	// ```yaml
-	// components:
-	//   componentexample:
-	//     endpoint: 0.0.0.0:12345
-	//   componentexample/settings:
-	//     endpoint: 0.0.0.0:12346
-	// in this case, we have 2 ports, named: "componentexample" and "componentexample-settings"
-	componentsProperty, ok := config[fmt.Sprintf("%ss", cType.String())]
-	if !ok {
-		return nil, fmt.Errorf("no %ss available as part of the configuration", cType)
-	}
+func PortsForExporters(l logr.Logger, c v1beta1.Config) ([]v1beta1.PortsSpec, error) {
+	compEnabled := getEnabledComponents(c.Service, ComponentTypeExporter)
+	return componentPorts(l, c.Exporters, exporterParser.For, compEnabled)
+}
 
-	components, ok := componentsProperty.(map[interface{}]interface{})
-	if !ok {
-		return nil, fmt.Errorf("%ss doesn't contain valid components", cType.String())
-	}
+func PortsForReceivers(l logr.Logger, c v1beta1.Config) ([]v1beta1.PortsSpec, error) {
+	compEnabled := getEnabledComponents(c.Service, ComponentTypeReceiver)
+	return componentPorts(l, c.Receivers, receiverParser.For, compEnabled)
+}
 
-	compEnabled := getEnabledComponents(config, cType)
-
-	if compEnabled == nil {
-		return nil, fmt.Errorf("no enabled %ss available as part of the configuration", cType)
-	}
-
-	ports := []corev1.ServicePort{}
-	for key, val := range components {
-		// This check will pass only the enabled components,
-		// then only the related ports will be opened.
-		if !compEnabled[key] {
+func componentPorts(l logr.Logger, c v1beta1.AnyConfig, p parser.For, enabledComponents map[string]bool) ([]v1beta1.PortsSpec, error) {
+	var ports []corev1.ServicePort
+	for cmptName, val := range c.Object {
+		if !enabledComponents[cmptName] {
 			continue
 		}
-		exporter, ok := val.(map[interface{}]interface{})
+		component, ok := val.(map[string]interface{})
 		if !ok {
-			logger.V(2).Info("component doesn't seem to be a map of properties", cType.String(), key)
-			exporter = map[interface{}]interface{}{}
+			component = map[string]interface{}{}
 		}
-
-		cmptName := key.(string)
-		var cmptParser parser.ComponentPortParser
-		var err error
-		switch cType {
-		case ComponentTypeExporter:
-			cmptParser, err = exporterParser.For(logger, cmptName, exporter)
-		case ComponentTypeReceiver:
-			cmptParser, err = receiverParser.For(logger, cmptName, exporter)
-		case ComponentTypeProcessor:
-			logger.V(4).Info("processors don't provide a way to enable associated ports", "name", key)
-		}
-
+		componentParser, err := p(l, cmptName, component)
 		if err != nil {
-			logger.V(2).Info("no parser found for", "component", cmptName)
+			l.Error(err, "failed to retrieve parser for '%s', has returned an error: %w", cmptName, err)
 			continue
 		}
-
-		exprtPorts, err := cmptParser.Ports()
+		componentPorts, err := componentParser.Ports()
 		if err != nil {
-			logger.Error(err, "parser for '%s' has returned an error: %w", cmptName, err)
+			l.Error(err, "parser for '%s' has returned an error: %w", cmptName, err)
 			continue
 		}
-
-		if len(exprtPorts) > 0 {
-			ports = append(ports, exprtPorts...)
-		}
+		ports = append(ports, componentPorts...)
 	}
 
 	sort.Slice(ports, func(i, j int) bool {
 		return ports[i].Name < ports[j].Name
 	})
-
 	patchedPorts := []v1beta1.PortsSpec{}
 	for _, p := range ports {
 		patchedPorts = append(patchedPorts, v1beta1.PortsSpec{
 			ServicePort: p,
 		})
 	}
-
 	return patchedPorts, nil
 }
 
-func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) ([]v1beta1.PortsSpec, error) {
-	ports, err := ConfigToComponentPorts(logger, ComponentTypeReceiver, config)
+func ConfigToPorts(logger logr.Logger, config v1beta1.Config) ([]v1beta1.PortsSpec, error) {
+	ports, err := PortsForReceivers(logger, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the receivers")
 		return nil, err
 	}
 
-	exporterPorts, err := ConfigToComponentPorts(logger, ComponentTypeExporter, config)
+	exporterPorts, err := PortsForExporters(logger, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the exporters")
 		return nil, err

@@ -28,7 +28,7 @@ func TestUdpLogSelfRegisters(t *testing.T) {
 
 func TestUdpLogIsFoundByName(t *testing.T) {
 	// test
-	p, err := For(logger, "udplog", map[interface{}]interface{}{})
+	p, err := For(logger, "udplog", map[string]interface{}{})
 	assert.NoError(t, err)
 
 	// verify
@@ -38,12 +38,12 @@ func TestUdpLogIsFoundByName(t *testing.T) {
 func TestUdpLogConfiguration(t *testing.T) {
 	for _, tt := range []struct {
 		desc     string
-		config   map[interface{}]interface{}
+		config   map[string]interface{}
 		expected []corev1.ServicePort
 	}{
-		{"Empty configuration", map[interface{}]interface{}{}, []corev1.ServicePort{}},
+		{"Empty configuration", map[string]interface{}{}, []corev1.ServicePort{}},
 		{"UDP port configuration",
-			map[interface{}]interface{}{"listen_address": "0.0.0.0:1234"},
+			map[string]interface{}{"listen_address": "0.0.0.0:1234"},
 			[]corev1.ServicePort{{Name: "udplog", Port: 1234, Protocol: corev1.ProtocolUDP}}},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {

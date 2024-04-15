@@ -90,19 +90,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 func Service(params manifests.Params) (*corev1.Service, error) {
 	name := naming.Service(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
-
-	out, err := params.OtelCol.Spec.Config.Yaml()
-	if err != nil {
-		return nil, err
-	}
-
-	configFromString, err := adapters.ConfigFromString(out)
-	if err != nil {
-		params.Log.Error(err, "couldn't extract the configuration from the context")
-		return nil, err
-	}
-
-	ports, err := adapters.ConfigToPorts(params.Log, configFromString)
+	ports, err := adapters.ConfigToPorts(params.Log, params.OtelCol.Spec.Config)
 	if err != nil {
 		return nil, err
 	}

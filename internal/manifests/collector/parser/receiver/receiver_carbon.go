@@ -23,7 +23,7 @@ import (
 const parserNameCarbon = "__carbon"
 
 // NewCarbonReceiverParser builds a new parser for Carbon receivers, from the contrib repository.
-func NewCarbonReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewCarbonReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:      logger,
 		name:        name,

@@ -23,7 +23,7 @@ import (
 const parserNameAWSXRAY = "__awsxray"
 
 // NewAWSXrayReceiverParser builds a new parser for AWS xray receivers, from the contrib repository.
-func NewAWSXrayReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewAWSXrayReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:      logger,
 		name:        name,

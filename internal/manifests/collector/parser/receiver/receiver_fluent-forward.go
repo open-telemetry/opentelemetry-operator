@@ -23,7 +23,7 @@ import (
 const parserNameFluentForward = "__fluentforward"
 
 // NewFluentForwardReceiverParser builds a new parser for FluentForward receivers, from the contrib repository.
-func NewFluentForwardReceiverParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+func NewFluentForwardReceiverParser(logger logr.Logger, name string, config map[string]interface{}) parser.ComponentPortParser {
 	return &GenericReceiver{
 		logger:      logger,
 		name:        name,

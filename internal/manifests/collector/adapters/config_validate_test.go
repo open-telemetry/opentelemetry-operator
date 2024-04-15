@@ -18,6 +18,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 func TestConfigValidate(t *testing.T) {
@@ -52,12 +55,12 @@ service:
       exporters: [debug]
 `
 	// // prepare
-	config, err := ConfigFromString(configStr)
+	cfg := v1beta1.Config{}
+	err := yaml.Unmarshal([]byte(configStr), &cfg)
 	require.NoError(t, err)
-	require.NotEmpty(t, config)
 
 	// test
-	check := getEnabledComponents(config, ComponentTypeReceiver)
+	check := getEnabledComponents(cfg.Service, ComponentTypeReceiver)
 	require.NotEmpty(t, check)
 }
 
@@ -93,11 +96,11 @@ service:
       exporters: []
 `
 	// // prepare
-	config, err := ConfigFromString(configStr)
+	cfg := v1beta1.Config{}
+	err := yaml.Unmarshal([]byte(configStr), &cfg)
 	require.NoError(t, err)
-	require.NotEmpty(t, config)
 
 	// test
-	check := getEnabledComponents(config, ComponentTypeReceiver)
+	check := getEnabledComponents(cfg.Service, ComponentTypeReceiver)
 	require.Empty(t, check)
 }

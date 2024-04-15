@@ -44,7 +44,7 @@ func BuilderFor(name string) parser.Builder {
 }
 
 // For returns a new parser for the given receiver name + config.
-func For(logger logr.Logger, name string, config map[interface{}]interface{}) (parser.ComponentPortParser, error) {
+func For(logger logr.Logger, name string, config map[string]interface{}) (parser.ComponentPortParser, error) {
 	builder := BuilderFor(name)
 	return builder(logger, name, config), nil
 }
@@ -102,7 +102,7 @@ func isScraperReceiver(name string) bool {
 	return exists
 }
 
-func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[interface{}]interface{}) *v1.ServicePort {
+func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[string]interface{}) *v1.ServicePort {
 	var endpoint interface{}
 	var receiverType = receiverType(name)
 	switch {
@@ -137,7 +137,7 @@ func singlePortFromConfigEndpoint(logger logr.Logger, name string, config map[in
 	return nil
 }
 
-func getAddressFromConfig(logger logr.Logger, name, key string, config map[interface{}]interface{}) interface{} {
+func getAddressFromConfig(logger logr.Logger, name, key string, config map[string]interface{}) interface{} {
 	endpoint, ok := config[key]
 	if !ok {
 		logger.V(2).Info("%s receiver doesn't have an %s", name, key)
