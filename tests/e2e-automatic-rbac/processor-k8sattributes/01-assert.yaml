@@ -28,11 +28,12 @@ metadata:
     app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/instance: chainsaw-k8sattributes.simplest
     app.kubernetes.io/managed-by: opentelemetry-operator
-    app.kubernetes.io/name: simplest-collector
+    app.kubernetes.io/name: simplest-chainsaw-k8sattributes-collector
+  name: simplest-chainsaw-k8sattributes-collector
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: simplest-chainsaw-resourcedetection-cluster-role
+  name: simplest-chainsaw-k8sattributes-cluster-role
 subjects:
 - kind: ServiceAccount
   name: simplest-collector

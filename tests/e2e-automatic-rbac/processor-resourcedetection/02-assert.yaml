@@ -18,7 +18,9 @@ metadata:
     app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/instance: chainsaw-resourcedetection.simplest
     app.kubernetes.io/managed-by: opentelemetry-operator
-    app.kubernetes.io/name: simplest-collector
+    app.kubernetes.io/name: simplest-chainsaw-resourcedetection-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: simplest-chainsaw-resourcedetection-collector
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
