@@ -16,10 +16,7 @@ package adapters
 
 import (
 	"fmt"
-	"net"
 	"sort"
-	"strconv"
-	"strings"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -141,24 +138,4 @@ func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) ([]co
 	})
 
 	return ports, nil
-}
-
-// ConfigToMetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
-func ConfigToMetricsPort(config v1beta1.Service) (int32, error) {
-	if config.GetTelemetry() == nil {
-		// telemetry isn't set, use the default
-		return 8888, nil
-	}
-	_, port, netErr := net.SplitHostPort(config.GetTelemetry().Metrics.Address)
-	if netErr != nil && strings.Contains(netErr.Error(), "missing port in address") {
-		return 8888, nil
-	} else if netErr != nil {
-		return 0, netErr
-	}
-	i64, err := strconv.ParseInt(port, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-
-	return int32(i64), nil
 }

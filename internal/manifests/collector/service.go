@@ -64,7 +64,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[monitoringLabel] = valueExists
 
-	metricsPort, err := adapters.ConfigToMetricsPort(params.OtelCol.Spec.Config.Service)
+	metricsPort, err := params.OtelCol.Spec.Config.Service.MetricsPort()
 	if err != nil {
 		return nil, err
 	}
@@ -147,11 +147,6 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 		trafficPolicy = corev1.ServiceInternalTrafficPolicyLocal
 	}
 
-	svcPorts := []corev1.ServicePort{}
-	for _, p := range ports {
-		svcPorts = append(svcPorts, p)
-	}
-
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        naming.Service(params.OtelCol.Name),
@@ -163,7 +158,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 			InternalTrafficPolicy: &trafficPolicy,
 			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			ClusterIP:             "",
-			Ports:                 svcPorts,
+			Ports:                 ports,
 		},
 	}, nil
 }

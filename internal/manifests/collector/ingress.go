@@ -171,12 +171,7 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollec
 		ports = append(toServicePorts(otelcol.Spec.Ports), resultingInferredPorts...)
 	}
 
-	svcPorts := []corev1.ServicePort{}
-	for _, p := range ports {
-		svcPorts = append(svcPorts, p)
-	}
-
-	return svcPorts, err
+	return ports, nil
 }
 
 func toServicePorts(spec []v1beta1.PortsSpec) []corev1.ServicePort {
