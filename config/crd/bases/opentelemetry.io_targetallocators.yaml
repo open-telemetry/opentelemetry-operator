@@ -1072,6 +1072,7 @@ spec:
                 enum:
                 - least-weighted
                 - consistent-hashing
+                - per-node
                 type: string
               args:
                 additionalProperties:

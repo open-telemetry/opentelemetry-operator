@@ -51,6 +51,7 @@ type Config struct {
 	enableDotNetInstrumentation         bool
 	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
+	enableJavaInstrumentation           bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
@@ -78,6 +79,7 @@ func New(opts ...Option) Config {
 		operatorOpAMPBridgeConfigMapEntry: defaultOperatorOpAMPBridgeConfigMapEntry,
 		logger:                            logf.Log.WithName("config"),
 		version:                           version.Get(),
+		enableJavaInstrumentation:         true,
 	}
 
 	for _, opt := range opts {
@@ -93,6 +95,7 @@ func New(opts ...Option) Config {
 		enableDotNetInstrumentation:         o.enableDotNetInstrumentation,
 		enableNginxInstrumentation:          o.enableNginxInstrumentation,
 		enablePythonInstrumentation:         o.enablePythonInstrumentation,
+		enableJavaInstrumentation:           o.enableJavaInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
@@ -163,6 +166,11 @@ func (c *Config) EnableDotNetAutoInstrumentation() bool {
 // EnableNginxAutoInstrumentation is true when the operator supports nginx auto instrumentation.
 func (c *Config) EnableNginxAutoInstrumentation() bool {
 	return c.enableNginxInstrumentation
+}
+
+// EnableJavaAutoInstrumentation is true when the operator supports nginx auto instrumentation.
+func (c *Config) EnableJavaAutoInstrumentation() bool {
+	return c.enableJavaInstrumentation
 }
 
 // EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.

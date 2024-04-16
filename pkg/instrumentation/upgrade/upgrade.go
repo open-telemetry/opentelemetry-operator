@@ -32,7 +32,6 @@ import (
 
 var (
 	defaultAnnotationToGate = map[string]*featuregate2.Gate{
-		constants.AnnotationDefaultAutoInstrumentationJava:   featuregate.EnableJavaAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationNodeJS: featuregate.EnableNodeJSAutoInstrumentationSupport,
 		constants.AnnotationDefaultAutoInstrumentationGo:     featuregate.EnableGoAutoInstrumentationSupport,
 	}
@@ -63,6 +62,7 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationNginx:       {constants.FlagNginx, cfg.EnableNginxAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationPython:      {constants.FlagPython, cfg.EnablePythonAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationJava:        {constants.FlagJava, cfg.EnableJavaAutoInstrumentation()},
 	}
 
 	return &InstrumentationUpgrade{
@@ -142,6 +142,11 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 						upgraded.Spec.Python.Image = u.DefaultAutoInstPython
 						upgraded.Annotations[annotation] = u.DefaultAutoInstPython
 					}
+				case constants.AnnotationDefaultAutoInstrumentationJava:
+					if inst.Spec.Java.Image == autoInst {
+						upgraded.Spec.Java.Image = u.DefaultAutoInstJava
+						upgraded.Annotations[annotation] = u.DefaultAutoInstJava
+					}
 				}
 			} else {
 				u.Logger.V(4).Info("autoinstrumentation not enabled for this language", "flag", instCfg.id)
@@ -154,11 +159,6 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 		if autoInst != "" {
 			if gate.IsEnabled() {
 				switch annotation {
-				case constants.AnnotationDefaultAutoInstrumentationJava:
-					if inst.Spec.Java.Image == autoInst {
-						upgraded.Spec.Java.Image = u.DefaultAutoInstJava
-						upgraded.Annotations[annotation] = u.DefaultAutoInstJava
-					}
 				case constants.AnnotationDefaultAutoInstrumentationNodeJS:
 					if inst.Spec.NodeJS.Image == autoInst {
 						upgraded.Spec.NodeJS.Image = u.DefaultAutoInstNodeJS
