@@ -98,7 +98,7 @@ func TestExtractPortsFromConfig(t *testing.T) {
 
 	svcPorts := []corev1.ServicePort{}
 	for _, p := range ports {
-		svcPorts = append(svcPorts, p.ServicePort)
+		svcPorts = append(svcPorts, p)
 	}
 
 	expectedPorts := []corev1.ServicePort{
