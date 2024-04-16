@@ -7132,6 +7132,7 @@ spec:
                     enum:
                     - least-weighted
                     - consistent-hashing
+                    - per-node
                     type: string
                   enabled:
                     type: boolean
