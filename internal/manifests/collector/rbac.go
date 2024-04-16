@@ -70,7 +70,7 @@ func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, er
 		return nil, nil
 	}
 
-	name := naming.ClusterRoleBinding(params.OtelCol.Name)
+	name := naming.ClusterRoleBinding(params.OtelCol.Name, params.OtelCol.Namespace)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
 
 	return &rbacv1.ClusterRoleBinding{
