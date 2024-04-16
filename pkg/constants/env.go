@@ -41,4 +41,5 @@ const (
 	FlagDotNet      = "enable-dotnet-instrumentation"
 	FlagPython      = "enable-python-instrumentation"
 	FlagNginx       = "enable-nginx-instrumentation"
+	FlagJava        = "enable-java-instrumentation"
 )
