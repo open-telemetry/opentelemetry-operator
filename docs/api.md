@@ -40460,7 +40460,7 @@ The current options are least-weighted, consistent-hashing and per-node. The def
 consistent-hashing.
 WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.<br/>
           <br/>
-            <i>Enum</i>: least-weighted, consistent-hashing<br/>
+            <i>Enum</i>: least-weighted, consistent-hashing, per-node<br/>
             <i>Default</i>: consistent-hashing<br/>
         </td>
         <td>false</td>
