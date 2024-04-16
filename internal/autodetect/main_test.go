@@ -35,7 +35,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
-	autoRbac "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
@@ -155,7 +155,7 @@ func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
 
 	for _, tt := range []struct {
 		description          string
-		expectedAvailability autoRbac.Availability
+		expectedAvailability autoRBAC.Availability
 		shouldError          bool
 		namespace            string
 		serviceAccount       string
@@ -165,7 +165,7 @@ func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
 			description:          "Not possible to read the namespace",
 			namespace:            "default",
 			shouldError:          true,
-			expectedAvailability: autoRbac.NotAvailable,
+			expectedAvailability: autoRBAC.NotAvailable,
 			clientGenerator: reactorFactory(v1.SubjectAccessReviewStatus{
 				Allowed: true,
 			}),
@@ -187,7 +187,7 @@ func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
 			clientGenerator: reactorFactory(v1.SubjectAccessReviewStatus{
 				Allowed: false,
 			}),
-			expectedAvailability: autoRbac.NotAvailable,
+			expectedAvailability: autoRBAC.NotAvailable,
 		},
 		{
 			description: "RBAC resources are there",
@@ -198,13 +198,13 @@ func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
 			clientGenerator: reactorFactory(v1.SubjectAccessReviewStatus{
 				Allowed: true,
 			}),
-			expectedAvailability: autoRbac.Available,
+			expectedAvailability: autoRBAC.Available,
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			// These settings can be get from env vars
-			t.Setenv(autoRbac.NAMESPACE_ENV_VAR, tt.namespace)
-			t.Setenv(autoRbac.SA_ENV_VAR, tt.serviceAccount)
+			t.Setenv(autoRBAC.NAMESPACE_ENV_VAR, tt.namespace)
+			t.Setenv(autoRBAC.SA_ENV_VAR, tt.serviceAccount)
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {}))
 			defer server.Close()

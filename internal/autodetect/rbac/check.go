@@ -52,9 +52,9 @@ func getOperatorServiceAccount() (string, error) {
 	return sa, nil
 }
 
-// CheckRbacPermissions checks if the operator has the needed permissions to create RBAC resources automatically.
+// CheckRBACPermissions checks if the operator has the needed permissions to create RBAC resources automatically.
 // If the RBAC is there, no errors nor warnings are returned.
-func CheckRbacPermissions(ctx context.Context, reviewer *rbac.Reviewer) (admission.Warnings, error) {
+func CheckRBACPermissions(ctx context.Context, reviewer *rbac.Reviewer) (admission.Warnings, error) {
 	namespace, err := getOperatorNamespace()
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", "not possible to check RBAC rules", err)

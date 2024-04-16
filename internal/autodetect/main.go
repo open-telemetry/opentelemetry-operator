@@ -24,7 +24,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
-	autoRbac "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
@@ -34,7 +34,7 @@ var _ AutoDetect = (*autoDetect)(nil)
 type AutoDetect interface {
 	OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailability() (prometheus.Availability, error)
-	RBACPermissions(ctx context.Context) (autoRbac.Availability, error)
+	RBACPermissions(ctx context.Context) (autoRBAC.Availability, error)
 }
 
 type autoDetect struct {
@@ -92,14 +92,14 @@ func (a *autoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability
 	return openshift.RoutesNotAvailable, nil
 }
 
-func (a *autoDetect) RBACPermissions(ctx context.Context) (autoRbac.Availability, error) {
-	w, err := autoRbac.CheckRbacPermissions(ctx, a.reviewer)
+func (a *autoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
+	w, err := autoRBAC.CheckRBACPermissions(ctx, a.reviewer)
 	if err != nil {
-		return autoRbac.NotAvailable, err
+		return autoRBAC.NotAvailable, err
 	}
 	if w != nil {
-		return autoRbac.NotAvailable, fmt.Errorf("missing permissions: %s", w)
+		return autoRBAC.NotAvailable, fmt.Errorf("missing permissions: %s", w)
 	}
 
-	return autoRbac.Available, nil
+	return autoRBAC.Available, nil
 }

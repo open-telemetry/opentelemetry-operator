@@ -25,7 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
-	autoRbac "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
@@ -45,7 +45,7 @@ type Config struct {
 	autoInstrumentationPythonImage      string
 	collectorImage                      string
 	collectorConfigMapEntry             string
-	createRBACPermissions               autoRbac.Availability
+	createRBACPermissions               autoRBAC.Availability
 	enableMultiInstrumentation          bool
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
@@ -72,7 +72,7 @@ func New(opts ...Option) Config {
 	o := options{
 		prometheusCRAvailability:          prometheus.NotAvailable,
 		openshiftRoutesAvailability:       openshift.RoutesNotAvailable,
-		createRBACPermissions:             autoRbac.NotAvailable,
+		createRBACPermissions:             autoRBAC.NotAvailable,
 		collectorConfigMapEntry:           defaultCollectorConfigMapEntry,
 		targetAllocatorConfigMapEntry:     defaultTargetAllocatorConfigMapEntry,
 		operatorOpAMPBridgeConfigMapEntry: defaultOperatorOpAMPBridgeConfigMapEntry,
@@ -176,7 +176,7 @@ func (c *Config) CollectorConfigMapEntry() string {
 }
 
 // CreateRBACPermissions is true when the operator can create RBAC permissions for SAs running a collector instance. Immutable.
-func (c *Config) CreateRBACPermissions() autoRbac.Availability {
+func (c *Config) CreateRBACPermissions() autoRBAC.Availability {
 	return c.createRBACPermissions
 }
 

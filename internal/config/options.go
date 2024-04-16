@@ -23,7 +23,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
-	autoRbac "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
@@ -43,7 +43,7 @@ type options struct {
 	autoInstrumentationNginxImage       string
 	collectorImage                      string
 	collectorConfigMapEntry             string
-	createRBACPermissions               autoRbac.Availability
+	createRBACPermissions               autoRBAC.Availability
 	enableMultiInstrumentation          bool
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
@@ -184,7 +184,7 @@ func WithPrometheusCRAvailability(pcrd prometheus.Availability) Option {
 	}
 }
 
-func WithRBACPermissions(rAuto autoRbac.Availability) Option {
+func WithRBACPermissions(rAuto autoRBAC.Availability) Option {
 	return func(o *options) {
 		o.createRBACPermissions = rAuto
 	}
