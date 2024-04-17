@@ -151,7 +151,7 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 	if otelcol.Spec.Ingress.Type == IngressTypeRoute && otelcol.Spec.Ingress.Route.Termination == "" {
 		otelcol.Spec.Ingress.Route.Termination = TLSRouteTerminationTypeEdge
 	}
-	if otelcol.Spec.Ingress.Type == IngressTypeNginx && otelcol.Spec.Ingress.RuleType == "" {
+	if otelcol.Spec.Ingress.Type == IngressTypeIngress && otelcol.Spec.Ingress.RuleType == "" {
 		otelcol.Spec.Ingress.RuleType = IngressRuleTypePath
 	}
 	// If someone upgrades to a later version without upgrading their CRD they will not have a management state set.
@@ -275,13 +275,13 @@ func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollecto
 		}
 	}
 
-	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
+	if r.Spec.Ingress.Type == IngressTypeIngress && r.Spec.Mode == ModeSidecar {
 		return warnings, fmt.Errorf("the OpenTelemetry Spec Ingress configuration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
 			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
 		)
 	}
 
-	if r.Spec.Ingress.Type == IngressTypeNginx && r.Spec.Mode == ModeSidecar {
+	if r.Spec.Ingress.Type == IngressTypeIngress && r.Spec.Mode == ModeSidecar {
 		return warnings, fmt.Errorf("the OpenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
 			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
 		)

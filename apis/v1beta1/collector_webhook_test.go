@@ -967,7 +967,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeSidecar,
 					Ingress: Ingress{
-						Type: IngressTypeNginx,
+						Type: IngressTypeIngress,
 					},
 				},
 			},
