@@ -166,10 +166,6 @@ func TestMain(m *testing.M) {
 	}
 	reviewer := rbac.NewReviewer(clientset)
 
-	if err = v1alpha1.SetupCollectorWebhook(mgr, config.New(), reviewer); err != nil {
-		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
-		os.Exit(1)
-	}
 	if err = v1beta1.SetupCollectorWebhook(mgr, config.New(), reviewer); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)

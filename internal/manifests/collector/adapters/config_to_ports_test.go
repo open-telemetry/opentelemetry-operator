@@ -25,7 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
@@ -96,11 +95,6 @@ func TestExtractPortsFromConfig(t *testing.T) {
 	targetPort4317 := intstr.IntOrString{Type: 0, IntVal: 4317, StrVal: ""}
 	targetPort4318 := intstr.IntOrString{Type: 0, IntVal: 4318, StrVal: ""}
 
-	svcPorts := []corev1.ServicePort{}
-	for _, p := range ports {
-		svcPorts = append(svcPorts, p.ServicePort)
-	}
-
 	expectedPorts := []corev1.ServicePort{
 		{Name: "examplereceiver", Port: 12345},
 		{Name: "port-12346", Port: 12346},
@@ -113,7 +107,7 @@ func TestExtractPortsFromConfig(t *testing.T) {
 		{Name: "otlp-http", AppProtocol: &httpAppProtocol, Port: 4318, TargetPort: targetPort4318},
 		{Name: "zipkin", AppProtocol: &httpAppProtocol, Protocol: "TCP", Port: 9411},
 	}
-	assert.ElementsMatch(t, expectedPorts, svcPorts)
+	assert.ElementsMatch(t, expectedPorts, ports)
 }
 
 func TestNoPortsParsed(t *testing.T) {
@@ -210,73 +204,6 @@ func TestParserFailed(t *testing.T) {
 	assert.Len(t, ports, 0)
 	assert.NoError(t, err)
 	assert.True(t, mockParserCalled)
-}
-func TestConfigToMetricsPort(t *testing.T) {
-
-	for _, tt := range []struct {
-		desc         string
-		expectedPort int32
-		config       v1beta1.Service
-	}{
-		{
-			"custom port",
-			9090,
-			v1beta1.Service{
-				Telemetry: &v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
-							"address": "0.0.0.0:9090",
-						},
-					},
-				},
-			},
-		},
-		{
-			"bad address",
-			8888,
-			v1beta1.Service{
-				Telemetry: &v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
-							"address": "0.0.0.0",
-						},
-					},
-				},
-			},
-		},
-		{
-			"missing address",
-			8888,
-			v1beta1.Service{
-				Telemetry: &v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
-							"level": "detailed",
-						},
-					},
-				},
-			},
-		},
-		{
-			"missing metrics",
-			8888,
-			v1beta1.Service{
-				Telemetry: &v1beta1.AnyConfig{},
-			},
-		},
-		{
-			"missing telemetry",
-			8888,
-			v1beta1.Service{},
-		},
-	} {
-		t.Run(tt.desc, func(t *testing.T) {
-			// these are acceptable failures, we return to the collector's default metric port
-			port, err := adapters.ConfigToMetricsPort(tt.config)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expectedPort, port)
-		})
-	}
 }
 
 type mockParser struct {

@@ -325,10 +325,6 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = otelv1alpha1.SetupCollectorWebhook(mgr, cfg, reviewer); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
-			os.Exit(1)
-		}
 		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
