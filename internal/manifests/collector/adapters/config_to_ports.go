@@ -15,10 +15,7 @@
 package adapters
 
 import (
-	"net"
 	"sort"
-	"strconv"
-	"strings"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -41,17 +38,17 @@ func (c ComponentType) String() string {
 	return [...]string{"receiver", "exporter", "processor"}[c]
 }
 
-func PortsForExporters(l logr.Logger, c v1beta1.Config) ([]v1beta1.PortsSpec, error) {
+func PortsForExporters(l logr.Logger, c v1beta1.Config) ([]corev1.ServicePort, error) {
 	compEnabled := getEnabledComponents(c.Service, ComponentTypeExporter)
 	return componentPorts(l, c.Exporters, exporterParser.For, compEnabled)
 }
 
-func PortsForReceivers(l logr.Logger, c v1beta1.Config) ([]v1beta1.PortsSpec, error) {
+func PortsForReceivers(l logr.Logger, c v1beta1.Config) ([]corev1.ServicePort, error) {
 	compEnabled := getEnabledComponents(c.Service, ComponentTypeReceiver)
 	return componentPorts(l, c.Receivers, receiverParser.For, compEnabled)
 }
 
-func componentPorts(l logr.Logger, c v1beta1.AnyConfig, p parser.For, enabledComponents map[string]bool) ([]v1beta1.PortsSpec, error) {
+func componentPorts(l logr.Logger, c v1beta1.AnyConfig, p parser.For, enabledComponents map[string]bool) ([]corev1.ServicePort, error) {
 	var ports []corev1.ServicePort
 	for cmptName, val := range c.Object {
 		if !enabledComponents[cmptName] {
@@ -77,16 +74,11 @@ func componentPorts(l logr.Logger, c v1beta1.AnyConfig, p parser.For, enabledCom
 	sort.Slice(ports, func(i, j int) bool {
 		return ports[i].Name < ports[j].Name
 	})
-	patchedPorts := []v1beta1.PortsSpec{}
-	for _, p := range ports {
-		patchedPorts = append(patchedPorts, v1beta1.PortsSpec{
-			ServicePort: p,
-		})
-	}
-	return patchedPorts, nil
+
+	return ports, nil
 }
 
-func ConfigToPorts(logger logr.Logger, config v1beta1.Config) ([]v1beta1.PortsSpec, error) {
+func ConfigToPorts(logger logr.Logger, config v1beta1.Config) ([]corev1.ServicePort, error) {
 	ports, err := PortsForReceivers(logger, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the receivers")
@@ -106,24 +98,4 @@ func ConfigToPorts(logger logr.Logger, config v1beta1.Config) ([]v1beta1.PortsSp
 	})
 
 	return ports, nil
-}
-
-// ConfigToMetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
-func ConfigToMetricsPort(config v1beta1.Service) (int32, error) {
-	if config.GetTelemetry() == nil {
-		// telemetry isn't set, use the default
-		return 8888, nil
-	}
-	_, port, netErr := net.SplitHostPort(config.GetTelemetry().Metrics.Address)
-	if netErr != nil && strings.Contains(netErr.Error(), "missing port in address") {
-		return 8888, nil
-	} else if netErr != nil {
-		return 0, netErr
-	}
-	i64, err := strconv.ParseInt(port, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-
-	return int32(i64), nil
 }

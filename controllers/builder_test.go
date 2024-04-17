@@ -351,7 +351,7 @@ service:
 						},
 						Mode: "deployment",
 						Ingress: v1beta1.Ingress{
-							Type:     v1beta1.IngressTypeNginx,
+							Type:     v1beta1.IngressTypeIngress,
 							Hostname: "example.com",
 							Annotations: map[string]string{
 								"something": "true",

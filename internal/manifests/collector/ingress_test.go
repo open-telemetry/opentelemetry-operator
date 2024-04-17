@@ -74,7 +74,7 @@ func TestDesiredIngresses(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: v1beta1.Config{},
 					Ingress: v1beta1.Ingress{
-						Type: v1beta1.IngressTypeNginx,
+						Type: v1beta1.IngressTypeIngress,
 					},
 				},
 			},
@@ -99,7 +99,7 @@ func TestDesiredIngresses(t *testing.T) {
 
 		params.OtelCol.Namespace = ns
 		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
-			Type:             v1beta1.IngressTypeNginx,
+			Type:             v1beta1.IngressTypeIngress,
 			Hostname:         hostname,
 			Annotations:      map[string]string{"some.key": "some.value"},
 			IngressClassName: &ingressClassName,
@@ -190,7 +190,7 @@ func TestDesiredIngresses(t *testing.T) {
 
 		params.OtelCol.Namespace = ns
 		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
-			Type:             v1beta1.IngressTypeNginx,
+			Type:             v1beta1.IngressTypeIngress,
 			RuleType:         v1beta1.IngressRuleTypeSubdomain,
 			Hostname:         hostname,
 			Annotations:      map[string]string{"some.key": "some.value"},
