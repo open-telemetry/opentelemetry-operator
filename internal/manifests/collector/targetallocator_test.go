@@ -376,6 +376,43 @@ func TestGetScrapeConfigs(t *testing.T) {
 				{Object: map[string]interface{}{"job": "somejob"}},
 			},
 		},
+		{
+			name: "regex substitution",
+			input: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"prometheus": map[string]any{
+							"config": map[string]any{
+								"scrape_configs": []any{
+									map[string]any{
+										"job": "somejob",
+										"metric_relabel_configs": []map[string]any{
+											{
+												"action":      "labelmap",
+												"regex":       "label_(.+)",
+												"replacement": "$$1",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []v1beta1.AnyConfig{
+				{Object: map[string]interface{}{
+					"job": "somejob",
+					"metric_relabel_configs": []any{
+						map[any]any{
+							"action":      "labelmap",
+							"regex":       "label_(.+)",
+							"replacement": "$1",
+						},
+					},
+				}},
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
