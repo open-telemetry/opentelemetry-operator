@@ -70,26 +70,6 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-opentelemetry-io-v1alpha1-opentelemetrycollector
-  failurePolicy: Fail
-  name: mopentelemetrycollector.kb.io
-  rules:
-  - apiGroups:
-    - opentelemetry.io
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - opentelemetrycollectors
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
       path: /mutate-v1-pod
   failurePolicy: Ignore
   name: mpod.kb.io
@@ -225,43 +205,4 @@ webhooks:
     - DELETE
     resources:
     - opampbridges
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
-  failurePolicy: Fail
-  name: vopentelemetrycollectorcreateupdate.kb.io
-  rules:
-  - apiGroups:
-    - opentelemetry.io
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - opentelemetrycollectors
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
-  failurePolicy: Ignore
-  name: vopentelemetrycollectordelete.kb.io
-  rules:
-  - apiGroups:
-    - opentelemetry.io
-    apiVersions:
-    - v1alpha1
-    operations:
-    - DELETE
-    resources:
-    - opentelemetrycollectors
   sideEffects: None

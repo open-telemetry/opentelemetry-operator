@@ -32,7 +32,7 @@ import (
 func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 	name := naming.Ingress(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
-	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeNginx {
+	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeIngress {
 		return nil, nil
 	}
 
@@ -161,19 +161,24 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollec
 		// in the first case, we remove the port we inferred from the list
 		// in the second case, we rename our inferred port to something like "port-%d"
 		portNumbers, portNames := extractPortNumbersAndNames(otelcol.Spec.Ports)
-		var resultingInferredPorts []v1beta1.PortsSpec
+		var resultingInferredPorts []corev1.ServicePort
 		for _, inferred := range ports {
 			if filtered := filterPort(logger, inferred, portNumbers, portNames); filtered != nil {
 				resultingInferredPorts = append(resultingInferredPorts, *filtered)
 			}
 		}
-		ports = append(otelcol.Spec.Ports, resultingInferredPorts...)
+
+		ports = append(toServicePorts(otelcol.Spec.Ports), resultingInferredPorts...)
 	}
 
-	svcPorts := []corev1.ServicePort{}
-	for _, p := range ports {
-		svcPorts = append(svcPorts, p.ServicePort)
+	return ports, nil
+}
+
+func toServicePorts(spec []v1beta1.PortsSpec) []corev1.ServicePort {
+	var ports []corev1.ServicePort
+	for _, p := range spec {
+		ports = append(ports, p.ServicePort)
 	}
 
-	return svcPorts, err
+	return ports
 }
