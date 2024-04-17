@@ -45,15 +45,34 @@ kind: OpenTelemetryCollector
 metadata:
   name: stateful
 spec:
-  config: "receivers:\n  jaeger:\n      protocols:\n        grpc:\n\n  # Collect own
-    metrics\n  prometheus:\n    config:\n      scrape_configs:\n      - job_name:
-    'otel-collector'\n        scrape_interval: 10s\n        static_configs:\n        -
-    targets: [ '0.0.0.0:8888' ]\n        relabel_configs:\n        - regex: __meta_kubernetes_node_label_(.+)\n
-    \         action: labelmap\n          replacement: $$1\n        - regex: test_.*\n
-    \         action: labeldrop  \n        - regex: 'metrica_*|metricb.*'\n          action:
-    labelkeep\n          replacement: $$1\n\nprocessors:\n\nexporters:\n  debug:\nservice:\n
-    \ pipelines:\n    traces:\n      receivers: [jaeger]\n      processors: []\n      exporters:
-    [debug]\n"
+  config: |
+    receivers:
+      # Collect own metrics
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: 'otel-collector'
+            scrape_interval: 10s
+            static_configs:        
+            - targets: [ '0.0.0.0:8888' ]
+            metric_relabel_configs:
+            - action: labeldrop
+              regex: (id|name)
+            - action: labelmap
+              regex: label_(.+)
+              replacement: $$1
+    
+    processors:
+    
+    exporters:
+      debug:
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          processors: []
+          exporters: [debug]
+
   mode: statefulset
   targetAllocator:
     affinity:

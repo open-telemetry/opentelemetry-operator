@@ -117,7 +117,85 @@ func TestExtractPromConfigFromNullConfig(t *testing.T) {
 }
 
 func TestUnescapeDollarSignsInPromConfig(t *testing.T) {
-	actual := `
+	testCases := []struct {
+		description string
+		input       string
+		expected    string
+	}{
+		{
+			description: "no scrape configs",
+			input: `
+receivers:
+  prometheus:
+    config:
+      scrape_configs: []
+`,
+			expected: `
+receivers:
+  prometheus:
+    config:
+      scrape_configs: []
+`,
+		},
+		{
+			description: "only metric relabellings",
+			input: `
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: 'example'
+        metric_relabel_configs:
+        - source_labels: ['job']
+          target_label: 'job'
+          replacement: '$$1_$2'
+`,
+			expected: `
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: 'example'
+        metric_relabel_configs:
+        - source_labels: ['job']
+          target_label: 'job'
+          replacement: '$1_$2'
+`,
+		},
+		{
+			description: "only target relabellings",
+			input: `
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: 'example'
+        relabel_configs:
+        - source_labels: ['__meta_service_id']
+          target_label: 'job'
+          replacement: 'my_service_$$1'
+        - source_labels: ['__meta_service_name']
+          target_label: 'instance'
+          replacement: '$1'
+`,
+			expected: `
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: 'example'
+        relabel_configs:
+        - source_labels: ['__meta_service_id']
+          target_label: 'job'
+          replacement: 'my_service_$1'
+        - source_labels: ['__meta_service_name']
+          target_label: 'instance'
+          replacement: '$1'
+`,
+		},
+		{
+			description: "full",
+			input: `
 receivers:
   prometheus:
     config:
@@ -134,8 +212,8 @@ receivers:
         - source_labels: ['job']
           target_label: 'job'
           replacement: '$$1_$2'
-`
-	expected := `
+`,
+			expected: `
 receivers:
   prometheus:
     config:
@@ -152,20 +230,26 @@ receivers:
         - source_labels: ['job']
           target_label: 'job'
           replacement: '$1_$2'
-`
-
-	config, err := ta.UnescapeDollarSignsInPromConfig(actual)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
+`,
+		},
 	}
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.description, func(t *testing.T) {
+			config, err := ta.UnescapeDollarSignsInPromConfig(testCase.input)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
 
-	expectedConfig, err := ta.UnescapeDollarSignsInPromConfig(expected)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
+			expectedConfig, err := ta.UnescapeDollarSignsInPromConfig(testCase.expected)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
 
-	if !reflect.DeepEqual(config, expectedConfig) {
-		t.Errorf("unexpected config: got %v, want %v", config, expectedConfig)
+			if !reflect.DeepEqual(config, expectedConfig) {
+				t.Errorf("unexpected config: got %v, want %v", config, expectedConfig)
+			}
+		})
 	}
 }
 
