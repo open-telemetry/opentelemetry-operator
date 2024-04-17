@@ -29,17 +29,17 @@ Once the `opentelemetry-operator` deployment is ready, create an OpenTelemetry C
 
 ```yaml
 kubectl apply -f - <<EOF
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
+          grpc: {}
+          http: {}
     processors:
       memory_limiter:
         check_interval: 1s
@@ -50,7 +50,7 @@ spec:
         timeout: 10s
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
@@ -101,21 +101,21 @@ A sidecar with the OpenTelemetry Collector can be injected into pod-based worklo
 
 ```yaml
 kubectl apply -f - <<EOF
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: sidecar-for-my-app
 spec:
   mode: sidecar
-  config: |
+  config:
     receivers:
       jaeger:
         protocols:
-          thrift_compact:
+          thrift_compact: {}
     processors:
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
@@ -599,7 +599,8 @@ For more information about multi-instrumentation feature capabilities please see
 The OpenTelemetry Operator comes with an optional component, the [Target Allocator](/cmd/otel-allocator/README.md) (TA). When creating an OpenTelemetryCollector Custom Resource (CR) and setting the TA as enabled, the Operator will create a new deployment and service to serve specific `http_sd_config` directives for each Collector pod as part of that CR. It will also rewrite the Prometheus receiver configuration in the CR, so that it uses the deployed target allocator. The following example shows how to get started with the Target Allocator:
 
 ```yaml
-apiVersion: opentelemetry.io/v1alpha1
+kubectl apply -f - <<EOF
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: collector-with-ta
@@ -607,7 +608,7 @@ spec:
   mode: statefulset
   targetAllocator:
     enabled: true
-  config: |
+  config: 
     receivers:
       prometheus:
         config:
@@ -624,7 +625,7 @@ spec:
               replacement: $$1
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
@@ -632,6 +633,7 @@ spec:
           receivers: [prometheus]
           processors: []
           exporters: [debug]
+EOF
 ```
 
 The usage of `$$` in the replacement keys in the example above is based on the information provided in the Prometheus receiver [README](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) documentation, which states:
@@ -687,7 +689,8 @@ a function analogous to that of prometheus-operator itself. This is enabled via 
 See below for a minimal example:
 
 ```yaml
-apiVersion: opentelemetry.io/v1alpha1
+kubectl apply -f - <<EOF
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: collector-with-ta-prometheus-cr
@@ -698,13 +701,13 @@ spec:
     serviceAccount: everything-prometheus-operator-needs
     prometheusCR:
       enabled: true
-  config: |
+  config:
     receivers:
       prometheus:
-        config:
+        config: {}
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
@@ -712,6 +715,7 @@ spec:
           receivers: [prometheus]
           processors: []
           exporters: [debug]
+EOF
 ```
 
 ## Compatibility matrix
