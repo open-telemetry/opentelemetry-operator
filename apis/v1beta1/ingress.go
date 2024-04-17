@@ -23,9 +23,9 @@ type (
 )
 
 const (
-	// IngressTypeNginx specifies that an ingress entry should be created.
-	IngressTypeNginx IngressType = "ingress"
-	// IngressTypeOpenshiftRoute specifies that an route entry should be created.
+	// IngressTypeIngress specifies that an ingress should be created.
+	IngressTypeIngress IngressType = "ingress"
+	// IngressTypeRoute IngressTypeOpenshiftRoute specifies that an route should be created.
 	IngressTypeRoute IngressType = "route"
 )
 
