@@ -151,6 +151,9 @@ add-image-opampbridge:
 
 .PHONY: add-rbac-permissions-to-operator
 add-rbac-permissions-to-operator: manifests kustomize
+	# Kustomize only allows patches in the folder where the kustomization is located
+	# This folder is ignored by .gitignore
+	cp -r tests/e2e-automatic-rbac/extra-permissions-operator/ config/rbac/extra-permissions-operator
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/namespaces.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/nodes.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/rbac.yaml
