@@ -115,6 +115,9 @@ spec:
       - kind: Deployment
         name: ""
         version: apps/v1
+      - kind: Ingress
+        name: ""
+        version: networking/v1
       - kind: Pod
         name: ""
         version: v1
