@@ -89,7 +89,7 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 		case *corev1.Service:
 			svc := existing.(*corev1.Service)
 			wantSvc := desired.(*corev1.Service)
-			return mutateService(svc, wantSvc)
+			mutateService(svc, wantSvc)
 
 		case *corev1.ServiceAccount:
 			sa := existing.(*corev1.ServiceAccount)
@@ -256,12 +256,9 @@ func mutatePodMonitor(existing, desired *monitoringv1.PodMonitor) {
 	existing.Spec = desired.Spec
 }
 
-func mutateService(existing, desired *corev1.Service) error {
+func mutateService(existing, desired *corev1.Service) {
 	existing.Spec.Ports = desired.Spec.Ports
-	if err := mergeWithOverride(&existing.Spec.Selector, desired.Spec.Selector); err != nil {
-		return err
-	}
-	return nil
+	existing.Spec.Selector = desired.Spec.Selector
 }
 
 func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
