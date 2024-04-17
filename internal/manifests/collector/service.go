@@ -64,7 +64,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[monitoringLabel] = valueExists
 
-	metricsPort, err := adapters.ConfigToMetricsPort(params.OtelCol.Spec.Config.Service)
+	metricsPort, err := params.OtelCol.Spec.Config.Service.MetricsPort()
 	if err != nil {
 		return nil, err
 	}
@@ -125,14 +125,14 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 		// in the first case, we remove the port we inferred from the list
 		// in the second case, we rename our inferred port to something like "port-%d"
 		portNumbers, portNames := extractPortNumbersAndNames(params.OtelCol.Spec.Ports)
-		var resultingInferredPorts []v1beta1.PortsSpec
+		var resultingInferredPorts []corev1.ServicePort
 		for _, inferred := range ports {
 			if filtered := filterPort(params.Log, inferred, portNumbers, portNames); filtered != nil {
 				resultingInferredPorts = append(resultingInferredPorts, *filtered)
 			}
 		}
 
-		ports = append(params.OtelCol.Spec.Ports, resultingInferredPorts...)
+		ports = append(toServicePorts(params.OtelCol.Spec.Ports), resultingInferredPorts...)
 	}
 
 	// if we have no ports, we don't need a service
@@ -147,11 +147,6 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 		trafficPolicy = corev1.ServiceInternalTrafficPolicyLocal
 	}
 
-	svcPorts := []corev1.ServicePort{}
-	for _, p := range ports {
-		svcPorts = append(svcPorts, p.ServicePort)
-	}
-
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        naming.Service(params.OtelCol.Name),
@@ -163,7 +158,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 			InternalTrafficPolicy: &trafficPolicy,
 			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			ClusterIP:             "",
-			Ports:                 svcPorts,
+			Ports:                 ports,
 		},
 	}, nil
 }
@@ -185,7 +180,7 @@ func newPortNumberKey(port int32, protocol corev1.Protocol) PortNumberKey {
 	return PortNumberKey{Port: port, Protocol: protocol}
 }
 
-func filterPort(logger logr.Logger, candidate v1beta1.PortsSpec, portNumbers map[PortNumberKey]bool, portNames map[string]bool) *v1beta1.PortsSpec {
+func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers map[PortNumberKey]bool, portNames map[string]bool) *corev1.ServicePort {
 	if portNumbers[newPortNumberKey(candidate.Port, candidate.Protocol)] {
 		return nil
 	}

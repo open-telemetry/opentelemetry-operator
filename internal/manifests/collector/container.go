@@ -202,7 +202,7 @@ func getConfigContainerPorts(logger logr.Logger, cfgYaml string, conf v1beta1.Co
 		}
 	}
 
-	metricsPort, err := adapters.ConfigToMetricsPort(conf.Service)
+	metricsPort, err := conf.Service.MetricsPort()
 	if err != nil {
 		logger.Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
 		metricsPort = 8888

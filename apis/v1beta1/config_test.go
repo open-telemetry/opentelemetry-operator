@@ -210,3 +210,71 @@ func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, cfg.Service.GetTelemetry())
 }
+
+func TestConfigToMetricsPort(t *testing.T) {
+
+	for _, tt := range []struct {
+		desc         string
+		expectedPort int32
+		config       Service
+	}{
+		{
+			"custom port",
+			9090,
+			Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "0.0.0.0:9090",
+						},
+					},
+				},
+			},
+		},
+		{
+			"bad address",
+			8888,
+			Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "0.0.0.0",
+						},
+					},
+				},
+			},
+		},
+		{
+			"missing address",
+			8888,
+			Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"level": "detailed",
+						},
+					},
+				},
+			},
+		},
+		{
+			"missing metrics",
+			8888,
+			Service{
+				Telemetry: &AnyConfig{},
+			},
+		},
+		{
+			"missing telemetry",
+			8888,
+			Service{},
+		},
+	} {
+		t.Run(tt.desc, func(t *testing.T) {
+			// these are acceptable failures, we return to the collector's default metric port
+			port, err := tt.config.MetricsPort()
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedPort, port)
+		})
+	}
+}

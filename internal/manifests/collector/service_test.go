@@ -54,14 +54,14 @@ func TestFilterPort(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		candidate   v1beta1.PortsSpec
+		candidate   v1.ServicePort
 		portNumbers map[PortNumberKey]bool
 		portNames   map[string]bool
-		expected    v1beta1.PortsSpec
+		expected    v1.ServicePort
 	}{
 		{
 			name:      "should filter out duplicate port",
-			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080}},
+			candidate: v1.ServicePort{Name: "web", Port: 8080},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKeyByPort(8080): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"test": true, "metrics": true},
@@ -69,7 +69,7 @@ func TestFilterPort(t *testing.T) {
 
 		{
 			name:      "should filter out duplicate port, protocol specified (TCP)",
-			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolTCP}},
+			candidate: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolTCP},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKeyByPort(8080): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"test": true, "metrics": true},
@@ -77,7 +77,7 @@ func TestFilterPort(t *testing.T) {
 
 		{
 			name:      "should filter out duplicate port, protocol specified (UDP)",
-			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolUDP}},
+			candidate: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolUDP},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKey(8080, v1.ProtocolUDP): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"test": true, "metrics": true},
@@ -85,52 +85,52 @@ func TestFilterPort(t *testing.T) {
 
 		{
 			name:      "should not filter unique port",
-			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8090}},
+			candidate: v1.ServicePort{Name: "web", Port: 8090},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKeyByPort(8080): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"test": true, "metrics": true},
-			expected:  v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8090}},
+			expected:  v1.ServicePort{Name: "web", Port: 8090},
 		},
 
 		{
 			name:      "should not filter same port with different protocols",
-			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080}},
+			candidate: v1.ServicePort{Name: "web", Port: 8080},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKey(8080, v1.ProtocolUDP): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"test": true, "metrics": true},
-			expected:  v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080}},
+			expected:  v1.ServicePort{Name: "web", Port: 8080},
 		},
 
 		{
 			name:      "should not filter same port with different protocols, candidate has specified port (TCP vs UDP)",
-			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolTCP}},
+			candidate: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolTCP},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKey(8080, v1.ProtocolUDP): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"test": true, "metrics": true},
-			expected:  v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolTCP}},
+			expected:  v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolTCP},
 		},
 
 		{
 			name:      "should not filter same port with different protocols, candidate has specified port (UDP vs TCP)",
-			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolUDP}},
+			candidate: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolUDP},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKeyByPort(8080): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"test": true, "metrics": true},
-			expected:  v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolUDP}},
+			expected:  v1.ServicePort{Name: "web", Port: 8080, Protocol: v1.ProtocolUDP},
 		},
 
 		{
 			name:      "should change the duplicate portName",
-			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8090}},
+			candidate: v1.ServicePort{Name: "web", Port: 8090},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKeyByPort(8080): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"web": true, "metrics": true},
-			expected:  v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "port-8090", Port: 8090}},
+			expected:  v1.ServicePort{Name: "port-8090", Port: 8090},
 		},
 
 		{
 			name:      "should return nil if fallback name clashes with existing portName",
-			candidate: v1beta1.PortsSpec{ServicePort: v1.ServicePort{Name: "web", Port: 8090}},
+			candidate: v1.ServicePort{Name: "web", Port: 8090},
 			portNumbers: map[PortNumberKey]bool{
 				newPortNumberKeyByPort(8080): true, newPortNumberKeyByPort(9200): true},
 			portNames: map[string]bool{"web": true, "port-8090": true},
@@ -139,7 +139,7 @@ func TestFilterPort(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			actual := filterPort(logger, test.candidate, test.portNumbers, test.portNames)
-			if test.expected != (v1beta1.PortsSpec{}) {
+			if test.expected != (v1.ServicePort{}) {
 				assert.Equal(t, test.expected, *actual)
 				return
 			}

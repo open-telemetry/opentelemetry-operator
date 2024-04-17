@@ -24,9 +24,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
+
+var testScheme = scheme.Scheme
 
 func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 	one := int32(1)

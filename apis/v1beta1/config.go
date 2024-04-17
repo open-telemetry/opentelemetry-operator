@@ -18,8 +18,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
 	"reflect"
 	"sort"
+	"strconv"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -133,6 +136,26 @@ type Service struct {
 	Telemetry *AnyConfig `json:"telemetry,omitempty" yaml:"telemetry,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Pipelines AnyConfig `json:"pipelines" yaml:"pipelines"`
+}
+
+// MetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
+func (s *Service) MetricsPort() (int32, error) {
+	if s.GetTelemetry() == nil {
+		// telemetry isn't set, use the default
+		return 8888, nil
+	}
+	_, port, netErr := net.SplitHostPort(s.GetTelemetry().Metrics.Address)
+	if netErr != nil && strings.Contains(netErr.Error(), "missing port in address") {
+		return 8888, nil
+	} else if netErr != nil {
+		return 0, netErr
+	}
+	i64, err := strconv.ParseInt(port, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+
+	return int32(i64), nil
 }
 
 // MetricsConfig comes from the collector.
