@@ -90,7 +90,7 @@ The `spec.targetAllocator:` controls the TargetAllocator general properties. Ful
 
 A basic example that deploys.
 ```yaml
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: collector-with-ta
