@@ -28,20 +28,21 @@ spec:
     receivers:
       jaeger:
         protocols:
-          grpc:
+          grpc: {}
 
     processors:
-      batch:
+      batch: {}
 
     exporters:
-      jaeger:
+      otlp:
         endpoint: "simplest-collector-headless.default.svc:14250"
-        ca_file: "/etc/pki/ca-trust/source/service-ca/service-ca.crt"
-        server_name_override: "simplest-collector-headless.default.svc.cluster.local"
+        tls:
+          ca_file: "/etc/pki/ca-trust/source/service-ca/service-ca.crt"
+          server_name_override: "simplest-collector-headless.default.svc.cluster.local"
 
     service:
       pipelines:
         traces:
           receivers: [jaeger]
           processors: [batch]
-          exporters: [jaeger]
+          exporters: [otlp]
