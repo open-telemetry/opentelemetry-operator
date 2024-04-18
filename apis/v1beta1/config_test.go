@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 	go_yaml "gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/yaml"
 )
 
@@ -115,31 +116,29 @@ func TestNullObjects_go_yaml(t *testing.T) {
 
 func TestConfigYaml(t *testing.T) {
 	cfg := &Config{
-		Receivers: ComponentDefinitionMap{
-			"otlp": nil,
-		},
-		Processors: ComponentDefinitionMap{
-			"modify_2000": &AnyConfig{
-				map[string]interface{}{
-					"enabled": true,
-				},
+		Receivers: AnyConfig{
+			Object: map[string]interface{}{
+				"otlp": nil,
 			},
 		},
-		Exporters: ComponentDefinitionMap{
-			"otlp/exporter": nil,
-		},
-		Connectors: ComponentDefinitionMap{
-			"con": &AnyConfig{
-				map[string]interface{}{
-					"enabled": true,
-				},
+		Processors: &AnyConfig{
+			Object: map[string]interface{}{
+				"modify_2000": "enabled",
 			},
 		},
-		Extensions: ComponentDefinitionMap{
-			"addon": &AnyConfig{
-				map[string]interface{}{
-					"enabled": true,
-				},
+		Exporters: AnyConfig{
+			Object: map[string]interface{}{
+				"otlp/exporter": nil,
+			},
+		},
+		Connectors: &AnyConfig{
+			Object: map[string]interface{}{
+				"con": "magic",
+			},
+		},
+		Extensions: &AnyConfig{
+			Object: map[string]interface{}{
+				"addon": "option1",
 			},
 		},
 		Service: Service{
@@ -166,14 +165,11 @@ func TestConfigYaml(t *testing.T) {
 exporters:
   otlp/exporter: null
 processors:
-  modify_2000:
-    enabled: true
+  modify_2000: enabled
 connectors:
-  con:
-    enabled: true
+  con: magic
 extensions:
-  addon:
-    enabled: true
+  addon: option1
 service:
   extensions:
     - addon
@@ -200,7 +196,16 @@ func TestGetReceiverListFromYAML(t *testing.T) {
 	err = go_yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
 	assert.Len(t, cfg.GetReceivers(), 1)
-	expectedPorts := []corev1.ServicePort{}
+	grpcAppProtocol := "grpc"
+	expectedPorts := []corev1.ServicePort{
+		{
+			Name:        "otlp-grpc",
+			AppProtocol: &grpcAppProtocol,
+			Port:        4317,
+			TargetPort:  intstr.FromInt32(4317),
+			Protocol:    corev1.ProtocolTCP,
+		},
+	}
 	actualPorts, err := cfg.GetReceivers()[0].Ports(logr.Discard())
 	assert.NoError(t, err)
 	assert.Equal(t, expectedPorts, actualPorts)

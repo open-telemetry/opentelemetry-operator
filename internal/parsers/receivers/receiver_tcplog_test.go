@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package receiver
+package receivers
 
 import (
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -28,7 +29,7 @@ func TestTcpLogSelfRegisters(t *testing.T) {
 
 func TestTcpLogIsFoundByName(t *testing.T) {
 	// test
-	p, err := For(logger, "tcplog", map[interface{}]interface{}{})
+	p, err := For("tcplog", map[string]interface{}{})
 	assert.NoError(t, err)
 
 	// verify
@@ -37,24 +38,31 @@ func TestTcpLogIsFoundByName(t *testing.T) {
 
 func TestTcpLogConfiguration(t *testing.T) {
 	for _, tt := range []struct {
-		desc     string
-		config   map[interface{}]interface{}
-		expected []corev1.ServicePort
+		desc        string
+		config      map[string]interface{}
+		expected    []corev1.ServicePort
+		expectedErr bool
 	}{
-		{"Empty configuration", map[interface{}]interface{}{}, []corev1.ServicePort{}},
+		{"Empty configuration", map[string]interface{}{}, []corev1.ServicePort{}, true},
 		{"TCP port configuration",
-			map[interface{}]interface{}{"listen_address": "0.0.0.0:1234"},
-			[]corev1.ServicePort{{Name: "tcplog", Port: 1234, Protocol: corev1.ProtocolTCP}}},
+			map[string]interface{}{"listen_address": "0.0.0.0:1234"},
+			[]corev1.ServicePort{{Name: "tcplog", Port: 1234, Protocol: corev1.ProtocolTCP}},
+			false},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			// prepare
-			builder := NewTcpLogReceiverParser(logger, "tcplog", tt.config)
+			builder, err := For("tcplog", tt.config)
+			assert.NoError(t, err)
 
 			// test
-			ports, err := builder.Ports()
+			ports, err := builder.Ports(logr.Discard())
 
 			// verify
-			assert.NoError(t, err)
+			if tt.expectedErr {
+				assert.Error(t, err, "expecting an error")
+			} else {
+				assert.NoError(t, err, "not expecting an error")
+			}
 			assert.Equal(t, ports, tt.expected)
 		})
 	}

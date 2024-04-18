@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package receiver
+package receivers
 
 import (
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -28,7 +29,7 @@ func TestJaegerSelfRegisters(t *testing.T) {
 
 func TestJaegerIsFoundByName(t *testing.T) {
 	// test
-	p, err := For(logger, "jaeger", map[interface{}]interface{}{})
+	p, err := For("jaeger", map[string]interface{}{})
 	assert.NoError(t, err)
 
 	// verify
@@ -37,14 +38,15 @@ func TestJaegerIsFoundByName(t *testing.T) {
 
 func TestJaegerMinimalConfiguration(t *testing.T) {
 	// prepare
-	builder := NewJaegerReceiverParser(logger, "jaeger", map[interface{}]interface{}{
-		"protocols": map[interface{}]interface{}{
-			"grpc": map[interface{}]interface{}{},
+	builder, err := For("jaeger", map[string]interface{}{
+		"protocols": map[string]interface{}{
+			"grpc": map[string]interface{}{},
 		},
 	})
+	assert.NoError(t, err)
 
 	// test
-	ports, err := builder.Ports()
+	ports, err := builder.Ports(logr.Discard())
 
 	// verify
 	assert.NoError(t, err)
@@ -55,16 +57,17 @@ func TestJaegerMinimalConfiguration(t *testing.T) {
 
 func TestJaegerPortsOverridden(t *testing.T) {
 	// prepare
-	builder := NewJaegerReceiverParser(logger, "jaeger", map[interface{}]interface{}{
-		"protocols": map[interface{}]interface{}{
-			"grpc": map[interface{}]interface{}{
+	builder, err := For("jaeger", map[string]interface{}{
+		"protocols": map[string]interface{}{
+			"grpc": map[string]interface{}{
 				"endpoint": "0.0.0.0:1234",
 			},
 		},
 	})
+	assert.NoError(t, err)
 
 	// test
-	ports, err := builder.Ports()
+	ports, err := builder.Ports(logr.Discard())
 
 	// verify
 	assert.NoError(t, err)
@@ -75,14 +78,15 @@ func TestJaegerPortsOverridden(t *testing.T) {
 
 func TestJaegerExposeDefaultPorts(t *testing.T) {
 	// prepare
-	builder := NewJaegerReceiverParser(logger, "jaeger", map[interface{}]interface{}{
-		"protocols": map[interface{}]interface{}{
-			"grpc":           map[interface{}]interface{}{},
-			"thrift_http":    map[interface{}]interface{}{},
-			"thrift_compact": map[interface{}]interface{}{},
-			"thrift_binary":  map[interface{}]interface{}{},
+	builder, err := For("jaeger", map[string]interface{}{
+		"protocols": map[string]interface{}{
+			"grpc":           map[string]interface{}{},
+			"thrift_http":    map[string]interface{}{},
+			"thrift_compact": map[string]interface{}{},
+			"thrift_binary":  map[string]interface{}{},
 		},
 	})
+	assert.NoError(t, err)
 
 	expectedResults := map[string]struct {
 		transportProtocol corev1.Protocol
@@ -96,7 +100,7 @@ func TestJaegerExposeDefaultPorts(t *testing.T) {
 	}
 
 	// test
-	ports, err := builder.Ports()
+	ports, err := builder.Ports(logr.Discard())
 
 	// verify
 	assert.NoError(t, err)

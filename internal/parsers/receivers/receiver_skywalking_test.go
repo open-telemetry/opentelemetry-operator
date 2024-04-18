@@ -12,51 +12,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package receiver
+package receivers
 
 import (
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLokiSelfRegisters(t *testing.T) {
+func TestSkywalkingSelfRegisters(t *testing.T) {
 	// verify
-	assert.True(t, IsRegistered("loki"))
+	assert.True(t, IsRegistered("skywalking"))
 }
 
-func TestLokiIsFoundByName(t *testing.T) {
+func TestSkywalkingIsFoundByName(t *testing.T) {
 	// test
-	p, err := For(logger, "loki", map[interface{}]interface{}{})
+	p, err := For("skywalking", map[string]interface{}{})
 	assert.NoError(t, err)
 
 	// verify
-	assert.Equal(t, "__loki", p.ParserName())
+	assert.Equal(t, "__skywalking", p.ParserName())
 }
 
-func TestLokiPortsOverridden(t *testing.T) {
+func TestSkywalkingPortsOverridden(t *testing.T) {
 	// prepare
-	builder := NewLokiReceiverParser(logger, "loki", map[interface{}]interface{}{
-		"protocols": map[interface{}]interface{}{
-			"grpc": map[interface{}]interface{}{
+	builder, err := For("skywalking", map[string]interface{}{
+		"protocols": map[string]interface{}{
+			"grpc": map[string]interface{}{
 				"endpoint": "0.0.0.0:1234",
 			},
-			"http": map[interface{}]interface{}{
+			"http": map[string]interface{}{
 				"endpoint": "0.0.0.0:1235",
 			},
 		},
 	})
-
+	assert.NoError(t, err)
 	expectedResults := map[string]struct {
 		portNumber int32
 		seen       bool
 	}{
-		"loki-grpc": {portNumber: 1234},
-		"loki-http": {portNumber: 1235},
+		"skywalking-grpc": {portNumber: 1234},
+		"skywalking-http": {portNumber: 1235},
 	}
 
 	// test
-	ports, err := builder.Ports()
+	ports, err := builder.Ports(logr.Discard())
 
 	// verify
 	assert.NoError(t, err)
@@ -73,25 +74,26 @@ func TestLokiPortsOverridden(t *testing.T) {
 	}
 }
 
-func TestLokiExposeDefaultPorts(t *testing.T) {
+func TestSkywalkingExposeDefaultPorts(t *testing.T) {
 	// prepare
-	builder := NewLokiReceiverParser(logger, "loki", map[interface{}]interface{}{
-		"protocols": map[interface{}]interface{}{
-			"grpc": map[interface{}]interface{}{},
-			"http": map[interface{}]interface{}{},
+	builder, err := For("skywalking", map[string]interface{}{
+		"protocols": map[string]interface{}{
+			"grpc": map[string]interface{}{},
+			"http": map[string]interface{}{},
 		},
 	})
+	assert.NoError(t, err)
 
 	expectedResults := map[string]struct {
 		portNumber int32
 		seen       bool
 	}{
-		"loki-grpc": {portNumber: 9095},
-		"loki-http": {portNumber: 3100},
+		"skywalking-grpc": {portNumber: 11800},
+		"skywalking-http": {portNumber: 12800},
 	}
 
 	// test
-	ports, err := builder.Ports()
+	ports, err := builder.Ports(logr.Discard())
 
 	// verify
 	assert.NoError(t, err)

@@ -48,7 +48,7 @@ type Receiver struct {
 	name   string
 
 	// Optional fields
-	defaultAppProtocol string
+	defaultAppProtocol *string
 	defaultProtocol    corev1.Protocol
 	defaultPort        int32
 }
@@ -78,7 +78,7 @@ func (g *Receiver) ParserName() string {
 	return fmt.Sprintf("__%s", g.ParserType())
 }
 
-func WithDefaultAppProtocol(proto string) Option {
+func WithDefaultAppProtocol(proto *string) Option {
 	return func(receiver *Receiver) {
 		receiver.defaultAppProtocol = proto
 	}
@@ -115,6 +115,9 @@ func (g *Receiver) IsScraper() bool {
 
 // Ports returns all the service ports for all protocols in this parser.
 func (g *Receiver) Ports(logger logr.Logger) ([]corev1.ServicePort, error) {
+	if g.IsScraper() {
+		return nil, nil
+	}
 	portNum, err := g.config.getPortNum()
 	if err != nil && g.defaultPort > 0 {
 		logger.WithValues("receiver", g.config).Error(err, "couldn't parse the endpoint's port")
@@ -122,7 +125,7 @@ func (g *Receiver) Ports(logger logr.Logger) ([]corev1.ServicePort, error) {
 			Port:        g.defaultPort,
 			Name:        naming.PortName(g.name, g.defaultPort),
 			Protocol:    g.defaultProtocol,
-			AppProtocol: &g.defaultAppProtocol,
+			AppProtocol: g.defaultAppProtocol,
 		}}, nil
 	} else if err != nil {
 		logger.WithValues("receiver", g.config).Error(err, "couldn't parse the endpoint's port and no default port set")
@@ -134,7 +137,7 @@ func (g *Receiver) Ports(logger logr.Logger) ([]corev1.ServicePort, error) {
 			Name:        naming.PortName(g.name, portNum),
 			Port:        portNum,
 			Protocol:    g.defaultProtocol,
-			AppProtocol: &g.defaultAppProtocol,
+			AppProtocol: g.defaultAppProtocol,
 		},
 	}, nil
 }

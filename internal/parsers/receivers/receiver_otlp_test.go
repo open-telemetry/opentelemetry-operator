@@ -12,51 +12,53 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package receiver
+package receivers
 
 import (
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSkywalkingSelfRegisters(t *testing.T) {
+func TestOTLPSelfRegisters(t *testing.T) {
 	// verify
-	assert.True(t, IsRegistered("skywalking"))
+	assert.True(t, IsRegistered("otlp"))
 }
 
-func TestSkywalkingIsFoundByName(t *testing.T) {
+func TestOTLPIsFoundByName(t *testing.T) {
 	// test
-	p, err := For(logger, "skywalking", map[interface{}]interface{}{})
+	p, err := For("otlp", map[string]interface{}{})
 	assert.NoError(t, err)
 
 	// verify
-	assert.Equal(t, "__skywalking", p.ParserName())
+	assert.Equal(t, "__otlp", p.ParserName())
 }
 
-func TestSkywalkingPortsOverridden(t *testing.T) {
+func TestOTLPPortsOverridden(t *testing.T) {
 	// prepare
-	builder := NewSkywalkingReceiverParser(logger, "skywalking", map[interface{}]interface{}{
-		"protocols": map[interface{}]interface{}{
-			"grpc": map[interface{}]interface{}{
+	builder, err := NewOTLPReceiverParser("otlp", map[string]interface{}{
+		"protocols": map[string]interface{}{
+			"grpc": map[string]interface{}{
 				"endpoint": "0.0.0.0:1234",
 			},
-			"http": map[interface{}]interface{}{
+			"http": map[string]interface{}{
 				"endpoint": "0.0.0.0:1235",
 			},
 		},
 	})
+	assert.NoError(t, err)
 
 	expectedResults := map[string]struct {
 		portNumber int32
 		seen       bool
 	}{
-		"skywalking-grpc": {portNumber: 1234},
-		"skywalking-http": {portNumber: 1235},
+		"otlp-grpc": {portNumber: 1234},
+		"otlp-http": {portNumber: 1235},
 	}
 
 	// test
-	ports, err := builder.Ports()
+	ports, err := builder.Ports(logr.Discard())
 
 	// verify
 	assert.NoError(t, err)
@@ -73,25 +75,26 @@ func TestSkywalkingPortsOverridden(t *testing.T) {
 	}
 }
 
-func TestSkywalkingExposeDefaultPorts(t *testing.T) {
+func TestOTLPExposeDefaultPorts(t *testing.T) {
 	// prepare
-	builder := NewSkywalkingReceiverParser(logger, "skywalking", map[interface{}]interface{}{
-		"protocols": map[interface{}]interface{}{
-			"grpc": map[interface{}]interface{}{},
-			"http": map[interface{}]interface{}{},
+	builder, err := NewOTLPReceiverParser("otlp", map[string]interface{}{
+		"protocols": map[string]interface{}{
+			"grpc": map[string]interface{}{},
+			"http": map[string]interface{}{},
 		},
 	})
+	assert.NoError(t, err)
 
 	expectedResults := map[string]struct {
 		portNumber int32
 		seen       bool
 	}{
-		"skywalking-grpc": {portNumber: 11800},
-		"skywalking-http": {portNumber: 12800},
+		"otlp-grpc": {portNumber: 4317},
+		"otlp-http": {portNumber: 4318},
 	}
 
 	// test
-	ports, err := builder.Ports()
+	ports, err := builder.Ports(logr.Discard())
 
 	// verify
 	assert.NoError(t, err)

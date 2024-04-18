@@ -78,28 +78,24 @@ func (c *AnyConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.Object)
 }
 
-// ComponentDefinitionMap is the type from name -> config for a component definition
-// in the collector.
-type ComponentDefinitionMap map[string]*AnyConfig
-
 // Config encapsulates collector config.
 type Config struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Receivers ComponentDefinitionMap `json:"receivers" yaml:"receivers"`
+	Receivers AnyConfig `json:"receivers" yaml:"receivers"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Exporters ComponentDefinitionMap `json:"exporters" yaml:"exporters"`
+	Exporters AnyConfig `json:"exporters" yaml:"exporters"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Processors ComponentDefinitionMap `json:"processors,omitempty" yaml:"processors,omitempty"`
+	Processors *AnyConfig `json:"processors,omitempty" yaml:"processors,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Connectors ComponentDefinitionMap `json:"connectors,omitempty" yaml:"connectors,omitempty"`
+	Connectors *AnyConfig `json:"connectors,omitempty" yaml:"connectors,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Extensions ComponentDefinitionMap `json:"extensions,omitempty" yaml:"extensions,omitempty"`
-	Service    Service                `json:"service" yaml:"service"`
+	Extensions *AnyConfig `json:"extensions,omitempty" yaml:"extensions,omitempty"`
+	Service    Service    `json:"service" yaml:"service"`
 }
 
 func (c *Config) GetReceivers() []parsers.ComponentPortParser {
 	var receiverList []parsers.ComponentPortParser
-	for name, config := range c.Receivers {
+	for name, config := range c.Receivers.Object {
 		parser, err := receivers.For(name, config)
 		if err != nil {
 			continue
@@ -123,24 +119,24 @@ func (c *Config) Yaml() (string, error) {
 // Returns null objects in the config.
 func (c *Config) nullObjects() []string {
 	var nullKeys []string
-	if nulls := componentHasNullValue(c.Receivers); len(nulls) > 0 {
+	if nulls := hasNullValue(c.Receivers.Object); len(nulls) > 0 {
 		nullKeys = append(nullKeys, addPrefix("receivers.", nulls)...)
 	}
-	if nulls := componentHasNullValue(c.Exporters); len(nulls) > 0 {
+	if nulls := hasNullValue(c.Exporters.Object); len(nulls) > 0 {
 		nullKeys = append(nullKeys, addPrefix("exporters.", nulls)...)
 	}
 	if c.Processors != nil {
-		if nulls := componentHasNullValue(c.Processors); len(nulls) > 0 {
+		if nulls := hasNullValue(c.Processors.Object); len(nulls) > 0 {
 			nullKeys = append(nullKeys, addPrefix("processors.", nulls)...)
 		}
 	}
 	if c.Extensions != nil {
-		if nulls := componentHasNullValue(c.Extensions); len(nulls) > 0 {
+		if nulls := hasNullValue(c.Extensions.Object); len(nulls) > 0 {
 			nullKeys = append(nullKeys, addPrefix("extensions.", nulls)...)
 		}
 	}
 	if c.Connectors != nil {
-		if nulls := componentHasNullValue(c.Connectors); len(nulls) > 0 {
+		if nulls := hasNullValue(c.Connectors.Object); len(nulls) > 0 {
 			nullKeys = append(nullKeys, addPrefix("connectors.", nulls)...)
 		}
 	}
@@ -218,18 +214,6 @@ func (s *Service) GetTelemetry() *Telemetry {
 		return nil
 	}
 	return t
-}
-
-func componentHasNullValue(def ComponentDefinitionMap) []string {
-	var nullKeys []string
-	for k, v := range def {
-		if v.Object == nil {
-			nullKeys = append(nullKeys, fmt.Sprintf("%s:", k))
-			continue
-		}
-		nullKeys = append(nullKeys, hasNullValue(v.Object)...)
-	}
-	return nullKeys
 }
 
 func hasNullValue(cfg map[string]interface{}) []string {

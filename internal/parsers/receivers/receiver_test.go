@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package receiver
+package receivers
 
 import (
 	"testing"
@@ -22,8 +22,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/parsers"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -89,28 +89,16 @@ func TestReceiverParsePortFromEndpoint(t *testing.T) {
 	}
 }
 
-func TestReceiverFailsWhenPortIsntString(t *testing.T) {
-	// prepare
-	config := map[interface{}]interface{}{
-		"endpoint": 123,
-	}
-
-	// test
-	p := singlePortFromConfigEndpoint(logger, "myreceiver", config)
-
-	// verify
-	assert.Nil(t, p)
-}
-
 func TestIgnorekubeletstatsEndpoint(t *testing.T) {
 	// ignore "kubeletstats" receiver endpoint field, this is special case
 	// as this receiver gets parsed by generic receiver parser
-	builder := NewGenericReceiverParser(logger, "kubeletstats", map[interface{}]interface{}{
+	builder, err := For("kubeletstats", map[string]interface{}{
 		"endpoint": "0.0.0.0:9000",
 	})
+	assert.NoError(t, err)
 
 	// test
-	ports, err := builder.Ports()
+	ports, err := builder.Ports(logr.Discard())
 
 	// verify
 	assert.NoError(t, err)
@@ -119,23 +107,23 @@ func TestIgnorekubeletstatsEndpoint(t *testing.T) {
 
 func TestReceiverFallbackWhenNotRegistered(t *testing.T) {
 	// test
-	p, err := For(logger, "myreceiver", map[interface{}]interface{}{})
+	p, err := For("myreceiver", map[string]interface{}{})
 	assert.NoError(t, err)
 
 	// test
-	assert.Equal(t, "__generic", p.ParserName())
+	assert.Equal(t, "__myreceiver", p.ParserName())
 }
 
 func TestReceiverShouldFindRegisteredParser(t *testing.T) {
 	// prepare
 	builderCalled := false
-	Register("mock", func(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
+	Register("mock", func(name string, config interface{}) (parsers.ComponentPortParser, error) {
 		builderCalled = true
-		return &mockParser{}
+		return &mockParser{}, nil
 	})
 
 	// test
-	_, _ = For(logger, "mock", map[interface{}]interface{}{})
+	_, _ = For("mock", map[string]interface{}{})
 
 	// verify
 	assert.True(t, builderCalled)
@@ -144,7 +132,7 @@ func TestReceiverShouldFindRegisteredParser(t *testing.T) {
 type mockParser struct {
 }
 
-func (m *mockParser) Ports() ([]corev1.ServicePort, error) {
+func (m *mockParser) Ports(l logr.Logger) ([]corev1.ServicePort, error) {
 	return nil, nil
 }
 
@@ -153,11 +141,12 @@ func (m *mockParser) ParserName() string {
 }
 
 func TestSkipPortsForScrapers(t *testing.T) {
-	for receiver := range scraperReceivers {
-		builder := NewGenericReceiverParser(logger, receiver, map[interface{}]interface{}{
+	for r := range scraperReceivers {
+		builder, err := For(r, map[string]interface{}{
 			"endpoint": "0.0.0.0:42069",
 		})
-		ports, err := builder.Ports()
+		assert.NoError(t, err)
+		ports, err := builder.Ports(logr.Discard())
 		assert.NoError(t, err)
 		assert.Len(t, ports, 0)
 	}

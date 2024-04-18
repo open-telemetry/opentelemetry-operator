@@ -56,12 +56,16 @@ func TestValidate(t *testing.T) {
 			collector: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					Config: Config{
-						Processors: ComponentDefinitionMap{
-							"batch": nil,
-							"foo":   nil,
+						Processors: &AnyConfig{
+							Object: map[string]interface{}{
+								"batch": nil,
+								"foo":   nil,
+							},
 						},
-						Extensions: ComponentDefinitionMap{
-							"foo": nil,
+						Extensions: &AnyConfig{
+							Object: map[string]interface{}{
+								"foo": nil,
+							},
 						},
 					},
 				},
