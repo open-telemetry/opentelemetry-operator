@@ -3,7 +3,7 @@
 Target Allocator is an optional component of the OpenTelemetry Collector [Custom Resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) (CR). The release version matches the
 operator's most recent release as well.
 
-> 🚨 **Note:** the TargetAllocator currently supports `deployment`, `statefulset`, and `daemonset` deployment modes of the `OpenTelemetryCollector` CR.
+> 🚨 **Note:** the TargetAllocator currently supports the `statefulset` and `daemonset` deployment modes of the `OpenTelemetryCollector` CR.
 
 In a nutshell, the TA is a mechanism for decoupling the service discovery and metric collection functions of Prometheus such that they can be scaled independently. The Collector manages Prometheus metrics without needing to install Prometheus. The TA manages the configuration of the Collector's [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md).
 
