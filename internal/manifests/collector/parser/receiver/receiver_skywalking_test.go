@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package receivers
+package receiver
 
 import (
 	"testing"
@@ -21,23 +21,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOTLPSelfRegisters(t *testing.T) {
+func TestSkywalkingSelfRegisters(t *testing.T) {
 	// verify
-	assert.True(t, IsRegistered("otlp"))
+	assert.True(t, IsRegistered("skywalking"))
 }
 
-func TestOTLPIsFoundByName(t *testing.T) {
+func TestSkywalkingIsFoundByName(t *testing.T) {
 	// test
-	p, err := For("otlp", map[string]interface{}{})
+	p, err := For("skywalking", map[string]interface{}{})
 	assert.NoError(t, err)
 
 	// verify
-	assert.Equal(t, "__otlp", p.ParserName())
+	assert.Equal(t, "__skywalking", p.ParserName())
 }
 
-func TestOTLPPortsOverridden(t *testing.T) {
+func TestSkywalkingPortsOverridden(t *testing.T) {
 	// prepare
-	builder, err := NewOTLPReceiverParser("otlp", map[string]interface{}{
+	builder, err := For("skywalking", map[string]interface{}{
 		"protocols": map[string]interface{}{
 			"grpc": map[string]interface{}{
 				"endpoint": "0.0.0.0:1234",
@@ -48,13 +48,12 @@ func TestOTLPPortsOverridden(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
-
 	expectedResults := map[string]struct {
 		portNumber int32
 		seen       bool
 	}{
-		"otlp-grpc": {portNumber: 1234},
-		"otlp-http": {portNumber: 1235},
+		"skywalking-grpc": {portNumber: 1234},
+		"skywalking-http": {portNumber: 1235},
 	}
 
 	// test
@@ -75,9 +74,9 @@ func TestOTLPPortsOverridden(t *testing.T) {
 	}
 }
 
-func TestOTLPExposeDefaultPorts(t *testing.T) {
+func TestSkywalkingExposeDefaultPorts(t *testing.T) {
 	// prepare
-	builder, err := NewOTLPReceiverParser("otlp", map[string]interface{}{
+	builder, err := For("skywalking", map[string]interface{}{
 		"protocols": map[string]interface{}{
 			"grpc": map[string]interface{}{},
 			"http": map[string]interface{}{},
@@ -89,8 +88,8 @@ func TestOTLPExposeDefaultPorts(t *testing.T) {
 		portNumber int32
 		seen       bool
 	}{
-		"otlp-grpc": {portNumber: 4317},
-		"otlp-http": {portNumber: 4318},
+		"skywalking-grpc": {portNumber: 11800},
+		"skywalking-http": {portNumber: 12800},
 	}
 
 	// test

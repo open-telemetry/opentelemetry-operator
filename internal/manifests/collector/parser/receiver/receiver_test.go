@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package receivers
+package receiver
 
 import (
 	"testing"
@@ -22,8 +22,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/internal/parsers"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -42,49 +42,6 @@ func TestReceiverPortNames(t *testing.T) {
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			assert.Equal(t, tt.expected, naming.PortName(tt.candidate, int32(tt.port)))
-		})
-	}
-}
-
-func TestReceiverType(t *testing.T) {
-	for _, tt := range []struct {
-		desc     string
-		name     string
-		expected string
-	}{
-		{"regular case", "myreceiver", "myreceiver"},
-		{"named instance", "myreceiver/custom", "myreceiver"},
-	} {
-		t.Run(tt.desc, func(t *testing.T) {
-			// test and verify
-			assert.Equal(t, tt.expected, receiverType(tt.name))
-		})
-	}
-}
-
-func TestReceiverParsePortFromEndpoint(t *testing.T) {
-	for _, tt := range []struct {
-		desc          string
-		endpoint      string
-		expected      int
-		errorExpected bool
-	}{
-		{"regular case", "http://localhost:1234", 1234, false},
-		{"absolute with path", "http://localhost:1234/server-status?auto", 1234, false},
-		{"no protocol", "0.0.0.0:1234", 1234, false},
-		{"just port", ":1234", 1234, false},
-		{"no port at all", "http://localhost", 0, true},
-	} {
-		t.Run(tt.desc, func(t *testing.T) {
-			// test
-			val, err := portFromEndpoint(tt.endpoint)
-			if tt.errorExpected {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-
-			assert.EqualValues(t, tt.expected, val, "wrong port from endpoint %s: %d", tt.endpoint, val)
 		})
 	}
 }
@@ -117,7 +74,7 @@ func TestReceiverFallbackWhenNotRegistered(t *testing.T) {
 func TestReceiverShouldFindRegisteredParser(t *testing.T) {
 	// prepare
 	builderCalled := false
-	Register("mock", func(name string, config interface{}) (parsers.ComponentPortParser, error) {
+	Register("mock", func(name string, config interface{}) (parser.ComponentPortParser, error) {
 		builderCalled = true
 		return &mockParser{}, nil
 	})

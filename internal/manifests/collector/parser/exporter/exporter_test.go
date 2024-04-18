@@ -17,6 +17,7 @@ package exporter
 import (
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -25,54 +26,61 @@ import (
 func TestPorts(t *testing.T) {
 	tests := []struct {
 		testName string
-		parser   *PrometheusExporterParser
+		name     string
+		config   interface{}
 		want     []v1.ServicePort
 	}{
 		{
 			testName: "Valid Configuration",
-			parser: &PrometheusExporterParser{
-				name: "test-exporter",
-				config: map[interface{}]interface{}{
-					"endpoint": "http://myprometheus.io:9090",
-				},
+			name:     "test-exporter",
+			config: map[string]interface{}{
+				"endpoint": "http://myprometheus.io:9090",
 			},
 			want: []v1.ServicePort{
 				{
-					Name: "test-exporter",
-					Port: 9090,
+					Name:       "test-exporter",
+					Port:       9090,
+					Protocol:   v1.ProtocolTCP,
+					TargetPort: intstr.FromInt32(defaultPrometheusPort),
 				},
 			},
 		},
 		{
 			testName: "Empty Configuration",
-			parser: &PrometheusExporterParser{
-				name:   "test-exporter",
-				config: nil, // Simulate no configuration provided
-			},
+			name:     "test-exporter",
+			config:   nil, // Simulate no configuration provided
 			want: []v1.ServicePort{
 				{
 					Name:       "test-exporter",
 					Port:       defaultPrometheusPort,
-					TargetPort: intstr.FromInt(int(defaultPrometheusPort)),
+					TargetPort: intstr.FromInt32(defaultPrometheusPort),
 					Protocol:   v1.ProtocolTCP,
 				},
 			},
 		},
 		{
-			testName: "Invalid Endpoint No Port",
-			parser: &PrometheusExporterParser{
-				name: "test-exporter",
-				config: map[interface{}]interface{}{
-					"endpoint": "invalidendpoint",
+			testName: "Invalid Endpoint gives default",
+			name:     "test-exporter",
+			config: map[string]interface{}{
+				"endpoint": "invalidendpoint",
+			},
+
+			want: []v1.ServicePort{
+				{
+					Name:       "test-exporter",
+					Port:       defaultPrometheusPort,
+					TargetPort: intstr.FromInt32(defaultPrometheusPort),
+					Protocol:   v1.ProtocolTCP,
 				},
 			},
-			want: []v1.ServicePort{},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
-			ports, _ := tt.parser.Ports()
+			parser, err := NewPrometheusExporterParser(tt.name, tt.config)
+			assert.NoError(t, err)
+			ports, _ := parser.Ports(logr.Discard())
 			assert.Equal(t, tt.want, ports)
 		})
 	}

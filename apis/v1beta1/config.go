@@ -26,8 +26,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/parsers"
-	"github.com/open-telemetry/opentelemetry-operator/internal/parsers/receivers"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
 )
 
 // AnyConfig represent parts of the config.
@@ -93,10 +93,10 @@ type Config struct {
 	Service    Service    `json:"service" yaml:"service"`
 }
 
-func (c *Config) GetReceivers() []parsers.ComponentPortParser {
-	var receiverList []parsers.ComponentPortParser
+func (c *Config) GetReceivers() []parser.ComponentPortParser {
+	var receiverList []parser.ComponentPortParser
 	for name, config := range c.Receivers.Object {
-		parser, err := receivers.For(name, config)
+		parser, err := receiver.For(name, config)
 		if err != nil {
 			continue
 		}

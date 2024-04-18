@@ -23,7 +23,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	exporterParser "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/exporter"
-	receiverParser "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
 )
 
 type ComponentType int
@@ -59,7 +59,7 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 		return nil, fmt.Errorf("no %ss available as part of the configuration", cType)
 	}
 
-	components, ok := componentsProperty.(map[interface{}]interface{})
+	components, ok := componentsProperty.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("%ss doesn't contain valid components", cType.String())
 	}
@@ -71,28 +71,27 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 	}
 
 	ports := []corev1.ServicePort{}
-	for key, val := range components {
+	for cmptName, val := range components {
 		// This check will pass only the enabled components,
 		// then only the related ports will be opened.
-		if !compEnabled[key] {
+		if !compEnabled[cmptName] {
 			continue
 		}
-		exporter, ok := val.(map[interface{}]interface{})
+		exporter, ok := val.(map[string]interface{})
 		if !ok {
-			logger.V(2).Info("component doesn't seem to be a map of properties", cType.String(), key)
-			exporter = map[interface{}]interface{}{}
+			logger.V(2).Info("component doesn't seem to be a map of properties", cType.String(), cmptName)
+			exporter = map[string]interface{}{}
 		}
 
-		cmptName := key.(string)
 		var cmptParser parser.ComponentPortParser
 		var err error
 		switch cType {
 		case ComponentTypeExporter:
-			cmptParser, err = exporterParser.For(logger, cmptName, exporter)
+			cmptParser, err = exporterParser.For(cmptName, exporter)
 		case ComponentTypeReceiver:
-			cmptParser, err = receiverParser.For(logger, cmptName, exporter)
+			cmptParser, err = receiver.For(cmptName, exporter)
 		case ComponentTypeProcessor:
-			logger.V(4).Info("processors don't provide a way to enable associated ports", "name", key)
+			logger.V(4).Info("processors don't provide a way to enable associated ports", "name", cmptName)
 		}
 
 		if err != nil {
@@ -100,7 +99,7 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 			continue
 		}
 
-		exprtPorts, err := cmptParser.Ports()
+		exprtPorts, err := cmptParser.Ports(logger)
 		if err != nil {
 			logger.Error(err, "parser for '%s' has returned an error: %w", cmptName, err)
 			continue

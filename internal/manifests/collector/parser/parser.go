@@ -15,17 +15,32 @@
 package parser
 
 import (
+	"encoding/json"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 )
 
 type ComponentPortParser interface {
 	// Ports returns the service ports parsed based on the exporter's configuration
-	Ports() ([]corev1.ServicePort, error)
+	Ports(logger logr.Logger) ([]corev1.ServicePort, error)
 
 	// ParserName returns the name of this parser
 	ParserName() string
 }
 
+func LoadMap[T any](m interface{}, in T) error {
+	// Convert map to JSON bytes
+	yamlData, err := json.Marshal(m)
+	if err != nil {
+		return err
+	}
+	// Unmarshal YAML into the provided struct
+	if err := json.Unmarshal(yamlData, in); err != nil {
+		return err
+	}
+	return nil
+}
+
 // Builder specifies the signature required for parser builders.
-type Builder func(logr.Logger, string, map[interface{}]interface{}) ComponentPortParser
+type Builder func(string, interface{}) (ComponentPortParser, error)

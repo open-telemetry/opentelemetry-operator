@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package receivers
+package receiver
 
 import (
 	"testing"
@@ -21,23 +21,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSkywalkingSelfRegisters(t *testing.T) {
+func TestLokiSelfRegisters(t *testing.T) {
 	// verify
-	assert.True(t, IsRegistered("skywalking"))
+	assert.True(t, IsRegistered("loki"))
 }
 
-func TestSkywalkingIsFoundByName(t *testing.T) {
+func TestLokiIsFoundByName(t *testing.T) {
 	// test
-	p, err := For("skywalking", map[string]interface{}{})
+	p, err := For("loki", map[string]interface{}{})
 	assert.NoError(t, err)
 
 	// verify
-	assert.Equal(t, "__skywalking", p.ParserName())
+	assert.Equal(t, "__loki", p.ParserName())
 }
 
-func TestSkywalkingPortsOverridden(t *testing.T) {
+func TestLokiPortsOverridden(t *testing.T) {
 	// prepare
-	builder, err := For("skywalking", map[string]interface{}{
+	builder, err := For("loki", map[string]interface{}{
 		"protocols": map[string]interface{}{
 			"grpc": map[string]interface{}{
 				"endpoint": "0.0.0.0:1234",
@@ -48,12 +48,13 @@ func TestSkywalkingPortsOverridden(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
+
 	expectedResults := map[string]struct {
 		portNumber int32
 		seen       bool
 	}{
-		"skywalking-grpc": {portNumber: 1234},
-		"skywalking-http": {portNumber: 1235},
+		"loki-grpc": {portNumber: 1234},
+		"loki-http": {portNumber: 1235},
 	}
 
 	// test
@@ -74,9 +75,9 @@ func TestSkywalkingPortsOverridden(t *testing.T) {
 	}
 }
 
-func TestSkywalkingExposeDefaultPorts(t *testing.T) {
+func TestLokiExposeDefaultPorts(t *testing.T) {
 	// prepare
-	builder, err := For("skywalking", map[string]interface{}{
+	builder, err := For("loki", map[string]interface{}{
 		"protocols": map[string]interface{}{
 			"grpc": map[string]interface{}{},
 			"http": map[string]interface{}{},
@@ -88,8 +89,8 @@ func TestSkywalkingExposeDefaultPorts(t *testing.T) {
 		portNumber int32
 		seen       bool
 	}{
-		"skywalking-grpc": {portNumber: 11800},
-		"skywalking-http": {portNumber: 12800},
+		"loki-grpc": {portNumber: 9095},
+		"loki-http": {portNumber: 3100},
 	}
 
 	// test

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package receivers_test
+package receiver_test
 
 import (
 	"testing"
@@ -20,8 +20,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/internal/parsers/receivers"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -29,7 +30,7 @@ var logger = logf.Log.WithName("unit-tests")
 func TestParseEndpoint(t *testing.T) {
 	// prepare
 	// there's no parser registered to handle "myreceiver", so, it falls back to the generic parser
-	builder, err := receivers.NewGenericReceiverParser("myreceiver", map[string]interface{}{
+	builder, err := parser.NewSinglePortParser("myreceiver", map[string]interface{}{
 		"endpoint": "0.0.0.0:1234",
 	})
 	assert.NoError(t, err)
@@ -46,7 +47,7 @@ func TestParseEndpoint(t *testing.T) {
 func TestFailedToParseEndpoint(t *testing.T) {
 	// prepare
 	// there's no parser registered to handle "myreceiver", so, it falls back to the generic parser
-	builder, err := receivers.NewGenericReceiverParser("myreceiver", map[string]interface{}{
+	builder, err := parser.NewSinglePortParser("myreceiver", map[string]interface{}{
 		"endpoint": "0.0.0.0",
 	})
 	assert.NoError(t, err)
@@ -84,7 +85,7 @@ func TestDownstreamParsers(t *testing.T) {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
 				// test
-				builder, err := receivers.For(tt.receiverName, map[string]interface{}{})
+				builder, err := receiver.For(tt.receiverName, map[string]interface{}{})
 				assert.NoError(t, err)
 
 				// verify
@@ -93,7 +94,7 @@ func TestDownstreamParsers(t *testing.T) {
 
 			t.Run("assigns the expected port", func(t *testing.T) {
 				// prepare
-				builder, err := receivers.For(tt.receiverName, map[string]interface{}{})
+				builder, err := receiver.For(tt.receiverName, map[string]interface{}{})
 				assert.NoError(t, err)
 
 				// test
@@ -108,7 +109,7 @@ func TestDownstreamParsers(t *testing.T) {
 
 			t.Run("allows port to be overridden", func(t *testing.T) {
 				// prepare
-				builder, err := receivers.For(tt.receiverName, map[string]interface{}{
+				builder, err := receiver.For(tt.receiverName, map[string]interface{}{
 					"endpoint": "0.0.0.0:65535",
 				})
 				assert.NoError(t, err)

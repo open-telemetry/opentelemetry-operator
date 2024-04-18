@@ -14,4 +14,31 @@
 
 package receiver
 
-// all tests for the Splunk Hec parser are currently part of the test TestDownstreamParsers
+import (
+	"fmt"
+
+	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
+)
+
+var _ parser.ComponentPortParser = &scraperParser{}
+
+type scraperParser struct {
+	name string
+}
+
+func (s *scraperParser) Ports(logger logr.Logger) ([]corev1.ServicePort, error) {
+	return nil, nil
+}
+
+func (s *scraperParser) ParserName() string {
+	return fmt.Sprintf("__%s", parser.ComponentType(s.name))
+}
+
+func NewScraperParser(name string, config interface{}) (parser.ComponentPortParser, error) {
+	return &scraperParser{
+		name: name,
+	}, nil
+}

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package receivers
+package receiver
 
 import (
 	"testing"
@@ -21,23 +21,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLokiSelfRegisters(t *testing.T) {
+func TestOTLPSelfRegisters(t *testing.T) {
 	// verify
-	assert.True(t, IsRegistered("loki"))
+	assert.True(t, IsRegistered("otlp"))
 }
 
-func TestLokiIsFoundByName(t *testing.T) {
+func TestOTLPIsFoundByName(t *testing.T) {
 	// test
-	p, err := For("loki", map[string]interface{}{})
+	p, err := For("otlp", map[string]interface{}{})
 	assert.NoError(t, err)
 
 	// verify
-	assert.Equal(t, "__loki", p.ParserName())
+	assert.Equal(t, "__otlp", p.ParserName())
 }
 
-func TestLokiPortsOverridden(t *testing.T) {
+func TestOTLPPortsOverridden(t *testing.T) {
 	// prepare
-	builder, err := For("loki", map[string]interface{}{
+	builder, err := For("otlp", map[string]interface{}{
 		"protocols": map[string]interface{}{
 			"grpc": map[string]interface{}{
 				"endpoint": "0.0.0.0:1234",
@@ -53,8 +53,8 @@ func TestLokiPortsOverridden(t *testing.T) {
 		portNumber int32
 		seen       bool
 	}{
-		"loki-grpc": {portNumber: 1234},
-		"loki-http": {portNumber: 1235},
+		"otlp-grpc": {portNumber: 1234},
+		"otlp-http": {portNumber: 1235},
 	}
 
 	// test
@@ -75,9 +75,9 @@ func TestLokiPortsOverridden(t *testing.T) {
 	}
 }
 
-func TestLokiExposeDefaultPorts(t *testing.T) {
+func TestOTLPExposeDefaultPorts(t *testing.T) {
 	// prepare
-	builder, err := For("loki", map[string]interface{}{
+	builder, err := For("otlp", map[string]interface{}{
 		"protocols": map[string]interface{}{
 			"grpc": map[string]interface{}{},
 			"http": map[string]interface{}{},
@@ -89,8 +89,8 @@ func TestLokiExposeDefaultPorts(t *testing.T) {
 		portNumber int32
 		seen       bool
 	}{
-		"loki-grpc": {portNumber: 9095},
-		"loki-http": {portNumber: 3100},
+		"otlp-grpc": {portNumber: 4317},
+		"otlp-http": {portNumber: 4318},
 	}
 
 	// test

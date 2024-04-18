@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package receivers
+package receiver
 
 import (
 	"testing"
@@ -22,48 +22,45 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func TestTcpLogSelfRegisters(t *testing.T) {
+func TestSyslogSelfRegisters(t *testing.T) {
 	// verify
-	assert.True(t, IsRegistered("tcplog"))
+	assert.True(t, IsRegistered("syslog"))
 }
 
-func TestTcpLogIsFoundByName(t *testing.T) {
+func TestSyslogIsFoundByName(t *testing.T) {
 	// test
-	p, err := For("tcplog", map[string]interface{}{})
+	p, err := For("syslog", map[string]interface{}{})
 	assert.NoError(t, err)
-
 	// verify
-	assert.Equal(t, "__tcplog", p.ParserName())
+	assert.Equal(t, "__syslog", p.ParserName())
 }
 
-func TestTcpLogConfiguration(t *testing.T) {
+func TestSyslogConfiguration(t *testing.T) {
 	for _, tt := range []struct {
-		desc        string
-		config      map[string]interface{}
-		expected    []corev1.ServicePort
-		expectedErr bool
+		desc     string
+		config   map[string]interface{}
+		expected []corev1.ServicePort
 	}{
-		{"Empty configuration", map[string]interface{}{}, []corev1.ServicePort{}, true},
+		{"UDP port configuration",
+			map[string]interface{}{"udp": map[string]interface{}{"listen_address": "0.0.0.0:1234"}},
+			[]corev1.ServicePort{{Name: "syslog-udp", Port: 1234, Protocol: corev1.ProtocolUDP}},
+		},
 		{"TCP port configuration",
-			map[string]interface{}{"listen_address": "0.0.0.0:1234"},
-			[]corev1.ServicePort{{Name: "tcplog", Port: 1234, Protocol: corev1.ProtocolTCP}},
-			false},
+			map[string]interface{}{"tcp": map[string]interface{}{"listen_address": "0.0.0.0:1234"}},
+			[]corev1.ServicePort{{Name: "syslog-tcp", Port: 1234, Protocol: corev1.ProtocolTCP}},
+		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			// prepare
-			builder, err := For("tcplog", tt.config)
+			builder, err := For("syslog", tt.config)
 			assert.NoError(t, err)
 
 			// test
 			ports, err := builder.Ports(logr.Discard())
 
 			// verify
-			if tt.expectedErr {
-				assert.Error(t, err, "expecting an error")
-			} else {
-				assert.NoError(t, err, "not expecting an error")
-			}
-			assert.Equal(t, ports, tt.expected)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, ports)
 		})
 	}
 }
