@@ -21,9 +21,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	go_yaml "gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
 )
 
@@ -113,29 +115,31 @@ func TestNullObjects_go_yaml(t *testing.T) {
 
 func TestConfigYaml(t *testing.T) {
 	cfg := &Config{
-		Receivers: AnyConfig{
-			Object: map[string]interface{}{
-				"otlp": nil,
+		Receivers: ComponentDefinitionMap{
+			"otlp": nil,
+		},
+		Processors: ComponentDefinitionMap{
+			"modify_2000": &AnyConfig{
+				map[string]interface{}{
+					"enabled": true,
+				},
 			},
 		},
-		Processors: &AnyConfig{
-			Object: map[string]interface{}{
-				"modify_2000": "enabled",
+		Exporters: ComponentDefinitionMap{
+			"otlp/exporter": nil,
+		},
+		Connectors: ComponentDefinitionMap{
+			"con": &AnyConfig{
+				map[string]interface{}{
+					"enabled": true,
+				},
 			},
 		},
-		Exporters: AnyConfig{
-			Object: map[string]interface{}{
-				"otlp/exporter": nil,
-			},
-		},
-		Connectors: &AnyConfig{
-			Object: map[string]interface{}{
-				"con": "magic",
-			},
-		},
-		Extensions: &AnyConfig{
-			Object: map[string]interface{}{
-				"addon": "option1",
+		Extensions: ComponentDefinitionMap{
+			"addon": &AnyConfig{
+				map[string]interface{}{
+					"enabled": true,
+				},
 			},
 		},
 		Service: Service{
@@ -162,11 +166,14 @@ func TestConfigYaml(t *testing.T) {
 exporters:
   otlp/exporter: null
 processors:
-  modify_2000: enabled
+  modify_2000:
+    enabled: true
 connectors:
-  con: magic
+  con:
+    enabled: true
 extensions:
-  addon: option1
+  addon:
+    enabled: true
 service:
   extensions:
     - addon
@@ -183,6 +190,20 @@ service:
 `
 
 	assert.Equal(t, expected, yamlCollector)
+}
+
+func TestGetReceiverListFromYAML(t *testing.T) {
+	collectorYaml, err := os.ReadFile("./testdata/otelcol-demo.yaml")
+	require.NoError(t, err)
+
+	cfg := &Config{}
+	err = go_yaml.Unmarshal(collectorYaml, cfg)
+	require.NoError(t, err)
+	assert.Len(t, cfg.GetReceivers(), 1)
+	expectedPorts := []corev1.ServicePort{}
+	actualPorts, err := cfg.GetReceivers()[0].Ports(logr.Discard())
+	assert.NoError(t, err)
+	assert.Equal(t, expectedPorts, actualPorts)
 }
 
 func TestGetTelemetryFromYAML(t *testing.T) {
