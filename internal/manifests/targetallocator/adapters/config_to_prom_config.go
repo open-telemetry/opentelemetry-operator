@@ -134,62 +134,58 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 
 	for i, scrapeConfig := range scrapeConfigs {
 
-		relabelConfigsProperty, ok := scrapeConfig["relabel_configs"]
-		if !ok {
-			continue
-		}
-
-		relabelConfigs, ok := relabelConfigsProperty.([]interface{})
-		if !ok {
-			return nil, errorNotAListAtIndex("relabel_configs", i)
-		}
-
-		for i, rc := range relabelConfigs {
-			relabelConfig, rcErr := rc.(map[interface{}]interface{})
-			if !rcErr {
-				return nil, errorNotAMapAtIndex("relabel_config", i)
-			}
-
-			replacementProperty, rcErr := relabelConfig["replacement"]
-			if !rcErr {
-				continue
-			}
-
-			replacement, rcErr := replacementProperty.(string)
-			if !rcErr {
-				return nil, errorNotAStringAtIndex("replacement", i)
-			}
-
-			relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
-		}
-
-		metricRelabelConfigsProperty, ok := scrapeConfig["metric_relabel_configs"]
-		if !ok {
-			continue
-		}
-
-		metricRelabelConfigs, ok := metricRelabelConfigsProperty.([]interface{})
-		if !ok {
-			return nil, errorNotAListAtIndex("metric_relabel_configs", i)
-		}
-
-		for i, rc := range metricRelabelConfigs {
-			relabelConfig, ok := rc.(map[interface{}]interface{})
+		relabelConfigsProperty, found := scrapeConfig["relabel_configs"]
+		if found {
+			relabelConfigs, ok := relabelConfigsProperty.([]interface{})
 			if !ok {
-				return nil, errorNotAMapAtIndex("metric_relabel_config", i)
+				return nil, errorNotAListAtIndex("relabel_configs", i)
 			}
 
-			replacementProperty, ok := relabelConfig["replacement"]
+			for i, rc := range relabelConfigs {
+				relabelConfig, rcErr := rc.(map[interface{}]interface{})
+				if !rcErr {
+					return nil, errorNotAMapAtIndex("relabel_config", i)
+				}
+
+				replacementProperty, rcErr := relabelConfig["replacement"]
+				if !rcErr {
+					continue
+				}
+
+				replacement, rcErr := replacementProperty.(string)
+				if !rcErr {
+					return nil, errorNotAStringAtIndex("replacement", i)
+				}
+
+				relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
+			}
+		}
+
+		metricRelabelConfigsProperty, found := scrapeConfig["metric_relabel_configs"]
+		if found {
+			metricRelabelConfigs, ok := metricRelabelConfigsProperty.([]interface{})
 			if !ok {
-				continue
+				return nil, errorNotAListAtIndex("metric_relabel_configs", i)
 			}
 
-			replacement, ok := replacementProperty.(string)
-			if !ok {
-				return nil, errorNotAStringAtIndex("replacement", i)
-			}
+			for i, rc := range metricRelabelConfigs {
+				relabelConfig, ok := rc.(map[interface{}]interface{})
+				if !ok {
+					return nil, errorNotAMapAtIndex("metric_relabel_config", i)
+				}
 
-			relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
+				replacementProperty, ok := relabelConfig["replacement"]
+				if !ok {
+					continue
+				}
+
+				replacement, ok := replacementProperty.(string)
+				if !ok {
+					return nil, errorNotAStringAtIndex("replacement", i)
+				}
+
+				relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
+			}
 		}
 	}
 

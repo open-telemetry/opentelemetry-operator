@@ -57,7 +57,7 @@ metadata:
             "name": "otel"
           },
           "spec": {
-            "config": "receivers:\n  otlp:\n    protocols: \n      grpc:\n      http:\n\nexporters:\n  debug:\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [debug]\n"
+            "config": "receivers:\n  otlp:\n    protocols: \n      grpc: {}\n      http: {}\n\nexporters:\n  debug: {}\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [debug]\n"
           }
         },
         {
@@ -153,6 +153,9 @@ spec:
       - kind: Deployment
         name: ""
         version: apps/v1
+      - kind: Ingress
+        name: ""
+        version: networking/v1
       - kind: Pod
         name: ""
         version: v1
