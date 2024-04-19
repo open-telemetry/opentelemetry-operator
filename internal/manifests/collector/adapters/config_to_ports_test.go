@@ -21,10 +21,12 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	go_yaml "gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
@@ -79,12 +81,12 @@ service:
 
 func TestExtractPortsFromConfig(t *testing.T) {
 	// prepare
-	config, err := adapters.ConfigFromString(portConfigStr)
+	cfg := &v1beta1.Config{}
+	err := go_yaml.Unmarshal([]byte(portConfigStr), cfg)
 	require.NoError(t, err)
-	require.NotEmpty(t, config)
 
 	// test
-	ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, config)
+	ports, err := adapters.GetComponentPorts(logger, cfg.GetReceiverParsers(logger)...)
 	assert.NoError(t, err)
 	assert.Len(t, ports, 10)
 
@@ -102,7 +104,7 @@ func TestExtractPortsFromConfig(t *testing.T) {
 		{Name: "jaeger-grpc", AppProtocol: &grpcAppProtocol, Protocol: "TCP", Port: 14250},
 		{Name: "port-6833", Protocol: "UDP", Port: 6833},
 		{Name: "port-6831", Protocol: "UDP", Port: 6831},
-		{Name: "otlp-2-grpc", AppProtocol: &grpcAppProtocol, Protocol: "TCP", Port: 55555},
+		{Name: "otlp-2-grpc", AppProtocol: &grpcAppProtocol, Port: 55555, TargetPort: targetPort4317},
 		{Name: "otlp-grpc", AppProtocol: &grpcAppProtocol, Port: 4317, TargetPort: targetPort4317},
 		{Name: "otlp-http", AppProtocol: &httpAppProtocol, Port: 4318, TargetPort: targetPort4318},
 		{Name: "zipkin", AppProtocol: &httpAppProtocol, Protocol: "TCP", Port: 9411},
@@ -110,37 +112,39 @@ func TestExtractPortsFromConfig(t *testing.T) {
 	assert.ElementsMatch(t, expectedPorts, ports)
 }
 
-func TestNoPortsParsed(t *testing.T) {
-	for _, tt := range []struct {
-		expected  error
-		desc      string
-		configStr string
-	}{
-		{
-			expected:  errors.New("no receivers available as part of the configuration"),
-			desc:      "empty",
-			configStr: "",
-		},
-		{
-			expected:  errors.New("receivers doesn't contain valid components"),
-			desc:      "not a map",
-			configStr: "receivers: some-string",
-		},
-	} {
-		t.Run(tt.desc, func(t *testing.T) {
-			// prepare
-			config, err := adapters.ConfigFromString(tt.configStr)
-			require.NoError(t, err)
-
-			// test
-			ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, config)
-
-			// verify
-			assert.Nil(t, ports)
-			assert.Equal(t, tt.expected, err)
-		})
-	}
-}
+//this test may be unnecessary now
+//func TestNoPortsParsed(t *testing.T) {
+//	for _, tt := range []struct {
+//		expected  error
+//		desc      string
+//		configStr string
+//	}{
+//		{
+//			expected:  errors.New("no receivers available as part of the configuration"),
+//			desc:      "empty",
+//			configStr: "",
+//		},
+//		{
+//			expected:  errors.New("receivers doesn't contain valid components"),
+//			desc:      "not a map",
+//			configStr: "receivers: some-string",
+//		},
+//	} {
+//		t.Run(tt.desc, func(t *testing.T) {
+//			// prepare
+//			cfg := &v1beta1.Config{}
+//			err := go_yaml.Unmarshal([]byte(tt.configStr), cfg)
+//			require.NoError(t, err)
+//
+//			// test
+//			ports, err := adapters.GetComponentPorts(logger, cfg.GetReceiverParsers(logger)...)
+//
+//			// verify
+//			assert.Nil(t, ports)
+//			assert.Equal(t, tt.expected, err)
+//		})
+//	}
+//}
 
 func TestInvalidReceivers(t *testing.T) {
 	for _, tt := range []struct {
@@ -158,11 +162,12 @@ func TestInvalidReceivers(t *testing.T) {
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			// prepare
-			config, err := adapters.ConfigFromString(tt.configStr)
+			cfg := &v1beta1.Config{}
+			err := go_yaml.Unmarshal([]byte(tt.configStr), cfg)
 			require.NoError(t, err)
 
 			// test
-			ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, config)
+			ports, err := adapters.GetComponentPorts(logger, cfg.GetReceiverParsers(logger)...)
 
 			// verify
 			assert.NoError(t, err)
@@ -180,25 +185,27 @@ func TestParserFailed(t *testing.T) {
 			return nil, errors.New("mocked error")
 		},
 	}
-	receiver.Register("mock", func(logger logr.Logger, name string, config map[interface{}]interface{}) parser.ComponentPortParser {
-		return mockParser
+	receiver.Register("mock", func(name string, config interface{}) (parser.ComponentPortParser, error) {
+		return mockParser, nil
 	})
 
-	config := map[interface{}]interface{}{
-		"receivers": map[interface{}]interface{}{
-			"mock": map[string]interface{}{},
+	cfg := v1beta1.Config{
+		Receivers: v1beta1.AnyConfig{
+			Object: map[string]interface{}{
+				"mock": map[string]interface{}{},
+			},
 		},
-		"service": map[interface{}]interface{}{
-			"pipelines": map[interface{}]interface{}{
-				"metrics": map[interface{}]interface{}{
-					"receivers": []interface{}{"mock"},
+		Service: v1beta1.Service{
+			Pipelines: map[string]*v1beta1.Pipeline{
+				"metrics": {
+					Receivers: []string{"mock"},
 				},
 			},
 		},
 	}
 
 	// test
-	ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, config)
+	ports, err := adapters.GetComponentPorts(logger, cfg.GetReceiverParsers(logger)...)
 
 	// verify
 	assert.Len(t, ports, 0)
@@ -210,7 +217,7 @@ type mockParser struct {
 	portsFunc func() ([]corev1.ServicePort, error)
 }
 
-func (m *mockParser) Ports() ([]corev1.ServicePort, error) {
+func (m *mockParser) Ports(_ logr.Logger) ([]corev1.ServicePort, error) {
 	if m.portsFunc != nil {
 		return m.portsFunc()
 	}

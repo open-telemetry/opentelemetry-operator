@@ -107,6 +107,7 @@ func (g *SinglePortParser) Ports(logger logr.Logger) ([]corev1.ServicePort, erro
 	port := g.svcPort.Port
 	if g.config != nil {
 		port = g.config.GetPortNumOrDefault(logger, port)
+		g.svcPort.Name = naming.PortName(g.name, port)
 	}
 	return []corev1.ServicePort{ConstructServicePort(g.svcPort, port)}, nil
 }

@@ -24,11 +24,25 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v3"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/exporter"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
 )
+
+type ComponentType int
+
+const (
+	ComponentTypeReceiver ComponentType = iota
+	ComponentTypeExporter
+	ComponentTypeProcessor
+)
+
+func (c ComponentType) String() string {
+	return [...]string{"receiver", "exporter", "processor"}[c]
+}
 
 // AnyConfig represent parts of the config.
 type AnyConfig struct {
@@ -78,6 +92,13 @@ func (c *AnyConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.Object)
 }
 
+// Pipeline is a struct of component type to a list of component IDs
+type Pipeline struct {
+	Receivers  []string `json:"receivers" yaml:"receivers"`
+	Processors []string `json:"processors" yaml:"processors"`
+	Exporters  []string `json:"exporters" yaml:"exporters"`
+}
+
 // Config encapsulates collector config.
 type Config struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
@@ -93,16 +114,60 @@ type Config struct {
 	Service    Service    `json:"service" yaml:"service"`
 }
 
-func (c *Config) GetReceivers() []parser.ComponentPortParser {
-	var receiverList []parser.ComponentPortParser
-	for name, config := range c.Receivers.Object {
-		parser, err := receiver.For(name, config)
-		if err != nil {
+// GetEnabledComponents constructs a list of enabled components by component type.
+func (c *Config) GetEnabledComponents() map[ComponentType]map[string]interface{} {
+	toReturn := map[ComponentType]map[string]interface{}{
+		ComponentTypeReceiver:  {},
+		ComponentTypeProcessor: {},
+		ComponentTypeExporter:  {},
+	}
+	for _, pipeline := range c.Service.Pipelines {
+		if pipeline == nil {
 			continue
 		}
-		receiverList = append(receiverList, parser)
+		for _, componentId := range pipeline.Receivers {
+			toReturn[ComponentTypeReceiver][componentId] = struct{}{}
+		}
+		for _, componentId := range pipeline.Exporters {
+			toReturn[ComponentTypeExporter][componentId] = struct{}{}
+		}
+		for _, componentId := range pipeline.Processors {
+			toReturn[ComponentTypeProcessor][componentId] = struct{}{}
+		}
+	}
+	return toReturn
+}
+
+func (c *Config) GetReceiverParsers(logger logr.Logger) []parser.ComponentPortParser {
+	var receiverList []parser.ComponentPortParser
+	enabledComponents := c.GetEnabledComponents()
+	for name, config := range c.Receivers.Object {
+		receiverParsers, err := receiver.For(name, config)
+		if err != nil {
+			logger.Error(err, "failed to get receiver parser", "name", name)
+			continue
+		}
+		if _, ok := enabledComponents[ComponentTypeReceiver][name]; ok {
+			receiverList = append(receiverList, receiverParsers)
+		}
 	}
 	return receiverList
+}
+
+func (c *Config) GetExporterParsers(logger logr.Logger) []parser.ComponentPortParser {
+	var exporterList []parser.ComponentPortParser
+	enabledComponents := c.GetEnabledComponents()
+	for name, config := range c.Exporters.Object {
+		exporterParsers, err := exporter.For(name, config)
+		if err != nil {
+			logger.Error(err, "failed to get receiver parser", "name", name)
+			continue
+		}
+		if _, ok := enabledComponents[ComponentTypeExporter][name]; ok {
+			exporterList = append(exporterList, exporterParsers)
+		}
+	}
+	return exporterList
 }
 
 // Yaml encodes the current object and returns it as a string.
@@ -150,7 +215,7 @@ type Service struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Telemetry *AnyConfig `json:"telemetry,omitempty" yaml:"telemetry,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Pipelines AnyConfig `json:"pipelines" yaml:"pipelines"`
+	Pipelines map[string]*Pipeline `json:"pipelines" yaml:"pipelines"`
 }
 
 // MetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.

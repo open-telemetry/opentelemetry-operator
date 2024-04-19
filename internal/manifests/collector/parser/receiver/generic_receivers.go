@@ -100,7 +100,7 @@ var (
 			parser.WithSinglePort(2003),
 		},
 		"zipkin": {
-			parser.WithSinglePort(9411, parser.WithAppProtocol(&http)),
+			parser.WithSinglePort(9411, parser.WithAppProtocol(&http), parser.WithProtocol(corev1.ProtocolTCP)),
 		},
 	}
 	genericMultiPortReceivers = map[string][]MultiPortOption{
@@ -164,6 +164,6 @@ func init() {
 		Register(name, parser.CreateParser(options...))
 	}
 	for name, options := range genericMultiPortReceivers {
-		Register(name, createMultiPortParser(&multiProtocolEndpointConfig{}, options...))
+		Register(name, createMultiPortParser(multiProtocolEndpointConfigFactory, options...))
 	}
 }

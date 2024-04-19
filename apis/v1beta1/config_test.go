@@ -148,11 +148,11 @@ func TestConfigYaml(t *testing.T) {
 					"insights": "yeah!",
 				},
 			},
-			Pipelines: AnyConfig{
-				Object: map[string]interface{}{
-					"receivers":  []string{"otlp"},
-					"processors": []string{"modify_2000"},
-					"exporters":  []string{"otlp/exporter", "con"},
+			Pipelines: map[string]*Pipeline{
+				"traces": {
+					Receivers:  []string{"otlp"},
+					Processors: []string{"modify_2000"},
+					Exporters:  []string{"otlp/exporter", "con"},
 				},
 			},
 		},
@@ -176,13 +176,14 @@ service:
   telemetry:
     insights: yeah!
   pipelines:
-    exporters:
-      - otlp/exporter
-      - con
-    processors:
-      - modify_2000
-    receivers:
-      - otlp
+	traces:
+      exporters:
+        - otlp/exporter
+        - con
+      processors:
+        - modify_2000
+      receivers:
+        - otlp
 `
 
 	assert.Equal(t, expected, yamlCollector)
@@ -195,7 +196,7 @@ func TestGetReceiverListFromYAML(t *testing.T) {
 	cfg := &Config{}
 	err = go_yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
-	assert.Len(t, cfg.GetReceivers(), 1)
+	assert.Len(t, cfg.GetReceiverParsers(logr.Discard()), 1)
 	grpcAppProtocol := "grpc"
 	expectedPorts := []corev1.ServicePort{
 		{
@@ -206,7 +207,7 @@ func TestGetReceiverListFromYAML(t *testing.T) {
 			Protocol:    corev1.ProtocolTCP,
 		},
 	}
-	actualPorts, err := cfg.GetReceivers()[0].Ports(logr.Discard())
+	actualPorts, err := cfg.GetReceiverParsers(logr.Discard())[0].Ports(logr.Discard())
 	assert.NoError(t, err)
 	assert.Equal(t, expectedPorts, actualPorts)
 }
@@ -301,6 +302,44 @@ func TestConfigToMetricsPort(t *testing.T) {
 			port, err := tt.config.MetricsPort()
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedPort, port)
+		})
+	}
+}
+
+func TestConfig_GetEnabledComponents(t *testing.T) {
+	tests := []struct {
+		name     string
+		testFile string
+		want     map[ComponentType]map[string]interface{}
+	}{
+		{
+			name:     "demo",
+			testFile: "otelcol-demo.yaml",
+			want: map[ComponentType]map[string]interface{}{
+				ComponentTypeReceiver: {
+					"otlp": struct{}{},
+				},
+				ComponentTypeProcessor: {
+					"batch": struct{}{},
+				},
+				ComponentTypeExporter: {
+					"otlp":       struct{}{},
+					"debug":      struct{}{},
+					"prometheus": struct{}{},
+					"zipkin":     struct{}{},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			collectorYaml, err := os.ReadFile("./testdata/otelcol-demo.yaml")
+			require.NoError(t, err)
+
+			cfg := &Config{}
+			err = go_yaml.Unmarshal(collectorYaml, cfg)
+			require.NoError(t, err)
+			assert.Equalf(t, tt.want, cfg.GetEnabledComponents(), "GetEnabledComponents(%v)")
 		})
 	}
 }

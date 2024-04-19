@@ -80,7 +80,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 }
 
 func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector) []monitoringv1.PodMetricsEndpoint {
-	exporterPorts, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeExporter, otelcol.Spec.Config.Exporters.Object)
+	exporterPorts, err := adapters.GetComponentPorts(logger, otelcol.Spec.Config.GetExporterParsers(logger)...)
 	if err != nil {
 		logger.Error(err, "couldn't build endpoints to podMonitors from configuration")
 		return []monitoringv1.PodMetricsEndpoint{}

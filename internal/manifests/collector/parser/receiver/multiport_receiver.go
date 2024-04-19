@@ -29,10 +29,16 @@ type multiProtoConfig interface {
 	configByProtocol() map[string]*parser.SingleEndpointConfig
 }
 
+type multiProtoConfigGenerator[T multiProtoConfig] func() T
+
 type MultiPortOption func(parser *MultiPortReceiver)
 
 type multiProtocolEndpointConfig struct {
 	Protocols map[string]*parser.SingleEndpointConfig `json:"protocols"`
+}
+
+func multiProtocolEndpointConfigFactory() *multiProtocolEndpointConfig {
+	return &multiProtocolEndpointConfig{}
 }
 
 var _ multiProtoConfig = &multiProtocolEndpointConfig{}
@@ -49,8 +55,9 @@ type MultiPortReceiver struct {
 	portMappings map[string]*corev1.ServicePort
 }
 
-func createMultiPortParser[T multiProtoConfig](base T, opts ...MultiPortOption) parser.Builder {
+func createMultiPortParser[T multiProtoConfig](generator multiProtoConfigGenerator[T], opts ...MultiPortOption) parser.Builder {
 	return func(name string, config interface{}) (parser.ComponentPortParser, error) {
+		base := generator()
 		if err := parser.LoadMap[T](config, base); err != nil {
 			return nil, err
 		}
@@ -83,22 +90,15 @@ func WithPortMapping(name string, port int32, opts ...parser.PortBuilderOption) 
 	}
 }
 
-func (g *MultiPortReceiver) IsScraper() bool {
-	_, exists := scraperReceivers[parser.ComponentType(g.name)]
-	return exists
-}
-
 // Ports returns all the service ports for all protocols in this parser.
 func (g *MultiPortReceiver) Ports(logger logr.Logger) ([]corev1.ServicePort, error) {
-	if g.IsScraper() {
-		return nil, nil
-	}
 	var ports []corev1.ServicePort
 	for protocol, ec := range g.config.configByProtocol() {
 		if defaultSvc, ok := g.portMappings[protocol]; ok {
 			port := defaultSvc.Port
 			if ec != nil {
 				port = ec.GetPortNumOrDefault(logger, port)
+				defaultSvc.Name = naming.PortName(fmt.Sprintf("%s-%s", g.name, protocol), port)
 			}
 			ports = append(ports, parser.ConstructServicePort(defaultSvc, port))
 		} else {

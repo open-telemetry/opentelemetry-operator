@@ -25,6 +25,10 @@ type SyslogReceiverConfig struct {
 	Udp *parser.SingleEndpointConfig `json:"udp,omitempty"`
 }
 
+func syslogReceiverConfigFactory() *SyslogReceiverConfig {
+	return &SyslogReceiverConfig{}
+}
+
 func (s SyslogReceiverConfig) configByProtocol() map[string]*parser.SingleEndpointConfig {
 	if s.Tcp != nil {
 		return map[string]*parser.SingleEndpointConfig{
@@ -50,7 +54,7 @@ var baseSyslogConf = []MultiPortOption{
 
 // NewSyslogReceiverParser builds a new parser for TCP log receivers.
 func NewSyslogReceiverParser(name string, config interface{}) (parser.ComponentPortParser, error) {
-	return createMultiPortParser(&SyslogReceiverConfig{}, baseSyslogConf...)(name, config)
+	return createMultiPortParser(syslogReceiverConfigFactory, baseSyslogConf...)(name, config)
 }
 
 func init() {
