@@ -149,7 +149,7 @@ func main() {
 	runGroup.Add(
 		func() error {
 			// Initial loading of the config file's scrape config
-			if cfg.PromConfig != nil {
+			if cfg.PromConfig != nil && len(cfg.PromConfig.ScrapeConfigs) > 0 {
 				err = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.PromConfig.ScrapeConfigs)
 				if err != nil {
 					setupLog.Error(err, "Unable to apply initial configuration")

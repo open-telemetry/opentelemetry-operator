@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -64,6 +65,43 @@ prometheus_cr:
 		}
 		collector := collectorInstance()
 		targetAllocator := targetAllocatorInstance()
+		cfg := config.New()
+		params := manifests.Params{
+			OtelCol:         collector,
+			TargetAllocator: targetAllocator,
+			Config:          cfg,
+			Log:             logr.Discard(),
+		}
+		actual, err := ConfigMap(params)
+		require.NoError(t, err)
+
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, expectedLabels, actual.Labels)
+		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
+
+	})
+	t.Run("should return target allocator config map without scrape configs", func(t *testing.T) {
+		expectedLabels["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
+		expectedLabels["app.kubernetes.io/name"] = "my-instance-targetallocator"
+
+		expectedData := map[string]string{
+			targetAllocatorFilename: `allocation_strategy: consistent-hashing
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
+filter_strategy: relabel-config
+prometheus_cr:
+  pod_monitor_selector: null
+  service_monitor_selector: null
+`,
+		}
+		collector := collectorInstance()
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.ScrapeConfigs = []v1beta1.AnyConfig{}
 		cfg := config.New()
 		params := manifests.Params{
 			OtelCol:         collector,
