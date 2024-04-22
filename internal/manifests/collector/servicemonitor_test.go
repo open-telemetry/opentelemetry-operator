@@ -34,18 +34,26 @@ func TestDesiredServiceMonitors(t *testing.T) {
 	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
 	actual, err = ServiceMonitor(params)
 	assert.NoError(t, err)
+	assert.Nil(t, actual)
+
+	// Check the monitoring SM
+	actual, err = ServiceMonitorMonitoring(params)
+	assert.NoError(t, err)
 	assert.NotNil(t, actual)
-	assert.Equal(t, fmt.Sprintf("%s-collector", params.OtelCol.Name), actual.Name)
+	assert.Equal(t, fmt.Sprintf("%s-monitoring-collector", params.OtelCol.Name), actual.Name)
 	assert.Equal(t, params.OtelCol.Namespace, actual.Namespace)
 	assert.Equal(t, "monitoring", actual.Spec.Endpoints[0].Port)
-	expectedSelectorLabels := map[string]string{
+	expectedSelectorLabelsMonitor := map[string]string{
 		"app.kubernetes.io/component":                            "opentelemetry-collector",
 		"app.kubernetes.io/instance":                             "default.test",
 		"app.kubernetes.io/managed-by":                           "opentelemetry-operator",
 		"app.kubernetes.io/part-of":                              "opentelemetry",
 		"operator.opentelemetry.io/collector-monitoring-service": "Exists",
 	}
-	assert.Equal(t, expectedSelectorLabels, actual.Spec.Selector.MatchLabels)
+	assert.Equal(t, expectedSelectorLabelsMonitor, actual.Spec.Selector.MatchLabels)
+	assert.NotContains(t, "operator.opentelemetry.io/collector-headless-service", actual.Spec.Selector.MatchLabels)
+	assert.NotContains(t, "operator.opentelemetry.io/collector-service", actual.Spec.Selector.MatchLabels)
+
 }
 
 func TestDesiredServiceMonitorsWithPrometheus(t *testing.T) {
@@ -57,17 +65,18 @@ func TestDesiredServiceMonitorsWithPrometheus(t *testing.T) {
 	assert.NotNil(t, actual)
 	assert.Equal(t, fmt.Sprintf("%s-collector", params.OtelCol.Name), actual.Name)
 	assert.Equal(t, params.OtelCol.Namespace, actual.Namespace)
-	assert.Equal(t, "monitoring", actual.Spec.Endpoints[0].Port)
-	assert.Equal(t, "prometheus-dev", actual.Spec.Endpoints[1].Port)
-	assert.Equal(t, "prometheus-prod", actual.Spec.Endpoints[2].Port)
+	assert.Equal(t, "prometheus-dev", actual.Spec.Endpoints[0].Port)
+	assert.Equal(t, "prometheus-prod", actual.Spec.Endpoints[1].Port)
 	expectedSelectorLabels := map[string]string{
-		"app.kubernetes.io/component":                            "opentelemetry-collector",
-		"app.kubernetes.io/instance":                             "default.test",
-		"app.kubernetes.io/managed-by":                           "opentelemetry-operator",
-		"app.kubernetes.io/part-of":                              "opentelemetry",
-		"operator.opentelemetry.io/collector-monitoring-service": "Exists",
+		"app.kubernetes.io/component":                 "opentelemetry-collector",
+		"app.kubernetes.io/instance":                  "default.test",
+		"app.kubernetes.io/managed-by":                "opentelemetry-operator",
+		"app.kubernetes.io/part-of":                   "opentelemetry",
+		"operator.opentelemetry.io/collector-service": "Exists",
 	}
 	assert.Equal(t, expectedSelectorLabels, actual.Spec.Selector.MatchLabels)
+	assert.NotContains(t, "operator.opentelemetry.io/collector-headless-service", actual.Spec.Selector.MatchLabels)
+	assert.NotContains(t, "operator.opentelemetry.io/collector-monitoring-service", actual.Spec.Selector.MatchLabels)
 }
 
 func TestDesiredServiceMonitorsPrometheusNotAvailable(t *testing.T) {

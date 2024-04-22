@@ -15,6 +15,7 @@
 package collector
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -29,30 +30,38 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-// ServiceMonitor returns the service monitor for the given instance.
+// ServiceMonitor returns the service monitor for the collector.
 func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, error) {
-	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
-		params.Log.V(2).Info("Metrics disabled for this OTEL Collector",
-			"params.OtelCol.name", params.OtelCol.Name,
-			"params.OtelCol.namespace", params.OtelCol.Namespace,
-		)
-		return nil, nil
-	} else if params.Config.PrometheusCRAvailability() == prometheus.NotAvailable {
-		params.Log.V(1).Info("Cannot enable ServiceMonitor when prometheus CRDs are unavailable",
-			"params.OtelCol.name", params.OtelCol.Name,
-			"params.OtelCol.namespace", params.OtelCol.Namespace,
-		)
+	name := naming.ServiceMonitor(params.OtelCol.Name)
+	endpoints := endpointsFromConfig(params.Log, params.OtelCol)
+	if len(endpoints) > 0 {
+		return createServiceMonitor(name, params, headfulLabel, endpoints)
+	}
+	return nil, nil
+}
+
+// ServiceMonitor returns the service monitor for the monitoring service of the collector.
+func ServiceMonitorMonitoring(params manifests.Params) (*monitoringv1.ServiceMonitor, error) {
+	name := naming.ServiceMonitor(fmt.Sprintf("%s-monitoring", params.OtelCol.Name))
+	endpoints := []monitoringv1.Endpoint{
+		{
+			Port: "monitoring",
+		},
+	}
+	return createServiceMonitor(name, params, monitoringLabel, endpoints)
+}
+
+func createServiceMonitor(name string, params manifests.Params, label string, endpoints []monitoringv1.Endpoint) (*monitoringv1.ServiceMonitor, error) {
+	if !shouldCreateServiceMonitor(params) {
 		return nil, nil
 	}
+
 	var sm monitoringv1.ServiceMonitor
 
-	if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
-		return nil, nil
-	}
-	name := naming.ServiceMonitor(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	selectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
-	selectorLabels[monitoringLabel] = valueExists
+	// This label is the one which differentiates the services
+	selectorLabels[label] = valueExists
 
 	sm = monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
@@ -61,11 +70,7 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 			Labels:    labels,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
-			Endpoints: append([]monitoringv1.Endpoint{
-				{
-					Port: "monitoring",
-				},
-			}, endpointsFromConfig(params.Log, params.OtelCol)...),
+			Endpoints: endpoints,
 			NamespaceSelector: monitoringv1.NamespaceSelector{
 				MatchNames: []string{params.OtelCol.Namespace},
 			},
@@ -76,6 +81,25 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 	}
 
 	return &sm, nil
+}
+
+func shouldCreateServiceMonitor(params manifests.Params) bool {
+	l := params.Log.WithValues(
+		"params.OtelCol.name", params.OtelCol.Name,
+		"params.OtelCol.namespace", params.OtelCol.Namespace,
+	)
+
+	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
+		l.V(2).Info("Metrics disabled for this OTEL Collector. ServiceMonitor will not ve created")
+		return false
+	} else if params.Config.PrometheusCRAvailability() == prometheus.NotAvailable {
+		l.V(2).Info("Cannot enable ServiceMonitor when prometheus CRDs are unavailable")
+		return false
+	} else if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
+		l.V(2).Info("Using sidecar mode. ServiceMonitor will not be created")
+		return false
+	}
+	return true
 }
 
 func endpointsFromConfig(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector) []monitoringv1.Endpoint {
@@ -92,6 +116,7 @@ func endpointsFromConfig(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollec
 	}
 
 	exporterPorts, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeExporter, c)
+	fmt.Println("eeeeeeeeeeeeeeeeeeeeeestos son: ", exporterPorts)
 	if err != nil {
 		logger.Error(err, "couldn't build service monitors from configuration")
 		return []monitoringv1.Endpoint{}
