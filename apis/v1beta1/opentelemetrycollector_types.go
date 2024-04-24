@@ -49,6 +49,9 @@ type OpenTelemetryCollector struct {
 	Status OpenTelemetryCollectorStatus `json:"status,omitempty"`
 }
 
+// Hub exists to allow for conversion.
+func (*OpenTelemetryCollector) Hub() {}
+
 //+kubebuilder:object:root=true
 
 // OpenTelemetryCollectorList contains a list of OpenTelemetryCollector.
