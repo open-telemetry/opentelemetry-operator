@@ -113,3 +113,26 @@ type TargetAllocatorPrometheusCR struct {
 	// +optional
 	ServiceMonitorSelector *metav1.LabelSelector `json:"serviceMonitorSelector,omitempty"`
 }
+
+type (
+	// TargetAllocatorAllocationStrategy represent a strategy Target Allocator uses to distribute targets to each collector
+	// +kubebuilder:validation:Enum=least-weighted;consistent-hashing;per-node
+	TargetAllocatorAllocationStrategy string
+	// TargetAllocatorFilterStrategy represent a filtering strategy for targets before they are assigned to collectors
+	// +kubebuilder:validation:Enum="";relabel-config
+	TargetAllocatorFilterStrategy string
+)
+
+const (
+	// TargetAllocatorAllocationStrategyLeastWeighted targets will be distributed to collector with fewer targets currently assigned.
+	TargetAllocatorAllocationStrategyLeastWeighted TargetAllocatorAllocationStrategy = "least-weighted"
+
+	// TargetAllocatorAllocationStrategyConsistentHashing targets will be consistently added to collectors, which allows a high-availability setup.
+	TargetAllocatorAllocationStrategyConsistentHashing TargetAllocatorAllocationStrategy = "consistent-hashing"
+
+	// TargetAllocatorAllocationStrategyPerNode targets will be assigned to the collector on the node they reside on (use only with daemon set).
+	TargetAllocatorAllocationStrategyPerNode TargetAllocatorAllocationStrategy = "per-node"
+
+	// TargetAllocatorFilterStrategyRelabelConfig targets will be consistently drops targets based on the relabel_config.
+	TargetAllocatorFilterStrategyRelabelConfig TargetAllocatorFilterStrategy = "relabel-config"
+)
