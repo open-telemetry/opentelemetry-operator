@@ -312,10 +312,6 @@ endif
 install-metrics-server:
 	./hack/install-metrics-server.sh
 
-.PHONY: install-prometheus-operator
-install-prometheus-operator:
-	./hack/install-prometheus-operator.sh
-
 # This only installs the CRDs Target Allocator supports
 .PHONY: install-targetallocator-prometheus-crds
 install-targetallocator-prometheus-crds:
