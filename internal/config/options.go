@@ -219,8 +219,7 @@ func WithLabelFilters(labelFilters []string) Option {
 
 func WithAnnotationFilters(annotationFilters []string) Option {
 	return func(o *options) {
-
-		filters := []string{}
+		filters := o.annotationsFilter
 		for _, pattern := range annotationFilters {
 			var result strings.Builder
 

@@ -76,6 +76,7 @@ func New(opts ...Option) Config {
 		logger:                            logf.Log.WithName("config"),
 		version:                           version.Get(),
 		enableJavaInstrumentation:         true,
+		annotationsFilter:                 []string{"kubectl.kubernetes.io/last-applied-configuration"},
 	}
 	for _, opt := range opts {
 		opt(&o)

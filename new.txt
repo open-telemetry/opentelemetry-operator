@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  annotations:
+    deployment.kubernetes.io/desired-replicas: "2"
+    deployment.kubernetes.io/max-replicas: "3"
+    deployment.kubernetes.io/revision: "2"
+    opentelemetry-operator-config/sha256: 17ca6c1392c79101dddb7ffbb1e3902572f4a1b3559409f299d9edcc0e1435ec
+    prometheus.io/path: /metrics
+    prometheus.io/port: "8888"
+    prometheus.io/scrape: "true"
+  creationTimestamp: "2024-04-25T17:42:14Z"
+  generation: 2
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.simplest
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: simplest-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    pod-template-hash: 6567f9c848
+  name: simplest-collector-6567f9c848
+  namespace: default
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Deployment
+    name: simplest-collector
+    uid: e5f6507a-d584-4aec-963c-71a873dd2761
+  resourceVersion: "7369"
+  uid: 9f2ac8f8-05c1-494d-b1da-9e69a0d6f988
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/instance: default.simplest
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+      pod-template-hash: 6567f9c848
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/last-applied-configuration: |
+          {"apiVersion":"opentelemetry.io/v1alpha1","kind":"OpenTelemetryCollector","metadata":{"annotations":{},"name":"simplest","namespace":"default"},"spec":{"config":"receivers:\n  otlp:\n    protocols:\n      grpc:\n      http:\nprocessors:\n\nexporters:\n  debug:\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: []\n      exporters: [debug]\n","managementState":"managed","replicas":2}}
+        opentelemetry-operator-config/sha256: 17ca6c1392c79101dddb7ffbb1e3902572f4a1b3559409f299d9edcc0e1435ec
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8888"
+        prometheus.io/scrape: "true"
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/component: opentelemetry-collector
+        app.kubernetes.io/instance: default.simplest
+        app.kubernetes.io/managed-by: opentelemetry-operator
+        app.kubernetes.io/name: simplest-collector
+        app.kubernetes.io/part-of: opentelemetry
+        app.kubernetes.io/version: latest
+        pod-template-hash: 6567f9c848
+    spec:
+      containers:
+      - args:
+        - --config=/conf/collector.yaml
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.98.0
+        imagePullPolicy: IfNotPresent
+        name: otc-container
+        ports:
+        - containerPort: 8888
+          name: metrics
+          protocol: TCP
+        - containerPort: 4317
+          name: otlp-grpc
+          protocol: TCP
+        - containerPort: 4318
+          name: otlp-http
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /conf
+          name: otc-internal
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: simplest-collector
+      serviceAccountName: simplest-collector
+      shareProcessNamespace: false
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: collector.yaml
+            path: collector.yaml
+          name: simplest-collector
+        name: otc-internal
+status:
+  availableReplicas: 2
+  fullyLabeledReplicas: 2
+  observedGeneration: 2
+  readyReplicas: 2
+  replicas: 2
