@@ -170,8 +170,8 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 		Replicas:           in.Replicas,
 		NodeSelector:       in.NodeSelector,
 		Resources:          in.Resources,
-		AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategy(in.AllocationStrategy),
-		FilterStrategy:     v1beta1.TargetAllocatorFilterStrategy(in.FilterStrategy),
+		AllocationStrategy: tov1beta1TAAllocationStrategy(in.AllocationStrategy),
+		FilterStrategy:     tov1beta1TAFilterStrategy(in.FilterStrategy),
 		ServiceAccount:     in.ServiceAccount,
 		Image:              in.Image,
 		Enabled:            in.Enabled,
@@ -440,8 +440,8 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		Replicas:           in.Replicas,
 		NodeSelector:       in.NodeSelector,
 		Resources:          in.Resources,
-		AllocationStrategy: OpenTelemetryTargetAllocatorAllocationStrategy(in.AllocationStrategy),
-		FilterStrategy:     string(in.FilterStrategy),
+		AllocationStrategy: tov1alpha1TAAllocationStrategy(in.AllocationStrategy),
+		FilterStrategy:     tov1alpha1TAFilterStrategy(in.FilterStrategy),
 		ServiceAccount:     in.ServiceAccount,
 		Image:              in.Image,
 		Enabled:            in.Enabled,
@@ -465,4 +465,43 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		},
 		PodDisruptionBudget: tov1alpha1PodDisruptionBudget(in.PodDisruptionBudget),
 	}
+}
+
+func tov1alpha1TAFilterStrategy(strategy v1beta1.TargetAllocatorFilterStrategy) string {
+	switch strategy {
+	case v1beta1.TargetAllocatorFilterStrategyRelabelConfig:
+		return string(strategy)
+	}
+	return ""
+}
+
+func tov1alpha1TAAllocationStrategy(strategy v1beta1.TargetAllocatorAllocationStrategy) OpenTelemetryTargetAllocatorAllocationStrategy {
+	switch strategy {
+	case v1beta1.TargetAllocatorAllocationStrategyConsistentHashing:
+		return OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing
+	case v1beta1.TargetAllocatorAllocationStrategyPerNode:
+		return OpenTelemetryTargetAllocatorAllocationStrategyPerNode
+	case v1beta1.TargetAllocatorAllocationStrategyLeastWeighted:
+		return OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted
+	}
+	return ""
+}
+
+func tov1beta1TAFilterStrategy(strategy string) v1beta1.TargetAllocatorFilterStrategy {
+	if strategy == string(v1beta1.TargetAllocatorFilterStrategyRelabelConfig) {
+		return v1beta1.TargetAllocatorFilterStrategyRelabelConfig
+	}
+	return ""
+}
+
+func tov1beta1TAAllocationStrategy(strategy OpenTelemetryTargetAllocatorAllocationStrategy) v1beta1.TargetAllocatorAllocationStrategy {
+	switch strategy {
+	case OpenTelemetryTargetAllocatorAllocationStrategyPerNode:
+		return v1beta1.TargetAllocatorAllocationStrategyPerNode
+	case OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing:
+		return v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
+	case OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted:
+		return v1beta1.TargetAllocatorAllocationStrategyLeastWeighted
+	}
+	return ""
 }
