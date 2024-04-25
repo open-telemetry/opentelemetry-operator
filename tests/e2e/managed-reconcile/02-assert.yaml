@@ -65,8 +65,8 @@ data:
     service:
       pipelines:
         traces:
-          exporters:
-            - debug
-          processors: []
           receivers:
             - otlp
+          processors: []
+          exporters:
+            - debug

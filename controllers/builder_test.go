@@ -129,7 +129,7 @@ service:
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6e8e21bdba40253df96292550a1be6174bbeebe986cf103a6740b524850b99c4",
+							"opentelemetry-operator-config/sha256": "9bd1efff23a7ebfb451c6104fc9f63722e4312d3407a5825725c20aab6b5c37b",
 							"prometheus.io/path":                   "/metrics",
 							"prometheus.io/port":                   "8888",
 							"prometheus.io/scrape":                 "true",
@@ -151,7 +151,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "6e8e21bdba40253df96292550a1be6174bbeebe986cf103a6740b524850b99c4",
+									"opentelemetry-operator-config/sha256": "9bd1efff23a7ebfb451c6104fc9f63722e4312d3407a5825725c20aab6b5c37b",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -236,7 +236,7 @@ service:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      receivers:\n        - examplereceiver\n      exporters:\n        - logging\n",
+						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      receivers:\n        - examplereceiver\n      processors: []\n      exporters:\n        - logging\n",
 					},
 				},
 				&corev1.ServiceAccount{
@@ -376,7 +376,7 @@ service:
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6e8e21bdba40253df96292550a1be6174bbeebe986cf103a6740b524850b99c4",
+							"opentelemetry-operator-config/sha256": "9bd1efff23a7ebfb451c6104fc9f63722e4312d3407a5825725c20aab6b5c37b",
 							"prometheus.io/path":                   "/metrics",
 							"prometheus.io/port":                   "8888",
 							"prometheus.io/scrape":                 "true",
@@ -398,7 +398,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "6e8e21bdba40253df96292550a1be6174bbeebe986cf103a6740b524850b99c4",
+									"opentelemetry-operator-config/sha256": "9bd1efff23a7ebfb451c6104fc9f63722e4312d3407a5825725c20aab6b5c37b",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -483,7 +483,7 @@ service:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      receivers:\n        - examplereceiver\n      exporters:\n        - logging\n",
+						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      receivers:\n        - examplereceiver\n      processors: []\n      exporters:\n        - logging\n",
 					},
 				},
 				&corev1.ServiceAccount{
@@ -659,7 +659,7 @@ service:
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6e8e21bdba40253df96292550a1be6174bbeebe986cf103a6740b524850b99c4",
+							"opentelemetry-operator-config/sha256": "9bd1efff23a7ebfb451c6104fc9f63722e4312d3407a5825725c20aab6b5c37b",
 							"prometheus.io/path":                   "/metrics",
 							"prometheus.io/port":                   "8888",
 							"prometheus.io/scrape":                 "true",
@@ -681,7 +681,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "6e8e21bdba40253df96292550a1be6174bbeebe986cf103a6740b524850b99c4",
+									"opentelemetry-operator-config/sha256": "9bd1efff23a7ebfb451c6104fc9f63722e4312d3407a5825725c20aab6b5c37b",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -766,7 +766,7 @@ service:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      receivers:\n        - examplereceiver\n      exporters:\n        - logging\n",
+						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      receivers:\n        - examplereceiver\n      processors: []\n      exporters:\n        - logging\n",
 					},
 				},
 				&corev1.Service{
@@ -1180,7 +1180,7 @@ service:
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
+							"opentelemetry-operator-config/sha256": "b80a3e582dad871b9093492816f35018029b07508576abe8d136f5f369e8af66",
 							"prometheus.io/path":                   "/metrics",
 							"prometheus.io/port":                   "8888",
 							"prometheus.io/scrape":                 "true",
@@ -1203,7 +1203,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
+									"opentelemetry-operator-config/sha256": "b80a3e582dad871b9093492816f35018029b07508576abe8d136f5f369e8af66",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -1288,7 +1288,7 @@ service:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"collector.yaml": "exporters:\n    logging: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - logging\n            receivers:\n                - prometheus\n",
+						"collector.yaml": "exporters:\n    logging: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - logging\n            processors: []\n            receivers:\n                - prometheus\n",
 					},
 				},
 				&corev1.ServiceAccount{
@@ -1574,7 +1574,7 @@ prometheus_cr:
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
+							"opentelemetry-operator-config/sha256": "b80a3e582dad871b9093492816f35018029b07508576abe8d136f5f369e8af66",
 							"prometheus.io/path":                   "/metrics",
 							"prometheus.io/port":                   "8888",
 							"prometheus.io/scrape":                 "true",
@@ -1597,7 +1597,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
+									"opentelemetry-operator-config/sha256": "b80a3e582dad871b9093492816f35018029b07508576abe8d136f5f369e8af66",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -1682,7 +1682,7 @@ prometheus_cr:
 						Annotations: nil,
 					},
 					Data: map[string]string{
-						"collector.yaml": "exporters:\n    logging: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - logging\n            receivers:\n                - prometheus\n",
+						"collector.yaml": "exporters:\n    logging: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - logging\n            processors: []\n            receivers:\n                - prometheus\n",
 					},
 				},
 				&corev1.ServiceAccount{

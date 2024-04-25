@@ -23,5 +23,6 @@ service:
     traces:
       receivers:
         - otlp
+      processors: []
       exporters:
         - otlp/auth
