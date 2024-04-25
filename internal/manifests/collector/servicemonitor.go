@@ -116,7 +116,6 @@ func endpointsFromConfig(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollec
 	}
 
 	exporterPorts, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeExporter, c)
-	fmt.Println("eeeeeeeeeeeeeeeeeeeeeestos son: ", exporterPorts)
 	if err != nil {
 		logger.Error(err, "couldn't build service monitors from configuration")
 		return []monitoringv1.Endpoint{}
