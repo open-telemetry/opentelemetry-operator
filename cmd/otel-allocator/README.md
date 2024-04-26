@@ -3,7 +3,7 @@
 Target Allocator is an optional component of the OpenTelemetry Collector [Custom Resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) (CR). The release version matches the
 operator's most recent release as well.
 
-> 🚨 **Note:** the TargetAllocator currently supports `deployment`, `statefulset`, and `daemonset` deployment modes of the `OpenTelemetryCollector` CR.
+> 🚨 **Note:** the TargetAllocator currently supports the `statefulset` and `daemonset` deployment modes of the `OpenTelemetryCollector` CR.
 
 In a nutshell, the TA is a mechanism for decoupling the service discovery and metric collection functions of Prometheus such that they can be scaled independently. The Collector manages Prometheus metrics without needing to install Prometheus. The TA manages the configuration of the Collector's [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md).
 
@@ -30,6 +30,33 @@ sequenceDiagram
   OTel Collectors ->>Metrics Targets: 5. Scrape Metrics target
 ```
 
+### Allocation strategies
+
+Several target allocation strategies are available. Some strategies may only make sense for a given Collector deployment
+mode. For example, the `per-node` strategy only works correctly with a Collector deployed as a DaemonSet.
+
+#### `consistent-hashing`
+
+A consistent hashing strategy implementing the [following algorithm][consistent_hashing]. Only the target url is hashed
+to prevent label changes from causing targets to be moved between collectors. This strategy consistently assigns
+targets to the same collectors, but will experience rebalancing when the collector count changes.
+
+This is the default.
+
+#### `least-weighted`
+
+A strategy that simply assigns the target to the collector with the least number of targets. It achieves more stability
+in target assignment when collector count changes, but at the cost of less even distribution of targets.
+
+#### `per-node`
+
+This strategy assigns each target to the collector running on the same Node the target is. As such, it only makes sense
+to use it with a collector running as a DaemonSet.
+
+> [!WARNING]  
+> The per-node strategy ignores targets not assigned to a Node, like for example control plane components.
+
+[consistent_hashing]: https://blog.research.google/2017/04/consistent-hashing-with-bounded-loads.html
 ## Discovery of Prometheus Custom Resources
 
 The Target Allocator also provides for the discovery of [Prometheus Operator CRs](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md), namely the [ServiceMonitor and PodMonitor](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#target-allocator). The ServiceMonitors and the PodMonitors purpose is to inform the Target Allocator (or PrometheusOperator) to add a new job to their scrape configuration. The Target Allocator then provides the jobs to the OTel Collector [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md). 

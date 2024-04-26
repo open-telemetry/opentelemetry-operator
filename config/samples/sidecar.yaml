@@ -8,11 +8,11 @@ spec:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
+          grpc: {}
+          http: {}
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:

@@ -36,7 +36,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -131,30 +130,25 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 	return ownedObjects, nil
 }
 
-func (r *OpenTelemetryCollectorReconciler) getParams(instance v1alpha1.OpenTelemetryCollector) (manifests.Params, error) {
-	otelCol := v1beta1.OpenTelemetryCollector{}
-	err := instance.ConvertTo(&otelCol)
-	if err != nil {
-		return manifests.Params{}, err
-	}
-	params := manifests.Params{
+func (r *OpenTelemetryCollectorReconciler) getParams(instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
+	p := manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
-		OtelCol:  otelCol,
+		OtelCol:  instance,
 		Log:      r.log,
 		Scheme:   r.scheme,
 		Recorder: r.recorder,
 	}
 
 	// generate the target allocator CR from the collector CR
-	targetAllocator, err := collector.TargetAllocator(params)
+	targetAllocator, err := collector.TargetAllocator(p)
 	if err != nil {
-		return params, err
+		return p, err
 	}
 	if targetAllocator != nil {
-		params.TargetAllocator = *targetAllocator
+		p.TargetAllocator = *targetAllocator
 	}
-	return params, nil
+	return p, nil
 }
 
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
@@ -187,7 +181,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.log.WithValues("opentelemetrycollector", req.NamespacedName)
 
-	var instance v1alpha1.OpenTelemetryCollector
+	var instance v1beta1.OpenTelemetryCollector
 	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
 			log.Error(err, "unable to fetch OpenTelemetryCollector")
@@ -203,7 +197,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, nil
 	}
 
-	if instance.Spec.ManagementState == v1alpha1.ManagementStateUnmanaged {
+	if instance.Spec.ManagementState == v1beta1.ManagementStateUnmanaged {
 		log.Info("Skipping reconciliation for unmanaged OpenTelemetryCollector resource", "name", req.String())
 		// Stop requeueing for unmanaged OpenTelemetryCollector custom resources
 		return ctrl.Result{}, nil
@@ -232,7 +226,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 // SetupWithManager tells the manager what our controller is interested in.
 func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.OpenTelemetryCollector{}).
+		For(&v1beta1.OpenTelemetryCollector{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Service{}).

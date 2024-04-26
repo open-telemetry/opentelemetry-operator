@@ -10,8 +10,11 @@ linters-settings:
     template-path: header.txt
   goimports:
     local-prefixes: github.com/open-telemetry/opentelemetry-operator
-  maligned:
-    suggest-new: true
+  gci:
+    sections:
+    - standard
+    - default
+    - prefix(github.com/open-telemetry/opentelemetry-operator)
   misspell:
     locale: US
     ignore-words:
@@ -22,9 +25,6 @@ linters-settings:
       - kilometre
       - kilometres
   govet:
-    # report about shadowed variables
-    check-shadowing: true
-
     # settings per analyzer
     settings:
       printf: # analyzer name, run `go tool vet help` to see all analyzers
@@ -41,7 +41,7 @@ linters-settings:
   gofmt:
     simplify: true
   revive:
-    min-confidence: 0.8
+    confidence: 0.8
   
   depguard:
     rules:
@@ -51,6 +51,12 @@ linters-settings:
             desc: "Use go.uber.org/atomic instead of sync/atomic"
           - pkg: github.com/pkg/errors
             desc: "Use 'errors' or 'fmt' instead of github.com/pkg/errors"
+
+issues:
+  exclude-rules:
+    - linters:
+        - gci
+      source: "// \\+kubebuilder"
 
 linters:
   enable:
@@ -71,3 +77,4 @@ linters:
     - depguard
     - errcheck
     - errorlint
+    - gci

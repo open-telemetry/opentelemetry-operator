@@ -25,7 +25,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 type targetAllocator struct {
@@ -62,43 +61,24 @@ func ReplaceConfig(instance v1beta1.OpenTelemetryCollector) (string, error) {
 		return "", getCfgPromErr
 	}
 
-	validateCfgPromErr := ta.ValidatePromConfig(promCfgMap, instance.Spec.TargetAllocator.Enabled, featuregate.EnableTargetAllocatorRewrite.IsEnabled())
+	validateCfgPromErr := ta.ValidatePromConfig(promCfgMap, instance.Spec.TargetAllocator.Enabled)
 	if validateCfgPromErr != nil {
 		return "", validateCfgPromErr
 	}
 
-	if featuregate.EnableTargetAllocatorRewrite.IsEnabled() {
-		// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
-		// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
-		updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
-		if getCfgPromErr != nil {
-			return "", getCfgPromErr
-		}
-
-		// type coercion checks are handled in the AddTAConfigToPromConfig method above
-		config["receivers"].(map[interface{}]interface{})["prometheus"] = updPromCfgMap
-
-		out, updCfgMarshalErr := yaml.Marshal(config)
-		if updCfgMarshalErr != nil {
-			return "", updCfgMarshalErr
-		}
-		return string(out), nil
-	}
-
 	// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
 	// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
-	updPromCfgMap, err := ta.AddHTTPSDConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
-	if err != nil {
-		return "", err
+	updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
+	if getCfgPromErr != nil {
+		return "", getCfgPromErr
 	}
 
-	// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
-	// type coercion checks are handled in the ConfigToPromConfig method above
+	// type coercion checks are handled in the AddTAConfigToPromConfig method above
 	config["receivers"].(map[interface{}]interface{})["prometheus"] = updPromCfgMap
 
-	out, err := yaml.Marshal(config)
-	if err != nil {
-		return "", err
+	out, updCfgMarshalErr := yaml.Marshal(config)
+	if updCfgMarshalErr != nil {
+		return "", updCfgMarshalErr
 	}
 
 	return string(out), nil

@@ -56,7 +56,7 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
+          processors: [memory_limiter, batch]
           exporters: [debug]
 EOF
 ```
@@ -733,7 +733,8 @@ We use `cert-manager` for some features of this operator and the third column sh
 The OpenTelemetry Operator _might_ work on versions outside of the given range, but when opening new issues, please make sure to test your scenario on a supported version.
 
 | OpenTelemetry Operator | Kubernetes     | Cert-Manager |
-| ---------------------- | -------------- | ------------ |
+|------------------------| -------------- | ------------ |
+| v0.98.0                | v1.23 to v1.29 | v1           |
 | v0.97.0                | v1.23 to v1.29 | v1           |
 | v0.96.0                | v1.23 to v1.29 | v1           |
 | v0.95.0                | v1.23 to v1.29 | v1           |
@@ -756,7 +757,6 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 | v0.78.0                | v1.19 to v1.27 | v1           |
 | v0.77.0                | v1.19 to v1.26 | v1           |
 | v0.76.1                | v1.19 to v1.26 | v1           |
-| v0.75.0                | v1.19 to v1.26 | v1           |
 
 ## Contributing and Developing
 
@@ -769,7 +769,6 @@ Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-tel
 - [Benedikt Bongartz](https://github.com/frzifus), Red Hat
 - [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), Red Hat
-- [Mikołaj Świątek](https://github.com/swiatekm-sumo), Sumo Logic
 
 Emeritus Approvers:
 
@@ -789,6 +788,7 @@ Target Allocator Maintainers ([@open-telemetry/operator-ta-maintainers](https://
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
 - [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
+- [Mikołaj Świątek](https://github.com/swiatekm-sumo), Sumo Logic
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 - [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
 

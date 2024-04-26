@@ -95,11 +95,6 @@ func TestExtractPortsFromConfig(t *testing.T) {
 	targetPort4317 := intstr.IntOrString{Type: 0, IntVal: 4317, StrVal: ""}
 	targetPort4318 := intstr.IntOrString{Type: 0, IntVal: 4318, StrVal: ""}
 
-	svcPorts := []corev1.ServicePort{}
-	for _, p := range ports {
-		svcPorts = append(svcPorts, p.ServicePort)
-	}
-
 	expectedPorts := []corev1.ServicePort{
 		{Name: "examplereceiver", Port: 12345},
 		{Name: "port-12346", Port: 12346},
@@ -112,7 +107,7 @@ func TestExtractPortsFromConfig(t *testing.T) {
 		{Name: "otlp-http", AppProtocol: &httpAppProtocol, Port: 4318, TargetPort: targetPort4318},
 		{Name: "zipkin", AppProtocol: &httpAppProtocol, Protocol: "TCP", Port: 9411},
 	}
-	assert.ElementsMatch(t, expectedPorts, svcPorts)
+	assert.ElementsMatch(t, expectedPorts, ports)
 }
 
 func TestNoPortsParsed(t *testing.T) {
@@ -209,75 +204,6 @@ func TestParserFailed(t *testing.T) {
 	assert.Len(t, ports, 0)
 	assert.NoError(t, err)
 	assert.True(t, mockParserCalled)
-}
-
-func TestConfigToMetricsPort(t *testing.T) {
-	t.Run("custom port specified", func(t *testing.T) {
-		config := map[interface{}]interface{}{
-			"service": map[interface{}]interface{}{
-				"telemetry": map[interface{}]interface{}{
-					"metrics": map[interface{}]interface{}{
-						"address": "0.0.0.0:9090",
-					},
-				},
-			},
-		}
-
-		port, err := adapters.ConfigToMetricsPort(logger, config)
-		assert.NoError(t, err)
-		assert.Equal(t, int32(9090), port)
-	})
-
-	for _, tt := range []struct {
-		desc   string
-		config map[interface{}]interface{}
-	}{
-		{
-			"bad address",
-			map[interface{}]interface{}{
-				"service": map[interface{}]interface{}{
-					"telemetry": map[interface{}]interface{}{
-						"metrics": map[interface{}]interface{}{
-							"address": "0.0.0.0",
-						},
-					},
-				},
-			},
-		},
-		{
-			"missing address",
-			map[interface{}]interface{}{
-				"service": map[interface{}]interface{}{
-					"telemetry": map[interface{}]interface{}{
-						"metrics": map[interface{}]interface{}{
-							"level": "detailed",
-						},
-					},
-				},
-			},
-		},
-		{
-			"missing metrics",
-			map[interface{}]interface{}{
-				"service": map[interface{}]interface{}{
-					"telemetry": map[interface{}]interface{}{},
-				},
-			},
-		},
-		{
-			"missing telemetry",
-			map[interface{}]interface{}{
-				"service": map[interface{}]interface{}{},
-			},
-		},
-	} {
-		t.Run(tt.desc, func(t *testing.T) {
-			// these are acceptable failures, we return to the collector's default metric port
-			port, err := adapters.ConfigToMetricsPort(logger, tt.config)
-			assert.NoError(t, err)
-			assert.Equal(t, int32(8888), port)
-		})
-	}
 }
 
 type mockParser struct {

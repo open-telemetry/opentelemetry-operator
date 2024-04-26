@@ -49,6 +49,7 @@ type options struct {
 	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
 	enableNodeJSInstrumentation         bool
+	enableJavaInstrumentation           bool
 	targetAllocatorConfigMapEntry       string
 	operatorOpAMPBridgeConfigMapEntry   string
 	targetAllocatorImage                string
@@ -107,6 +108,11 @@ func WithEnableDotNetInstrumentation(s bool) Option {
 func WithEnableNginxInstrumentation(s bool) Option {
 	return func(o *options) {
 		o.enableNginxInstrumentation = s
+	}
+}
+func WithEnableJavaInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableJavaInstrumentation = s
 	}
 }
 func WithEnablePythonInstrumentation(s bool) Option {

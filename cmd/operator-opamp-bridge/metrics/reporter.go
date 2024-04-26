@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/oklog/ulid/v2"
+	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/shirou/gopsutil/process"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
@@ -30,8 +31,6 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	otelresource "go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-
-	"github.com/open-telemetry/opamp-go/protobufs"
 )
 
 // MetricReporter is a metric reporter that collects Agent metrics and sends them to an
