@@ -34,7 +34,7 @@ jobs:
          - e2e-multi-instrumentation
          - e2e-metadata-filters
        include:
-         - group: e2e-autoscale
+         - group: e2e-instrumentation
            setup: "add-operator-arg OPERATOR_ARG=--enable-go-instrumentation prepare-e2e"
          - group: e2e-multi-instrumentation
            setup: "add-operator-arg OPERATOR_ARG=--enable-multi-instrumentation prepare-e2e"

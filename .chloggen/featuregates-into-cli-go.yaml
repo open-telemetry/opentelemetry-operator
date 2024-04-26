@@ -5,7 +5,7 @@ change_type: 'breaking'
 component: 'operator'
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Change featuregates auto-instrumentation.go to CLI
+note: remove featuregate `operator.autoinstrumentation.go`. Use command line flag `--enable-go-instrumentation` instead
 
 # One or more tracking issues related to the change
 issues: [2675]
