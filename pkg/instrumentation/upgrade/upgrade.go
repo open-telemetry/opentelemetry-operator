@@ -32,7 +32,7 @@ import (
 
 var (
 	defaultAnnotationToGate = map[string]*featuregate2.Gate{
-		constants.AnnotationDefaultAutoInstrumentationGo:   featuregate.EnableGoAutoInstrumentationSupport,
+		constants.AnnotationDefaultAutoInstrumentationGo: featuregate.EnableGoAutoInstrumentationSupport,
 	}
 )
 
