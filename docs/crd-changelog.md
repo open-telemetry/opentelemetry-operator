@@ -3,11 +3,33 @@
 This document explains major changes made in new CRD versions. It is intended to help users migrate and take
 advantage of the new features.
 
-## opentelemetry.io/v1beta1 OpenTelemetryCollector
+## OpenTelemetryCollector.opentelemetry.io/v1beta1 
 
 ### Migration
 
-There is no need for any user action. The operator will automatically convert existing `v1alpha1` resources to `v1beta1`.
+There is no need for any immediate user action. The operator will continue to support existing `v1alpha1` resources.
+
+In addition, any newly applied `v1alpha1` resource will be converted to `v1beta1` and stored in the new API version.
+
+The plan is to remove support for `v1alpha1` in a future operator version, so users should migrate promptly. In order to migrate fully to `v1beta1`:
+
+1. Update any manifests you have stored outside the cluster, for example in your infrastructure git repository.
+2. Apply them, so they're all stored as `v1beta1`.
+3. Update the OpenTelemetryCollector CRD to only store `v1beta1`
+   ```bash
+   kubectl patch customresourcedefinitions opentelemetrycollectors.opentelemetry.io  \
+     --subresource='status' \
+     --type='merge' \
+     -p '{"status":{"storedVersions":["v1beta1"]}}'
+   ```
+For a more thorough explanation of how and why this migration works, see the relevant [Kubernetes documentation][crd_migration_guide].
+
+#### Operator Lifecycle Manager
+
+If you're installing the opentelemetry-operator in OpenShift using OLM, be advised that
+**only `AllNamespaces` install mode is now supported**, due to the conversion webhook from `v1beta1` to `v1alpha1`.
+See [OLM docs](https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/) and
+[OLM operator groups docs](https://olm.operatorframework.io/docs/advanced-tasks/operator-scoping-with-operatorgroups/).
 
 ### Structured Configuration
 
@@ -136,3 +158,4 @@ Our intent is to eventually use this distribution as our default collector image
 [core_distro]: https://github.com/open-telemetry/opentelemetry-collector-releases/tree/main/distributions/otelcol
 [k8s_distro]: https://github.com/open-telemetry/opentelemetry-collector-releases/tree/main/distributions/otelcol-k8s
 [k8s_issue]: https://github.com/open-telemetry/opentelemetry-operator/issues/2835
+[crd_migration_guide]: https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#upgrade-existing-objects-to-a-new-stored-version
