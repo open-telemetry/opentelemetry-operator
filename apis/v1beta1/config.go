@@ -118,19 +118,36 @@ func (c *Config) GetEnabledComponents() map[ComponentType]map[string]interface{}
 	return toReturn
 }
 
+type ComponentDefinitions map[string]*AnyConfig
+
+func (cd ComponentDefinitions) hasNullValues(prefix string) []string {
+	var nullKeys []string
+	for key, config := range cd {
+		prefixWithKey := fmt.Sprintf("%s.%s", prefix, key)
+		if config == nil {
+			nullKeys = append(nullKeys, prefixWithKey+":")
+			continue
+		}
+		if nulls := hasNullValue(config.Object); len(nulls) > 0 {
+			nullKeys = append(nullKeys, addPrefix(prefixWithKey, nulls)...)
+		}
+	}
+	return nullKeys
+}
+
 // Config encapsulates collector config.
 type Config struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Receivers AnyConfig `json:"receivers" yaml:"receivers"`
+	Receivers ComponentDefinitions `json:"receivers" yaml:"receivers"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Exporters AnyConfig `json:"exporters" yaml:"exporters"`
+	Exporters ComponentDefinitions `json:"exporters" yaml:"exporters"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Processors *AnyConfig `json:"processors,omitempty" yaml:"processors,omitempty"`
+	Processors ComponentDefinitions `json:"processors,omitempty" yaml:"processors,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Connectors *AnyConfig `json:"connectors,omitempty" yaml:"connectors,omitempty"`
+	Connectors ComponentDefinitions `json:"connectors,omitempty" yaml:"connectors,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Extensions *AnyConfig `json:"extensions,omitempty" yaml:"extensions,omitempty"`
-	Service    Service    `json:"service" yaml:"service"`
+	Extensions ComponentDefinitions `json:"extensions,omitempty" yaml:"extensions,omitempty"`
+	Service    Service              `json:"service" yaml:"service"`
 }
 
 // Yaml encodes the current object and returns it as a string.
@@ -147,27 +164,11 @@ func (c *Config) Yaml() (string, error) {
 // Returns null objects in the config.
 func (c *Config) nullObjects() []string {
 	var nullKeys []string
-	if nulls := hasNullValue(c.Receivers.Object); len(nulls) > 0 {
-		nullKeys = append(nullKeys, addPrefix("receivers.", nulls)...)
-	}
-	if nulls := hasNullValue(c.Exporters.Object); len(nulls) > 0 {
-		nullKeys = append(nullKeys, addPrefix("exporters.", nulls)...)
-	}
-	if c.Processors != nil {
-		if nulls := hasNullValue(c.Processors.Object); len(nulls) > 0 {
-			nullKeys = append(nullKeys, addPrefix("processors.", nulls)...)
-		}
-	}
-	if c.Extensions != nil {
-		if nulls := hasNullValue(c.Extensions.Object); len(nulls) > 0 {
-			nullKeys = append(nullKeys, addPrefix("extensions.", nulls)...)
-		}
-	}
-	if c.Connectors != nil {
-		if nulls := hasNullValue(c.Connectors.Object); len(nulls) > 0 {
-			nullKeys = append(nullKeys, addPrefix("connectors.", nulls)...)
-		}
-	}
+	nullKeys = append(nullKeys, c.Receivers.hasNullValues("receivers")...)
+	nullKeys = append(nullKeys, c.Exporters.hasNullValues("exporters")...)
+	nullKeys = append(nullKeys, c.Processors.hasNullValues("processors")...)
+	nullKeys = append(nullKeys, c.Extensions.hasNullValues("extensions")...)
+	nullKeys = append(nullKeys, c.Connectors.hasNullValues("connectors")...)
 	// Make the return deterministic. The config uses maps therefore processing order is non-deterministic.
 	sort.Strings(nullKeys)
 	return nullKeys
@@ -257,7 +258,7 @@ func hasNullValue(cfg map[string]interface{}) []string {
 				nulls = hasNullValue(val)
 			}
 			if len(nulls) > 0 {
-				prefixed := addPrefix(k+".", nulls)
+				prefixed := addPrefix(k, nulls)
 				nullKeys = append(nullKeys, prefixed...)
 			}
 		}
@@ -268,7 +269,7 @@ func hasNullValue(cfg map[string]interface{}) []string {
 func addPrefix(prefix string, arr []string) []string {
 	var prefixed []string
 	for _, v := range arr {
-		prefixed = append(prefixed, fmt.Sprintf("%s%s", prefix, v))
+		prefixed = append(prefixed, fmt.Sprintf("%s.%s", prefix, v))
 	}
 	return prefixed
 }

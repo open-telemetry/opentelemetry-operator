@@ -111,31 +111,77 @@ func TestNullObjects_go_yaml(t *testing.T) {
 	assert.Equal(t, []string{"connectors.spanmetrics:", "exporters.otlp.endpoint:", "extensions.health_check:", "processors.batch:", "receivers.otlp.protocols.grpc:", "receivers.otlp.protocols.http:"}, nullObjects)
 }
 
+func TestMinimalConfigYaml(t *testing.T) {
+	cfg := &Config{
+		Receivers: ComponentDefinitions{
+			"otlp": nil,
+		},
+		Exporters: ComponentDefinitions{
+			"otlp/exporter": nil,
+		},
+		Service: Service{
+			Telemetry: &AnyConfig{
+				Object: map[string]interface{}{
+					"insights": "yeah!",
+				},
+			},
+			Pipelines: map[string]*Pipeline{
+				"traces": {
+					Receivers: []string{"otlp"},
+					Exporters: []string{"otlp/exporter"},
+				},
+			},
+		},
+	}
+	yamlCollector, err := cfg.Yaml()
+	require.NoError(t, err)
+
+	const expected = `receivers:
+  otlp: null
+exporters:
+  otlp/exporter: null
+service:
+  telemetry:
+    insights: yeah!
+  pipelines:
+    traces:
+      receivers:
+        - otlp
+      processors: []
+      exporters:
+        - otlp/exporter
+`
+
+	assert.Equal(t, expected, yamlCollector)
+}
+
 func TestConfigYaml(t *testing.T) {
 	cfg := &Config{
-		Receivers: AnyConfig{
-			Object: map[string]interface{}{
-				"otlp": nil,
+		Receivers: ComponentDefinitions{
+			"otlp": nil,
+		},
+		Processors: ComponentDefinitions{
+			"modify_2000": &AnyConfig{
+				Object: map[string]interface{}{
+					"enabled": true,
+				},
 			},
 		},
-		Processors: &AnyConfig{
-			Object: map[string]interface{}{
-				"modify_2000": "enabled",
+		Exporters: ComponentDefinitions{
+			"otlp/exporter": nil,
+		},
+		Connectors: ComponentDefinitions{
+			"con": &AnyConfig{
+				Object: map[string]interface{}{
+					"magic": true,
+				},
 			},
 		},
-		Exporters: AnyConfig{
-			Object: map[string]interface{}{
-				"otlp/exporter": nil,
-			},
-		},
-		Connectors: &AnyConfig{
-			Object: map[string]interface{}{
-				"con": "magic",
-			},
-		},
-		Extensions: &AnyConfig{
-			Object: map[string]interface{}{
-				"addon": "option1",
+		Extensions: ComponentDefinitions{
+			"addon": &AnyConfig{
+				Object: map[string]interface{}{
+					"option1": true,
+				},
 			},
 		},
 		Service: Service{
@@ -162,11 +208,14 @@ func TestConfigYaml(t *testing.T) {
 exporters:
   otlp/exporter: null
 processors:
-  modify_2000: enabled
+  modify_2000:
+    enabled: true
 connectors:
-  con: magic
+  con:
+    magic: true
 extensions:
-  addon: option1
+  addon:
+    option1: true
 service:
   extensions:
     - addon

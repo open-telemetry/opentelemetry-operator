@@ -52,27 +52,33 @@ func TestValidate(t *testing.T) {
 		err       string
 	}{
 		{
-			name: "Test ",
+			name: "Test warnings",
 			collector: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					Config: Config{
-						Processors: &AnyConfig{
-							Object: map[string]interface{}{
-								"batch": nil,
-								"foo":   nil,
+						Receivers: ComponentDefinitions{
+							"otlp": &AnyConfig{
+								map[string]interface{}{
+									"protocols": map[string]interface{}{
+										"grpc": nil,
+										"http": nil,
+									},
+								},
 							},
 						},
-						Extensions: &AnyConfig{
-							Object: map[string]interface{}{
-								"foo": nil,
-							},
+						Processors: ComponentDefinitions{
+							"batch": nil,
+							"foo":   nil,
+						},
+						Extensions: ComponentDefinitions{
+							"foo": nil,
 						},
 					},
 				},
 			},
 
 			warnings: []string{
-				"Collector config spec.config has null objects: extensions.foo:, processors.batch:, processors.foo:. For compatibility tooling (kustomize and kubectl edit) it is recommended to use empty obejects e.g. batch: {}.",
+				"Collector config spec.config has null objects: extensions.foo:, processors.batch:, processors.foo:, receivers.otlp.protocols.grpc:, receivers.otlp.protocols.http:. For compatibility tooling (kustomize and kubectl edit) it is recommended to use empty obejects e.g. batch: {}.",
 			},
 		},
 	}
