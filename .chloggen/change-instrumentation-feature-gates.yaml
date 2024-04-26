@@ -5,7 +5,7 @@ change_type: 'breaking'
 component: 'operator'
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: change nodejs instrumentation feature gate operator.autoinstrumentation.nodejs into command line flag --enable-nodejs-instrumentation
+note: remove featuregate `operator.autoinstrumentation.nodejs`. Use command line flag `--enable-nodejs-instrumentation` instead
 
 # One or more tracking issues related to the change
 issues: [2674]
