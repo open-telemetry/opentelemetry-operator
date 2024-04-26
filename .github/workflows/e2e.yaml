@@ -35,7 +35,7 @@ jobs:
          - e2e-metadata-filters
        include:
          - group: e2e-instrumentation
-           setup: "add-operator-arg OPERATOR_ARG=-'--enable-nodejs-instrumentation' prepare-e2e"
+           setup: "add-operator-arg OPERATOR_ARG=-'--enable-go-instrumentation --enable-nodejs-instrumentation' prepare-e2e"
          - group: e2e-multi-instrumentation
            setup: "add-operator-arg OPERATOR_ARG=-'--enable-multi-instrumentation --enable-nodejs-instrumentation' prepare-e2e"
          - group: e2e-metadata-filters

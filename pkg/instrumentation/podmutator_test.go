@@ -22,14 +22,12 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestMutatePod(t *testing.T) {
@@ -2716,16 +2714,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableMultiInstrumentation(true)),
-			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnableGoAutoInstrumentationSupport.IsEnabled()
-
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableGoAutoInstrumentationSupport.ID(), true))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableGoAutoInstrumentationSupport.ID(), originalVal))
-
-				})
-			},
+			config: config.New(config.WithEnableGoInstrumentation(true)),
 		},
 		{
 			name: "go injection feature gate disabled",
@@ -2806,6 +2795,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(config.WithEnableGoInstrumentation(false)),
 		},
 		{
 			name: "apache httpd injection, true",

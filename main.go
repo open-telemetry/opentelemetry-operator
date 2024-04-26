@@ -112,6 +112,7 @@ func main() {
 		enableMultiInstrumentation       bool
 		enableApacheHttpdInstrumentation bool
 		enableDotNetInstrumentation      bool
+		enableGoInstrumentation          bool
 		enablePythonInstrumentation      bool
 		enableNginxInstrumentation       bool
 		enableNodeJSInstrumentation      bool
@@ -142,6 +143,7 @@ func main() {
 	pflag.BoolVar(&enableMultiInstrumentation, "enable-multi-instrumentation", false, "Controls whether the operator supports multi instrumentation")
 	pflag.BoolVar(&enableApacheHttpdInstrumentation, constants.FlagApacheHttpd, true, "Controls whether the operator supports Apache HTTPD auto-instrumentation")
 	pflag.BoolVar(&enableDotNetInstrumentation, constants.FlagDotNet, true, "Controls whether the operator supports dotnet auto-instrumentation")
+	pflag.BoolVar(&enableGoInstrumentation, constants.FlagGo, false, "Controls whether the operator supports Go auto-instrumentation")
 	pflag.BoolVar(&enablePythonInstrumentation, constants.FlagPython, true, "Controls whether the operator supports python auto-instrumentation")
 	pflag.BoolVar(&enableNginxInstrumentation, constants.FlagNginx, false, "Controls whether the operator supports nginx auto-instrumentation")
 	pflag.BoolVar(&enableNodeJSInstrumentation, constants.FlagNodeJS, false, "Controls whether the operator supports nodejs auto-instrumentation")
@@ -188,6 +190,7 @@ func main() {
 		"enable-multi-instrumentation", enableMultiInstrumentation,
 		"enable-apache-httpd-instrumentation", enableApacheHttpdInstrumentation,
 		"enable-dotnet-instrumentation", enableDotNetInstrumentation,
+		"enable-go-instrumentation", enableGoInstrumentation,
 		"enable-python-instrumentation", enablePythonInstrumentation,
 		"enable-nginx-instrumentation", enableNginxInstrumentation,
 		"enable-nodejs-instrumentation", enableNodeJSInstrumentation,
@@ -211,6 +214,7 @@ func main() {
 		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
 		config.WithEnableApacheHttpdInstrumentation(enableApacheHttpdInstrumentation),
 		config.WithEnableDotNetInstrumentation(enableDotNetInstrumentation),
+		config.WithEnableGoInstrumentation(enableGoInstrumentation),
 		config.WithEnableNginxInstrumentation(enableNginxInstrumentation),
 		config.WithEnablePythonInstrumentation(enablePythonInstrumentation),
 		config.WithEnableNodeJSInstrumentation(enableNodeJSInstrumentation),
