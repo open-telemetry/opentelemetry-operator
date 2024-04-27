@@ -17,14 +17,15 @@ package collector
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 )
 
 // TargetAllocator builds the TargetAllocator CR for the given instance.
-func TargetAllocator(params manifests.Params) (*v1beta1.TargetAllocator, error) {
+func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error) {
 
 	taSpec := params.OtelCol.Spec.TargetAllocator
 	if !taSpec.Enabled {
@@ -44,15 +45,15 @@ func TargetAllocator(params manifests.Params) (*v1beta1.TargetAllocator, error) 
 		return nil, err
 	}
 
-	return &v1beta1.TargetAllocator{
+	return &v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        params.OtelCol.Name,
 			Namespace:   params.OtelCol.Namespace,
 			Annotations: params.OtelCol.Annotations,
 			Labels:      params.OtelCol.Labels,
 		},
-		Spec: v1beta1.TargetAllocatorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+		Spec: v1alpha1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Replicas:                  taSpec.Replicas,
 				NodeSelector:              taSpec.NodeSelector,
 				Resources:                 taSpec.Resources,
@@ -77,7 +78,7 @@ func TargetAllocator(params manifests.Params) (*v1beta1.TargetAllocator, error) 
 	}, nil
 }
 
-func getScrapeConfigs(otelcolConfig string) ([]v1beta1.AnyConfig, error) {
+func getScrapeConfigs(otelcolConfig string) ([]common.AnyConfig, error) {
 	// Collector supports environment variable substitution, but the TA does not.
 	// TA Scrape Configs should have a single "$", as it does not support env var substitution
 	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(otelcolConfig)
@@ -90,10 +91,10 @@ func getScrapeConfigs(otelcolConfig string) ([]v1beta1.AnyConfig, error) {
 		return nil, err
 	}
 
-	v1beta1scrapeConfigs := make([]v1beta1.AnyConfig, len(scrapeConfigs))
+	v1beta1scrapeConfigs := make([]common.AnyConfig, len(scrapeConfigs))
 
 	for i, config := range scrapeConfigs {
-		v1beta1scrapeConfigs[i] = v1beta1.AnyConfig{Object: config}
+		v1beta1scrapeConfigs[i] = common.AnyConfig{Object: config}
 	}
 
 	return v1beta1scrapeConfigs, nil

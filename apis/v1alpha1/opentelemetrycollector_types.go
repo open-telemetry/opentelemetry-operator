@@ -21,6 +21,8 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 )
 
 // ManagementStateType defines the type for CR management states.
@@ -320,13 +322,13 @@ type OpenTelemetryTargetAllocator struct {
 	// WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.
 	// +optional
 	// +kubebuilder:default:=consistent-hashing
-	AllocationStrategy OpenTelemetryTargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
+	AllocationStrategy common.TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
 	// The only current option is relabel-config (drops targets based on prom relabel_config).
 	// The default is relabel-config.
 	// +optional
 	// +kubebuilder:default:=relabel-config
-	FilterStrategy string `json:"filterStrategy,omitempty"`
+	FilterStrategy common.TargetAllocatorFilterStrategy `json:"filterStrategy,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
 	// the operator will not automatically create a ServiceAccount for the TargetAllocator.
 	// +optional

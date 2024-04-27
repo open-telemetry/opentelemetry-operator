@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -77,7 +78,7 @@ func TestDeploymentNewDefault(t *testing.T) {
 			Namespace: "my-namespace",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Tolerations: testTolerationValues,
 			},
 		},
@@ -145,7 +146,7 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				PodAnnotations: testPodAnnotationValues,
 			},
 		},
@@ -189,7 +190,7 @@ func TestDeploymenttPodSecurityContext(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				PodSecurityContext: &v1.PodSecurityContext{
 					RunAsNonRoot: &runAsNonRoot,
 					RunAsUser:    &runAsUser,
@@ -275,7 +276,7 @@ func TestDeploymentHostNetwork(t *testing.T) {
 			Name: "my-instance-hostnetwork",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				HostNetwork: true,
 			},
 		},
@@ -384,7 +385,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 			Name: "my-instance-nodeselector",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				HostNetwork: true,
 				NodeSelector: map[string]string{
 					"node-key": "node-value",
@@ -432,7 +433,7 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 			Name: "my-instance-priortyClassName",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				PriorityClassName: priorityClassName,
 			},
 		},
@@ -475,7 +476,7 @@ func TestDeploymentAffinity(t *testing.T) {
 			Name: "my-instance-priortyClassName",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Affinity: testAffinityValue,
 			},
 		},
@@ -521,7 +522,7 @@ func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
 			Name: "my-instance-terminationGracePeriodSeconds",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				TerminationGracePeriodSeconds: &gracePeriodSec,
 			},
 		},
@@ -549,7 +550,7 @@ func TestDeploymentSetInitContainer(t *testing.T) {
 			Namespace: "my-namespace",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				InitContainers: []v1.Container{
 					{
 						Name: "test",
@@ -603,7 +604,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 			Name: "my-instance-topologyspreadconstraint",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				TopologySpreadConstraints: testTopologySpreadConstraintValue,
 			},
 		},
@@ -632,7 +633,7 @@ func TestDeploymentAdditionalContainers(t *testing.T) {
 			Namespace: "my-namespace",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				AdditionalContainers: []v1.Container{
 					{
 						Name: "test",
@@ -687,7 +688,7 @@ func TestDeploymentShareProcessNamespace(t *testing.T) {
 			Name: "my-instance-with-shareprocessnamespace",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				ShareProcessNamespace: true,
 			},
 		},

@@ -20,11 +20,12 @@ import (
 	"fmt"
 	"reflect"
 
-	semver "github.com/Masterminds/semver/v3"
+	"github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -57,7 +58,7 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 		original := list.Items[i]
 		itemLogger := u.Log.WithValues("name", original.Name, "namespace", original.Namespace)
 
-		if original.Spec.ManagementState == v1beta1.ManagementStateUnmanaged {
+		if original.Spec.ManagementState == common.ManagementStateUnmanaged {
 			itemLogger.Info("skipping upgrade because instance is not managed")
 			continue
 		}

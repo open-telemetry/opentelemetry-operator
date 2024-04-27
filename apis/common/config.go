@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1beta1
+package common
 
 import (
 	"bytes"
@@ -145,7 +145,7 @@ func (c *Config) Yaml() (string, error) {
 }
 
 // Returns null objects in the config.
-func (c *Config) nullObjects() []string {
+func (c *Config) NullObjects() []string {
 	var nullKeys []string
 	if nulls := hasNullValue(c.Receivers.Object); len(nulls) > 0 {
 		nullKeys = append(nullKeys, addPrefix("receivers.", nulls)...)

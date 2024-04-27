@@ -32,6 +32,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -83,7 +84,7 @@ service:
       exporters: [logging]
 `
 
-	goodConfig := v1beta1.Config{}
+	goodConfig := common.Config{}
 	err := go_yaml.Unmarshal([]byte(goodConfigYaml), &goodConfig)
 	require.NoError(t, err)
 	one := int32(1)
@@ -105,7 +106,7 @@ service:
 						Namespace: "test",
 					},
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 							Image:    "test",
 							Replicas: &one,
 						},
@@ -345,7 +346,7 @@ service:
 						Namespace: "test",
 					},
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 							Image:    "test",
 							Replicas: &one,
 						},
@@ -634,7 +635,7 @@ service:
 						Namespace: "test",
 					},
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 							Image:          "test",
 							Replicas:       &one,
 							ServiceAccount: "my-special-sa",
@@ -1126,7 +1127,7 @@ service:
       exporters: [logging]
 `
 
-	goodConfig := v1beta1.Config{}
+	goodConfig := common.Config{}
 	err := go_yaml.Unmarshal([]byte(goodConfigYaml), &goodConfig)
 	require.NoError(t, err)
 	one := int32(1)
@@ -1149,7 +1150,7 @@ service:
 						Namespace: "test",
 					},
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 							Image:    "test",
 							Replicas: &one,
 						},
@@ -1158,7 +1159,7 @@ service:
 						TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 							Enabled:        true,
 							FilterStrategy: "relabel-config",
-							PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+							PrometheusCR: common.TargetAllocatorPrometheusCR{
 								Enabled: true,
 							},
 						},
@@ -1538,7 +1539,7 @@ prometheus_cr:
 						Namespace: "test",
 					},
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
-						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 							Image:    "test",
 							Replicas: &one,
 						},
@@ -1546,12 +1547,12 @@ prometheus_cr:
 						Config: goodConfig,
 						TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 							Enabled: true,
-							PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+							PrometheusCR: common.TargetAllocatorPrometheusCR{
 								Enabled: true,
 							},
 							FilterStrategy: "relabel-config",
-							Observability: v1beta1.ObservabilitySpec{
-								Metrics: v1beta1.MetricsConfigSpec{
+							Observability: common.ObservabilitySpec{
+								Metrics: common.MetricsConfigSpec{
 									EnableMetrics: true,
 								},
 							},

@@ -22,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -76,7 +77,7 @@ func TestPDB(t *testing.T) {
 	for _, otelcol := range otelcols {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				otelcol.Spec.PodDisruptionBudget = &v1beta1.PodDisruptionBudgetSpec{
+				otelcol.Spec.PodDisruptionBudget = &common.PodDisruptionBudgetSpec{
 					MinAvailable:   test.MinAvailable,
 					MaxUnavailable: test.MaxUnavailable,
 				}

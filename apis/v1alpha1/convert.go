@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
@@ -65,7 +66,7 @@ func (dst *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
 
 func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
 	copy := in.DeepCopy()
-	cfg := &v1beta1.Config{}
+	cfg := &common.Config{}
 	if err := yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
 		return v1beta1.OpenTelemetryCollector{}, errors.New("could not convert config json to v1beta1.Config")
 	}
@@ -82,8 +83,8 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 			Image:   in.Status.Image,
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-				ManagementState:               v1beta1.ManagementStateType(copy.Spec.ManagementState),
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
+				ManagementState:               common.ManagementStateType(copy.Spec.ManagementState),
 				Resources:                     copy.Spec.Resources,
 				NodeSelector:                  copy.Spec.NodeSelector,
 				Args:                          copy.Spec.Args,
@@ -129,8 +130,8 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 				},
 			},
 			LivenessProbe: tov1beta1Probe(copy.Spec.LivenessProbe),
-			Observability: v1beta1.ObservabilitySpec{
-				Metrics: v1beta1.MetricsConfigSpec{
+			Observability: common.ObservabilitySpec{
+				Metrics: common.MetricsConfigSpec{
 					EnableMetrics:                copy.Spec.Observability.Metrics.EnableMetrics,
 					DisablePrometheusAnnotations: copy.Spec.Observability.Metrics.DisablePrometheusAnnotations,
 				},
@@ -145,11 +146,11 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 	}, nil
 }
 
-func tov1beta1Ports(in []PortsSpec) []v1beta1.PortsSpec {
-	var ports []v1beta1.PortsSpec
+func tov1beta1Ports(in []PortsSpec) []common.PortsSpec {
+	var ports []common.PortsSpec
 
 	for _, p := range in {
-		ports = append(ports, v1beta1.PortsSpec{
+		ports = append(ports, common.PortsSpec{
 			ServicePort: v1.ServicePort{
 				Name:        p.ServicePort.Name,
 				Protocol:    p.ServicePort.Protocol,
@@ -170,13 +171,13 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 		Replicas:           in.Replicas,
 		NodeSelector:       in.NodeSelector,
 		Resources:          in.Resources,
-		AllocationStrategy: tov1beta1TAAllocationStrategy(in.AllocationStrategy),
-		FilterStrategy:     tov1beta1TAFilterStrategy(in.FilterStrategy),
+		AllocationStrategy: in.AllocationStrategy,
+		FilterStrategy:     in.FilterStrategy,
 		ServiceAccount:     in.ServiceAccount,
 		Image:              in.Image,
 		Enabled:            in.Enabled,
 		Affinity:           in.Affinity,
-		PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+		PrometheusCR: common.TargetAllocatorPrometheusCR{
 			Enabled:        in.PrometheusCR.Enabled,
 			ScrapeInterval: in.PrometheusCR.ScrapeInterval,
 			// prometheus_cr.pod_monitor_selector shouldn't be nil when selector is empty
@@ -192,8 +193,8 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 		TopologySpreadConstraints: in.TopologySpreadConstraints,
 		Tolerations:               in.Tolerations,
 		Env:                       in.Env,
-		Observability: v1beta1.ObservabilitySpec{
-			Metrics: v1beta1.MetricsConfigSpec{
+		Observability: common.ObservabilitySpec{
+			Metrics: common.MetricsConfigSpec{
 				EnableMetrics:                in.Observability.Metrics.EnableMetrics,
 				DisablePrometheusAnnotations: in.Observability.Metrics.DisablePrometheusAnnotations,
 			},
@@ -203,7 +204,7 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 }
 
 // The conversion takes into account deprecated v1alpha1 spec.minReplicas and spec.maxReplicas.
-func tov1beta1Autoscaler(in *AutoscalerSpec, minReplicas, maxReplicas *int32) *v1beta1.AutoscalerSpec {
+func tov1beta1Autoscaler(in *AutoscalerSpec, minReplicas, maxReplicas *int32) *common.AutoscalerSpec {
 	if in == nil && minReplicas == nil && maxReplicas == nil {
 		return nil
 	}
@@ -211,9 +212,9 @@ func tov1beta1Autoscaler(in *AutoscalerSpec, minReplicas, maxReplicas *int32) *v
 		in = &AutoscalerSpec{}
 	}
 
-	var metrics []v1beta1.MetricSpec
+	var metrics []common.MetricSpec
 	for _, m := range in.Metrics {
-		metrics = append(metrics, v1beta1.MetricSpec{
+		metrics = append(metrics, common.MetricSpec{
 			Type: m.Type,
 			Pods: m.Pods,
 		})
@@ -225,7 +226,7 @@ func tov1beta1Autoscaler(in *AutoscalerSpec, minReplicas, maxReplicas *int32) *v
 		in.MinReplicas = minReplicas
 	}
 
-	return &v1beta1.AutoscalerSpec{
+	return &common.AutoscalerSpec{
 		MinReplicas:             in.MinReplicas,
 		MaxReplicas:             in.MaxReplicas,
 		Behavior:                in.Behavior,
@@ -235,11 +236,11 @@ func tov1beta1Autoscaler(in *AutoscalerSpec, minReplicas, maxReplicas *int32) *v
 	}
 }
 
-func tov1beta1PodDisruptionBudget(in *PodDisruptionBudgetSpec) *v1beta1.PodDisruptionBudgetSpec {
+func tov1beta1PodDisruptionBudget(in *PodDisruptionBudgetSpec) *common.PodDisruptionBudgetSpec {
 	if in == nil {
 		return nil
 	}
-	return &v1beta1.PodDisruptionBudgetSpec{
+	return &common.PodDisruptionBudgetSpec{
 		MinAvailable:   in.MinAvailable,
 		MaxUnavailable: in.MaxUnavailable,
 	}
@@ -270,7 +271,7 @@ func tov1beta1ConfigMaps(in []ConfigMapsSpec) []v1beta1.ConfigMapsSpec {
 	return mapsSpecs
 }
 
-func tov1alpha1Ports(in []v1beta1.PortsSpec) []PortsSpec {
+func tov1alpha1Ports(in []common.PortsSpec) []PortsSpec {
 	var ports []PortsSpec
 
 	for _, p := range in {
@@ -368,7 +369,7 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 	}, nil
 }
 
-func tov1alpha1PodDisruptionBudget(in *v1beta1.PodDisruptionBudgetSpec) *PodDisruptionBudgetSpec {
+func tov1alpha1PodDisruptionBudget(in *common.PodDisruptionBudgetSpec) *PodDisruptionBudgetSpec {
 	if in == nil {
 		return nil
 	}
@@ -392,7 +393,7 @@ func tov1alpha1Probe(in *v1beta1.Probe) *Probe {
 	}
 }
 
-func tov1alpha1Autoscaler(in *v1beta1.AutoscalerSpec) *AutoscalerSpec {
+func tov1alpha1Autoscaler(in *common.AutoscalerSpec) *AutoscalerSpec {
 	if in == nil {
 		return nil
 	}
@@ -440,8 +441,8 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		Replicas:           in.Replicas,
 		NodeSelector:       in.NodeSelector,
 		Resources:          in.Resources,
-		AllocationStrategy: tov1alpha1TAAllocationStrategy(in.AllocationStrategy),
-		FilterStrategy:     tov1alpha1TAFilterStrategy(in.FilterStrategy),
+		AllocationStrategy: in.AllocationStrategy,
+		FilterStrategy:     in.FilterStrategy,
 		ServiceAccount:     in.ServiceAccount,
 		Image:              in.Image,
 		Enabled:            in.Enabled,
@@ -465,43 +466,4 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		},
 		PodDisruptionBudget: tov1alpha1PodDisruptionBudget(in.PodDisruptionBudget),
 	}
-}
-
-func tov1alpha1TAFilterStrategy(strategy v1beta1.TargetAllocatorFilterStrategy) string {
-	switch strategy {
-	case v1beta1.TargetAllocatorFilterStrategyRelabelConfig:
-		return string(strategy)
-	}
-	return ""
-}
-
-func tov1alpha1TAAllocationStrategy(strategy v1beta1.TargetAllocatorAllocationStrategy) OpenTelemetryTargetAllocatorAllocationStrategy {
-	switch strategy {
-	case v1beta1.TargetAllocatorAllocationStrategyConsistentHashing:
-		return OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing
-	case v1beta1.TargetAllocatorAllocationStrategyPerNode:
-		return OpenTelemetryTargetAllocatorAllocationStrategyPerNode
-	case v1beta1.TargetAllocatorAllocationStrategyLeastWeighted:
-		return OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted
-	}
-	return ""
-}
-
-func tov1beta1TAFilterStrategy(strategy string) v1beta1.TargetAllocatorFilterStrategy {
-	if strategy == string(v1beta1.TargetAllocatorFilterStrategyRelabelConfig) {
-		return v1beta1.TargetAllocatorFilterStrategyRelabelConfig
-	}
-	return ""
-}
-
-func tov1beta1TAAllocationStrategy(strategy OpenTelemetryTargetAllocatorAllocationStrategy) v1beta1.TargetAllocatorAllocationStrategy {
-	switch strategy {
-	case OpenTelemetryTargetAllocatorAllocationStrategyPerNode:
-		return v1beta1.TargetAllocatorAllocationStrategyPerNode
-	case OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing:
-		return v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
-	case OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted:
-		return v1beta1.TargetAllocatorAllocationStrategyLeastWeighted
-	}
-	return ""
 }

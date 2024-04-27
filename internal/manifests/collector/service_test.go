@@ -21,6 +21,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -29,7 +30,7 @@ import (
 
 func TestExtractPortNumbersAndNames(t *testing.T) {
 	t.Run("should return extracted port names and numbers", func(t *testing.T) {
-		ports := []v1beta1.PortsSpec{
+		ports := []common.PortsSpec{
 			{ServicePort: v1.ServicePort{Name: "web", Port: 8080}},
 			{ServicePort: v1.ServicePort{Name: "tcp", Port: 9200}},
 			{ServicePort: v1.ServicePort{Name: "web-explicit", Port: 80, Protocol: v1.ProtocolTCP}},
@@ -156,7 +157,7 @@ func TestDesiredService(t *testing.T) {
 			Config: config.Config{},
 			Log:    logger,
 			OtelCol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{Config: v1beta1.Config{}},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{Config: common.Config{}},
 			},
 		}
 
@@ -167,7 +168,7 @@ func TestDesiredService(t *testing.T) {
 	t.Run("should return service with port mentioned in OtelCol.Spec.Ports and inferred ports", func(t *testing.T) {
 
 		grpc := "grpc"
-		jaegerPorts := v1beta1.PortsSpec{
+		jaegerPorts := common.PortsSpec{
 			ServicePort: v1.ServicePort{
 				Name:        "jaeger-grpc",
 				Protocol:    "TCP",
@@ -186,7 +187,7 @@ func TestDesiredService(t *testing.T) {
 
 	t.Run("on OpenShift gRPC appProtocol should be h2c", func(t *testing.T) {
 		h2c := "h2c"
-		jaegerPort := v1beta1.PortsSpec{
+		jaegerPort := common.PortsSpec{
 			ServicePort: v1.ServicePort{
 				Name:        "jaeger-grpc",
 				Protocol:    "TCP",
@@ -209,7 +210,7 @@ func TestDesiredService(t *testing.T) {
 	t.Run("should return service with local internal traffic policy", func(t *testing.T) {
 
 		grpc := "grpc"
-		jaegerPorts := v1beta1.PortsSpec{
+		jaegerPorts := common.PortsSpec{
 			ServicePort: v1.ServicePort{
 				Name:        "jaeger-grpc",
 				Protocol:    "TCP",
@@ -258,9 +259,9 @@ func TestMonitoringService(t *testing.T) {
 			Port: 9090,
 		}}
 		params := deploymentParams()
-		params.OtelCol.Spec.Config = v1beta1.Config{
-			Service: v1beta1.Service{
-				Telemetry: &v1beta1.AnyConfig{
+		params.OtelCol.Spec.Config = common.Config{
+			Service: common.Service{
+				Telemetry: &common.AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
 							"level":   "detailed",
@@ -279,11 +280,11 @@ func TestMonitoringService(t *testing.T) {
 	})
 }
 
-func service(name string, ports []v1beta1.PortsSpec) v1.Service {
+func service(name string, ports []common.PortsSpec) v1.Service {
 	return serviceWithInternalTrafficPolicy(name, ports, v1.ServiceInternalTrafficPolicyCluster)
 }
 
-func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, internalTrafficPolicy v1.ServiceInternalTrafficPolicyType) v1.Service {
+func serviceWithInternalTrafficPolicy(name string, ports []common.PortsSpec, internalTrafficPolicy v1.ServiceInternalTrafficPolicyType) v1.Service {
 	params := deploymentParams()
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 

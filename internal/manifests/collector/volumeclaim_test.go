@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
@@ -31,7 +32,7 @@ func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			Mode: "statefulset",
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "added-volume",
@@ -68,7 +69,7 @@ func TestVolumeClaimChecksForStatefulset(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			Mode: "daemonset",
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "added-volume",

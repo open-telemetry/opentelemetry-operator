@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1beta1
+package common
 
 import (
 	"encoding/json"
@@ -69,7 +69,7 @@ func TestNullObjects(t *testing.T) {
 	err = json.Unmarshal(collectorJson, cfg)
 	require.NoError(t, err)
 
-	nullObjects := cfg.nullObjects()
+	nullObjects := cfg.NullObjects()
 	assert.Equal(t, []string{"connectors.spanmetrics:", "exporters.otlp.endpoint:", "extensions.health_check:", "processors.batch:", "receivers.otlp.protocols.grpc:", "receivers.otlp.protocols.http:"}, nullObjects)
 }
 
@@ -107,7 +107,7 @@ func TestNullObjects_go_yaml(t *testing.T) {
 	err = go_yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
 
-	nullObjects := cfg.nullObjects()
+	nullObjects := cfg.NullObjects()
 	assert.Equal(t, []string{"connectors.spanmetrics:", "exporters.otlp.endpoint:", "extensions.health_check:", "processors.batch:", "receivers.otlp.protocols.grpc:", "receivers.otlp.protocols.http:"}, nullObjects)
 }
 

@@ -21589,12 +21589,13 @@ consumed in the config file for the TargetAllocator.<br/>
         <td>false</td>
       </tr><tr>
         <td><b>filterStrategy</b></td>
-        <td>string</td>
+        <td>enum</td>
         <td>
           FilterStrategy determines how to filter targets before allocating them among the collectors.
 The only current option is relabel-config (drops targets based on prom relabel_config).
 The default is relabel-config.<br/>
           <br/>
+            <i>Enum</i>: , relabel-config<br/>
             <i>Default</i>: relabel-config<br/>
         </td>
         <td>false</td>

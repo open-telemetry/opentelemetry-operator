@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -40,7 +41,7 @@ func TestStatefulSetNewDefault(t *testing.T) {
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			Mode: "statefulset",
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Tolerations: testTolerationValues,
 			},
 		},
@@ -115,7 +116,7 @@ func TestStatefulSetReplicas(t *testing.T) {
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			Mode: "statefulset",
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Replicas: &replicaInt,
 			},
 		},
@@ -144,7 +145,7 @@ func TestStatefulSetVolumeClaimTemplates(t *testing.T) {
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			Mode: "statefulset",
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "added-volume",
@@ -189,7 +190,7 @@ func TestStatefulSetPodAnnotations(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				PodAnnotations: testPodAnnotationValues,
 			},
 		},
@@ -231,7 +232,7 @@ func TestStatefulSetPodSecurityContext(t *testing.T) {
 			Name: "my-instance",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				PodSecurityContext: &v1.PodSecurityContext{
 					RunAsNonRoot: &runAsNonRoot,
 					RunAsUser:    &runAsUser,
@@ -285,7 +286,7 @@ func TestStatefulSetHostNetwork(t *testing.T) {
 			Name: "my-instance-hostnetwork",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				HostNetwork: true,
 			},
 		},
@@ -394,7 +395,7 @@ func TestStatefulSetNodeSelector(t *testing.T) {
 			Name: "my-instance-nodeselector",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				HostNetwork: true,
 				NodeSelector: map[string]string{
 					"node-key": "node-value",
@@ -442,7 +443,7 @@ func TestStatefulSetPriorityClassName(t *testing.T) {
 			Name: "my-instance-priortyClassName",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				PriorityClassName: priorityClassName,
 			},
 		},
@@ -485,7 +486,7 @@ func TestStatefulSetAffinity(t *testing.T) {
 			Name: "my-instance-priortyClassName",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Affinity: testAffinityValue,
 			},
 		},
@@ -513,7 +514,7 @@ func TestStatefulSetInitContainer(t *testing.T) {
 			Namespace: "my-namespace",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				InitContainers: []v1.Container{
 					{
 						Name: "test",
@@ -567,7 +568,7 @@ func TestStatefulSetTopologySpreadConstraints(t *testing.T) {
 			Name: "my-instance-topologyspreadconstraint",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				TopologySpreadConstraints: testTopologySpreadConstraintValue,
 			},
 		},
@@ -597,7 +598,7 @@ func TestStatefulSetAdditionalContainers(t *testing.T) {
 			Namespace: "my-namespace",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				AdditionalContainers: []v1.Container{
 					{
 						Name: "test",
@@ -652,7 +653,7 @@ func TestStatefulSetShareProcessNamespace(t *testing.T) {
 			Name: "my-instance-with-shareprocessnamespace",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				ShareProcessNamespace: true,
 			},
 		},

@@ -21,7 +21,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -66,18 +67,18 @@ var tests = []test{
 func TestPDBWithValidStrategy(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			targetAllocator := v1beta1.TargetAllocator{
+			targetAllocator := v1alpha1.TargetAllocator{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-instance",
 				},
-				Spec: v1beta1.TargetAllocatorSpec{
-					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
+						PodDisruptionBudget: &common.PodDisruptionBudgetSpec{
 							MinAvailable:   test.MinAvailable,
 							MaxUnavailable: test.MaxUnavailable,
 						},
 					},
-					AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyConsistentHashing,
+					AllocationStrategy: common.TargetAllocatorAllocationStrategyConsistentHashing,
 				},
 			}
 			configuration := config.New()
@@ -100,18 +101,18 @@ func TestPDBWithValidStrategy(t *testing.T) {
 func TestPDBWithNotValidStrategy(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			targetAllocator := v1beta1.TargetAllocator{
+			targetAllocator := v1alpha1.TargetAllocator{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-instance",
 				},
-				Spec: v1beta1.TargetAllocatorSpec{
-					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
+				Spec: v1alpha1.TargetAllocatorSpec{
+					OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
+						PodDisruptionBudget: &common.PodDisruptionBudgetSpec{
 							MinAvailable:   test.MinAvailable,
 							MaxUnavailable: test.MaxUnavailable,
 						},
 					},
-					AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyLeastWeighted,
+					AllocationStrategy: common.TargetAllocatorAllocationStrategyLeastWeighted,
 				},
 			}
 			configuration := config.New()
@@ -129,9 +130,9 @@ func TestPDBWithNotValidStrategy(t *testing.T) {
 }
 
 func TestNoPDB(t *testing.T) {
-	targetAllocator := v1beta1.TargetAllocator{
-		Spec: v1beta1.TargetAllocatorSpec{
-			AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyLeastWeighted,
+	targetAllocator := v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{
+			AllocationStrategy: common.TargetAllocatorAllocationStrategyLeastWeighted,
 		},
 	}
 	configuration := config.New()

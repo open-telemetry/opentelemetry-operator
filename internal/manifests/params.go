@@ -32,7 +32,7 @@ type Params struct {
 	Scheme          *runtime.Scheme
 	Log             logr.Logger
 	OtelCol         v1beta1.OpenTelemetryCollector
-	TargetAllocator v1beta1.TargetAllocator
+	TargetAllocator v1alpha1.TargetAllocator
 	OpAMPBridge     v1alpha1.OpAMPBridge
 	Config          config.Config
 }

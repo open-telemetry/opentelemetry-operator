@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -53,8 +54,8 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 			Namespace: "some-app",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-				Ports: []v1beta1.PortsSpec{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
+				Ports: []common.PortsSpec{
 					{
 						ServicePort: corev1.ServicePort{
 							Name:     "metrics",

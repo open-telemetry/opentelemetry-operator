@@ -22,6 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -46,8 +47,8 @@ func TestHPA(t *testing.T) {
 				Name: "my-instance",
 			},
 			Spec: v1beta1.OpenTelemetryCollectorSpec{
-				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-					Autoscaler: &v1beta1.AutoscalerSpec{
+				OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
+					Autoscaler: &common.AutoscalerSpec{
 						MinReplicas:             &minReplicas,
 						MaxReplicas:             &maxReplicas,
 						TargetCPUUtilization:    &cpuUtilization,
@@ -61,8 +62,8 @@ func TestHPA(t *testing.T) {
 				Name: "my-instance",
 			},
 			Spec: v1beta1.OpenTelemetryCollectorSpec{
-				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-					Autoscaler: &v1beta1.AutoscalerSpec{
+				OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
+					Autoscaler: &common.AutoscalerSpec{
 						MinReplicas:             &minReplicas,
 						MaxReplicas:             &maxReplicas,
 						TargetCPUUtilization:    &cpuUtilization,
@@ -82,8 +83,8 @@ func TestHPA(t *testing.T) {
 					OtelCol: v1beta1.OpenTelemetryCollector{
 						ObjectMeta: otelcol.ObjectMeta,
 						Spec: v1beta1.OpenTelemetryCollectorSpec{
-							OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-								Autoscaler: &v1beta1.AutoscalerSpec{
+							OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
+								Autoscaler: &common.AutoscalerSpec{
 									MinReplicas:             otelcol.Spec.Autoscaler.MinReplicas,
 									MaxReplicas:             otelcol.Spec.Autoscaler.MaxReplicas,
 									TargetCPUUtilization:    otelcol.Spec.OpenTelemetryCommonFields.Autoscaler.TargetCPUUtilization,

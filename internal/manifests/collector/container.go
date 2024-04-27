@@ -25,6 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
@@ -169,7 +170,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 	}
 }
 
-func getConfigContainerPorts(logger logr.Logger, cfgYaml string, conf v1beta1.Config) (map[string]corev1.ContainerPort, error) {
+func getConfigContainerPorts(logger logr.Logger, cfgYaml string, conf common.Config) (map[string]corev1.ContainerPort, error) {
 	ports := map[string]corev1.ContainerPort{}
 	c, err := adapters.ConfigFromString(cfgYaml)
 	if err != nil {

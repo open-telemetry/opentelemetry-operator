@@ -2907,6 +2907,9 @@ spec:
                     type: array
                   filterStrategy:
                     default: relabel-config
+                    enum:
+                    - ""
+                    - relabel-config
                     type: string
                   image:
                     type: string

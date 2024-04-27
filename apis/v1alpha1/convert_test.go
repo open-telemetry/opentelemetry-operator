@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
@@ -85,7 +86,7 @@ func Test_tov1beta1_config(t *testing.T) {
 }
 
 func Test_tov1alpha1_config(t *testing.T) {
-	cfg := v1beta1.Config{}
+	cfg := common.Config{}
 	err := yaml.Unmarshal([]byte(collectorCfg), &cfg)
 	require.NoError(t, err)
 
@@ -427,7 +428,7 @@ func createTA() OpenTelemetryTargetAllocator {
 				v1.ResourceMemory: resource.MustParse("128Mi"),
 			},
 		},
-		AllocationStrategy: OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing,
+		AllocationStrategy: common.TargetAllocatorAllocationStrategyConsistentHashing,
 		FilterStrategy:     "relabel-config",
 		ServiceAccount:     "serviceAccountName",
 		Image:              "custom_image",
@@ -527,11 +528,11 @@ func TestConvertTo(t *testing.T) {
 			Name: "otel",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				ServiceAccount: "otelcol",
 			},
 			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
-				PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+				PrometheusCR: common.TargetAllocatorPrometheusCR{
 					PodMonitorSelector:     &metav1.LabelSelector{},
 					ServiceMonitorSelector: &metav1.LabelSelector{},
 				},
@@ -549,7 +550,7 @@ func TestConvertFrom(t *testing.T) {
 			Name: "otel",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				ServiceAccount: "otelcol",
 			},
 		},

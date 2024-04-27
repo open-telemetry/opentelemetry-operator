@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1beta1
+// +kubebuilder:object:generate=true
+// +groupName=opentelemetry.io
+package common
 
 import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -92,6 +94,33 @@ type PortsSpec struct {
 
 	// Maintain previous fields in new struct
 	v1.ServicePort `json:",inline"`
+}
+
+// ObservabilitySpec defines how telemetry data gets handled.
+type ObservabilitySpec struct {
+	// Metrics defines the metrics configuration for operands.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Metrics Config"
+	Metrics MetricsConfigSpec `json:"metrics,omitempty"`
+}
+
+// MetricsConfigSpec defines a metrics config.
+type MetricsConfigSpec struct {
+	// EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
+	// The operator.observability.prometheus feature gate must be enabled to use this feature.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Create ServiceMonitors for OpenTelemetry Collector"
+	EnableMetrics bool `json:"enableMetrics,omitempty"`
+	// DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations
+	// ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	DisablePrometheusAnnotations bool `json:"disablePrometheusAnnotations,omitempty"`
 }
 
 type OpenTelemetryCommonFields struct {

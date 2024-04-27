@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
@@ -88,7 +89,7 @@ func PodAnnotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations [
 	return podAnnotations, nil
 }
 
-func getConfigMapSHA(config v1beta1.Config) (string, error) {
+func getConfigMapSHA(config common.Config) (string, error) {
 	b, err := json.Marshal(&config)
 	if err != nil {
 		return "", err

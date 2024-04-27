@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -101,7 +101,7 @@ prometheus_cr:
 		}
 		collector := collectorInstance()
 		targetAllocator := targetAllocatorInstance()
-		targetAllocator.Spec.ScrapeConfigs = []v1beta1.AnyConfig{}
+		targetAllocator.Spec.ScrapeConfigs = []common.AnyConfig{}
 		cfg := config.New()
 		params := manifests.Params{
 			OtelCol:         collector,

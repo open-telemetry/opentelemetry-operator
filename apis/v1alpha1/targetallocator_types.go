@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1beta1
+package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 )
 
 func init() {
@@ -57,7 +59,7 @@ type TargetAllocatorStatus struct {
 // TargetAllocatorSpec defines the desired state of TargetAllocator.
 type TargetAllocatorSpec struct {
 	// Common defines fields that are common to all OpenTelemetry CRD workloads.
-	OpenTelemetryCommonFields `json:",inline"`
+	common.OpenTelemetryCommonFields `json:",inline"`
 	// CollectorSelector is the selector for Collector Pods the target allocator will allocate targets to.
 	CollectorSelector metav1.LabelSelector `json:"collectorSelector,omitempty"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
@@ -66,29 +68,29 @@ type TargetAllocatorSpec struct {
 	// WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.
 	// +optional
 	// +kubebuilder:default:=consistent-hashing
-	AllocationStrategy TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
+	AllocationStrategy common.TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
 	// The only current option is relabel-config (drops targets based on prom relabel_config).
 	// The default is relabel-config.
 	// +optional
 	// +kubebuilder:default:=relabel-config
-	FilterStrategy TargetAllocatorFilterStrategy `json:"filterStrategy,omitempty"`
+	FilterStrategy common.TargetAllocatorFilterStrategy `json:"filterStrategy,omitempty"`
 	// ScrapeConfigs define static Prometheus scrape configurations for the target allocator.
 	// To use dynamic configurations from ServiceMonitors and PodMonitors, see the PrometheusCR section.
 	// For the exact format, see https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config.
 	// +optional
 	// +listType=atomic
 	// +kubebuilder:pruning:PreserveUnknownFields
-	ScrapeConfigs []AnyConfig `json:"scrapeConfigs,omitempty"`
+	ScrapeConfigs []common.AnyConfig `json:"scrapeConfigs,omitempty"`
 	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 ).
 	// +optional
-	PrometheusCR TargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+	PrometheusCR common.TargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
 	// ObservabilitySpec defines how telemetry data gets handled.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
-	Observability ObservabilitySpec `json:"observability,omitempty"`
+	Observability common.ObservabilitySpec `json:"observability,omitempty"`
 }
 
 // TargetAllocatorPrometheusCR configures Prometheus CustomResource handling in the Target Allocator.

@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -54,8 +55,8 @@ func TestContainerNewDefault(t *testing.T) {
         exporters: [debug]`
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-				Ports: []v1beta1.PortsSpec{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
+				Ports: []common.PortsSpec{
 					{
 						ServicePort: corev1.ServicePort{
 							Name:     "metrics",
@@ -82,7 +83,7 @@ func TestContainerWithImageOverridden(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Image: "overridden-image",
 			},
 		},
@@ -111,13 +112,13 @@ service:
 	tests := []struct {
 		description   string
 		specConfig    string
-		specPorts     []v1beta1.PortsSpec
+		specPorts     []common.PortsSpec
 		expectedPorts []corev1.ContainerPort
 	}{
 		{
 			description: "couldn't build ports from spec config",
 			specConfig:  "",
-			specPorts: []v1beta1.PortsSpec{
+			specPorts: []common.PortsSpec{
 				{
 					ServicePort: corev1.ServicePort{
 						Name:     "metrics",
@@ -142,7 +143,7 @@ service:
 		},
 		{
 			description: "ports in spec ContainerPorts",
-			specPorts: []v1beta1.PortsSpec{
+			specPorts: []common.PortsSpec{
 				{
 					ServicePort: corev1.ServicePort{
 						Name:     "metrics",
@@ -168,7 +169,7 @@ service:
 		{
 			description: "ports in spec Config and ContainerPorts",
 			specConfig:  goodConfig,
-			specPorts: []v1beta1.PortsSpec{
+			specPorts: []common.PortsSpec{
 				{
 					ServicePort: corev1.ServicePort{
 						Name: "testport1",
@@ -203,7 +204,7 @@ service:
 		{
 			description: "duplicate port name",
 			specConfig:  goodConfig,
-			specPorts: []v1beta1.PortsSpec{
+			specPorts: []common.PortsSpec{
 				{
 					ServicePort: corev1.ServicePort{
 						Name: "testport1",
@@ -241,7 +242,7 @@ service:
             receivers: [otlp]
             exporters: [prometheus, debug]
 `,
-			specPorts: []v1beta1.PortsSpec{
+			specPorts: []common.PortsSpec{
 				{
 					ServicePort: corev1.ServicePort{
 						Name:     "metrics",
@@ -281,7 +282,7 @@ service:
         metrics:
             exporters: [prometheus/prod, prometheus/dev, debug]
 `,
-			specPorts: []v1beta1.PortsSpec{
+			specPorts: []common.PortsSpec{
 				{
 					ServicePort: corev1.ServicePort{
 						Name:     "metrics",
@@ -319,7 +320,7 @@ service:
 			specConfig: `exporters:
     prometheusremotewrite/prometheus:
         endpoint: http://prometheus-server.monitoring/api/v1/write`,
-			specPorts: []v1beta1.PortsSpec{
+			specPorts: []common.PortsSpec{
 				{
 					ServicePort: corev1.ServicePort{
 						Name:     "metrics",
@@ -345,7 +346,7 @@ service:
   pipelines:
     metrics:
       exporters: [prometheus/prod, prometheus/dev, prometheusremotewrite/prometheus, debug]`,
-			specPorts: []v1beta1.PortsSpec{
+			specPorts: []common.PortsSpec{
 				{
 					ServicePort: corev1.ServicePort{
 						Name:     "metrics",
@@ -386,7 +387,7 @@ service:
 			otelcol := v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: mustUnmarshalToConfig(t, testCase.specConfig),
-					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+					OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 						Ports: testCase.specPorts,
 					},
 				},
@@ -406,7 +407,7 @@ func TestContainerConfigFlagIsIgnored(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Args: map[string]string{
 					"key":    "value",
 					"config": "/some-custom-file.yaml",
@@ -429,7 +430,7 @@ func TestContainerCustomVolumes(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				VolumeMounts: []corev1.VolumeMount{{
 					Name: "custom-volume-mount",
 				}},
@@ -486,7 +487,7 @@ func TestContainerCustomSecurityContext(t *testing.T) {
 	// test
 	c2 := Container(config.New(), logger, v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 
 				SecurityContext: &corev1.SecurityContext{
 					Privileged: &isPrivileged,
@@ -505,7 +506,7 @@ func TestContainerCustomSecurityContext(t *testing.T) {
 func TestContainerEnvVarsOverridden(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Env: []corev1.EnvVar{
 					{
 						Name:  "foo",
@@ -565,7 +566,7 @@ func TestContainerProxyEnvVars(t *testing.T) {
 func TestContainerResourceRequirements(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("100m"),
@@ -610,7 +611,7 @@ func TestContainerArgs(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Args: map[string]string{
 					"metrics-level": "detailed",
 					"log-level":     "debug",
@@ -632,7 +633,7 @@ func TestContainerOrderedArgs(t *testing.T) {
 	// prepare a scenario where the debug level and a feature gate has been enabled
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Args: map[string]string{
 					"log-level":     "debug",
 					"feature-gates": "+random-feature",
@@ -656,7 +657,7 @@ func TestContainerImagePullPolicy(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				ImagePullPolicy: corev1.PullIfNotPresent,
 			},
 		},
@@ -688,7 +689,7 @@ func TestContainerEnvFrom(t *testing.T) {
 	}
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				EnvFrom: []corev1.EnvFromSource{
 					envFrom1,
 					envFrom2,
@@ -796,7 +797,7 @@ func TestContainerLifecycle(t *testing.T) {
 	// prepare
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Lifecycle: &corev1.Lifecycle{
 					PostStart: &corev1.LifecycleHandler{
 						Exec: &corev1.ExecAction{Command: []string{"sh", "sleep 100"}},
@@ -826,8 +827,8 @@ func TestContainerLifecycle(t *testing.T) {
 	assert.Equal(t, expectedLifecycleHooks, *c.Lifecycle)
 }
 
-func mustUnmarshalToConfig(t *testing.T, config string) v1beta1.Config {
-	cfg := v1beta1.Config{}
+func mustUnmarshalToConfig(t *testing.T, config string) common.Config {
+	cfg := common.Config{}
 	if err := yaml.Unmarshal([]byte(config), &cfg); err != nil {
 		t.Fatal(err)
 	}

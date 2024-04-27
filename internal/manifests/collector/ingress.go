@@ -22,6 +22,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
@@ -174,7 +175,7 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollec
 	return ports, nil
 }
 
-func toServicePorts(spec []v1beta1.PortsSpec) []corev1.ServicePort {
+func toServicePorts(spec []common.PortsSpec) []corev1.ServicePort {
 	var ports []corev1.ServicePort
 	for _, p := range spec {
 		ports = append(ports, p.ServicePort)
