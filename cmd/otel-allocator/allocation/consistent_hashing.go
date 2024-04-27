@@ -110,14 +110,14 @@ func (c *consistentHashingAllocator) addTargetToTargetItems(tg *target.Item) {
 	if previousColName, ok := c.collectors[tg.CollectorName]; ok {
 		previousColName.NumTargets--
 		delete(c.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName], tg.Hash())
-		TargetsPerCollector.WithLabelValues(previousColName.String(), consistentHashingStrategyName).Set(float64(c.collectors[previousColName.String()].NumTargets))
+		TargetsPerCollector.WithLabelValues(previousColName.String(), consistentHashingStrategyName, tg.JobName).Set(float64(len(c.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName])))
 	}
 	colOwner := c.consistentHasher.LocateKey([]byte(strings.Join(tg.TargetURL, "")))
 	tg.CollectorName = colOwner.String()
 	c.targetItems[tg.Hash()] = tg
 	c.addCollectorTargetItemMapping(tg)
 	c.collectors[colOwner.String()].NumTargets++
-	TargetsPerCollector.WithLabelValues(colOwner.String(), consistentHashingStrategyName).Set(float64(c.collectors[colOwner.String()].NumTargets))
+	TargetsPerCollector.WithLabelValues(colOwner.String(), consistentHashingStrategyName, tg.JobName).Set(float64(len(c.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName])))
 }
 
 // handleTargets receives the new and removed targets and reconciles the current state.
@@ -132,7 +132,7 @@ func (c *consistentHashingAllocator) handleTargets(diff diff.Changes[*target.Ite
 			col.NumTargets--
 			delete(c.targetItems, k)
 			delete(c.targetItemsPerJobPerCollector[item.CollectorName][item.JobName], item.Hash())
-			TargetsPerCollector.WithLabelValues(item.CollectorName, consistentHashingStrategyName).Set(float64(col.NumTargets))
+			TargetsPerCollector.WithLabelValues(item.CollectorName, consistentHashingStrategyName, item.JobName).Set(float64(len(c.targetItemsPerJobPerCollector[item.CollectorName][item.JobName])))
 		}
 	}
 
@@ -155,9 +155,12 @@ func (c *consistentHashingAllocator) handleCollectors(diff diff.Changes[*Collect
 	// Clear removed collectors
 	for _, k := range diff.Removals() {
 		delete(c.collectors, k.Name)
+		jobs := c.targetItemsPerJobPerCollector[k.Name]
 		delete(c.targetItemsPerJobPerCollector, k.Name)
 		c.consistentHasher.Remove(k.Name)
-		TargetsPerCollector.WithLabelValues(k.Name, consistentHashingStrategyName).Set(0)
+		for job, _ := range jobs {
+			TargetsPerCollector.WithLabelValues(k.Name, consistentHashingStrategyName, job).Set(0)
+		}
 	}
 	// Insert the new collectors
 	for _, i := range diff.Additions() {

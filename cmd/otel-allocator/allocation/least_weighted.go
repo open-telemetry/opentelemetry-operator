@@ -142,7 +142,7 @@ func (allocator *leastWeightedAllocator) addTargetToTargetItems(tg *target.Item)
 	allocator.targetItems[tg.Hash()] = tg
 	allocator.addCollectorTargetItemMapping(tg)
 	chosenCollector.NumTargets++
-	TargetsPerCollector.WithLabelValues(chosenCollector.Name, leastWeightedStrategyName).Set(float64(chosenCollector.NumTargets))
+	TargetsPerCollector.WithLabelValues(chosenCollector.Name, leastWeightedStrategyName, tg.JobName).Set(float64(len(allocator.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName])))
 }
 
 // handleTargets receives the new and removed targets and reconciles the current state.
@@ -157,7 +157,7 @@ func (allocator *leastWeightedAllocator) handleTargets(diff diff.Changes[*target
 			c.NumTargets--
 			delete(allocator.targetItems, k)
 			delete(allocator.targetItemsPerJobPerCollector[item.CollectorName][item.JobName], item.Hash())
-			TargetsPerCollector.WithLabelValues(item.CollectorName, leastWeightedStrategyName).Set(float64(c.NumTargets))
+			TargetsPerCollector.WithLabelValues(item.CollectorName, leastWeightedStrategyName, item.JobName).Set(float64(len(allocator.targetItemsPerJobPerCollector[item.CollectorName][item.JobName])))
 		}
 	}
 
@@ -180,8 +180,11 @@ func (allocator *leastWeightedAllocator) handleCollectors(diff diff.Changes[*Col
 	// Clear removed collectors
 	for _, k := range diff.Removals() {
 		delete(allocator.collectors, k.Name)
+		jobs := allocator.targetItemsPerJobPerCollector[k.Name]
 		delete(allocator.targetItemsPerJobPerCollector, k.Name)
-		TargetsPerCollector.WithLabelValues(k.Name, leastWeightedStrategyName).Set(0)
+		for job, _ := range jobs {
+			TargetsPerCollector.WithLabelValues(k.Name, leastWeightedStrategyName, job).Set(0)
+		}
 	}
 
 	// If previously there were no collector instances present, allocate the previous set of saved targets to the new collectors

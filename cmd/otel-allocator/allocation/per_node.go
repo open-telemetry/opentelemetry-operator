@@ -70,8 +70,11 @@ func (allocator *perNodeAllocator) SetCollectors(collectors map[string]*Collecto
 	if len(collectorsDiff.Additions()) != 0 || len(collectorsDiff.Removals()) != 0 {
 		for _, k := range allocator.collectors {
 			delete(allocator.collectors, k.NodeName)
+			jobs := allocator.targetItemsPerJobPerCollector[k.Name]
 			delete(allocator.targetItemsPerJobPerCollector, k.Name)
-			TargetsPerCollector.WithLabelValues(k.Name, perNodeStrategyName).Set(0)
+			for job, _ := range jobs {
+				TargetsPerCollector.WithLabelValues(k.Name, perNodeStrategyName, job).Set(0)
+			}
 		}
 
 		for _, k := range collectors {
@@ -119,10 +122,10 @@ func (allocator *perNodeAllocator) handleTargets(diff diff.Changes[*target.Item]
 			c, ok := allocator.collectors[item.GetNodeName()]
 			if ok {
 				c.NumTargets--
-				TargetsPerCollector.WithLabelValues(item.CollectorName, perNodeStrategyName).Set(float64(c.NumTargets))
 			}
 			delete(allocator.targetItems, k)
 			delete(allocator.targetItemsPerJobPerCollector[item.CollectorName][item.JobName], item.Hash())
+			TargetsPerCollector.WithLabelValues(item.CollectorName, perNodeStrategyName, item.JobName).Set(float64(len(allocator.targetItemsPerJobPerCollector[item.CollectorName][item.JobName])))
 		}
 	}
 
@@ -164,7 +167,7 @@ func (allocator *perNodeAllocator) addTargetToTargetItems(tg *target.Item) bool 
 	tg.CollectorName = chosenCollector.Name
 	allocator.addCollectorTargetItemMapping(tg)
 	chosenCollector.NumTargets++
-	TargetsPerCollector.WithLabelValues(chosenCollector.Name, perNodeStrategyName).Set(float64(chosenCollector.NumTargets))
+	TargetsPerCollector.WithLabelValues(chosenCollector.Name, perNodeStrategyName, tg.JobName).Set(float64(len(allocator.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName])))
 	return true
 }
 

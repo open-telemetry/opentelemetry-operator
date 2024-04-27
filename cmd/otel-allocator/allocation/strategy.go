@@ -36,7 +36,7 @@ var (
 	TargetsPerCollector = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "opentelemetry_allocator_targets_per_collector",
 		Help: "The number of targets for each collector.",
-	}, []string{"collector_name", "strategy"})
+	}, []string{"collector_name", "strategy", "job_name"})
 	CollectorsAllocatable = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "opentelemetry_allocator_collectors_allocatable",
 		Help: "Number of collectors the allocator is able to allocate to.",
