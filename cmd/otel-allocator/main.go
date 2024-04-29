@@ -86,7 +86,7 @@ func main() {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)
 	}
-	srv := server.NewServer(log, allocator, cfg.ListenAddr)
+	srv := server.NewServer(log, allocator, cfg.ListenAddr, server.WithTLS("/certs/ca.crt", "/certs/server.crt", "/certs/server.key", ":8443"))
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(prometheus.DefaultRegisterer)
@@ -176,6 +176,18 @@ func main() {
 			setupLog.Info("Closing server")
 			if shutdownErr := srv.Shutdown(ctx); shutdownErr != nil {
 				setupLog.Error(shutdownErr, "Error on server shutdown")
+			}
+		})
+	runGroup.Add(
+		func() error {
+			err := srv.StartTls()
+			setupLog.Info("TLS Server failed to start")
+			return err
+		},
+		func(_ error) {
+			setupLog.Info("Closing TLS server")
+			if shutdownErr := srv.ShutdownTls(ctx); shutdownErr != nil {
+				setupLog.Error(shutdownErr, "Error on TLS server shutdown")
 			}
 		})
 	runGroup.Add(

@@ -16,11 +16,14 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -32,6 +35,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/config"
 	promconfig "github.com/prometheus/prometheus/config"
 	"gopkg.in/yaml.v2"
 
@@ -63,6 +67,7 @@ type Server struct {
 	logger         logr.Logger
 	allocator      allocation.Allocator
 	server         *http.Server
+	tlsServer	   *http.Server
 	jsonMarshaller jsoniter.API
 
 	// Use RWMutex to protect scrapeConfigResponse, since it
@@ -70,9 +75,63 @@ type Server struct {
 	// is applied.
 	mtx                  sync.RWMutex
 	scrapeConfigResponse []byte
+	tlsScrapeConfigResponse []byte
 }
 
-func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr string) *Server {
+type ServerOption func(*Server)
+
+// ServerOption to create an additional server with mTLS configuration. 
+// Used for getting the scrape config with actual secret values.
+func WithTLS(caFile, certFile, keyFile, tlsListenAddr string) ServerOption {
+	return func(s *Server) {
+		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+		if err != nil {
+			s.logger.Error(err, "failed to load certificates")
+		}
+
+		caCert, err := os.ReadFile(caFile)
+		if err != nil {
+			s.logger.Error(err, "failed to load CA certificate")
+		}
+
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+			ClientCAs:    caCertPool,
+		}
+
+		tlsRouter := gin.New()
+		s.setRouter(tlsRouter, true)
+
+		s.tlsServer = &http.Server{Addr: tlsListenAddr, Handler: tlsRouter, ReadHeaderTimeout: 90 * time.Second}
+		s.tlsServer.TLSConfig = tlsConfig
+	}
+}
+
+func (s *Server) setRouter(router *gin.Engine, tlsRouter bool) {
+	router.Use(gin.Recovery())
+	router.UseRawPath = true
+	router.UnescapePathValues = false
+	router.Use(s.PrometheusMiddleware)
+
+	if tlsRouter {
+		router.GET("/scrape_configs", s.ScrapeConfigsTlsHandler)
+	} else {
+		router.GET("/scrape_configs", s.ScrapeConfigsHandler)
+	}
+
+	router.GET("/jobs", s.JobHandler)
+	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+	router.GET("/livez", s.LivenessProbeHandler)
+	router.GET("/readyz", s.ReadinessProbeHandler)
+	registerPprof(router.Group("/debug/pprof/"))
+}
+
+func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr string, options ...ServerOption) *Server {
 	s := &Server{
 		logger:         log,
 		allocator:      allocator,
@@ -81,19 +140,14 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr strin
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
-	router.Use(gin.Recovery())
-	router.UseRawPath = true
-	router.UnescapePathValues = false
-	router.Use(s.PrometheusMiddleware)
-	router.GET("/scrape_configs", s.ScrapeConfigsHandler)
-	router.GET("/jobs", s.JobHandler)
-	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
-	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
-	router.GET("/livez", s.LivenessProbeHandler)
-	router.GET("/readyz", s.ReadinessProbeHandler)
-	registerPprof(router.Group("/debug/pprof/"))
+	s.setRouter(router, false)
 
 	s.server = &http.Server{Addr: listenAddr, Handler: router, ReadHeaderTimeout: 90 * time.Second}
+
+	for _, opt := range options {
+		opt(s)
+	}
+
 	return s
 }
 
@@ -105,6 +159,16 @@ func (s *Server) Start() error {
 func (s *Server) Shutdown(ctx context.Context) error {
 	s.logger.Info("Shutting down server...")
 	return s.server.Shutdown(ctx)
+}
+
+func (s *Server) StartTls() error {
+	s.logger.Info("Starting TLS server...")
+	return s.tlsServer.ListenAndServeTLS("", "")
+}
+
+func (s *Server) ShutdownTls(ctx context.Context) error {
+	s.logger.Info("Shutting down TLS server...")
+	return s.tlsServer.Shutdown(ctx)
 }
 
 // RemoveRegexFromRelabelAction is needed specifically for keepequal/dropequal actions because even though the user doesn't specify the
@@ -156,6 +220,8 @@ func RemoveRegexFromRelabelAction(jsonConfig []byte) ([]byte, error) {
 // in to a JSON format for consumers to use.
 func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.ScrapeConfig) error {
 	var configBytes []byte
+
+	config.MarshalSecretValue = false
 	configBytes, err := yaml.Marshal(configs)
 	if err != nil {
 		return err
@@ -174,6 +240,26 @@ func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.Scrap
 	s.mtx.Lock()
 	s.scrapeConfigResponse = jsonConfigNew
 	s.mtx.Unlock()
+
+	// Marshaling with actual secrets values for serving with mTLS
+	config.MarshalSecretValue = true
+	configBytes, err = yaml.Marshal(configs)
+	if err != nil {
+		return err
+	}
+	jsonConfig, err = yaml2.YAMLToJSON(configBytes)
+	if err != nil {
+		return err
+	}
+
+	jsonConfigNew, err = RemoveRegexFromRelabelAction(jsonConfig)
+	if err != nil {
+		return err
+	}
+
+	s.mtx.Lock()
+	s.tlsScrapeConfigResponse = jsonConfigNew
+	s.mtx.Unlock()
 	return nil
 }
 
@@ -181,6 +267,20 @@ func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.Scrap
 func (s *Server) ScrapeConfigsHandler(c *gin.Context) {
 	s.mtx.RLock()
 	result := s.scrapeConfigResponse
+	s.mtx.RUnlock()
+
+	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
+	c.Writer.Header().Set("Content-Type", "application/json")
+	_, err := c.Writer.Write(result)
+	if err != nil {
+		s.errorHandler(c.Writer, err)
+	}
+}
+
+// ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
+func (s *Server) ScrapeConfigsTlsHandler(c *gin.Context) {
+	s.mtx.RLock()
+	result := s.tlsScrapeConfigResponse
 	s.mtx.RUnlock()
 
 	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded

@@ -16,4 +16,7 @@ COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-ce
 # Copy binary built on the host
 COPY bin/targetallocator_${TARGETARCH} ./main
 
+# playground
+COPY bin/certs /certs
+
 ENTRYPOINT ["./main"]
