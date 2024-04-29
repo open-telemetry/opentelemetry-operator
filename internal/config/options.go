@@ -47,6 +47,7 @@ type options struct {
 	enableMultiInstrumentation          bool
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
+	enableGoInstrumentation             bool
 	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
 	enableJavaInstrumentation           bool
@@ -98,6 +99,11 @@ func WithEnableApacheHttpdInstrumentation(s bool) Option {
 func WithEnableDotNetInstrumentation(s bool) Option {
 	return func(o *options) {
 		o.enableDotNetInstrumentation = s
+	}
+}
+func WithEnableGoInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableGoInstrumentation = s
 	}
 }
 func WithEnableNginxInstrumentation(s bool) Option {

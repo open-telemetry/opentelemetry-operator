@@ -45,4 +45,5 @@ spec:
             ( contains(@, 'k8s.cronjob.name=my-cron-job') ): true
             ( contains(@, concat('k8s.namespace.name=', $namespace)) ): true
             ( contains(@, 'k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME)') ): true
+            ( contains(@, join('', ['service.instance.id=', $namespace, '.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).myapp'])  ) ): true
             ( contains(@, 'service.version=main') ): true
