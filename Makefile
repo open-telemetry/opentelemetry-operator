@@ -147,11 +147,11 @@ add-image-targetallocator:
 
 .PHONY: add-instrumentation-params
 add-instrumentation-params:
-	@$(MAKE) add-operator-arg OPERATOR_ARG='--enable-go-instrumentation=true --enable-nodejs-instrumentation=true'
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-go-instrumentation=true
 
 .PHONY: add-multi-instrumentation-params
 add-multi-instrumentation-params:
-	@$(MAKE) add-operator-arg OPERATOR_ARG='--enable-multi-instrumentation=true --enable-nodejs-instrumentation=true'
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-multi-instrumentation
 
 .PHONY: add-image-opampbridge
 add-image-opampbridge:
