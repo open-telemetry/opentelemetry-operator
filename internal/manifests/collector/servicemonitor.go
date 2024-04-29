@@ -51,6 +51,8 @@ func ServiceMonitorMonitoring(params manifests.Params) (*monitoringv1.ServiceMon
 	return createServiceMonitor(name, params, monitoringLabel, endpoints)
 }
 
+// createServiceMonitor creates a Service Monitor using the provided name, the params from the instance, a label to identify the service
+// to target (like the monitoring or the collector services) and the endpoints to scrape.
 func createServiceMonitor(name string, params manifests.Params, label string, endpoints []monitoringv1.Endpoint) (*monitoringv1.ServiceMonitor, error) {
 	if !shouldCreateServiceMonitor(params) {
 		return nil, nil
