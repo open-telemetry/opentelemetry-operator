@@ -219,7 +219,7 @@ func WithLabelFilters(labelFilters []string) Option {
 
 // WithAnnotationFilters is additive if called multiple times. It works off of a few default filters
 // to prevent unnecessary rollouts. The defaults include the following:
-// * kubectl.kubernetes.io/last-applied-configuration
+// * kubectl.kubernetes.io/last-applied-configuration.
 func WithAnnotationFilters(annotationFilters []string) Option {
 	return func(o *options) {
 		filters := o.annotationsFilter
