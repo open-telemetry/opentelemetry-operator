@@ -18,7 +18,7 @@
 
 ### 🚀 New components 🚀
 
-- `collector`: Enable reconciliation of Collector v1beta1 CRD. (#2620, #1907)
+- `collector`: Enable reconciliation of Collector v1beta1 CRD. See [CRD changelog](./docs/crd-changelog.md) for detailed information. (#2620, #1907)
   Users are expected to migrate to `otelcol.v1beta1.opentelemetry.io`. 
   The support for `otelcol.v1alpha1.opentelemetry.io` will be removed in the future.
   Follow [migration guide](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#upgrade-existing-objects-to-a-new-stored-version) for upgrading already created collector instances.
