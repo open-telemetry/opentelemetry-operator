@@ -498,7 +498,6 @@ spec:
                 - --enable-leader-election
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
-                - --feature-gates=+operator.autoinstrumentation.go
                 - --enable-nginx-instrumentation=true
                 env:
                 - name: SERVICE_ACCOUNT_NAME
