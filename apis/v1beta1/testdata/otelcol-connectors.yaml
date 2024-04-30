@@ -17,7 +17,9 @@ service:
   pipelines:
     traces:
       receivers: [foo]
+      processors: []
       exporters: [count]
     metrics:
       receivers: [count]
+      processors: []
       exporters: [bar]

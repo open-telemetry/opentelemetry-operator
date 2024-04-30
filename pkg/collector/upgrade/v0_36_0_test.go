@@ -120,6 +120,7 @@ service:
     traces:
       exporters:
       - otlp
+      processors: []
       receivers:
       - otlp/mtls
 `, res.Spec.Config)
