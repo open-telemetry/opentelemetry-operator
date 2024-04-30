@@ -59,7 +59,7 @@
 * [OpenTelemetry Collector - v0.99.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.99.0)
 * [OpenTelemetry Contrib - v0.99.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.99.0)
 * [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
-* [.NET auto-instrumentation - v1.6.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/{AUTO_INSTRUMENTATION_DOTNET_VERSION})
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
 * [Node.JS - v0.49.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.49.1)
 * [Python - v0.44b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.44b0)
 * [Go - v0.12.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.12.0-alpha)
