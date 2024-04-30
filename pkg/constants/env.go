@@ -42,5 +42,6 @@ const (
 	FlagGo          = "enable-go-instrumentation"
 	FlagPython      = "enable-python-instrumentation"
 	FlagNginx       = "enable-nginx-instrumentation"
+	FlagNodeJS      = "enable-nodejs-instrumentation"
 	FlagJava        = "enable-java-instrumentation"
 )

@@ -22,14 +22,12 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestMutatePod(t *testing.T) {
@@ -815,6 +813,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(config.WithEnableNodeJSInstrumentation(true)),
 		},
 		{
 			name: "nodejs injection multiple containers, true",
@@ -1086,6 +1085,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
+			config: config.New(config.WithEnableNodeJSInstrumentation(true)),
 		},
 		{
 			name: "nodejs injection feature gate disabled",
@@ -1167,13 +1167,6 @@ func TestMutatePod(t *testing.T) {
 						},
 					},
 				},
-			},
-			setFeatureGates: func(t *testing.T) {
-				originalVal := featuregate.EnableNodeJSAutoInstrumentationSupport.IsEnabled()
-				require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNodeJSAutoInstrumentationSupport.ID(), false))
-				t.Cleanup(func() {
-					require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNodeJSAutoInstrumentationSupport.ID(), originalVal))
-				})
 			},
 		},
 		{
@@ -4201,6 +4194,7 @@ func TestMutatePod(t *testing.T) {
 				config.WithEnableMultiInstrumentation(true),
 				config.WithEnablePythonInstrumentation(true),
 				config.WithEnableDotNetInstrumentation(true),
+				config.WithEnableNodeJSInstrumentation(true),
 			),
 		},
 		{
@@ -4991,6 +4985,7 @@ func TestMutatePod(t *testing.T) {
 				config.WithEnableMultiInstrumentation(true),
 				config.WithEnableDotNetInstrumentation(true),
 				config.WithEnablePythonInstrumentation(true),
+				config.WithEnableNodeJSInstrumentation(true),
 			),
 		},
 		{
@@ -5145,7 +5140,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableMultiInstrumentation(false)),
+			config: config.New(config.WithEnableMultiInstrumentation(false), config.WithEnableJavaInstrumentation(false)),
 		},
 		{
 			name: "multi instrumentation feature gate enabled, multiple instrumentation annotations set, no containers",
@@ -5289,7 +5284,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableMultiInstrumentation(true)),
+			config: config.New(config.WithEnableMultiInstrumentation(true), config.WithEnableJavaInstrumentation(false)),
 		},
 		{
 			name: "multi instrumentation feature gate enabled, single instrumentation annotation set, no containers",
@@ -5590,6 +5585,7 @@ func TestMutatePod(t *testing.T) {
 			config: config.New(
 				config.WithEnableMultiInstrumentation(true),
 				config.WithEnableDotNetInstrumentation(false),
+				config.WithEnableNodeJSInstrumentation(false),
 			),
 		},
 	}
