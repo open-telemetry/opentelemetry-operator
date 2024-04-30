@@ -39,7 +39,9 @@ const (
 
 	FlagApacheHttpd = "enable-apache-httpd-instrumentation"
 	FlagDotNet      = "enable-dotnet-instrumentation"
+	FlagGo          = "enable-go-instrumentation"
 	FlagPython      = "enable-python-instrumentation"
 	FlagNginx       = "enable-nginx-instrumentation"
+	FlagNodeJS      = "enable-nodejs-instrumentation"
 	FlagJava        = "enable-java-instrumentation"
 )

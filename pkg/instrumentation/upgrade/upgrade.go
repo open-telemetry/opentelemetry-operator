@@ -20,21 +20,12 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	featuregate2 "go.opentelemetry.io/collector/featuregate"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
-)
-
-var (
-	defaultAnnotationToGate = map[string]*featuregate2.Gate{
-		constants.AnnotationDefaultAutoInstrumentationNodeJS: featuregate.EnableNodeJSAutoInstrumentationSupport,
-		constants.AnnotationDefaultAutoInstrumentationGo:     featuregate.EnableGoAutoInstrumentationSupport,
-	}
 )
 
 type autoInstConfig struct {
@@ -60,8 +51,10 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 	defaultAnnotationToConfig := map[string]autoInstConfig{
 		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationGo:          {constants.FlagGo, cfg.EnableGoAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationNginx:       {constants.FlagNginx, cfg.EnableNginxAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationPython:      {constants.FlagPython, cfg.EnablePythonAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationNodeJS:      {constants.FlagNodeJS, cfg.EnableNodeJSAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationJava:        {constants.FlagJava, cfg.EnableJavaAutoInstrumentation()},
 	}
 
@@ -132,6 +125,11 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 						upgraded.Spec.DotNet.Image = u.DefaultAutoInstDotNet
 						upgraded.Annotations[annotation] = u.DefaultAutoInstDotNet
 					}
+				case constants.AnnotationDefaultAutoInstrumentationGo:
+					if inst.Spec.Go.Image == autoInst {
+						upgraded.Spec.Go.Image = u.DefaultAutoInstGo
+						upgraded.Annotations[annotation] = u.DefaultAutoInstGo
+					}
 				case constants.AnnotationDefaultAutoInstrumentationNginx:
 					if inst.Spec.Nginx.Image == autoInst {
 						upgraded.Spec.Nginx.Image = u.DefaultAutoInstNginx
@@ -142,43 +140,23 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 						upgraded.Spec.Python.Image = u.DefaultAutoInstPython
 						upgraded.Annotations[annotation] = u.DefaultAutoInstPython
 					}
+				case constants.AnnotationDefaultAutoInstrumentationNodeJS:
+					if inst.Spec.NodeJS.Image == autoInst {
+						upgraded.Spec.NodeJS.Image = u.DefaultAutoInstNodeJS
+						upgraded.Annotations[annotation] = u.DefaultAutoInstNodeJS
+					}
 				case constants.AnnotationDefaultAutoInstrumentationJava:
 					if inst.Spec.Java.Image == autoInst {
 						upgraded.Spec.Java.Image = u.DefaultAutoInstJava
 						upgraded.Annotations[annotation] = u.DefaultAutoInstJava
 					}
 				}
+
 			} else {
 				u.Logger.V(4).Info("autoinstrumentation not enabled for this language", "flag", instCfg.id)
 			}
 		}
 	}
 
-	for annotation, gate := range defaultAnnotationToGate {
-		autoInst := upgraded.Annotations[annotation]
-		if autoInst != "" {
-			if gate.IsEnabled() {
-				switch annotation {
-				case constants.AnnotationDefaultAutoInstrumentationNodeJS:
-					if inst.Spec.NodeJS.Image == autoInst {
-						upgraded.Spec.NodeJS.Image = u.DefaultAutoInstNodeJS
-						upgraded.Annotations[annotation] = u.DefaultAutoInstNodeJS
-					}
-				case constants.AnnotationDefaultAutoInstrumentationPython:
-					if inst.Spec.Python.Image == autoInst {
-						upgraded.Spec.Python.Image = u.DefaultAutoInstPython
-						upgraded.Annotations[annotation] = u.DefaultAutoInstPython
-					}
-				case constants.AnnotationDefaultAutoInstrumentationGo:
-					if inst.Spec.Go.Image == autoInst {
-						upgraded.Spec.Go.Image = u.DefaultAutoInstGo
-						upgraded.Annotations[annotation] = u.DefaultAutoInstGo
-					}
-				}
-			} else {
-				u.Logger.V(4).Info("autoinstrumentation not enabled for this language", "flag", gate.ID())
-			}
-		}
-	}
 	return upgraded
 }

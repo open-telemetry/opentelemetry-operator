@@ -87,11 +87,28 @@ func (c *AnyConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.Object)
 }
 
+type ComponentDefinitions map[string]*AnyConfig
+
+func (cd ComponentDefinitions) hasNullValues(prefix string) []string {
+	var nullKeys []string
+	for key, config := range cd {
+		prefixWithKey := fmt.Sprintf("%s.%s", prefix, key)
+		if config == nil {
+			nullKeys = append(nullKeys, prefixWithKey+":")
+			continue
+		}
+		if nulls := hasNullValue(config.Object); len(nulls) > 0 {
+			nullKeys = append(nullKeys, addPrefix(prefixWithKey, nulls)...)
+		}
+	}
+	return nullKeys
+}
+
 // Pipeline is a struct of component type to a list of component IDs.
 type Pipeline struct {
-	Receivers  []string `json:"receivers" yaml:"receivers"`
-	Processors []string `json:"processors" yaml:"processors"`
 	Exporters  []string `json:"exporters" yaml:"exporters"`
+	Processors []string `json:"processors" yaml:"processors"`
+	Receivers  []string `json:"receivers" yaml:"receivers"`
 }
 
 // GetEnabledComponents constructs a list of enabled components by component type.
@@ -116,23 +133,6 @@ func (c *Config) GetEnabledComponents() map[ComponentType]map[string]interface{}
 		}
 	}
 	return toReturn
-}
-
-type ComponentDefinitions map[string]*AnyConfig
-
-func (cd ComponentDefinitions) hasNullValues(prefix string) []string {
-	var nullKeys []string
-	for key, config := range cd {
-		prefixWithKey := fmt.Sprintf("%s.%s", prefix, key)
-		if config == nil {
-			nullKeys = append(nullKeys, prefixWithKey+":")
-			continue
-		}
-		if nulls := hasNullValue(config.Object); len(nulls) > 0 {
-			nullKeys = append(nullKeys, addPrefix(prefixWithKey, nulls)...)
-		}
-	}
-	return nullKeys
 }
 
 // Config encapsulates collector config.

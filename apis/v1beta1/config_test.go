@@ -145,11 +145,11 @@ service:
     insights: yeah!
   pipelines:
     traces:
-      receivers:
-        - otlp
-      processors: []
       exporters:
         - otlp/exporter
+      processors: []
+      receivers:
+        - otlp
 `
 
 	assert.Equal(t, expected, yamlCollector)
@@ -223,13 +223,13 @@ service:
     insights: yeah!
   pipelines:
     traces:
-      receivers:
-        - otlp
-      processors:
-        - modify_2000
       exporters:
         - otlp/exporter
         - con
+      processors:
+        - modify_2000
+      receivers:
+        - otlp
 `
 
 	assert.Equal(t, expected, yamlCollector)
