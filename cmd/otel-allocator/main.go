@@ -86,7 +86,11 @@ func main() {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)
 	}
-	srv := server.NewServer(log, allocator, cfg.ListenAddr, server.WithTLS("/certs/ca.crt", "/certs/server.crt", "/certs/server.key", ":8443"))
+
+	srv := server.NewServer(log, allocator, cfg.ListenAddr)
+	if cfg.HTTPS.Enabled {
+		srv = server.NewServer(log, allocator, cfg.ListenAddr, server.WithTLSServer("/certs/ca.crt", "/certs/server.crt", "/certs/server.key", cfg.HTTPS.ListenAddr))
+	}
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(prometheus.DefaultRegisterer)

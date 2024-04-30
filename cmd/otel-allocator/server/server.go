@@ -67,22 +67,22 @@ type Server struct {
 	logger         logr.Logger
 	allocator      allocation.Allocator
 	server         *http.Server
-	tlsServer	   *http.Server
+	tlsServer      *http.Server
 	jsonMarshaller jsoniter.API
 
 	// Use RWMutex to protect scrapeConfigResponse, since it
 	// will be predominantly read and only written when config
 	// is applied.
-	mtx                  sync.RWMutex
-	scrapeConfigResponse []byte
+	mtx                     sync.RWMutex
+	scrapeConfigResponse    []byte
 	tlsScrapeConfigResponse []byte
 }
 
 type ServerOption func(*Server)
 
-// ServerOption to create an additional server with mTLS configuration. 
+// ServerOption to create an additional server with mTLS configuration.
 // Used for getting the scrape config with actual secret values.
-func WithTLS(caFile, certFile, keyFile, tlsListenAddr string) ServerOption {
+func WithTLSServer(caFile, certFile, keyFile, tlsListenAddr string) ServerOption {
 	return func(s *Server) {
 		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 		if err != nil {
@@ -117,12 +117,9 @@ func (s *Server) setRouter(router *gin.Engine, tlsRouter bool) {
 	router.UnescapePathValues = false
 	router.Use(s.PrometheusMiddleware)
 
-	if tlsRouter {
-		router.GET("/scrape_configs", s.ScrapeConfigsTlsHandler)
-	} else {
-		router.GET("/scrape_configs", s.ScrapeConfigsHandler)
-	}
-
+	router.GET("/scrape_configs", func(c *gin.Context) {
+		s.ScrapeConfigsHandler(c, tlsRouter)
+	})
 	router.GET("/jobs", s.JobHandler)
 	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
@@ -219,68 +216,48 @@ func RemoveRegexFromRelabelAction(jsonConfig []byte) ([]byte, error) {
 // configurations such that the underlying prometheus marshaling is used. After that, the YAML is converted
 // in to a JSON format for consumers to use.
 func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.ScrapeConfig) error {
-	var configBytes []byte
-
-	config.MarshalSecretValue = false
-	configBytes, err := yaml.Marshal(configs)
-	if err != nil {
-		return err
-	}
-	var jsonConfig []byte
-	jsonConfig, err = yaml2.YAMLToJSON(configBytes)
-	if err != nil {
-		return err
+	marshalSecretValues := []bool{false}
+	if s.tlsServer != nil {
+		marshalSecretValues = append(marshalSecretValues, true)
 	}
 
-	jsonConfigNew, err := RemoveRegexFromRelabelAction(jsonConfig)
-	if err != nil {
-		return err
+	for _, marshalSecretValue := range marshalSecretValues {
+		config.MarshalSecretValue = marshalSecretValue
+		configBytes, err := yaml.Marshal(configs)
+		if err != nil {
+			return err
+		}
+
+		var jsonConfig []byte
+		jsonConfig, err = yaml2.YAMLToJSON(configBytes)
+		if err != nil {
+			return err
+		}
+
+		jsonConfigNew, err := RemoveRegexFromRelabelAction(jsonConfig)
+		if err != nil {
+			return err
+		}
+
+		s.mtx.Lock()
+		if marshalSecretValue {
+			s.tlsScrapeConfigResponse = jsonConfigNew
+		} else {
+			s.scrapeConfigResponse = jsonConfigNew
+		}
+		s.mtx.Unlock()
 	}
 
-	s.mtx.Lock()
-	s.scrapeConfigResponse = jsonConfigNew
-	s.mtx.Unlock()
-
-	// Marshaling with actual secrets values for serving with mTLS
-	config.MarshalSecretValue = true
-	configBytes, err = yaml.Marshal(configs)
-	if err != nil {
-		return err
-	}
-	jsonConfig, err = yaml2.YAMLToJSON(configBytes)
-	if err != nil {
-		return err
-	}
-
-	jsonConfigNew, err = RemoveRegexFromRelabelAction(jsonConfig)
-	if err != nil {
-		return err
-	}
-
-	s.mtx.Lock()
-	s.tlsScrapeConfigResponse = jsonConfigNew
-	s.mtx.Unlock()
 	return nil
 }
 
 // ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
-func (s *Server) ScrapeConfigsHandler(c *gin.Context) {
+func (s *Server) ScrapeConfigsHandler(c *gin.Context, tlsRouter bool) {
 	s.mtx.RLock()
 	result := s.scrapeConfigResponse
-	s.mtx.RUnlock()
-
-	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded
-	c.Writer.Header().Set("Content-Type", "application/json")
-	_, err := c.Writer.Write(result)
-	if err != nil {
-		s.errorHandler(c.Writer, err)
+	if tlsRouter {
+		result = s.tlsScrapeConfigResponse
 	}
-}
-
-// ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
-func (s *Server) ScrapeConfigsTlsHandler(c *gin.Context) {
-	s.mtx.RLock()
-	result := s.tlsScrapeConfigResponse
 	s.mtx.RUnlock()
 
 	// We don't use the jsonHandler method because we don't want our bytes to be re-encoded

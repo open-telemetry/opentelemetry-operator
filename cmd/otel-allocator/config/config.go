@@ -36,11 +36,14 @@ import (
 )
 
 const (
-	DefaultResyncTime                        = 5 * time.Minute
-	DefaultConfigFilePath     string         = "/conf/targetallocator.yaml"
-	DefaultCRScrapeInterval   model.Duration = model.Duration(time.Second * 30)
-	DefaultAllocationStrategy                = "consistent-hashing"
-	DefaultFilterStrategy                    = "relabel-config"
+	DefaultResyncTime                           = 5 * time.Minute
+	DefaultConfigFilePath        string         = "/conf/targetallocator.yaml"
+	DefaultCRScrapeInterval      model.Duration = model.Duration(time.Second * 30)
+	DefaultAllocationStrategy                   = "consistent-hashing"
+	DefaultFilterStrategy                       = "relabel-config"
+	DefaultServerCAFilePath                     = "/conf/tls/ca.crt"
+	DefaultServerTLSCertFilePath                = "/conf/tls/tls.crt"
+	DefaultServerTLSKeyFilePath                 = "/conf/tls/tls.key"
 )
 
 type Config struct {
@@ -53,6 +56,7 @@ type Config struct {
 	AllocationStrategy string                `yaml:"allocation_strategy,omitempty"`
 	FilterStrategy     string                `yaml:"filter_strategy,omitempty"`
 	PrometheusCR       PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
+	HTTPS              HTTPSServerConfig     `yaml:"https,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -62,6 +66,14 @@ type PrometheusCRConfig struct {
 	ServiceMonitorNamespaceSelector *metav1.LabelSelector `yaml:"service_monitor_namespace_selector,omitempty"`
 	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
 	ScrapeInterval                  model.Duration        `yaml:"scrape_interval,omitempty"`
+}
+
+type HTTPSServerConfig struct {
+	Enabled               bool   `yaml:"enabled,omitempty"`
+	ListenAddr            string `yaml:"listen_addr,omitempty"`
+	ServerCAFilePath      string `yaml:"ca_file_path,omitempty"`
+	ServerTLSCertFilePath string `yaml:"tls_cert_file_path,omitempty"`
+	ServerTLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
 }
 
 func LoadFromFile(file string, target *Config) error {
@@ -99,6 +111,16 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	}
 
 	target.PrometheusCR.Enabled, err = getPrometheusCREnabled(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.HTTPS.Enabled, err = getHttpsEnabled(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.HTTPS.ListenAddr, err = getHttpsListenAddr(flagSet)
 	if err != nil {
 		return err
 	}
