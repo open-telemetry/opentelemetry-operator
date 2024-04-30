@@ -89,7 +89,7 @@ func main() {
 
 	srv := server.NewServer(log, allocator, cfg.ListenAddr)
 	if cfg.HTTPS.Enabled {
-		srv = server.NewServer(log, allocator, cfg.ListenAddr, server.WithTLSServer("/certs/ca.crt", "/certs/server.crt", "/certs/server.key", cfg.HTTPS.ListenAddr))
+		srv = server.NewServer(log, allocator, cfg.ListenAddr, server.WithHTTPSServer(cfg.HTTPS.CAFilePath, cfg.HTTPS.TLSCertFilePath, cfg.HTTPS.TLSKeyFilePath, cfg.HTTPS.ListenAddr))
 	}
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
@@ -184,14 +184,14 @@ func main() {
 		})
 	runGroup.Add(
 		func() error {
-			err := srv.StartTls()
-			setupLog.Info("TLS Server failed to start")
+			err := srv.StartHTTPS()
+			setupLog.Info("HTTPS Server failed to start")
 			return err
 		},
 		func(_ error) {
-			setupLog.Info("Closing TLS server")
-			if shutdownErr := srv.ShutdownTls(ctx); shutdownErr != nil {
-				setupLog.Error(shutdownErr, "Error on TLS server shutdown")
+			setupLog.Info("Closing HTTPS server")
+			if shutdownErr := srv.ShutdownHTTPS(ctx); shutdownErr != nil {
+				setupLog.Error(shutdownErr, "Error on HTTPS server shutdown")
 			}
 		})
 	runGroup.Add(

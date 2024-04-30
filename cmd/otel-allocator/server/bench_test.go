@@ -87,7 +87,7 @@ func BenchmarkScrapeConfigsHandler(b *testing.B) {
 				gin.SetMode(gin.ReleaseMode)
 				c.Request = httptest.NewRequest("GET", "/scrape_configs", nil)
 
-				s.ScrapeConfigsHandler(c)
+				s.ScrapeConfigsHandler(c, false)
 			}
 		})
 	}

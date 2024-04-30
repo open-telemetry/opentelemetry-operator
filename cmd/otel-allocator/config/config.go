@@ -36,14 +36,14 @@ import (
 )
 
 const (
-	DefaultResyncTime                           = 5 * time.Minute
-	DefaultConfigFilePath        string         = "/conf/targetallocator.yaml"
-	DefaultCRScrapeInterval      model.Duration = model.Duration(time.Second * 30)
-	DefaultAllocationStrategy                   = "consistent-hashing"
-	DefaultFilterStrategy                       = "relabel-config"
-	DefaultServerCAFilePath                     = "/conf/tls/ca.crt"
-	DefaultServerTLSCertFilePath                = "/conf/tls/tls.crt"
-	DefaultServerTLSKeyFilePath                 = "/conf/tls/tls.key"
+	DefaultResyncTime                          = 5 * time.Minute
+	DefaultConfigFilePath       string         = "/conf/targetallocator.yaml"
+	DefaultCRScrapeInterval     model.Duration = model.Duration(time.Second * 30)
+	DefaultAllocationStrategy                  = "consistent-hashing"
+	DefaultFilterStrategy                      = "relabel-config"
+	DefaultHttpsCAFilePath                     = "/conf/tls/ca.crt"
+	DefaultHttpsTLSCertFilePath                = "/conf/tls/tls.crt"
+	DefaultHttpsTLSKeyFilePath                 = "/conf/tls/tls.key"
 )
 
 type Config struct {
@@ -69,11 +69,11 @@ type PrometheusCRConfig struct {
 }
 
 type HTTPSServerConfig struct {
-	Enabled               bool   `yaml:"enabled,omitempty"`
-	ListenAddr            string `yaml:"listen_addr,omitempty"`
-	ServerCAFilePath      string `yaml:"ca_file_path,omitempty"`
-	ServerTLSCertFilePath string `yaml:"tls_cert_file_path,omitempty"`
-	ServerTLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
+	Enabled         bool   `yaml:"enabled,omitempty"`
+	ListenAddr      string `yaml:"listen_addr,omitempty"`
+	CAFilePath      string `yaml:"ca_file_path,omitempty"`
+	TLSCertFilePath string `yaml:"tls_cert_file_path,omitempty"`
+	TLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
 }
 
 func LoadFromFile(file string, target *Config) error {
@@ -121,6 +121,21 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	}
 
 	target.HTTPS.ListenAddr, err = getHttpsListenAddr(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.HTTPS.CAFilePath, err = getHttpsCAFilePath(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.HTTPS.TLSCertFilePath, err = getHttpsTLSCertFilePath(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.HTTPS.TLSKeyFilePath, err = getHttpsTLSKeyFilePath(flagSet)
 	if err != nil {
 		return err
 	}

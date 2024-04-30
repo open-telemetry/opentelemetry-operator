@@ -25,13 +25,16 @@ import (
 
 // Flag names.
 const (
-	targetAllocatorName         = "target-allocator"
-	configFilePathFlagName      = "config-file"
-	listenAddrFlagName          = "listen-addr"
-	prometheusCREnabledFlagName = "enable-prometheus-cr-watcher"
-	kubeConfigPathFlagName      = "kubeconfig-path"
-	listenAddrHttpsFlagName     = "listen-addr-https"
-	httpsEnabledFlagName        = "enable-https-server"
+	targetAllocatorName          = "target-allocator"
+	configFilePathFlagName       = "config-file"
+	listenAddrFlagName           = "listen-addr"
+	prometheusCREnabledFlagName  = "enable-prometheus-cr-watcher"
+	kubeConfigPathFlagName       = "kubeconfig-path"
+	httpsEnabledFlagName         = "enable-https-server"
+	listenAddrHttpsFlagName      = "listen-addr-https"
+	httpsCAFilePathFlagName      = "https-ca-file"
+	httpsTLSCertFilePathFlagName = "https-tls-cert-file"
+	httpsTLSKeyFilePathFlagName  = "https-tls-key-file"
 )
 
 // We can't bind this flag to our FlagSet, so we need to handle it separately.
@@ -42,9 +45,12 @@ func getFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet.String(configFilePathFlagName, DefaultConfigFilePath, "The path to the config file.")
 	flagSet.String(listenAddrFlagName, ":8080", "The address where this service serves.")
 	flagSet.Bool(prometheusCREnabledFlagName, false, "Enable Prometheus CRs as target sources")
+	flagSet.String(kubeConfigPathFlagName, filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
 	flagSet.Bool(httpsEnabledFlagName, false, "Enable HTTPS additional server")
 	flagSet.String(listenAddrHttpsFlagName, ":8443", "The address where this service serves over HTTPS.")
-	flagSet.String(kubeConfigPathFlagName, filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
+	flagSet.String(httpsCAFilePathFlagName, DefaultHttpsCAFilePath, "The path to the HTTPS server TLS CA file.")
+	flagSet.String(httpsTLSCertFilePathFlagName, DefaultHttpsTLSCertFilePath, "The path to the HTTPS server TLS certificate file.")
+	flagSet.String(httpsTLSKeyFilePathFlagName, DefaultHttpsTLSKeyFilePath, "The path to the HTTPS server TLS key file.")
 	zapFlagSet := flag.NewFlagSet("", flag.ErrorHandling(errorHandling))
 	zapCmdLineOpts.BindFlags(zapFlagSet)
 	flagSet.AddGoFlagSet(zapFlagSet)
@@ -73,4 +79,16 @@ func getHttpsListenAddr(flagSet *pflag.FlagSet) (string, error) {
 
 func getHttpsEnabled(flagSet *pflag.FlagSet) (bool, error) {
 	return flagSet.GetBool(httpsEnabledFlagName)
+}
+
+func getHttpsCAFilePath(flagSet *pflag.FlagSet) (string, error) {
+	return flagSet.GetString(httpsCAFilePathFlagName)
+}
+
+func getHttpsTLSCertFilePath(flagSet *pflag.FlagSet) (string, error) {
+	return flagSet.GetString(httpsTLSCertFilePathFlagName)
+}
+
+func getHttpsTLSKeyFilePath(flagSet *pflag.FlagSet) (string, error) {
+	return flagSet.GetString(httpsTLSKeyFilePathFlagName)
 }

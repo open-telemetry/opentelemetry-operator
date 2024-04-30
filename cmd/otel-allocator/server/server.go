@@ -67,22 +67,22 @@ type Server struct {
 	logger         logr.Logger
 	allocator      allocation.Allocator
 	server         *http.Server
-	tlsServer      *http.Server
+	httpsServer    *http.Server
 	jsonMarshaller jsoniter.API
 
 	// Use RWMutex to protect scrapeConfigResponse, since it
 	// will be predominantly read and only written when config
 	// is applied.
-	mtx                     sync.RWMutex
-	scrapeConfigResponse    []byte
-	tlsScrapeConfigResponse []byte
+	mtx                                  sync.RWMutex
+	scrapeConfigResponse                 []byte
+	ScrapeConfigMarshalledSecretResponse []byte
 }
 
-type ServerOption func(*Server)
+type Option func(*Server)
 
-// ServerOption to create an additional server with mTLS configuration.
+// ServerOption to create an additional https server with mTLS configuration.
 // Used for getting the scrape config with actual secret values.
-func WithTLSServer(caFile, certFile, keyFile, tlsListenAddr string) ServerOption {
+func WithHTTPSServer(caFile, certFile, keyFile, httpsListenAddr string) Option {
 	return func(s *Server) {
 		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 		if err != nil {
@@ -103,22 +103,21 @@ func WithTLSServer(caFile, certFile, keyFile, tlsListenAddr string) ServerOption
 			ClientCAs:    caCertPool,
 		}
 
-		tlsRouter := gin.New()
-		s.setRouter(tlsRouter, true)
+		httpsRouter := gin.New()
+		s.setRouter(httpsRouter, true)
 
-		s.tlsServer = &http.Server{Addr: tlsListenAddr, Handler: tlsRouter, ReadHeaderTimeout: 90 * time.Second}
-		s.tlsServer.TLSConfig = tlsConfig
+		s.httpsServer = &http.Server{Addr: httpsListenAddr, Handler: httpsRouter, ReadHeaderTimeout: 90 * time.Second, TLSConfig: tlsConfig}
 	}
 }
 
-func (s *Server) setRouter(router *gin.Engine, tlsRouter bool) {
+func (s *Server) setRouter(router *gin.Engine, httpsRouter bool) {
 	router.Use(gin.Recovery())
 	router.UseRawPath = true
 	router.UnescapePathValues = false
 	router.Use(s.PrometheusMiddleware)
 
 	router.GET("/scrape_configs", func(c *gin.Context) {
-		s.ScrapeConfigsHandler(c, tlsRouter)
+		s.ScrapeConfigsHandler(c, httpsRouter)
 	})
 	router.GET("/jobs", s.JobHandler)
 	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
@@ -128,7 +127,7 @@ func (s *Server) setRouter(router *gin.Engine, tlsRouter bool) {
 	registerPprof(router.Group("/debug/pprof/"))
 }
 
-func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr string, options ...ServerOption) *Server {
+func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr string, options ...Option) *Server {
 	s := &Server{
 		logger:         log,
 		allocator:      allocator,
@@ -158,14 +157,14 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
-func (s *Server) StartTls() error {
-	s.logger.Info("Starting TLS server...")
-	return s.tlsServer.ListenAndServeTLS("", "")
+func (s *Server) StartHTTPS() error {
+	s.logger.Info("Starting HTTPS server...")
+	return s.httpsServer.ListenAndServeTLS("", "")
 }
 
-func (s *Server) ShutdownTls(ctx context.Context) error {
-	s.logger.Info("Shutting down TLS server...")
-	return s.tlsServer.Shutdown(ctx)
+func (s *Server) ShutdownHTTPS(ctx context.Context) error {
+	s.logger.Info("Shutting down HTTPS server...")
+	return s.httpsServer.Shutdown(ctx)
 }
 
 // RemoveRegexFromRelabelAction is needed specifically for keepequal/dropequal actions because even though the user doesn't specify the
@@ -217,7 +216,7 @@ func RemoveRegexFromRelabelAction(jsonConfig []byte) ([]byte, error) {
 // in to a JSON format for consumers to use.
 func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.ScrapeConfig) error {
 	marshalSecretValues := []bool{false}
-	if s.tlsServer != nil {
+	if s.httpsServer != nil {
 		marshalSecretValues = append(marshalSecretValues, true)
 	}
 
@@ -241,7 +240,7 @@ func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.Scrap
 
 		s.mtx.Lock()
 		if marshalSecretValue {
-			s.tlsScrapeConfigResponse = jsonConfigNew
+			s.ScrapeConfigMarshalledSecretResponse = jsonConfigNew
 		} else {
 			s.scrapeConfigResponse = jsonConfigNew
 		}
@@ -252,11 +251,11 @@ func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.Scrap
 }
 
 // ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
-func (s *Server) ScrapeConfigsHandler(c *gin.Context, tlsRouter bool) {
+func (s *Server) ScrapeConfigsHandler(c *gin.Context, httpsRouter bool) {
 	s.mtx.RLock()
 	result := s.scrapeConfigResponse
-	if tlsRouter {
-		result = s.tlsScrapeConfigResponse
+	if httpsRouter {
+		result = s.ScrapeConfigMarshalledSecretResponse
 	}
 	s.mtx.RUnlock()
 
