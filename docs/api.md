@@ -30248,10 +30248,10 @@ The empty objects e.g. batch: should be written as batch: {} otherwise they won'
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>pipelines</b></td>
-        <td>object</td>
+        <td><b><a href="#opentelemetrycollectorspecconfigservicepipelineskey">pipelines</a></b></td>
+        <td>map[string]object</td>
         <td>
-          AnyConfig represent parts of the config.<br/>
+          <br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -30268,6 +30268,47 @@ The empty objects e.g. batch: should be written as batch: {} otherwise they won'
           AnyConfig represent parts of the config.<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.config.service.pipelines[key]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecconfigservice)</sup></sup>
+
+
+
+Pipeline is a struct of component type to a list of component IDs.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>exporters</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>processors</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>receivers</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 

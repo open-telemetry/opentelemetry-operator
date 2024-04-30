@@ -100,6 +100,7 @@ service:
     traces:
       exporters:
       - otlp
+      processors: []
       receivers:
       - otlp/mtls
   telemetry:
@@ -124,6 +125,7 @@ service:
     traces:
       exporters:
       - otlp
+      processors: []
       receivers:
       - otlp/mtls
   telemetry:
