@@ -40,8 +40,8 @@ var labelSelector = metav1.LabelSelector{
 	MatchLabels: labelMap,
 }
 
-func getTestPodWatcher() CollectorWatcher {
-	podWatcher := CollectorWatcher{
+func getTestPodWatcher() Watcher {
+	podWatcher := Watcher{
 		k8sClient:         fake.NewSimpleClientset(),
 		close:             make(chan struct{}),
 		log:               logger,
@@ -65,7 +65,7 @@ func pod(name string) *v1.Pod {
 
 func Test_runWatch(t *testing.T) {
 	type args struct {
-		kubeFn       func(t *testing.T, podWatcher CollectorWatcher)
+		kubeFn       func(t *testing.T, podWatcher Watcher)
 		collectorMap map[string]*allocation.Collector
 	}
 	tests := []struct {
@@ -76,7 +76,7 @@ func Test_runWatch(t *testing.T) {
 		{
 			name: "pod add",
 			args: args{
-				kubeFn: func(t *testing.T, podWatcher CollectorWatcher) {
+				kubeFn: func(t *testing.T, podWatcher Watcher) {
 					for _, k := range []string{"test-pod1", "test-pod2", "test-pod3"} {
 						p := pod(k)
 						_, err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
@@ -103,7 +103,7 @@ func Test_runWatch(t *testing.T) {
 		{
 			name: "pod delete",
 			args: args{
-				kubeFn: func(t *testing.T, podWatcher CollectorWatcher) {
+				kubeFn: func(t *testing.T, podWatcher Watcher) {
 					for _, k := range []string{"test-pod2", "test-pod3"} {
 						err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Delete(context.Background(), k, metav1.DeleteOptions{})
 						assert.NoError(t, err)
@@ -145,7 +145,7 @@ func Test_runWatch(t *testing.T) {
 				_, err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
 				assert.NoError(t, err)
 			}
-			go func(podWatcher CollectorWatcher) {
+			go func(podWatcher Watcher) {
 				err := podWatcher.Watch(&labelSelector, func(colMap map[string]*allocation.Collector) {
 					mapMutex.Lock()
 					defer mapMutex.Unlock()
@@ -176,7 +176,7 @@ func Test_closeChannel(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	go func(podWatcher CollectorWatcher) {
+	go func(podWatcher Watcher) {
 		defer wg.Done()
 		err := podWatcher.Watch(&labelSelector, func(colMap map[string]*allocation.Collector) {})
 		require.NoError(t, err)

@@ -53,7 +53,7 @@ func main() {
 		allocatorPrehook prehook.Hook
 		allocator        allocation.Allocator
 		discoveryManager *discovery.Manager
-		collectorWatcher *collector.CollectorWatcher
+		collectorWatcher *collector.Watcher
 		promWatcher      allocatorWatcher.Watcher
 		targetDiscoverer *target.Discoverer
 

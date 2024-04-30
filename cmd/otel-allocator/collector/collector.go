@@ -43,20 +43,20 @@ var (
 	})
 )
 
-type CollectorWatcher struct {
+type Watcher struct {
 	log               logr.Logger
 	k8sClient         kubernetes.Interface
 	close             chan struct{}
 	minUpdateInterval time.Duration
 }
 
-func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config) (*CollectorWatcher, error) {
+func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config) (*Watcher, error) {
 	clientset, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
-		return &CollectorWatcher{}, err
+		return &Watcher{}, err
 	}
 
-	return &CollectorWatcher{
+	return &Watcher{
 		log:               logger.WithValues("component", "opentelemetry-targetallocator"),
 		k8sClient:         clientset,
 		close:             make(chan struct{}),
@@ -64,7 +64,7 @@ func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config) (*Collecto
 	}, nil
 }
 
-func (k *CollectorWatcher) Watch(labelSelector *metav1.LabelSelector, fn func(collectors map[string]*allocation.Collector)) error {
+func (k *Watcher) Watch(labelSelector *metav1.LabelSelector, fn func(collectors map[string]*allocation.Collector)) error {
 	selector, err := metav1.LabelSelectorAsSelector(labelSelector)
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func (k *CollectorWatcher) Watch(labelSelector *metav1.LabelSelector, fn func(co
 
 // rateLimitedCollectorHandler runs fn on collectors present in the store whenever it gets a notification on the notify channel,
 // but not more frequently than once per k.eventPeriod.
-func (k *CollectorWatcher) rateLimitedCollectorHandler(notify chan struct{}, store cache.Store, fn func(collectors map[string]*allocation.Collector)) {
+func (k *Watcher) rateLimitedCollectorHandler(notify chan struct{}, store cache.Store, fn func(collectors map[string]*allocation.Collector)) {
 	ticker := time.NewTicker(k.minUpdateInterval)
 	defer ticker.Stop()
 
@@ -125,7 +125,7 @@ func (k *CollectorWatcher) rateLimitedCollectorHandler(notify chan struct{}, sto
 }
 
 // runOnCollectors runs the provided function on the set of collectors from the Store.
-func (k *CollectorWatcher) runOnCollectors(store cache.Store, fn func(collectors map[string]*allocation.Collector)) {
+func (k *Watcher) runOnCollectors(store cache.Store, fn func(collectors map[string]*allocation.Collector)) {
 	collectorMap := map[string]*allocation.Collector{}
 	objects := store.List()
 	for _, obj := range objects {
@@ -139,6 +139,6 @@ func (k *CollectorWatcher) runOnCollectors(store cache.Store, fn func(collectors
 	fn(collectorMap)
 }
 
-func (k *CollectorWatcher) Close() {
+func (k *Watcher) Close() {
 	close(k.close)
 }
