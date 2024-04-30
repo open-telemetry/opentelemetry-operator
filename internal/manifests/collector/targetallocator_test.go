@@ -48,7 +48,7 @@ func TestTargetAllocator(t *testing.T) {
 	runAsUser := int64(1337)
 	runasGroup := int64(1338)
 	otelcolConfig := v1beta1.Config{
-		Receivers: v1beta1.ComponentDefinitions{
+		Receivers: map[string]*v1beta1.AnyConfig{
 			"prometheus": &v1beta1.AnyConfig{
 				Object: map[string]interface{}{
 					"config": map[string]any{
@@ -330,7 +330,7 @@ func TestGetScrapeConfigs(t *testing.T) {
 		{
 			name: "empty scrape configs list",
 			input: v1beta1.Config{
-				Receivers: v1beta1.ComponentDefinitions{
+				Receivers: map[string]*v1beta1.AnyConfig{
 					"prometheus": &v1beta1.AnyConfig{
 						Object: map[string]interface{}{
 							"config": map[string]any{
@@ -345,7 +345,7 @@ func TestGetScrapeConfigs(t *testing.T) {
 		{
 			name: "no scrape configs key",
 			input: v1beta1.Config{
-				Receivers: v1beta1.ComponentDefinitions{
+				Receivers: map[string]*v1beta1.AnyConfig{
 					"prometheus": &v1beta1.AnyConfig{
 						Object: map[string]interface{}{
 							"config": map[string]any{},
@@ -358,7 +358,7 @@ func TestGetScrapeConfigs(t *testing.T) {
 		{
 			name: "one scrape config",
 			input: v1beta1.Config{
-				Receivers: v1beta1.ComponentDefinitions{
+				Receivers: map[string]*v1beta1.AnyConfig{
 					"prometheus": &v1beta1.AnyConfig{
 						Object: map[string]interface{}{
 							"config": map[string]any{
@@ -379,7 +379,7 @@ func TestGetScrapeConfigs(t *testing.T) {
 		{
 			name: "regex substitution",
 			input: v1beta1.Config{
-				Receivers: v1beta1.ComponentDefinitions{
+				Receivers: map[string]*v1beta1.AnyConfig{
 					"prometheus": &v1beta1.AnyConfig{
 						Object: map[string]interface{}{
 							"config": map[string]any{

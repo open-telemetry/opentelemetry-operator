@@ -113,10 +113,10 @@ func TestNullObjects_go_yaml(t *testing.T) {
 
 func TestMinimalConfigYaml(t *testing.T) {
 	cfg := &Config{
-		Receivers: ComponentDefinitions{
+		Receivers: map[string]*AnyConfig{
 			"otlp": nil,
 		},
-		Exporters: ComponentDefinitions{
+		Exporters: map[string]*AnyConfig{
 			"otlp/exporter": nil,
 		},
 		Service: Service{
@@ -157,27 +157,27 @@ service:
 
 func TestConfigYaml(t *testing.T) {
 	cfg := &Config{
-		Receivers: ComponentDefinitions{
+		Receivers: map[string]*AnyConfig{
 			"otlp": nil,
 		},
-		Processors: ComponentDefinitions{
+		Processors: map[string]*AnyConfig{
 			"modify_2000": &AnyConfig{
 				Object: map[string]interface{}{
 					"enabled": true,
 				},
 			},
 		},
-		Exporters: ComponentDefinitions{
+		Exporters: map[string]*AnyConfig{
 			"otlp/exporter": nil,
 		},
-		Connectors: ComponentDefinitions{
+		Connectors: map[string]*AnyConfig{
 			"con": &AnyConfig{
 				Object: map[string]interface{}{
 					"magic": true,
 				},
 			},
 		},
-		Extensions: ComponentDefinitions{
+		Extensions: map[string]*AnyConfig{
 			"addon": &AnyConfig{
 				Object: map[string]interface{}{
 					"option1": true,
@@ -233,6 +233,84 @@ service:
 `
 
 	assert.Equal(t, expected, yamlCollector)
+}
+
+func TestConfigYamlPrometheus(t *testing.T) {
+	expectedCfg := &Config{
+		Receivers: map[string]*AnyConfig{
+			"jaeger": &AnyConfig{
+				Object: map[string]interface{}{
+					"protocols": map[string]interface{}{
+						"grpc": nil,
+					},
+				},
+			},
+			"prometheus": &AnyConfig{
+				Object: map[string]interface{}{
+					"config": map[string]interface{}{
+						"scrape_configs": []interface{}{
+							map[string]interface{}{
+								"job_name":        "otel-collector",
+								"scrape_interval": "10s",
+								"static_configs": []interface{}{
+									map[string]interface{}{
+										"targets": []interface{}{
+											"0.0.0.0:8888",
+											"0.0.0.0:9999",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Processors: nil,
+		Exporters: map[string]*AnyConfig{
+			"logging": nil,
+		},
+		Connectors: nil,
+		Extensions: nil,
+		Service: Service{
+			Pipelines: map[string]*Pipeline{
+				"metrics": {
+					Receivers:  []string{"prometheus", "jaeger"},
+					Processors: []string{},
+					Exporters:  []string{"logging"},
+				},
+			},
+		},
+	}
+	const collectorYaml = `processors:
+receivers:
+  jaeger:
+    protocols:
+      grpc:
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: otel-collector
+          scrape_interval: 10s
+          static_configs:
+            - targets: [ '0.0.0.0:8888', '0.0.0.0:9999' ]
+
+exporters:
+  logging:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [prometheus, jaeger]
+      processors: []
+      exporters: [logging]
+`
+
+	cfg := &Config{}
+	err := go_yaml.Unmarshal([]byte(collectorYaml), cfg)
+	require.NoError(t, err)
+
+	assert.Equal(t, cfg, expectedCfg)
 }
 
 func TestGetTelemetryFromYAML(t *testing.T) {

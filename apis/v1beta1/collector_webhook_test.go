@@ -56,7 +56,7 @@ func TestValidate(t *testing.T) {
 			collector: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					Config: Config{
-						Receivers: ComponentDefinitions{
+						Receivers: map[string]*AnyConfig{
 							"otlp": &AnyConfig{
 								map[string]interface{}{
 									"protocols": map[string]interface{}{
@@ -66,11 +66,11 @@ func TestValidate(t *testing.T) {
 								},
 							},
 						},
-						Processors: ComponentDefinitions{
+						Processors: map[string]*AnyConfig{
 							"batch": nil,
 							"foo":   nil,
 						},
-						Extensions: ComponentDefinitions{
+						Extensions: map[string]*AnyConfig{
 							"foo": nil,
 						},
 					},

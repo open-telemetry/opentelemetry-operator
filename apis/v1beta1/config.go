@@ -87,9 +87,7 @@ func (c *AnyConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.Object)
 }
 
-type ComponentDefinitions map[string]*AnyConfig
-
-func (cd ComponentDefinitions) hasNullValues(prefix string) []string {
+func hasNullValues(cd map[string]*AnyConfig, prefix string) []string {
 	var nullKeys []string
 	for key, config := range cd {
 		prefixWithKey := fmt.Sprintf("%s.%s", prefix, key)
@@ -138,16 +136,16 @@ func (c *Config) GetEnabledComponents() map[ComponentType]map[string]interface{}
 // Config encapsulates collector config.
 type Config struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Receivers ComponentDefinitions `json:"receivers" yaml:"receivers"`
+	Receivers map[string]*AnyConfig `json:"receivers" yaml:"receivers"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Exporters ComponentDefinitions `json:"exporters" yaml:"exporters"`
+	Exporters map[string]*AnyConfig `json:"exporters" yaml:"exporters"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Processors ComponentDefinitions `json:"processors,omitempty" yaml:"processors,omitempty"`
+	Processors map[string]*AnyConfig `json:"processors,omitempty" yaml:"processors,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Connectors ComponentDefinitions `json:"connectors,omitempty" yaml:"connectors,omitempty"`
+	Connectors map[string]*AnyConfig `json:"connectors,omitempty" yaml:"connectors,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Extensions ComponentDefinitions `json:"extensions,omitempty" yaml:"extensions,omitempty"`
-	Service    Service              `json:"service" yaml:"service"`
+	Extensions map[string]*AnyConfig `json:"extensions,omitempty" yaml:"extensions,omitempty"`
+	Service    Service               `json:"service" yaml:"service"`
 }
 
 // Yaml encodes the current object and returns it as a string.
@@ -164,11 +162,11 @@ func (c *Config) Yaml() (string, error) {
 // Returns null objects in the config.
 func (c *Config) nullObjects() []string {
 	var nullKeys []string
-	nullKeys = append(nullKeys, c.Receivers.hasNullValues("receivers")...)
-	nullKeys = append(nullKeys, c.Exporters.hasNullValues("exporters")...)
-	nullKeys = append(nullKeys, c.Processors.hasNullValues("processors")...)
-	nullKeys = append(nullKeys, c.Extensions.hasNullValues("extensions")...)
-	nullKeys = append(nullKeys, c.Connectors.hasNullValues("connectors")...)
+	nullKeys = append(nullKeys, hasNullValues(c.Receivers, "receivers")...)
+	nullKeys = append(nullKeys, hasNullValues(c.Exporters, "exporters")...)
+	nullKeys = append(nullKeys, hasNullValues(c.Processors, "processors")...)
+	nullKeys = append(nullKeys, hasNullValues(c.Extensions, "extensions")...)
+	nullKeys = append(nullKeys, hasNullValues(c.Connectors, "connectors")...)
 	// Make the return deterministic. The config uses maps therefore processing order is non-deterministic.
 	sort.Strings(nullKeys)
 	return nullKeys
