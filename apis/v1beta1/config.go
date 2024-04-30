@@ -89,9 +89,9 @@ func (c *AnyConfig) MarshalJSON() ([]byte, error) {
 
 // Pipeline is a struct of component type to a list of component IDs.
 type Pipeline struct {
-	Receivers  []string `json:"receivers" yaml:"receivers"`
-	Processors []string `json:"processors" yaml:"processors"`
 	Exporters  []string `json:"exporters" yaml:"exporters"`
+	Processors []string `json:"processors" yaml:"processors"`
+	Receivers  []string `json:"receivers" yaml:"receivers"`
 }
 
 // GetEnabledComponents constructs a list of enabled components by component type.
