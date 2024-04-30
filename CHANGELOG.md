@@ -6,10 +6,10 @@
 
 ### 🛑 Breaking changes 🛑
 
-- `operator`: change java instrumentation feature gate operator.autoinstrumentation.java into command line flag --enable-java-instrumentation (#2673, #2582)
+- `operator`: change java instrumentation feature gate `operator.autoinstrumentation.java` into command line flag `--enable-java-instrumentation` (#2673, #2582)
 - `operator`: remove featuregate `operator.autoinstrumentation.nodejs`. Use command line flag `--enable-nodejs-instrumentation` instead (#2674)
-- `target allocator`: Remove `operator.collector.rewritetargetallocator` feature flag (#2796)
 - `operator`: remove featuregate `operator.autoinstrumentation.go`. Use command line flag `--enable-go-instrumentation` instead (#2675)
+- `target allocator`: Remove `operator.collector.rewritetargetallocator` feature flag (#2796)
 - `target allocator`: Drop compatibility with older target allocator versions (#1907)
   We've made a breaking change to the target allocator configuration in 0.93.0. This change removes operator 
   compatibility with target allocator versions older than that. Users running more recent target allocator versions
