@@ -30187,16 +30187,16 @@ The empty objects e.g. batch: should be written as batch: {} otherwise they won'
     </thead>
     <tbody><tr>
         <td><b>exporters</b></td>
-        <td>object</td>
+        <td>map[string]object</td>
         <td>
-          AnyConfig represent parts of the config.<br/>
+          <br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>receivers</b></td>
-        <td>object</td>
+        <td>map[string]object</td>
         <td>
-          AnyConfig represent parts of the config.<br/>
+          <br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -30208,23 +30208,23 @@ The empty objects e.g. batch: should be written as batch: {} otherwise they won'
         <td>true</td>
       </tr><tr>
         <td><b>connectors</b></td>
-        <td>object</td>
+        <td>map[string]object</td>
         <td>
-          AnyConfig represent parts of the config.<br/>
+          <br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>extensions</b></td>
-        <td>object</td>
+        <td>map[string]object</td>
         <td>
-          AnyConfig represent parts of the config.<br/>
+          <br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>processors</b></td>
-        <td>object</td>
+        <td>map[string]object</td>
         <td>
-          AnyConfig represent parts of the config.<br/>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
