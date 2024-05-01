@@ -394,7 +394,7 @@ In the above case, `myapp` and `myapp2` containers will be instrumented, `myapp3
 
 #### Multi-container pods with multiple instrumentations
 
-Works only when `operator.autoinstrumentation.multi-instrumentation` feature is `enabled`.
+Works only when `enable-multi-instrumentation` flag is `true`.
 
 Annotations defining which language instrumentation will be injected are required. When feature is enabled, specific for Instrumentation language containers annotations are used:
 
@@ -566,31 +566,23 @@ instrumentation.opentelemetry.io/inject-sdk: "true"
 
 #### Controlling Instrumentation Capabilities
 
-The operator allows specifying, via the feature gates, which languages the Instrumentation resource may instrument.
-These feature gates must be passed to the operator via the `--feature-gates` flag.
-The flag allows for a comma-delimited list of feature gate identifiers.
-Prefix a gate with '-' to disable support for the corresponding language or multi instrumentation feature.
-Prefixing a gate with '+' or no prefix will enable support for the corresponding language or multi instrumentation feature.
+The operator allows specifying, via the flags, which languages the Instrumentation resource may instrument.
 If a language is enabled by default its gate only needs to be supplied when disabling the gate.
+Language support can be disabled by passing the flag with a value of `false`.
 
-| Language    | Gate                                        | Default Value |
-| ----------- | ------------------------------------------- | ------------- |
-| Java        | `operator.autoinstrumentation.java`         | enabled       |
-| NodeJS      | `operator.autoinstrumentation.nodejs`       | enabled       |
-| Python      | `operator.autoinstrumentation.python`       | enabled       |
-| DotNet      | `operator.autoinstrumentation.dotnet`       | enabled       |
-| ApacheHttpD | `operator.autoinstrumentation.apache-httpd` | enabled       |
-| Go          | `operator.autoinstrumentation.go`           | disabled      |
-| Nginx       | `operator.autoinstrumentation.nginx`        | disabled      |
+| Language    | Gate                                  | Default Value |
+| ----------- | ------------------------------------- | ------------- |
+| Java        | `enable-java-instrumentation`         | `true`        |
+| NodeJS      | `enable-nodejs-instrumentation`       | `true`        |
+| Python      | `enable-python-instrumentation`       | `true`        |
+| DotNet      | `enable-dotnet-instrumentation`       | `true`        |
+| ApacheHttpD | `enable-apache-httpd-instrumentation` | `true`        |
+| Go          | `enable-go-instrumentation`           | `false`       |
+| Nginx       | `enable-nginx-instrumentation`        | `false`       |
 
-Language not specified in the table are always supported and cannot be disabled.
 
 OpenTelemetry Operator allows to instrument multiple containers using multiple language specific instrumentations.
-These features can be enabled using `operator.autoinstrumentation.multi-instrumentation` flag when installing the Operator via Helm. By default flag is `disabled`. For example:
-
-```sh
-helm install opentelemetry-operator open-telemetry/opentelemetry-operator --set manager.featureGates=operator.autoinstrumentation.multi-instrumentation
-```
+These features can be enabled using the `enable-multi-instrumentation` flag. By default flag is `false`.
 
 For more information about multi-instrumentation feature capabilities please see [Multi-container pods with multiple instrumentations](#Multi-container-pods-with-multiple-instrumentations).
 
