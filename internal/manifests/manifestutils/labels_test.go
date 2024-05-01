@@ -21,7 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -163,7 +162,7 @@ func TestSelectorLabels(t *testing.T) {
 		"app.kubernetes.io/name":       "my-opentelemetry-collector-targetallocator",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 	}
-	tainstance := v1beta1.TargetAllocator{
+	tainstance := v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{Name: "my-opentelemetry-collector", Namespace: "my-namespace"},
 	}
 
@@ -176,7 +175,7 @@ func TestSelectorLabels(t *testing.T) {
 
 func TestLabelsTACommonSet(t *testing.T) {
 	// prepare
-	tainstance := v1beta1.TargetAllocator{
+	tainstance := v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      taname,
 			Namespace: tanamespace,
@@ -195,7 +194,7 @@ func TestLabelsTACommonSet(t *testing.T) {
 
 func TestLabelsTAPropagateDown(t *testing.T) {
 	// prepare
-	tainstance := v1beta1.TargetAllocator{
+	tainstance := v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				"myapp":                  "mycomponent",
@@ -218,7 +217,7 @@ func TestLabelsTAPropagateDown(t *testing.T) {
 
 func TestSelectorTALabels(t *testing.T) {
 	// prepare
-	tainstance := v1beta1.TargetAllocator{
+	tainstance := v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      taname,
 			Namespace: tanamespace,

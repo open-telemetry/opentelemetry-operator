@@ -21,6 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -28,7 +29,7 @@ import (
 
 func TestServiceAccountDefaultName(t *testing.T) {
 	// prepare
-	targetAllocator := v1beta1.TargetAllocator{
+	targetAllocator := v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -43,11 +44,11 @@ func TestServiceAccountDefaultName(t *testing.T) {
 
 func TestServiceAccountOverrideName(t *testing.T) {
 	// prepare
-	targetAllocator := v1beta1.TargetAllocator{
+	targetAllocator := v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1beta1.TargetAllocatorSpec{
+		Spec: v1alpha1.TargetAllocatorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				ServiceAccount: "my-special-sa",
 			},
@@ -63,7 +64,7 @@ func TestServiceAccountOverrideName(t *testing.T) {
 
 func TestServiceAccountDefault(t *testing.T) {
 	params := manifests.Params{
-		TargetAllocator: v1beta1.TargetAllocator{
+		TargetAllocator: v1alpha1.TargetAllocator{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",
 			},
@@ -87,11 +88,11 @@ func TestServiceAccountDefault(t *testing.T) {
 
 func TestServiceAccountOverride(t *testing.T) {
 	params := manifests.Params{
-		TargetAllocator: v1beta1.TargetAllocator{
+		TargetAllocator: v1alpha1.TargetAllocator{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-instance",
 			},
-			Spec: v1beta1.TargetAllocatorSpec{
+			Spec: v1alpha1.TargetAllocatorSpec{
 				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 					ServiceAccount: "my-special-sa",
 				},
