@@ -155,16 +155,5 @@ spec:
     enabled: true
     prometheusCR:
       enabled: true
-    scrapeInterval: 1s
+      scrapeInterval: 1s
     serviceAccount: ta
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: prometheus-cr
-spec:
-  endpoints:
-  - port: monitoring
-  selector:
-    matchLabels:
-      app.kubernetes.io/managed-by: opentelemetry-operator

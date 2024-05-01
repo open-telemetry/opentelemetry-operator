@@ -2,6 +2,70 @@
 
 <!-- next version -->
 
+## 0.99.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: change java instrumentation feature gate `operator.autoinstrumentation.java` into command line flag `--enable-java-instrumentation` (#2673, #2582)
+- `operator`: remove featuregate `operator.autoinstrumentation.nodejs`. Use command line flag `--enable-nodejs-instrumentation` instead (#2674)
+- `operator`: remove featuregate `operator.autoinstrumentation.go`. Use command line flag `--enable-go-instrumentation` instead (#2675)
+- `target allocator`: Remove `operator.collector.rewritetargetallocator` feature flag (#2796)
+- `target allocator`: Drop compatibility with older target allocator versions (#1907)
+  We've made a breaking change to the target allocator configuration in 0.93.0. This change removes operator 
+  compatibility with target allocator versions older than that. Users running more recent target allocator versions
+  are unaffected.
+  
+
+### 🚀 New components 🚀
+
+- `collector`: Enable reconciliation of Collector v1beta1 CRD. See [CRD changelog](./docs/crd-changelog.md) for detailed information. (#2620, #1907)
+  Users are expected to migrate to `otelcol.v1beta1.opentelemetry.io`. 
+  The support for `otelcol.v1alpha1.opentelemetry.io` will be removed in the future.
+  Follow [migration guide](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#upgrade-existing-objects-to-a-new-stored-version) for upgrading already created collector instances.
+  After all `otelcol.v1alpha1.opentelemetry.io` are stored as `v1beta1` update the collector CRD to store only `v1beta1`
+  `kubectl patch customresourcedefinitions opentelemetrycollectors.opentelemetry.io  --subresource='status' --type='merge' -p '{"status":{"storedVersions":["v1beta1"]}}'`.
+  **Only `AllNamespaces` install mode is now supported** due to the conversion webhook from `v1beta1` to `v1alpha1`.
+  See [OLM docs](https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/) and
+  [OLM operator groups docs](https://olm.operatorframework.io/docs/advanced-tasks/operator-scoping-with-operatorgroups/).
+  
+
+### 💡 Enhancements 💡
+
+- `collector`: Changes metric port logic to use intermediary struct. (#2603)
+- `collector`: Remove collector v1alpha1 defaulting and validating webhooks. (#2736)
+  The functionality was moved to the collector v1beta1 webhooks.
+
+### 🧰 Bug fixes 🧰
+
+- `auto-instrumentation`: Add attribute `service.instance.id` while pod is mutated. (#2679)
+  `service.instance.id` is expected to be `<namespace>.<podName>.<containerName>`
+  
+  But while pod is created it may not have the `podName` yet at the podMutator webhooks.
+  
+  This changed to use the env var `OTEL_RESOURCE_ATTRIBUTES_POD_NAME` which will be present at runtime.
+  `<namespace>.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).<containerName>`
+  
+  Making a valid and complete value for `service.instance.id` to be added.
+  
+- `collector`: Fixes a bug that would cause errant rollouts on a non-config related change. (#2899)
+- `collector`: resolves a bug that would create a junk selector for the service by merging rather than overriding. (#2873)
+- `target allocator`: Fix a metric relabel config unescaping bug (#2867)
+  If only metric relabel configs were present, without target relabel configs, unescaping wouldn't be applied, leading
+  to invalid Target Allocator configuration.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.99.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.99.0)
+* [OpenTelemetry Contrib - v0.99.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.99.0)
+* [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.49.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.49.1)
+* [Python - v0.44b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.44b0)
+* [Go - v0.12.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.12.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.98.0
 
 ### 💡 Enhancements 💡

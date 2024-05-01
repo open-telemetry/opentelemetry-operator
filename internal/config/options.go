@@ -49,6 +49,7 @@ type options struct {
 	enableGoInstrumentation             bool
 	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
+	enableNodeJSInstrumentation         bool
 	enableJavaInstrumentation           bool
 	targetAllocatorConfigMapEntry       string
 	operatorOpAMPBridgeConfigMapEntry   string
@@ -123,6 +124,11 @@ func WithEnableJavaInstrumentation(s bool) Option {
 func WithEnablePythonInstrumentation(s bool) Option {
 	return func(o *options) {
 		o.enablePythonInstrumentation = s
+	}
+}
+func WithEnableNodeJSInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableNodeJSInstrumentation = s
 	}
 }
 func WithTargetAllocatorConfigMapEntry(s string) Option {
@@ -223,10 +229,12 @@ func WithLabelFilters(labelFilters []string) Option {
 	}
 }
 
+// WithAnnotationFilters is additive if called multiple times. It works off of a few default filters
+// to prevent unnecessary rollouts. The defaults include the following:
+// * kubectl.kubernetes.io/last-applied-configuration.
 func WithAnnotationFilters(annotationFilters []string) Option {
 	return func(o *options) {
-
-		filters := []string{}
+		filters := o.annotationsFilter
 		for _, pattern := range annotationFilters {
 			var result strings.Builder
 
