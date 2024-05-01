@@ -481,7 +481,7 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 			},
 		},
 		{
-			description: "https secret handling",
+			description: "http secret handling",
 			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
 				"serviceMonitor/testapp/testapp3/0": {
 					JobName:         "serviceMonitor/testapp/testapp3/0",

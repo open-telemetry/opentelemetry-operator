@@ -80,8 +80,8 @@ type Server struct {
 
 type Option func(*Server)
 
-// ServerOption to create an additional https server with mTLS configuration.
-// Used for getting the scrape config with actual secret values.
+// Option to create an additional https server with mTLS configuration.
+// Used for getting the scrape config with real secret values.
 func WithHTTPSServer(caFile, certFile, keyFile, httpsListenAddr string) Option {
 	return func(s *Server) {
 		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
@@ -101,6 +101,7 @@ func WithHTTPSServer(caFile, certFile, keyFile, httpsListenAddr string) Option {
 			Certificates: []tls.Certificate{cert},
 			ClientAuth:   tls.RequireAndVerifyClientCert,
 			ClientCAs:    caCertPool,
+			MinVersion:   tls.VersionTLS12,
 		}
 
 		httpsRouter := gin.New()

@@ -4,6 +4,11 @@ collector_selector:
     app.kubernetes.io/managed-by: opentelemetry-operator
 prometheus_cr:
   scrape_interval: 60s
+https:
+  enabled: true
+  ca_file_path: /path/to/ca.pem
+  tls_cert_file_path: /path/to/cert.pem
+  tls_key_file_path: /path/to/key.pem
 config:
   scrape_configs:
   - job_name: prometheus

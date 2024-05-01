@@ -21,7 +21,7 @@ ARCH ?= $(shell go env GOARCH)
 DOCKER_USER ?= open-telemetry
 IMG_PREFIX ?= ghcr.io/${DOCKER_USER}/opentelemetry-operator
 IMG_REPO ?= opentelemetry-operator
-IMG ?= manager:both # playground. real val --> ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
+IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
 
 TARGETALLOCATOR_IMG_REPO ?= target-allocator
@@ -51,7 +51,7 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 # by default, do not run the manager with webhooks enabled. This only affects local runs, not the build or in-cluster deployments.
-ENABLE_WEBHOOKS ?= true # Playground. real val --> false
+ENABLE_WEBHOOKS ?= false
 
 # If we are running in CI, run go test in verbose mode
 ifeq (,$(CI))
