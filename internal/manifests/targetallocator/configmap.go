@@ -40,7 +40,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	taConfig["collector_selector"] = taSpec.CollectorSelector
 
 	// Add scrape configs if present
-	if instance.Spec.ScrapeConfigs != nil {
+	if instance.Spec.ScrapeConfigs != nil && len(instance.Spec.ScrapeConfigs) > 0 {
 		taConfig["config"] = map[string]interface{}{
 			"scrape_configs": instance.Spec.ScrapeConfigs,
 		}
