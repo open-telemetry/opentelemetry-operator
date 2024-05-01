@@ -25,8 +25,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/common"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )

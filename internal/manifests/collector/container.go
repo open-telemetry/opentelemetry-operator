@@ -25,8 +25,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/validation"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/common"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"

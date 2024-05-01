@@ -19,7 +19,7 @@
 package v1beta1
 
 import (
-	"github.com/open-telemetry/opentelemetry-operator/apis/common"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"

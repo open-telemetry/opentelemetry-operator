@@ -19,8 +19,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/common"
 )
 
 // Annotations return the annotations for OpenTelemetryCollector pod.

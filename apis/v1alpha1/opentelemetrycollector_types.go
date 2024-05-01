@@ -22,7 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/common"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/common"
 )
 
 // ManagementStateType defines the type for CR management states.

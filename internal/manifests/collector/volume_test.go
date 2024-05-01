@@ -20,8 +20,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/common"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"

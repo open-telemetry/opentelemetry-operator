@@ -21,8 +21,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	common2 "github.com/open-telemetry/opentelemetry-operator/internal/api/common"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -72,13 +72,13 @@ func TestPDBWithValidStrategy(t *testing.T) {
 					Name: "my-instance",
 				},
 				Spec: v1alpha1.TargetAllocatorSpec{
-					OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
-						PodDisruptionBudget: &common.PodDisruptionBudgetSpec{
+					OpenTelemetryCommonFields: common2.OpenTelemetryCommonFields{
+						PodDisruptionBudget: &common2.PodDisruptionBudgetSpec{
 							MinAvailable:   test.MinAvailable,
 							MaxUnavailable: test.MaxUnavailable,
 						},
 					},
-					AllocationStrategy: common.TargetAllocatorAllocationStrategyConsistentHashing,
+					AllocationStrategy: common2.TargetAllocatorAllocationStrategyConsistentHashing,
 				},
 			}
 			configuration := config.New()
@@ -106,13 +106,13 @@ func TestPDBWithNotValidStrategy(t *testing.T) {
 					Name: "my-instance",
 				},
 				Spec: v1alpha1.TargetAllocatorSpec{
-					OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
-						PodDisruptionBudget: &common.PodDisruptionBudgetSpec{
+					OpenTelemetryCommonFields: common2.OpenTelemetryCommonFields{
+						PodDisruptionBudget: &common2.PodDisruptionBudgetSpec{
 							MinAvailable:   test.MinAvailable,
 							MaxUnavailable: test.MaxUnavailable,
 						},
 					},
-					AllocationStrategy: common.TargetAllocatorAllocationStrategyLeastWeighted,
+					AllocationStrategy: common2.TargetAllocatorAllocationStrategyLeastWeighted,
 				},
 			}
 			configuration := config.New()
@@ -132,7 +132,7 @@ func TestPDBWithNotValidStrategy(t *testing.T) {
 func TestNoPDB(t *testing.T) {
 	targetAllocator := v1alpha1.TargetAllocator{
 		Spec: v1alpha1.TargetAllocatorSpec{
-			AllocationStrategy: common.TargetAllocatorAllocationStrategyLeastWeighted,
+			AllocationStrategy: common2.TargetAllocatorAllocationStrategyLeastWeighted,
 		},
 	}
 	configuration := config.New()

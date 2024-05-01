@@ -21,8 +21,8 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/common"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	common2 "github.com/open-telemetry/opentelemetry-operator/internal/api/common"
 )
 
 func TestDefaultAnnotations(t *testing.T) {
@@ -33,8 +33,8 @@ func TestDefaultAnnotations(t *testing.T) {
 			Namespace: "my-ns",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			Config: common.Config{
-				Service: common.Service{
+			Config: common2.Config{
+				Service: common2.Service{
 					Extensions: func() *[]string {
 						res := []string{"test"}
 						return &res
@@ -70,8 +70,8 @@ func TestNonDefaultPodAnnotation(t *testing.T) {
 			Namespace: "my-ns",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			Observability: common.ObservabilitySpec{
-				Metrics: common.MetricsConfigSpec{
+			Observability: common2.ObservabilitySpec{
+				Metrics: common2.MetricsConfigSpec{
 					DisablePrometheusAnnotations: true,
 				},
 			},
@@ -109,8 +109,8 @@ func TestUserAnnotations(t *testing.T) {
 			},
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			Config: common.Config{
-				Service: common.Service{
+			Config: common2.Config{
+				Service: common2.Service{
 					Extensions: func() *[]string {
 						res := []string{"test2"}
 						return &res
@@ -141,7 +141,7 @@ func TestAnnotationsPropagateDown(t *testing.T) {
 			Annotations: map[string]string{"myapp": "mycomponent"},
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common2.OpenTelemetryCommonFields{
 				PodAnnotations: map[string]string{"pod_annotation": "pod_annotation_value"},
 			},
 		},
