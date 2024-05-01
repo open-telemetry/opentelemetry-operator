@@ -53,7 +53,7 @@ func main() {
 		allocatorPrehook prehook.Hook
 		allocator        allocation.Allocator
 		discoveryManager *discovery.Manager
-		collectorWatcher *collector.Client
+		collectorWatcher *collector.Watcher
 		promWatcher      allocatorWatcher.Watcher
 		targetDiscoverer *target.Discoverer
 
@@ -97,7 +97,7 @@ func main() {
 	discoveryManager = discovery.NewManager(discoveryCtx, gokitlog.NewNopLogger(), prometheus.DefaultRegisterer, sdMetrics)
 
 	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv)
-	collectorWatcher, collectorWatcherErr := collector.NewClient(log, cfg.ClusterConfig)
+	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, cfg.ClusterConfig)
 	if collectorWatcherErr != nil {
 		setupLog.Error(collectorWatcherErr, "Unable to initialize collector watcher")
 		os.Exit(1)
@@ -169,7 +169,7 @@ func main() {
 		})
 	runGroup.Add(
 		func() error {
-			err := collectorWatcher.Watch(ctx, cfg.CollectorSelector, allocator.SetCollectors)
+			err := collectorWatcher.Watch(cfg.CollectorSelector, allocator.SetCollectors)
 			setupLog.Info("Collector watcher exited")
 			return err
 		},
