@@ -28,7 +28,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	common2 "github.com/open-telemetry/opentelemetry-operator/internal/api/common"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/common"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 )
@@ -49,8 +49,8 @@ func TestTargetAllocator(t *testing.T) {
 	privileged := true
 	runAsUser := int64(1337)
 	runasGroup := int64(1338)
-	otelcolConfig := common2.Config{
-		Receivers: common2.AnyConfig{
+	otelcolConfig := v1beta1.Config{
+		Receivers: common.AnyConfig{
 			Object: map[string]interface{}{
 				"prometheus": map[string]any{
 					"config": map[string]any{
@@ -95,7 +95,7 @@ func TestTargetAllocator(t *testing.T) {
 					CollectorSelector: metav1.LabelSelector{
 						MatchLabels: manifestutils.SelectorLabels(objectMetadata, ComponentOpenTelemetryCollector),
 					},
-					ScrapeConfigs: []common2.AnyConfig{},
+					ScrapeConfigs: []common.AnyConfig{},
 				},
 			},
 		},
@@ -117,7 +117,7 @@ func TestTargetAllocator(t *testing.T) {
 								v1.ResourceMemory: resource.MustParse("128Mi"),
 							},
 						},
-						AllocationStrategy: common2.TargetAllocatorAllocationStrategyConsistentHashing,
+						AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyConsistentHashing,
 						FilterStrategy:     "relabel-config",
 						ServiceAccount:     "serviceAccountName",
 						Image:              "custom_image",
@@ -139,7 +139,7 @@ func TestTargetAllocator(t *testing.T) {
 								},
 							},
 						},
-						PrometheusCR: common2.TargetAllocatorPrometheusCR{
+						PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 							Enabled:        true,
 							ScrapeInterval: &metav1.Duration{Duration: time.Second},
 							PodMonitorSelector: &metav1.LabelSelector{
@@ -187,12 +187,12 @@ func TestTargetAllocator(t *testing.T) {
 								},
 							},
 						},
-						Observability: common2.ObservabilitySpec{
-							Metrics: common2.MetricsConfigSpec{
+						Observability: common.ObservabilitySpec{
+							Metrics: common.MetricsConfigSpec{
 								EnableMetrics: true,
 							},
 						},
-						PodDisruptionBudget: &common2.PodDisruptionBudgetSpec{
+						PodDisruptionBudget: &common.PodDisruptionBudgetSpec{
 							MaxUnavailable: &intstr.IntOrString{
 								Type:   intstr.Int,
 								IntVal: 1,
@@ -205,7 +205,7 @@ func TestTargetAllocator(t *testing.T) {
 			want: &v1alpha1.TargetAllocator{
 				ObjectMeta: objectMetadata,
 				Spec: v1alpha1.TargetAllocatorSpec{
-					OpenTelemetryCommonFields: common2.OpenTelemetryCommonFields{
+					OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 						Replicas:     &replicas,
 						NodeSelector: map[string]string{"key": "value"},
 						Resources: v1.ResourceRequirements{
@@ -276,7 +276,7 @@ func TestTargetAllocator(t *testing.T) {
 							},
 						},
 
-						PodDisruptionBudget: &common2.PodDisruptionBudgetSpec{
+						PodDisruptionBudget: &common.PodDisruptionBudgetSpec{
 							MaxUnavailable: &intstr.IntOrString{
 								Type:   intstr.Int,
 								IntVal: 1,
@@ -286,9 +286,9 @@ func TestTargetAllocator(t *testing.T) {
 					CollectorSelector: metav1.LabelSelector{
 						MatchLabels: manifestutils.SelectorLabels(objectMetadata, ComponentOpenTelemetryCollector),
 					},
-					AllocationStrategy: common2.TargetAllocatorAllocationStrategyConsistentHashing,
-					FilterStrategy:     common2.TargetAllocatorFilterStrategyRelabelConfig,
-					PrometheusCR: common2.TargetAllocatorPrometheusCR{
+					AllocationStrategy: v1alpha1.TargetAllocatorAllocationStrategyConsistentHashing,
+					FilterStrategy:     v1alpha1.TargetAllocatorFilterStrategyRelabelConfig,
+					PrometheusCR: v1alpha1.TargetAllocatorPrometheusCR{
 						Enabled:        true,
 						ScrapeInterval: &metav1.Duration{Duration: time.Second},
 						PodMonitorSelector: &metav1.LabelSelector{
@@ -298,9 +298,9 @@ func TestTargetAllocator(t *testing.T) {
 							MatchLabels: map[string]string{"servicemonitorkey": "servicemonitorkey"},
 						},
 					},
-					ScrapeConfigs: []common2.AnyConfig{},
-					Observability: common2.ObservabilitySpec{
-						Metrics: common2.MetricsConfigSpec{
+					ScrapeConfigs: []common.AnyConfig{},
+					Observability: common.ObservabilitySpec{
+						Metrics: common.MetricsConfigSpec{
 							EnableMetrics: true,
 						},
 					},
@@ -325,14 +325,14 @@ func TestTargetAllocator(t *testing.T) {
 func TestGetScrapeConfigs(t *testing.T) {
 	testCases := []struct {
 		name    string
-		input   common2.Config
-		want    []common2.AnyConfig
+		input   v1beta1.Config
+		want    []common.AnyConfig
 		wantErr error
 	}{
 		{
 			name: "empty scrape configs list",
-			input: common2.Config{
-				Receivers: common2.AnyConfig{
+			input: v1beta1.Config{
+				Receivers: common.AnyConfig{
 					Object: map[string]interface{}{
 						"prometheus": map[string]any{
 							"config": map[string]any{
@@ -342,12 +342,12 @@ func TestGetScrapeConfigs(t *testing.T) {
 					},
 				},
 			},
-			want: []common2.AnyConfig{},
+			want: []common.AnyConfig{},
 		},
 		{
 			name: "no scrape configs key",
-			input: common2.Config{
-				Receivers: common2.AnyConfig{
+			input: v1beta1.Config{
+				Receivers: common.AnyConfig{
 					Object: map[string]interface{}{
 						"prometheus": map[string]any{
 							"config": map[string]any{},
@@ -359,8 +359,8 @@ func TestGetScrapeConfigs(t *testing.T) {
 		},
 		{
 			name: "one scrape config",
-			input: common2.Config{
-				Receivers: common2.AnyConfig{
+			input: v1beta1.Config{
+				Receivers: common.AnyConfig{
 					Object: map[string]interface{}{
 						"prometheus": map[string]any{
 							"config": map[string]any{
@@ -374,14 +374,14 @@ func TestGetScrapeConfigs(t *testing.T) {
 					},
 				},
 			},
-			want: []common2.AnyConfig{
+			want: []common.AnyConfig{
 				{Object: map[string]interface{}{"job": "somejob"}},
 			},
 		},
 		{
 			name: "regex substitution",
-			input: common2.Config{
-				Receivers: common2.AnyConfig{
+			input: v1beta1.Config{
+				Receivers: common.AnyConfig{
 					Object: map[string]interface{}{
 						"prometheus": map[string]any{
 							"config": map[string]any{
@@ -402,7 +402,7 @@ func TestGetScrapeConfigs(t *testing.T) {
 					},
 				},
 			},
-			want: []common2.AnyConfig{
+			want: []common.AnyConfig{
 				{Object: map[string]interface{}{
 					"job": "somejob",
 					"metric_relabel_configs": []any{

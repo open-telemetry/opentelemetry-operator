@@ -86,7 +86,7 @@ func Test_tov1beta1_config(t *testing.T) {
 }
 
 func Test_tov1alpha1_config(t *testing.T) {
-	cfg := common.Config{}
+	cfg := v1beta1.Config{}
 	err := yaml.Unmarshal([]byte(collectorCfg), &cfg)
 	require.NoError(t, err)
 
@@ -428,7 +428,7 @@ func createTA() OpenTelemetryTargetAllocator {
 				v1.ResourceMemory: resource.MustParse("128Mi"),
 			},
 		},
-		AllocationStrategy: common.TargetAllocatorAllocationStrategyConsistentHashing,
+		AllocationStrategy: TargetAllocatorAllocationStrategyConsistentHashing,
 		FilterStrategy:     "relabel-config",
 		ServiceAccount:     "serviceAccountName",
 		Image:              "custom_image",
@@ -532,7 +532,7 @@ func TestConvertTo(t *testing.T) {
 				ServiceAccount: "otelcol",
 			},
 			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
-				PrometheusCR: common.TargetAllocatorPrometheusCR{
+				PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 					PodMonitorSelector:     &metav1.LabelSelector{},
 					ServiceMonitorSelector: &metav1.LabelSelector{},
 				},

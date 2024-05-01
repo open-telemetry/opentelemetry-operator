@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package common
+package v1beta1
 
 import (
 	"encoding/json"
@@ -25,6 +25,8 @@ import (
 	"github.com/stretchr/testify/require"
 	go_yaml "gopkg.in/yaml.v3"
 	"sigs.k8s.io/yaml"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/common"
 )
 
 func TestConfigFiles(t *testing.T) {
@@ -113,34 +115,34 @@ func TestNullObjects_go_yaml(t *testing.T) {
 
 func TestConfigYaml(t *testing.T) {
 	cfg := &Config{
-		Receivers: AnyConfig{
+		Receivers: common.AnyConfig{
 			Object: map[string]interface{}{
 				"otlp": nil,
 			},
 		},
-		Processors: &AnyConfig{
+		Processors: &common.AnyConfig{
 			Object: map[string]interface{}{
 				"modify_2000": "enabled",
 			},
 		},
-		Exporters: AnyConfig{
+		Exporters: common.AnyConfig{
 			Object: map[string]interface{}{
 				"otlp/exporter": nil,
 			},
 		},
-		Connectors: &AnyConfig{
+		Connectors: &common.AnyConfig{
 			Object: map[string]interface{}{
 				"con": "magic",
 			},
 		},
-		Extensions: &AnyConfig{
+		Extensions: &common.AnyConfig{
 			Object: map[string]interface{}{
 				"addon": "option1",
 			},
 		},
 		Service: Service{
 			Extensions: &[]string{"addon"},
-			Telemetry: &AnyConfig{
+			Telemetry: &common.AnyConfig{
 				Object: map[string]interface{}{
 					"insights": "yeah!",
 				},
@@ -223,7 +225,7 @@ func TestConfigToMetricsPort(t *testing.T) {
 			"custom port",
 			9090,
 			Service{
-				Telemetry: &AnyConfig{
+				Telemetry: &common.AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
 							"address": "0.0.0.0:9090",
@@ -236,7 +238,7 @@ func TestConfigToMetricsPort(t *testing.T) {
 			"bad address",
 			8888,
 			Service{
-				Telemetry: &AnyConfig{
+				Telemetry: &common.AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
 							"address": "0.0.0.0",
@@ -249,7 +251,7 @@ func TestConfigToMetricsPort(t *testing.T) {
 			"missing address",
 			8888,
 			Service{
-				Telemetry: &AnyConfig{
+				Telemetry: &common.AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
 							"level": "detailed",
@@ -262,7 +264,7 @@ func TestConfigToMetricsPort(t *testing.T) {
 			"missing metrics",
 			8888,
 			Service{
-				Telemetry: &AnyConfig{},
+				Telemetry: &common.AnyConfig{},
 			},
 		},
 		{

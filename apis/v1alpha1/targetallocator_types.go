@@ -68,13 +68,13 @@ type TargetAllocatorSpec struct {
 	// WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.
 	// +optional
 	// +kubebuilder:default:=consistent-hashing
-	AllocationStrategy common.TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
+	AllocationStrategy TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
 	// The only current option is relabel-config (drops targets based on prom relabel_config).
 	// The default is relabel-config.
 	// +optional
 	// +kubebuilder:default:=relabel-config
-	FilterStrategy common.TargetAllocatorFilterStrategy `json:"filterStrategy,omitempty"`
+	FilterStrategy TargetAllocatorFilterStrategy `json:"filterStrategy,omitempty"`
 	// ScrapeConfigs define static Prometheus scrape configurations for the target allocator.
 	// To use dynamic configurations from ServiceMonitors and PodMonitors, see the PrometheusCR section.
 	// For the exact format, see https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config.
@@ -84,7 +84,7 @@ type TargetAllocatorSpec struct {
 	ScrapeConfigs []common.AnyConfig `json:"scrapeConfigs,omitempty"`
 	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 ).
 	// +optional
-	PrometheusCR common.TargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+	PrometheusCR TargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
 	// ObservabilitySpec defines how telemetry data gets handled.
 	//
 	// +optional
@@ -93,49 +93,25 @@ type TargetAllocatorSpec struct {
 	Observability common.ObservabilitySpec `json:"observability,omitempty"`
 }
 
-// TargetAllocatorPrometheusCR configures Prometheus CustomResource handling in the Target Allocator.
-type TargetAllocatorPrometheusCR struct {
-	// Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.
-	// +optional
-	Enabled bool `json:"enabled,omitempty"`
-	// Default interval between consecutive scrapes. Intervals set in ServiceMonitors and PodMonitors override it.
-	//Equivalent to the same setting on the Prometheus CR.
-	//
-	// Default: "30s"
-	// +kubebuilder:default:="30s"
-	// +kubebuilder:validation:Format:=duration
-	ScrapeInterval *metav1.Duration `json:"scrapeInterval,omitempty"`
-	// PodMonitors to be selected for target discovery.
-	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-	// PodMonitor's meta labels. The requirements are ANDed.
-	// +optional
-	PodMonitorSelector *metav1.LabelSelector `json:"podMonitorSelector,omitempty"`
-	// ServiceMonitors to be selected for target discovery.
-	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-	// ServiceMonitor's meta labels. The requirements are ANDed.
-	// +optional
-	ServiceMonitorSelector *metav1.LabelSelector `json:"serviceMonitorSelector,omitempty"`
-}
-
 type (
-	// TargetAllocatorAllocationStrategy represent a strategy Target Allocator uses to distribute targets to each collector
-	// +kubebuilder:validation:Enum=least-weighted;consistent-hashing;per-node
-	TargetAllocatorAllocationStrategy string
-	// TargetAllocatorFilterStrategy represent a filtering strategy for targets before they are assigned to collectors
-	// +kubebuilder:validation:Enum="";relabel-config
-	TargetAllocatorFilterStrategy string
+	// TargetAllocatorPrometheusCR configures Prometheus CustomResource handling in the Target Allocator.
+	TargetAllocatorPrometheusCR common.TargetAllocatorPrometheusCR
+	// TargetAllocatorAllocationStrategy represent a strategy Target Allocator uses to distribute targets to each collector.
+	TargetAllocatorAllocationStrategy common.TargetAllocatorAllocationStrategy
+	// TargetAllocatorFilterStrategy represent a filtering strategy for targets before they are assigned to collectors.
+	TargetAllocatorFilterStrategy common.TargetAllocatorFilterStrategy
 )
 
 const (
 	// TargetAllocatorAllocationStrategyLeastWeighted targets will be distributed to collector with fewer targets currently assigned.
-	TargetAllocatorAllocationStrategyLeastWeighted TargetAllocatorAllocationStrategy = "least-weighted"
+	TargetAllocatorAllocationStrategyLeastWeighted = TargetAllocatorAllocationStrategy(common.TargetAllocatorAllocationStrategyLeastWeighted)
 
 	// TargetAllocatorAllocationStrategyConsistentHashing targets will be consistently added to collectors, which allows a high-availability setup.
-	TargetAllocatorAllocationStrategyConsistentHashing TargetAllocatorAllocationStrategy = "consistent-hashing"
+	TargetAllocatorAllocationStrategyConsistentHashing = TargetAllocatorAllocationStrategy(common.TargetAllocatorAllocationStrategyConsistentHashing)
 
 	// TargetAllocatorAllocationStrategyPerNode targets will be assigned to the collector on the node they reside on (use only with daemon set).
-	TargetAllocatorAllocationStrategyPerNode TargetAllocatorAllocationStrategy = "per-node"
+	TargetAllocatorAllocationStrategyPerNode TargetAllocatorAllocationStrategy = TargetAllocatorAllocationStrategy(common.TargetAllocatorAllocationStrategyPerNode)
 
 	// TargetAllocatorFilterStrategyRelabelConfig targets will be consistently drops targets based on the relabel_config.
-	TargetAllocatorFilterStrategyRelabelConfig TargetAllocatorFilterStrategy = "relabel-config"
+	TargetAllocatorFilterStrategyRelabelConfig = TargetAllocatorFilterStrategy(common.TargetAllocatorFilterStrategyRelabelConfig)
 )

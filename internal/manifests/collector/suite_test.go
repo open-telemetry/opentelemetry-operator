@@ -27,7 +27,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	common2 "github.com/open-telemetry/opentelemetry-operator/internal/api/common"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/common"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -54,7 +54,7 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
-	cfg := common2.Config{}
+	cfg := v1beta1.Config{}
 	err = go_yaml.Unmarshal(configYAML, &cfg)
 	if err != nil {
 		fmt.Printf("Error unmarshalling YAML: %v", err)
@@ -76,10 +76,10 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 				UID:       instanceUID,
 			},
 			Spec: v1beta1.OpenTelemetryCollectorSpec{
-				OpenTelemetryCommonFields: common2.OpenTelemetryCommonFields{
+				OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 
 					Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
-					Ports: []common2.PortsSpec{
+					Ports: []common.PortsSpec{
 						{
 							ServicePort: v1.ServicePort{
 								Name: "web",
@@ -117,7 +117,7 @@ func newParams(taContainerImage string, file string, options ...config.Option) (
 		return manifests.Params{}, fmt.Errorf("error getting yaml file: %w", err)
 	}
 
-	colCfg := common2.Config{}
+	colCfg := v1beta1.Config{}
 	err = go_yaml.Unmarshal(configYAML, &colCfg)
 	if err != nil {
 		return manifests.Params{}, fmt.Errorf("failed to unmarshal config: %w", err)
@@ -143,8 +143,8 @@ func newParams(taContainerImage string, file string, options ...config.Option) (
 				UID:       instanceUID,
 			},
 			Spec: v1beta1.OpenTelemetryCollectorSpec{
-				OpenTelemetryCommonFields: common2.OpenTelemetryCommonFields{
-					Ports: []common2.PortsSpec{
+				OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
+					Ports: []common.PortsSpec{
 						{
 							ServicePort: v1.ServicePort{
 								Name: "web",

@@ -19,7 +19,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	common2 "github.com/open-telemetry/opentelemetry-operator/internal/api/common"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/common"
 )
 
 func init() {
@@ -81,7 +81,7 @@ type OpenTelemetryCollectorStatus struct {
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
 type OpenTelemetryCollectorSpec struct {
 	// OpenTelemetryCommonFields are fields that are on all OpenTelemetry CRD workloads.
-	common2.OpenTelemetryCommonFields `json:",inline"`
+	common.OpenTelemetryCommonFields `json:",inline"`
 	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
 	// +optional
 	TargetAllocator TargetAllocatorEmbedded `json:"targetAllocator,omitempty"`
@@ -95,7 +95,7 @@ type OpenTelemetryCollectorSpec struct {
 	// The empty objects e.g. batch: should be written as batch: {} otherwise they won't work with kustomize or kubectl edit.
 	// +required
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Config common2.Config `json:"config"`
+	Config Config `json:"config"`
 	// Ingress is used to specify how OpenTelemetry Collector is exposed. This
 	// functionality is only available if one of the valid modes is set.
 	// Valid modes are: deployment, daemonset and statefulset.
@@ -111,7 +111,7 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
-	Observability common2.ObservabilitySpec `json:"observability,omitempty"`
+	Observability common.ObservabilitySpec `json:"observability,omitempty"`
 
 	// ConfigMaps is a list of ConfigMaps in the same namespace as the OpenTelemetryCollector
 	// object, which shall be mounted into the Collector Pods.
@@ -149,13 +149,13 @@ type TargetAllocatorEmbedded struct {
 	// WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.
 	// +optional
 	// +kubebuilder:default:=consistent-hashing
-	AllocationStrategy common2.TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
+	AllocationStrategy TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
 	// The only current option is relabel-config (drops targets based on prom relabel_config).
 	// The default is relabel-config.
 	// +optional
 	// +kubebuilder:default:=relabel-config
-	FilterStrategy common2.TargetAllocatorFilterStrategy `json:"filterStrategy,omitempty"`
+	FilterStrategy TargetAllocatorFilterStrategy `json:"filterStrategy,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
 	// the operator will not automatically create a ServiceAccount for the TargetAllocator.
 	// +optional
@@ -172,7 +172,7 @@ type TargetAllocatorEmbedded struct {
 	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
 	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
 	// +optional
-	PrometheusCR common2.TargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
+	PrometheusCR TargetAllocatorPrometheusCR `json:"prometheusCR,omitempty"`
 	// SecurityContext configures the container security context for
 	// the targetallocator.
 	// +optional
@@ -200,12 +200,12 @@ type TargetAllocatorEmbedded struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
-	Observability common2.ObservabilitySpec `json:"observability,omitempty"`
+	Observability common.ObservabilitySpec `json:"observability,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
 	// for the target allocator workload.
 	//
 	// +optional
-	PodDisruptionBudget *common2.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	PodDisruptionBudget *common.PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config. Only Liveness probe is supported currently.

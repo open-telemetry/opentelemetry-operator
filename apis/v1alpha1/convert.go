@@ -66,7 +66,7 @@ func (dst *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
 
 func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
 	copy := in.DeepCopy()
-	cfg := &common.Config{}
+	cfg := &v1beta1.Config{}
 	if err := yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
 		return v1beta1.OpenTelemetryCollector{}, errors.New("could not convert config json to v1beta1.Config")
 	}
@@ -171,13 +171,13 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 		Replicas:           in.Replicas,
 		NodeSelector:       in.NodeSelector,
 		Resources:          in.Resources,
-		AllocationStrategy: in.AllocationStrategy,
-		FilterStrategy:     in.FilterStrategy,
+		AllocationStrategy: tov1beta1TAAllocationStrategy(in.AllocationStrategy),
+		FilterStrategy:     tov1beta1TAFilterStrategy(in.FilterStrategy),
 		ServiceAccount:     in.ServiceAccount,
 		Image:              in.Image,
 		Enabled:            in.Enabled,
 		Affinity:           in.Affinity,
-		PrometheusCR: common.TargetAllocatorPrometheusCR{
+		PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 			Enabled:        in.PrometheusCR.Enabled,
 			ScrapeInterval: in.PrometheusCR.ScrapeInterval,
 			// prometheus_cr.pod_monitor_selector shouldn't be nil when selector is empty
@@ -441,8 +441,8 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		Replicas:           in.Replicas,
 		NodeSelector:       in.NodeSelector,
 		Resources:          in.Resources,
-		AllocationStrategy: in.AllocationStrategy,
-		FilterStrategy:     in.FilterStrategy,
+		AllocationStrategy: Tov1alpha1TAAllocationStrategy(in.AllocationStrategy),
+		FilterStrategy:     Tov1alpha1TAFilterStrategy(in.FilterStrategy),
 		ServiceAccount:     in.ServiceAccount,
 		Image:              in.Image,
 		Enabled:            in.Enabled,
@@ -466,4 +466,20 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		},
 		PodDisruptionBudget: tov1alpha1PodDisruptionBudget(in.PodDisruptionBudget),
 	}
+}
+
+func Tov1alpha1TAFilterStrategy(strategy v1beta1.TargetAllocatorFilterStrategy) TargetAllocatorFilterStrategy {
+	return TargetAllocatorFilterStrategy(strategy)
+}
+
+func Tov1alpha1TAAllocationStrategy(strategy v1beta1.TargetAllocatorAllocationStrategy) TargetAllocatorAllocationStrategy {
+	return TargetAllocatorAllocationStrategy(strategy)
+}
+
+func tov1beta1TAFilterStrategy(strategy TargetAllocatorFilterStrategy) v1beta1.TargetAllocatorFilterStrategy {
+	return v1beta1.TargetAllocatorFilterStrategy(strategy)
+}
+
+func tov1beta1TAAllocationStrategy(strategy TargetAllocatorAllocationStrategy) v1beta1.TargetAllocatorAllocationStrategy {
+	return v1beta1.TargetAllocatorAllocationStrategy(strategy)
 }

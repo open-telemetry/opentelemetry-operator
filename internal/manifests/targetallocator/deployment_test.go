@@ -26,7 +26,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	common2 "github.com/open-telemetry/opentelemetry-operator/internal/api/common"
+	"github.com/open-telemetry/opentelemetry-operator/internal/api/common"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -106,7 +106,7 @@ func TestDeploymentSecurityContext(t *testing.T) {
 			Name: "my-instance-securitycontext",
 		},
 		Spec: v1alpha1.TargetAllocatorSpec{
-			OpenTelemetryCommonFields: common2.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				PodSecurityContext: testSecurityContextValue,
 			},
 		},
@@ -187,7 +187,7 @@ func collectorInstance() v1beta1.OpenTelemetryCollector {
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
-	cfg := common2.Config{}
+	cfg := v1beta1.Config{}
 	err = go_yaml.Unmarshal(configYAML, &cfg)
 	if err != nil {
 		fmt.Printf("Error unmarshalling YAML: %v", err)
@@ -198,7 +198,7 @@ func collectorInstance() v1beta1.OpenTelemetryCollector {
 			Namespace: "default",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: common2.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
 			},
 			Config: cfg,
@@ -240,7 +240,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 			Name: "my-instance-nodeselector",
 		},
 		Spec: v1alpha1.TargetAllocatorSpec{
-			OpenTelemetryCommonFields: common2.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				NodeSelector: map[string]string{
 					"node-key": "node-value",
 				},
@@ -282,7 +282,7 @@ func TestDeploymentAffinity(t *testing.T) {
 			Name: "my-instance-affinity",
 		},
 		Spec: v1alpha1.TargetAllocatorSpec{
-			OpenTelemetryCommonFields: common2.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Affinity: testAffinityValue,
 			},
 		},
@@ -326,7 +326,7 @@ func TestDeploymentTolerations(t *testing.T) {
 			Name: "my-instance-toleration",
 		},
 		Spec: v1alpha1.TargetAllocatorSpec{
-			OpenTelemetryCommonFields: common2.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				Tolerations: testTolerationValues,
 			},
 		},
@@ -371,7 +371,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 			Name: "my-instance-topologyspreadconstraint",
 		},
 		Spec: v1alpha1.TargetAllocatorSpec{
-			OpenTelemetryCommonFields: common2.OpenTelemetryCommonFields{
+			OpenTelemetryCommonFields: common.OpenTelemetryCommonFields{
 				TopologySpreadConstraints: testTopologySpreadConstraintValue,
 			},
 		},
