@@ -15,6 +15,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -194,6 +195,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 }
 
 func TestServer_ScrapeConfigsHandler(t *testing.T) {
+	tlsConfig, _ := allocatorconfig.TLSConfig("", "", "")
 	tests := []struct {
 		description   string
 		scrapeConfigs map[string]*promconfig.ScrapeConfig
@@ -477,7 +479,7 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 			},
 			expectedCode: http.StatusOK,
 			serverOptions: []Option{
-				WithHTTPSServer("", "", "", ""),
+				WithTLSConfig(tlsConfig, ""),
 			},
 		},
 		{
@@ -512,6 +514,7 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			if s.httpsServer != nil {
+				request.TLS = &tls.ConnectionState{}
 				s.httpsServer.Handler.ServeHTTP(w, request)
 			} else {
 				s.server.Handler.ServeHTTP(w, request)

@@ -15,6 +15,8 @@
 package config
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -200,4 +202,27 @@ func ValidateConfig(config *Config) error {
 		return fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
 	}
 	return nil
+}
+
+func TLSConfig(CAFile, CertFile, KeyFile string) (*tls.Config, error) {
+	cert, err := tls.LoadX509KeyPair(CertFile, KeyFile)
+	if err != nil {
+		return nil, err
+	}
+
+	caCert, err := os.ReadFile(CAFile)
+	if err != nil {
+		return nil, err
+	}
+
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientCAs:    caCertPool,
+		MinVersion:   tls.VersionTLS12,
+	}
+	return tlsConfig, nil
 }

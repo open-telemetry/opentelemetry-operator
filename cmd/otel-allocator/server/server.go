@@ -17,13 +17,11 @@ package server
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -35,7 +33,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/config"
+	promcommconfig "github.com/prometheus/common/config"
 	promconfig "github.com/prometheus/prometheus/config"
 	"gopkg.in/yaml.v2"
 
@@ -82,44 +80,22 @@ type Option func(*Server)
 
 // Option to create an additional https server with mTLS configuration.
 // Used for getting the scrape config with real secret values.
-func WithHTTPSServer(caFile, certFile, keyFile, httpsListenAddr string) Option {
+func WithTLSConfig(tlsConfig *tls.Config, httpsListenAddr string) Option {
 	return func(s *Server) {
-		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-		if err != nil {
-			s.logger.Error(err, "failed to load certificates")
-		}
-
-		caCert, err := os.ReadFile(caFile)
-		if err != nil {
-			s.logger.Error(err, "failed to load CA certificate")
-		}
-
-		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(caCert)
-
-		tlsConfig := &tls.Config{
-			Certificates: []tls.Certificate{cert},
-			ClientAuth:   tls.RequireAndVerifyClientCert,
-			ClientCAs:    caCertPool,
-			MinVersion:   tls.VersionTLS12,
-		}
-
 		httpsRouter := gin.New()
-		s.setRouter(httpsRouter, true)
+		s.setRouter(httpsRouter)
 
 		s.httpsServer = &http.Server{Addr: httpsListenAddr, Handler: httpsRouter, ReadHeaderTimeout: 90 * time.Second, TLSConfig: tlsConfig}
 	}
 }
 
-func (s *Server) setRouter(router *gin.Engine, httpsRouter bool) {
+func (s *Server) setRouter(router *gin.Engine) {
 	router.Use(gin.Recovery())
 	router.UseRawPath = true
 	router.UnescapePathValues = false
 	router.Use(s.PrometheusMiddleware)
 
-	router.GET("/scrape_configs", func(c *gin.Context) {
-		s.ScrapeConfigsHandler(c, httpsRouter)
-	})
+	router.GET("/scrape_configs", s.ScrapeConfigsHandler)
 	router.GET("/jobs", s.JobHandler)
 	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
@@ -137,7 +113,7 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr strin
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
-	s.setRouter(router, false)
+	s.setRouter(router)
 
 	s.server = &http.Server{Addr: listenAddr, Handler: router, ReadHeaderTimeout: 90 * time.Second}
 
@@ -212,50 +188,56 @@ func RemoveRegexFromRelabelAction(jsonConfig []byte) ([]byte, error) {
 	return jsonConfigNew, nil
 }
 
-// UpdateScrapeConfigResponse updates the scrape config response. The target allocator first marshals these
-// configurations such that the underlying prometheus marshaling is used. After that, the YAML is converted
-// in to a JSON format for consumers to use.
-func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.ScrapeConfig) error {
-	marshalSecretValues := []bool{false}
-	if s.httpsServer != nil {
-		marshalSecretValues = append(marshalSecretValues, true)
+func (s *Server) MarshalScrapeConfig(configs map[string]*promconfig.ScrapeConfig, marshalSecretValue bool) error {
+	promcommconfig.MarshalSecretValue = marshalSecretValue
+
+	configBytes, err := yaml.Marshal(configs)
+	if err != nil {
+		return err
 	}
 
-	for _, marshalSecretValue := range marshalSecretValues {
-		config.MarshalSecretValue = marshalSecretValue
-		configBytes, err := yaml.Marshal(configs)
-		if err != nil {
-			return err
-		}
-
-		var jsonConfig []byte
-		jsonConfig, err = yaml2.YAMLToJSON(configBytes)
-		if err != nil {
-			return err
-		}
-
-		jsonConfigNew, err := RemoveRegexFromRelabelAction(jsonConfig)
-		if err != nil {
-			return err
-		}
-
-		s.mtx.Lock()
-		if marshalSecretValue {
-			s.ScrapeConfigMarshalledSecretResponse = jsonConfigNew
-		} else {
-			s.scrapeConfigResponse = jsonConfigNew
-		}
-		s.mtx.Unlock()
+	var jsonConfig []byte
+	jsonConfig, err = yaml2.YAMLToJSON(configBytes)
+	if err != nil {
+		return err
 	}
+
+	jsonConfigNew, err := RemoveRegexFromRelabelAction(jsonConfig)
+	if err != nil {
+		return err
+	}
+
+	s.mtx.Lock()
+	if marshalSecretValue {
+		s.ScrapeConfigMarshalledSecretResponse = jsonConfigNew
+	} else {
+		s.scrapeConfigResponse = jsonConfigNew
+	}
+	s.mtx.Unlock()
 
 	return nil
 }
 
+// UpdateScrapeConfigResponse updates the scrape config response. The target allocator first marshals these
+// configurations such that the underlying prometheus marshaling is used. After that, the YAML is converted
+// in to a JSON format for consumers to use.
+func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.ScrapeConfig) error {
+	err := s.MarshalScrapeConfig(configs, false)
+	if err != nil {
+		return err
+	}
+	err = s.MarshalScrapeConfig(configs, true)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
-func (s *Server) ScrapeConfigsHandler(c *gin.Context, httpsRouter bool) {
+func (s *Server) ScrapeConfigsHandler(c *gin.Context) {
 	s.mtx.RLock()
 	result := s.scrapeConfigResponse
-	if httpsRouter {
+	if c.Request.TLS != nil {
 		result = s.ScrapeConfigMarshalledSecretResponse
 	}
 	s.mtx.RUnlock()
