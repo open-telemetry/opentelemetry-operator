@@ -16,6 +16,7 @@ package controllers_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -572,6 +573,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			firstCheck := tt.want[0]
 			// Check for this before create, otherwise it's blown away.
 			deletionTimestamp := tt.args.params.GetDeletionTimestamp()
+			fmt.Println("----------------------- params")
+			fmt.Println(tt.args.params.Spec.Config)
+			fmt.Println("-----------------------")
 			createErr := k8sClient.Create(testContext, &tt.args.params)
 			if !firstCheck.validateErr(t, createErr) {
 				return
@@ -580,6 +584,13 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				err := k8sClient.Delete(testContext, &tt.args.params, client.PropagationPolicy(metav1.DeletePropagationForeground))
 				assert.NoError(t, err)
 			}
+			var otelcol v1alpha1.OpenTelemetryCollector
+			found, err := populateObjectIfExists(t, &otelcol, nsn)
+			assert.True(t, found)
+			assert.NoError(t, err)
+			fmt.Println("-----------------------")
+			fmt.Println(otelcol.Spec.Config)
+			fmt.Println("-----------------------")
 			req := k8sreconcile.Request{
 				NamespacedName: nsn,
 			}

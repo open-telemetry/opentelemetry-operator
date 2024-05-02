@@ -79,38 +79,23 @@ func (in *Config) DeepCopyInto(out *Config) {
 	*out = *in
 	if in.Receivers != nil {
 		in, out := &in.Receivers, &out.Receivers
-		*out = make(map[string]*AnyConfig, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val.DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	if in.Exporters != nil {
 		in, out := &in.Exporters, &out.Exporters
-		*out = make(map[string]*AnyConfig, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val.DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	if in.Processors != nil {
 		in, out := &in.Processors, &out.Processors
-		*out = make(map[string]*AnyConfig, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val.DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	if in.Connectors != nil {
 		in, out := &in.Connectors, &out.Connectors
-		*out = make(map[string]*AnyConfig, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val.DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	if in.Extensions != nil {
 		in, out := &in.Extensions, &out.Extensions
-		*out = make(map[string]*AnyConfig, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val.DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	in.Service.DeepCopyInto(&out.Service)
 }
