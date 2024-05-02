@@ -18,6 +18,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/go-logr/logr"
 	routev1 "github.com/openshift/api/route/v1"
@@ -125,6 +126,30 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 	}
 	for i := range pdbList.Items {
 		ownedObjects[pdbList.Items[i].GetUID()] = &pdbList.Items[i]
+	}
+
+	configMapList := &corev1.ConfigMapList{}
+	err = r.List(ctx, configMapList, listOps)
+	if err != nil {
+		return nil, fmt.Errorf("error listing ConfigMaps: %w", err)
+	}
+
+	// only return collector ConfigMaps older than spec.ConfigVersions
+	sort.Slice(configMapList.Items, func(i, j int) bool {
+		iTime := configMapList.Items[i].GetCreationTimestamp().Time
+		jTime := configMapList.Items[j].GetCreationTimestamp().Time
+		// sort the ConfigMaps newest to oldest
+		return iTime.After(jTime)
+	})
+	configVersionsToKeep := 3
+	if params.OtelCol.Spec.ConfigVersions != nil {
+		configVersionsToKeep = int(*params.OtelCol.Spec.ConfigVersions)
+	}
+
+	for i := range configMapList.Items {
+		if i > configVersionsToKeep {
+			ownedObjects[configMapList.Items[i].GetUID()] = &configMapList.Items[i]
+		}
 	}
 
 	return ownedObjects, nil

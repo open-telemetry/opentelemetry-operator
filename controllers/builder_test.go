@@ -37,6 +37,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -86,6 +87,10 @@ service:
 	goodConfig := v1beta1.Config{}
 	err := go_yaml.Unmarshal([]byte(goodConfigYaml), &goodConfig)
 	require.NoError(t, err)
+
+	goodConfigHash, _ := manifestutils.GetConfigMapSHA(goodConfig)
+	goodConfigHash = goodConfigHash[:8]
+
 	one := int32(1)
 	type args struct {
 		instance v1beta1.OpenTelemetryCollector
@@ -164,7 +169,7 @@ service:
 										VolumeSource: corev1.VolumeSource{
 											ConfigMap: &corev1.ConfigMapVolumeSource{
 												LocalObjectReference: corev1.LocalObjectReference{
-													Name: "test-collector",
+													Name: "test-collector-" + goodConfigHash,
 												},
 												Items: []corev1.KeyToPath{
 													{
@@ -223,13 +228,13 @@ service:
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-collector",
+						Name:      "test-collector-" + goodConfigHash,
 						Namespace: "test",
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
 							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-collector",
+							"app.kubernetes.io/name":       "test-collector-" + goodConfigHash,
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
@@ -411,7 +416,7 @@ service:
 										VolumeSource: corev1.VolumeSource{
 											ConfigMap: &corev1.ConfigMapVolumeSource{
 												LocalObjectReference: corev1.LocalObjectReference{
-													Name: "test-collector",
+													Name: "test-collector-" + goodConfigHash,
 												},
 												Items: []corev1.KeyToPath{
 													{
@@ -470,13 +475,13 @@ service:
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-collector",
+						Name:      "test-collector-" + goodConfigHash,
 						Namespace: "test",
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
 							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-collector",
+							"app.kubernetes.io/name":       "test-collector-" + goodConfigHash,
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
@@ -694,7 +699,7 @@ service:
 										VolumeSource: corev1.VolumeSource{
 											ConfigMap: &corev1.ConfigMapVolumeSource{
 												LocalObjectReference: corev1.LocalObjectReference{
-													Name: "test-collector",
+													Name: "test-collector-" + goodConfigHash,
 												},
 												Items: []corev1.KeyToPath{
 													{
@@ -753,13 +758,13 @@ service:
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-collector",
+						Name:      "test-collector-" + goodConfigHash,
 						Namespace: "test",
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
 							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-collector",
+							"app.kubernetes.io/name":       "test-collector-" + goodConfigHash,
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
@@ -1129,6 +1134,10 @@ service:
 	goodConfig := v1beta1.Config{}
 	err := go_yaml.Unmarshal([]byte(goodConfigYaml), &goodConfig)
 	require.NoError(t, err)
+
+	goodConfigHash, _ := manifestutils.GetConfigMapSHA(goodConfig)
+	goodConfigHash = goodConfigHash[:8]
+
 	one := int32(1)
 	type args struct {
 		instance v1beta1.OpenTelemetryCollector
@@ -1216,7 +1225,7 @@ service:
 										VolumeSource: corev1.VolumeSource{
 											ConfigMap: &corev1.ConfigMapVolumeSource{
 												LocalObjectReference: corev1.LocalObjectReference{
-													Name: "test-collector",
+													Name: "test-collector-" + goodConfigHash,
 												},
 												Items: []corev1.KeyToPath{
 													{
@@ -1275,13 +1284,13 @@ service:
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-collector",
+						Name:      "test-collector-" + goodConfigHash,
 						Namespace: "test",
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
 							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-collector",
+							"app.kubernetes.io/name":       "test-collector-" + goodConfigHash,
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
@@ -1610,7 +1619,7 @@ prometheus_cr:
 										VolumeSource: corev1.VolumeSource{
 											ConfigMap: &corev1.ConfigMapVolumeSource{
 												LocalObjectReference: corev1.LocalObjectReference{
-													Name: "test-collector",
+													Name: "test-collector-" + goodConfigHash,
 												},
 												Items: []corev1.KeyToPath{
 													{
@@ -1669,13 +1678,13 @@ prometheus_cr:
 				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-collector",
+						Name:      "test-collector-" + goodConfigHash,
 						Namespace: "test",
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
 							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-collector",
+							"app.kubernetes.io/name":       "test-collector-" + goodConfigHash,
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},

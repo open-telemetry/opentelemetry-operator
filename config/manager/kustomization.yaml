@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: localhost:5001/opentelemetry-operator
-  newTag: matth-dev-1714578767
+  newTag: matth-dev-1714590016
