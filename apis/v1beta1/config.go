@@ -27,6 +27,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type ComponentType int
+
+const (
+	ComponentTypeReceiver ComponentType = iota
+	ComponentTypeExporter
+	ComponentTypeProcessor
+)
+
+func (c ComponentType) String() string {
+	return [...]string{"receiver", "exporter", "processor"}[c]
+}
+
 // AnyConfig represent parts of the config.
 type AnyConfig struct {
 	Object map[string]interface{} `json:"-" yaml:",inline"`
@@ -73,6 +85,37 @@ func (c *AnyConfig) MarshalJSON() ([]byte, error) {
 		return []byte("{}"), nil
 	}
 	return json.Marshal(c.Object)
+}
+
+// Pipeline is a struct of component type to a list of component IDs.
+type Pipeline struct {
+	Exporters  []string `json:"exporters" yaml:"exporters"`
+	Processors []string `json:"processors" yaml:"processors"`
+	Receivers  []string `json:"receivers" yaml:"receivers"`
+}
+
+// GetEnabledComponents constructs a list of enabled components by component type.
+func (c *Config) GetEnabledComponents() map[ComponentType]map[string]interface{} {
+	toReturn := map[ComponentType]map[string]interface{}{
+		ComponentTypeReceiver:  {},
+		ComponentTypeProcessor: {},
+		ComponentTypeExporter:  {},
+	}
+	for _, pipeline := range c.Service.Pipelines {
+		if pipeline == nil {
+			continue
+		}
+		for _, componentId := range pipeline.Receivers {
+			toReturn[ComponentTypeReceiver][componentId] = struct{}{}
+		}
+		for _, componentId := range pipeline.Exporters {
+			toReturn[ComponentTypeExporter][componentId] = struct{}{}
+		}
+		for _, componentId := range pipeline.Processors {
+			toReturn[ComponentTypeProcessor][componentId] = struct{}{}
+		}
+	}
+	return toReturn
 }
 
 // Config encapsulates collector config.
@@ -135,7 +178,7 @@ type Service struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Telemetry *AnyConfig `json:"telemetry,omitempty" yaml:"telemetry,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Pipelines AnyConfig `json:"pipelines" yaml:"pipelines"`
+	Pipelines map[string]*Pipeline `json:"pipelines" yaml:"pipelines"`
 }
 
 // MetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.

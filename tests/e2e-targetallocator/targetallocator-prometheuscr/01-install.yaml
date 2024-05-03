@@ -1,4 +1,15 @@
 ---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: prometheus-cr
+spec:
+  endpoints:
+    - port: monitoring
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: opentelemetry-operator
+---
 apiVersion: batch/v1
 kind: Job
 metadata:

@@ -87,6 +87,7 @@ service:
     metrics:
       exporters:
       - debug
+      processors: []
       receivers:
       - otlp
 `, res.Spec.Config)
@@ -138,6 +139,7 @@ service:
     metrics:
       exporters:
       - debug
+      processors: []
       receivers:
       - otlp
 `, res.Spec.Config)

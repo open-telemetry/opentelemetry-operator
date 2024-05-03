@@ -96,6 +96,7 @@ service:
     metrics:
       exporters:
       - debug
+      processors: []
       receivers:
       - otlp
 `, upgradedInstance.Spec.Config)

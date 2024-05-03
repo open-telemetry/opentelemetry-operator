@@ -145,6 +145,14 @@ add-operator-arg: manifests kustomize
 add-image-targetallocator:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--target-allocator-image=$(TARGETALLOCATOR_IMG)
 
+.PHONY: add-instrumentation-params
+add-instrumentation-params:
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-go-instrumentation=true
+
+.PHONY: add-multi-instrumentation-params
+add-multi-instrumentation-params:
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-multi-instrumentation
+
 .PHONY: add-image-opampbridge
 add-image-opampbridge:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--operator-opamp-bridge-image=$(OPERATOROPAMPBRIDGE_IMG)

@@ -26,8 +26,9 @@ import (
 
 func IsFilteredSet(sourceSet string, filterSet []string) bool {
 	for _, pattern := range filterSet {
-		match, _ := regexp.MatchString(pattern, sourceSet)
-		return match
+		if match, _ := regexp.MatchString(pattern, sourceSet); match {
+			return match
+		}
 	}
 	return false
 }

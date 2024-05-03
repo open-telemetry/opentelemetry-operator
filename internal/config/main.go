@@ -50,6 +50,7 @@ type Config struct {
 	enableGoInstrumentation             bool
 	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
+	enableNodeJSInstrumentation         bool
 	enableJavaInstrumentation           bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
@@ -77,6 +78,7 @@ func New(opts ...Option) Config {
 		logger:                            logf.Log.WithName("config"),
 		version:                           version.Get(),
 		enableJavaInstrumentation:         true,
+		annotationsFilter:                 []string{"kubectl.kubernetes.io/last-applied-configuration"},
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -93,6 +95,7 @@ func New(opts ...Option) Config {
 		enableGoInstrumentation:             o.enableGoInstrumentation,
 		enableNginxInstrumentation:          o.enableNginxInstrumentation,
 		enablePythonInstrumentation:         o.enablePythonInstrumentation,
+		enableNodeJSInstrumentation:         o.enableNodeJSInstrumentation,
 		enableJavaInstrumentation:           o.enableJavaInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
@@ -169,6 +172,11 @@ func (c *Config) EnableJavaAutoInstrumentation() bool {
 // EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
 func (c *Config) EnablePythonAutoInstrumentation() bool {
 	return c.enablePythonInstrumentation
+}
+
+// EnableNodeJSAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+func (c *Config) EnableNodeJSAutoInstrumentation() bool {
+	return c.enableNodeJSInstrumentation
 }
 
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
