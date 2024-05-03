@@ -5522,6 +5522,25 @@ spec:
                           type: string
                         type: array
                       pipelines:
+                        additionalProperties:
+                          properties:
+                            exporters:
+                              items:
+                                type: string
+                              type: array
+                            processors:
+                              items:
+                                type: string
+                              type: array
+                            receivers:
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - exporters
+                          - processors
+                          - receivers
+                          type: object
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       telemetry:

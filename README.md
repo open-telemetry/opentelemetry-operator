@@ -29,17 +29,17 @@ Once the `opentelemetry-operator` deployment is ready, create an OpenTelemetry C
 
 ```yaml
 kubectl apply -f - <<EOF
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
+          grpc: {}
+          http: {}
     processors:
       memory_limiter:
         check_interval: 1s
@@ -50,7 +50,7 @@ spec:
         timeout: 10s
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
@@ -101,21 +101,21 @@ A sidecar with the OpenTelemetry Collector can be injected into pod-based worklo
 
 ```yaml
 kubectl apply -f - <<EOF
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: sidecar-for-my-app
 spec:
   mode: sidecar
-  config: |
+  config:
     receivers:
       jaeger:
         protocols:
-          thrift_compact:
+          thrift_compact: {}
     processors:
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
@@ -394,7 +394,7 @@ In the above case, `myapp` and `myapp2` containers will be instrumented, `myapp3
 
 #### Multi-container pods with multiple instrumentations
 
-Works only when `operator.autoinstrumentation.multi-instrumentation` feature is `enabled`.
+Works only when `enable-multi-instrumentation` flag is `true`.
 
 Annotations defining which language instrumentation will be injected are required. When feature is enabled, specific for Instrumentation language containers annotations are used:
 
@@ -566,31 +566,23 @@ instrumentation.opentelemetry.io/inject-sdk: "true"
 
 #### Controlling Instrumentation Capabilities
 
-The operator allows specifying, via the feature gates, which languages the Instrumentation resource may instrument.
-These feature gates must be passed to the operator via the `--feature-gates` flag.
-The flag allows for a comma-delimited list of feature gate identifiers.
-Prefix a gate with '-' to disable support for the corresponding language or multi instrumentation feature.
-Prefixing a gate with '+' or no prefix will enable support for the corresponding language or multi instrumentation feature.
+The operator allows specifying, via the flags, which languages the Instrumentation resource may instrument.
 If a language is enabled by default its gate only needs to be supplied when disabling the gate.
+Language support can be disabled by passing the flag with a value of `false`.
 
-| Language    | Gate                                        | Default Value |
-| ----------- | ------------------------------------------- | ------------- |
-| Java        | `operator.autoinstrumentation.java`         | enabled       |
-| NodeJS      | `operator.autoinstrumentation.nodejs`       | enabled       |
-| Python      | `operator.autoinstrumentation.python`       | enabled       |
-| DotNet      | `operator.autoinstrumentation.dotnet`       | enabled       |
-| ApacheHttpD | `operator.autoinstrumentation.apache-httpd` | enabled       |
-| Go          | `operator.autoinstrumentation.go`           | disabled      |
-| Nginx       | `operator.autoinstrumentation.nginx`        | disabled      |
+| Language    | Gate                                  | Default Value |
+| ----------- | ------------------------------------- | ------------- |
+| Java        | `enable-java-instrumentation`         | `true`        |
+| NodeJS      | `enable-nodejs-instrumentation`       | `true`        |
+| Python      | `enable-python-instrumentation`       | `true`        |
+| DotNet      | `enable-dotnet-instrumentation`       | `true`        |
+| ApacheHttpD | `enable-apache-httpd-instrumentation` | `true`        |
+| Go          | `enable-go-instrumentation`           | `false`       |
+| Nginx       | `enable-nginx-instrumentation`        | `false`       |
 
-Language not specified in the table are always supported and cannot be disabled.
 
 OpenTelemetry Operator allows to instrument multiple containers using multiple language specific instrumentations.
-These features can be enabled using `operator.autoinstrumentation.multi-instrumentation` flag when installing the Operator via Helm. By default flag is `disabled`. For example:
-
-```sh
-helm install opentelemetry-operator open-telemetry/opentelemetry-operator --set manager.featureGates=operator.autoinstrumentation.multi-instrumentation
-```
+These features can be enabled using the `enable-multi-instrumentation` flag. By default flag is `false`.
 
 For more information about multi-instrumentation feature capabilities please see [Multi-container pods with multiple instrumentations](#Multi-container-pods-with-multiple-instrumentations).
 
@@ -599,7 +591,8 @@ For more information about multi-instrumentation feature capabilities please see
 The OpenTelemetry Operator comes with an optional component, the [Target Allocator](/cmd/otel-allocator/README.md) (TA). When creating an OpenTelemetryCollector Custom Resource (CR) and setting the TA as enabled, the Operator will create a new deployment and service to serve specific `http_sd_config` directives for each Collector pod as part of that CR. It will also rewrite the Prometheus receiver configuration in the CR, so that it uses the deployed target allocator. The following example shows how to get started with the Target Allocator:
 
 ```yaml
-apiVersion: opentelemetry.io/v1alpha1
+kubectl apply -f - <<EOF
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: collector-with-ta
@@ -607,7 +600,7 @@ spec:
   mode: statefulset
   targetAllocator:
     enabled: true
-  config: |
+  config: 
     receivers:
       prometheus:
         config:
@@ -624,7 +617,7 @@ spec:
               replacement: $$1
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
@@ -632,6 +625,7 @@ spec:
           receivers: [prometheus]
           processors: []
           exporters: [debug]
+EOF
 ```
 
 The usage of `$$` in the replacement keys in the example above is based on the information provided in the Prometheus receiver [README](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) documentation, which states:
@@ -687,7 +681,8 @@ a function analogous to that of prometheus-operator itself. This is enabled via 
 See below for a minimal example:
 
 ```yaml
-apiVersion: opentelemetry.io/v1alpha1
+kubectl apply -f - <<EOF
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: collector-with-ta-prometheus-cr
@@ -698,13 +693,13 @@ spec:
     serviceAccount: everything-prometheus-operator-needs
     prometheusCR:
       enabled: true
-  config: |
+  config:
     receivers:
       prometheus:
-        config:
+        config: {}
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
@@ -712,6 +707,7 @@ spec:
           receivers: [prometheus]
           processors: []
           exporters: [debug]
+EOF
 ```
 
 ## Compatibility matrix
@@ -734,6 +730,7 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes     | Cert-Manager |
 |------------------------| -------------- | ------------ |
+| v0.99.0                | v1.23 to v1.29 | v1           |
 | v0.98.0                | v1.23 to v1.29 | v1           |
 | v0.97.0                | v1.23 to v1.29 | v1           |
 | v0.96.0                | v1.23 to v1.29 | v1           |
@@ -756,7 +753,6 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 | v0.79.0                | v1.19 to v1.27 | v1           |
 | v0.78.0                | v1.19 to v1.27 | v1           |
 | v0.77.0                | v1.19 to v1.26 | v1           |
-| v0.76.1                | v1.19 to v1.26 | v1           |
 
 ## Contributing and Developing
 
