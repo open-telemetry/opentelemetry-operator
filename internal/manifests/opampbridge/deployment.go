@@ -28,7 +28,7 @@ import (
 func Deployment(params manifests.Params) *appsv1.Deployment {
 	name := naming.OpAMPBridge(params.OpAMPBridge.Name)
 	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, params.Config.LabelsFilter())
-	if getDNSPolicy(params.OpAMPBridge) == "None" && params.OpAMPBridge.Spec.PodDNSConfig.Nameservers == nil {
+	if getDNSPolicy(params.OpAMPBridge) == corev1.DNSNone && params.OpAMPBridge.Spec.PodDNSConfig.Nameservers == nil {
 		return nil
 	}
 	configMap, err := ConfigMap(params)

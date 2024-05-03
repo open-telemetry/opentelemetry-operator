@@ -125,8 +125,10 @@ type OpenTelemetryCollectorSpec struct {
 	// This is only applicable to Deployment mode.
 	// +optional
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
+	//PodDNSPolicy define the DNS policies which can be set on a per-Pod basis. Currently Kubernetes supports the following Pod-specific DNS policies.
+	//These policies are specified in the dnsPolicy field of a Pod Spec.
+	PodDNSPolicy v1.DNSPolicy `json:"podDnsPolicy,omitempty"`
 	//PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
-	//https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1PodDNSConfig.md
 	PodDNSConfig v1.PodDNSConfig `json:"podDnsConfig,omitempty"`
 }
 

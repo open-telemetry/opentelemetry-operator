@@ -39,7 +39,7 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 		return nil, err
 	}
 
-	if getDNSPolicy(params.OtelCol) == "None" && params.OtelCol.Spec.PodDNSConfig.Nameservers == nil {
+	if getDNSPolicy(params.OtelCol) == corev1.DNSNone && params.OtelCol.Spec.PodDNSConfig.Nameservers == nil {
 		return nil, ErrorDNSPolicy
 	}
 

@@ -111,6 +111,7 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 				PriorityClassName:             copy.Spec.PriorityClassName,
 				InitContainers:                copy.Spec.InitContainers,
 				AdditionalContainers:          copy.Spec.AdditionalContainers,
+				PodDNSPolicy:                  copy.Spec.PodDNSPolicy,
 				PodDNSConfig:                  copy.Spec.PodDNSConfig,
 			},
 			TargetAllocator: tov1beta1TA(copy.Spec.TargetAllocator),
@@ -324,6 +325,7 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			ConfigMaps:                tov1alpha1ConfigMaps(copy.Spec.ConfigMaps),
 			UpdateStrategy:            copy.Spec.DaemonSetUpdateStrategy,
 			DeploymentUpdateStrategy:  copy.Spec.DeploymentUpdateStrategy,
+			PodDNSPolicy:              copy.Spec.PodDNSPolicy,
 			PodDNSConfig:              copy.Spec.PodDNSConfig,
 		},
 	}, nil
