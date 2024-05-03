@@ -7,7 +7,7 @@ component: collector
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
 note: |
   Create a Service Monitor for the collector Service when Prometheus exporter is used. A different Service Monitor is created for the monitoring service.
-  This helps excluding the headless service (duplicating the metrics collectiong) and splits responsibilities between the two Service Monitors.
+  This helps excluding the headless service (duplicating the metrics collection) and splits responsibilities between the two Service Monitors.
 
 # One or more tracking issues related to the change
 issues: [2877]
