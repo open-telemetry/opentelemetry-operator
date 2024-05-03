@@ -3,6 +3,8 @@
 Target Allocator is an optional component of the OpenTelemetry Collector [Custom Resource](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) (CR). The release version matches the
 operator's most recent release as well.
 
+> 🚨 **Note:** the TargetAllocator currently supports the `statefulset` and `daemonset` deployment modes of the `OpenTelemetryCollector` CR.
+
 In a nutshell, the TA is a mechanism for decoupling the service discovery and metric collection functions of Prometheus such that they can be scaled independently. The Collector manages Prometheus metrics without needing to install Prometheus. The TA manages the configuration of the Collector's [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md).
 
 The TA serves two functions:
@@ -28,6 +30,33 @@ sequenceDiagram
   OTel Collectors ->>Metrics Targets: 5. Scrape Metrics target
 ```
 
+### Allocation strategies
+
+Several target allocation strategies are available. Some strategies may only make sense for a given Collector deployment
+mode. For example, the `per-node` strategy only works correctly with a Collector deployed as a DaemonSet.
+
+#### `consistent-hashing`
+
+A consistent hashing strategy implementing the [following algorithm][consistent_hashing]. Only the target url is hashed
+to prevent label changes from causing targets to be moved between collectors. This strategy consistently assigns
+targets to the same collectors, but will experience rebalancing when the collector count changes.
+
+This is the default.
+
+#### `least-weighted`
+
+A strategy that simply assigns the target to the collector with the least number of targets. It achieves more stability
+in target assignment when collector count changes, but at the cost of less even distribution of targets.
+
+#### `per-node`
+
+This strategy assigns each target to the collector running on the same Node the target is. As such, it only makes sense
+to use it with a collector running as a DaemonSet.
+
+> [!WARNING]  
+> The per-node strategy ignores targets not assigned to a Node, like for example control plane components.
+
+[consistent_hashing]: https://blog.research.google/2017/04/consistent-hashing-with-bounded-loads.html
 ## Discovery of Prometheus Custom Resources
 
 The Target Allocator also provides for the discovery of [Prometheus Operator CRs](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md), namely the [ServiceMonitor and PodMonitor](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#target-allocator). The ServiceMonitors and the PodMonitors purpose is to inform the Target Allocator (or PrometheusOperator) to add a new job to their scrape configuration. The Target Allocator then provides the jobs to the OTel Collector [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md). 
@@ -52,14 +81,16 @@ flowchart RL
 
 Even though Prometheus is not required to be installed in your Kubernetes cluster to use the Target Allocator for Prometheus CR discovery, the TA does require that the ServiceMonitor and PodMonitor be installed. These CRs are bundled with Prometheus Operator; however, they can be installed standalone as well.
 
-The easiest way to do this is by going to the [Prometheus Operator’s Releases page](https://github.com/prometheus-operator/prometheus-operator/releases), grabbing a copy of the latest `bundle.yaml` file (for example, [this one](https://github.com/prometheus-operator/prometheus-operator/releases/download/v0.66.0/bundle.yaml)), and stripping out all of the YAML except the ServiceMonitor and PodMonitor YAML definitions.
+The easiest way to do this is to grab a copy of the individual [`PodMonitor`](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/charts/crds/crds/crd-podmonitors.yaml) YAML and [`ServiceMonitor`](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/charts/crds/crds/crd-servicemonitors.yaml) YAML custom resource definitions (CRDs) from the [Kube Prometheus Operator’s Helm chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/charts).
+
+> ✨ For more information on configuring the `PodMonitor` and `ServiceMonitor`, check out the [PodMonitor API](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.PodMonitor) and the [ServiceMonitor API](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.ServiceMonitor).
 
 # Usage
 The `spec.targetAllocator:` controls the TargetAllocator general properties. Full API spec can be found here: [api.md#opentelemetrycollectorspectargetallocator](../../docs/api.md#opentelemetrycollectorspectargetallocator)
 
 A basic example that deploys.
 ```yaml
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: collector-with-ta
@@ -118,34 +149,32 @@ OpenTelemetry Collector Operator-specific config.
 
 Upstream documentation here: [PrometheusReceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver#opentelemetry-operator)
 
-The TargetAllocator service is named based on the OpenTelemetryCollector CR name. `collector_id` should be unique per
+The TargetAllocator service is named based on the `OpenTelemetryCollector` CR name. For example, if your Collector CR name is `my-collector`, then the TargetAllocator `service` and `deployment` will each be named `my-collector-targetallocator`, and the `pod` will be named `my-collector-targetallocator-<pod_id>`. `collector_id` should be unique per
 collector instance, such as the pod name. The `POD_NAME` environment variable is convenient since this is supplied
 to collector instance pods by default.
 
 
 ### RBAC
-The ServiceAccount that the TargetAllocator runs as, has to have access to the CRs and the namespaces to watch for the pod and service monitors. A role like this will provide that
-access.
+
+Before the TargetAllocator can start scraping, you need to set up Kubernetes RBAC (role-based access controls) resources. This means that you need to have a `ServiceAccount` and corresponding cluster roles so that the TargetAllocator has access to all of the necessary resources to pull metrics from.
+
+You can create your own `ServiceAccount`, and reference it in `spec.targetAllocator.serviceAccount` in your `OpenTelemetryCollector` CR. You’ll then need to configure the `ClusterRole` and `ClusterRoleBinding` for this `ServiceAccount`, as per below.
+
 ```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: opentelemetry-targetallocator-cr-role
-rules:
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - servicemonitors
-  - podmonitors
-  verbs:
-  - '*'
-- apiGroups: [""]
-  resources:
-  - namespaces
-  verbs: ["get", "list", "watch"]
+  targetAllocator:
+    enabled: true
+    serviceAccount: opentelemetry-targetallocator-sa
+    prometheusCR:
+      enabled: true
 ```
-In addition, the TargetAllocator needs the same permissions as a Prometheus instance would to find the matching targets
-from the CR instances.
+
+> 🚨 **Note**: The Collector part of this same CR *also* has a serviceAccount key which only affects the collector and *not*
+the TargetAllocator.
+
+If you omit the `ServiceAccount` name, the TargetAllocator creates a `ServiceAccount` for you. The `ServiceAccount`’s default name is a concatenation of the Collector name and the `-targetallocator` suffix. By default, this `ServiceAccount` has no defined policy, so you’ll need to create your own `ClusterRole` and `ClusterRoleBinding` for it, as per below.
+
+The role below will provide the minimum access required for the Target Allocator to query all the targets it needs based on any Prometheus configurations:
+
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -177,19 +206,30 @@ rules:
 - nonResourceURLs: ["/metrics"]
   verbs: ["get"]
 ```
-These roles can be combined.
 
-A ServiceAccount bound with the above permissions in the namespaces that are to be monitored can then be referenced in
-the `targetAllocator:` part of the OpenTelemetryCollector CR.
+If you enable the the `prometheusCR` (set `spec.targetAllocator.prometheusCR.enabled` to `true`) in the `OpenTelemetryCollector` CR, you will also need to define the following roles. These give the TargetAllocator access to the `PodMonitor` and `ServiceMonitor` CRs. It also gives namespace access to the `PodMonitor` and `ServiceMonitor`.
+
 ```yaml
-  targetAllocator:
-    enabled: true
-    serviceAccount: opentelemetry-targetallocator-sa
-    prometheusCR:
-      enabled: true
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: opentelemetry-targetallocator-cr-role
+rules:
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  - podmonitors
+  verbs:
+  - '*'
+- apiGroups: [""]
+  resources:
+  - namespaces
+  verbs: ["get", "list", "watch"]
 ```
-**Note**: The Collector part of this same CR *also* has a serviceAccount key which only affects the collector and *not*
-the TargetAllocator.
+
+> ✨ The above roles can be combined into a single role.
+
 
 ### Service / Pod monitor endpoint credentials
 

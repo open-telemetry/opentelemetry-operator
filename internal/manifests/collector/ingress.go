@@ -32,7 +32,7 @@ import (
 func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 	name := naming.Ingress(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
-	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeNginx {
+	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeIngress {
 		return nil, nil
 	}
 
@@ -167,7 +167,18 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollec
 				resultingInferredPorts = append(resultingInferredPorts, *filtered)
 			}
 		}
-		ports = append(otelcol.Spec.Ports, resultingInferredPorts...)
+
+		ports = append(toServicePorts(otelcol.Spec.Ports), resultingInferredPorts...)
 	}
-	return ports, err
+
+	return ports, nil
+}
+
+func toServicePorts(spec []v1beta1.PortsSpec) []corev1.ServicePort {
+	var ports []corev1.ServicePort
+	for _, p := range spec {
+		ports = append(ports, p.ServicePort)
+	}
+
+	return ports
 }

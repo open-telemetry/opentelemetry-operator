@@ -145,11 +145,11 @@ func TestConfigYaml(t *testing.T) {
 					"insights": "yeah!",
 				},
 			},
-			Pipelines: AnyConfig{
-				Object: map[string]interface{}{
-					"receivers":  []string{"otlp"},
-					"processors": []string{"modify_2000"},
-					"exporters":  []string{"otlp/exporter", "con"},
+			Pipelines: map[string]*Pipeline{
+				"traces": {
+					Receivers:  []string{"otlp"},
+					Processors: []string{"modify_2000"},
+					Exporters:  []string{"otlp/exporter", "con"},
 				},
 			},
 		},
@@ -173,14 +173,215 @@ service:
   telemetry:
     insights: yeah!
   pipelines:
-    exporters:
-      - otlp/exporter
-      - con
-    processors:
-      - modify_2000
-    receivers:
-      - otlp
+    traces:
+      exporters:
+        - otlp/exporter
+        - con
+      processors:
+        - modify_2000
+      receivers:
+        - otlp
 `
 
 	assert.Equal(t, expected, yamlCollector)
+}
+
+func TestGetTelemetryFromYAML(t *testing.T) {
+	collectorYaml, err := os.ReadFile("./testdata/otelcol-demo.yaml")
+	require.NoError(t, err)
+
+	cfg := &Config{}
+	err = go_yaml.Unmarshal(collectorYaml, cfg)
+	require.NoError(t, err)
+	telemetry := &Telemetry{
+		Metrics: MetricsConfig{
+			Level:   "detailed",
+			Address: "0.0.0.0:8888",
+		},
+	}
+	assert.Equal(t, telemetry, cfg.Service.GetTelemetry())
+}
+
+func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
+	collectorYaml, err := os.ReadFile("./testdata/otelcol-couchbase.yaml")
+	require.NoError(t, err)
+
+	cfg := &Config{}
+	err = go_yaml.Unmarshal(collectorYaml, cfg)
+	require.NoError(t, err)
+	assert.Nil(t, cfg.Service.GetTelemetry())
+}
+
+func TestConfigToMetricsPort(t *testing.T) {
+
+	for _, tt := range []struct {
+		desc         string
+		expectedPort int32
+		config       Service
+	}{
+		{
+			"custom port",
+			9090,
+			Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "0.0.0.0:9090",
+						},
+					},
+				},
+			},
+		},
+		{
+			"bad address",
+			8888,
+			Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "0.0.0.0",
+						},
+					},
+				},
+			},
+		},
+		{
+			"missing address",
+			8888,
+			Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"level": "detailed",
+						},
+					},
+				},
+			},
+		},
+		{
+			"missing metrics",
+			8888,
+			Service{
+				Telemetry: &AnyConfig{},
+			},
+		},
+		{
+			"missing telemetry",
+			8888,
+			Service{},
+		},
+	} {
+		t.Run(tt.desc, func(t *testing.T) {
+			// these are acceptable failures, we return to the collector's default metric port
+			port, err := tt.config.MetricsPort()
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedPort, port)
+		})
+	}
+}
+
+func TestConfig_GetEnabledComponents(t *testing.T) {
+	tests := []struct {
+		name string
+		file string
+		want map[ComponentType]map[string]interface{}
+	}{
+
+		{
+			name: "connectors",
+			file: "testdata/otelcol-connectors.yaml",
+			want: map[ComponentType]map[string]interface{}{
+				ComponentTypeReceiver: {
+					"foo":   struct{}{},
+					"count": struct{}{},
+				},
+				ComponentTypeProcessor: {},
+				ComponentTypeExporter: {
+					"bar":   struct{}{},
+					"count": struct{}{},
+				},
+			},
+		},
+		{
+			name: "couchbase",
+			file: "testdata/otelcol-couchbase.yaml",
+			want: map[ComponentType]map[string]interface{}{
+				ComponentTypeReceiver: {
+					"prometheus/couchbase": struct{}{},
+				},
+				ComponentTypeProcessor: {
+					"filter/couchbase":           struct{}{},
+					"metricstransform/couchbase": struct{}{},
+					"transform/couchbase":        struct{}{},
+				},
+				ComponentTypeExporter: {
+					"prometheus": struct{}{},
+				},
+			},
+		},
+		{
+			name: "demo",
+			file: "testdata/otelcol-demo.yaml",
+			want: map[ComponentType]map[string]interface{}{
+				ComponentTypeReceiver: {
+					"otlp": struct{}{},
+				},
+				ComponentTypeProcessor: {
+					"batch": struct{}{},
+				},
+				ComponentTypeExporter: {
+					"debug":      struct{}{},
+					"zipkin":     struct{}{},
+					"otlp":       struct{}{},
+					"prometheus": struct{}{},
+				},
+			},
+		},
+		{
+			name: "extensions",
+			file: "testdata/otelcol-extensions.yaml",
+			want: map[ComponentType]map[string]interface{}{
+				ComponentTypeReceiver: {
+					"otlp": struct{}{},
+				},
+				ComponentTypeProcessor: {},
+				ComponentTypeExporter: {
+					"otlp/auth": struct{}{},
+				},
+			},
+		},
+		{
+			name: "filelog",
+			file: "testdata/otelcol-filelog.yaml",
+			want: map[ComponentType]map[string]interface{}{
+				ComponentTypeReceiver: {
+					"filelog": struct{}{},
+				},
+				ComponentTypeProcessor: {},
+				ComponentTypeExporter: {
+					"debug": struct{}{},
+				},
+			},
+		},
+		{
+			name: "null",
+			file: "testdata/otelcol-null-values.yaml",
+			want: map[ComponentType]map[string]interface{}{
+				ComponentTypeReceiver:  {},
+				ComponentTypeProcessor: {},
+				ComponentTypeExporter:  {},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			collectorYaml, err := os.ReadFile(tt.file)
+			require.NoError(t, err)
+
+			c := &Config{}
+			err = go_yaml.Unmarshal(collectorYaml, c)
+			require.NoError(t, err)
+			assert.Equalf(t, tt.want, c.GetEnabledComponents(), "GetEnabledComponents()")
+		})
+	}
 }

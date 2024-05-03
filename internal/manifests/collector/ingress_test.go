@@ -23,11 +23,10 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 const testFileIngress = "testdata/ingress_testdata.yaml"
@@ -75,7 +74,7 @@ func TestDesiredIngresses(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: v1beta1.Config{},
 					Ingress: v1beta1.Ingress{
-						Type: v1beta1.IngressTypeNginx,
+						Type: v1beta1.IngressTypeIngress,
 					},
 				},
 			},
@@ -100,7 +99,7 @@ func TestDesiredIngresses(t *testing.T) {
 
 		params.OtelCol.Namespace = ns
 		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
-			Type:             v1beta1.IngressTypeNginx,
+			Type:             v1beta1.IngressTypeIngress,
 			Hostname:         hostname,
 			Annotations:      map[string]string{"some.key": "some.value"},
 			IngressClassName: &ingressClassName,
@@ -191,7 +190,7 @@ func TestDesiredIngresses(t *testing.T) {
 
 		params.OtelCol.Namespace = ns
 		params.OtelCol.Spec.Ingress = v1beta1.Ingress{
-			Type:             v1beta1.IngressTypeNginx,
+			Type:             v1beta1.IngressTypeIngress,
 			RuleType:         v1beta1.IngressRuleTypeSubdomain,
 			Hostname:         hostname,
 			Annotations:      map[string]string{"some.key": "some.value"},

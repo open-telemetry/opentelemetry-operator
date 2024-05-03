@@ -20,6 +20,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
@@ -96,7 +97,7 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 				Image:                         copy.Spec.Image,
 				ImagePullPolicy:               copy.Spec.ImagePullPolicy,
 				VolumeMounts:                  copy.Spec.VolumeMounts,
-				Ports:                         copy.Spec.Ports,
+				Ports:                         tov1beta1Ports(copy.Spec.Ports),
 				Env:                           copy.Spec.Env,
 				EnvFrom:                       copy.Spec.EnvFrom,
 				VolumeClaimTemplates:          copy.Spec.VolumeClaimTemplates,
@@ -146,13 +147,33 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 	}, nil
 }
 
+func tov1beta1Ports(in []PortsSpec) []v1beta1.PortsSpec {
+	var ports []v1beta1.PortsSpec
+
+	for _, p := range in {
+		ports = append(ports, v1beta1.PortsSpec{
+			ServicePort: v1.ServicePort{
+				Name:        p.ServicePort.Name,
+				Protocol:    p.ServicePort.Protocol,
+				AppProtocol: p.ServicePort.AppProtocol,
+				Port:        p.ServicePort.Port,
+				TargetPort:  p.ServicePort.TargetPort,
+				NodePort:    p.ServicePort.NodePort,
+			},
+			HostPort: p.HostPort,
+		})
+	}
+
+	return ports
+}
+
 func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedded {
 	return v1beta1.TargetAllocatorEmbedded{
 		Replicas:           in.Replicas,
 		NodeSelector:       in.NodeSelector,
 		Resources:          in.Resources,
-		AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategy(in.AllocationStrategy),
-		FilterStrategy:     v1beta1.TargetAllocatorFilterStrategy(in.FilterStrategy),
+		AllocationStrategy: tov1beta1TAAllocationStrategy(in.AllocationStrategy),
+		FilterStrategy:     tov1beta1TAFilterStrategy(in.FilterStrategy),
 		ServiceAccount:     in.ServiceAccount,
 		Image:              in.Image,
 		Enabled:            in.Enabled,
@@ -251,6 +272,26 @@ func tov1beta1ConfigMaps(in []ConfigMapsSpec) []v1beta1.ConfigMapsSpec {
 	return mapsSpecs
 }
 
+func tov1alpha1Ports(in []v1beta1.PortsSpec) []PortsSpec {
+	var ports []PortsSpec
+
+	for _, p := range in {
+		ports = append(ports, PortsSpec{
+			ServicePort: v1.ServicePort{
+				Name:        p.ServicePort.Name,
+				Protocol:    p.ServicePort.Protocol,
+				AppProtocol: p.ServicePort.AppProtocol,
+				Port:        p.ServicePort.Port,
+				TargetPort:  p.ServicePort.TargetPort,
+				NodePort:    p.ServicePort.NodePort,
+			},
+			HostPort: p.HostPort,
+		})
+	}
+
+	return ports
+}
+
 func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, error) {
 	copy := in.DeepCopy()
 	configYaml, err := copy.Spec.Config.Yaml()
@@ -289,7 +330,7 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			ImagePullPolicy:      copy.Spec.ImagePullPolicy,
 			Config:               configYaml,
 			VolumeMounts:         copy.Spec.VolumeMounts,
-			Ports:                copy.Spec.Ports,
+			Ports:                tov1alpha1Ports(copy.Spec.Ports),
 			Env:                  copy.Spec.Env,
 			EnvFrom:              copy.Spec.EnvFrom,
 			VolumeClaimTemplates: copy.Spec.VolumeClaimTemplates,
@@ -403,8 +444,8 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		Replicas:           in.Replicas,
 		NodeSelector:       in.NodeSelector,
 		Resources:          in.Resources,
-		AllocationStrategy: OpenTelemetryTargetAllocatorAllocationStrategy(in.AllocationStrategy),
-		FilterStrategy:     string(in.FilterStrategy),
+		AllocationStrategy: tov1alpha1TAAllocationStrategy(in.AllocationStrategy),
+		FilterStrategy:     tov1alpha1TAFilterStrategy(in.FilterStrategy),
 		ServiceAccount:     in.ServiceAccount,
 		Image:              in.Image,
 		Enabled:            in.Enabled,
@@ -428,4 +469,43 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		},
 		PodDisruptionBudget: tov1alpha1PodDisruptionBudget(in.PodDisruptionBudget),
 	}
+}
+
+func tov1alpha1TAFilterStrategy(strategy v1beta1.TargetAllocatorFilterStrategy) string {
+	switch strategy {
+	case v1beta1.TargetAllocatorFilterStrategyRelabelConfig:
+		return string(strategy)
+	}
+	return ""
+}
+
+func tov1alpha1TAAllocationStrategy(strategy v1beta1.TargetAllocatorAllocationStrategy) OpenTelemetryTargetAllocatorAllocationStrategy {
+	switch strategy {
+	case v1beta1.TargetAllocatorAllocationStrategyConsistentHashing:
+		return OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing
+	case v1beta1.TargetAllocatorAllocationStrategyPerNode:
+		return OpenTelemetryTargetAllocatorAllocationStrategyPerNode
+	case v1beta1.TargetAllocatorAllocationStrategyLeastWeighted:
+		return OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted
+	}
+	return ""
+}
+
+func tov1beta1TAFilterStrategy(strategy string) v1beta1.TargetAllocatorFilterStrategy {
+	if strategy == string(v1beta1.TargetAllocatorFilterStrategyRelabelConfig) {
+		return v1beta1.TargetAllocatorFilterStrategyRelabelConfig
+	}
+	return ""
+}
+
+func tov1beta1TAAllocationStrategy(strategy OpenTelemetryTargetAllocatorAllocationStrategy) v1beta1.TargetAllocatorAllocationStrategy {
+	switch strategy {
+	case OpenTelemetryTargetAllocatorAllocationStrategyPerNode:
+		return v1beta1.TargetAllocatorAllocationStrategyPerNode
+	case OpenTelemetryTargetAllocatorAllocationStrategyConsistentHashing:
+		return v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
+	case OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted:
+		return v1beta1.TargetAllocatorAllocationStrategyLeastWeighted
+	}
+	return ""
 }

@@ -23,14 +23,10 @@ import (
 	"unsafe"
 
 	"github.com/go-logr/logr"
-
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
-
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,6 +34,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 const (
@@ -57,7 +57,6 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 	if len(pod.Spec.Containers) < 1 {
 		return pod
 	}
-
 	if insts.Java.Instrumentation != nil {
 		otelinst := *insts.Java.Instrumentation
 		var err error
@@ -235,6 +234,31 @@ func getContainerIndex(containerName string, pod corev1.Pod) int {
 
 func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod corev1.Pod, index int) corev1.Pod {
 	container := &pod.Spec.Containers[index]
+
+	idx := getIndexOfEnv(container.Env, constants.EnvPodIP)
+	if idx == -1 {
+		container.Env = append([]corev1.EnvVar{{
+			Name: constants.EnvPodIP,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "status.podIP",
+				},
+			},
+		}}, container.Env...)
+	}
+
+	idx = getIndexOfEnv(container.Env, constants.EnvNodeIP)
+	if idx == -1 {
+		container.Env = append([]corev1.EnvVar{{
+			Name: constants.EnvNodeIP,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "status.hostIP",
+				},
+			},
+		}}, container.Env...)
+	}
+
 	for _, env := range otelinst.Spec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
 		if idx == -1 {
@@ -374,16 +398,19 @@ func chooseServiceName(pod corev1.Pod, resources map[string]string, index int) s
 	if name := resources[string(semconv.K8SDeploymentNameKey)]; name != "" {
 		return name
 	}
+	if name := resources[string(semconv.K8SReplicaSetNameKey)]; name != "" {
+		return name
+	}
 	if name := resources[string(semconv.K8SStatefulSetNameKey)]; name != "" {
 		return name
 	}
 	if name := resources[string(semconv.K8SDaemonSetNameKey)]; name != "" {
 		return name
 	}
-	if name := resources[string(semconv.K8SJobNameKey)]; name != "" {
+	if name := resources[string(semconv.K8SCronJobNameKey)]; name != "" {
 		return name
 	}
-	if name := resources[string(semconv.K8SCronJobNameKey)]; name != "" {
+	if name := resources[string(semconv.K8SJobNameKey)]; name != "" {
 		return name
 	}
 	if name := resources[string(semconv.K8SPodNameKey)]; name != "" {
@@ -445,7 +472,7 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	k8sResources[semconv.K8SPodNameKey] = pod.Name
 	k8sResources[semconv.K8SPodUIDKey] = string(pod.UID)
 	k8sResources[semconv.K8SNodeNameKey] = pod.Spec.NodeName
-	k8sResources[semconv.ServiceInstanceIDKey] = createServiceInstanceId(ns.Name, pod.Name, pod.Spec.Containers[index].Name)
+	k8sResources[semconv.ServiceInstanceIDKey] = createServiceInstanceId(ns.Name, fmt.Sprintf("$(%s)", constants.EnvPodName), pod.Spec.Containers[index].Name)
 	i.addParentResourceLabels(ctx, otelinst.Spec.Resource.AddK8sUIDAttributes, ns, pod.ObjectMeta, k8sResources)
 	for k, v := range k8sResources {
 		if !existingRes[string(k)] && v != "" {
@@ -502,6 +529,26 @@ func (i *sdkInjector) addParentResourceLabels(ctx context.Context, uid bool, ns 
 			if uid {
 				resources[semconv.K8SJobUIDKey] = string(owner.UID)
 			}
+
+			// parent of Job can be CronJob which we are interested to know
+			j := batchv1.Job{}
+			nsn := types.NamespacedName{Namespace: ns.Name, Name: owner.Name}
+			backOff := wait.Backoff{Duration: 10 * time.Millisecond, Factor: 1.5, Jitter: 0.1, Steps: 20, Cap: 2 * time.Second}
+
+			checkError := func(err error) bool {
+				return apierrors.IsNotFound(err)
+			}
+
+			getJob := func() error {
+				return i.client.Get(ctx, nsn, &j)
+			}
+
+			// use a retry loop to get the Job. A single call to client.get fails occasionally
+			err := retry.OnError(backOff, checkError, getJob)
+			if err != nil {
+				i.logger.Error(err, "failed to get job", "job", nsn.Name, "namespace", nsn.Namespace)
+			}
+			i.addParentResourceLabels(ctx, uid, ns, j.ObjectMeta, resources)
 		case "cronjob":
 			resources[semconv.K8SCronJobNameKey] = owner.Name
 			if uid {

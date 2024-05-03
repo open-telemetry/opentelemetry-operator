@@ -29,10 +29,11 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-// headless label is to differentiate the headless service from the clusterIP service.
+// headless and monitoring labels are to differentiate the headless/monitoring services from the clusterIP service.
 const (
-	headlessLabel  = "operator.opentelemetry.io/collector-headless-service"
-	headlessExists = "Exists"
+	headlessLabel   = "operator.opentelemetry.io/collector-headless-service"
+	monitoringLabel = "operator.opentelemetry.io/collector-monitoring-service"
+	valueExists     = "Exists"
 )
 
 func HeadlessService(params manifests.Params) (*corev1.Service, error) {
@@ -42,7 +43,7 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 	}
 
 	h.Name = naming.HeadlessService(params.OtelCol.Name)
-	h.Labels[headlessLabel] = headlessExists
+	h.Labels[headlessLabel] = valueExists
 
 	// copy to avoid modifying params.OtelCol.Annotations
 	annotations := map[string]string{
@@ -61,19 +62,9 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 
 	name := naming.MonitoringService(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels[monitoringLabel] = valueExists
 
-	out, err := params.OtelCol.Spec.Config.Yaml()
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := adapters.ConfigFromString(out)
-	if err != nil {
-		params.Log.Error(err, "couldn't extract the configuration")
-		return nil, err
-	}
-
-	metricsPort, err := adapters.ConfigToMetricsPort(params.Log, c)
+	metricsPort, err := params.OtelCol.Spec.Config.Service.MetricsPort()
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +132,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 			}
 		}
 
-		ports = append(params.OtelCol.Spec.Ports, resultingInferredPorts...)
+		ports = append(toServicePorts(params.OtelCol.Spec.Ports), resultingInferredPorts...)
 	}
 
 	// if we have no ports, we don't need a service
@@ -215,7 +206,7 @@ func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers ma
 	return &candidate
 }
 
-func extractPortNumbersAndNames(ports []corev1.ServicePort) (map[PortNumberKey]bool, map[string]bool) {
+func extractPortNumbersAndNames(ports []v1beta1.PortsSpec) (map[PortNumberKey]bool, map[string]bool) {
 	numbers := map[PortNumberKey]bool{}
 	names := map[string]bool{}
 

@@ -21,20 +21,19 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
-
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 )
 
 func TestExtractPortNumbersAndNames(t *testing.T) {
 	t.Run("should return extracted port names and numbers", func(t *testing.T) {
-		ports := []v1.ServicePort{
-			{Name: "web", Port: 8080},
-			{Name: "tcp", Port: 9200},
-			{Name: "web-explicit", Port: 80, Protocol: v1.ProtocolTCP},
-			{Name: "syslog-udp", Port: 514, Protocol: v1.ProtocolUDP},
+		ports := []v1beta1.PortsSpec{
+			{ServicePort: v1.ServicePort{Name: "web", Port: 8080}},
+			{ServicePort: v1.ServicePort{Name: "tcp", Port: 9200}},
+			{ServicePort: v1.ServicePort{Name: "web-explicit", Port: 80, Protocol: v1.ProtocolTCP}},
+			{ServicePort: v1.ServicePort{Name: "syslog-udp", Port: 514, Protocol: v1.ProtocolUDP}},
 		}
 		expectedPortNames := map[string]bool{"web": true, "tcp": true, "web-explicit": true, "syslog-udp": true}
 		expectedPortNumbers := map[PortNumberKey]bool{
@@ -168,12 +167,13 @@ func TestDesiredService(t *testing.T) {
 	t.Run("should return service with port mentioned in OtelCol.Spec.Ports and inferred ports", func(t *testing.T) {
 
 		grpc := "grpc"
-		jaegerPorts := v1.ServicePort{
-			Name:        "jaeger-grpc",
-			Protocol:    "TCP",
-			Port:        14250,
-			AppProtocol: &grpc,
-		}
+		jaegerPorts := v1beta1.PortsSpec{
+			ServicePort: v1.ServicePort{
+				Name:        "jaeger-grpc",
+				Protocol:    "TCP",
+				Port:        14250,
+				AppProtocol: &grpc,
+			}}
 		params := deploymentParams()
 		ports := append(params.OtelCol.Spec.Ports, jaegerPorts)
 		expected := service("test-collector", ports)
@@ -186,12 +186,13 @@ func TestDesiredService(t *testing.T) {
 
 	t.Run("on OpenShift gRPC appProtocol should be h2c", func(t *testing.T) {
 		h2c := "h2c"
-		jaegerPort := v1.ServicePort{
-			Name:        "jaeger-grpc",
-			Protocol:    "TCP",
-			Port:        14250,
-			AppProtocol: &h2c,
-		}
+		jaegerPort := v1beta1.PortsSpec{
+			ServicePort: v1.ServicePort{
+				Name:        "jaeger-grpc",
+				Protocol:    "TCP",
+				Port:        14250,
+				AppProtocol: &h2c,
+			}}
 
 		params := deploymentParams()
 
@@ -208,12 +209,13 @@ func TestDesiredService(t *testing.T) {
 	t.Run("should return service with local internal traffic policy", func(t *testing.T) {
 
 		grpc := "grpc"
-		jaegerPorts := v1.ServicePort{
-			Name:        "jaeger-grpc",
-			Protocol:    "TCP",
-			Port:        14250,
-			AppProtocol: &grpc,
-		}
+		jaegerPorts := v1beta1.PortsSpec{
+			ServicePort: v1.ServicePort{
+				Name:        "jaeger-grpc",
+				Protocol:    "TCP",
+				Port:        14250,
+				AppProtocol: &grpc,
+			}}
 		p := paramsWithMode(v1beta1.ModeDaemonSet)
 		ports := append(p.OtelCol.Spec.Ports, jaegerPorts)
 		expected := serviceWithInternalTrafficPolicy("test-collector", ports, v1.ServiceInternalTrafficPolicyLocal)
@@ -277,13 +279,18 @@ func TestMonitoringService(t *testing.T) {
 	})
 }
 
-func service(name string, ports []v1.ServicePort) v1.Service {
+func service(name string, ports []v1beta1.PortsSpec) v1.Service {
 	return serviceWithInternalTrafficPolicy(name, ports, v1.ServiceInternalTrafficPolicyCluster)
 }
 
-func serviceWithInternalTrafficPolicy(name string, ports []v1.ServicePort, internalTrafficPolicy v1.ServiceInternalTrafficPolicyType) v1.Service {
+func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, internalTrafficPolicy v1.ServiceInternalTrafficPolicyType) v1.Service {
 	params := deploymentParams()
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+
+	svcPorts := []v1.ServicePort{}
+	for _, p := range ports {
+		svcPorts = append(svcPorts, p.ServicePort)
+	}
 
 	return v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -296,7 +303,7 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1.ServicePort, inter
 			InternalTrafficPolicy: &internalTrafficPolicy,
 			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			ClusterIP:             "",
-			Ports:                 ports,
+			Ports:                 svcPorts,
 		},
 	}
 }

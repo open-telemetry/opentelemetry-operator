@@ -2,24 +2,25 @@
 
 Steps to release a new version of the OpenTelemetry Operator:
 
-1. Set the version you're releasing as an environment variable for convenience: `export VERSION=0.n+1.0`
-2. Update `versions.txt`
-   - Operator, target allocator and opamp-bridge should be `$VERSION`. 
-   - OpenTelemetry Collector should be the latest collector version. The `major.minor` should typically match, with the patch portion being possibly different.
-   - The `autoinstrumentation-*` versions should match the latest supported versions in `autoinstrumentation/`.
-> [!WARNING]  
-> DO NOT BUMP JAVA PAST `1.32.X` AND DO NOT BUMP .NET PAST `1.2.0`. Upgrades past these versions will introduce breaking HTTP semantic convention changes.
-3. Check if the compatible OpenShift versions are updated in the `hack/add-openshift-annotations.sh` script.
-3. Update the bundle by running `make bundle VERSION=$VERSION`.
-3. Change the compatibility matrix in the [readme](./README.md) file, using the OpenTelemetry Operator version to be released and the current latest Kubernetes version as the latest supported version. Remove the oldest entry.
-3. Update release schedule table, by moving the current release manager to the end of the table with updated release version.
-3. Add the changes to the changelog by running `make chlog-update VERSION=$VERSION`.
-3. Check the OpenTelemetry Collector's changelog and ensure migration steps are present in `pkg/collector/upgrade`
-3. Once the changes above are merged and available in `main`, a draft release will be automatically created. Publish it once the release workflows all complete. 
-3. Update the operator version in the Helm Chart, as per the [release guide](https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-operator/CONTRIBUTING.md)
-3. The GitHub Workflow, submits two pull requests to the Operator hub repositories. Make sure the pull requests are approved and merged.
-   - `community-operators-prod` is used by OLM on OpenShift. Example: [`operator-framework/community-operators-prod`](https://github.com/redhat-openshift-ecosystem/community-operators-prod/pull/494)
-   - `community-operators` is used by Operatorhub.io. Example: [`operator-framework/community-operators`](https://github.com/k8s-operatorhub/community-operators/pull/461)
+1. Create a `Prepare relese x.y.z` pull request with the following content:
+   1. Set the version you're releasing as an environment variable for convenience: `export VERSION=0.n+1.0`
+   1. Update `versions.txt`
+      - Operator, target allocator and opamp-bridge should be `$VERSION`.
+      - OpenTelemetry Collector should be the latest collector version. The `major.minor` should typically match, with the patch portion being possibly different.
+      - The `autoinstrumentation-*` versions should match the latest supported versions in `autoinstrumentation/`.
+        > [!WARNING]
+        > DO NOT BUMP JAVA PAST `1.32.X` AND DO NOT BUMP .NET PAST `1.2.0`. Upgrades past these versions will introduce breaking HTTP semantic convention changes.
+   1. Check if the compatible OpenShift versions are updated in the `hack/add-openshift-annotations.sh` script.
+   1. Update the bundle by running `make bundle VERSION=$VERSION`.
+   1. Change the compatibility matrix in the [readme](./README.md) file, using the OpenTelemetry Operator version to be released and the current latest Kubernetes version as the latest supported version. Remove the oldest entry.
+   1. Update release schedule table, by moving the current release manager to the end of the table with updated release version.
+   1. Add the changes to the changelog by running `make chlog-update VERSION=$VERSION`.
+   1. Check the OpenTelemetry Collector's changelog and ensure migration steps are present in `pkg/collector/upgrade`
+1. Once the changes above are merged and available in `main`, a draft release will be automatically created. Publish it once the release workflows all complete.
+1. Update the operator version in the Helm Chart, as per the [release guide](https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-operator/CONTRIBUTING.md)
+1. The GitHub Workflow, submits two pull requests to the Operator hub repositories. Make sure the pull requests are approved and merged.
+    - `community-operators-prod` is used by OLM on OpenShift. Example: [`operator-framework/community-operators-prod`](https://github.com/redhat-openshift-ecosystem/community-operators-prod/pull/494)
+    - `community-operators` is used by Operatorhub.io. Example: [`operator-framework/community-operators`](https://github.com/k8s-operatorhub/community-operators/pull/461)
 
 ## Generating the changelog
 
@@ -30,7 +31,6 @@ make chlog-update VERSION=$VERSION
 ```
 
 This will delete all entries (other than the template) in the `.chloggen` directory and create a populated Changelog.md entry. Make sure that the PR you are generating for the release has the `[chore]` prefix, otherwise CI will not pass.
-
 
 ## Release managers
 
@@ -44,10 +44,10 @@ The operator should be released within a week after the [OpenTelemetry collector
 
 | Version  | Release manager |
 |----------|-----------------|
-| v0.96.0  | @frzifus        |
-| v0.97.0  | @jaronoff97     |
-| v0.98.0  | @yuriolisa      |
-| v0.99.0  | @pavolloffay    |
 | v0.100.0 | @VineethReddy02 |
 | v0.101.0 | @TylerHelmuth   |
 | v0.102.0 | @swiatekm-sumo  |
+| v0.103.0 | @frzifus        |
+| v0.104.0 | @jaronoff97     |
+| v0.105.0 | @pavolloffay    |
+| v0.106.0 | @yuriolisa    |

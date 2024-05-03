@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -51,8 +52,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
@@ -91,6 +94,14 @@ var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
+	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
+}
+
+func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, error) {
+	if m.PrometheusCRsAvailabilityFunc != nil {
+		return m.PrometheusCRsAvailabilityFunc()
+	}
+	return prometheus.NotAvailable, nil
 }
 
 func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error) {
@@ -104,6 +115,17 @@ func TestMain(m *testing.M) {
 	ctx, cancel = context.WithCancel(context.TODO())
 	defer cancel()
 
+	if err != nil {
+		fmt.Printf("failed to start testEnv: %v", err)
+		os.Exit(1)
+	}
+
+	utilruntime.Must(monitoringv1.AddToScheme(testScheme))
+	utilruntime.Must(networkingv1.AddToScheme(testScheme))
+	utilruntime.Must(routev1.AddToScheme(testScheme))
+	utilruntime.Must(v1alpha1.AddToScheme(testScheme))
+	utilruntime.Must(v1beta1.AddToScheme(testScheme))
+
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
 		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD},
@@ -112,26 +134,6 @@ func TestMain(m *testing.M) {
 		},
 	}
 	cfg, err = testEnv.Start()
-	if err != nil {
-		fmt.Printf("failed to start testEnv: %v", err)
-		os.Exit(1)
-	}
-	if err = monitoringv1.AddToScheme(testScheme); err != nil {
-		fmt.Printf("failed to register scheme: %v", err)
-		os.Exit(1)
-	}
-	if err = networkingv1.AddToScheme(testScheme); err != nil {
-		fmt.Printf("failed to register scheme: %v", err)
-		os.Exit(1)
-	}
-	if err = routev1.AddToScheme(testScheme); err != nil {
-		fmt.Printf("failed to register scheme: %v", err)
-		os.Exit(1)
-	}
-	if err = v1alpha1.AddToScheme(testScheme); err != nil {
-		fmt.Printf("failed to register scheme: %v", err)
-		os.Exit(1)
-	}
 	// +kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: testScheme})
@@ -164,7 +166,7 @@ func TestMain(m *testing.M) {
 	}
 	reviewer := rbac.NewReviewer(clientset)
 
-	if err = v1alpha1.SetupCollectorWebhook(mgr, config.New(), reviewer); err != nil {
+	if err = v1beta1.SetupCollectorWebhook(mgr, config.New(), reviewer); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
@@ -245,15 +247,16 @@ func testCollectorWithModeAndReplicas(mode v1alpha1.Mode, replicas int32) v1alph
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
-			Ports: []v1.ServicePort{{
-				Name: "web",
-				Port: 80,
-				TargetPort: intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 80,
-				},
-				NodePort: 0,
-			}},
+			Ports: []v1alpha1.PortsSpec{{
+				ServicePort: v1.ServicePort{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}}},
 			Replicas: &replicas,
 			Config:   string(configYAML),
 			Mode:     mode,
@@ -294,15 +297,16 @@ func testCollectorWithConfigFile(taContainerImage string, file string) (v1alpha1
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			Mode: v1alpha1.ModeStatefulSet,
-			Ports: []v1.ServicePort{{
-				Name: "web",
-				Port: 80,
-				TargetPort: intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 80,
-				},
-				NodePort: 0,
-			}},
+			Ports: []v1alpha1.PortsSpec{{
+				ServicePort: v1.ServicePort{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}}},
 			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
 				Enabled: true,
 				Image:   taContainerImage,
@@ -331,15 +335,16 @@ func testCollectorWithHPA(minReps, maxReps int32) v1alpha1.OpenTelemetryCollecto
 			UID:       instanceUID,
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Ports: []v1.ServicePort{{
-				Name: "web",
-				Port: 80,
-				TargetPort: intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 80,
-				},
-				NodePort: 0,
-			}},
+			Ports: []v1alpha1.PortsSpec{{
+				ServicePort: v1.ServicePort{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}}},
 			Config: string(configYAML),
 			Autoscaler: &v1alpha1.AutoscalerSpec{
 				MinReplicas:          &minReps,
@@ -390,15 +395,16 @@ func testCollectorWithPDB(minAvailable, maxUnavailable int32) v1alpha1.OpenTelem
 			UID:       instanceUID,
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Ports: []v1.ServicePort{{
-				Name: "web",
-				Port: 80,
-				TargetPort: intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 80,
-				},
-				NodePort: 0,
-			}},
+			Ports: []v1alpha1.PortsSpec{{
+				ServicePort: v1.ServicePort{
+					Name: "web",
+					Port: 80,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 80,
+					},
+					NodePort: 0,
+				}}},
 			Config:              string(configYAML),
 			PodDisruptionBudget: pdb,
 		},

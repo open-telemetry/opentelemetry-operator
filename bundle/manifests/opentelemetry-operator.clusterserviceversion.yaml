@@ -57,7 +57,41 @@ metadata:
             "name": "otel"
           },
           "spec": {
-            "config": "receivers:\n  otlp:\n    protocols: \n      grpc:\n      http:\n\nexporters:\n  debug:\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [debug]\n"
+            "config": "receivers:\n  otlp:\n    protocols: \n      grpc: {}\n      http: {}\n\nexporters:\n  debug: {}\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [debug]\n"
+          }
+        },
+        {
+          "apiVersion": "opentelemetry.io/v1beta1",
+          "kind": "OpenTelemetryCollector",
+          "metadata": {
+            "name": "otel"
+          },
+          "spec": {
+            "config": {
+              "exporters": {
+                "debug": {}
+              },
+              "receivers": {
+                "otlp": {
+                  "protocols": {
+                    "grpc": {},
+                    "http": {}
+                  }
+                }
+              },
+              "service": {
+                "pipelines": {
+                  "traces": {
+                    "exporters": [
+                      "debug"
+                    ],
+                    "receivers": [
+                      "otlp"
+                    ]
+                  }
+                }
+              }
+            }
           }
         }
       ]
@@ -65,13 +99,13 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2024-03-04T14:38:01Z"
+    createdAt: "2024-04-30T12:37:39Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.95.0
+  name: opentelemetry-operator.v0.99.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -103,6 +137,59 @@ spec:
       - kind: Service
         name: ""
         version: v1
+      version: v1alpha1
+    - description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
+        API.
+      displayName: OpenTelemetry Collector
+      kind: OpenTelemetryCollector
+      name: opentelemetrycollectors.opentelemetry.io
+      resources:
+      - kind: ConfigMaps
+        name: ""
+        version: v1
+      - kind: DaemonSets
+        name: ""
+        version: apps/v1
+      - kind: Deployment
+        name: ""
+        version: apps/v1
+      - kind: Ingress
+        name: ""
+        version: networking/v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: StatefulSets
+        name: ""
+        version: apps/v1
+      specDescriptors:
+      - description: ObservabilitySpec defines how telemetry data gets handled.
+        displayName: Observability
+        path: observability
+      - description: Metrics defines the metrics configuration for operands.
+        displayName: Metrics Config
+        path: observability.metrics
+      - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
+          mode) should be created for the service managed by the OpenTelemetry Operator.
+          The operator.observability.prometheus feature gate must be enabled to use
+          this feature.
+        displayName: Create ServiceMonitors for OpenTelemetry Collector
+        path: observability.metrics.enableMetrics
+      - description: ObservabilitySpec defines how telemetry data gets handled.
+        displayName: Observability
+        path: targetAllocator.observability
+      - description: Metrics defines the metrics configuration for operands.
+        displayName: Metrics Config
+        path: targetAllocator.observability.metrics
+      - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
+          mode) should be created for the service managed by the OpenTelemetry Operator.
+          The operator.observability.prometheus feature gate must be enabled to use
+          this feature.
+        displayName: Create ServiceMonitors for OpenTelemetry Collector
+        path: targetAllocator.observability.metrics.enableMetrics
       version: v1alpha1
     - description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
         API.
@@ -153,7 +240,7 @@ spec:
           this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: targetAllocator.observability.metrics.enableMetrics
-      version: v1alpha1
+      version: v1beta1
   description: |-
     OpenTelemetry is a collection of tools, APIs, and SDKs. You use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) for analysis in order to understand your software's performance and behavior.
 
@@ -235,6 +322,14 @@ spec:
           - list
           - patch
           - update
+          - watch
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          verbs:
+          - get
+          - list
           - watch
         - apiGroups:
           - config.openshift.io
@@ -403,8 +498,8 @@ spec:
                 - --enable-leader-election
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
-                - --feature-gates=+operator.autoinstrumentation.go,+operator.autoinstrumentation.nginx
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.95.0
+                - --enable-nginx-instrumentation=true
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.99.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -487,9 +582,9 @@ spec:
         serviceAccountName: opentelemetry-operator-controller-manager
     strategy: deployment
   installModes:
-  - supported: true
+  - supported: false
     type: OwnNamespace
-  - supported: true
+  - supported: false
     type: SingleNamespace
   - supported: false
     type: MultiNamespace
@@ -512,8 +607,20 @@ spec:
   minKubeVersion: 1.23.0
   provider:
     name: OpenTelemetry Community
-  version: 0.95.0
+  version: 0.99.0
   webhookdefinitions:
+  - admissionReviewVersions:
+    - v1alpha1
+    - v1beta1
+    containerPort: 443
+    conversionCRDs:
+    - opentelemetrycollectors.opentelemetry.io
+    deploymentName: opentelemetry-operator-controller-manager
+    generateName: copentelemetrycollectors.kb.io
+    sideEffects: None
+    targetPort: 9443
+    type: ConversionWebhook
+    webhookPath: /convert
   - admissionReviewVersions:
     - v1
     containerPort: 443
@@ -559,12 +666,12 @@ spec:
     containerPort: 443
     deploymentName: opentelemetry-operator-controller-manager
     failurePolicy: Fail
-    generateName: mopentelemetrycollector.kb.io
+    generateName: mopentelemetrycollectorbeta.kb.io
     rules:
     - apiGroups:
       - opentelemetry.io
       apiVersions:
-      - v1alpha1
+      - v1beta1
       operations:
       - CREATE
       - UPDATE
@@ -573,7 +680,7 @@ spec:
     sideEffects: None
     targetPort: 9443
     type: MutatingAdmissionWebhook
-    webhookPath: /mutate-opentelemetry-io-v1alpha1-opentelemetrycollector
+    webhookPath: /mutate-opentelemetry-io-v1beta1-opentelemetrycollector
   - admissionReviewVersions:
     - v1
     containerPort: 443
@@ -676,12 +783,12 @@ spec:
     containerPort: 443
     deploymentName: opentelemetry-operator-controller-manager
     failurePolicy: Fail
-    generateName: vopentelemetrycollectorcreateupdate.kb.io
+    generateName: vopentelemetrycollectorcreateupdatebeta.kb.io
     rules:
     - apiGroups:
       - opentelemetry.io
       apiVersions:
-      - v1alpha1
+      - v1beta1
       operations:
       - CREATE
       - UPDATE
@@ -690,18 +797,18 @@ spec:
     sideEffects: None
     targetPort: 9443
     type: ValidatingAdmissionWebhook
-    webhookPath: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
+    webhookPath: /validate-opentelemetry-io-v1beta1-opentelemetrycollector
   - admissionReviewVersions:
     - v1
     containerPort: 443
     deploymentName: opentelemetry-operator-controller-manager
     failurePolicy: Ignore
-    generateName: vopentelemetrycollectordelete.kb.io
+    generateName: vopentelemetrycollectordeletebeta.kb.io
     rules:
     - apiGroups:
       - opentelemetry.io
       apiVersions:
-      - v1alpha1
+      - v1beta1
       operations:
       - DELETE
       resources:
@@ -709,4 +816,4 @@ spec:
     sideEffects: None
     targetPort: 9443
     type: ValidatingAdmissionWebhook
-    webhookPath: /validate-opentelemetry-io-v1alpha1-opentelemetrycollector
+    webhookPath: /validate-opentelemetry-io-v1beta1-opentelemetrycollector

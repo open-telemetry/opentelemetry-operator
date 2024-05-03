@@ -29,7 +29,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
@@ -229,7 +228,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if featuregate.EnableJavaAutoInstrumentationSupport.IsEnabled() || inst == nil {
+	if pm.config.EnableJavaAutoInstrumentation() || inst == nil {
 		insts.Java.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Java auto instrumentation is not enabled")
@@ -241,7 +240,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if featuregate.EnableNodeJSAutoInstrumentationSupport.IsEnabled() || inst == nil {
+	if pm.config.EnableNodeJSAutoInstrumentation() || inst == nil {
 		insts.NodeJS.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for NodeJS auto instrumentation is not enabled")
@@ -253,7 +252,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if featuregate.EnablePythonAutoInstrumentationSupport.IsEnabled() || inst == nil {
+	if pm.config.EnablePythonAutoInstrumentation() || inst == nil {
 		insts.Python.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Python auto instrumentation is not enabled")
@@ -278,7 +277,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if featuregate.EnableGoAutoInstrumentationSupport.IsEnabled() || inst == nil {
+	if pm.config.EnableGoAutoInstrumentation() || inst == nil {
 		insts.Go.Instrumentation = inst
 	} else {
 		logger.Error(err, "support for Go auto instrumentation is not enabled")
@@ -302,7 +301,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if featuregate.EnableNginxAutoInstrumentationSupport.IsEnabled() || inst == nil {
+	if pm.config.EnableNginxAutoInstrumentation() || inst == nil {
 		insts.Nginx.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Nginx auto instrumentation is not enabled")

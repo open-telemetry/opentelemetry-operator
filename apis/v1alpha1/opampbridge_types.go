@@ -107,6 +107,7 @@ type OpAMPBridgeSpec struct {
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	//PodDNSPolicy define the DNS policies which can be set on a per-Pod basis. Currently Kubernetes supports the following Pod-specific DNS policies.
 	//These policies are specified in the dnsPolicy field of a Pod Spec.
+	// +kubebuilder:default:=ClusterFirst
 	PodDNSPolicy v1.DNSPolicy `json:"podDnsPolicy,omitempty"`
 	//PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
 	PodDNSConfig v1.PodDNSConfig `json:"podDnsConfig,omitempty"`

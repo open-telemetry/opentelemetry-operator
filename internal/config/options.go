@@ -22,6 +22,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
@@ -45,11 +46,17 @@ type options struct {
 	enableMultiInstrumentation          bool
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
+	enableGoInstrumentation             bool
+	enableNginxInstrumentation          bool
+	enablePythonInstrumentation         bool
+	enableNodeJSInstrumentation         bool
+	enableJavaInstrumentation           bool
 	targetAllocatorConfigMapEntry       string
 	operatorOpAMPBridgeConfigMapEntry   string
 	targetAllocatorImage                string
 	operatorOpAMPBridgeImage            string
 	openshiftRoutesAvailability         openshift.RoutesAvailability
+	prometheusCRAvailability            prometheus.Availability
 	labelsFilter                        []string
 	annotationsFilter                   []string
 }
@@ -97,6 +104,31 @@ func WithEnableApacheHttpdInstrumentation(s bool) Option {
 func WithEnableDotNetInstrumentation(s bool) Option {
 	return func(o *options) {
 		o.enableDotNetInstrumentation = s
+	}
+}
+func WithEnableGoInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableGoInstrumentation = s
+	}
+}
+func WithEnableNginxInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableNginxInstrumentation = s
+	}
+}
+func WithEnableJavaInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableJavaInstrumentation = s
+	}
+}
+func WithEnablePythonInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enablePythonInstrumentation = s
+	}
+}
+func WithEnableNodeJSInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableNodeJSInstrumentation = s
 	}
 }
 func WithTargetAllocatorConfigMapEntry(s string) Option {
@@ -168,6 +200,12 @@ func WithOpenShiftRoutesAvailability(os openshift.RoutesAvailability) Option {
 	}
 }
 
+func WithPrometheusCRAvailability(pcrd prometheus.Availability) Option {
+	return func(o *options) {
+		o.prometheusCRAvailability = pcrd
+	}
+}
+
 func WithLabelFilters(labelFilters []string) Option {
 	return func(o *options) {
 
@@ -191,10 +229,12 @@ func WithLabelFilters(labelFilters []string) Option {
 	}
 }
 
+// WithAnnotationFilters is additive if called multiple times. It works off of a few default filters
+// to prevent unnecessary rollouts. The defaults include the following:
+// * kubectl.kubernetes.io/last-applied-configuration.
 func WithAnnotationFilters(annotationFilters []string) Option {
 	return func(o *options) {
-
-		filters := []string{}
+		filters := o.annotationsFilter
 		for _, pattern := range annotationFilters {
 			var result strings.Builder
 

@@ -28,6 +28,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
@@ -58,7 +59,11 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 		fmt.Printf("Error unmarshalling YAML: %v", err)
 	}
 	return manifests.Params{
-		Config: config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage)),
+		Config: config.New(
+			config.WithCollectorImage(defaultCollectorImage),
+			config.WithTargetAllocatorImage(defaultTaAllocationImage),
+			config.WithPrometheusCRAvailability(prometheus.Available),
+		),
 		OtelCol: v1beta1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
@@ -73,15 +78,19 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 
 					Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
-					Ports: []v1.ServicePort{{
-						Name: "web",
-						Port: 80,
-						TargetPort: intstr.IntOrString{
-							Type:   intstr.Int,
-							IntVal: 80,
+					Ports: []v1beta1.PortsSpec{
+						{
+							ServicePort: v1.ServicePort{
+								Name: "web",
+								Port: 80,
+								TargetPort: intstr.IntOrString{
+									Type:   intstr.Int,
+									IntVal: 80,
+								},
+								NodePort: 0,
+							},
 						},
-						NodePort: 0,
-					}},
+					},
 					Replicas: &replicas,
 				},
 				Config: cfg,
@@ -93,7 +102,7 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 	}
 }
 
-func newParams(taContainerImage string, file string) (manifests.Params, error) {
+func newParams(taContainerImage string, file string, options ...config.Option) (manifests.Params, error) {
 	replicas := int32(1)
 	var configYAML []byte
 	var err error
@@ -112,12 +121,13 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 	if err != nil {
 		return manifests.Params{}, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
-
-	cfg := config.New(
+	defaultOptions := []config.Option{
 		config.WithCollectorImage(defaultCollectorImage),
 		config.WithTargetAllocatorImage(defaultTaAllocationImage),
 		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
-	)
+		config.WithPrometheusCRAvailability(prometheus.Available),
+	}
+	cfg := config.New(append(defaultOptions, options...)...)
 
 	return manifests.Params{
 		Config: cfg,
@@ -133,15 +143,19 @@ func newParams(taContainerImage string, file string) (manifests.Params, error) {
 			},
 			Spec: v1beta1.OpenTelemetryCollectorSpec{
 				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-					Ports: []v1.ServicePort{{
-						Name: "web",
-						Port: 80,
-						TargetPort: intstr.IntOrString{
-							Type:   intstr.Int,
-							IntVal: 80,
+					Ports: []v1beta1.PortsSpec{
+						{
+							ServicePort: v1.ServicePort{
+								Name: "web",
+								Port: 80,
+								TargetPort: intstr.IntOrString{
+									Type:   intstr.Int,
+									IntVal: 80,
+								},
+								NodePort: 0,
+							},
 						},
-						NodePort: 0,
-					}},
+					},
 
 					Replicas: &replicas,
 				},

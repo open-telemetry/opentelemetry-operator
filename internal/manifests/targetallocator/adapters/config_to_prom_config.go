@@ -15,7 +15,6 @@
 package adapters
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -135,62 +134,58 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 
 	for i, scrapeConfig := range scrapeConfigs {
 
-		relabelConfigsProperty, ok := scrapeConfig["relabel_configs"]
-		if !ok {
-			continue
-		}
-
-		relabelConfigs, ok := relabelConfigsProperty.([]interface{})
-		if !ok {
-			return nil, errorNotAListAtIndex("relabel_configs", i)
-		}
-
-		for i, rc := range relabelConfigs {
-			relabelConfig, rcErr := rc.(map[interface{}]interface{})
-			if !rcErr {
-				return nil, errorNotAMapAtIndex("relabel_config", i)
-			}
-
-			replacementProperty, rcErr := relabelConfig["replacement"]
-			if !rcErr {
-				continue
-			}
-
-			replacement, rcErr := replacementProperty.(string)
-			if !rcErr {
-				return nil, errorNotAStringAtIndex("replacement", i)
-			}
-
-			relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
-		}
-
-		metricRelabelConfigsProperty, ok := scrapeConfig["metric_relabel_configs"]
-		if !ok {
-			continue
-		}
-
-		metricRelabelConfigs, ok := metricRelabelConfigsProperty.([]interface{})
-		if !ok {
-			return nil, errorNotAListAtIndex("metric_relabel_configs", i)
-		}
-
-		for i, rc := range metricRelabelConfigs {
-			relabelConfig, ok := rc.(map[interface{}]interface{})
+		relabelConfigsProperty, found := scrapeConfig["relabel_configs"]
+		if found {
+			relabelConfigs, ok := relabelConfigsProperty.([]interface{})
 			if !ok {
-				return nil, errorNotAMapAtIndex("metric_relabel_config", i)
+				return nil, errorNotAListAtIndex("relabel_configs", i)
 			}
 
-			replacementProperty, ok := relabelConfig["replacement"]
+			for i, rc := range relabelConfigs {
+				relabelConfig, rcErr := rc.(map[interface{}]interface{})
+				if !rcErr {
+					return nil, errorNotAMapAtIndex("relabel_config", i)
+				}
+
+				replacementProperty, rcErr := relabelConfig["replacement"]
+				if !rcErr {
+					continue
+				}
+
+				replacement, rcErr := replacementProperty.(string)
+				if !rcErr {
+					return nil, errorNotAStringAtIndex("replacement", i)
+				}
+
+				relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
+			}
+		}
+
+		metricRelabelConfigsProperty, found := scrapeConfig["metric_relabel_configs"]
+		if found {
+			metricRelabelConfigs, ok := metricRelabelConfigsProperty.([]interface{})
 			if !ok {
-				continue
+				return nil, errorNotAListAtIndex("metric_relabel_configs", i)
 			}
 
-			replacement, ok := replacementProperty.(string)
-			if !ok {
-				return nil, errorNotAStringAtIndex("replacement", i)
-			}
+			for i, rc := range metricRelabelConfigs {
+				relabelConfig, ok := rc.(map[interface{}]interface{})
+				if !ok {
+					return nil, errorNotAMapAtIndex("metric_relabel_config", i)
+				}
 
-			relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
+				replacementProperty, ok := relabelConfig["replacement"]
+				if !ok {
+					continue
+				}
+
+				replacement, ok := replacementProperty.(string)
+				if !ok {
+					return nil, errorNotAStringAtIndex("replacement", i)
+				}
+
+				relabelConfig["replacement"] = strings.ReplaceAll(replacement, "$$", "$")
+			}
 		}
 	}
 
@@ -297,20 +292,12 @@ func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceNa
 }
 
 // ValidatePromConfig checks if the prometheus receiver config is valid given other collector-level settings.
-func ValidatePromConfig(config map[interface{}]interface{}, targetAllocatorEnabled bool, targetAllocatorRewriteEnabled bool) error {
+func ValidatePromConfig(config map[interface{}]interface{}, targetAllocatorEnabled bool) error {
+	// TODO: Rethink this validation, now that target allocator rewrite is enabled permanently.
+
 	_, promConfigExists := config["config"]
 
 	if targetAllocatorEnabled {
-		if targetAllocatorRewriteEnabled { // if rewrite is enabled, we will add a target_allocator section during rewrite
-			return nil
-		}
-		_, targetAllocatorExists := config["target_allocator"]
-
-		// otherwise, either the target_allocator or config section needs to be here
-		if !(promConfigExists || targetAllocatorExists) {
-			return errors.New("either target allocator or prometheus config needs to be present")
-		}
-
 		return nil
 	}
 	// if target allocator isn't enabled, we need a config section

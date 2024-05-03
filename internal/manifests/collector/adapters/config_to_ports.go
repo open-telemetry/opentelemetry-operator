@@ -16,13 +16,9 @@ package adapters
 
 import (
 	"fmt"
-	"net"
 	"sort"
-	"strconv"
-	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
@@ -100,7 +96,7 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 		}
 
 		if err != nil {
-			logger.V(2).Info("no parser found for '%s'", cmptName)
+			logger.V(2).Info("no parser found for", "component", cmptName)
 			continue
 		}
 
@@ -142,41 +138,4 @@ func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) ([]co
 	})
 
 	return ports, nil
-}
-
-// ConfigToMetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
-func ConfigToMetricsPort(logger logr.Logger, config map[interface{}]interface{}) (int32, error) {
-	// we don't need to unmarshal the whole config, just follow the keys down to
-	// the metrics address.
-	type metricsCfg struct {
-		Address string
-	}
-	type telemetryCfg struct {
-		Metrics metricsCfg
-	}
-	type serviceCfg struct {
-		Telemetry telemetryCfg
-	}
-	type cfg struct {
-		Service serviceCfg
-	}
-
-	var cOut cfg
-	err := mapstructure.Decode(config, &cOut)
-	if err != nil {
-		return 0, err
-	}
-
-	_, port, netErr := net.SplitHostPort(cOut.Service.Telemetry.Metrics.Address)
-	if netErr != nil && strings.Contains(netErr.Error(), "missing port in address") {
-		return 8888, nil
-	} else if netErr != nil {
-		return 0, netErr
-	}
-	i64, err := strconv.ParseInt(port, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-
-	return int32(i64), nil
 }

@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +kubebuilder:skip
-
 package v1beta1
 
 import (
@@ -28,6 +26,7 @@ func init() {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=otelcol;otelcols
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector
 // +kubebuilder:printcolumn:name="Mode",type="string",JSONPath=".spec.mode",description="Deployment Mode"
@@ -39,7 +38,7 @@ func init() {
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Collector"
 // This annotation provides a hint for OLM which resources are managed by OpenTelemetryCollector kind.
 // It's not mandatory to list all resources.
-// +operator-sdk:csv:customresourcedefinitions:resources={{Pod,v1},{Deployment,apps/v1},{DaemonSets,apps/v1},{StatefulSets,apps/v1},{ConfigMaps,v1},{Service,v1}}
+// +operator-sdk:csv:customresourcedefinitions:resources={{Pod,v1},{Deployment,apps/v1},{DaemonSets,apps/v1},{StatefulSets,apps/v1},{ConfigMaps,v1},{Service,v1},{Ingress,networking/v1}}
 
 // OpenTelemetryCollector is the Schema for the opentelemetrycollectors API.
 type OpenTelemetryCollector struct {
@@ -50,6 +49,7 @@ type OpenTelemetryCollector struct {
 	Status OpenTelemetryCollectorStatus `json:"status,omitempty"`
 }
 
+// Hub exists to allow for conversion.
 func (*OpenTelemetryCollector) Hub() {}
 
 //+kubebuilder:object:root=true
@@ -127,6 +127,7 @@ type OpenTelemetryCollectorSpec struct {
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
 	//PodDNSPolicy define the DNS policies which can be set on a per-Pod basis. Currently Kubernetes supports the following Pod-specific DNS policies.
 	//These policies are specified in the dnsPolicy field of a Pod Spec.
+	// +kubebuilder:default:=ClusterFirst
 	PodDNSPolicy v1.DNSPolicy `json:"podDnsPolicy,omitempty"`
 	//PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
 	PodDNSConfig v1.PodDNSConfig `json:"podDnsConfig,omitempty"`
@@ -149,6 +150,7 @@ type TargetAllocatorEmbedded struct {
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
 	// The current options are least-weighted, consistent-hashing and per-node. The default is
 	// consistent-hashing.
+	// WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.
 	// +optional
 	// +kubebuilder:default:=consistent-hashing
 	AllocationStrategy TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`

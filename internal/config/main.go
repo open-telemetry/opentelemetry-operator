@@ -23,6 +23,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
@@ -46,6 +47,11 @@ type Config struct {
 	enableMultiInstrumentation          bool
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
+	enableGoInstrumentation             bool
+	enableNginxInstrumentation          bool
+	enablePythonInstrumentation         bool
+	enableNodeJSInstrumentation         bool
+	enableJavaInstrumentation           bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
@@ -55,6 +61,7 @@ type Config struct {
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationJavaImage        string
 	openshiftRoutesAvailability         openshift.RoutesAvailability
+	prometheusCRAvailability            prometheus.Availability
 	labelsFilter                        []string
 	annotationsFilter                   []string
 }
@@ -63,12 +70,15 @@ type Config struct {
 func New(opts ...Option) Config {
 	// initialize with the default values
 	o := options{
+		prometheusCRAvailability:          prometheus.NotAvailable,
 		openshiftRoutesAvailability:       openshift.RoutesNotAvailable,
 		collectorConfigMapEntry:           defaultCollectorConfigMapEntry,
 		targetAllocatorConfigMapEntry:     defaultTargetAllocatorConfigMapEntry,
 		operatorOpAMPBridgeConfigMapEntry: defaultOperatorOpAMPBridgeConfigMapEntry,
 		logger:                            logf.Log.WithName("config"),
 		version:                           version.Get(),
+		enableJavaInstrumentation:         true,
+		annotationsFilter:                 []string{"kubectl.kubernetes.io/last-applied-configuration"},
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -82,12 +92,18 @@ func New(opts ...Option) Config {
 		enableMultiInstrumentation:          o.enableMultiInstrumentation,
 		enableApacheHttpdInstrumentation:    o.enableApacheHttpdInstrumentation,
 		enableDotNetInstrumentation:         o.enableDotNetInstrumentation,
+		enableGoInstrumentation:             o.enableGoInstrumentation,
+		enableNginxInstrumentation:          o.enableNginxInstrumentation,
+		enablePythonInstrumentation:         o.enablePythonInstrumentation,
+		enableNodeJSInstrumentation:         o.enableNodeJSInstrumentation,
+		enableJavaInstrumentation:           o.enableJavaInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
 		operatorOpAMPBridgeConfigMapEntry:   o.operatorOpAMPBridgeConfigMapEntry,
 		logger:                              o.logger,
 		openshiftRoutesAvailability:         o.openshiftRoutesAvailability,
+		prometheusCRAvailability:            o.prometheusCRAvailability,
 		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
@@ -109,6 +125,12 @@ func (c *Config) AutoDetect() error {
 		return err
 	}
 	c.openshiftRoutesAvailability = ora
+
+	pcrd, err := c.autoDetect.PrometheusCRsAvailability()
+	if err != nil {
+		return err
+	}
+	c.prometheusCRAvailability = pcrd
 	return nil
 }
 
@@ -130,6 +152,31 @@ func (c *Config) EnableApacheHttpdAutoInstrumentation() bool {
 // EnableDotNetAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
 func (c *Config) EnableDotNetAutoInstrumentation() bool {
 	return c.enableDotNetInstrumentation
+}
+
+// EnableGoAutoInstrumentation is true when the operator supports Go auto instrumentation.
+func (c *Config) EnableGoAutoInstrumentation() bool {
+	return c.enableGoInstrumentation
+}
+
+// EnableNginxAutoInstrumentation is true when the operator supports nginx auto instrumentation.
+func (c *Config) EnableNginxAutoInstrumentation() bool {
+	return c.enableNginxInstrumentation
+}
+
+// EnableJavaAutoInstrumentation is true when the operator supports nginx auto instrumentation.
+func (c *Config) EnableJavaAutoInstrumentation() bool {
+	return c.enableJavaInstrumentation
+}
+
+// EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+func (c *Config) EnablePythonAutoInstrumentation() bool {
+	return c.enablePythonInstrumentation
+}
+
+// EnableNodeJSAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+func (c *Config) EnableNodeJSAutoInstrumentation() bool {
+	return c.enableNodeJSInstrumentation
 }
 
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
@@ -165,6 +212,11 @@ func (c *Config) OperatorOpAMPBridgeConfigMapEntry() string {
 // OpenShiftRoutesAvailability represents the availability of the OpenShift Routes API.
 func (c *Config) OpenShiftRoutesAvailability() openshift.RoutesAvailability {
 	return c.openshiftRoutesAvailability
+}
+
+// PrometheusCRAvailability represents the availability of the Prometheus Operator CRDs.
+func (c *Config) PrometheusCRAvailability() prometheus.Availability {
+	return c.prometheusCRAvailability
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.

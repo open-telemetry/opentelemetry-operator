@@ -49,7 +49,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 	}
 
 	// build container ports from service ports
-	ports, err := getConfigContainerPorts(logger, configYaml)
+	ports, err := getConfigContainerPorts(logger, configYaml, otelcol.Spec.Config)
 	if err != nil {
 		logger.Error(err, "container ports config")
 	}
@@ -59,6 +59,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 			Name:          p.Name,
 			ContainerPort: p.Port,
 			Protocol:      p.Protocol,
+			HostPort:      p.HostPort,
 		}
 	}
 
@@ -143,9 +144,9 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		if probe, err := getLivenessProbe(configFromString, otelcol.Spec.LivenessProbe); err == nil {
 			livenessProbe = probe
 		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {
-			logger.Info("extensions not configured, skipping liveness probe creation")
+			logger.V(4).Info("extensions not configured, skipping liveness probe creation")
 		} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
-			logger.Info("healthcheck extension not configured, skipping liveness probe creation")
+			logger.V(4).Info("healthcheck extension not configured, skipping liveness probe creation")
 		} else {
 			logger.Error(err, "cannot create liveness probe.")
 		}
@@ -168,9 +169,9 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 	}
 }
 
-func getConfigContainerPorts(logger logr.Logger, cfg string) (map[string]corev1.ContainerPort, error) {
+func getConfigContainerPorts(logger logr.Logger, cfgYaml string, conf v1beta1.Config) (map[string]corev1.ContainerPort, error) {
 	ports := map[string]corev1.ContainerPort{}
-	c, err := adapters.ConfigFromString(cfg)
+	c, err := adapters.ConfigFromString(cfgYaml)
 	if err != nil {
 		logger.Error(err, "couldn't extract the configuration")
 		return ports, err
@@ -201,7 +202,7 @@ func getConfigContainerPorts(logger logr.Logger, cfg string) (map[string]corev1.
 		}
 	}
 
-	metricsPort, err := adapters.ConfigToMetricsPort(logger, c)
+	metricsPort, err := conf.Service.MetricsPort()
 	if err != nil {
 		logger.Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
 		metricsPort = 8888
