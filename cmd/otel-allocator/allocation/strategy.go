@@ -131,7 +131,9 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	err = Register(consistentHashingStrategyName, newConsistentHashingAllocator)
+	err = Register(consistentHashingStrategyName, func(log logr.Logger, opts ...AllocationOption) Allocator {
+		return newAllocator(log, newConsistentHashingStrategy(), opts...)
+	})
 	if err != nil {
 		panic(err)
 	}
