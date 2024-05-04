@@ -127,7 +127,9 @@ func NewCollector(name, node string) *Collector {
 }
 
 func init() {
-	err := Register(leastWeightedStrategyName, newLeastWeightedAllocator)
+	err := Register(leastWeightedStrategyName, func(log logr.Logger, opts ...AllocationOption) Allocator {
+		return newAllocator(log, newleastWeightedStrategy(), opts...)
+	})
 	if err != nil {
 		panic(err)
 	}

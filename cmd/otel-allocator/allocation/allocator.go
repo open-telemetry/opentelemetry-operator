@@ -25,6 +25,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
+/*
+	Target Allocator will serve on an HTTP server exposing /jobs/<job_id>/targets
+	The targets are allocated using the least connection method
+	Target Allocator will need information about the collectors in order to set the URLs
+	Keep a Map of what each collector currently holds and update it based on new scrape target updates
+*/
+
 type Strategy interface {
 	GetCollectorForTarget(map[string]*Collector, *target.Item) (*Collector, error)
 	SetCollectors(map[string]*Collector)
@@ -184,6 +191,7 @@ func (t *TargetAllocator) handleTargets(diff diff.Changes[*target.Item]) {
 		if _, ok := t.targetItems[k]; ok {
 			continue
 		} else {
+			item.CollectorName = ""
 			// Add item to item pool and assign a collector
 			err := t.addTargetToTargetItems(item)
 			if err != nil {
