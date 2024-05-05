@@ -103,6 +103,15 @@ type Allocator interface {
 	SetFilter(filter Filter)
 }
 
+type Strategy interface {
+	GetCollectorForTarget(map[string]*Collector, *target.Item) (*Collector, error)
+	// SetCollectors exists for strategies where changing the collector set is potentially an expensive operation.
+	// The caller must guarantee that the collectors map passed in GetCollectorForTarget is consistent with the latest
+	// SetCollectors call. Strategies which don't need this information can just ignore it.
+	SetCollectors(map[string]*Collector)
+	GetName() string
+}
+
 var _ consistent.Member = Collector{}
 
 // Collector Creates a struct that holds Collector information.

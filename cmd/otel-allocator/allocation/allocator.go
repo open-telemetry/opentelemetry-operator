@@ -32,16 +32,10 @@ import (
 	Keep a Map of what each collector currently holds and update it based on new scrape target updates
 */
 
-type Strategy interface {
-	GetCollectorForTarget(map[string]*Collector, *target.Item) (*Collector, error)
-	SetCollectors(map[string]*Collector)
-	GetName() string
-}
-
-var _ Allocator = &TargetAllocator{}
+var _ Allocator = &allocator{}
 
 func newAllocator(log logr.Logger, strategy Strategy, opts ...AllocationOption) Allocator {
-	chAllocator := &TargetAllocator{
+	chAllocator := &allocator{
 		strategy:                      strategy,
 		collectors:                    make(map[string]*Collector),
 		targetItems:                   make(map[string]*target.Item),
@@ -55,7 +49,7 @@ func newAllocator(log logr.Logger, strategy Strategy, opts ...AllocationOption) 
 	return chAllocator
 }
 
-type TargetAllocator struct {
+type allocator struct {
 	strategy Strategy
 	// m protects consistentHasher, collectors and targetItems for concurrent use.
 	m sync.RWMutex
@@ -77,90 +71,90 @@ type TargetAllocator struct {
 }
 
 // SetFilter sets the filtering hook to use.
-func (t *TargetAllocator) SetFilter(filter Filter) {
-	t.filter = filter
+func (a *allocator) SetFilter(filter Filter) {
+	a.filter = filter
 }
 
 // SetTargets accepts a list of targets that will be used to make
 // load balancing decisions. This method should be called when there are
 // new targets discovered or existing targets are shutdown.
-func (t *TargetAllocator) SetTargets(targets map[string]*target.Item) {
-	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetTargets", perNodeStrategyName))
+func (a *allocator) SetTargets(targets map[string]*target.Item) {
+	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetTargets", a.strategy.GetName()))
 	defer timer.ObserveDuration()
 
-	if t.filter != nil {
-		targets = t.filter.Apply(targets)
+	if a.filter != nil {
+		targets = a.filter.Apply(targets)
 	}
 	RecordTargetsKept(targets)
 
-	t.m.Lock()
-	defer t.m.Unlock()
+	a.m.Lock()
+	defer a.m.Unlock()
 
 	// Check for target changes
-	targetsDiff := diff.Maps(t.targetItems, targets)
+	targetsDiff := diff.Maps(a.targetItems, targets)
 	// If there are any additions or removals
 	if len(targetsDiff.Additions()) != 0 || len(targetsDiff.Removals()) != 0 {
-		t.handleTargets(targetsDiff)
+		a.handleTargets(targetsDiff)
 	}
 }
 
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
 // This method is called when Collectors are added or removed.
-func (t *TargetAllocator) SetCollectors(collectors map[string]*Collector) {
-	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetCollectors", consistentHashingStrategyName))
+func (a *allocator) SetCollectors(collectors map[string]*Collector) {
+	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetCollectors", a.strategy.GetName()))
 	defer timer.ObserveDuration()
 
-	CollectorsAllocatable.WithLabelValues(consistentHashingStrategyName).Set(float64(len(collectors)))
+	CollectorsAllocatable.WithLabelValues(a.strategy.GetName()).Set(float64(len(collectors)))
 	if len(collectors) == 0 {
-		t.log.Info("No collector instances present")
+		a.log.Info("No collector instances present")
 		return
 	}
 
-	t.m.Lock()
-	defer t.m.Unlock()
+	a.m.Lock()
+	defer a.m.Unlock()
 
 	// Check for collector changes
-	collectorsDiff := diff.Maps(t.collectors, collectors)
+	collectorsDiff := diff.Maps(a.collectors, collectors)
 	if len(collectorsDiff.Additions()) != 0 || len(collectorsDiff.Removals()) != 0 {
-		t.handleCollectors(collectorsDiff)
+		a.handleCollectors(collectorsDiff)
 	}
 }
 
-func (t *TargetAllocator) GetTargetsForCollectorAndJob(collector string, job string) []*target.Item {
-	t.m.RLock()
-	defer t.m.RUnlock()
-	if _, ok := t.targetItemsPerJobPerCollector[collector]; !ok {
+func (a *allocator) GetTargetsForCollectorAndJob(collector string, job string) []*target.Item {
+	a.m.RLock()
+	defer a.m.RUnlock()
+	if _, ok := a.targetItemsPerJobPerCollector[collector]; !ok {
 		return []*target.Item{}
 	}
-	if _, ok := t.targetItemsPerJobPerCollector[collector][job]; !ok {
+	if _, ok := a.targetItemsPerJobPerCollector[collector][job]; !ok {
 		return []*target.Item{}
 	}
-	targetItemsCopy := make([]*target.Item, len(t.targetItemsPerJobPerCollector[collector][job]))
+	targetItemsCopy := make([]*target.Item, len(a.targetItemsPerJobPerCollector[collector][job]))
 	index := 0
-	for targetHash := range t.targetItemsPerJobPerCollector[collector][job] {
-		targetItemsCopy[index] = t.targetItems[targetHash]
+	for targetHash := range a.targetItemsPerJobPerCollector[collector][job] {
+		targetItemsCopy[index] = a.targetItems[targetHash]
 		index++
 	}
 	return targetItemsCopy
 }
 
 // TargetItems returns a shallow copy of the targetItems map.
-func (t *TargetAllocator) TargetItems() map[string]*target.Item {
-	t.m.RLock()
-	defer t.m.RUnlock()
+func (a *allocator) TargetItems() map[string]*target.Item {
+	a.m.RLock()
+	defer a.m.RUnlock()
 	targetItemsCopy := make(map[string]*target.Item)
-	for k, v := range t.targetItems {
+	for k, v := range a.targetItems {
 		targetItemsCopy[k] = v
 	}
 	return targetItemsCopy
 }
 
 // Collectors returns a shallow copy of the collectors map.
-func (t *TargetAllocator) Collectors() map[string]*Collector {
-	t.m.RLock()
-	defer t.m.RUnlock()
+func (a *allocator) Collectors() map[string]*Collector {
+	a.m.RLock()
+	defer a.m.RUnlock()
 	collectorsCopy := make(map[string]*Collector)
-	for k, v := range t.collectors {
+	for k, v := range a.collectors {
 		collectorsCopy[k] = v
 	}
 	return collectorsCopy
@@ -169,18 +163,18 @@ func (t *TargetAllocator) Collectors() map[string]*Collector {
 // handleTargets receives the new and removed targets and reconciles the current state.
 // Any removals are removed from the allocator's targetItems and unassigned from the corresponding collector.
 // Any net-new additions are assigned to the collector on the same node as the target.
-func (t *TargetAllocator) handleTargets(diff diff.Changes[*target.Item]) {
+func (a *allocator) handleTargets(diff diff.Changes[*target.Item]) {
 	// Check for removals
-	for k, item := range t.targetItems {
+	for k, item := range a.targetItems {
 		// if the current item is in the removals list
 		if _, ok := diff.Removals()[k]; ok {
-			c, ok := t.collectors[item.CollectorName]
+			c, ok := a.collectors[item.CollectorName]
 			if ok {
 				c.NumTargets--
-				TargetsPerCollector.WithLabelValues(item.CollectorName, perNodeStrategyName).Set(float64(c.NumTargets))
+				TargetsPerCollector.WithLabelValues(item.CollectorName, a.strategy.GetName()).Set(float64(c.NumTargets))
 			}
-			delete(t.targetItems, k)
-			delete(t.targetItemsPerJobPerCollector[item.CollectorName][item.JobName], item.Hash())
+			delete(a.targetItems, k)
+			delete(a.targetItemsPerJobPerCollector[item.CollectorName][item.JobName], item.Hash())
 		}
 	}
 
@@ -188,12 +182,13 @@ func (t *TargetAllocator) handleTargets(diff diff.Changes[*target.Item]) {
 	assignmentErrors := []error{}
 	for k, item := range diff.Additions() {
 		// Do nothing if the item is already there
-		if _, ok := t.targetItems[k]; ok {
+		if _, ok := a.targetItems[k]; ok {
 			continue
 		} else {
+			// TODO: track target -> collector relationship in a separate map
 			item.CollectorName = ""
 			// Add item to item pool and assign a collector
-			err := t.addTargetToTargetItems(item)
+			err := a.addTargetToTargetItems(item)
 			if err != nil {
 				assignmentErrors = append(assignmentErrors, err)
 			}
@@ -204,29 +199,28 @@ func (t *TargetAllocator) handleTargets(diff diff.Changes[*target.Item]) {
 	unassignedTargets := len(assignmentErrors)
 	if unassignedTargets > 0 {
 		err := errors.Join(assignmentErrors...)
-		t.log.Info("Could not assign targets for some jobs due to missing node labels", "targets", unassignedTargets, "error", err)
+		a.log.Info("Could not assign targets for some jobs due to missing node labels", "targets", unassignedTargets, "error", err)
 		TargetsUnassigned.Set(float64(unassignedTargets))
 	}
 }
 
-func (t *TargetAllocator) addTargetToTargetItems(tg *target.Item) error {
-	// Short-circuit if there's no collectors
+func (a *allocator) addTargetToTargetItems(tg *target.Item) error {
 	// Check if this is a reassignment, if so, decrement the previous collector's NumTargets
-	if previousColName, ok := t.collectors[tg.CollectorName]; ok {
+	if previousColName, ok := a.collectors[tg.CollectorName]; ok {
 		previousColName.NumTargets--
-		delete(t.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName], tg.Hash())
-		TargetsPerCollector.WithLabelValues(previousColName.String(), consistentHashingStrategyName).Set(float64(t.collectors[previousColName.String()].NumTargets))
+		delete(a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName], tg.Hash())
+		TargetsPerCollector.WithLabelValues(previousColName.String(), a.strategy.GetName()).Set(float64(a.collectors[previousColName.String()].NumTargets))
 	}
-	t.targetItems[tg.Hash()] = tg
-	if len(t.collectors) > 0 {
-		colOwner, err := t.strategy.GetCollectorForTarget(t.collectors, tg)
+	a.targetItems[tg.Hash()] = tg
+	if len(a.collectors) > 0 {
+		colOwner, err := a.strategy.GetCollectorForTarget(a.collectors, tg)
 		if err != nil {
 			return err
 		}
 		tg.CollectorName = colOwner.Name
-		t.addCollectorTargetItemMapping(tg)
-		t.collectors[colOwner.String()].NumTargets++
-		TargetsPerCollector.WithLabelValues(colOwner.String(), consistentHashingStrategyName).Set(float64(t.collectors[colOwner.String()].NumTargets))
+		a.addCollectorTargetItemMapping(tg)
+		a.collectors[colOwner.String()].NumTargets++
+		TargetsPerCollector.WithLabelValues(colOwner.String(), a.strategy.GetName()).Set(float64(a.collectors[colOwner.String()].NumTargets))
 	}
 	return nil
 }
@@ -234,38 +228,38 @@ func (t *TargetAllocator) addTargetToTargetItems(tg *target.Item) error {
 // addCollectorTargetItemMapping keeps track of which collector has which jobs and targets
 // this allows the allocator to respond without any extra allocations to http calls. The caller of this method
 // has to acquire a lock.
-func (t *TargetAllocator) addCollectorTargetItemMapping(tg *target.Item) {
-	if t.targetItemsPerJobPerCollector[tg.CollectorName] == nil {
-		t.targetItemsPerJobPerCollector[tg.CollectorName] = make(map[string]map[string]bool)
+func (a *allocator) addCollectorTargetItemMapping(tg *target.Item) {
+	if a.targetItemsPerJobPerCollector[tg.CollectorName] == nil {
+		a.targetItemsPerJobPerCollector[tg.CollectorName] = make(map[string]map[string]bool)
 	}
-	if t.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName] == nil {
-		t.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName] = make(map[string]bool)
+	if a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName] == nil {
+		a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName] = make(map[string]bool)
 	}
-	t.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName][tg.Hash()] = true
+	a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName][tg.Hash()] = true
 }
 
 // handleCollectors receives the new and removed collectors and reconciles the current state.
 // Any removals are removed from the allocator's collectors. New collectors are added to the allocator's collector map.
 // Finally, update all targets' collectors to match the consistent hashing.
-func (t *TargetAllocator) handleCollectors(diff diff.Changes[*Collector]) {
+func (a *allocator) handleCollectors(diff diff.Changes[*Collector]) {
 	// Clear removed collectors
 	for _, k := range diff.Removals() {
-		delete(t.collectors, k.Name)
-		delete(t.targetItemsPerJobPerCollector, k.Name)
-		TargetsPerCollector.WithLabelValues(k.Name, consistentHashingStrategyName).Set(0)
+		delete(a.collectors, k.Name)
+		delete(a.targetItemsPerJobPerCollector, k.Name)
+		TargetsPerCollector.WithLabelValues(k.Name, a.strategy.GetName()).Set(0)
 	}
 	// Insert the new collectors
 	for _, i := range diff.Additions() {
-		t.collectors[i.Name] = NewCollector(i.Name, i.NodeName)
+		a.collectors[i.Name] = NewCollector(i.Name, i.NodeName)
 	}
 
 	// Set collectors on the strategy
-	t.strategy.SetCollectors(t.collectors)
+	a.strategy.SetCollectors(a.collectors)
 
 	// Re-Allocate all targets
 	assignmentErrors := []error{}
-	for _, item := range t.targetItems {
-		err := t.addTargetToTargetItems(item)
+	for _, item := range a.targetItems {
+		err := a.addTargetToTargetItems(item)
 		if err != nil {
 			assignmentErrors = append(assignmentErrors, err)
 		}
@@ -274,7 +268,7 @@ func (t *TargetAllocator) handleCollectors(diff diff.Changes[*Collector]) {
 	unassignedTargets := len(assignmentErrors)
 	if unassignedTargets > 0 {
 		err := errors.Join(assignmentErrors...)
-		t.log.Info("Could not assign targets for some jobs due to missing node labels", "targets", unassignedTargets, "error", err)
+		a.log.Info("Could not assign targets for some jobs due to missing node labels", "targets", unassignedTargets, "error", err)
 		TargetsUnassigned.Set(float64(unassignedTargets))
 	}
 }

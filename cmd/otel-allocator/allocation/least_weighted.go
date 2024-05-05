@@ -34,6 +34,7 @@ func (s *leastWeightedStrategy) GetName() string {
 
 func (s *leastWeightedStrategy) GetCollectorForTarget(collectors map[string]*Collector, item *target.Item) (*Collector, error) {
 	// if a collector is already assigned, do nothing
+	// TODO: track this in a separate map
 	if item.CollectorName != "" {
 		if col, ok := collectors[item.CollectorName]; ok {
 			return col, nil
