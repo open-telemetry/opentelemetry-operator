@@ -152,9 +152,16 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							// confirm the initial strategy is unset
 							assert.Equal(t, d.Spec.Strategy.RollingUpdate.MaxUnavailable.IntVal, int32(0))
 							assert.Equal(t, d.Spec.Strategy.RollingUpdate.MaxSurge.IntVal, int32(0))
-							exists, err = populateObjectIfExists(t, &v1.Service{}, namespacedObjectName(naming.Service(params.Name), params.Namespace))
+							svc := &v1.Service{}
+							exists, err = populateObjectIfExists(t, svc, namespacedObjectName(naming.Service(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
+							assert.Equal(t, svc.Spec.Selector, map[string]string{
+								"app.kubernetes.io/component":  "opentelemetry-collector",
+								"app.kubernetes.io/instance":   "default.test",
+								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/part-of":    "opentelemetry",
+							})
 							exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, namespacedObjectName(naming.ServiceAccount(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
@@ -183,6 +190,12 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							assert.Contains(t, actual.Spec.Ports, extraPorts.ServicePort)
+							assert.Equal(t, actual.Spec.Selector, map[string]string{
+								"app.kubernetes.io/component":  "opentelemetry-collector",
+								"app.kubernetes.io/instance":   "default.test",
+								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/part-of":    "opentelemetry",
+							})
 						},
 					},
 					wantErr:     assert.NoError,
@@ -462,17 +475,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 									"app.kubernetes.io/part-of":    "opentelemetry",
 								},
 							}
-							taConfig["label_selector"] = map[string]string{
-								"app.kubernetes.io/instance":   "default.test",
-								"app.kubernetes.io/managed-by": "opentelemetry-operator",
-								"app.kubernetes.io/component":  "opentelemetry-collector",
-								"app.kubernetes.io/part-of":    "opentelemetry",
-							}
 							taConfig["config"] = promConfig["config"]
 							taConfig["allocation_strategy"] = "consistent-hashing"
 							taConfig["filter_strategy"] = "relabel-config"
-							taConfig["pod_monitor_selector"] = map[string]string{}
-							taConfig["service_monitor_selector"] = map[string]string{}
 							taConfig["prometheus_cr"] = map[string]any{
 								"scrape_interval":          "30s",
 								"pod_monitor_selector":     &metav1.LabelSelector{},

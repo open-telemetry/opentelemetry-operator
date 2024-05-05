@@ -317,6 +317,7 @@ type OpenTelemetryTargetAllocator struct {
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
 	// The current options are least-weighted, consistent-hashing and per-node. The default is
 	// consistent-hashing.
+	// WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.
 	// +optional
 	// +kubebuilder:default:=consistent-hashing
 	AllocationStrategy OpenTelemetryTargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
@@ -448,8 +449,8 @@ type OpenTelemetryCollectorStatus struct {
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
+// +kubebuilder:deprecatedversion:warning="OpenTelemetryCollector v1alpha1 is deprecated. Migrate to v1beta1."
 // +kubebuilder:object:root=true
-// +kubebuilder:storageversion
 // +kubebuilder:resource:shortName=otelcol;otelcols
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.scale.replicas,selectorpath=.status.scale.selector
@@ -462,7 +463,7 @@ type OpenTelemetryCollectorStatus struct {
 // +operator-sdk:csv:customresourcedefinitions:displayName="OpenTelemetry Collector"
 // This annotation provides a hint for OLM which resources are managed by OpenTelemetryCollector kind.
 // It's not mandatory to list all resources.
-// +operator-sdk:csv:customresourcedefinitions:resources={{Pod,v1},{Deployment,apps/v1},{DaemonSets,apps/v1},{StatefulSets,apps/v1},{ConfigMaps,v1},{Service,v1}}
+// +operator-sdk:csv:customresourcedefinitions:resources={{Pod,v1},{Deployment,apps/v1},{DaemonSets,apps/v1},{StatefulSets,apps/v1},{ConfigMaps,v1},{Service,v1},{Ingress,networking/v1}}
 
 // OpenTelemetryCollector is the Schema for the opentelemetrycollectors API.
 type OpenTelemetryCollector struct {

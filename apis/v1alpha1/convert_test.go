@@ -181,7 +181,7 @@ func Test_tov1beta1AndBack(t *testing.T) {
 				ServicePort: v1.ServicePort{
 					Name: "otlp",
 				},
-				HostPort: 0,
+				HostPort: 4317,
 			}},
 			Env: []v1.EnvVar{
 				{

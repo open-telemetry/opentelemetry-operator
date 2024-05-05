@@ -59,9 +59,9 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCol
 }
 
 // remove the sidecar container from the given pod.
-func remove(pod corev1.Pod) (corev1.Pod, error) {
+func remove(pod corev1.Pod) corev1.Pod {
 	if !existsIn(pod) {
-		return pod, nil
+		return pod
 	}
 
 	var containers []corev1.Container
@@ -71,7 +71,7 @@ func remove(pod corev1.Pod) (corev1.Pod, error) {
 		}
 	}
 	pod.Spec.Containers = containers
-	return pod, nil
+	return pod
 }
 
 // existsIn checks whether a sidecar container exists in the given pod.

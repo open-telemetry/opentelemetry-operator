@@ -17,10 +17,9 @@ package featuregate
 import (
 	"testing"
 
-	"go.opentelemetry.io/collector/featuregate"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/featuregate"
 )
 
 const (

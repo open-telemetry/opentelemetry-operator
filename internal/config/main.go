@@ -47,8 +47,11 @@ type Config struct {
 	enableMultiInstrumentation          bool
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
+	enableGoInstrumentation             bool
 	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
+	enableNodeJSInstrumentation         bool
+	enableJavaInstrumentation           bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
@@ -74,6 +77,8 @@ func New(opts ...Option) Config {
 		operatorOpAMPBridgeConfigMapEntry: defaultOperatorOpAMPBridgeConfigMapEntry,
 		logger:                            logf.Log.WithName("config"),
 		version:                           version.Get(),
+		enableJavaInstrumentation:         true,
+		annotationsFilter:                 []string{"kubectl.kubernetes.io/last-applied-configuration"},
 	}
 	for _, opt := range opts {
 		opt(&o)
@@ -87,8 +92,11 @@ func New(opts ...Option) Config {
 		enableMultiInstrumentation:          o.enableMultiInstrumentation,
 		enableApacheHttpdInstrumentation:    o.enableApacheHttpdInstrumentation,
 		enableDotNetInstrumentation:         o.enableDotNetInstrumentation,
+		enableGoInstrumentation:             o.enableGoInstrumentation,
 		enableNginxInstrumentation:          o.enableNginxInstrumentation,
 		enablePythonInstrumentation:         o.enablePythonInstrumentation,
+		enableNodeJSInstrumentation:         o.enableNodeJSInstrumentation,
+		enableJavaInstrumentation:           o.enableJavaInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
@@ -146,14 +154,29 @@ func (c *Config) EnableDotNetAutoInstrumentation() bool {
 	return c.enableDotNetInstrumentation
 }
 
+// EnableGoAutoInstrumentation is true when the operator supports Go auto instrumentation.
+func (c *Config) EnableGoAutoInstrumentation() bool {
+	return c.enableGoInstrumentation
+}
+
 // EnableNginxAutoInstrumentation is true when the operator supports nginx auto instrumentation.
 func (c *Config) EnableNginxAutoInstrumentation() bool {
 	return c.enableNginxInstrumentation
 }
 
+// EnableJavaAutoInstrumentation is true when the operator supports nginx auto instrumentation.
+func (c *Config) EnableJavaAutoInstrumentation() bool {
+	return c.enableJavaInstrumentation
+}
+
 // EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
 func (c *Config) EnablePythonAutoInstrumentation() bool {
 	return c.enablePythonInstrumentation
+}
+
+// EnableNodeJSAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+func (c *Config) EnableNodeJSAutoInstrumentation() bool {
+	return c.enableNodeJSInstrumentation
 }
 
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.

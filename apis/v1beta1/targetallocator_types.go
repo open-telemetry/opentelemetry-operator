@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +kubebuilder:skip
-
 package v1beta1
 
 import (
@@ -63,7 +61,9 @@ type TargetAllocatorSpec struct {
 	// CollectorSelector is the selector for Collector Pods the target allocator will allocate targets to.
 	CollectorSelector metav1.LabelSelector `json:"collectorSelector,omitempty"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
-	// The current options are least-weighted and consistent-hashing. The default option is consistent-hashing
+	// The current options are least-weighted, consistent-hashing and per-node. The default is
+	// consistent-hashing.
+	// WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.
 	// +optional
 	// +kubebuilder:default:=consistent-hashing
 	AllocationStrategy TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
@@ -78,6 +78,7 @@ type TargetAllocatorSpec struct {
 	// For the exact format, see https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config.
 	// +optional
 	// +listType=atomic
+	// +kubebuilder:pruning:PreserveUnknownFields
 	ScrapeConfigs []AnyConfig `json:"scrapeConfigs,omitempty"`
 	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 ).
 	// +optional
@@ -113,3 +114,26 @@ type TargetAllocatorPrometheusCR struct {
 	// +optional
 	ServiceMonitorSelector *metav1.LabelSelector `json:"serviceMonitorSelector,omitempty"`
 }
+
+type (
+	// TargetAllocatorAllocationStrategy represent a strategy Target Allocator uses to distribute targets to each collector
+	// +kubebuilder:validation:Enum=least-weighted;consistent-hashing;per-node
+	TargetAllocatorAllocationStrategy string
+	// TargetAllocatorFilterStrategy represent a filtering strategy for targets before they are assigned to collectors
+	// +kubebuilder:validation:Enum="";relabel-config
+	TargetAllocatorFilterStrategy string
+)
+
+const (
+	// TargetAllocatorAllocationStrategyLeastWeighted targets will be distributed to collector with fewer targets currently assigned.
+	TargetAllocatorAllocationStrategyLeastWeighted TargetAllocatorAllocationStrategy = "least-weighted"
+
+	// TargetAllocatorAllocationStrategyConsistentHashing targets will be consistently added to collectors, which allows a high-availability setup.
+	TargetAllocatorAllocationStrategyConsistentHashing TargetAllocatorAllocationStrategy = "consistent-hashing"
+
+	// TargetAllocatorAllocationStrategyPerNode targets will be assigned to the collector on the node they reside on (use only with daemon set).
+	TargetAllocatorAllocationStrategyPerNode TargetAllocatorAllocationStrategy = "per-node"
+
+	// TargetAllocatorFilterStrategyRelabelConfig targets will be consistently drops targets based on the relabel_config.
+	TargetAllocatorFilterStrategyRelabelConfig TargetAllocatorFilterStrategy = "relabel-config"
+)

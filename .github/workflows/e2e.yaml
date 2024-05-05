@@ -34,8 +34,10 @@ jobs:
          - e2e-multi-instrumentation
          - e2e-metadata-filters
        include:
+         - group: e2e-instrumentation
+           setup: "add-instrumentation-params prepare-e2e"
          - group: e2e-multi-instrumentation
-           setup: "add-operator-arg OPERATOR_ARG=--enable-multi-instrumentation prepare-e2e"
+           setup: "add-multi-instrumentation-params prepare-e2e"
          - group: e2e-metadata-filters
            setup: "add-operator-arg OPERATOR_ARG='--annotations-filter=*filter.out --labels=*filter.out' prepare-e2e"
 

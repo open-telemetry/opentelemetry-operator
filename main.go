@@ -46,6 +46,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
@@ -76,6 +77,7 @@ type tlsConfig struct {
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(otelv1beta1.AddToScheme(scheme))
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
@@ -110,8 +112,11 @@ func main() {
 		enableMultiInstrumentation       bool
 		enableApacheHttpdInstrumentation bool
 		enableDotNetInstrumentation      bool
+		enableGoInstrumentation          bool
 		enablePythonInstrumentation      bool
 		enableNginxInstrumentation       bool
+		enableNodeJSInstrumentation      bool
+		enableJavaInstrumentation        bool
 		collectorImage                   string
 		targetAllocatorImage             string
 		operatorOpAMPBridgeImage         string
@@ -138,8 +143,11 @@ func main() {
 	pflag.BoolVar(&enableMultiInstrumentation, "enable-multi-instrumentation", false, "Controls whether the operator supports multi instrumentation")
 	pflag.BoolVar(&enableApacheHttpdInstrumentation, constants.FlagApacheHttpd, true, "Controls whether the operator supports Apache HTTPD auto-instrumentation")
 	pflag.BoolVar(&enableDotNetInstrumentation, constants.FlagDotNet, true, "Controls whether the operator supports dotnet auto-instrumentation")
+	pflag.BoolVar(&enableGoInstrumentation, constants.FlagGo, false, "Controls whether the operator supports Go auto-instrumentation")
 	pflag.BoolVar(&enablePythonInstrumentation, constants.FlagPython, true, "Controls whether the operator supports python auto-instrumentation")
 	pflag.BoolVar(&enableNginxInstrumentation, constants.FlagNginx, false, "Controls whether the operator supports nginx auto-instrumentation")
+	pflag.BoolVar(&enableNodeJSInstrumentation, constants.FlagNodeJS, true, "Controls whether the operator supports nodejs auto-instrumentation")
+	pflag.BoolVar(&enableJavaInstrumentation, constants.FlagJava, true, "Controls whether the operator supports java auto-instrumentation")
 	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&operatorOpAMPBridgeImage, "operator-opamp-bridge-image", "RELATED_IMAGE_OPERATOR_OPAMP_BRIDGE", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:%s", v.OperatorOpAMPBridge), "The default OpenTelemetry Operator OpAMP Bridge image. This image is used when no image is specified in the CustomResource.")
@@ -182,8 +190,11 @@ func main() {
 		"enable-multi-instrumentation", enableMultiInstrumentation,
 		"enable-apache-httpd-instrumentation", enableApacheHttpdInstrumentation,
 		"enable-dotnet-instrumentation", enableDotNetInstrumentation,
+		"enable-go-instrumentation", enableGoInstrumentation,
 		"enable-python-instrumentation", enablePythonInstrumentation,
 		"enable-nginx-instrumentation", enableNginxInstrumentation,
+		"enable-nodejs-instrumentation", enableNodeJSInstrumentation,
+		"enable-java-instrumentation", enableJavaInstrumentation,
 	)
 
 	restConfig := ctrl.GetConfigOrDie()
@@ -203,8 +214,11 @@ func main() {
 		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
 		config.WithEnableApacheHttpdInstrumentation(enableApacheHttpdInstrumentation),
 		config.WithEnableDotNetInstrumentation(enableDotNetInstrumentation),
+		config.WithEnableGoInstrumentation(enableGoInstrumentation),
 		config.WithEnableNginxInstrumentation(enableNginxInstrumentation),
 		config.WithEnablePythonInstrumentation(enablePythonInstrumentation),
+		config.WithEnableNodeJSInstrumentation(enableNodeJSInstrumentation),
+		config.WithEnableJavaInstrumentation(enableJavaInstrumentation),
 		config.WithTargetAllocatorImage(targetAllocatorImage),
 		config.WithOperatorOpAMPBridgeImage(operatorOpAMPBridgeImage),
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
@@ -319,7 +333,7 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = otelv1alpha1.SetupCollectorWebhook(mgr, cfg, reviewer); err != nil {
+		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
