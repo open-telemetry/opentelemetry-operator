@@ -20,18 +20,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCanSetSingleTarget(t *testing.T) {
-	cols := MakeNCollectors(3, 0)
-	c, _ := New("consistent-hashing", logger)
-	c.SetCollectors(cols)
-	c.SetTargets(MakeNNewTargets(1, 3, 0))
-	actualTargetItems := c.TargetItems()
-	assert.Len(t, actualTargetItems, 1)
-	for _, item := range actualTargetItems {
-		assert.Equal(t, "collector-0", item.CollectorName)
-	}
-}
-
 func TestRelativelyEvenDistribution(t *testing.T) {
 	numCols := 15
 	numItems := 10000

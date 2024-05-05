@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Note: These utilities are used by other packages, which is why they're defined in a non-test file.
+
 package allocation
 
 import (
 	"fmt"
 	"strconv"
+	"testing"
 
 	"github.com/prometheus/common/model"
+	"github.com/stretchr/testify/require"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
@@ -69,4 +74,16 @@ func MakeNNewTargetsWithEmptyCollectors(n int, startingIndex int) map[string]*ta
 		toReturn[newTarget.Hash()] = newTarget
 	}
 	return toReturn
+}
+
+func RunForAllStrategies(t *testing.T, f func(t *testing.T, allocator Allocator)) {
+	allocatorNames := GetRegisteredAllocatorNames()
+	logger := logf.Log.WithName("unit-tests")
+	for _, allocatorName := range allocatorNames {
+		t.Run(allocatorName, func(t *testing.T) {
+			allocator, err := New(allocatorName, logger)
+			require.NoError(t, err)
+			f(t, allocator)
+		})
+	}
 }
