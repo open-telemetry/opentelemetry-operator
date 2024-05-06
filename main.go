@@ -181,6 +181,7 @@ func main() {
 			ec.MessageKey = encodeMessageKey
 			ec.LevelKey = encodeLevelKey
 			ec.TimeKey = encodeTimeKey
+			ec.EncodeLevel = config.WithEncodeLevelFormat(encodeLevelFormat)
 		})
 	}
 
