@@ -89,13 +89,15 @@ func main() {
 
 	srv := server.NewServer(log, allocator, cfg.ListenAddr)
 
+	httpOptions := []server.Option{}
 	if cfg.HTTPS.Enabled {
-		tlsConfig, confErr := config.TLSConfig(cfg.HTTPS.TLSCertFilePath, cfg.HTTPS.TLSKeyFilePath, cfg.HTTPS.CAFilePath)
+		tlsConfig, confErr := cfg.HTTPS.NewTLSConfig()
 		if confErr != nil {
 			setupLog.Error(confErr, "Unable to initialize TLS configuration")
 			os.Exit(1)
 		}
-		srv = server.NewServer(log, allocator, cfg.ListenAddr, server.WithTLSConfig(tlsConfig, cfg.HTTPS.ListenAddr))
+		httpOptions = append(httpOptions, server.WithTLSConfig(tlsConfig, cfg.HTTPS.ListenAddr))
+		srv = server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 	}
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)

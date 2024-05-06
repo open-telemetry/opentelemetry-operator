@@ -195,7 +195,8 @@ func TestServer_TargetsHandler(t *testing.T) {
 }
 
 func TestServer_ScrapeConfigsHandler(t *testing.T) {
-	tlsConfig, _ := allocatorconfig.TLSConfig("", "", "")
+	svrConfig := allocatorconfig.HTTPSServerConfig{}
+	tlsConfig, _ := svrConfig.NewTLSConfig()
 	tests := []struct {
 		description   string
 		scrapeConfigs map[string]*promconfig.ScrapeConfig

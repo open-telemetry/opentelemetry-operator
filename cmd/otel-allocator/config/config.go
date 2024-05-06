@@ -204,13 +204,13 @@ func ValidateConfig(config *Config) error {
 	return nil
 }
 
-func TLSConfig(CAFile, CertFile, KeyFile string) (*tls.Config, error) {
-	cert, err := tls.LoadX509KeyPair(CertFile, KeyFile)
+func (c HTTPSServerConfig) NewTLSConfig() (*tls.Config, error) {
+	cert, err := tls.LoadX509KeyPair(c.TLSCertFilePath, c.TLSKeyFilePath)
 	if err != nil {
 		return nil, err
 	}
 
-	caCert, err := os.ReadFile(CAFile)
+	caCert, err := os.ReadFile(c.CAFilePath)
 	if err != nil {
 		return nil, err
 	}
