@@ -20,7 +20,6 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	authorizationv1 "k8s.io/api/authorization/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -359,7 +358,7 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 		if subjectAccessReviews, err := c.reviewer.CheckPolicyRules(ctx, r.GetNamespace(), r.Spec.TargetAllocator.ServiceAccount, targetAllocatorCRPolicyRules...); err != nil {
 			return nil, fmt.Errorf("unable to check rbac rules %w", err)
 		} else if allowed, deniedReviews := rbac.AllSubjectAccessReviewsAllowed(subjectAccessReviews); !allowed {
-			return warningsGroupedByResource(deniedReviews), nil
+			return rbac.WarningsGroupedByResource(deniedReviews), nil
 		}
 	}
 
@@ -405,28 +404,6 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	}
 
 	return nil
-}
-
-// warningsGroupedByResource is a helper to take the missing permissions and format them as warnings.
-func warningsGroupedByResource(reviews []*authorizationv1.SubjectAccessReview) []string {
-	fullResourceToVerbs := make(map[string][]string)
-	for _, review := range reviews {
-		if review.Spec.ResourceAttributes != nil {
-			key := fmt.Sprintf("%s/%s", review.Spec.ResourceAttributes.Group, review.Spec.ResourceAttributes.Resource)
-			if len(review.Spec.ResourceAttributes.Group) == 0 {
-				key = review.Spec.ResourceAttributes.Resource
-			}
-			fullResourceToVerbs[key] = append(fullResourceToVerbs[key], review.Spec.ResourceAttributes.Verb)
-		} else if review.Spec.NonResourceAttributes != nil {
-			key := fmt.Sprintf("nonResourceURL: %s", review.Spec.NonResourceAttributes.Path)
-			fullResourceToVerbs[key] = append(fullResourceToVerbs[key], review.Spec.NonResourceAttributes.Verb)
-		}
-	}
-	var warnings []string
-	for fullResource, verbs := range fullResourceToVerbs {
-		warnings = append(warnings, fmt.Sprintf("missing the following rules for %s: [%s]", fullResource, strings.Join(verbs, ",")))
-	}
-	return warnings
 }
 
 func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer) error {

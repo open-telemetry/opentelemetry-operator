@@ -139,7 +139,7 @@ func main() {
 	pflag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	pflag.BoolVar(&createRBACPermissions, "create-rbac-permissions", false, "Automatically create RBAC permissions needed by the processors")
+	pflag.BoolVar(&createRBACPermissions, "create-rbac-permissions", false, "Automatically create RBAC permissions needed by the processors (deprecated)")
 	pflag.BoolVar(&enableMultiInstrumentation, "enable-multi-instrumentation", false, "Controls whether the operator supports multi instrumentation")
 	pflag.BoolVar(&enableApacheHttpdInstrumentation, constants.FlagApacheHttpd, true, "Controls whether the operator supports Apache HTTPD auto-instrumentation")
 	pflag.BoolVar(&enableDotNetInstrumentation, constants.FlagDotNet, true, "Controls whether the operator supports dotnet auto-instrumentation")
@@ -199,57 +199,6 @@ func main() {
 
 	restConfig := ctrl.GetConfigOrDie()
 
-	// builds the operator's configuration
-	ad, err := autodetect.New(restConfig)
-	if err != nil {
-		setupLog.Error(err, "failed to setup auto-detect routine")
-		os.Exit(1)
-	}
-
-	cfg := config.New(
-		config.WithLogger(ctrl.Log.WithName("config")),
-		config.WithVersion(v),
-		config.WithCollectorImage(collectorImage),
-		config.WithCreateRBACPermissions(createRBACPermissions),
-		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
-		config.WithEnableApacheHttpdInstrumentation(enableApacheHttpdInstrumentation),
-		config.WithEnableDotNetInstrumentation(enableDotNetInstrumentation),
-		config.WithEnableGoInstrumentation(enableGoInstrumentation),
-		config.WithEnableNginxInstrumentation(enableNginxInstrumentation),
-		config.WithEnablePythonInstrumentation(enablePythonInstrumentation),
-		config.WithEnableNodeJSInstrumentation(enableNodeJSInstrumentation),
-		config.WithEnableJavaInstrumentation(enableJavaInstrumentation),
-		config.WithTargetAllocatorImage(targetAllocatorImage),
-		config.WithOperatorOpAMPBridgeImage(operatorOpAMPBridgeImage),
-		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
-		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
-		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
-		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
-		config.WithAutoInstrumentationGoImage(autoInstrumentationGo),
-		config.WithAutoInstrumentationApacheHttpdImage(autoInstrumentationApacheHttpd),
-		config.WithAutoInstrumentationNginxImage(autoInstrumentationNginx),
-		config.WithAutoDetect(ad),
-		config.WithLabelFilters(labelsFilter),
-		config.WithAnnotationFilters(annotationsFilter),
-	)
-	err = cfg.AutoDetect()
-	if err != nil {
-		setupLog.Error(err, "failed to autodetect config variables")
-	}
-	// Only add these to the scheme if they are available
-	if cfg.PrometheusCRAvailability() == prometheus.Available {
-		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
-		utilruntime.Must(monitoringv1.AddToScheme(scheme))
-	} else {
-		setupLog.Info("Prometheus CRDs are not installed, skipping adding to scheme.")
-	}
-	if cfg.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
-		setupLog.Info("Openshift CRDs are installed, adding to scheme.")
-		utilruntime.Must(routev1.Install(scheme))
-	} else {
-		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
-	}
-
 	var namespaces map[string]cache.Config
 	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
 	if found {
@@ -298,17 +247,69 @@ func main() {
 		os.Exit(1)
 	}
 
+	clientset, clientErr := kubernetes.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		setupLog.Error(clientErr, "failed to create kubernetes clientset")
+	}
+
+	reviewer := rbac.NewReviewer(clientset)
 	ctx := ctrl.SetupSignalHandler()
+
+	// builds the operator's configuration
+	ad, err := autodetect.New(restConfig, reviewer)
+	if err != nil {
+		setupLog.Error(err, "failed to setup auto-detect routine")
+		os.Exit(1)
+	}
+
+	cfg := config.New(
+		config.WithLogger(ctrl.Log.WithName("config")),
+		config.WithVersion(v),
+		config.WithCollectorImage(collectorImage),
+		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
+		config.WithEnableApacheHttpdInstrumentation(enableApacheHttpdInstrumentation),
+		config.WithEnableDotNetInstrumentation(enableDotNetInstrumentation),
+		config.WithEnableGoInstrumentation(enableGoInstrumentation),
+		config.WithEnableNginxInstrumentation(enableNginxInstrumentation),
+		config.WithEnablePythonInstrumentation(enablePythonInstrumentation),
+		config.WithEnableNodeJSInstrumentation(enableNodeJSInstrumentation),
+		config.WithEnableJavaInstrumentation(enableJavaInstrumentation),
+		config.WithTargetAllocatorImage(targetAllocatorImage),
+		config.WithOperatorOpAMPBridgeImage(operatorOpAMPBridgeImage),
+		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
+		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
+		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
+		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
+		config.WithAutoInstrumentationGoImage(autoInstrumentationGo),
+		config.WithAutoInstrumentationApacheHttpdImage(autoInstrumentationApacheHttpd),
+		config.WithAutoInstrumentationNginxImage(autoInstrumentationNginx),
+		config.WithAutoDetect(ad),
+		config.WithLabelFilters(labelsFilter),
+		config.WithAnnotationFilters(annotationsFilter),
+	)
+	err = cfg.AutoDetect()
+	if err != nil {
+		setupLog.Error(err, "failed to autodetect config variables")
+	}
+	// Only add these to the scheme if they are available
+	if cfg.PrometheusCRAvailability() == prometheus.Available {
+		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
+		utilruntime.Must(monitoringv1.AddToScheme(scheme))
+	} else {
+		setupLog.Info("Prometheus CRDs are not installed, skipping adding to scheme.")
+	}
+	if cfg.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
+		setupLog.Info("Openshift CRDs are installed, adding to scheme.")
+		utilruntime.Must(routev1.Install(scheme))
+	} else {
+		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
+	}
+
 	err = addDependencies(ctx, mgr, cfg, v)
 	if err != nil {
 		setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
 		os.Exit(1)
 	}
-	clientset, clientErr := kubernetes.NewForConfig(mgr.GetConfig())
-	if err != nil {
-		setupLog.Error(clientErr, "failed to create kubernetes clientset")
-	}
-	reviewer := rbac.NewReviewer(clientset)
 
 	if err = controllers.NewReconciler(controllers.Params{
 		Client:   mgr.GetClient(),
