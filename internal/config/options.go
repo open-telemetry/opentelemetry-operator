@@ -262,22 +262,3 @@ func WithEncodeLevelFormat(s string) zapcore.LevelEncoder {
 		return zapcore.CapitalLevelEncoder
 	}
 }
-
-func WithEncodeTimeFormat(s string) zapcore.TimeEncoder {
-	switch s {
-	case "iso8601":
-		return zapcore.ISO8601TimeEncoder
-	case "epochmillis":
-		return zapcore.EpochMillisTimeEncoder
-	case "epochnannos":
-		return zapcore.EpochNanosTimeEncoder
-	case "epoch":
-		return zapcore.EpochTimeEncoder
-	case "rfc3339nano":
-		return zapcore.RFC3339NanoTimeEncoder
-	case "rfc3339":
-		return zapcore.RFC3339TimeEncoder
-	default:
-		return zapcore.ISO8601TimeEncoder
-	}
-}

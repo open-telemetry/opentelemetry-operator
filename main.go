@@ -136,7 +136,6 @@ func main() {
 		encodeMessageKey                 string
 		encodeLevelKey                   string
 		encodeTimeKey                    string
-		encodeTimeFormat                 string
 		encodeLevelFormat                string
 	)
 
@@ -174,21 +173,17 @@ func main() {
 	pflag.StringVar(&encodeMessageKey, "log-message-key", "message", "The message key to be used in the customized Log Encoder")
 	pflag.StringVar(&encodeLevelKey, "log-level-key", "level", "The level key to be used in the customized Log Encoder")
 	pflag.StringVar(&encodeTimeKey, "log-time-key", "timestamp", "The time key to be used in the customized Log Encoder")
-	pflag.StringVar(&encodeTimeFormat, "log-time-format", "iso8601", "The time format to be used in the customized Log Encoder")
 	pflag.StringVar(&encodeLevelFormat, "log-level-format", "uppercase", "The level format to be used in the customized Log Encoder")
 	pflag.Parse()
 
 	if custLogEncoder {
-		var encCfg = zapcore.EncoderConfig{
-			MessageKey: encodeMessageKey,
-			LevelKey:   encodeLevelKey,
-			TimeKey:    encodeTimeKey,
-		}
-		encCfg.EncodeTime = config.WithEncodeTimeFormat(encodeTimeFormat)
-		encCfg.EncodeLevel = config.WithEncodeLevelFormat(encodeLevelFormat)
-		encoder := zapcore.NewJSONEncoder(encCfg)
-		opts.Encoder = encoder
+		opts.EncoderConfigOptions = append(opts.EncoderConfigOptions, func(ec *zapcore.EncoderConfig) {
+			ec.MessageKey = encodeMessageKey
+			ec.LevelKey = encodeLevelKey
+			ec.TimeKey = encodeTimeKey
+		})
 	}
+
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
 
@@ -223,7 +218,6 @@ func main() {
 		"log-message-key", encodeMessageKey,
 		"log-level-key", encodeLevelKey,
 		"log-time-key", encodeTimeKey,
-		"log-time-format", encodeTimeFormat,
 		"log-level-format", encodeLevelFormat,
 	)
 
