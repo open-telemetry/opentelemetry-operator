@@ -37,6 +37,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
@@ -47,6 +48,9 @@ var opampBridgeMockAutoDetector = &mockAutoDetect{
 	},
 	PrometheusCRsAvailabilityFunc: func() (prometheus.Availability, error) {
 		return prometheus.Available, nil
+	},
+	RBACPermissionsFunc: func(ctx context.Context) (rbac.Availability, error) {
+		return rbac.Available, nil
 	},
 }
 

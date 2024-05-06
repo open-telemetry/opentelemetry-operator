@@ -51,7 +51,7 @@ service:
 			desc: "resourcedetection-processor k8s",
 			config: `processors:
   resourcedetection:
-    detectors: [kubernetes]
+    detectors: [k8snode]
 service:
   pipelines:
     traces:
