@@ -22,6 +22,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
@@ -114,6 +115,18 @@ func V1Alpha1to2(in v1alpha1.OpenTelemetryCollector) (v1beta1.OpenTelemetryColle
 			SuccessThreshold:              copy.Spec.LivenessProbe.SuccessThreshold,
 			FailureThreshold:              copy.Spec.LivenessProbe.FailureThreshold,
 			TerminationGracePeriodSeconds: copy.Spec.LivenessProbe.TerminationGracePeriodSeconds,
+		}
+	}
+
+	if copy.Spec.ReadinessProbe != nil {
+		out.Spec.ReadinessProbe = &v1.Probe{
+			InitialDelaySeconds:           copy.Spec.ReadinessProbe.InitialDelaySeconds,
+			TimeoutSeconds:                copy.Spec.ReadinessProbe.TimeoutSeconds,
+			PeriodSeconds:                 copy.Spec.ReadinessProbe.PeriodSeconds,
+			SuccessThreshold:              copy.Spec.ReadinessProbe.SuccessThreshold,
+			FailureThreshold:              copy.Spec.ReadinessProbe.FailureThreshold,
+			TerminationGracePeriodSeconds: copy.Spec.ReadinessProbe.TerminationGracePeriodSeconds,
+			ProbeHandler:                  copy.Spec.ReadinessProbe.ProbeHandler,
 		}
 	}
 

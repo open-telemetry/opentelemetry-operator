@@ -143,6 +143,9 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	LivenessProbe *Probe `json:"livenessProbe,omitempty"`
 
+	// +optional
+	ReadinessProbe *v1.Probe `json:"readinessProbe,omitempty"`
+
 	// ObservabilitySpec defines how telemetry data gets handled.
 	//
 	// +optional

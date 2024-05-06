@@ -151,6 +151,9 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		}
 	}
 
+	var readinessProbe *corev1.Probe
+	readinessProbe = otelcol.Spec.ReadinessProbe
+
 	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
 	return corev1.Container{
 		Name:            naming.Container(),
@@ -164,6 +167,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		Resources:       otelcol.Spec.Resources,
 		SecurityContext: otelcol.Spec.SecurityContext,
 		LivenessProbe:   livenessProbe,
+		ReadinessProbe:  readinessProbe,
 		Lifecycle:       otelcol.Spec.Lifecycle,
 	}
 }
