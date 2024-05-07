@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -57,8 +58,7 @@ service:
 
 		param := deploymentParams()
 		hash, _ := manifestutils.GetConfigMapSHA(param.OtelCol.Spec.Config)
-		hash = hash[:8]
-		expectedName := "test-collector-" + hash
+		expectedName := naming.ConfigMap("test", hash)
 
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
 		expectedLables["app.kubernetes.io/name"] = expectedName
@@ -101,8 +101,7 @@ service:
 		assert.NoError(t, err)
 
 		hash, _ := manifestutils.GetConfigMapSHA(param.OtelCol.Spec.Config)
-		hash = hash[:8]
-		expectedName := "test-collector-" + hash
+		expectedName := naming.ConfigMap("test", hash)
 
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
 		expectedLables["app.kubernetes.io/name"] = expectedName
