@@ -170,10 +170,10 @@ func main() {
 	pflag.StringVar(&tlsOpt.minVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
 	pflag.StringSliceVar(&tlsOpt.cipherSuites, "tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
 	pflag.BoolVar(&custLogEncoder, "enable-customized-log-encoder", false, "Enable the use of a customized Json Log Encoder")
-	pflag.StringVar(&encodeMessageKey, "log-message-key", "message", "The message key to be used in the customized Log Encoder")
-	pflag.StringVar(&encodeLevelKey, "log-level-key", "level", "The level key to be used in the customized Log Encoder")
-	pflag.StringVar(&encodeTimeKey, "log-time-key", "timestamp", "The time key to be used in the customized Log Encoder")
-	pflag.StringVar(&encodeLevelFormat, "log-level-format", "uppercase", "The level format to be used in the customized Log Encoder")
+	pflag.StringVar(&encodeMessageKey, "zap-message-key", "message", "The message key to be used in the customized Log Encoder")
+	pflag.StringVar(&encodeLevelKey, "zap-level-key", "level", "The level key to be used in the customized Log Encoder")
+	pflag.StringVar(&encodeTimeKey, "zap-time-key", "timestamp", "The time key to be used in the customized Log Encoder")
+	pflag.StringVar(&encodeLevelFormat, "zap-level-format", "uppercase", "The level format to be used in the customized Log Encoder")
 	pflag.Parse()
 
 	if custLogEncoder {
@@ -216,10 +216,10 @@ func main() {
 		"enable-nodejs-instrumentation", enableNodeJSInstrumentation,
 		"enable-java-instrumentation", enableJavaInstrumentation,
 		"enable-customized-log-encoder", custLogEncoder,
-		"log-message-key", encodeMessageKey,
-		"log-level-key", encodeLevelKey,
-		"log-time-key", encodeTimeKey,
-		"log-level-format", encodeLevelFormat,
+		"zap-message-key", encodeMessageKey,
+		"zap-level-key", encodeLevelKey,
+		"zap-time-key", encodeTimeKey,
+		"zap-level-format", encodeLevelFormat,
 	)
 
 	restConfig := ctrl.GetConfigOrDie()
