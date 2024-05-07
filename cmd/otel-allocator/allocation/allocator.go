@@ -51,8 +51,6 @@ func newAllocator(log logr.Logger, strategy Strategy, opts ...AllocationOption) 
 
 type allocator struct {
 	strategy Strategy
-	// m protects consistentHasher, collectors and targetItems for concurrent use.
-	m sync.RWMutex
 
 	// collectors is a map from a Collector's name to a Collector instance
 	// collectorKey -> collector pointer
@@ -64,6 +62,9 @@ type allocator struct {
 
 	// collectorKey -> job -> target item hash -> true
 	targetItemsPerJobPerCollector map[string]map[string]map[string]bool
+
+	// m protects collectors, targetItems and targetItemsPerJobPerCollector for concurrent use.
+	m sync.RWMutex
 
 	log logr.Logger
 
@@ -107,7 +108,6 @@ func (a *allocator) SetCollectors(collectors map[string]*Collector) {
 	CollectorsAllocatable.WithLabelValues(a.strategy.GetName()).Set(float64(len(collectors)))
 	if len(collectors) == 0 {
 		a.log.Info("No collector instances present")
-		return
 	}
 
 	a.m.Lock()
@@ -168,13 +168,7 @@ func (a *allocator) handleTargets(diff diff.Changes[*target.Item]) {
 	for k, item := range a.targetItems {
 		// if the current item is in the removals list
 		if _, ok := diff.Removals()[k]; ok {
-			c, ok := a.collectors[item.CollectorName]
-			if ok {
-				c.NumTargets--
-				TargetsPerCollector.WithLabelValues(item.CollectorName, a.strategy.GetName()).Set(float64(c.NumTargets))
-			}
-			delete(a.targetItems, k)
-			delete(a.targetItemsPerJobPerCollector[item.CollectorName][item.JobName], item.Hash())
+			a.removeTargetItem(item)
 		}
 	}
 
@@ -205,24 +199,67 @@ func (a *allocator) handleTargets(diff diff.Changes[*target.Item]) {
 }
 
 func (a *allocator) addTargetToTargetItems(tg *target.Item) error {
-	// Check if this is a reassignment, if so, decrement the previous collector's NumTargets
-	if previousColName, ok := a.collectors[tg.CollectorName]; ok {
-		previousColName.NumTargets--
-		delete(a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName], tg.Hash())
-		TargetsPerCollector.WithLabelValues(previousColName.String(), a.strategy.GetName()).Set(float64(a.collectors[previousColName.String()].NumTargets))
-	}
 	a.targetItems[tg.Hash()] = tg
-	if len(a.collectors) > 0 {
-		colOwner, err := a.strategy.GetCollectorForTarget(a.collectors, tg)
-		if err != nil {
-			return err
-		}
-		tg.CollectorName = colOwner.Name
-		a.addCollectorTargetItemMapping(tg)
-		a.collectors[colOwner.String()].NumTargets++
-		TargetsPerCollector.WithLabelValues(colOwner.String(), a.strategy.GetName()).Set(float64(a.collectors[colOwner.String()].NumTargets))
+	if len(a.collectors) == 0 {
+		return nil
 	}
+
+	colOwner, err := a.strategy.GetCollectorForTarget(a.collectors, tg)
+	if err != nil {
+		return err
+	}
+
+	// Check if this is a reassignment, if so, unassign first
+	// note: The ordering here is important, we want to determine the new assignment before unassigning, because
+	// the strategy might make use of previous assignment information
+	if _, ok := a.collectors[tg.CollectorName]; ok {
+		a.unassignTargetItem(tg)
+	}
+
+	tg.CollectorName = colOwner.Name
+	a.addCollectorTargetItemMapping(tg)
+	a.collectors[colOwner.Name].NumTargets++
+	TargetsPerCollector.WithLabelValues(colOwner.String(), a.strategy.GetName()).Set(float64(a.collectors[colOwner.String()].NumTargets))
+
 	return nil
+}
+
+// unassignTargetItem unassigns the target item from its Collector. The target item is still tracked.
+func (a *allocator) unassignTargetItem(item *target.Item) {
+	collectorName := item.CollectorName
+	if collectorName == "" {
+		return
+	}
+	c, ok := a.collectors[collectorName]
+	if !ok {
+		return
+	}
+	c.NumTargets--
+	TargetsPerCollector.WithLabelValues(item.CollectorName, a.strategy.GetName()).Set(float64(c.NumTargets))
+	delete(a.targetItemsPerJobPerCollector[item.CollectorName][item.JobName], item.Hash())
+	if len(a.targetItemsPerJobPerCollector[item.CollectorName][item.JobName]) == 0 {
+		delete(a.targetItemsPerJobPerCollector[item.CollectorName], item.JobName)
+	}
+	item.CollectorName = ""
+}
+
+// removeTargetItem removes the target item from its Collector.
+func (a *allocator) removeTargetItem(item *target.Item) {
+	a.unassignTargetItem(item)
+	delete(a.targetItems, item.Hash())
+}
+
+// removeCollector removes a Collector from the allocator.
+func (a *allocator) removeCollector(collector *Collector) {
+	delete(a.collectors, collector.Name)
+	// Remove the collector from any target item records
+	for _, targetItems := range a.targetItemsPerJobPerCollector[collector.Name] {
+		for targetHash := range targetItems {
+			a.targetItems[targetHash].CollectorName = ""
+		}
+	}
+	delete(a.targetItemsPerJobPerCollector, collector.Name)
+	TargetsPerCollector.WithLabelValues(collector.Name, a.strategy.GetName()).Set(0)
 }
 
 // addCollectorTargetItemMapping keeps track of which collector has which jobs and targets
@@ -244,9 +281,7 @@ func (a *allocator) addCollectorTargetItemMapping(tg *target.Item) {
 func (a *allocator) handleCollectors(diff diff.Changes[*Collector]) {
 	// Clear removed collectors
 	for _, k := range diff.Removals() {
-		delete(a.collectors, k.Name)
-		delete(a.targetItemsPerJobPerCollector, k.Name)
-		TargetsPerCollector.WithLabelValues(k.Name, a.strategy.GetName()).Set(0)
+		a.removeCollector(k)
 	}
 	// Insert the new collectors
 	for _, i := range diff.Additions() {
@@ -262,6 +297,7 @@ func (a *allocator) handleCollectors(diff diff.Changes[*Collector]) {
 		err := a.addTargetToTargetItems(item)
 		if err != nil {
 			assignmentErrors = append(assignmentErrors, err)
+			item.CollectorName = ""
 		}
 	}
 	// Check for unassigned targets

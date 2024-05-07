@@ -108,7 +108,66 @@ func TestAddingAndRemovingTargets(t *testing.T) {
 			assert.True(t, ok)
 		}
 	})
+}
 
+func TestAddingAndRemovingCollectors(t *testing.T) {
+	RunForAllStrategies(t, func(t *testing.T, allocator Allocator) {
+		targets := MakeNNewTargetsWithEmptyCollectors(3, 0)
+		allocator.SetTargets(targets)
+
+		collectors := MakeNCollectors(3, 0)
+
+		// test that targets and collectors are added properly
+		allocator.SetCollectors(collectors)
+
+		// verify
+		assert.Len(t, allocator.Collectors(), len(collectors))
+		for _, tg := range allocator.TargetItems() {
+			if tg.CollectorName != "" {
+				assert.Contains(t, collectors, tg.CollectorName)
+			}
+		}
+
+		// remove a collector
+		delete(collectors, "collector-0")
+		allocator.SetCollectors(collectors)
+		// verify
+		assert.Len(t, allocator.Collectors(), len(collectors))
+		for _, tg := range allocator.TargetItems() {
+			if tg.CollectorName != "" {
+				assert.Contains(t, collectors, tg.CollectorName)
+			}
+		}
+
+		// add two more collectors
+		collectors = MakeNCollectors(5, 0)
+		allocator.SetCollectors(collectors)
+
+		// verify
+		assert.Len(t, allocator.Collectors(), len(collectors))
+		for _, tg := range allocator.TargetItems() {
+			if tg.CollectorName != "" {
+				assert.Contains(t, collectors, tg.CollectorName)
+			}
+		}
+
+		// remove all collectors
+		collectors = map[string]*Collector{}
+		allocator.SetCollectors(collectors)
+
+		// verify
+		assert.Len(t, allocator.Collectors(), len(collectors))
+		jobs := []string{}
+		for _, tg := range allocator.TargetItems() {
+			assert.Empty(t, tg.CollectorName)
+			jobs = append(jobs, tg.JobName)
+		}
+		for _, job := range jobs {
+			for collector := range collectors {
+				assert.Empty(t, allocator.GetTargetsForCollectorAndJob(collector, job))
+			}
+		}
+	})
 }
 
 // Tests that two targets with the same target url and job name but different label set are both added.

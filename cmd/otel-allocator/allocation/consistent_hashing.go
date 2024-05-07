@@ -72,10 +72,13 @@ func (s *consistentHashingStrategy) GetCollectorForTarget(collectors map[string]
 func (s *consistentHashingStrategy) SetCollectors(collectors map[string]*Collector) {
 	// we simply recreate the hasher with the new member set
 	// this isn't any more expensive than doing a diff and then applying the change
-	members := []consistent.Member{}
+	var members []consistent.Member
 
-	for _, collector := range collectors {
-		members = append(members, collector)
+	if len(collectors) > 0 {
+		members = make([]consistent.Member, 0, len(collectors))
+		for _, collector := range collectors {
+			members = append(members, collector)
+		}
 	}
 
 	s.consistentHasher = consistent.New(members, s.config)

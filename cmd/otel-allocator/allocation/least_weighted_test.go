@@ -104,7 +104,7 @@ func TestNoAssignmentToNewCollector(t *testing.T) {
 
 	// new collector should have no targets
 	newCollector := s.Collectors()[newColName]
-	assert.Equal(t, newCollector.NumTargets, 0)
+	assert.Equal(t, 0, newCollector.NumTargets)
 }
 
 // Tests that the delta in number of targets per collector is less than 15% of an even distribution.
