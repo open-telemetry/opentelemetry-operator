@@ -87,8 +87,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	srv := server.NewServer(log, allocator, cfg.ListenAddr)
-
 	httpOptions := []server.Option{}
 	if cfg.HTTPS.Enabled {
 		tlsConfig, confErr := cfg.HTTPS.NewTLSConfig()
@@ -97,8 +95,8 @@ func main() {
 			os.Exit(1)
 		}
 		httpOptions = append(httpOptions, server.WithTLSConfig(tlsConfig, cfg.HTTPS.ListenAddr))
-		srv = server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 	}
+	srv := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(prometheus.DefaultRegisterer)
