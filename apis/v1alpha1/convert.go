@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	v1 "k8s.io/api/core/v1"
 )
 
 var _ conversion.Convertible = &OpenTelemetryCollector{}
@@ -129,6 +130,15 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 				},
 			},
 			LivenessProbe: tov1beta1Probe(copy.Spec.LivenessProbe),
+			ReadinessProbe: &v1.Probe{
+				InitialDelaySeconds:           copy.Spec.ReadinessProbe.InitialDelaySeconds,
+				TimeoutSeconds:                copy.Spec.ReadinessProbe.TimeoutSeconds,
+				PeriodSeconds:                 copy.Spec.ReadinessProbe.PeriodSeconds,
+				SuccessThreshold:              copy.Spec.ReadinessProbe.SuccessThreshold,
+				FailureThreshold:              copy.Spec.ReadinessProbe.FailureThreshold,
+				TerminationGracePeriodSeconds: copy.Spec.ReadinessProbe.TerminationGracePeriodSeconds,
+				ProbeHandler:                  *copy.Spec.ReadinessProbe.ProbeHandler.DeepCopy(),
+			},
 			Observability: v1beta1.ObservabilitySpec{
 				Metrics: v1beta1.MetricsConfigSpec{
 					EnableMetrics:                copy.Spec.Observability.Metrics.EnableMetrics,
@@ -352,8 +362,17 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			Lifecycle:                     copy.Spec.Lifecycle,
 			TerminationGracePeriodSeconds: copy.Spec.TerminationGracePeriodSeconds,
 			LivenessProbe:                 tov1alpha1Probe(copy.Spec.LivenessProbe),
-			InitContainers:                copy.Spec.InitContainers,
-			AdditionalContainers:          copy.Spec.AdditionalContainers,
+			ReadinessProbe: &v1.Probe{
+				InitialDelaySeconds:           copy.Spec.ReadinessProbe.InitialDelaySeconds,
+				TimeoutSeconds:                copy.Spec.ReadinessProbe.TimeoutSeconds,
+				PeriodSeconds:                 copy.Spec.ReadinessProbe.PeriodSeconds,
+				SuccessThreshold:              copy.Spec.ReadinessProbe.SuccessThreshold,
+				FailureThreshold:              copy.Spec.ReadinessProbe.FailureThreshold,
+				TerminationGracePeriodSeconds: copy.Spec.ReadinessProbe.TerminationGracePeriodSeconds,
+				ProbeHandler:                  *copy.Spec.ReadinessProbe.ProbeHandler.DeepCopy(),
+			},
+			InitContainers:       copy.Spec.InitContainers,
+			AdditionalContainers: copy.Spec.AdditionalContainers,
 			Observability: ObservabilitySpec{
 				Metrics: MetricsConfigSpec{
 					EnableMetrics:                copy.Spec.Observability.Metrics.EnableMetrics,

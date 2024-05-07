@@ -236,6 +236,8 @@ type OpenTelemetryCollectorSpec struct {
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
 	LivenessProbe *Probe `json:"livenessProbe,omitempty"`
+	// +optional
+	ReadinessProbe *v1.Probe `json:"readinessProbe,omitempty"`
 	// InitContainers allows injecting initContainers to the Collector's pod definition.
 	// These init containers can be used to fetch secrets for injection into the
 	// configuration from external sources, run added checks, etc. Any errors during the execution of
