@@ -193,7 +193,7 @@ func (a *allocator) handleTargets(diff diff.Changes[*target.Item]) {
 	unassignedTargets := len(assignmentErrors)
 	if unassignedTargets > 0 {
 		err := errors.Join(assignmentErrors...)
-		a.log.Info("Could not assign targets for some jobs due to missing node labels", "targets", unassignedTargets, "error", err)
+		a.log.Info("Could not assign targets for some jobs", "targets", unassignedTargets, "error", err)
 		TargetsUnassigned.Set(float64(unassignedTargets))
 	}
 }
@@ -212,7 +212,7 @@ func (a *allocator) addTargetToTargetItems(tg *target.Item) error {
 	// Check if this is a reassignment, if so, unassign first
 	// note: The ordering here is important, we want to determine the new assignment before unassigning, because
 	// the strategy might make use of previous assignment information
-	if _, ok := a.collectors[tg.CollectorName]; ok {
+	if _, ok := a.collectors[tg.CollectorName]; ok && tg.CollectorName != "" {
 		a.unassignTargetItem(tg)
 	}
 
@@ -304,7 +304,7 @@ func (a *allocator) handleCollectors(diff diff.Changes[*Collector]) {
 	unassignedTargets := len(assignmentErrors)
 	if unassignedTargets > 0 {
 		err := errors.Join(assignmentErrors...)
-		a.log.Info("Could not assign targets for some jobs due to missing node labels", "targets", unassignedTargets, "error", err)
+		a.log.Info("Could not assign targets for some jobs", "targets", unassignedTargets, "error", err)
 		TargetsUnassigned.Set(float64(unassignedTargets))
 	}
 }
