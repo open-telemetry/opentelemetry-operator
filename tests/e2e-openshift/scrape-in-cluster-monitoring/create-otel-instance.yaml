@@ -1,0 +1,46 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel
+  namespace: chainsaw-scrape-in-cluster-monitoring
+spec:
+  volumeMounts:
+    - name: cabundle-volume
+      mountPath: /etc/pki/ca-trust/source/service-ca
+      readOnly: true
+  volumes:
+    - name: cabundle-volume
+      configMap:
+        name: cabundle
+  mode: deployment
+  config: |
+    receivers:
+      prometheus: 
+        config:
+          scrape_configs:
+            - job_name: 'federate'
+              scrape_interval: 15s
+              scheme: https
+              tls_config:
+                ca_file: /etc/pki/ca-trust/source/service-ca/service-ca.crt
+              bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+              # honor_labels needs to be set to false due to bug https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/32555
+              honor_labels: false
+              params:
+                'match[]':
+                  - '{__name__="kube_namespace_labels"}'
+              metrics_path: '/federate'
+              static_configs:
+                - targets:
+                  - "prometheus-k8s.openshift-monitoring.svc.cluster.local:9091"
+
+    exporters:
+      debug: 
+        verbosity: detailed
+
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          processors: []
+          exporters: [debug]
