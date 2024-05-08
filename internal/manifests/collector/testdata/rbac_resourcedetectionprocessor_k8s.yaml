@@ -4,7 +4,7 @@ receivers:
       grpc:
 processors:
   resourcedetection:
-    detectors: [kubernetes]
+    detectors: [k8snode]
 exporters:
   otlp:
     endpoint: "otlp:4317"
