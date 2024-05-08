@@ -132,7 +132,6 @@ func main() {
 		annotationsFilter                []string
 		webhookPort                      int
 		tlsOpt                           tlsConfig
-		custLogEncoder                   bool
 		encodeMessageKey                 string
 		encodeLevelKey                   string
 		encodeTimeKey                    string
@@ -169,21 +168,19 @@ func main() {
 	pflag.IntVar(&webhookPort, "webhook-port", 9443, "The port the webhook endpoint binds to.")
 	pflag.StringVar(&tlsOpt.minVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
 	pflag.StringSliceVar(&tlsOpt.cipherSuites, "tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
-	pflag.BoolVar(&custLogEncoder, "enable-customized-log-encoder", false, "Enable the use of a customized Json Log Encoder")
 	pflag.StringVar(&encodeMessageKey, "zap-message-key", "message", "The message key to be used in the customized Log Encoder")
 	pflag.StringVar(&encodeLevelKey, "zap-level-key", "level", "The level key to be used in the customized Log Encoder")
 	pflag.StringVar(&encodeTimeKey, "zap-time-key", "timestamp", "The time key to be used in the customized Log Encoder")
 	pflag.StringVar(&encodeLevelFormat, "zap-level-format", "uppercase", "The level format to be used in the customized Log Encoder")
 	pflag.Parse()
 
-	if custLogEncoder {
-		opts.EncoderConfigOptions = append(opts.EncoderConfigOptions, func(ec *zapcore.EncoderConfig) {
-			ec.MessageKey = encodeMessageKey
-			ec.LevelKey = encodeLevelKey
-			ec.TimeKey = encodeTimeKey
-			ec.EncodeLevel = config.WithEncodeLevelFormat(encodeLevelFormat)
-		})
-	}
+	
+	opts.EncoderConfigOptions = append(opts.EncoderConfigOptions, func(ec *zapcore.EncoderConfig) {
+		ec.MessageKey = encodeMessageKey
+		ec.LevelKey = encodeLevelKey
+		ec.TimeKey = encodeTimeKey
+		ec.EncodeLevel = config.WithEncodeLevelFormat(encodeLevelFormat)
+	})
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
@@ -215,7 +212,6 @@ func main() {
 		"enable-nginx-instrumentation", enableNginxInstrumentation,
 		"enable-nodejs-instrumentation", enableNodeJSInstrumentation,
 		"enable-java-instrumentation", enableJavaInstrumentation,
-		"enable-customized-log-encoder", custLogEncoder,
 		"zap-message-key", encodeMessageKey,
 		"zap-level-key", encodeLevelKey,
 		"zap-time-key", encodeTimeKey,
