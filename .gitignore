@@ -38,6 +38,7 @@ config/manager/kustomization.yaml
 # test resources
 kubeconfig
 tests/_build/
+config/rbac/extra-permissions-operator/
 
 # autoinstrumentation artifacts
 build

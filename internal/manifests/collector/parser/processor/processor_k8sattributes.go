@@ -57,15 +57,19 @@ func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
 			Resources: []string{"pods", "namespaces"},
 			Verbs:     []string{"get", "watch", "list"},
 		},
-		{
-			APIGroups: []string{"apps"},
-			Resources: []string{"replicasets"},
-			Verbs:     []string{"get", "watch", "list"},
-		},
+	}
+
+	replicasetPolicy := rbacv1.PolicyRule{
+		APIGroups: []string{"apps"},
+		Resources: []string{"replicasets"},
+		Verbs:     []string{"get", "watch", "list"},
 	}
 
 	extractCfg, ok := o.config["extract"]
 	if !ok {
+		// k8s.deployment.name is enabled by default so, replicasets permissions are needed
+		// https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/32248#discussion_r1560077826
+		prs = append(prs, replicasetPolicy)
 		return prs
 	}
 
@@ -81,7 +85,9 @@ func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
 
 	for _, m := range metadata {
 		metadataField := fmt.Sprint(m)
-		if strings.Contains(metadataField, "k8s.node") {
+		if metadataField == "k8s.deployment.uid" || metadataField == "k8s.deployment.name" {
+			prs = append(prs, replicasetPolicy)
+		} else if strings.Contains(metadataField, "k8s.node") {
 			prs = append(prs,
 				rbacv1.PolicyRule{
 					APIGroups: []string{""},

@@ -272,7 +272,7 @@ func TestAgent_getHealth(t *testing.T) {
 					StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
 					ComponentHealthMap: map[string]*protobufs.ComponentHealth{
 						"testnamespace/collector": {
-							Healthy:            false, // we're working with mocks so the status will never be reconciled.
+							Healthy:            true,
 							StartTimeUnixNano:  collectorStartTime,
 							LastError:          "",
 							Status:             "",
@@ -305,7 +305,7 @@ func TestAgent_getHealth(t *testing.T) {
 					StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
 					ComponentHealthMap: map[string]*protobufs.ComponentHealth{
 						"testnamespace/collector": {
-							Healthy:            false, // we're working with mocks so the status will never be reconciled.
+							Healthy:            true,
 							StartTimeUnixNano:  collectorStartTime,
 							LastError:          "",
 							Status:             "",
@@ -313,7 +313,7 @@ func TestAgent_getHealth(t *testing.T) {
 							ComponentHealthMap: map[string]*protobufs.ComponentHealth{},
 						},
 						"testnamespace/other": {
-							Healthy:            false, // we're working with mocks so the status will never be reconciled.
+							Healthy:            true,
 							StartTimeUnixNano:  collectorStartTime,
 							LastError:          "",
 							Status:             "",
@@ -345,7 +345,7 @@ func TestAgent_getHealth(t *testing.T) {
 					StatusTimeUnixNano: uint64(fakeClock.Now().UnixNano()),
 					ComponentHealthMap: map[string]*protobufs.ComponentHealth{
 						"other/third": {
-							Healthy:            false, // we're working with mocks so the status will never be reconciled.
+							Healthy:            true,
 							StartTimeUnixNano:  collectorStartTime,
 							LastError:          "",
 							Status:             "",
