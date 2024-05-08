@@ -26,7 +26,7 @@ RUN curl -LO https://github.com/kudobuilder/kuttl/releases/download/v0.15.0/kube
     && mv kubectl-kuttl_0.15.0_linux_x86_64 /usr/local/bin/kuttl
 
 # Install Chainsaw e2e
-RUN go install github.com/kyverno/chainsaw@v0.1.7
+RUN go install github.com/kyverno/chainsaw@v0.2.0
 
 # Install kubectl and oc
 RUN curl -LO https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/latest/openshift-client-linux.tar.gz \
