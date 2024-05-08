@@ -184,7 +184,9 @@ Enum=tracecontext;baggage;b3;b3multi;jaeger;xray;ottrace;none<br/>
         <td>object</td>
         <td>
           Selector is the label selector for affected Pods.
-This selector only takes effect when annotation: instrumentation.opentelemetry.io/inject-xx equal true.<br/>
+This selector only takes effect when annotation: instrumentation.opentelemetry.io/inject-xx equal true.
+Unlike standard label selectors, `nil` means `everything`, and this is also the default.
+This may change in a future CRD version.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3938,6 +3940,8 @@ The value can be for instance parentbased_always_on, parentbased_always_off, par
 
 Selector is the label selector for affected Pods.
 This selector only takes effect when annotation: instrumentation.opentelemetry.io/inject-xx equal true.
+Unlike standard label selectors, `nil` means `everything`, and this is also the default.
+This may change in a future CRD version.
 
 <table>
     <thead>
@@ -3959,7 +3963,9 @@ This selector only takes effect when annotation: instrumentation.opentelemetry.i
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4004,7 +4010,8 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         <td>
           values is an array of string values. If the operator is In or NotIn,
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
-the values array must be empty.<br/>
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
