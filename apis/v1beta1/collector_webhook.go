@@ -190,7 +190,7 @@ func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollecto
 
 	nullObjects := r.Spec.Config.nullObjects()
 	if len(nullObjects) > 0 {
-		warnings = append(warnings, fmt.Sprintf("Collector config spec.config has null objects: %s. For compatibility tooling (kustomize and kubectl edit) it is recommended to use empty obejects e.g. batch: {}.", strings.Join(nullObjects, ", ")))
+		warnings = append(warnings, fmt.Sprintf("Collector config spec.config has null objects: %s. For compatibility with other tooling, such as kustomize and kubectl edit, it is recommended to use empty objects e.g. batch: {}.", strings.Join(nullObjects, ", ")))
 	}
 
 	// validate volumeClaimTemplates
