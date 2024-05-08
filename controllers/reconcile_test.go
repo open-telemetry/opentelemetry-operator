@@ -73,14 +73,14 @@ var (
 type check[T any] func(t *testing.T, params T)
 
 func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
-	addedMetadataDeployment := testCollectorWithMode(v1alpha1.ModeDeployment)
+	addedMetadataDeployment := testCollectorWithMode("test-deployment", v1alpha1.ModeDeployment)
 	addedMetadataDeployment.Labels = map[string]string{
 		labelName: labelVal,
 	}
 	addedMetadataDeployment.Annotations = map[string]string{
 		annotationName: annotationVal,
 	}
-	deploymentExtraPorts := testCollectorWithModeAndReplicas(v1alpha1.ModeDeployment, 3)
+	deploymentExtraPorts := testCollectorWithModeAndReplicas("test-deployment", v1alpha1.ModeDeployment, 3)
 	deploymentExtraPorts.Spec.Ports = append(deploymentExtraPorts.Spec.Ports, extraPorts)
 	deploymentExtraPorts.Spec.DeploymentUpdateStrategy = appsv1.DeploymentStrategy{
 		RollingUpdate: &appsv1.RollingUpdateDeployment{
@@ -94,20 +94,20 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			},
 		},
 	}
-	ingressParams := testCollectorAssertNoErr(t, "", testFileIngress)
+	ingressParams := testCollectorAssertNoErr(t, "test-ingress", "", testFileIngress)
 	ingressParams.Spec.Ingress.Type = "ingress"
-	updatedIngressParams := testCollectorAssertNoErr(t, "", testFileIngress)
+	updatedIngressParams := testCollectorAssertNoErr(t, "test-ingress", "", testFileIngress)
 	updatedIngressParams.Spec.Ingress.Type = "ingress"
 	updatedIngressParams.Spec.Ingress.Annotations = map[string]string{"blub": "blob"}
 	updatedIngressParams.Spec.Ingress.Hostname = expectHostname
-	routeParams := testCollectorAssertNoErr(t, "", testFileIngress)
+	routeParams := testCollectorAssertNoErr(t, "test-route", "", testFileIngress)
 	routeParams.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
 	routeParams.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
-	updatedRouteParams := testCollectorAssertNoErr(t, "", testFileIngress)
+	updatedRouteParams := testCollectorAssertNoErr(t, "test-route", "", testFileIngress)
 	updatedRouteParams.Spec.Ingress.Type = v1alpha1.IngressTypeRoute
 	updatedRouteParams.Spec.Ingress.Route.Termination = v1alpha1.TLSRouteTerminationTypeInsecure
 	updatedRouteParams.Spec.Ingress.Hostname = expectHostname
-	deletedParams := testCollectorWithMode(v1alpha1.ModeDeployment)
+	deletedParams := testCollectorWithMode("test2", v1alpha1.ModeDeployment)
 	now := metav1.NewTime(time.Now())
 	deletedParams.DeletionTimestamp = &now
 
@@ -158,7 +158,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.True(t, exists)
 							assert.Equal(t, svc.Spec.Selector, map[string]string{
 								"app.kubernetes.io/component":  "opentelemetry-collector",
-								"app.kubernetes.io/instance":   "default.test",
+								"app.kubernetes.io/instance":   "default.test-deployment",
 								"app.kubernetes.io/managed-by": "opentelemetry-operator",
 								"app.kubernetes.io/part-of":    "opentelemetry",
 							})
@@ -192,7 +192,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.Contains(t, actual.Spec.Ports, extraPorts.ServicePort)
 							assert.Equal(t, actual.Spec.Selector, map[string]string{
 								"app.kubernetes.io/component":  "opentelemetry-collector",
-								"app.kubernetes.io/instance":   "default.test",
+								"app.kubernetes.io/instance":   "default.test-deployment",
 								"app.kubernetes.io/managed-by": "opentelemetry-operator",
 								"app.kubernetes.io/part-of":    "opentelemetry",
 							})
@@ -206,7 +206,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 		{
 			name: "invalid mode",
 			args: args{
-				params:  testCollectorWithMode("bad"),
+				params:  testCollectorWithMode("test-invalid", "bad"),
 				updates: []v1alpha1.OpenTelemetryCollector{},
 			},
 			want: []want{
@@ -223,7 +223,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 		{
 			name: "invalid prometheus configuration",
 			args: args{
-				params:  testCollectorAssertNoErr(t, baseTaImage, testFileIngress),
+				params:  testCollectorAssertNoErr(t, "test-invalid-prom", baseTaImage, testFileIngress),
 				updates: []v1alpha1.OpenTelemetryCollector{},
 			},
 			want: []want{
@@ -285,7 +285,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					checks: []check[v1alpha1.OpenTelemetryCollector]{
 						func(t *testing.T, params v1alpha1.OpenTelemetryCollector) {
 							got := routev1.Route{}
-							nsn := types.NamespacedName{Namespace: params.Namespace, Name: "otlp-grpc-test-route"}
+							nsn := types.NamespacedName{Namespace: params.Namespace, Name: "otlp-grpc-test-route-route"}
 							exists, err := populateObjectIfExists(t, &got, nsn)
 							assert.NoError(t, err)
 							assert.True(t, exists)
@@ -299,7 +299,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					checks: []check[v1alpha1.OpenTelemetryCollector]{
 						func(t *testing.T, params v1alpha1.OpenTelemetryCollector) {
 							got := routev1.Route{}
-							nsn := types.NamespacedName{Namespace: params.Namespace, Name: "otlp-grpc-test-route"}
+							nsn := types.NamespacedName{Namespace: params.Namespace, Name: "otlp-grpc-test-route-route"}
 							exists, err := populateObjectIfExists(t, &got, nsn)
 							assert.NoError(t, err)
 							assert.True(t, exists)
@@ -396,7 +396,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 		{
 			name: "daemonset collector",
 			args: args{
-				params: testCollectorWithMode(v1alpha1.ModeDaemonSet),
+				params: testCollectorWithMode("test-daemonset", v1alpha1.ModeDaemonSet),
 			},
 			want: []want{
 				{
@@ -416,11 +416,11 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 		{
 			name: "stateful should update collector with TA",
 			args: args{
-				params: testCollectorWithMode(v1alpha1.ModeStatefulSet),
+				params: testCollectorWithMode("test-stateful-ta", v1alpha1.ModeStatefulSet),
 				updates: []v1alpha1.OpenTelemetryCollector{
-					testCollectorAssertNoErr(t, baseTaImage, promFile),
-					testCollectorAssertNoErr(t, baseTaImage, updatedPromFile),
-					testCollectorAssertNoErr(t, updatedTaImage, updatedPromFile),
+					testCollectorAssertNoErr(t, "test-stateful-ta", baseTaImage, promFile),
+					testCollectorAssertNoErr(t, "test-stateful-ta", baseTaImage, updatedPromFile),
+					testCollectorAssertNoErr(t, "test-stateful-ta", updatedTaImage, updatedPromFile),
 				},
 			},
 			want: []want{
@@ -463,13 +463,13 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, namespacedObjectName(naming.TargetAllocatorServiceAccount(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							promConfig, err := ta.ConfigToPromConfig(testCollectorAssertNoErr(t, baseTaImage, promFile).Spec.Config)
+							promConfig, err := ta.ConfigToPromConfig(testCollectorAssertNoErr(t, "test-stateful-ta", baseTaImage, promFile).Spec.Config)
 							assert.NoError(t, err)
 
 							taConfig := make(map[interface{}]interface{})
 							taConfig["collector_selector"] = metav1.LabelSelector{
 								MatchLabels: map[string]string{
-									"app.kubernetes.io/instance":   "default.test",
+									"app.kubernetes.io/instance":   "default.test-stateful-ta",
 									"app.kubernetes.io/managed-by": "opentelemetry-operator",
 									"app.kubernetes.io/component":  "opentelemetry-collector",
 									"app.kubernetes.io/part-of":    "opentelemetry",
