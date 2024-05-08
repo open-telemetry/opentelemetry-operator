@@ -72,7 +72,7 @@ func TestValidate(t *testing.T) {
 			},
 
 			warnings: []string{
-				"Collector config spec.config has null objects: extensions.foo:, processors.batch:, processors.foo:. For compatibility tooling (kustomize and kubectl edit) it is recommended to use empty obejects e.g. batch: {}.",
+				"Collector config spec.config has null objects: extensions.foo:, processors.batch:, processors.foo:. For compatibility with other tooling, such as kustomize and kubectl edit, it is recommended to use empty objects e.g. batch: {}.",
 			},
 		},
 	}
