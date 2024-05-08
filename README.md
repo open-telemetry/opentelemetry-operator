@@ -777,9 +777,12 @@ Emeritus Approvers:
 
 Target Allocator Maintainers ([@open-telemetry/operator-ta-maintainers](https://github.com/orgs/open-telemetry/teams/operator-ta-maintainers)):
 
-- [Anthony Mirabella](https://github.com/Aneurysm9), AWS
 - [Kristina Pathak](https://github.com/kristinapathak), Lightstep
 - [Sebastian Poxhofer](https://github.com/secustor)
+
+Emeritus Target Allocator Maintainers
+
+- [Anthony Mirabella](https://github.com/Aneurysm9), AWS
 
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
