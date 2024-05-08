@@ -15,6 +15,8 @@
 package config
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -53,6 +55,7 @@ type Config struct {
 	AllocationStrategy string                `yaml:"allocation_strategy,omitempty"`
 	FilterStrategy     string                `yaml:"filter_strategy,omitempty"`
 	PrometheusCR       PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
+	HTTPS              HTTPSServerConfig     `yaml:"https,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -62,6 +65,14 @@ type PrometheusCRConfig struct {
 	ServiceMonitorNamespaceSelector *metav1.LabelSelector `yaml:"service_monitor_namespace_selector,omitempty"`
 	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
 	ScrapeInterval                  model.Duration        `yaml:"scrape_interval,omitempty"`
+}
+
+type HTTPSServerConfig struct {
+	Enabled         bool   `yaml:"enabled,omitempty"`
+	ListenAddr      string `yaml:"listen_addr,omitempty"`
+	CAFilePath      string `yaml:"ca_file_path,omitempty"`
+	TLSCertFilePath string `yaml:"tls_cert_file_path,omitempty"`
+	TLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
 }
 
 func LoadFromFile(file string, target *Config) error {
@@ -99,6 +110,31 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	}
 
 	target.PrometheusCR.Enabled, err = getPrometheusCREnabled(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.HTTPS.Enabled, err = getHttpsEnabled(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.HTTPS.ListenAddr, err = getHttpsListenAddr(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.HTTPS.CAFilePath, err = getHttpsCAFilePath(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.HTTPS.TLSCertFilePath, err = getHttpsTLSCertFilePath(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.HTTPS.TLSKeyFilePath, err = getHttpsTLSKeyFilePath(flagSet)
 	if err != nil {
 		return err
 	}
@@ -163,4 +199,27 @@ func ValidateConfig(config *Config) error {
 		return fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
 	}
 	return nil
+}
+
+func (c HTTPSServerConfig) NewTLSConfig() (*tls.Config, error) {
+	cert, err := tls.LoadX509KeyPair(c.TLSCertFilePath, c.TLSKeyFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	caCert, err := os.ReadFile(c.CAFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientCAs:    caCertPool,
+		MinVersion:   tls.VersionTLS12,
+	}
+	return tlsConfig, nil
 }
