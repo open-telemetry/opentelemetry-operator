@@ -39,6 +39,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -239,7 +240,7 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
 		Owns(&policyV1.PodDisruptionBudget{})
 
-	if r.config.CreateRBACPermissions() {
+	if r.config.CreateRBACPermissions() == rbac.Available {
 		builder.Owns(&rbacv1.ClusterRoleBinding{})
 		builder.Owns(&rbacv1.ClusterRole{})
 	}

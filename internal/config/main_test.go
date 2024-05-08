@@ -15,6 +15,7 @@
 package config_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,6 +24,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
@@ -51,6 +53,9 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		PrometheusCRsAvailabilityFunc: func() (prometheus.Availability, error) {
 			return prometheus.Available, nil
 		},
+		RBACPermissionsFunc: func(ctx context.Context) (rbac.Availability, error) {
+			return rbac.Available, nil
+		},
 	}
 	cfg := config.New(
 		config.WithAutoDetect(mock),
@@ -74,6 +79,7 @@ var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
+	RBACPermissionsFunc             func(ctx context.Context) (rbac.Availability, error)
 }
 
 func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error) {
@@ -88,4 +94,11 @@ func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, e
 		return m.PrometheusCRsAvailabilityFunc()
 	}
 	return prometheus.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) RBACPermissions(ctx context.Context) (rbac.Availability, error) {
+	if m.RBACPermissionsFunc != nil {
+		return m.RBACPermissionsFunc(ctx)
+	}
+	return rbac.NotAvailable, nil
 }

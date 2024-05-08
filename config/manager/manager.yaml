@@ -51,5 +51,10 @@ spec:
           requests:
             cpu: 100m
             memory: 64Mi
+        env:
+          - name: SERVICE_ACCOUNT_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.serviceAccountName
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10

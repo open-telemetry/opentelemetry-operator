@@ -16,6 +16,7 @@
 package config
 
 import (
+	"context"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -24,6 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
+	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
@@ -43,7 +45,7 @@ type Config struct {
 	autoInstrumentationPythonImage      string
 	collectorImage                      string
 	collectorConfigMapEntry             string
-	createRBACPermissions               bool
+	createRBACPermissions               autoRBAC.Availability
 	enableMultiInstrumentation          bool
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
@@ -60,10 +62,11 @@ type Config struct {
 	operatorOpAMPBridgeConfigMapEntry   string
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationJavaImage        string
-	openshiftRoutesAvailability         openshift.RoutesAvailability
-	prometheusCRAvailability            prometheus.Availability
-	labelsFilter                        []string
-	annotationsFilter                   []string
+
+	openshiftRoutesAvailability openshift.RoutesAvailability
+	prometheusCRAvailability    prometheus.Availability
+	labelsFilter                []string
+	annotationsFilter           []string
 }
 
 // New constructs a new configuration based on the given options.
@@ -72,6 +75,7 @@ func New(opts ...Option) Config {
 	o := options{
 		prometheusCRAvailability:          prometheus.NotAvailable,
 		openshiftRoutesAvailability:       openshift.RoutesNotAvailable,
+		createRBACPermissions:             autoRBAC.NotAvailable,
 		collectorConfigMapEntry:           defaultCollectorConfigMapEntry,
 		targetAllocatorConfigMapEntry:     defaultTargetAllocatorConfigMapEntry,
 		operatorOpAMPBridgeConfigMapEntry: defaultOperatorOpAMPBridgeConfigMapEntry,
@@ -80,6 +84,7 @@ func New(opts ...Option) Config {
 		enableJavaInstrumentation:         true,
 		annotationsFilter:                 []string{"kubectl.kubernetes.io/last-applied-configuration"},
 	}
+
 	for _, opt := range opts {
 		opt(&o)
 	}
@@ -88,7 +93,6 @@ func New(opts ...Option) Config {
 		autoDetect:                          o.autoDetect,
 		collectorImage:                      o.collectorImage,
 		collectorConfigMapEntry:             o.collectorConfigMapEntry,
-		createRBACPermissions:               o.createRBACPermissions,
 		enableMultiInstrumentation:          o.enableMultiInstrumentation,
 		enableApacheHttpdInstrumentation:    o.enableApacheHttpdInstrumentation,
 		enableDotNetInstrumentation:         o.enableDotNetInstrumentation,
@@ -125,12 +129,22 @@ func (c *Config) AutoDetect() error {
 		return err
 	}
 	c.openshiftRoutesAvailability = ora
+	c.logger.V(2).Info("openshift routes detected", "availability", ora)
 
 	pcrd, err := c.autoDetect.PrometheusCRsAvailability()
 	if err != nil {
 		return err
 	}
 	c.prometheusCRAvailability = pcrd
+	c.logger.V(2).Info("prometheus cr detected", "availability", pcrd)
+
+	rAuto, err := c.autoDetect.RBACPermissions(context.Background())
+	if err != nil {
+		c.logger.V(2).Info("the rbac permissions are not set for the operator", "reason", err)
+	}
+	c.createRBACPermissions = rAuto
+	c.logger.V(2).Info("create rbac permissions detected", "availability", rAuto)
+
 	return nil
 }
 
@@ -185,7 +199,7 @@ func (c *Config) CollectorConfigMapEntry() string {
 }
 
 // CreateRBACPermissions is true when the operator can create RBAC permissions for SAs running a collector instance. Immutable.
-func (c *Config) CreateRBACPermissions() bool {
+func (c *Config) CreateRBACPermissions() autoRBAC.Availability {
 	return c.createRBACPermissions
 }
 

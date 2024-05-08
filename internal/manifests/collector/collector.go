@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -60,7 +61,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		}
 	}
 
-	if params.Config.CreateRBACPermissions() {
+	if params.Config.CreateRBACPermissions() == rbac.Available {
 		manifestFactories = append(manifestFactories,
 			manifests.Factory(ClusterRole),
 			manifests.Factory(ClusterRoleBinding),

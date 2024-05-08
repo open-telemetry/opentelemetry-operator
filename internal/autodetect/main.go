@@ -16,11 +16,16 @@
 package autodetect
 
 import (
+	"context"
+	"fmt"
+
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
+	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
 var _ AutoDetect = (*autoDetect)(nil)
@@ -29,14 +34,16 @@ var _ AutoDetect = (*autoDetect)(nil)
 type AutoDetect interface {
 	OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailability() (prometheus.Availability, error)
+	RBACPermissions(ctx context.Context) (autoRBAC.Availability, error)
 }
 
 type autoDetect struct {
-	dcl discovery.DiscoveryInterface
+	dcl      discovery.DiscoveryInterface
+	reviewer *rbac.Reviewer
 }
 
 // New creates a new auto-detection worker, using the given client when talking to the current cluster.
-func New(restConfig *rest.Config) (AutoDetect, error) {
+func New(restConfig *rest.Config, reviewer *rbac.Reviewer) (AutoDetect, error) {
 	dcl, err := discovery.NewDiscoveryClientForConfig(restConfig)
 	if err != nil {
 		// it's pretty much impossible to get into this problem, as most of the
@@ -46,7 +53,8 @@ func New(restConfig *rest.Config) (AutoDetect, error) {
 	}
 
 	return &autoDetect{
-		dcl: dcl,
+		dcl:      dcl,
+		reviewer: reviewer,
 	}, nil
 }
 
@@ -82,4 +90,16 @@ func (a *autoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability
 	}
 
 	return openshift.RoutesNotAvailable, nil
+}
+
+func (a *autoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
+	w, err := autoRBAC.CheckRBACPermissions(ctx, a.reviewer)
+	if err != nil {
+		return autoRBAC.NotAvailable, err
+	}
+	if w != nil {
+		return autoRBAC.NotAvailable, fmt.Errorf("missing permissions: %s", w)
+	}
+
+	return autoRBAC.Available, nil
 }

@@ -136,8 +136,8 @@ func ClusterRole(otelcol string, namespace string) string {
 }
 
 // ClusterRoleBinding builds the cluster role binding name based on the instance.
-func ClusterRoleBinding(otelcol string) string {
-	return DNSName(Truncate("%s-collector", 63, otelcol))
+func ClusterRoleBinding(otelcol, namespace string) string {
+	return DNSName(Truncate("%s-%s-collector", 63, otelcol, namespace))
 }
 
 // TAService returns the name to use for the TargetAllocator service.
