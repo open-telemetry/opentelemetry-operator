@@ -236,8 +236,10 @@ type OpenTelemetryCollectorSpec struct {
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
 	LivenessProbe *Probe `json:"livenessProbe,omitempty"`
+	// Readiness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
+	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
-	ReadinessProbe *v1.Probe `json:"readinessProbe,omitempty"`
+	ReadinessProbe *Probe `json:"readinessProbe,omitempty"`
 	// InitContainers allows injecting initContainers to the Collector's pod definition.
 	// These init containers can be used to fetch secrets for injection into the
 	// configuration from external sources, run added checks, etc. Any errors during the execution of
@@ -553,7 +555,7 @@ type ObservabilitySpec struct {
 	Metrics MetricsConfigSpec `json:"metrics,omitempty"`
 }
 
-// Probe defines the OpenTelemetry's pod probe config. Only Liveness probe is supported currently.
+// Probe defines the OpenTelemetry's pod probe config.
 type Probe struct {
 	// Number of seconds after the container has started before liveness probes are initiated.
 	// Defaults to 0 seconds. Minimum value is 0.

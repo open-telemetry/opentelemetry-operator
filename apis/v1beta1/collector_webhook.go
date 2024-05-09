@@ -309,6 +309,26 @@ func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollecto
 			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1")
 		}
 	}
+	if r.Spec.ReadinessProbe != nil {
+		if r.Spec.ReadinessProbe.InitialDelaySeconds != nil && *r.Spec.ReadinessProbe.InitialDelaySeconds < 0 {
+			return warnings, fmt.Errorf("the OpenTelemetry Spec ReadinessProbe InitialDelaySeconds configuration is incorrect. InitialDelaySeconds should be greater than or equal to 0")
+		}
+		if r.Spec.ReadinessProbe.PeriodSeconds != nil && *r.Spec.ReadinessProbe.PeriodSeconds < 1 {
+			return warnings, fmt.Errorf("the OpenTelemetry Spec ReadinessProbe PeriodSeconds configuration is incorrect. PeriodSeconds should be greater than or equal to 1")
+		}
+		if r.Spec.ReadinessProbe.TimeoutSeconds != nil && *r.Spec.ReadinessProbe.TimeoutSeconds < 1 {
+			return warnings, fmt.Errorf("the OpenTelemetry Spec ReadinessProbe TimeoutSeconds configuration is incorrect. TimeoutSeconds should be greater than or equal to 1")
+		}
+		if r.Spec.ReadinessProbe.SuccessThreshold != nil && *r.Spec.ReadinessProbe.SuccessThreshold < 1 {
+			return warnings, fmt.Errorf("the OpenTelemetry Spec ReadinessProbe SuccessThreshold configuration is incorrect. SuccessThreshold should be greater than or equal to 1")
+		}
+		if r.Spec.ReadinessProbe.FailureThreshold != nil && *r.Spec.ReadinessProbe.FailureThreshold < 1 {
+			return warnings, fmt.Errorf("the OpenTelemetry Spec ReadinessProbe FailureThreshold configuration is incorrect. FailureThreshold should be greater than or equal to 1")
+		}
+		if r.Spec.ReadinessProbe.TerminationGracePeriodSeconds != nil && *r.Spec.ReadinessProbe.TerminationGracePeriodSeconds < 1 {
+			return warnings, fmt.Errorf("the OpenTelemetry Spec ReadinessProbe TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1")
+		}
+	}
 
 	// validate updateStrategy for DaemonSet
 	if r.Spec.Mode != ModeDaemonSet && len(r.Spec.DaemonSetUpdateStrategy.Type) > 0 {

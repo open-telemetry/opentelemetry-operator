@@ -103,8 +103,10 @@ type OpenTelemetryCollectorSpec struct {
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
 	LivenessProbe *Probe `json:"livenessProbe,omitempty"`
+	// Readiness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
+	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
-	ReadinessProbe *v1.Probe `json:"readinessProbe,omitempty"`
+	ReadinessProbe *Probe `json:"readinessProbe,omitempty"`
 
 	// ObservabilitySpec defines how telemetry data gets handled.
 	//
@@ -208,7 +210,7 @@ type TargetAllocatorEmbedded struct {
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 }
 
-// Probe defines the OpenTelemetry's pod probe config. Only Liveness probe is supported currently.
+// Probe defines the OpenTelemetry's pod probe config.
 type Probe struct {
 	// Number of seconds after the container has started before liveness probes are initiated.
 	// Defaults to 0 seconds. Minimum value is 0.
