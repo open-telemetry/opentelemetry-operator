@@ -15,4 +15,3 @@ issues: [2940]
 # Use pipe (|) for multiline entries.
 subtext: |
   When updating `OpenTelemetryCollector.spec.nodeSelector` it was not removing previous selector from the final collector pod (Deployment/Daemonset/Statefulset).
-  
