@@ -274,8 +274,10 @@ func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
 	if existing.CreationTimestamp.IsZero() {
 		existing.Spec.Selector = desired.Spec.Selector
 	}
-
-	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec, desired.Spec); err != nil {
+	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Template.Spec.NodeSelector, desired.Spec.Template.Spec.NodeSelector); err != nil {
+		return err
+	}
+	if err := mergeWithOverride(&existing.Spec, desired.Spec); err != nil {
 		return err
 	}
 	return nil
@@ -291,7 +293,10 @@ func mutateDeployment(existing, desired *appsv1.Deployment) error {
 		existing.Spec.Selector = desired.Spec.Selector
 	}
 	existing.Spec.Replicas = desired.Spec.Replicas
-	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Template, desired.Spec.Template); err != nil {
+	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Template.Spec.NodeSelector, desired.Spec.Template.Spec.NodeSelector); err != nil {
+		return err
+	}
+	if err := mergeWithOverride(&existing.Spec.Template, desired.Spec.Template); err != nil {
 		return err
 	}
 	if err := mergeWithOverride(&existing.Spec.Strategy, desired.Spec.Strategy); err != nil {
@@ -317,7 +322,10 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 		existing.Spec.VolumeClaimTemplates[i].ObjectMeta = desired.Spec.VolumeClaimTemplates[i].ObjectMeta
 		existing.Spec.VolumeClaimTemplates[i].Spec = desired.Spec.VolumeClaimTemplates[i].Spec
 	}
-	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Template, desired.Spec.Template); err != nil {
+	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Template.Spec.NodeSelector, desired.Spec.Template.Spec.NodeSelector); err != nil {
+		return err
+	}
+	if err := mergeWithOverride(&existing.Spec.Template, desired.Spec.Template); err != nil {
 		return err
 	}
 	return nil
