@@ -277,7 +277,7 @@ func (a *allocator) addCollectorTargetItemMapping(tg *target.Item) {
 
 // handleCollectors receives the new and removed collectors and reconciles the current state.
 // Any removals are removed from the allocator's collectors. New collectors are added to the allocator's collector map.
-// Finally, update all targets' collectors to match the consistent hashing.
+// Finally, update all targets' collector assignments.
 func (a *allocator) handleCollectors(diff diff.Changes[*Collector]) {
 	// Clear removed collectors
 	for _, k := range diff.Removals() {
