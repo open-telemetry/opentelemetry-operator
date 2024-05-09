@@ -19,7 +19,7 @@ spec:
       app.kubernetes.io/instance: create-sm-prometheus.simplest
       app.kubernetes.io/managed-by: opentelemetry-operator
       app.kubernetes.io/part-of: opentelemetry
-      operator.opentelemetry.io/collector-monitoring-service: Exists
+      operator.opentelemetry.io/collector-service-type: monitoring
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -42,7 +42,7 @@ spec:
       app.kubernetes.io/instance: create-sm-prometheus.simplest
       app.kubernetes.io/managed-by: opentelemetry-operator
       app.kubernetes.io/part-of: opentelemetry
-      operator.opentelemetry.io/collector-service: Exists
+      operator.opentelemetry.io/collector-service-type: base
 ---
 apiVersion: v1
 kind: Service
@@ -53,7 +53,7 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: simplest-collector-monitoring
     app.kubernetes.io/part-of: opentelemetry
-    operator.opentelemetry.io/collector-monitoring-service: "Exists"
+    operator.opentelemetry.io/collector-service-type: "monitoring"
   name: simplest-collector-monitoring
   namespace: create-sm-prometheus
 spec:

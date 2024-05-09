@@ -11,4 +11,4 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/managed-by: opentelemetry-operator
-      operator.opentelemetry.io/collector-service: Exists
+      operator.opentelemetry.io/collector-service-type: base

@@ -29,7 +29,7 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/managed-by: opentelemetry-operator
-      operator.opentelemetry.io/collector-monitoring-service: Exists
+      operator.opentelemetry.io/collector-service-type: monitoring
 ---
 apiVersion: v1
 kind: Service
@@ -67,7 +67,7 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: cluster-collector-collector
     app.kubernetes.io/part-of: opentelemetry
-    operator.opentelemetry.io/collector-headless-service: Exists
+    operator.opentelemetry.io/collector-service-type: headless
   name: cluster-collector-collector-headless
 spec:
   ports:

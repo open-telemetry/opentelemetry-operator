@@ -35,7 +35,7 @@ func ServiceMonitor(params manifests.Params) (*monitoringv1.ServiceMonitor, erro
 	name := naming.ServiceMonitor(params.OtelCol.Name)
 	endpoints := endpointsFromConfig(params.Log, params.OtelCol)
 	if len(endpoints) > 0 {
-		return createServiceMonitor(name, params, headfulLabel, endpoints)
+		return createServiceMonitor(name, params, BaseServiceType, endpoints)
 	}
 	return nil, nil
 }
@@ -48,12 +48,12 @@ func ServiceMonitorMonitoring(params manifests.Params) (*monitoringv1.ServiceMon
 			Port: "monitoring",
 		},
 	}
-	return createServiceMonitor(name, params, monitoringLabel, endpoints)
+	return createServiceMonitor(name, params, MonitoringServiceType, endpoints)
 }
 
 // createServiceMonitor creates a Service Monitor using the provided name, the params from the instance, a label to identify the service
 // to target (like the monitoring or the collector services) and the endpoints to scrape.
-func createServiceMonitor(name string, params manifests.Params, label string, endpoints []monitoringv1.Endpoint) (*monitoringv1.ServiceMonitor, error) {
+func createServiceMonitor(name string, params manifests.Params, serviceType ServiceType, endpoints []monitoringv1.Endpoint) (*monitoringv1.ServiceMonitor, error) {
 	if !shouldCreateServiceMonitor(params) {
 		return nil, nil
 	}
@@ -63,7 +63,7 @@ func createServiceMonitor(name string, params manifests.Params, label string, en
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	selectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
 	// This label is the one which differentiates the services
-	selectorLabels[label] = valueExists
+	selectorLabels[serviceTypeLabel] = serviceType.String()
 
 	sm = monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{

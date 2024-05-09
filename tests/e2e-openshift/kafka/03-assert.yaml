@@ -53,7 +53,7 @@ metadata:
     app.kubernetes.io/instance: chainsaw-kafka.kafka-exporter
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: kafka-exporter-collector
-    operator.opentelemetry.io/collector-headless-service: Exists
+    operator.opentelemetry.io/collector-service-type: headless
   name: kafka-exporter-collector-headless
   namespace: chainsaw-kafka
 spec:
