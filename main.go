@@ -174,7 +174,6 @@ func main() {
 	pflag.StringVar(&encodeLevelFormat, "zap-level-format", "uppercase", "The level format to be used in the customized Log Encoder")
 	pflag.Parse()
 
-	
 	opts.EncoderConfigOptions = append(opts.EncoderConfigOptions, func(ec *zapcore.EncoderConfig) {
 		ec.MessageKey = encodeMessageKey
 		ec.LevelKey = encodeLevelKey
