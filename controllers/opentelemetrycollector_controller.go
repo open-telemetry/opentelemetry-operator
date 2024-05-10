@@ -143,7 +143,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 	})
 	configVersionsToKeep := 3
 	if params.OtelCol.Spec.ConfigVersions != nil {
-		configVersionsToKeep = int(*params.OtelCol.Spec.ConfigVersions)
+		configVersionsToKeep = max(1, int(*params.OtelCol.Spec.ConfigVersions))
 	}
 
 	for i := range configMapList.Items {

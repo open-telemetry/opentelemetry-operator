@@ -5544,6 +5544,7 @@ spec:
               configVersions:
                 format: int32
                 type: integer
+                default: 3
               configmaps:
                 items:
                   properties:

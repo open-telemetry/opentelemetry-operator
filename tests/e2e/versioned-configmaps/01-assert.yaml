@@ -10,15 +10,6 @@ spec:
         - name: otc-internal
           configMap:
             name: simple-collector-8cd615bf
-            items:
-              - key: collector.yaml
-                path: collector.yaml
-            defaultMode: 420
-      containers:
-        - name: otc-container
-          volumeMounts:
-            - name: otc-internal
-              mountPath: /conf
 status:
   readyReplicas: 1
 ---
