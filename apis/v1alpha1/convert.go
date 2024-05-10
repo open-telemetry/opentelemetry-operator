@@ -129,7 +129,6 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 				},
 			},
 			LivenessProbe:  tov1beta1Probe(copy.Spec.LivenessProbe),
-			ReadinessProbe: tov1beta1Probe(copy.Spec.ReadinessProbe),
 			Observability: v1beta1.ObservabilitySpec{
 				Metrics: v1beta1.MetricsConfigSpec{
 					EnableMetrics:                copy.Spec.Observability.Metrics.EnableMetrics,
@@ -353,7 +352,6 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			Lifecycle:                     copy.Spec.Lifecycle,
 			TerminationGracePeriodSeconds: copy.Spec.TerminationGracePeriodSeconds,
 			LivenessProbe:                 tov1alpha1Probe(copy.Spec.LivenessProbe),
-			ReadinessProbe:                tov1alpha1Probe(copy.Spec.ReadinessProbe),
 			InitContainers:                copy.Spec.InitContainers,
 			AdditionalContainers:          copy.Spec.AdditionalContainers,
 			Observability: ObservabilitySpec{

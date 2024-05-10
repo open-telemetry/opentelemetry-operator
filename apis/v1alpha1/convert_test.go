@@ -266,9 +266,6 @@ func Test_tov1beta1AndBack(t *testing.T) {
 			LivenessProbe: &Probe{
 				PeriodSeconds: &one,
 			},
-			ReadinessProbe: &Probe{
-				PeriodSeconds: &one,
-			},
 			InitContainers: []v1.Container{
 				{
 					Name: "init",
