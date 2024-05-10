@@ -45,4 +45,4 @@ data:
                     - jaeger
 kind: ConfigMap
 metadata:
-  name: stateful-collector
+  name: stateful-collector-fb278632

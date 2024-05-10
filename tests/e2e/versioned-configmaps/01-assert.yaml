@@ -1,0 +1,33 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-collector
+spec:
+  template:
+    spec:
+      volumes:
+        - name: otc-internal
+          configMap:
+            name: simple-collector-8cd615bf
+            items:
+              - key: collector.yaml
+                path: collector.yaml
+            defaultMode: 420
+      containers:
+        - name: otc-container
+          volumeMounts:
+            - name: otc-internal
+              mountPath: /conf
+status:
+  readyReplicas: 1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: simple-collector-d6f40475
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: simple-collector-8cd615bf

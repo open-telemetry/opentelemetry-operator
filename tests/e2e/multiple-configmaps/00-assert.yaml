@@ -25,7 +25,7 @@ spec:
       volumes:
         - name: otc-internal
           configMap:
-            name: simplest-with-configmaps-collector
+            name: simplest-with-configmaps-collector-17ca6c13
             items:
               - key: collector.yaml
                 path: collector.yaml
