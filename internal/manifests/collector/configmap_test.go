@@ -61,7 +61,7 @@ service:
 		expectedName := naming.ConfigMap("test", hash)
 
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
-		expectedLables["app.kubernetes.io/name"] = expectedName
+		expectedLables["app.kubernetes.io/name"] = "test-collector"
 		expectedLables["app.kubernetes.io/version"] = "0.47.0"
 
 		actual, err := ConfigMap(param)
@@ -104,7 +104,7 @@ service:
 		expectedName := naming.ConfigMap("test", hash)
 
 		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
-		expectedLables["app.kubernetes.io/name"] = expectedName
+		expectedLables["app.kubernetes.io/name"] = "test-collector"
 		expectedLables["app.kubernetes.io/version"] = "latest"
 
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
