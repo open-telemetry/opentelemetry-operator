@@ -128,7 +128,7 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 					Termination: v1beta1.TLSRouteTerminationType(copy.Spec.Ingress.Route.Termination),
 				},
 			},
-			LivenessProbe:  tov1beta1Probe(copy.Spec.LivenessProbe),
+			LivenessProbe: tov1beta1Probe(copy.Spec.LivenessProbe),
 			Observability: v1beta1.ObservabilitySpec{
 				Metrics: v1beta1.MetricsConfigSpec{
 					EnableMetrics:                copy.Spec.Observability.Metrics.EnableMetrics,
