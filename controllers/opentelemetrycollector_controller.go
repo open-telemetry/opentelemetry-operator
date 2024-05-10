@@ -134,26 +134,32 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 	if err != nil {
 		return nil, fmt.Errorf("error listing ConfigMaps: %w", err)
 	}
+	ownedConfigMaps := r.getConfigMapsToReconcile(params.OtelCol.Spec.ConfigVersions, configMapList)
+	for i := range ownedConfigMaps {
+		ownedObjects[ownedConfigMaps[i].GetUID()] = &ownedConfigMaps[i]
+	}
 
-	// only return collector ConfigMaps older than spec.ConfigVersions
+	return ownedObjects, nil
+}
+
+// getConfigMapsToReconcile returns a list of ConfigMaps to reconcile based on the number of ConfigMaps to keep.
+// It keeps the newest ConfigMap, the `configVersionsToKeep` next newest ConfigMaps, and returns the remainder.
+func (r *OpenTelemetryCollectorReconciler) getConfigMapsToReconcile(configVersionsToKeep int, configMapList *corev1.ConfigMapList) []corev1.ConfigMap {
+	ownedConfigMaps := []corev1.ConfigMap{}
 	sort.Slice(configMapList.Items, func(i, j int) bool {
 		iTime := configMapList.Items[i].GetCreationTimestamp().Time
 		jTime := configMapList.Items[j].GetCreationTimestamp().Time
 		// sort the ConfigMaps newest to oldest
 		return iTime.After(jTime)
 	})
-	configVersionsToKeep := 3
-	if params.OtelCol.Spec.ConfigVersions != nil {
-		configVersionsToKeep = max(1, int(*params.OtelCol.Spec.ConfigVersions))
-	}
 
 	for i := range configMapList.Items {
 		if i > configVersionsToKeep {
-			ownedObjects[configMapList.Items[i].GetUID()] = &configMapList.Items[i]
+			ownedConfigMaps = append(ownedConfigMaps, configMapList.Items[i])
 		}
 	}
 
-	return ownedObjects, nil
+	return ownedConfigMaps
 }
 
 func (r *OpenTelemetryCollectorReconciler) getParams(instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {

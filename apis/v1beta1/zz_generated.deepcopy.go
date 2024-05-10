@@ -300,11 +300,6 @@ func (in *OpenTelemetryCollectorSpec) DeepCopyInto(out *OpenTelemetryCollectorSp
 	in.OpenTelemetryCommonFields.DeepCopyInto(&out.OpenTelemetryCommonFields)
 	in.TargetAllocator.DeepCopyInto(&out.TargetAllocator)
 	in.Config.DeepCopyInto(&out.Config)
-	if in.ConfigVersions != nil {
-		in, out := &in.ConfigVersions, &out.ConfigVersions
-		*out = new(int32)
-		**out = **in
-	}
 	in.Ingress.DeepCopyInto(&out.Ingress)
 	if in.LivenessProbe != nil {
 		in, out := &in.LivenessProbe, &out.LivenessProbe

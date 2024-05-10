@@ -99,7 +99,7 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	// +kubebuilder:default:=3
 	// +kubebuilder:validation:Minimum:=1
-	ConfigVersions *int32 `json:"configVersions,omitempty"`
+	ConfigVersions int `json:"configVersions,omitempty"`
 	// Ingress is used to specify how OpenTelemetry Collector is exposed. This
 	// functionality is only available if one of the valid modes is set.
 	// Valid modes are: deployment, daemonset and statefulset.

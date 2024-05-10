@@ -5543,7 +5543,7 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
               configVersions:
                 default: 3
-                format: int32
+                minimum: 1
                 type: integer
               configmaps:
                 items:
