@@ -5542,9 +5542,9 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               configVersions:
+                default: 3
                 format: int32
                 type: integer
-                default: 3
               configmaps:
                 items:
                   properties:
