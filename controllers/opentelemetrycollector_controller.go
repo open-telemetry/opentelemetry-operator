@@ -145,6 +145,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 // getConfigMapsToRemove returns a list of ConfigMaps to remove based on the number of ConfigMaps to keep.
 // It keeps the newest ConfigMap, the `configVersionsToKeep` next newest ConfigMaps, and returns the remainder.
 func (r *OpenTelemetryCollectorReconciler) getConfigMapsToRemove(configVersionsToKeep int, configMapList *corev1.ConfigMapList) []corev1.ConfigMap {
+	configVersionsToKeep = max(1, configVersionsToKeep)
 	ownedConfigMaps := []corev1.ConfigMap{}
 	sort.Slice(configMapList.Items, func(i, j int) bool {
 		iTime := configMapList.Items[i].GetCreationTimestamp().Time
