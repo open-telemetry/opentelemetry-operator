@@ -24,6 +24,7 @@ jobs:
          - "1.29"
        group:
          - e2e
+         - e2e-automatic-rbac
          - e2e-autoscale
          - e2e-instrumentation
          - e2e-opampbridge
@@ -39,8 +40,9 @@ jobs:
          - group: e2e-multi-instrumentation
            setup: "add-multi-instrumentation-params prepare-e2e"
          - group: e2e-metadata-filters
-           setup: "add-operator-arg OPERATOR_ARG='--annotations-filter=*filter.out --labels=*filter.out' prepare-e2e"
-
+           setup: "add-operator-arg OPERATOR_ARG='--annotations-filter=.*filter.out --labels=.*filter.out' prepare-e2e"
+         - group: e2e-automatic-rbac
+           setup: "add-rbac-permissions-to-operator prepare-e2e"
     steps:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v4
@@ -55,7 +57,7 @@ jobs:
         path: bin
         key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
     - name: Install chainsaw
-      uses: kyverno/action-install-chainsaw@v0.1.9
+      uses: kyverno/action-install-chainsaw@v0.2.0
     - name: Install tools
       run: make install-tools
     - name: Prepare e2e tests

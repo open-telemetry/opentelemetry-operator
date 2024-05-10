@@ -119,11 +119,17 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 		if err != nil {
 			return nil, err
 		}
+
+		isPoolHealthy := true
+		for _, pod := range podMap {
+			isPoolHealthy = isPoolHealthy && pod.Healthy
+		}
 		healthMap[key.String()] = &protobufs.ComponentHealth{
 			StartTimeUnixNano:  uint64(col.ObjectMeta.GetCreationTimestamp().UnixNano()),
 			StatusTimeUnixNano: uint64(agent.clock.Now().UnixNano()),
 			Status:             col.Status.Scale.StatusReplicas,
 			ComponentHealthMap: podMap,
+			Healthy:            isPoolHealthy,
 		}
 	}
 	return healthMap, nil

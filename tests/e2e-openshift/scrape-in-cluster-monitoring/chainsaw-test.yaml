@@ -1,0 +1,26 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: scrape-in-cluster-monitoring
+spec:
+  namespace: chainsaw-scrape-in-cluster-monitoring
+  steps:
+  - name: Create OTEL collector with Prometheus receiver to scrape in-cluster metrics
+    try:
+    - apply:
+        file: create-clusterrolebinding.yaml
+    - assert:
+        file: create-clusterrolebinding-assert.yaml
+    - apply:
+        file: create-otel-instance.yaml
+    - assert:
+        file: create-otel-instance-assert.yaml
+  - name: Wait for the metrics to be collected
+    try:
+    - sleep:
+        duration: 10s
+  - name: Check the presence of metrics in the OTEL collector
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_logs.sh 

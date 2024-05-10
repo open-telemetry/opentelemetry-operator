@@ -63,7 +63,7 @@ func (o *ResourceDetectionParser) GetRBACRules() []rbacv1.PolicyRule {
 	for _, d := range detectors {
 		detectorName := fmt.Sprint(d)
 		switch detectorName {
-		case "kubernetes":
+		case "k8snode":
 			policy := rbacv1.PolicyRule{
 				APIGroups: []string{""},
 				Resources: []string{"nodes"},
