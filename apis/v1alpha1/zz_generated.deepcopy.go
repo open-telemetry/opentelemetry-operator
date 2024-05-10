@@ -911,11 +911,6 @@ func (in *OpenTelemetryCollectorSpec) DeepCopyInto(out *OpenTelemetryCollectorSp
 		*out = new(Probe)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.ReadinessProbe != nil {
-		in, out := &in.ReadinessProbe, &out.ReadinessProbe
-		*out = new(Probe)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.InitContainers != nil {
 		in, out := &in.InitContainers, &out.InitContainers
 		*out = make([]v1.Container, len(*in))
