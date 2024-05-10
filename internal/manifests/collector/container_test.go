@@ -778,7 +778,7 @@ func TestContainerProbeEmptyConfig(t *testing.T) {
   health_check:
 service:
   extensions: [health_check]`),
-			LivenessProbe: &v1beta1.Probe{},
+			LivenessProbe:  &v1beta1.Probe{},
 			ReadinessProbe: &v1beta1.Probe{},
 		},
 	}
