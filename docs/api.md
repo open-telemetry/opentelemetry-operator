@@ -29873,6 +29873,17 @@ for the workload.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>configVersions</b></td>
+        <td>integer</td>
+        <td>
+          ConfigVersions defines the number versions to keep for the collector config. Each config version is stored in a separate ConfigMap.
+Defaults to 3. The minimum value is 1.<br/>
+          <br/>
+            <i>Default</i>: 3<br/>
+            <i>Minimum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecconfigmapsindex-1">configmaps</a></b></td>
         <td>[]object</td>
         <td>
