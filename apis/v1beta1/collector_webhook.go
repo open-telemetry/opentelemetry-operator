@@ -289,45 +289,14 @@ func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollecto
 		return warnings, fmt.Errorf("a valid Ingress hostname has to be defined for subdomain ruleType")
 	}
 
-	if r.Spec.LivenessProbe != nil {
-		if r.Spec.LivenessProbe.InitialDelaySeconds != nil && *r.Spec.LivenessProbe.InitialDelaySeconds < 0 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe InitialDelaySeconds configuration is incorrect. InitialDelaySeconds should be greater than or equal to 0")
-		}
-		if r.Spec.LivenessProbe.PeriodSeconds != nil && *r.Spec.LivenessProbe.PeriodSeconds < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe PeriodSeconds configuration is incorrect. PeriodSeconds should be greater than or equal to 1")
-		}
-		if r.Spec.LivenessProbe.TimeoutSeconds != nil && *r.Spec.LivenessProbe.TimeoutSeconds < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe TimeoutSeconds configuration is incorrect. TimeoutSeconds should be greater than or equal to 1")
-		}
-		if r.Spec.LivenessProbe.SuccessThreshold != nil && *r.Spec.LivenessProbe.SuccessThreshold < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe SuccessThreshold configuration is incorrect. SuccessThreshold should be greater than or equal to 1")
-		}
-		if r.Spec.LivenessProbe.FailureThreshold != nil && *r.Spec.LivenessProbe.FailureThreshold < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe FailureThreshold configuration is incorrect. FailureThreshold should be greater than or equal to 1")
-		}
-		if r.Spec.LivenessProbe.TerminationGracePeriodSeconds != nil && *r.Spec.LivenessProbe.TerminationGracePeriodSeconds < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1")
-		}
+	// validate probes Liveness/Readiness
+	err := validateProbe("LivenessProbe", r.Spec.LivenessProbe)
+	if err != nil {
+		return warnings, err
 	}
-	if r.Spec.ReadinessProbe != nil {
-		if r.Spec.ReadinessProbe.InitialDelaySeconds != nil && *r.Spec.ReadinessProbe.InitialDelaySeconds < 0 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec ReadinessProbe InitialDelaySeconds configuration is incorrect. InitialDelaySeconds should be greater than or equal to 0")
-		}
-		if r.Spec.ReadinessProbe.PeriodSeconds != nil && *r.Spec.ReadinessProbe.PeriodSeconds < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec ReadinessProbe PeriodSeconds configuration is incorrect. PeriodSeconds should be greater than or equal to 1")
-		}
-		if r.Spec.ReadinessProbe.TimeoutSeconds != nil && *r.Spec.ReadinessProbe.TimeoutSeconds < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec ReadinessProbe TimeoutSeconds configuration is incorrect. TimeoutSeconds should be greater than or equal to 1")
-		}
-		if r.Spec.ReadinessProbe.SuccessThreshold != nil && *r.Spec.ReadinessProbe.SuccessThreshold < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec ReadinessProbe SuccessThreshold configuration is incorrect. SuccessThreshold should be greater than or equal to 1")
-		}
-		if r.Spec.ReadinessProbe.FailureThreshold != nil && *r.Spec.ReadinessProbe.FailureThreshold < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec ReadinessProbe FailureThreshold configuration is incorrect. FailureThreshold should be greater than or equal to 1")
-		}
-		if r.Spec.ReadinessProbe.TerminationGracePeriodSeconds != nil && *r.Spec.ReadinessProbe.TerminationGracePeriodSeconds < 1 {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec ReadinessProbe TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1")
-		}
+	err = validateProbe("ReadinessProbe", r.Spec.ReadinessProbe)
+	if err != nil {
+		return warnings, err
 	}
 
 	// validate updateStrategy for DaemonSet
@@ -383,6 +352,30 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 	}
 
 	return nil, nil
+}
+
+func validateProbe(probeName string, probe *Probe) error {
+	if probe != nil {
+		if probe.InitialDelaySeconds != nil && *probe.InitialDelaySeconds < 0 {
+			return fmt.Errorf("the OpenTelemetry Spec %s InitialDelaySeconds configuration is incorrect. InitialDelaySeconds should be greater than or equal to 0", probeName)
+		}
+		if probe.PeriodSeconds != nil && *probe.PeriodSeconds < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec %s PeriodSeconds configuration is incorrect. PeriodSeconds should be greater than or equal to 1", probeName)
+		}
+		if probe.TimeoutSeconds != nil && *probe.TimeoutSeconds < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec %s TimeoutSeconds configuration is incorrect. TimeoutSeconds should be greater than or equal to 1", probeName)
+		}
+		if probe.SuccessThreshold != nil && *probe.SuccessThreshold < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec %s SuccessThreshold configuration is incorrect. SuccessThreshold should be greater than or equal to 1", probeName)
+		}
+		if probe.FailureThreshold != nil && *probe.FailureThreshold < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec %s FailureThreshold configuration is incorrect. FailureThreshold should be greater than or equal to 1", probeName)
+		}
+		if probe.TerminationGracePeriodSeconds != nil && *probe.TerminationGracePeriodSeconds < 1 {
+			return fmt.Errorf("the OpenTelemetry Spec %s TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1", probeName)
+		}
+	}
+	return nil
 }
 
 func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
