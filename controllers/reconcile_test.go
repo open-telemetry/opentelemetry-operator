@@ -681,7 +681,7 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 							exists, err = populateObjectIfExists(t, &v1.Service{}, namespacedObjectName(naming.OpAMPBridgeService(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, namespacedObjectName(naming.ServiceAccount(params.Name), params.Namespace))
+							exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, namespacedObjectName(naming.OpAMPBridgeServiceAccount(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 						},
