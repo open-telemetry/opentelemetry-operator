@@ -241,14 +241,14 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		if controllerutil.ContainsFinalizer(&instance, collectorFinalizer) {
 			// If the finalization logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
-			if err := r.finalizeCollector(ctx, params); err != nil {
+			if err = r.finalizeCollector(ctx, params); err != nil {
 				return ctrl.Result{}, err
 			}
 
 			// Once all finalizers have been
 			// removed, the object will be deleted.
 			if controllerutil.RemoveFinalizer(&instance, collectorFinalizer) {
-				err := r.Update(ctx, &instance)
+				err = r.Update(ctx, &instance)
 				if err != nil {
 					return ctrl.Result{}, err
 				}
