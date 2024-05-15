@@ -2,7 +2,7 @@
 
 Steps to release a new version of the OpenTelemetry Operator:
 
-1. Create a `Prepare relese x.y.z` pull request with the following content:
+1. Create a `Prepare release x.y.z` pull request with the following content:
    1. Set the version you're releasing as an environment variable for convenience: `export VERSION=0.n+1.0`
    1. Update `versions.txt`
       - Operator, target allocator and opamp-bridge should be `$VERSION`.
@@ -44,9 +44,9 @@ The operator should be released within a week after the [OpenTelemetry collector
 
 | Version  | Release manager |
 |----------|-----------------|
-| v0.100.0 | @TylerHelmuth   |
 | v0.101.0 | @swiatekm-sumo  |
 | v0.102.0 | @frzifus        |
 | v0.103.0 | @jaronoff97     |
 | v0.104.0 | @pavolloffay    |
 | v0.105.0 | @yuriolisa      |
+| v0.106.0 | @TylerHelmuth   |

@@ -2,6 +2,45 @@
 
 <!-- next version -->
 
+## 0.100.0
+
+### 💡 Enhancements 💡
+
+- `opamp`: Add healthy field at collector pool level in opamp bridge heartbeat (#2936)
+- `collector`: Add support for readinessProbe on OpenTelemetryCollector CRD. (#2943)
+  Add support for readinessProbe on `OpenTelemetryCollector` and its default similar to the already supported livenessProbe.
+  
+- `operator`: Enabling new Logs Enconder Configuration parameters. (#268)
+- `operator`: Automatically enable RBAC creation if operator SA can create clusterroles and bindings. --create-rbac-permissions flag is noop and deprecated now. (#2588)
+- `target allocator`: Added option for creating an mTLS-configured HTTPS server to fetch scrape config with real secret values. (#1669)
+  The change introduces an option to create an additional HTTPS server with mTLS configuration. 
+  This server is specifically utilized for obtaining the scrape configuration with actual secret values.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Cleanup ClusterRoles and ClusterRoleBindings created by the operator (#2938)
+  The operator uses finalizer on the collector to run the cleanup
+- `collector`: Use the k8snode detector instead of kubernetes for the automatic RBAC creation for the resourcedetector (#2833)
+- `collector`: When two Collectors are created with the same name but different namespaces, the ClusterRoleBinding created by the first will be overriden by the second one. (#2862)
+- `collector`: Fix to reflect changes of OpenTelemetryCollector.spec.nodeSelector in the collector Pods (#2940)
+  When updating `OpenTelemetryCollector.spec.nodeSelector` it was not removing previous selector from the final collector pod (Deployment/Daemonset/Statefulset).
+  
+- `collector`: Fix of Labels and Annotations filter (#2770)
+- `target allocator`: Fix target allocator readiness check (#2903)
+
+### Components
+
+* [OpenTelemetry Collector - v0.100.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.100.0)
+* [OpenTelemetry Contrib - v0.100.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.100.0)
+* [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/{AUTO_INSTRUMENTATION_DOTNET_VERSION})
+* [Node.JS - v0.51.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.51.0)
+* [Python - v0.44b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.44b0)
+* [Go - v0.12.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.12.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.99.0
 
 ### 🛑 Breaking changes 🛑
