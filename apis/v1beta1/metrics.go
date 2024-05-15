@@ -95,14 +95,37 @@ func getComponentsFromConfigV1Beta1(yamlContent Config) *components {
 }
 
 func IncCounters(ctx context.Context, collector *OpenTelemetryCollector) error {
-	return updateCounter(ctx, collector, true)
+	if err := updateComponentCounters(ctx, collector, true); err != nil {
+		return err
+	}
+	return updateGeneralCRMetricsComponents(ctx, collector, true)
 }
 
 func DecCounters(ctx context.Context, collector *OpenTelemetryCollector) error {
-	return updateCounter(ctx, collector, false)
+	if err := updateComponentCounters(ctx, collector, false); err != nil {
+		return err
+	}
+	return updateGeneralCRMetricsComponents(ctx, collector, false)
 }
 
-func updateCounter(ctx context.Context, collector *OpenTelemetryCollector, up bool) error {
+func updateGeneralCRMetricsComponents(ctx context.Context, collector *OpenTelemetryCollector, up bool) error {
+	meter := otel.Meter(meterName)
+	modeCounter, err := meter.Int64UpDownCounter(mode)
+	if err != nil {
+		return err
+	}
+	inc := 1
+	if !up {
+		inc = -1
+	}
+	modeCounter.Add(ctx, int64(inc), metric.WithAttributes(
+		attribute.Key("collector_name").String(collector.Name),
+		attribute.Key("namespace").String(collector.Namespace),
+		attribute.Key("type").String(string(collector.Spec.Mode)),
+	))
+	return nil
+}
+func updateComponentCounters(ctx context.Context, collector *OpenTelemetryCollector, up bool) error {
 	meter := otel.Meter(meterName)
 	receiversCounter, err := meter.Int64UpDownCounter(receivers)
 	if err != nil {
