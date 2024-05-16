@@ -344,7 +344,7 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 	}
 	// if the prometheusCR is enabled, it needs a suite of permissions to function
 	if r.Spec.TargetAllocator.PrometheusCR.Enabled {
-		if subjectAccessReviews, err := c.reviewer.CheckPolicyRules(ctx, r.GetNamespace(), r.Spec.TargetAllocator.ServiceAccount, targetAllocatorCRPolicyRules...); err != nil {
+		if subjectAccessReviews, err := c.reviewer.CheckPolicyRules(ctx, r.Spec.TargetAllocator.ServiceAccount, r.GetNamespace(), targetAllocatorCRPolicyRules...); err != nil {
 			return nil, fmt.Errorf("unable to check rbac rules %w", err)
 		} else if allowed, deniedReviews := rbac.AllSubjectAccessReviewsAllowed(subjectAccessReviews); !allowed {
 			return rbac.WarningsGroupedByResource(deniedReviews), nil
