@@ -48,6 +48,8 @@ type components struct {
 	extensions []string
 }
 
+// Metrics hold all gauges for the different metrics related to the CRs
+// +kubebuilder:object:generate=false
 type Metrics struct {
 	modeCounter       metric.Int64UpDownCounter
 	receiversCounter  metric.Int64UpDownCounter
