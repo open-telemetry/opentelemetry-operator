@@ -48,9 +48,16 @@ type components struct {
 	extensions []string
 }
 
+type Metrics struct {
+	modeCounter       metric.Int64UpDownCounter
+	receiversCounter  metric.Int64UpDownCounter
+	exporterCounter   metric.Int64UpDownCounter
+	processorCounter  metric.Int64UpDownCounter
+	extensionsCounter metric.Int64UpDownCounter
+}
+
 // BootstrapMetrics configures the OpenTelemetry meter provider with the Prometheus exporter.
 func BootstrapMetrics() error {
-
 	exporter, err := prometheus.New(prometheus.WithRegisterer(metrics.Registry))
 	if err != nil {
 		return err
@@ -58,6 +65,72 @@ func BootstrapMetrics() error {
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter))
 	otel.SetMeterProvider(provider)
 	return err
+}
+
+func NewMetrics() (*Metrics, error) {
+	meter := otel.Meter(meterName)
+	modeCounter, err := meter.Int64UpDownCounter(mode)
+	if err != nil {
+		return nil, err
+	}
+	receiversCounter, err := meter.Int64UpDownCounter(receivers)
+	if err != nil {
+		return nil, err
+	}
+
+	exporterCounter, err := meter.Int64UpDownCounter(exporters)
+	if err != nil {
+		return nil, err
+	}
+
+	processorCounter, err := meter.Int64UpDownCounter(processors)
+	if err != nil {
+		return nil, err
+	}
+
+	extensionsCounter, err := meter.Int64UpDownCounter(extensions)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Metrics{
+		modeCounter:       modeCounter,
+		receiversCounter:  receiversCounter,
+		exporterCounter:   exporterCounter,
+		processorCounter:  processorCounter,
+		extensionsCounter: extensionsCounter,
+	}, nil
+
+}
+
+func (m *Metrics) incCounters(ctx context.Context, collector *OpenTelemetryCollector) {
+	m.updateComponentCounters(ctx, collector, true)
+	m.updateGeneralCRMetricsComponents(ctx, collector, true)
+}
+
+func (m *Metrics) decCounters(ctx context.Context, collector *OpenTelemetryCollector) {
+	m.updateComponentCounters(ctx, collector, false)
+	m.updateGeneralCRMetricsComponents(ctx, collector, false)
+}
+
+func (m *Metrics) updateGeneralCRMetricsComponents(ctx context.Context, collector *OpenTelemetryCollector, up bool) {
+
+	inc := 1
+	if !up {
+		inc = -1
+	}
+	m.modeCounter.Add(ctx, int64(inc), metric.WithAttributes(
+		attribute.Key("collector_name").String(collector.Name),
+		attribute.Key("namespace").String(collector.Namespace),
+		attribute.Key("type").String(string(collector.Spec.Mode)),
+	))
+}
+func (m *Metrics) updateComponentCounters(ctx context.Context, collector *OpenTelemetryCollector, up bool) {
+	components := getComponentsFromConfigV1Beta1(collector.Spec.Config)
+	moveCounter(ctx, collector, components.receivers, m.receiversCounter, up)
+	moveCounter(ctx, collector, components.exporters, m.exporterCounter, up)
+	moveCounter(ctx, collector, components.processors, m.processorCounter, up)
+	moveCounter(ctx, collector, components.extensions, m.extensionsCounter, up)
 }
 
 func extractElements(elements map[string]interface{}) []string {
@@ -92,68 +165,6 @@ func getComponentsFromConfigV1Beta1(yamlContent Config) *components {
 		info.extensions = extractElements(yamlContent.Extensions.Object)
 	}
 	return info
-}
-
-func IncCounters(ctx context.Context, collector *OpenTelemetryCollector) error {
-	if err := updateComponentCounters(ctx, collector, true); err != nil {
-		return err
-	}
-	return updateGeneralCRMetricsComponents(ctx, collector, true)
-}
-
-func DecCounters(ctx context.Context, collector *OpenTelemetryCollector) error {
-	if err := updateComponentCounters(ctx, collector, false); err != nil {
-		return err
-	}
-	return updateGeneralCRMetricsComponents(ctx, collector, false)
-}
-
-func updateGeneralCRMetricsComponents(ctx context.Context, collector *OpenTelemetryCollector, up bool) error {
-	meter := otel.Meter(meterName)
-	modeCounter, err := meter.Int64UpDownCounter(mode)
-	if err != nil {
-		return err
-	}
-	inc := 1
-	if !up {
-		inc = -1
-	}
-	modeCounter.Add(ctx, int64(inc), metric.WithAttributes(
-		attribute.Key("collector_name").String(collector.Name),
-		attribute.Key("namespace").String(collector.Namespace),
-		attribute.Key("type").String(string(collector.Spec.Mode)),
-	))
-	return nil
-}
-func updateComponentCounters(ctx context.Context, collector *OpenTelemetryCollector, up bool) error {
-	meter := otel.Meter(meterName)
-	receiversCounter, err := meter.Int64UpDownCounter(receivers)
-	if err != nil {
-		return err
-	}
-
-	exporterCounter, err := meter.Int64UpDownCounter(exporters)
-	if err != nil {
-		return err
-	}
-
-	processorCounter, err := meter.Int64UpDownCounter(processors)
-	if err != nil {
-		return err
-	}
-
-	extensionsCounter, err := meter.Int64UpDownCounter(extensions)
-	if err != nil {
-		return err
-	}
-
-	components := getComponentsFromConfigV1Beta1(collector.Spec.Config)
-	moveCounter(ctx, collector, components.receivers, receiversCounter, up)
-	moveCounter(ctx, collector, components.exporters, exporterCounter, up)
-	moveCounter(ctx, collector, components.processors, processorCounter, up)
-	moveCounter(ctx, collector, components.extensions, extensionsCounter, up)
-
-	return nil
 }
 
 func moveCounter(

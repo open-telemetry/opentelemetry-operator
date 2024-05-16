@@ -76,6 +76,7 @@ type CollectorWebhook struct {
 	cfg      config.Config
 	scheme   *runtime.Scheme
 	reviewer *rbac.Reviewer
+	metrics  *Metrics
 }
 
 func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
@@ -171,10 +172,8 @@ func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object
 	if err != nil {
 		return warnings, err
 	}
-
-	err = IncCounters(ctx, otelcol)
-	if err != nil {
-		return warnings, err
+	if c.metrics != nil {
+		c.metrics.incCounters(ctx, otelcol)
 	}
 
 	return warnings, nil
@@ -196,17 +195,13 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj run
 		return warnings, err
 	}
 
-	// Decrease all metrics related to old CR
-	err = DecCounters(ctx, otelcolOld)
-	if err != nil {
-		return warnings, err
+	if c.metrics != nil {
+		// Decrease all metrics related to old CR
+		c.metrics.decCounters(ctx, otelcolOld)
+		// Increase all metrics related to new CR
+		c.metrics.incCounters(ctx, otelcol)
 	}
 
-	// Increase all metrics related to new CR
-	err = IncCounters(ctx, otelcolOld)
-	if err != nil {
-		return warnings, err
-	}
 	return warnings, nil
 }
 
@@ -220,9 +215,9 @@ func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object
 	if err != nil {
 		return warnings, err
 	}
-	err = DecCounters(ctx, otelcol)
-	if err != nil {
-		return warnings, err
+
+	if c.metrics != nil {
+		c.metrics.decCounters(ctx, otelcol)
 	}
 
 	return warnings, nil
@@ -462,12 +457,13 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	return nil
 }
 
-func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer) error {
+func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics) error {
 	cvw := &CollectorWebhook{
 		reviewer: reviewer,
 		logger:   mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"),
 		scheme:   mgr.GetScheme(),
 		cfg:      cfg,
+		metrics:  metrics,
 	}
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&OpenTelemetryCollector{}).

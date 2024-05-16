@@ -155,7 +155,7 @@ func main() {
 	pflag.BoolVar(&enableNginxInstrumentation, constants.FlagNginx, false, "Controls whether the operator supports nginx auto-instrumentation")
 	pflag.BoolVar(&enableNodeJSInstrumentation, constants.FlagNodeJS, true, "Controls whether the operator supports nodejs auto-instrumentation")
 	pflag.BoolVar(&enableJavaInstrumentation, constants.FlagJava, true, "Controls whether the operator supports java auto-instrumentation")
-	pflag.BoolVar(&enableCRMetrics, constants.FlagCRMetrics, false, "Controls whether the CR metrics is enabled")
+	pflag.BoolVar(&enableCRMetrics, constants.FlagCRMetrics, true, "Controls whether the CR metrics is enabled")
 
 	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
@@ -338,12 +338,6 @@ func main() {
 		}
 	}
 
-	if enableCRMetrics {
-		if metricsErr := otelv1beta1.BootstrapMetrics(); metricsErr != nil {
-			setupLog.Error(metricsErr, "Error bootstrapping CRD metrics")
-		}
-	}
-
 	if cfg.LabelsFilter() != nil {
 		for _, basePattern := range cfg.LabelsFilter() {
 			_, compileErr := regexp.Compile(basePattern)
@@ -382,7 +376,19 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer); err != nil {
+		var crdMetrics *otelv1beta1.Metrics
+
+		if enableCRMetrics {
+			if metricsErr := otelv1beta1.BootstrapMetrics(); metricsErr != nil {
+				setupLog.Error(metricsErr, "Error bootstrapping CRD metrics")
+			}
+			crdMetrics, err = otelv1beta1.NewMetrics()
+			if err != nil {
+				setupLog.Error(err, "Error bootstrapping CRD metrics")
+			}
+		}
+
+		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
