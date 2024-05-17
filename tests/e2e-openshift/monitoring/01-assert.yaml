@@ -68,6 +68,7 @@ metadata:
     app.kubernetes.io/name: cluster-collector-collector
     app.kubernetes.io/part-of: opentelemetry
     operator.opentelemetry.io/collector-service-type: headless
+    operator.opentelemetry.io/collector-headless-service: Exists
   name: cluster-collector-collector-headless
 spec:
   ports:
