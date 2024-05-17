@@ -65,11 +65,30 @@ func (a *autoDetect) PrometheusCRsAvailability() (prometheus.Availability, error
 		return prometheus.NotAvailable, err
 	}
 
+	foundServiceMonitor := false
+	foundPodMonitor := false
 	apiGroups := apiList.Groups
 	for i := 0; i < len(apiGroups); i++ {
 		if apiGroups[i].Name == "monitoring.coreos.com" {
-			return prometheus.Available, nil
+			for _, version := range apiGroups[i].Versions {
+				resources, err := a.dcl.ServerResourcesForGroupVersion(version.GroupVersion)
+				if err != nil {
+					return prometheus.NotAvailable, err
+				}
+
+				for _, resource := range resources.APIResources {
+					if resource.Kind == "ServiceMonitor" {
+						foundServiceMonitor = true
+					} else if resource.Kind == "PodMonitor" {
+						foundPodMonitor = true
+					}
+				}
+			}
 		}
+	}
+
+	if foundServiceMonitor && foundPodMonitor {
+		return prometheus.Available, nil
 	}
 
 	return prometheus.NotAvailable, nil
