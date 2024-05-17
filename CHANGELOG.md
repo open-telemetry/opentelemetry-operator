@@ -19,6 +19,8 @@
 
 ### 🧰 Bug fixes 🧰
 
+- `target-allocator`: Fixed non-expected warnings on TA webhook. (#2685)
+- `collector`: Ensure all Prometheus CRDs are installed (#2964)
 - `collector`: Cleanup ClusterRoles and ClusterRoleBindings created by the operator (#2938)
   The operator uses finalizer on the collector to run the cleanup
 - `collector`: Use the k8snode detector instead of kubernetes for the automatic RBAC creation for the resourcedetector (#2833)
