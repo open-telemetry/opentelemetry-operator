@@ -117,6 +117,7 @@ func New(opts ...Option) Config {
 		autoInstrumentationNginxImage:       o.autoInstrumentationNginxImage,
 		labelsFilter:                        o.labelsFilter,
 		annotationsFilter:                   o.annotationsFilter,
+		createRBACPermissions:               o.createRBACPermissions,
 	}
 }
 
