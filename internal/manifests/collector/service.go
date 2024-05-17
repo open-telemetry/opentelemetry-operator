@@ -31,7 +31,10 @@ import (
 
 // headless and monitoring labels are to differentiate the base/headless/monitoring services from the clusterIP service.
 const (
+	headlessLabel    = "operator.opentelemetry.io/collector-headless-service"
+	monitoringLabel  = "operator.opentelemetry.io/collector-monitoring-service"
 	serviceTypeLabel = "operator.opentelemetry.io/collector-service-type"
+	valueExists      = "Exists"
 )
 
 type ServiceType int
@@ -53,6 +56,7 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 	}
 
 	h.Name = naming.HeadlessService(params.OtelCol.Name)
+	h.Labels[headlessLabel] = valueExists
 	h.Labels[serviceTypeLabel] = HeadlessServiceType.String()
 
 	// copy to avoid modifying params.OtelCol.Annotations
@@ -72,6 +76,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 
 	name := naming.MonitoringService(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels[monitoringLabel] = valueExists
 	labels[serviceTypeLabel] = MonitoringServiceType.String()
 
 	metricsPort, err := params.OtelCol.Spec.Config.Service.MetricsPort()
