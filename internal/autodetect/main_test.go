@@ -85,25 +85,65 @@ func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 func TestDetectPlatformBasedOnAvailableAPIGroupsPrometheus(t *testing.T) {
 	for _, tt := range []struct {
 		apiGroupList *metav1.APIGroupList
+		resources    *metav1.APIResourceList
 		expected     prometheus.Availability
 	}{
 		{
 			&metav1.APIGroupList{},
+			&metav1.APIResourceList{},
 			prometheus.NotAvailable,
 		},
 		{
 			&metav1.APIGroupList{
 				Groups: []metav1.APIGroup{
 					{
-						Name: "monitoring.coreos.com",
+						Name:     "monitoring.coreos.com",
+						Versions: []metav1.GroupVersionForDiscovery{{GroupVersion: "monitoring.coreos.com/v1"}},
 					},
 				},
+			},
+			&metav1.APIResourceList{
+				APIResources: []metav1.APIResource{{Kind: "ServiceMonitor"}},
+			},
+			prometheus.NotAvailable,
+		},
+		{
+			&metav1.APIGroupList{
+				Groups: []metav1.APIGroup{
+					{
+						Name:     "monitoring.coreos.com",
+						Versions: []metav1.GroupVersionForDiscovery{{GroupVersion: "monitoring.coreos.com/v1"}},
+					},
+				},
+			},
+			&metav1.APIResourceList{
+				APIResources: []metav1.APIResource{{Kind: "PodMonitor"}},
+			},
+			prometheus.NotAvailable,
+		},
+		{
+			&metav1.APIGroupList{
+				Groups: []metav1.APIGroup{
+					{
+						Name:     "monitoring.coreos.com",
+						Versions: []metav1.GroupVersionForDiscovery{{GroupVersion: "monitoring.coreos.com/v1"}},
+					},
+				},
+			},
+			&metav1.APIResourceList{
+				APIResources: []metav1.APIResource{{Kind: "PodMonitor"}, {Kind: "ServiceMonitor"}},
 			},
 			prometheus.Available,
 		},
 	} {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			output, err := json.Marshal(tt.apiGroupList)
+			var output []byte
+			var err error
+			if req.URL.Path == "/apis" {
+				output, err = json.Marshal(tt.apiGroupList)
+			} else {
+				output, err = json.Marshal(tt.resources)
+			}
 			require.NoError(t, err)
 
 			w.Header().Set("Content-Type", "application/json")
