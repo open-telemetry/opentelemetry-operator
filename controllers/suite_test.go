@@ -235,12 +235,12 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func testCollectorWithMode(mode v1alpha1.Mode) v1alpha1.OpenTelemetryCollector {
+func testCollectorWithMode(name string, mode v1alpha1.Mode) v1alpha1.OpenTelemetryCollector {
 	replicas := int32(2)
-	return testCollectorWithModeAndReplicas(mode, replicas)
+	return testCollectorWithModeAndReplicas(name, mode, replicas)
 }
 
-func testCollectorWithModeAndReplicas(mode v1alpha1.Mode, replicas int32) v1alpha1.OpenTelemetryCollector {
+func testCollectorWithModeAndReplicas(name string, mode v1alpha1.Mode, replicas int32) v1alpha1.OpenTelemetryCollector {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
@@ -251,7 +251,7 @@ func testCollectorWithModeAndReplicas(mode v1alpha1.Mode, replicas int32) v1alph
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
+			Name:      name,
 			Namespace: "default",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
@@ -273,8 +273,8 @@ func testCollectorWithModeAndReplicas(mode v1alpha1.Mode, replicas int32) v1alph
 	}
 }
 
-func testCollectorAssertNoErr(t *testing.T, taContainerImage string, file string) v1alpha1.OpenTelemetryCollector {
-	p, err := testCollectorWithConfigFile(taContainerImage, file)
+func testCollectorAssertNoErr(t *testing.T, name string, taContainerImage string, file string) v1alpha1.OpenTelemetryCollector {
+	p, err := testCollectorWithConfigFile(name, taContainerImage, file)
 	assert.NoError(t, err)
 	if len(taContainerImage) == 0 {
 		p.Spec.TargetAllocator.Enabled = false
@@ -282,7 +282,7 @@ func testCollectorAssertNoErr(t *testing.T, taContainerImage string, file string
 	return p
 }
 
-func testCollectorWithConfigFile(taContainerImage string, file string) (v1alpha1.OpenTelemetryCollector, error) {
+func testCollectorWithConfigFile(name string, taContainerImage string, file string) (v1alpha1.OpenTelemetryCollector, error) {
 	replicas := int32(1)
 	var configYAML []byte
 	var err error
@@ -301,7 +301,7 @@ func testCollectorWithConfigFile(taContainerImage string, file string) (v1alpha1
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
+			Name:      name,
 			Namespace: "default",
 		},
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{

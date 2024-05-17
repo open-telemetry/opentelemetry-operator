@@ -15,6 +15,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -194,11 +195,14 @@ func TestServer_TargetsHandler(t *testing.T) {
 }
 
 func TestServer_ScrapeConfigsHandler(t *testing.T) {
+	svrConfig := allocatorconfig.HTTPSServerConfig{}
+	tlsConfig, _ := svrConfig.NewTLSConfig()
 	tests := []struct {
 		description   string
 		scrapeConfigs map[string]*promconfig.ScrapeConfig
 		expectedCode  int
 		expectedBody  []byte
+		serverOptions []Option
 	}{
 		{
 			description:   "nil scrape config",
@@ -455,17 +459,67 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 			},
 			expectedCode: http.StatusOK,
 		},
+		{
+			description: "https secret handling",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
+				"serviceMonitor/testapp/testapp3/0": {
+					JobName:         "serviceMonitor/testapp/testapp3/0",
+					HonorTimestamps: true,
+					ScrapeInterval:  model.Duration(30 * time.Second),
+					ScrapeTimeout:   model.Duration(30 * time.Second),
+					MetricsPath:     "/metrics",
+					Scheme:          "http",
+					HTTPClientConfig: config.HTTPClientConfig{
+						FollowRedirects: true,
+						BasicAuth: &config.BasicAuth{
+							Username: "test",
+							Password: "P@$$w0rd1!?",
+						},
+					},
+				},
+			},
+			expectedCode: http.StatusOK,
+			serverOptions: []Option{
+				WithTLSConfig(tlsConfig, ""),
+			},
+		},
+		{
+			description: "http secret handling",
+			scrapeConfigs: map[string]*promconfig.ScrapeConfig{
+				"serviceMonitor/testapp/testapp3/0": {
+					JobName:         "serviceMonitor/testapp/testapp3/0",
+					HonorTimestamps: true,
+					ScrapeInterval:  model.Duration(30 * time.Second),
+					ScrapeTimeout:   model.Duration(30 * time.Second),
+					MetricsPath:     "/metrics",
+					Scheme:          "http",
+					HTTPClientConfig: config.HTTPClientConfig{
+						FollowRedirects: true,
+						BasicAuth: &config.BasicAuth{
+							Username: "test",
+							Password: "P@$$w0rd1!?",
+						},
+					},
+				},
+			},
+			expectedCode: http.StatusOK,
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, nil, listenAddr)
+			s := NewServer(logger, nil, listenAddr, tc.serverOptions...)
 			assert.NoError(t, s.UpdateScrapeConfigResponse(tc.scrapeConfigs))
 
 			request := httptest.NewRequest("GET", "/scrape_configs", nil)
 			w := httptest.NewRecorder()
 
-			s.server.Handler.ServeHTTP(w, request)
+			if s.httpsServer != nil {
+				request.TLS = &tls.ConnectionState{}
+				s.httpsServer.Handler.ServeHTTP(w, request)
+			} else {
+				s.server.Handler.ServeHTTP(w, request)
+			}
 			result := w.Result()
 
 			assert.Equal(t, tc.expectedCode, result.StatusCode)
@@ -478,6 +532,19 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 			scrapeConfigs := map[string]*promconfig.ScrapeConfig{}
 			err = yaml.Unmarshal(bodyBytes, scrapeConfigs)
 			require.NoError(t, err)
+
+			for _, c := range scrapeConfigs {
+				if s.httpsServer == nil && c.HTTPClientConfig.BasicAuth != nil {
+					assert.Equal(t, c.HTTPClientConfig.BasicAuth.Password, config.Secret("<secret>"))
+				}
+			}
+
+			for _, c := range tc.scrapeConfigs {
+				if s.httpsServer == nil && c.HTTPClientConfig.BasicAuth != nil {
+					c.HTTPClientConfig.BasicAuth.Password = "<secret>"
+				}
+			}
+
 			assert.Equal(t, tc.scrapeConfigs, scrapeConfigs)
 		})
 	}

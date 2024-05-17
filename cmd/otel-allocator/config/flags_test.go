@@ -70,6 +70,18 @@ func TestFlagGetters(t *testing.T) {
 			expectedErr: true,
 			getterFunc:  func(fs *pflag.FlagSet) (interface{}, error) { return getConfigFilePath(fs) },
 		},
+		{
+			name:          "HttpsServer",
+			flagArgs:      []string{"--" + httpsEnabledFlagName, "true"},
+			expectedValue: true,
+			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getHttpsEnabled(fs) },
+		},
+		{
+			name:          "HttpsServerKey",
+			flagArgs:      []string{"--" + httpsTLSKeyFilePathFlagName, "/path/to/tls.key"},
+			expectedValue: "/path/to/tls.key",
+			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getHttpsTLSKeyFilePath(fs) },
+		},
 	}
 
 	for _, tt := range tests {

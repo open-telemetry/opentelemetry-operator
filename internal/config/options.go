@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
@@ -253,5 +254,13 @@ func WithAnnotationFilters(annotationFilters []string) Option {
 			filters = append(filters, result.String())
 		}
 		o.annotationsFilter = filters
+	}
+}
+
+func WithEncodeLevelFormat(s string) zapcore.LevelEncoder {
+	if s == "lowercase" {
+		return zapcore.LowercaseLevelEncoder
+	} else {
+		return zapcore.CapitalLevelEncoder
 	}
 }
