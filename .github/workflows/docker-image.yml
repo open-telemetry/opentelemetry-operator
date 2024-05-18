@@ -16,5 +16,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        ref: 'a specific commit SHA'
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag my-image-name:$(git rev-parse --short HEAD)
