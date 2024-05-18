@@ -1,5 +1,7 @@
 name: Docker Image CI
 
+description: This workflow builds and tests the Docker image for the application.
+
 on:
   push:
     branches: [ "main" ]
