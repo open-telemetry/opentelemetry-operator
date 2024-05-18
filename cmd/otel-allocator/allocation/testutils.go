@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -39,9 +39,9 @@ func MakeNNewTargets(n int, numCollectors int, startingIndex int) map[string]*ta
 	toReturn := map[string]*target.Item{}
 	for i := startingIndex; i < n+startingIndex; i++ {
 		collector := fmt.Sprintf("collector-%d", colIndex(i, numCollectors))
-		label := model.LabelSet{
-			"i":     model.LabelValue(strconv.Itoa(i)),
-			"total": model.LabelValue(strconv.Itoa(n + startingIndex)),
+		label := labels.Labels{
+			{Name: "i", Value: strconv.Itoa(i)},
+			{Name: "total", Value: strconv.Itoa(n + startingIndex)},
 		}
 		newTarget := target.NewItem(fmt.Sprintf("test-job-%d", i), fmt.Sprintf("test-url-%d", i), label, collector)
 		toReturn[newTarget.Hash()] = newTarget
@@ -65,10 +65,10 @@ func MakeNCollectors(n int, startingIndex int) map[string]*Collector {
 func MakeNNewTargetsWithEmptyCollectors(n int, startingIndex int) map[string]*target.Item {
 	toReturn := map[string]*target.Item{}
 	for i := startingIndex; i < n+startingIndex; i++ {
-		label := model.LabelSet{
-			"i":                               model.LabelValue(strconv.Itoa(i)),
-			"total":                           model.LabelValue(strconv.Itoa(n + startingIndex)),
-			"__meta_kubernetes_pod_node_name": model.LabelValue("node-0"),
+		label := labels.Labels{
+			{Name: "i", Value: strconv.Itoa(i)},
+			{Name: "total", Value: strconv.Itoa(n + startingIndex)},
+			{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
 		}
 		newTarget := target.NewItem(fmt.Sprintf("test-job-%d", i), fmt.Sprintf("test-url-%d", i), label, "")
 		toReturn[newTarget.Hash()] = newTarget

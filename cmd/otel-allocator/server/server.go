@@ -34,8 +34,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	promcommconfig "github.com/prometheus/common/config"
-	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
+	"github.com/prometheus/prometheus/model/labels"
 	"gopkg.in/yaml.v2"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
@@ -67,8 +67,8 @@ type linkJSON struct {
 }
 
 type targetJSON struct {
-	TargetURL []string       `json:"targets"`
-	Labels    model.LabelSet `json:"labels"`
+	TargetURL []string      `json:"targets"`
+	Labels    labels.Labels `json:"labels"`
 }
 
 type Server struct {
@@ -374,7 +374,7 @@ func registerPprof(g *gin.RouterGroup) {
 
 func targetJsonFromTargetItem(item *target.Item) *targetJSON {
 	return &targetJSON{
-		TargetURL: item.TargetURL,
+		TargetURL: []string{item.TargetURL},
 		Labels:    item.Labels,
 	}
 }
