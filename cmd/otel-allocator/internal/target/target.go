@@ -32,6 +32,9 @@ type Item struct {
 }
 
 func (t *Item) Hash() string {
+	if t.hash == "" {
+		t.hash = t.JobName + t.TargetURL + strconv.FormatUint(t.Labels.Hash(), 10)
+	}
 	return t.hash
 }
 
@@ -53,11 +56,9 @@ func (t *Item) GetNodeName() string {
 // NewItem Creates a new target item.
 // INVARIANTS:
 // * Item fields must not be modified after creation.
-// * Item should only be made via its constructor, never directly.
 func NewItem(jobName string, targetURL string, labels labels.Labels, collectorName string) *Item {
 	return &Item{
 		JobName:       jobName,
-		hash:          jobName + targetURL + strconv.FormatUint(labels.Hash(), 10),
 		TargetURL:     targetURL,
 		Labels:        labels,
 		CollectorName: collectorName,

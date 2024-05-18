@@ -5,6 +5,8 @@ package allocation
 
 import (
 	"errors"
+	"runtime"
+	"slices"
 	"sync"
 
 	"github.com/go-logr/logr"
@@ -73,7 +75,7 @@ func (a *allocator) SetFallbackStrategy(strategy Strategy) {
 // SetTargets accepts a list of targets that will be used to make
 // load balancing decisions. This method should be called when there are
 // new targets discovered or existing targets are shutdown.
-func (a *allocator) SetTargets(targets map[string]*target.Item) {
+func (a *allocator) SetTargets(targets []*target.Item) {
 	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetTargets", a.strategy.GetName()))
 	defer timer.ObserveDuration()
 
@@ -81,12 +83,14 @@ func (a *allocator) SetTargets(targets map[string]*target.Item) {
 		targets = a.filter.Apply(targets)
 	}
 	RecordTargetsKept(targets)
+	concurrency := runtime.NumCPU() * 2 // determined experimentally
+	targetMap := buildTargetMap(targets, concurrency)
 
 	a.m.Lock()
 	defer a.m.Unlock()
 
 	// Check for target changes
-	targetsDiff := diff.Maps(a.targetItems, targets)
+	targetsDiff := diff.Maps(a.targetItems, targetMap)
 	// If there are any additions or removals
 	if len(targetsDiff.Additions()) != 0 || len(targetsDiff.Removals()) != 0 {
 		a.handleTargets(targetsDiff)
@@ -301,4 +305,31 @@ func (a *allocator) handleCollectors(diff diff.Changes[*Collector]) {
 		a.log.Info("Could not assign targets for some jobs", "targets", unassignedTargets, "error", err)
 		TargetsUnassigned.Set(float64(unassignedTargets))
 	}
+}
+
+const minChunkSize = 100 // for small target counts, it's not worth it to spawn a lot of goroutines
+
+// buildTargetMap builds a map of targets, using their hashes as keys. It does this concurrently, and the concurrency
+// is configurable via the concurrency parameter. We do this in parallel because target hashing is surprisingly
+// expensive.
+func buildTargetMap(targets []*target.Item, concurrency int) map[string]*target.Item {
+	// technically there may be duplicates, so this may overallocate, but in the majority of cases it will be exact
+	result := make(map[string]*target.Item, len(targets))
+	chunkSize := len(targets) / concurrency
+	chunkSize = max(chunkSize, minChunkSize)
+	wg := sync.WaitGroup{}
+	for chunk := range slices.Chunk(targets, chunkSize) {
+		wg.Add(1)
+		go func(ch []*target.Item) {
+			defer wg.Done()
+			for _, item := range ch {
+				item.Hash()
+			}
+		}(chunk)
+	}
+	wg.Wait()
+	for _, item := range targets {
+		result[item.Hash()] = item
+	}
+	return result
 }

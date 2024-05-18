@@ -4,6 +4,8 @@
 package prehook
 
 import (
+	"slices"
+
 	"github.com/go-logr/logr"
 	"github.com/prometheus/prometheus/model/relabel"
 
@@ -26,7 +28,7 @@ func newRelabelConfigTargetFilter(log logr.Logger) Hook {
 	}
 }
 
-func (tf *relabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[string]*target.Item {
+func (tf *relabelConfigTargetFilter) Apply(targets []*target.Item) []*target.Item {
 	numTargets := len(targets)
 
 	// need to wait until relabelCfg is set
@@ -34,19 +36,25 @@ func (tf *relabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[
 		return targets
 	}
 
-	// Note: jobNameKey != tItem.JobName (jobNameKey is hashed)
-	for jobNameKey, tItem := range targets {
-		var keepTarget bool
+	writeIndex := 0
+	for _, tItem := range targets {
+		keepTarget := true
 		lset := tItem.Labels
 		for _, cfg := range tf.relabelCfg[tItem.JobName] {
 			lset, keepTarget = relabel.Process(lset, cfg)
 			if !keepTarget {
-				delete(targets, jobNameKey)
 				break // inner loop
 			}
 		}
+
+		if keepTarget {
+			targets[writeIndex] = tItem
+			writeIndex++
+		}
 	}
 
+	targets = targets[:writeIndex]
+	targets = slices.Clip(targets)
 	tf.log.V(2).Info("Filtering complete", "seen", numTargets, "kept", len(targets))
 	return targets
 }
