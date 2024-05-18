@@ -73,7 +73,7 @@ func (a *allocator) SetFallbackStrategy(strategy Strategy) {
 // SetTargets accepts a list of targets that will be used to make
 // load balancing decisions. This method should be called when there are
 // new targets discovered or existing targets are shutdown.
-func (a *allocator) SetTargets(targets map[string]*target.Item) {
+func (a *allocator) SetTargets(targets []*target.Item) {
 	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetTargets", a.strategy.GetName()))
 	defer timer.ObserveDuration()
 
@@ -81,12 +81,16 @@ func (a *allocator) SetTargets(targets map[string]*target.Item) {
 		targets = a.filter.Apply(targets)
 	}
 	RecordTargetsKept(targets)
+	targetMap := make(map[string]*target.Item, len(targets))
+	for _, tg := range targets {
+		targetMap[tg.Hash()] = tg
+	}
 
 	a.m.Lock()
 	defer a.m.Unlock()
 
 	// Check for target changes
-	targetsDiff := diff.Maps(a.targetItems, targets)
+	targetsDiff := diff.Maps(a.targetItems, targetMap)
 	// If there are any additions or removals
 	if len(targetsDiff.Additions()) != 0 || len(targetsDiff.Removals()) != 0 {
 		a.handleTargets(targetsDiff)

@@ -160,8 +160,12 @@ func TestServer_TargetsHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			listenAddr := ":8080"
 			s := NewServer(logger, tt.args.allocator, listenAddr)
+			targets := []*target.Item{}
+			for _, item := range tt.args.cMap {
+				targets = append(targets, item)
+			}
 			tt.args.allocator.SetCollectors(map[string]*allocation.Collector{"test-collector": {Name: "test-collector"}})
-			tt.args.allocator.SetTargets(tt.args.cMap)
+			tt.args.allocator.SetTargets(targets)
 			request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/%s/targets?collector_id=%s", tt.args.job, tt.args.collector), nil)
 			w := httptest.NewRecorder()
 
