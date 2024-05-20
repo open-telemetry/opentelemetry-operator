@@ -29,6 +29,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/spf13/pflag"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
+	"go.uber.org/zap/zapcore"
 	networkingv1 "k8s.io/api/networking/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -132,6 +133,10 @@ func main() {
 		annotationsFilter                []string
 		webhookPort                      int
 		tlsOpt                           tlsConfig
+		encodeMessageKey                 string
+		encodeLevelKey                   string
+		encodeTimeKey                    string
+		encodeLevelFormat                string
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -163,7 +168,18 @@ func main() {
 	pflag.StringArrayVar(&annotationsFilter, "annotations-filter", []string{}, "Annotations to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --annotations-filter=.*filter.out will filter out annotations that looks like: annotation.filter.out: true")
 	pflag.StringVar(&tlsOpt.minVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
 	pflag.StringSliceVar(&tlsOpt.cipherSuites, "tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
+	pflag.StringVar(&encodeMessageKey, "zap-message-key", "message", "The message key to be used in the customized Log Encoder")
+	pflag.StringVar(&encodeLevelKey, "zap-level-key", "level", "The level key to be used in the customized Log Encoder")
+	pflag.StringVar(&encodeTimeKey, "zap-time-key", "timestamp", "The time key to be used in the customized Log Encoder")
+	pflag.StringVar(&encodeLevelFormat, "zap-level-format", "uppercase", "The level format to be used in the customized Log Encoder")
 	pflag.Parse()
+
+	opts.EncoderConfigOptions = append(opts.EncoderConfigOptions, func(ec *zapcore.EncoderConfig) {
+		ec.MessageKey = encodeMessageKey
+		ec.LevelKey = encodeLevelKey
+		ec.TimeKey = encodeTimeKey
+		ec.EncodeLevel = config.WithEncodeLevelFormat(encodeLevelFormat)
+	})
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
@@ -195,6 +211,10 @@ func main() {
 		"enable-nginx-instrumentation", enableNginxInstrumentation,
 		"enable-nodejs-instrumentation", enableNodeJSInstrumentation,
 		"enable-java-instrumentation", enableJavaInstrumentation,
+		"zap-message-key", encodeMessageKey,
+		"zap-level-key", encodeLevelKey,
+		"zap-time-key", encodeTimeKey,
+		"zap-level-format", encodeLevelFormat,
 	)
 
 	restConfig := ctrl.GetConfigOrDie()

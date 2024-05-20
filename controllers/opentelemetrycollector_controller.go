@@ -35,6 +35,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
@@ -127,7 +128,42 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 	for i := range pdbList.Items {
 		ownedObjects[pdbList.Items[i].GetUID()] = &pdbList.Items[i]
 	}
+	if params.Config.CreateRBACPermissions() == rbac.Available {
+		clusterObjects, err := r.findClusterRoleObjects(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range clusterObjects {
+			ownedObjects[k] = v
+		}
+	}
+	return ownedObjects, nil
+}
 
+// The cluster scope objects do not have owner reference.
+func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
+	ownedObjects := map[types.UID]client.Object{}
+	// Remove cluster roles and bindings.
+	// Users might switch off the RBAC creation feature on the operator which should remove existing RBAC.
+	listOpsCluster := &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)),
+	}
+	clusterroleList := &rbacv1.ClusterRoleList{}
+	err := r.List(ctx, clusterroleList, listOpsCluster)
+	if err != nil {
+		return nil, fmt.Errorf("error listing ClusterRoles: %w", err)
+	}
+	for i := range clusterroleList.Items {
+		ownedObjects[clusterroleList.Items[i].GetUID()] = &clusterroleList.Items[i]
+	}
+	clusterrolebindingList := &rbacv1.ClusterRoleBindingList{}
+	err = r.List(ctx, clusterrolebindingList, listOpsCluster)
+	if err != nil {
+		return nil, fmt.Errorf("error listing ClusterRoleBIndings: %w", err)
+	}
+	for i := range clusterrolebindingList.Items {
+		ownedObjects[clusterrolebindingList.Items[i].GetUID()] = &clusterrolebindingList.Items[i]
+	}
 	return ownedObjects, nil
 }
 
@@ -193,8 +229,32 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
+	params, err := r.getParams(instance)
+	if err != nil {
+		log.Error(err, "Failed to create manifest.Params")
+		return ctrl.Result{}, err
+	}
+
 	// We have a deletion, short circuit and let the deletion happen
 	if deletionTimestamp := instance.GetDeletionTimestamp(); deletionTimestamp != nil {
+		if controllerutil.ContainsFinalizer(&instance, collectorFinalizer) {
+			// If the finalization logic fails, don't remove the finalizer so
+			// that we can retry during the next reconciliation.
+			if err = r.finalizeCollector(ctx, params); err != nil {
+				return ctrl.Result{}, err
+			}
+
+			// Once all finalizers have been
+			// removed, the object will be deleted.
+			if controllerutil.RemoveFinalizer(&instance, collectorFinalizer) {
+				err = r.Update(ctx, &instance)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+		}
+
 		return ctrl.Result{}, nil
 	}
 
@@ -204,10 +264,14 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, nil
 	}
 
-	params, err := r.getParams(instance)
-	if err != nil {
-		log.Error(err, "Failed to create manifest.Params")
-		return ctrl.Result{}, err
+	// Add finalizer for this CR
+	if !controllerutil.ContainsFinalizer(&instance, collectorFinalizer) {
+		if controllerutil.AddFinalizer(&instance, collectorFinalizer) {
+			err = r.Update(ctx, &instance)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
 	}
 
 	desiredObjects, buildErr := BuildCollector(params)
@@ -254,4 +318,18 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 	}
 
 	return builder.Complete(r)
+}
+
+const collectorFinalizer = "opentelemetrycollector.opentelemetry.io/finalizer"
+
+func (r *OpenTelemetryCollectorReconciler) finalizeCollector(ctx context.Context, params manifests.Params) error {
+	// The cluster scope objects do not have owner reference. They need to be deleted explicitly
+	if params.Config.CreateRBACPermissions() == rbac.Available {
+		objects, err := r.findClusterRoleObjects(ctx, params)
+		if err != nil {
+			return err
+		}
+		return deleteObjects(ctx, r.Client, r.log, objects)
+	}
+	return nil
 }

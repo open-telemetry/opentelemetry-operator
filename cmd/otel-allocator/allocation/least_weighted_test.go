@@ -20,99 +20,11 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
 var logger = logf.Log.WithName("unit-tests")
-
-func TestSetCollectors(t *testing.T) {
-	s, _ := New("least-weighted", logger)
-
-	cols := MakeNCollectors(3, 0)
-	s.SetCollectors(cols)
-
-	expectedColLen := len(cols)
-	collectors := s.Collectors()
-	assert.Len(t, collectors, expectedColLen)
-
-	for _, i := range cols {
-		assert.NotNil(t, collectors[i.Name])
-	}
-}
-
-func TestAddingAndRemovingTargets(t *testing.T) {
-	// prepare allocator with initial targets and collectors
-	s, _ := New("least-weighted", logger)
-
-	cols := MakeNCollectors(3, 0)
-	s.SetCollectors(cols)
-
-	initTargets := MakeNNewTargets(6, 3, 0)
-
-	// test that targets and collectors are added properly
-	s.SetTargets(initTargets)
-
-	// verify
-	expectedTargetLen := len(initTargets)
-	assert.Len(t, s.TargetItems(), expectedTargetLen)
-
-	// prepare second round of targets
-	tar := MakeNNewTargets(4, 3, 0)
-
-	// test that fewer targets are found - removed
-	s.SetTargets(tar)
-
-	// verify
-	targetItems := s.TargetItems()
-	expectedNewTargetLen := len(tar)
-	assert.Len(t, targetItems, expectedNewTargetLen)
-
-	// verify results map
-	for _, i := range tar {
-		_, ok := targetItems[i.Hash()]
-		assert.True(t, ok)
-	}
-}
-
-// Tests that two targets with the same target url and job name but different label set are both added.
-func TestAllocationCollision(t *testing.T) {
-	// prepare allocator with initial targets and collectors
-	s, _ := New("least-weighted", logger)
-
-	cols := MakeNCollectors(3, 0)
-	s.SetCollectors(cols)
-	firstLabels := model.LabelSet{
-		"test": "test1",
-	}
-	secondLabels := model.LabelSet{
-		"test": "test2",
-	}
-	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
-	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
-
-	targetList := map[string]*target.Item{
-		firstTarget.Hash():  firstTarget,
-		secondTarget.Hash(): secondTarget,
-	}
-
-	// test that targets and collectors are added properly
-	s.SetTargets(targetList)
-
-	// verify
-	targetItems := s.TargetItems()
-	expectedTargetLen := len(targetList)
-	assert.Len(t, targetItems, expectedTargetLen)
-
-	// verify results map
-	for _, i := range targetList {
-		_, ok := targetItems[i.Hash()]
-		assert.True(t, ok)
-	}
-}
 
 func TestNoCollectorReassignment(t *testing.T) {
 	s, _ := New("least-weighted", logger)
@@ -192,7 +104,7 @@ func TestNoAssignmentToNewCollector(t *testing.T) {
 
 	// new collector should have no targets
 	newCollector := s.Collectors()[newColName]
-	assert.Equal(t, newCollector.NumTargets, 0)
+	assert.Equal(t, 0, newCollector.NumTargets)
 }
 
 // Tests that the delta in number of targets per collector is less than 15% of an even distribution.

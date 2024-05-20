@@ -6640,6 +6640,27 @@ spec:
                 x-kubernetes-list-type: atomic
               priorityClassName:
                 type: string
+              readinessProbe:
+                properties:
+                  failureThreshold:
+                    format: int32
+                    type: integer
+                  initialDelaySeconds:
+                    format: int32
+                    type: integer
+                  periodSeconds:
+                    format: int32
+                    type: integer
+                  successThreshold:
+                    format: int32
+                    type: integer
+                  terminationGracePeriodSeconds:
+                    format: int64
+                    type: integer
+                  timeoutSeconds:
+                    format: int32
+                    type: integer
+                type: object
               replicas:
                 format: int32
                 type: integer

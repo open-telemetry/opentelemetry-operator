@@ -57,7 +57,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
 			manifestFactories = append(manifestFactories, manifests.Factory(PodMonitor))
 		} else {
-			manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
+			manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor), manifests.Factory(ServiceMonitorMonitoring))
 		}
 	}
 

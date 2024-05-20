@@ -35,3 +35,9 @@ spec:
     - script:
         timeout: 5m
         content: ./check_metrics.sh
+  - name: step-04
+    try:
+    - apply:
+        file: 04-use-prometheus-exporter.yaml
+    - assert:
+        file: 04-assert.yaml

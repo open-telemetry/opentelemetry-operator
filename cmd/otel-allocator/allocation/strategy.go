@@ -103,6 +103,15 @@ type Allocator interface {
 	SetFilter(filter Filter)
 }
 
+type Strategy interface {
+	GetCollectorForTarget(map[string]*Collector, *target.Item) (*Collector, error)
+	// SetCollectors exists for strategies where changing the collector set is potentially an expensive operation.
+	// The caller must guarantee that the collectors map passed in GetCollectorForTarget is consistent with the latest
+	// SetCollectors call. Strategies which don't need this information can just ignore it.
+	SetCollectors(map[string]*Collector)
+	GetName() string
+}
+
 var _ consistent.Member = Collector{}
 
 // Collector Creates a struct that holds Collector information.
@@ -127,15 +136,21 @@ func NewCollector(name, node string) *Collector {
 }
 
 func init() {
-	err := Register(leastWeightedStrategyName, newLeastWeightedAllocator)
+	err := Register(leastWeightedStrategyName, func(log logr.Logger, opts ...AllocationOption) Allocator {
+		return newAllocator(log, newleastWeightedStrategy(), opts...)
+	})
 	if err != nil {
 		panic(err)
 	}
-	err = Register(consistentHashingStrategyName, newConsistentHashingAllocator)
+	err = Register(consistentHashingStrategyName, func(log logr.Logger, opts ...AllocationOption) Allocator {
+		return newAllocator(log, newConsistentHashingStrategy(), opts...)
+	})
 	if err != nil {
 		panic(err)
 	}
-	err = Register(perNodeStrategyName, newPerNodeAllocator)
+	err = Register(perNodeStrategyName, func(log logr.Logger, opts ...AllocationOption) Allocator {
+		return newAllocator(log, newPerNodeStrategy(), opts...)
+	})
 	if err != nil {
 		panic(err)
 	}

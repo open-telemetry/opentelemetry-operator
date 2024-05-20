@@ -58,6 +58,7 @@ metadata:
     app.kubernetes.io/name: otlp-receiver-collector
     app.kubernetes.io/part-of: opentelemetry
     app.kubernetes.io/version: latest
+    operator.opentelemetry.io/collector-service-type: headless
     operator.opentelemetry.io/collector-headless-service: Exists
   name: otlp-receiver-collector-headless
   namespace: chainsaw-multi-cluster-receive
