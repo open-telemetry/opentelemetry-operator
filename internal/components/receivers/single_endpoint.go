@@ -26,6 +26,9 @@ import (
 
 var (
 	_                     components.ComponentPortParser = &SingleEndpointParser{}
+	grpc                                                 = "grpc"
+	http                                                 = "http"
+	unsetPort             int32                          = 0
 	singleEndpointConfigs                                = []components.ComponentPortParser{
 		NewSinglePortParser("awsxray", 2000),
 		NewSinglePortParser("carbon", 2003),
@@ -37,10 +40,10 @@ var (
 		NewSinglePortParser("signalfx", 9943),
 		NewSinglePortParser("splunk_hec", 8088),
 		NewSinglePortParser("statsd", 8125, components.WithProtocol(corev1.ProtocolUDP)),
-		NewSinglePortParser("tcplog", components.unsetPort, components.WithProtocol(corev1.ProtocolTCP)),
-		NewSinglePortParser("udplog", components.unsetPort, components.WithProtocol(corev1.ProtocolUDP)),
+		NewSinglePortParser("tcplog", unsetPort, components.WithProtocol(corev1.ProtocolTCP)),
+		NewSinglePortParser("udplog", unsetPort, components.WithProtocol(corev1.ProtocolUDP)),
 		NewSinglePortParser("wavefront", 2003),
-		NewSinglePortParser("zipkin", 9411, components.WithAppProtocol(&components.http), components.WithProtocol(corev1.ProtocolTCP)),
+		NewSinglePortParser("zipkin", 9411, components.WithAppProtocol(&http), components.WithProtocol(corev1.ProtocolTCP)),
 	}
 )
 
@@ -66,7 +69,7 @@ func (g *SingleEndpointConfig) GetPortNum() (int32, error) {
 	} else if len(g.ListenAddress) > 0 {
 		return components.PortFromEndpoint(g.ListenAddress)
 	}
-	return 0, components.portNotFoundErr
+	return 0, components.PortNotFoundErr
 }
 
 // SingleEndpointParser is a special parser for a generic receiver that has an endpoint or listen_address in its
@@ -82,7 +85,7 @@ func (s *SingleEndpointParser) Ports(logger logr.Logger, config interface{}) ([]
 	if err := components.LoadMap[*SingleEndpointConfig](config, singleEndpointConfig); err != nil {
 		return nil, err
 	}
-	if _, err := singleEndpointConfig.GetPortNum(); err != nil && s.svcPort.Port == components.unsetPort {
+	if _, err := singleEndpointConfig.GetPortNum(); err != nil && s.svcPort.Port == unsetPort {
 		logger.WithValues("receiver", s.name).Error(err, "couldn't parse the endpoint's port and no default port set")
 		return []corev1.ServicePort{}, err
 	}

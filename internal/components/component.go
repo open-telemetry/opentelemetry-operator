@@ -24,18 +24,10 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
-)
-
-const (
-	unsetPort = 0
 )
 
 var (
-	portNotFoundErr = errors.New("port should not be empty")
-	grpc            = "grpc"
-	http            = "http"
+	PortNotFoundErr = errors.New("port should not be empty")
 )
 
 type PortRetriever interface {
@@ -90,7 +82,7 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 	}
 
 	if port == 0 {
-		return 0, portNotFoundErr
+		return 0, PortNotFoundErr
 	}
 
 	return int32(port), err
@@ -105,28 +97,6 @@ type ComponentPortParser interface {
 
 	// ParserName is an internal name for the parser
 	ParserName() string
-}
-
-// registry holds a record of all known receiver parsers.
-var registry = make(map[string]ComponentPortParser)
-
-// Register adds a new parser builder to the list of known builders.
-func Register(name string, p ComponentPortParser) {
-	registry[name] = p
-}
-
-// IsRegistered checks whether a parser is registered with the given name.
-func IsRegistered(name string) bool {
-	_, ok := registry[name]
-	return ok
-}
-
-// BuilderFor returns a parser builder for the given exporter name.
-func BuilderFor(name string) ComponentPortParser {
-	if parser, ok := registry[ComponentType(name)]; ok {
-		return parser
-	}
-	return receivers.NewSinglePortParser(ComponentType(name), unsetPort)
 }
 
 func LoadMap[T any](m interface{}, in T) error {
@@ -150,12 +120,5 @@ func ConstructServicePort(current *corev1.ServicePort, port int32) corev1.Servic
 		NodePort:    current.NodePort,
 		AppProtocol: current.AppProtocol,
 		Protocol:    current.Protocol,
-	}
-}
-
-func init() {
-	parsers := append(receivers.scraperReceivers, append(receivers.singleEndpointConfigs, receivers.multiPortReceivers...)...)
-	for _, parser := range parsers {
-		Register(parser.ParserType(), parser)
 	}
 }
