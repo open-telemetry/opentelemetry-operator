@@ -12,18 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package components
+package receivers
 
 import (
 	"fmt"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 )
 
 var (
-	_                ComponentPortParser = &ScraperParser{}
-	scraperReceivers                     = []ComponentPortParser{
+	_                components.ComponentPortParser = &ScraperParser{}
+	scraperReceivers                                = []components.ComponentPortParser{
 		NewScraperParser("prometheus"),
 		NewScraperParser("kubeletstats"),
 		NewScraperParser("sshcheck"),
@@ -75,6 +77,6 @@ func (s *ScraperParser) ParserName() string {
 
 func NewScraperParser(name string) *ScraperParser {
 	return &ScraperParser{
-		componentType: ComponentType(name),
+		componentType: components.ComponentType(name),
 	}
 }

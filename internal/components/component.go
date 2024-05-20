@@ -24,6 +24,8 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
 )
 
 const (
@@ -124,7 +126,7 @@ func BuilderFor(name string) ComponentPortParser {
 	if parser, ok := registry[ComponentType(name)]; ok {
 		return parser
 	}
-	return NewSinglePortParser(ComponentType(name), unsetPort)
+	return receivers.NewSinglePortParser(ComponentType(name), unsetPort)
 }
 
 func LoadMap[T any](m interface{}, in T) error {
@@ -152,7 +154,7 @@ func ConstructServicePort(current *corev1.ServicePort, port int32) corev1.Servic
 }
 
 func init() {
-	parsers := append(scraperReceivers, append(singleEndpointConfigs, multiPortReceivers...)...)
+	parsers := append(receivers.scraperReceivers, append(receivers.singleEndpointConfigs, receivers.multiPortReceivers...)...)
 	for _, parser := range parsers {
 		Register(parser.ParserType(), parser)
 	}
