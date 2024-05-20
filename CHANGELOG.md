@@ -19,6 +19,11 @@
 
 ### 🧰 Bug fixes 🧰
 
+- `collector`: Create a Service Monitor for the monitoring service and another one for the collector service when the Prometheus exporter is used. (#2877)
+  Create a Service Monitor for the collector Service when Prometheus exporter is used. A different Service Monitor is created for the monitoring service.
+  This helps excluding the headless service (duplicating the metrics collection) and splits responsibilities between the two Service Monitors.
+  Now, the operator.opentelemetry.io/collector-service-type label is used to differentiate the services.
+  operator.opentelemetry.io/collector-monitoring-service and operator.opentelemetry.io/collector-headless-service are deprecated now.
 - `target-allocator`: Fixed non-expected warnings on TA webhook. (#2685)
 - `collector`: Ensure all Prometheus CRDs are installed (#2964)
 - `collector`: Cleanup ClusterRoles and ClusterRoleBindings created by the operator (#2938)
