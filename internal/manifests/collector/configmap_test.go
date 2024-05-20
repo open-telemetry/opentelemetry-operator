@@ -19,6 +19,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+
 	"github.com/stretchr/testify/assert"
 )
 
