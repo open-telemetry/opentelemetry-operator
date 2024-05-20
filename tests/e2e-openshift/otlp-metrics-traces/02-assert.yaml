@@ -15,12 +15,32 @@ metadata:
   labels:
     app.kubernetes.io/instance: chainsaw-otlp-metrics.cluster-collector
     app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: cluster-collector-monitoring-collector
+  name: cluster-collector-monitoring-collector
+  namespace: chainsaw-otlp-metrics
+spec:
+  endpoints:
+  - port: monitoring
+  namespaceSelector:
+    matchNames:
+    - chainsaw-otlp-metrics
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: chainsaw-otlp-metrics.cluster-collector
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      operator.opentelemetry.io/collector-service-type: monitoring
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: chainsaw-otlp-metrics.cluster-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: cluster-collector-collector
   name: cluster-collector-collector
   namespace: chainsaw-otlp-metrics
 spec:
   endpoints:
-  - port: monitoring
   - port: prometheus
   namespaceSelector:
     matchNames:
@@ -29,3 +49,4 @@ spec:
     matchLabels:
       app.kubernetes.io/instance: chainsaw-otlp-metrics.cluster-collector
       app.kubernetes.io/managed-by: opentelemetry-operator
+      operator.opentelemetry.io/collector-service-type: base
