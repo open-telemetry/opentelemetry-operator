@@ -128,7 +128,7 @@ func TestTargetsWithNoCollectorsPerNode(t *testing.T) {
 	assert.Len(t, actualCollectors, numCols)
 	// Based on lable all targets should be assigned to node-0
 	for name, ac := range actualCollectors {
-		if name == "node-0" {
+		if name == "collector-0" {
 			assert.Equal(t, 6, ac.NumTargets)
 		} else {
 			assert.Equal(t, 0, ac.NumTargets)
