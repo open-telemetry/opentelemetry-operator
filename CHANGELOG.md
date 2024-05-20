@@ -2,6 +2,29 @@
 
 <!-- next version -->
 
+## 0.100.1
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Refactor allocation strategies (#2928)
+  The performance of the per-node strategy was massively improved as part of this change.
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Fixes an issue where the user can no longer set the webhook port (#2923)
+
+### Components
+
+* [OpenTelemetry Collector - v0.100.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.100.0)
+* [OpenTelemetry Contrib - v0.100.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.100.0)
+* [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/{AUTO_INSTRUMENTATION_DOTNET_VERSION})
+* [Node.JS - v0.51.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.51.0)
+* [Python - v0.44b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.44b0)
+* [Go - v0.12.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.12.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.100.0
 
 ### 💡 Enhancements 💡
