@@ -50,6 +50,7 @@ func TestReceiverParsePortFromEndpoint(t *testing.T) {
 		{"no protocol", "0.0.0.0:1234", 1234, false},
 		{"just port", ":1234", 1234, false},
 		{"no port at all", "http://localhost", 0, true},
+		{"overflow", "0.0.0.0:2147483648", 0, true},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			// test

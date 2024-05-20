@@ -48,11 +48,6 @@ func WithTargetPort(targetPort int32) PortBuilderOption {
 		servicePort.TargetPort = intstr.FromInt32(targetPort)
 	}
 }
-func WithNodePort(nodePort int32) PortBuilderOption {
-	return func(servicePort *corev1.ServicePort) {
-		servicePort.NodePort = nodePort
-	}
-}
 
 func WithAppProtocol(proto *string) PortBuilderOption {
 	return func(servicePort *corev1.ServicePort) {

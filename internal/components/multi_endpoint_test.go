@@ -329,6 +329,31 @@ func TestMultiEndpointParsers(t *testing.T) {
 				p := components.BuilderFor(tt.receiverName)
 				assert.Equal(t, tt.parserName, p.ParserName())
 			})
+
+			t.Run("bad config errors", func(t *testing.T) {
+				// prepare
+				parser := components.BuilderFor(tt.receiverName)
+
+				// test
+				_, err := parser.Ports(logger, []interface{}{"junk"})
+
+				// verify
+				assert.ErrorContains(t, err, "cannot unmarshal array")
+			})
+			t.Run("good config, unknown protocol", func(t *testing.T) {
+				// prepare
+				parser := components.BuilderFor(tt.receiverName)
+
+				// test
+				_, err := parser.Ports(logger, map[string]interface{}{
+					"protocols": map[string]interface{}{
+						"garbage": map[string]interface{}{},
+					},
+				})
+
+				// verify
+				assert.ErrorContains(t, err, "unknown protocol set: garbage")
+			})
 			for _, kase := range tt.cases {
 				t.Run(kase.name, func(t *testing.T) {
 					// prepare

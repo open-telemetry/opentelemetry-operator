@@ -15,7 +15,6 @@
 package components
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -84,7 +83,7 @@ type MultiProtocolEndpointConfig struct {
 	Protocols map[string]*SingleEndpointConfig `json:"protocols"`
 }
 
-// MultiPortOption allows the setting of options for
+// MultiPortOption allows the setting of options for a MultiPortReceiver.
 type MultiPortOption func(parser *MultiPortReceiver)
 
 // MultiPortReceiver is a special parser for components with endpoints for each protocol.
@@ -109,7 +108,7 @@ func (m *MultiPortReceiver) Ports(logger logr.Logger, config interface{}) ([]cor
 			}
 			ports = append(ports, ConstructServicePort(defaultSvc, port))
 		} else {
-			return nil, errors.New(fmt.Sprintf("unknown protocol set: %s", protocol))
+			return nil, fmt.Errorf("unknown protocol set: %s", protocol)
 		}
 	}
 	return ports, nil
