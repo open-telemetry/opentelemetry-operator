@@ -88,6 +88,8 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 	return int32(port), err
 }
 
+type ParserRetriever func(string) ComponentPortParser
+
 type ComponentPortParser interface {
 	// Ports returns the service ports parsed based on the exporter's configuration
 	Ports(logger logr.Logger, config interface{}) ([]corev1.ServicePort, error)

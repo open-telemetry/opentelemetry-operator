@@ -29,6 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
 )
 
 type ComponentType int
@@ -52,14 +53,23 @@ type AnyConfig struct {
 // the AnyConfig.
 type ComponentDefinitions AnyConfig
 
-func (cd *ComponentDefinitions) GetPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
+func (cd *ComponentDefinitions) GetPorts(logger logr.Logger, c ComponentType) ([]corev1.ServicePort, error) {
 	if cd == nil || cd.Object == nil {
 		logger.V(4).Info("config is nil, returning early")
 		return nil, nil
 	}
 	var ports []corev1.ServicePort
+	var retriever components.ParserRetriever
+	switch c {
+	case ComponentTypeProcessor:
+		return nil, nil
+	case ComponentTypeExporter:
+		return nil, nil
+	case ComponentTypeReceiver:
+		retriever = receivers.BuilderFor
+	}
 	for componentName, componentDef := range cd.Object {
-		parser := components.BuilderFor(componentName)
+		parser := retriever(componentName)
 		if parsedPorts, err := parser.Ports(logger, componentDef); err != nil {
 			return nil, err
 		} else {
