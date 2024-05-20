@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package components_test
+package receivers_test
 
 import (
 	"testing"
@@ -21,7 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/components"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
 )
 
 var (
@@ -322,17 +322,17 @@ func TestMultiEndpointParsers(t *testing.T) {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("self registers", func(t *testing.T) {
 				// verify
-				assert.True(t, components.IsRegistered(tt.receiverName))
+				assert.True(t, receivers.IsRegistered(tt.receiverName))
 			})
 
 			t.Run("is found by name", func(t *testing.T) {
-				p := components.BuilderFor(tt.receiverName)
+				p := receivers.BuilderFor(tt.receiverName)
 				assert.Equal(t, tt.parserName, p.ParserName())
 			})
 
 			t.Run("bad config errors", func(t *testing.T) {
 				// prepare
-				parser := components.BuilderFor(tt.receiverName)
+				parser := receivers.BuilderFor(tt.receiverName)
 
 				// test
 				_, err := parser.Ports(logger, []interface{}{"junk"})
@@ -342,7 +342,7 @@ func TestMultiEndpointParsers(t *testing.T) {
 			})
 			t.Run("good config, unknown protocol", func(t *testing.T) {
 				// prepare
-				parser := components.BuilderFor(tt.receiverName)
+				parser := receivers.BuilderFor(tt.receiverName)
 
 				// test
 				_, err := parser.Ports(logger, map[string]interface{}{
@@ -357,7 +357,7 @@ func TestMultiEndpointParsers(t *testing.T) {
 			for _, kase := range tt.cases {
 				t.Run(kase.name, func(t *testing.T) {
 					// prepare
-					parser := components.BuilderFor(tt.receiverName)
+					parser := receivers.BuilderFor(tt.receiverName)
 
 					// test
 					ports, err := parser.Ports(logger, kase.config)

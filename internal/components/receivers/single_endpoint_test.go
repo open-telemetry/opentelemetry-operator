@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package components_test
+package receivers_test
 
 import (
 	"testing"
@@ -21,7 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/components"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -30,7 +30,7 @@ var logger = logf.Log.WithName("unit-tests")
 func TestParseEndpoint(t *testing.T) {
 	// prepare
 	// there's no parser registered to handle "myreceiver", so, it falls back to the generic parser
-	parser := components.BuilderFor("myreceiver")
+	parser := receivers.BuilderFor("myreceiver")
 
 	// test
 	ports, err := parser.Ports(logger, map[string]interface{}{
@@ -46,7 +46,7 @@ func TestParseEndpoint(t *testing.T) {
 func TestFailedToParseEndpoint(t *testing.T) {
 	// prepare
 	// there's no parser registered to handle "myreceiver", so, it falls back to the generic parser
-	parser := components.BuilderFor("myreceiver")
+	parser := receivers.BuilderFor("myreceiver")
 
 	// test
 	ports, err := parser.Ports(logger, map[string]interface{}{
@@ -86,14 +86,14 @@ func TestDownstreamParsers(t *testing.T) {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
 				// test
-				parser := components.BuilderFor(tt.receiverName)
+				parser := receivers.BuilderFor(tt.receiverName)
 
 				// verify
 				assert.Equal(t, tt.parserName, parser.ParserName())
 			})
 			t.Run("bad config errors", func(t *testing.T) {
 				// prepare
-				parser := components.BuilderFor(tt.receiverName)
+				parser := receivers.BuilderFor(tt.receiverName)
 
 				// test throwing in pure junk
 				_, err := parser.Ports(logger, func() {})
@@ -104,7 +104,7 @@ func TestDownstreamParsers(t *testing.T) {
 
 			t.Run("assigns the expected port", func(t *testing.T) {
 				// prepare
-				parser := components.BuilderFor(tt.receiverName)
+				parser := receivers.BuilderFor(tt.receiverName)
 
 				// test
 				ports, err := parser.Ports(logger, map[string]interface{}{})
@@ -122,7 +122,7 @@ func TestDownstreamParsers(t *testing.T) {
 
 			t.Run("allows port to be overridden", func(t *testing.T) {
 				// prepare
-				parser := components.BuilderFor(tt.receiverName)
+				parser := receivers.BuilderFor(tt.receiverName)
 
 				// test
 				var ports []corev1.ServicePort

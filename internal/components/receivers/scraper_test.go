@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package components_test
+package receivers_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/components"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
 )
 
 func TestScraperParsers(t *testing.T) {
@@ -62,7 +62,7 @@ func TestScraperParsers(t *testing.T) {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
 				// test
-				parser := components.BuilderFor(tt.receiverName)
+				parser := receivers.BuilderFor(tt.receiverName)
 
 				// verify
 				assert.Equal(t, tt.parserName, parser.ParserName())
@@ -70,7 +70,7 @@ func TestScraperParsers(t *testing.T) {
 
 			t.Run("default is nothing", func(t *testing.T) {
 				// prepare
-				parser := components.BuilderFor(tt.receiverName)
+				parser := receivers.BuilderFor(tt.receiverName)
 
 				// test
 				ports, err := parser.Ports(logger, map[string]interface{}{})
@@ -82,7 +82,7 @@ func TestScraperParsers(t *testing.T) {
 
 			t.Run("always returns nothing", func(t *testing.T) {
 				// prepare
-				parser := components.BuilderFor(tt.receiverName)
+				parser := receivers.BuilderFor(tt.receiverName)
 
 				// test
 				ports, err := parser.Ports(logger, map[string]interface{}{

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package components
+package receivers
 
 import (
 	"fmt"
@@ -20,58 +20,59 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 var (
-	_                  ComponentPortParser = &MultiPortReceiver{}
-	multiPortReceivers                     = []ComponentPortParser{
+	_                  components.ComponentPortParser = &MultiPortReceiver{}
+	multiPortReceivers                                = []components.ComponentPortParser{
 		NewMultiPortReceiver("otlp",
 			WithPortMapping(
 				"grpc",
 				4317,
-				WithAppProtocol(&grpc),
-				WithTargetPort(4317),
+				components.WithAppProtocol(&grpc),
+				components.WithTargetPort(4317),
 			), WithPortMapping(
 				"http",
 				4318,
-				WithAppProtocol(&http),
-				WithTargetPort(4318),
+				components.WithAppProtocol(&http),
+				components.WithTargetPort(4318),
 			),
 		),
 		NewMultiPortReceiver("skywalking",
 			WithPortMapping(grpc, 11800,
-				WithTargetPort(11800),
-				WithAppProtocol(&grpc),
+				components.WithTargetPort(11800),
+				components.WithAppProtocol(&grpc),
 			),
 			WithPortMapping(http, 12800,
-				WithTargetPort(12800),
-				WithAppProtocol(&http),
+				components.WithTargetPort(12800),
+				components.WithAppProtocol(&http),
 			)),
 		NewMultiPortReceiver("jaeger",
 			WithPortMapping(grpc, 14250,
-				WithProtocol(corev1.ProtocolTCP),
-				WithAppProtocol(&grpc),
+				components.WithProtocol(corev1.ProtocolTCP),
+				components.WithAppProtocol(&grpc),
 			),
 			WithPortMapping("thrift_http", 14268,
-				WithProtocol(corev1.ProtocolTCP),
-				WithAppProtocol(&http),
+				components.WithProtocol(corev1.ProtocolTCP),
+				components.WithAppProtocol(&http),
 			),
 			WithPortMapping("thrift_compact", 6831,
-				WithProtocol(corev1.ProtocolUDP),
+				components.WithProtocol(corev1.ProtocolUDP),
 			),
 			WithPortMapping("thrift_binary", 6832,
-				WithProtocol(corev1.ProtocolUDP),
+				components.WithProtocol(corev1.ProtocolUDP),
 			),
 		),
 		NewMultiPortReceiver("loki",
 			WithPortMapping(grpc, 9095,
-				WithTargetPort(9095),
-				WithAppProtocol(&grpc),
+				components.WithTargetPort(9095),
+				components.WithAppProtocol(&grpc),
 			),
 			WithPortMapping(http, 3100,
-				WithTargetPort(3100),
-				WithAppProtocol(&http),
+				components.WithTargetPort(3100),
+				components.WithAppProtocol(&http),
 			),
 		),
 	}
@@ -95,7 +96,7 @@ type MultiPortReceiver struct {
 
 func (m *MultiPortReceiver) Ports(logger logr.Logger, config interface{}) ([]corev1.ServicePort, error) {
 	multiProtoEndpointCfg := &MultiProtocolEndpointConfig{}
-	if err := LoadMap[*MultiProtocolEndpointConfig](config, multiProtoEndpointCfg); err != nil {
+	if err := components.LoadMap[*MultiProtocolEndpointConfig](config, multiProtoEndpointCfg); err != nil {
 		return nil, err
 	}
 	var ports []corev1.ServicePort
@@ -106,7 +107,7 @@ func (m *MultiPortReceiver) Ports(logger logr.Logger, config interface{}) ([]cor
 				port = ec.GetPortNumOrDefault(logger, port)
 				defaultSvc.Name = naming.PortName(fmt.Sprintf("%s-%s", m.name, protocol), port)
 			}
-			ports = append(ports, ConstructServicePort(defaultSvc, port))
+			ports = append(ports, components.ConstructServicePort(defaultSvc, port))
 		} else {
 			return nil, fmt.Errorf("unknown protocol set: %s", protocol)
 		}
@@ -115,7 +116,7 @@ func (m *MultiPortReceiver) Ports(logger logr.Logger, config interface{}) ([]cor
 }
 
 func (m *MultiPortReceiver) ParserType() string {
-	return ComponentType(m.name)
+	return components.ComponentType(m.name)
 }
 
 func (m *MultiPortReceiver) ParserName() string {
@@ -133,7 +134,7 @@ func NewMultiPortReceiver(name string, opts ...MultiPortOption) *MultiPortReceiv
 	return multiReceiver
 }
 
-func WithPortMapping(name string, port int32, opts ...PortBuilderOption) MultiPortOption {
+func WithPortMapping(name string, port int32, opts ...components.PortBuilderOption) MultiPortOption {
 	return func(parser *MultiPortReceiver) {
 		servicePort := &corev1.ServicePort{
 			Name: naming.PortName(fmt.Sprintf("%s-%s", parser.name, name), port),

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package components
+package receivers
 
 import (
 	"fmt"
@@ -20,26 +20,30 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 var (
-	_                     ComponentPortParser = &SingleEndpointParser{}
-	singleEndpointConfigs                     = []ComponentPortParser{
+	_                     components.ComponentPortParser = &SingleEndpointParser{}
+	grpc                                                 = "grpc"
+	http                                                 = "http"
+	unsetPort             int32                          = 0
+	singleEndpointConfigs                                = []components.ComponentPortParser{
 		NewSinglePortParser("awsxray", 2000),
 		NewSinglePortParser("carbon", 2003),
 		NewSinglePortParser("collectd", 8081),
 		NewSinglePortParser("fluentforward", 8006),
 		NewSinglePortParser("influxdb", 8086),
-		NewSinglePortParser("opencensus", 55678, WithAppProtocol(nil)),
+		NewSinglePortParser("opencensus", 55678, components.WithAppProtocol(nil)),
 		NewSinglePortParser("sapm", 7276),
 		NewSinglePortParser("signalfx", 9943),
 		NewSinglePortParser("splunk_hec", 8088),
-		NewSinglePortParser("statsd", 8125, WithProtocol(corev1.ProtocolUDP)),
-		NewSinglePortParser("tcplog", unsetPort, WithProtocol(corev1.ProtocolTCP)),
-		NewSinglePortParser("udplog", unsetPort, WithProtocol(corev1.ProtocolUDP)),
+		NewSinglePortParser("statsd", 8125, components.WithProtocol(corev1.ProtocolUDP)),
+		NewSinglePortParser("tcplog", unsetPort, components.WithProtocol(corev1.ProtocolTCP)),
+		NewSinglePortParser("udplog", unsetPort, components.WithProtocol(corev1.ProtocolUDP)),
 		NewSinglePortParser("wavefront", 2003),
-		NewSinglePortParser("zipkin", 9411, WithAppProtocol(&http), WithProtocol(corev1.ProtocolTCP)),
+		NewSinglePortParser("zipkin", 9411, components.WithAppProtocol(&http), components.WithProtocol(corev1.ProtocolTCP)),
 	}
 )
 
@@ -61,11 +65,11 @@ func (g *SingleEndpointConfig) GetPortNumOrDefault(logger logr.Logger, p int32) 
 
 func (g *SingleEndpointConfig) GetPortNum() (int32, error) {
 	if len(g.Endpoint) > 0 {
-		return PortFromEndpoint(g.Endpoint)
+		return components.PortFromEndpoint(g.Endpoint)
 	} else if len(g.ListenAddress) > 0 {
-		return PortFromEndpoint(g.ListenAddress)
+		return components.PortFromEndpoint(g.ListenAddress)
 	}
-	return 0, portNotFoundErr
+	return 0, components.PortNotFoundErr
 }
 
 // SingleEndpointParser is a special parser for a generic receiver that has an endpoint or listen_address in its
@@ -78,7 +82,7 @@ type SingleEndpointParser struct {
 
 func (s *SingleEndpointParser) Ports(logger logr.Logger, config interface{}) ([]corev1.ServicePort, error) {
 	singleEndpointConfig := &SingleEndpointConfig{}
-	if err := LoadMap[*SingleEndpointConfig](config, singleEndpointConfig); err != nil {
+	if err := components.LoadMap[*SingleEndpointConfig](config, singleEndpointConfig); err != nil {
 		return nil, err
 	}
 	if _, err := singleEndpointConfig.GetPortNum(); err != nil && s.svcPort.Port == unsetPort {
@@ -88,18 +92,18 @@ func (s *SingleEndpointParser) Ports(logger logr.Logger, config interface{}) ([]
 
 	port := singleEndpointConfig.GetPortNumOrDefault(logger, s.svcPort.Port)
 	s.svcPort.Name = naming.PortName(s.name, port)
-	return []corev1.ServicePort{ConstructServicePort(s.svcPort, port)}, nil
+	return []corev1.ServicePort{components.ConstructServicePort(s.svcPort, port)}, nil
 }
 
 func (s *SingleEndpointParser) ParserType() string {
-	return ComponentType(s.name)
+	return components.ComponentType(s.name)
 }
 
 func (s *SingleEndpointParser) ParserName() string {
 	return fmt.Sprintf("__%s", s.name)
 }
 
-func NewSinglePortParser(name string, port int32, opts ...PortBuilderOption) *SingleEndpointParser {
+func NewSinglePortParser(name string, port int32, opts ...components.PortBuilderOption) *SingleEndpointParser {
 	servicePort := &corev1.ServicePort{
 		Name: naming.PortName(name, port),
 		Port: port,
