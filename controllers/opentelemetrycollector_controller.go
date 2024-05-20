@@ -17,7 +17,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-logr/logr"
 	routev1 "github.com/openshift/api/route/v1"
@@ -49,6 +48,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
+var (
+	ownedClusterObjectTypes = []client.Object{
+		&rbacv1.ClusterRole{},
+		&rbacv1.ClusterRoleBinding{},
+	}
+)
+
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
 type OpenTelemetryCollectorReconciler struct {
 	client.Client
@@ -69,72 +75,40 @@ type Params struct {
 
 func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
 	ownedObjects := map[types.UID]client.Object{}
-
+	ownedObjectTypes := []client.Object{
+		&autoscalingv2.HorizontalPodAutoscaler{},
+		&networkingv1.Ingress{},
+		&policyV1.PodDisruptionBudget{},
+	}
 	listOps := &client.ListOptions{
 		Namespace:     params.OtelCol.Namespace,
 		LabelSelector: labels.SelectorFromSet(manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)),
 	}
-	hpaList := &autoscalingv2.HorizontalPodAutoscalerList{}
-	err := r.List(ctx, hpaList, listOps)
-	if err != nil {
-		return nil, fmt.Errorf("error listing HorizontalPodAutoscalers: %w", err)
-	}
-	for i := range hpaList.Items {
-		ownedObjects[hpaList.Items[i].GetUID()] = &hpaList.Items[i]
-	}
 	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability() == prometheus.Available {
-		servicemonitorList := &monitoringv1.ServiceMonitorList{}
-		err = r.List(ctx, servicemonitorList, listOps)
-		if err != nil {
-			return nil, fmt.Errorf("error listing ServiceMonitors: %w", err)
-		}
-		for i := range servicemonitorList.Items {
-			ownedObjects[servicemonitorList.Items[i].GetUID()] = servicemonitorList.Items[i]
-		}
-
-		podMonitorList := &monitoringv1.PodMonitorList{}
-		err = r.List(ctx, podMonitorList, listOps)
-		if err != nil {
-			return nil, fmt.Errorf("error listing PodMonitors: %w", err)
-		}
-		for i := range podMonitorList.Items {
-			ownedObjects[podMonitorList.Items[i].GetUID()] = podMonitorList.Items[i]
-		}
+		ownedObjectTypes = append(ownedObjectTypes,
+			&monitoringv1.ServiceMonitor{},
+			&monitoringv1.PodMonitor{},
+		)
 	}
-	ingressList := &networkingv1.IngressList{}
-	err = r.List(ctx, ingressList, listOps)
-	if err != nil {
-		return nil, fmt.Errorf("error listing Ingresses: %w", err)
-	}
-	for i := range ingressList.Items {
-		ownedObjects[ingressList.Items[i].GetUID()] = &ingressList.Items[i]
-	}
-
 	if params.Config.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
-		routesList := &routev1.RouteList{}
-		err = r.List(ctx, routesList, listOps)
-		if err != nil {
-			return nil, fmt.Errorf("error listing Routes: %w", err)
-		}
-		for i := range routesList.Items {
-			ownedObjects[routesList.Items[i].GetUID()] = &routesList.Items[i]
-		}
+		ownedObjectTypes = append(ownedObjectTypes, &routev1.Route{})
 	}
-	pdbList := &policyV1.PodDisruptionBudgetList{}
-	err = r.List(ctx, pdbList, listOps)
-	if err != nil {
-		return nil, fmt.Errorf("error listing PodDisruptionBudgets: %w", err)
-	}
-	for i := range pdbList.Items {
-		ownedObjects[pdbList.Items[i].GetUID()] = &pdbList.Items[i]
-	}
-	if params.Config.CreateRBACPermissions() == rbac.Available {
-		clusterObjects, err := r.findClusterRoleObjects(ctx, params)
+	for _, objectType := range ownedObjectTypes {
+		objs, err := getList(ctx, r, objectType, listOps)
 		if err != nil {
 			return nil, err
 		}
-		for k, v := range clusterObjects {
-			ownedObjects[k] = v
+		for uid, object := range objs {
+			ownedObjects[uid] = object
+		}
+	}
+	if params.Config.CreateRBACPermissions() == rbac.Available {
+		objs, err := r.findClusterRoleObjects(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		for uid, object := range objs {
+			ownedObjects[uid] = object
 		}
 	}
 	return ownedObjects, nil
@@ -148,21 +122,14 @@ func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Co
 	listOpsCluster := &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)),
 	}
-	clusterroleList := &rbacv1.ClusterRoleList{}
-	err := r.List(ctx, clusterroleList, listOpsCluster)
-	if err != nil {
-		return nil, fmt.Errorf("error listing ClusterRoles: %w", err)
-	}
-	for i := range clusterroleList.Items {
-		ownedObjects[clusterroleList.Items[i].GetUID()] = &clusterroleList.Items[i]
-	}
-	clusterrolebindingList := &rbacv1.ClusterRoleBindingList{}
-	err = r.List(ctx, clusterrolebindingList, listOpsCluster)
-	if err != nil {
-		return nil, fmt.Errorf("error listing ClusterRoleBIndings: %w", err)
-	}
-	for i := range clusterrolebindingList.Items {
-		ownedObjects[clusterrolebindingList.Items[i].GetUID()] = &clusterrolebindingList.Items[i]
+	for _, objectType := range ownedClusterObjectTypes {
+		objs, err := getList(ctx, r, objectType, listOpsCluster)
+		if err != nil {
+			return nil, err
+		}
+		for uid, object := range objs {
+			ownedObjects[uid] = object
+		}
 	}
 	return ownedObjects, nil
 }
