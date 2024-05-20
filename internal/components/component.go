@@ -26,10 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
-	unsetPort = 0
-)
-
 var (
 	PortNotFoundErr = errors.New("port should not be empty")
 )
