@@ -326,13 +326,13 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 			})
 
 			t.Run("is found by name", func(t *testing.T) {
-				p := receivers.BuilderFor(tt.receiverName)
+				p := receivers.ReceiverFor(tt.receiverName)
 				assert.Equal(t, tt.parserName, p.ParserName())
 			})
 
 			t.Run("bad config errors", func(t *testing.T) {
 				// prepare
-				parser := receivers.BuilderFor(tt.receiverName)
+				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// test
 				_, err := parser.Ports(logger, []interface{}{"junk"})
@@ -342,7 +342,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 			})
 			t.Run("good config, unknown protocol", func(t *testing.T) {
 				// prepare
-				parser := receivers.BuilderFor(tt.receiverName)
+				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// test
 				_, err := parser.Ports(logger, map[string]interface{}{
@@ -357,7 +357,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 			for _, kase := range tt.cases {
 				t.Run(kase.name, func(t *testing.T) {
 					// prepare
-					parser := receivers.BuilderFor(tt.receiverName)
+					parser := receivers.ReceiverFor(tt.receiverName)
 
 					// test
 					ports, err := parser.Ports(logger, kase.config)

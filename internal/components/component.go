@@ -117,6 +117,19 @@ func LoadMap[T any](m interface{}, in T) error {
 	return nil
 }
 
+func GetPortsForConfig(logger logr.Logger, config map[string]interface{}, retriever ParserRetriever) ([]corev1.ServicePort, error) {
+	var ports []corev1.ServicePort
+	for componentName, componentDef := range config {
+		parser := retriever(componentName)
+		if parsedPorts, err := parser.Ports(logger, componentDef); err != nil {
+			return nil, err
+		} else {
+			ports = append(ports, parsedPorts...)
+		}
+	}
+	return ports, nil
+}
+
 func ConstructServicePort(current *corev1.ServicePort, port int32) corev1.ServicePort {
 	return corev1.ServicePort{
 		Name:        current.Name,

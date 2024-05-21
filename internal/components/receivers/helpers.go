@@ -34,8 +34,8 @@ func IsRegistered(name string) bool {
 	return ok
 }
 
-// BuilderFor returns a parser builder for the given exporter name.
-func BuilderFor(name string) components.ComponentPortParser {
+// ReceiverFor returns a parser builder for the given exporter name.
+func ReceiverFor(name string) components.ComponentPortParser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}

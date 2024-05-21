@@ -30,7 +30,7 @@ var logger = logf.Log.WithName("unit-tests")
 func TestParseEndpoint(t *testing.T) {
 	// prepare
 	// there's no parser registered to handle "myreceiver", so, it falls back to the generic parser
-	parser := receivers.BuilderFor("myreceiver")
+	parser := receivers.ReceiverFor("myreceiver")
 
 	// test
 	ports, err := parser.Ports(logger, map[string]interface{}{
@@ -46,7 +46,7 @@ func TestParseEndpoint(t *testing.T) {
 func TestFailedToParseEndpoint(t *testing.T) {
 	// prepare
 	// there's no parser registered to handle "myreceiver", so, it falls back to the generic parser
-	parser := receivers.BuilderFor("myreceiver")
+	parser := receivers.ReceiverFor("myreceiver")
 
 	// test
 	ports, err := parser.Ports(logger, map[string]interface{}{
@@ -86,14 +86,14 @@ func TestDownstreamParsers(t *testing.T) {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
 				// test
-				parser := receivers.BuilderFor(tt.receiverName)
+				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// verify
 				assert.Equal(t, tt.parserName, parser.ParserName())
 			})
 			t.Run("bad config errors", func(t *testing.T) {
 				// prepare
-				parser := receivers.BuilderFor(tt.receiverName)
+				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// test throwing in pure junk
 				_, err := parser.Ports(logger, func() {})
@@ -104,7 +104,7 @@ func TestDownstreamParsers(t *testing.T) {
 
 			t.Run("assigns the expected port", func(t *testing.T) {
 				// prepare
-				parser := receivers.BuilderFor(tt.receiverName)
+				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// test
 				ports, err := parser.Ports(logger, map[string]interface{}{})
@@ -122,7 +122,7 @@ func TestDownstreamParsers(t *testing.T) {
 
 			t.Run("allows port to be overridden", func(t *testing.T) {
 				// prepare
-				parser := receivers.BuilderFor(tt.receiverName)
+				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// test
 				var ports []corev1.ServicePort
