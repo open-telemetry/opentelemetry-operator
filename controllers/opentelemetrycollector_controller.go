@@ -113,9 +113,9 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 			ownedObjects[uid] = object
 		}
 	}
-  
+
 	configMapList := &corev1.ConfigMapList{}
-	err = r.List(ctx, configMapList, listOps)
+	err := r.List(ctx, configMapList, listOps)
 	if err != nil {
 		return nil, fmt.Errorf("error listing ConfigMaps: %w", err)
 	}
