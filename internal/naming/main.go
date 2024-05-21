@@ -16,7 +16,7 @@
 package naming
 
 // ConfigMap builds the name for the config map used in the OpenTelemetryCollector containers.
-// The configHash should be calculated using manifestutils.GetConfigMapSHA
+// The configHash should be calculated using manifestutils.GetConfigMapSHA.
 func ConfigMap(otelcol, configHash string) string {
 	return DNSName(Truncate("%s-collector-%s", 63, otelcol, configHash[:8]))
 }

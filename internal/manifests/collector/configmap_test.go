@@ -17,10 +17,10 @@ package collector
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestDesiredConfigMap(t *testing.T) {
