@@ -24,39 +24,7 @@ import (
 )
 
 var (
-	_                components.ComponentPortParser = &ScraperParser{}
-	scraperReceivers                                = []components.ComponentPortParser{
-		NewScraperParser("prometheus"),
-		NewScraperParser("kubeletstats"),
-		NewScraperParser("sshcheck"),
-		NewScraperParser("cloudfoundry"),
-		NewScraperParser("vcenter"),
-		NewScraperParser("oracledb"),
-		NewScraperParser("snmp"),
-		NewScraperParser("googlecloudpubsub"),
-		NewScraperParser("chrony"),
-		NewScraperParser("jmx"),
-		NewScraperParser("podman_stats"),
-		NewScraperParser("pulsar"),
-		NewScraperParser("docker_stats"),
-		NewScraperParser("aerospike"),
-		NewScraperParser("zookeeper"),
-		NewScraperParser("prometheus_simple"),
-		NewScraperParser("saphana"),
-		NewScraperParser("riak"),
-		NewScraperParser("redis"),
-		NewScraperParser("rabbitmq"),
-		NewScraperParser("purefb"),
-		NewScraperParser("postgresql"),
-		NewScraperParser("nsxt"),
-		NewScraperParser("nginx"),
-		NewScraperParser("mysql"),
-		NewScraperParser("memcached"),
-		NewScraperParser("httpcheck"),
-		NewScraperParser("haproxy"),
-		NewScraperParser("flinkmetrics"),
-		NewScraperParser("couchdb"),
-	}
+	_ components.ComponentPortParser = &ScraperParser{}
 )
 
 type ScraperParser struct {
