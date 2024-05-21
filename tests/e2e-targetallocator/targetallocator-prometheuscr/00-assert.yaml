@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: prometheus-cr-collector-b88fa6e7
+  name: prometheus-cr-collector
 status:
   readyReplicas: 1
   replicas: 1
@@ -43,4 +43,4 @@ data:
                     - prometheus
 kind: ConfigMap
 metadata:
-  name: prometheus-cr-collector
+  name: prometheus-cr-collector-b88fa6e7
