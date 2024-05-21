@@ -730,6 +730,7 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes     | Cert-Manager |
 |------------------------| -------------- | ------------ |
+| v0.100.0               | v1.23 to v1.29 | v1           |
 | v0.99.0                | v1.23 to v1.29 | v1           |
 | v0.98.0                | v1.23 to v1.29 | v1           |
 | v0.97.0                | v1.23 to v1.29 | v1           |
@@ -752,7 +753,6 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 | v0.80.0                | v1.19 to v1.27 | v1           |
 | v0.79.0                | v1.19 to v1.27 | v1           |
 | v0.78.0                | v1.19 to v1.27 | v1           |
-| v0.77.0                | v1.19 to v1.26 | v1           |
 
 ## Contributing and Developing
 
@@ -789,7 +789,6 @@ Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open
 - [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
 - [Mikołaj Świątek](https://github.com/swiatekm-sumo), Sumo Logic
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
-- [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
 
 Emeritus Maintainers
 
@@ -797,6 +796,7 @@ Emeritus Maintainers
 - [Bogdan Drutu](https://github.com/BogdanDrutu), Splunk
 - [Juraci Paixão Kröhling](https://github.com/jpkrohling), Grafana Labs
 - [Tigran Najaryan](https://github.com/tigrannajaryan), Splunk
+- [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
 
 Learn more about roles in the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md).
 

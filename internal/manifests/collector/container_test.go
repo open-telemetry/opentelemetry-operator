@@ -728,6 +728,14 @@ service:
 				FailureThreshold:              &failureThreshold,
 				TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
 			},
+			ReadinessProbe: &v1beta1.Probe{
+				InitialDelaySeconds:           &initialDelaySeconds,
+				TimeoutSeconds:                &timeoutSeconds,
+				PeriodSeconds:                 &periodSeconds,
+				SuccessThreshold:              &successThreshold,
+				FailureThreshold:              &failureThreshold,
+				TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
+			},
 		},
 	}
 	cfg := config.New()
@@ -736,6 +744,7 @@ service:
 	c := Container(cfg, logger, otelcol, true)
 
 	// verify
+	// liveness
 	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
 	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
 	assert.Equal(t, "", c.LivenessProbe.HTTPGet.Host)
@@ -746,6 +755,18 @@ service:
 	assert.Equal(t, successThreshold, c.LivenessProbe.SuccessThreshold)
 	assert.Equal(t, failureThreshold, c.LivenessProbe.FailureThreshold)
 	assert.Equal(t, terminationGracePeriodSeconds, *c.LivenessProbe.TerminationGracePeriodSeconds)
+
+	// rediness
+	assert.Equal(t, "/", c.ReadinessProbe.HTTPGet.Path)
+	assert.Equal(t, int32(13133), c.ReadinessProbe.HTTPGet.Port.IntVal)
+	assert.Equal(t, "", c.ReadinessProbe.HTTPGet.Host)
+
+	assert.Equal(t, initialDelaySeconds, c.ReadinessProbe.InitialDelaySeconds)
+	assert.Equal(t, timeoutSeconds, c.ReadinessProbe.TimeoutSeconds)
+	assert.Equal(t, periodSeconds, c.ReadinessProbe.PeriodSeconds)
+	assert.Equal(t, successThreshold, c.ReadinessProbe.SuccessThreshold)
+	assert.Equal(t, failureThreshold, c.ReadinessProbe.FailureThreshold)
+	assert.Equal(t, terminationGracePeriodSeconds, *c.ReadinessProbe.TerminationGracePeriodSeconds)
 }
 
 func TestContainerProbeEmptyConfig(t *testing.T) {
@@ -757,7 +778,8 @@ func TestContainerProbeEmptyConfig(t *testing.T) {
   health_check:
 service:
   extensions: [health_check]`),
-			LivenessProbe: &v1beta1.Probe{},
+			LivenessProbe:  &v1beta1.Probe{},
+			ReadinessProbe: &v1beta1.Probe{},
 		},
 	}
 	cfg := config.New()
@@ -766,9 +788,14 @@ service:
 	c := Container(cfg, logger, otelcol, true)
 
 	// verify
+	// liveness
 	assert.Equal(t, "/", c.LivenessProbe.HTTPGet.Path)
 	assert.Equal(t, int32(13133), c.LivenessProbe.HTTPGet.Port.IntVal)
 	assert.Equal(t, "", c.LivenessProbe.HTTPGet.Host)
+	// readiness
+	assert.Equal(t, "/", c.ReadinessProbe.HTTPGet.Path)
+	assert.Equal(t, int32(13133), c.ReadinessProbe.HTTPGet.Port.IntVal)
+	assert.Equal(t, "", c.ReadinessProbe.HTTPGet.Host)
 }
 
 func TestContainerProbeNoConfig(t *testing.T) {
