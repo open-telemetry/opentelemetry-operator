@@ -29,7 +29,7 @@ var (
 	http = "http"
 )
 
-func TestMultiEndpointParsers(t *testing.T) {
+func TestMultiEndpointReceiverParsers(t *testing.T) {
 	type testCase struct {
 		name        string
 		config      interface{}

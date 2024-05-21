@@ -27,7 +27,10 @@ import (
 )
 
 var (
-	PortNotFoundErr = errors.New("port should not be empty")
+	GrpcProtocol          = "grpc"
+	HttpProtocol          = "http"
+	UnsetPort       int32 = 0
+	PortNotFoundErr       = errors.New("port should not be empty")
 )
 
 type PortRetriever interface {
