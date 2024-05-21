@@ -70,7 +70,7 @@ jobs:
           message="Update the opentelemetry to $VERSION"
           body="Release opentelemetry-operator \`$VERSION\`.
 
-          cc @pavolloffay @frzifus @yuriolisa @jaronoff97 @VineethReddy02 @TylerHelmuth @swiatekm-sumo
+          cc @pavolloffay @frzifus @yuriolisa @jaronoff97 @TylerHelmuth @swiatekm-sumo
           "
           branch="update-opentelemetry-operator-to-${VERSION}"
 
