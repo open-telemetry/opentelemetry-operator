@@ -20,7 +20,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -86,7 +86,7 @@ func SelectorLabels(instance metav1.ObjectMeta, component string) map[string]str
 }
 
 // SelectorLabels return the selector labels for Target Allocator Pods.
-func TASelectorLabels(instance v1beta1.TargetAllocator, component string) map[string]string {
+func TASelectorLabels(instance v1alpha1.TargetAllocator, component string) map[string]string {
 	selectorLabels := SelectorLabels(instance.ObjectMeta, component)
 
 	// TargetAllocator uses the name label as well for selection

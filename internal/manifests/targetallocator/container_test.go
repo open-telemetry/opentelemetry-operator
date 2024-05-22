@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -34,7 +35,7 @@ var logger = logf.Log.WithName("unit-tests")
 
 func TestContainerNewDefault(t *testing.T) {
 	// prepare
-	targetAllocator := v1beta1.TargetAllocator{}
+	targetAllocator := v1alpha1.TargetAllocator{}
 	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
 
 	// test
@@ -46,8 +47,8 @@ func TestContainerNewDefault(t *testing.T) {
 
 func TestContainerWithImageOverridden(t *testing.T) {
 	// prepare
-	targetAllocator := v1beta1.TargetAllocator{
-		Spec: v1beta1.TargetAllocatorSpec{
+	targetAllocator := v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Image: "overridden-image",
 			},
@@ -64,7 +65,7 @@ func TestContainerWithImageOverridden(t *testing.T) {
 
 func TestContainerPorts(t *testing.T) {
 	// prepare
-	targetAllocator := v1beta1.TargetAllocator{}
+	targetAllocator := v1alpha1.TargetAllocator{}
 	cfg := config.New()
 
 	// test
@@ -78,7 +79,7 @@ func TestContainerPorts(t *testing.T) {
 
 func TestContainerVolumes(t *testing.T) {
 	// prepare
-	targetAllocator := v1beta1.TargetAllocator{}
+	targetAllocator := v1alpha1.TargetAllocator{}
 	cfg := config.New()
 
 	// test
@@ -90,8 +91,8 @@ func TestContainerVolumes(t *testing.T) {
 }
 
 func TestContainerResourceRequirements(t *testing.T) {
-	targetAllocator := v1beta1.TargetAllocator{
-		Spec: v1beta1.TargetAllocatorSpec{
+	targetAllocator := v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Resources: corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
@@ -128,8 +129,8 @@ func TestContainerResourceRequirements(t *testing.T) {
 
 func TestContainerHasEnvVars(t *testing.T) {
 	// prepare
-	targetAllocator := v1beta1.TargetAllocator{
-		Spec: v1beta1.TargetAllocatorSpec{
+	targetAllocator := v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Env: []corev1.EnvVar{
 					{
@@ -212,8 +213,8 @@ func TestContainerHasProxyEnvVars(t *testing.T) {
 	defer os.Unsetenv("NO_PROXY")
 
 	// prepare
-	targetAllocator := v1beta1.TargetAllocator{
-		Spec: v1beta1.TargetAllocatorSpec{
+	targetAllocator := v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Env: []corev1.EnvVar{
 					{
@@ -237,8 +238,8 @@ func TestContainerHasProxyEnvVars(t *testing.T) {
 
 func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 	// prepare
-	targetAllocator := v1beta1.TargetAllocator{
-		Spec: v1beta1.TargetAllocatorSpec{
+	targetAllocator := v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Env: []corev1.EnvVar{
 					{
@@ -302,7 +303,7 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 	assert.Equal(t, expected, c)
 }
 func TestReadinessProbe(t *testing.T) {
-	targetAllocator := v1beta1.TargetAllocator{}
+	targetAllocator := v1alpha1.TargetAllocator{}
 	cfg := config.New()
 	expected := &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
@@ -321,7 +322,7 @@ func TestReadinessProbe(t *testing.T) {
 }
 func TestLivenessProbe(t *testing.T) {
 	// prepare
-	targetAllocator := v1beta1.TargetAllocator{}
+	targetAllocator := v1alpha1.TargetAllocator{}
 	cfg := config.New()
 	expected := &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
@@ -345,8 +346,8 @@ func TestSecurityContext(t *testing.T) {
 		RunAsNonRoot: &runAsNonRoot,
 	}
 	// prepare
-	targetAllocator := v1beta1.TargetAllocator{
-		Spec: v1beta1.TargetAllocatorSpec{
+	targetAllocator := v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				SecurityContext: securityContext,
 			},

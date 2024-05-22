@@ -21,18 +21,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
 func TestDesiredServiceMonitors(t *testing.T) {
-	ta := v1beta1.TargetAllocator{
+	ta := v1alpha1.TargetAllocator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1beta1.TargetAllocatorSpec{
+		Spec: v1alpha1.TargetAllocatorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				Tolerations: testTolerationValues,
 			},
