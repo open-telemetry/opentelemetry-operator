@@ -101,7 +101,7 @@ metadata:
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
     createdAt: "2024-05-20T19:57:07Z"
     description: Provides the OpenTelemetry components, including the Collector
-    operators.operatorframework.io/builder: operator-sdk-v1.29.0
+    operators.operatorframework.io/builder: operator-sdk-v1.30.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
