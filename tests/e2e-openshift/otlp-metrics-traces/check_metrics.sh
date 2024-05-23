@@ -1,7 +1,6 @@
 #!/bin/bash
 
-SECRET=$(oc get secret -n openshift-user-workload-monitoring | grep prometheus-user-workload-token | head -n 1 | awk '{print $1}')
-TOKEN=$(echo $(oc get secret $SECRET -n openshift-user-workload-monitoring -o json | jq -r '.data.token') | base64 -d)
+TOKEN=$(oc create token prometheus-user-workload -n openshift-user-workload-monitoring)
 THANOS_QUERIER_HOST=$(oc get route thanos-querier -n openshift-monitoring -o json | jq -r '.spec.host')
 
 while true; do
