@@ -386,6 +386,10 @@ func main() {
 			if err != nil {
 				setupLog.Error(err, "Error bootstrapping CRD metrics")
 			}
+			err = crdMetrics.Init(ctx, mgr.GetClient())
+			if err != nil {
+				setupLog.Error(err, "Error intiializing CRD metrics")
+			}
 		}
 
 		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics); err != nil {

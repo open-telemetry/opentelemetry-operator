@@ -16,6 +16,7 @@ package v1beta1
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"go.opentelemetry.io/otel"
@@ -23,6 +24,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
@@ -105,14 +107,37 @@ func NewMetrics() (*Metrics, error) {
 
 }
 
-func (m *Metrics) incCounters(ctx context.Context, collector *OpenTelemetryCollector) {
+// Init metrics from the first time the operator starts.
+func (m *Metrics) Init(ctx context.Context, cl client.Client) error {
+	opts := []client.ListOption{
+		client.MatchingLabels(map[string]string{
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		}),
+	}
+	list := &OpenTelemetryCollectorList{}
+	if err := cl.List(ctx, list, opts...); err != nil {
+		return fmt.Errorf("failed to list: %w", err)
+	}
+
+	for i := range list.Items {
+		m.create(ctx, &list.Items[i])
+	}
+	return nil
+}
+
+func (m *Metrics) create(ctx context.Context, collector *OpenTelemetryCollector) {
 	m.updateComponentCounters(ctx, collector, true)
 	m.updateGeneralCRMetricsComponents(ctx, collector, true)
 }
 
-func (m *Metrics) decCounters(ctx context.Context, collector *OpenTelemetryCollector) {
+func (m *Metrics) delete(ctx context.Context, collector *OpenTelemetryCollector) {
 	m.updateComponentCounters(ctx, collector, false)
 	m.updateGeneralCRMetricsComponents(ctx, collector, false)
+}
+
+func (m *Metrics) update(ctx context.Context, oldCollector *OpenTelemetryCollector, newCollector *OpenTelemetryCollector) {
+	m.delete(ctx, oldCollector)
+	m.create(ctx, newCollector)
 }
 
 func (m *Metrics) updateGeneralCRMetricsComponents(ctx context.Context, collector *OpenTelemetryCollector, up bool) {
