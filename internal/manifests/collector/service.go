@@ -29,12 +29,25 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-// headless and monitoring labels are to differentiate the headless/monitoring services from the clusterIP service.
+// headless and monitoring labels are to differentiate the base/headless/monitoring services from the clusterIP service.
 const (
-	headlessLabel   = "operator.opentelemetry.io/collector-headless-service"
-	monitoringLabel = "operator.opentelemetry.io/collector-monitoring-service"
-	valueExists     = "Exists"
+	headlessLabel    = "operator.opentelemetry.io/collector-headless-service"
+	monitoringLabel  = "operator.opentelemetry.io/collector-monitoring-service"
+	serviceTypeLabel = "operator.opentelemetry.io/collector-service-type"
+	valueExists      = "Exists"
 )
+
+type ServiceType int
+
+const (
+	BaseServiceType ServiceType = iota
+	HeadlessServiceType
+	MonitoringServiceType
+)
+
+func (s ServiceType) String() string {
+	return [...]string{"base", "headless", "monitoring"}[s]
+}
 
 func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 	h, err := Service(params)
@@ -44,6 +57,7 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 
 	h.Name = naming.HeadlessService(params.OtelCol.Name)
 	h.Labels[headlessLabel] = valueExists
+	h.Labels[serviceTypeLabel] = HeadlessServiceType.String()
 
 	// copy to avoid modifying params.OtelCol.Annotations
 	annotations := map[string]string{
@@ -63,6 +77,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 	name := naming.MonitoringService(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[monitoringLabel] = valueExists
+	labels[serviceTypeLabel] = MonitoringServiceType.String()
 
 	metricsPort, err := params.OtelCol.Spec.Config.Service.MetricsPort()
 	if err != nil {
@@ -90,6 +105,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 func Service(params manifests.Params) (*corev1.Service, error) {
 	name := naming.Service(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels[serviceTypeLabel] = BaseServiceType.String()
 
 	out, err := params.OtelCol.Spec.Config.Yaml()
 	if err != nil {

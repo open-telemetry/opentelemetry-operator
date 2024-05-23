@@ -20,25 +20,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCanSetSingleTarget(t *testing.T) {
-	cols := MakeNCollectors(3, 0)
-	c := newConsistentHashingAllocator(logger)
-	c.SetCollectors(cols)
-	c.SetTargets(MakeNNewTargets(1, 3, 0))
-	actualTargetItems := c.TargetItems()
-	assert.Len(t, actualTargetItems, 1)
-	for _, item := range actualTargetItems {
-		assert.Equal(t, "collector-0", item.CollectorName)
-	}
-}
-
 func TestRelativelyEvenDistribution(t *testing.T) {
 	numCols := 15
 	numItems := 10000
 	cols := MakeNCollectors(numCols, 0)
 	var expectedPerCollector = float64(numItems / numCols)
 	expectedDelta := (expectedPerCollector * 1.5) - expectedPerCollector
-	c := newConsistentHashingAllocator(logger)
+	c, _ := New("consistent-hashing", logger)
 	c.SetCollectors(cols)
 	c.SetTargets(MakeNNewTargets(numItems, 0, 0))
 	actualTargetItems := c.TargetItems()
@@ -52,7 +40,7 @@ func TestRelativelyEvenDistribution(t *testing.T) {
 
 func TestFullReallocation(t *testing.T) {
 	cols := MakeNCollectors(10, 0)
-	c := newConsistentHashingAllocator(logger)
+	c, _ := New("consistent-hashing", logger)
 	c.SetCollectors(cols)
 	c.SetTargets(MakeNNewTargets(10000, 10, 0))
 	actualTargetItems := c.TargetItems()
@@ -77,7 +65,7 @@ func TestNumRemapped(t *testing.T) {
 	numFinalCols := 16
 	expectedDelta := float64((numFinalCols - numInitialCols) * (numItems / numFinalCols))
 	cols := MakeNCollectors(numInitialCols, 0)
-	c := newConsistentHashingAllocator(logger)
+	c, _ := New("consistent-hashing", logger)
 	c.SetCollectors(cols)
 	c.SetTargets(MakeNNewTargets(numItems, numInitialCols, 0))
 	actualTargetItems := c.TargetItems()
@@ -106,7 +94,7 @@ func TestNumRemapped(t *testing.T) {
 
 func TestTargetsWithNoCollectorsConsistentHashing(t *testing.T) {
 
-	c := newConsistentHashingAllocator(logger)
+	c, _ := New("consistent-hashing", logger)
 
 	// Adding 10 new targets
 	numItems := 10

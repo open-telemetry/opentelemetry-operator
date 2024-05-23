@@ -31,28 +31,14 @@ import (
 
 // PodMonitor returns the pod monitor for the given instance.
 func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
-	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
-		params.Log.V(2).Info("Metrics disabled for this OTEL Collector",
-			"params.OtelCol.name", params.OtelCol.Name,
-			"params.OtelCol.namespace", params.OtelCol.Namespace,
-		)
-		return nil, nil
-	} else if params.Config.PrometheusCRAvailability() == prometheus.NotAvailable {
-		params.Log.V(1).Info("Cannot enable PodMonitor when prometheus CRDs are unavailable",
-			"params.OtelCol.name", params.OtelCol.Name,
-			"params.OtelCol.namespace", params.OtelCol.Namespace,
-		)
+	if !shouldCreatePodMonitor(params) {
 		return nil, nil
 	}
-	var pm monitoringv1.PodMonitor
 
-	if params.OtelCol.Spec.Mode != v1beta1.ModeSidecar {
-		return nil, nil
-	}
 	name := naming.PodMonitor(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, nil)
 	selectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
-	pm = monitoringv1.PodMonitor{
+	pm := monitoringv1.PodMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: params.OtelCol.Namespace,
 			Name:      name,
@@ -106,4 +92,23 @@ func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1beta1.OpenTelemetr
 		}
 	}
 	return metricsEndpoints
+}
+
+func shouldCreatePodMonitor(params manifests.Params) bool {
+	l := params.Log.WithValues(
+		"params.OtelCol.name", params.OtelCol.Name,
+		"params.OtelCol.namespace", params.OtelCol.Namespace,
+	)
+
+	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
+		l.V(2).Info("Metrics disabled for this OTEL Collector. PodMonitor will not ve created")
+		return false
+	} else if params.Config.PrometheusCRAvailability() == prometheus.NotAvailable {
+		l.V(2).Info("Cannot enable PodMonitor when prometheus CRDs are unavailable")
+		return false
+	} else if params.OtelCol.Spec.Mode != v1beta1.ModeSidecar {
+		l.V(2).Info("Not using sidecar mode. PodMonitor will not be created")
+		return false
+	}
+	return true
 }

@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: chainsaw-scrape-in-cluster-monitoring-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-monitoring-view 
+subjects:
+  - kind: ServiceAccount
+    name: otel-collector
+    namespace: chainsaw-scrape-in-cluster-monitoring
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: cabundle
+  namespce: chainsaw-scrape-in-cluster-monitoring
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"

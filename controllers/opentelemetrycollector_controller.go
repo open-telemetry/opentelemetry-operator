@@ -17,7 +17,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-logr/logr"
 	routev1 "github.com/openshift/api/route/v1"
@@ -35,6 +34,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
@@ -46,6 +46,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+)
+
+var (
+	ownedClusterObjectTypes = []client.Object{
+		&rbacv1.ClusterRole{},
+		&rbacv1.ClusterRoleBinding{},
+	}
 )
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
@@ -68,66 +75,62 @@ type Params struct {
 
 func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
 	ownedObjects := map[types.UID]client.Object{}
-
+	ownedObjectTypes := []client.Object{
+		&autoscalingv2.HorizontalPodAutoscaler{},
+		&networkingv1.Ingress{},
+		&policyV1.PodDisruptionBudget{},
+	}
 	listOps := &client.ListOptions{
 		Namespace:     params.OtelCol.Namespace,
 		LabelSelector: labels.SelectorFromSet(manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)),
 	}
-	hpaList := &autoscalingv2.HorizontalPodAutoscalerList{}
-	err := r.List(ctx, hpaList, listOps)
-	if err != nil {
-		return nil, fmt.Errorf("error listing HorizontalPodAutoscalers: %w", err)
-	}
-	for i := range hpaList.Items {
-		ownedObjects[hpaList.Items[i].GetUID()] = &hpaList.Items[i]
-	}
 	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability() == prometheus.Available {
-		servicemonitorList := &monitoringv1.ServiceMonitorList{}
-		err = r.List(ctx, servicemonitorList, listOps)
-		if err != nil {
-			return nil, fmt.Errorf("error listing ServiceMonitors: %w", err)
-		}
-		for i := range servicemonitorList.Items {
-			ownedObjects[servicemonitorList.Items[i].GetUID()] = servicemonitorList.Items[i]
-		}
-
-		podMonitorList := &monitoringv1.PodMonitorList{}
-		err = r.List(ctx, podMonitorList, listOps)
-		if err != nil {
-			return nil, fmt.Errorf("error listing PodMonitors: %w", err)
-		}
-		for i := range podMonitorList.Items {
-			ownedObjects[podMonitorList.Items[i].GetUID()] = podMonitorList.Items[i]
-		}
+		ownedObjectTypes = append(ownedObjectTypes,
+			&monitoringv1.ServiceMonitor{},
+			&monitoringv1.PodMonitor{},
+		)
 	}
-	ingressList := &networkingv1.IngressList{}
-	err = r.List(ctx, ingressList, listOps)
-	if err != nil {
-		return nil, fmt.Errorf("error listing Ingresses: %w", err)
-	}
-	for i := range ingressList.Items {
-		ownedObjects[ingressList.Items[i].GetUID()] = &ingressList.Items[i]
-	}
-
 	if params.Config.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
-		routesList := &routev1.RouteList{}
-		err = r.List(ctx, routesList, listOps)
+		ownedObjectTypes = append(ownedObjectTypes, &routev1.Route{})
+	}
+	for _, objectType := range ownedObjectTypes {
+		objs, err := getList(ctx, r, objectType, listOps)
 		if err != nil {
-			return nil, fmt.Errorf("error listing Routes: %w", err)
+			return nil, err
 		}
-		for i := range routesList.Items {
-			ownedObjects[routesList.Items[i].GetUID()] = &routesList.Items[i]
+		for uid, object := range objs {
+			ownedObjects[uid] = object
 		}
 	}
-	pdbList := &policyV1.PodDisruptionBudgetList{}
-	err = r.List(ctx, pdbList, listOps)
-	if err != nil {
-		return nil, fmt.Errorf("error listing PodDisruptionBudgets: %w", err)
+	if params.Config.CreateRBACPermissions() == rbac.Available {
+		objs, err := r.findClusterRoleObjects(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		for uid, object := range objs {
+			ownedObjects[uid] = object
+		}
 	}
-	for i := range pdbList.Items {
-		ownedObjects[pdbList.Items[i].GetUID()] = &pdbList.Items[i]
-	}
+	return ownedObjects, nil
+}
 
+// The cluster scope objects do not have owner reference.
+func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
+	ownedObjects := map[types.UID]client.Object{}
+	// Remove cluster roles and bindings.
+	// Users might switch off the RBAC creation feature on the operator which should remove existing RBAC.
+	listOpsCluster := &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)),
+	}
+	for _, objectType := range ownedClusterObjectTypes {
+		objs, err := getList(ctx, r, objectType, listOpsCluster)
+		if err != nil {
+			return nil, err
+		}
+		for uid, object := range objs {
+			ownedObjects[uid] = object
+		}
+	}
 	return ownedObjects, nil
 }
 
@@ -193,8 +196,32 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
+	params, err := r.getParams(instance)
+	if err != nil {
+		log.Error(err, "Failed to create manifest.Params")
+		return ctrl.Result{}, err
+	}
+
 	// We have a deletion, short circuit and let the deletion happen
 	if deletionTimestamp := instance.GetDeletionTimestamp(); deletionTimestamp != nil {
+		if controllerutil.ContainsFinalizer(&instance, collectorFinalizer) {
+			// If the finalization logic fails, don't remove the finalizer so
+			// that we can retry during the next reconciliation.
+			if err = r.finalizeCollector(ctx, params); err != nil {
+				return ctrl.Result{}, err
+			}
+
+			// Once all finalizers have been
+			// removed, the object will be deleted.
+			if controllerutil.RemoveFinalizer(&instance, collectorFinalizer) {
+				err = r.Update(ctx, &instance)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+		}
+
 		return ctrl.Result{}, nil
 	}
 
@@ -204,10 +231,14 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, nil
 	}
 
-	params, err := r.getParams(instance)
-	if err != nil {
-		log.Error(err, "Failed to create manifest.Params")
-		return ctrl.Result{}, err
+	// Add finalizer for this CR
+	if !controllerutil.ContainsFinalizer(&instance, collectorFinalizer) {
+		if controllerutil.AddFinalizer(&instance, collectorFinalizer) {
+			err = r.Update(ctx, &instance)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+		}
 	}
 
 	desiredObjects, buildErr := BuildCollector(params)
@@ -254,4 +285,18 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 	}
 
 	return builder.Complete(r)
+}
+
+const collectorFinalizer = "opentelemetrycollector.opentelemetry.io/finalizer"
+
+func (r *OpenTelemetryCollectorReconciler) finalizeCollector(ctx context.Context, params manifests.Params) error {
+	// The cluster scope objects do not have owner reference. They need to be deleted explicitly
+	if params.Config.CreateRBACPermissions() == rbac.Available {
+		objects, err := r.findClusterRoleObjects(ctx, params)
+		if err != nil {
+			return err
+		}
+		return deleteObjects(ctx, r.Client, r.log, objects)
+	}
+	return nil
 }

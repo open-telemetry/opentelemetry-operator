@@ -20,13 +20,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 // Container builds a container for the given TargetAllocator.
-func Container(cfg config.Config, logger logr.Logger, instance v1beta1.TargetAllocator) corev1.Container {
+func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAllocator) corev1.Container {
 	image := instance.Spec.Image
 	if len(image) == 0 {
 		image = cfg.TargetAllocatorImage()
@@ -64,6 +65,28 @@ func Container(cfg config.Config, logger logr.Logger, instance v1beta1.TargetAll
 				},
 			},
 		})
+	}
+
+	if featuregate.SetGolangFlags.IsEnabled() {
+		envVars = append(envVars, corev1.EnvVar{
+			Name: "GOMEMLIMIT",
+			ValueFrom: &corev1.EnvVarSource{
+				ResourceFieldRef: &corev1.ResourceFieldSelector{
+					Resource:      "limits.memory",
+					ContainerName: naming.TAContainer(),
+				},
+			},
+		},
+			corev1.EnvVar{
+				Name: "GOMAXPROCS",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.cpu",
+						ContainerName: naming.TAContainer(),
+					},
+				},
+			},
+		)
 	}
 
 	var args []string

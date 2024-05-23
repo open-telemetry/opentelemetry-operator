@@ -72,7 +72,7 @@ func TestValidate(t *testing.T) {
 			},
 
 			warnings: []string{
-				"Collector config spec.config has null objects: extensions.foo:, processors.batch:, processors.foo:. For compatibility tooling (kustomize and kubectl edit) it is recommended to use empty obejects e.g. batch: {}.",
+				"Collector config spec.config has null objects: extensions.foo:, processors.batch:, processors.foo:. For compatibility with other tooling, such as kustomize and kubectl edit, it is recommended to use empty objects e.g. batch: {}.",
 			},
 		},
 	}
@@ -1077,6 +1077,17 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "the OpenTelemetry Spec LivenessProbe InitialDelaySeconds configuration is incorrect",
 		},
 		{
+			name: "invalid InitialDelaySeconds readiness",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					ReadinessProbe: &Probe{
+						InitialDelaySeconds: &minusOne,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec ReadinessProbe InitialDelaySeconds configuration is incorrect",
+		},
+		{
 			name: "invalid PeriodSeconds",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
@@ -1086,6 +1097,17 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "the OpenTelemetry Spec LivenessProbe PeriodSeconds configuration is incorrect",
+		},
+		{
+			name: "invalid PeriodSeconds readiness",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					ReadinessProbe: &Probe{
+						PeriodSeconds: &zero,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec ReadinessProbe PeriodSeconds configuration is incorrect",
 		},
 		{
 			name: "invalid TimeoutSeconds",
@@ -1099,6 +1121,17 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "the OpenTelemetry Spec LivenessProbe TimeoutSeconds configuration is incorrect",
 		},
 		{
+			name: "invalid TimeoutSeconds readiness",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					ReadinessProbe: &Probe{
+						TimeoutSeconds: &zero,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec ReadinessProbe TimeoutSeconds configuration is incorrect",
+		},
+		{
 			name: "invalid SuccessThreshold",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
@@ -1108,6 +1141,17 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "the OpenTelemetry Spec LivenessProbe SuccessThreshold configuration is incorrect",
+		},
+		{
+			name: "invalid SuccessThreshold readiness",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					ReadinessProbe: &Probe{
+						SuccessThreshold: &zero,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec ReadinessProbe SuccessThreshold configuration is incorrect",
 		},
 		{
 			name: "invalid FailureThreshold",
@@ -1121,6 +1165,17 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "the OpenTelemetry Spec LivenessProbe FailureThreshold configuration is incorrect",
 		},
 		{
+			name: "invalid FailureThreshold readiness",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					ReadinessProbe: &Probe{
+						FailureThreshold: &zero,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec ReadinessProbe FailureThreshold configuration is incorrect",
+		},
+		{
 			name: "invalid TerminationGracePeriodSeconds",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
@@ -1130,6 +1185,17 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect",
+		},
+		{
+			name: "invalid TerminationGracePeriodSeconds readiness",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					ReadinessProbe: &Probe{
+						TerminationGracePeriodSeconds: &zero64,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec ReadinessProbe TerminationGracePeriodSeconds configuration is incorrect",
 		},
 		{
 			name: "invalid AdditionalContainers",
