@@ -39,14 +39,17 @@ const (
 	exportersMetricName  = prefix + "exporters"
 	processorsMetricName = prefix + "processors"
 	extensionsMetricName = prefix + "extensions"
+	connectorsMetricName = prefix + "connectors"
 	modeMetricName       = prefix + "info"
 )
 
+// TODO: Refactor this logic, centralize it.
 type components struct {
 	receivers  []string
 	processors []string
 	exporters  []string
 	extensions []string
+	connectors []string
 }
 
 // Metrics hold all gauges for the different metrics related to the CRs
@@ -57,6 +60,7 @@ type Metrics struct {
 	exporterCounter   metric.Int64UpDownCounter
 	processorCounter  metric.Int64UpDownCounter
 	extensionsCounter metric.Int64UpDownCounter
+	connectorsCounter metric.Int64UpDownCounter
 }
 
 // BootstrapMetrics configures the OpenTelemetry meter provider with the Prometheus exporter.
@@ -94,12 +98,18 @@ func NewMetrics(prv metric.MeterProvider) (*Metrics, error) {
 		return nil, err
 	}
 
+	connectorsCounter, err := meter.Int64UpDownCounter(connectorsMetricName)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Metrics{
 		modeCounter:       modeCounter,
 		receiversCounter:  receiversCounter,
 		exporterCounter:   exporterCounter,
 		processorCounter:  processorCounter,
 		extensionsCounter: extensionsCounter,
+		connectorsCounter: connectorsCounter,
 	}, nil
 
 }
@@ -155,6 +165,8 @@ func (m *Metrics) updateComponentCounters(ctx context.Context, collector *OpenTe
 	moveCounter(ctx, collector, components.exporters, m.exporterCounter, up)
 	moveCounter(ctx, collector, components.processors, m.processorCounter, up)
 	moveCounter(ctx, collector, components.extensions, m.extensionsCounter, up)
+	moveCounter(ctx, collector, components.connectors, m.connectorsCounter, up)
+
 }
 
 func extractElements(elements map[string]interface{}) []string {
@@ -190,6 +202,11 @@ func getComponentsFromConfigV1Beta1(yamlContent Config) *components {
 	if yamlContent.Extensions != nil {
 		info.extensions = extractElements(yamlContent.Extensions.Object)
 	}
+
+	if yamlContent.Connectors != nil {
+		info.connectors = extractElements(yamlContent.Connectors.Object)
+	}
+
 	return info
 }
 
