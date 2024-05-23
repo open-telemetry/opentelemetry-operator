@@ -69,11 +69,11 @@ func TestPDBWithValidStrategy(t *testing.T) {
 	for _, test := range tests {
 		for _, strategy := range []v1beta1.TargetAllocatorAllocationStrategy{v1beta1.TargetAllocatorAllocationStrategyPerNode, v1beta1.TargetAllocatorAllocationStrategyConsistentHashing} {
 			t.Run(fmt.Sprintf("%s-%s", strategy, test.name), func(t *testing.T) {
-				targetAllocator := v1beta1.TargetAllocator{
+				targetAllocator := v1alpha1.TargetAllocator{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "my-instance",
 					},
-					Spec: v1beta1.TargetAllocatorSpec{
+					Spec: v1alpha1.TargetAllocatorSpec{
 						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 							PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
 								MinAvailable:   test.MinAvailable,
