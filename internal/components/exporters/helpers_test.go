@@ -25,6 +25,19 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
+func TestParserForReturns(t *testing.T) {
+	const testComponentName = "test"
+	parser := exporters.ParserFor(testComponentName)
+	assert.Equal(t, "test", parser.ParserType())
+	assert.Equal(t, "__test", parser.ParserName())
+	ports, err := parser.Ports(logr.Discard(), map[string]interface{}{
+		"endpoint": "localhost:9000",
+	})
+	assert.NoError(t, err)
+	assert.Len(t, ports, 1)
+	assert.Equal(t, ports[0].Port, int32(9000))
+}
+
 func TestCanRegister(t *testing.T) {
 	const testComponentName = "test"
 	exporters.Register(testComponentName, components.NewSinglePortParser(testComponentName, 9000))

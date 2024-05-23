@@ -104,7 +104,7 @@ func shouldCreateServiceMonitor(params manifests.Params) bool {
 }
 
 func endpointsFromConfig(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector) []monitoringv1.Endpoint {
-	exporterPorts, err := otelcol.Spec.Config.Exporters.GetPorts(logger)
+	exporterPorts, err := otelcol.Spec.Config.GetExporterPorts(logger)
 	if err != nil {
 		logger.Error(err, "couldn't build service monitors from configuration")
 		return []monitoringv1.Endpoint{}
