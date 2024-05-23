@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"strings"
 
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
@@ -61,18 +60,16 @@ type Metrics struct {
 }
 
 // BootstrapMetrics configures the OpenTelemetry meter provider with the Prometheus exporter.
-func BootstrapMetrics() error {
+func BootstrapMetrics() (metric.MeterProvider, error) {
 	exporter, err := prometheus.New(prometheus.WithRegisterer(metrics.Registry))
 	if err != nil {
-		return err
+		return nil, err
 	}
-	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter))
-	otel.SetMeterProvider(provider)
-	return err
+	return sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter)), err
 }
 
-func NewMetrics() (*Metrics, error) {
-	meter := otel.Meter(meterName)
+func NewMetrics(prv metric.MeterProvider) (*Metrics, error) {
+	meter := prv.Meter(meterName)
 	modeCounter, err := meter.Int64UpDownCounter(mode)
 	if err != nil {
 		return nil, err

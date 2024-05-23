@@ -379,10 +379,12 @@ func main() {
 		var crdMetrics *otelv1beta1.Metrics
 
 		if enableCRMetrics {
-			if metricsErr := otelv1beta1.BootstrapMetrics(); metricsErr != nil {
+			meterProvider, metricsErr := otelv1beta1.BootstrapMetrics()
+			if metricsErr != nil {
 				setupLog.Error(metricsErr, "Error bootstrapping CRD metrics")
 			}
-			crdMetrics, err = otelv1beta1.NewMetrics()
+
+			crdMetrics, err = otelv1beta1.NewMetrics(meterProvider)
 			if err != nil {
 				setupLog.Error(err, "Error bootstrapping CRD metrics")
 			}

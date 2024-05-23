@@ -116,8 +116,6 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 			},
 		},
 	}
-	crdMetrics, err := NewMetrics()
-	assert.NoError(t, err)
 
 	var tests = []struct {
 		name         string
@@ -139,14 +137,14 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 
 	reader := sdkmetric.NewManualReader()
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-	otel.SetMeterProvider(provider)
+	crdMetrics, err := NewMetrics(provider)
+	assert.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.testFunction(t, crdMetrics, []*OpenTelemetryCollector{otelcollector1, otelcollector2, updatedCollector1}, reader)
 		})
 	}
-
 }
 
 func TestOTELCollectorInitMetrics(t *testing.T) {
@@ -215,12 +213,11 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 	}
 	require.NoError(t, err, "Should be able to add custom types")
 	cl := fake.NewClientBuilder().WithLists(list).WithScheme(scheme).Build()
-	crdMetrics, err := NewMetrics()
-	assert.NoError(t, err)
-
 	reader := sdkmetric.NewManualReader()
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-	otel.SetMeterProvider(provider)
+	crdMetrics, err := NewMetrics(provider)
+	assert.NoError(t, err)
+
 	err = crdMetrics.Init(context.Background(), cl)
 	assert.NoError(t, err)
 
@@ -340,7 +337,6 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 	}
 
 	metricdatatest.AssertEqual(t, want, rm.ScopeMetrics[0], metricdatatest.IgnoreTimestamp())
-
 }
 
 func checkCreate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector, reader metric.Reader) {
