@@ -34,12 +34,12 @@ const (
 // Metric labels
 
 const (
-	prefix     = "opentelemetry_collector_"
-	receivers  = prefix + "receivers"
-	exporters  = prefix + "exporters"
-	processors = prefix + "processors"
-	extensions = prefix + "extensions"
-	mode       = prefix + "info"
+	prefix               = "opentelemetry_collector_"
+	receiversMetricName  = prefix + "receivers"
+	exportersMetricName  = prefix + "exporters"
+	processorsMetricName = prefix + "processors"
+	extensionsMetricName = prefix + "extensions"
+	modeMetricName       = prefix + "info"
 )
 
 type components struct {
@@ -70,26 +70,26 @@ func BootstrapMetrics() (metric.MeterProvider, error) {
 
 func NewMetrics(prv metric.MeterProvider) (*Metrics, error) {
 	meter := prv.Meter(meterName)
-	modeCounter, err := meter.Int64UpDownCounter(mode)
+	modeCounter, err := meter.Int64UpDownCounter(modeMetricName)
 	if err != nil {
 		return nil, err
 	}
-	receiversCounter, err := meter.Int64UpDownCounter(receivers)
-	if err != nil {
-		return nil, err
-	}
-
-	exporterCounter, err := meter.Int64UpDownCounter(exporters)
+	receiversCounter, err := meter.Int64UpDownCounter(receiversMetricName)
 	if err != nil {
 		return nil, err
 	}
 
-	processorCounter, err := meter.Int64UpDownCounter(processors)
+	exporterCounter, err := meter.Int64UpDownCounter(exportersMetricName)
 	if err != nil {
 		return nil, err
 	}
 
-	extensionsCounter, err := meter.Int64UpDownCounter(extensions)
+	processorCounter, err := meter.Int64UpDownCounter(processorsMetricName)
+	if err != nil {
+		return nil, err
+	}
+
+	extensionsCounter, err := meter.Int64UpDownCounter(extensionsMetricName)
 	if err != nil {
 		return nil, err
 	}
@@ -158,6 +158,8 @@ func (m *Metrics) updateComponentCounters(ctx context.Context, collector *OpenTe
 }
 
 func extractElements(elements map[string]interface{}) []string {
+	// TODO: we should get rid of this method and centralize the parse logic
+	//		see https://github.com/open-telemetry/opentelemetry-operator/issues/2603
 	if elements == nil {
 		return []string{}
 	}
