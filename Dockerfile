@@ -1,5 +1,5 @@
 # Get CA certificates from alpine package repo
-FROM alpine:3.19 as certificates
+FROM alpine:3.20 as certificates
 
 RUN apk --no-cache add ca-certificates
 
