@@ -5555,6 +5555,10 @@ spec:
                 - service
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
+              configVersions:
+                default: 3
+                minimum: 1
+                type: integer
               configmaps:
                 items:
                   properties:

@@ -17,6 +17,8 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"sort"
 
 	"github.com/go-logr/logr"
 	routev1 "github.com/openshift/api/route/v1"
@@ -111,6 +113,17 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 			ownedObjects[uid] = object
 		}
 	}
+
+	configMapList := &corev1.ConfigMapList{}
+	err := r.List(ctx, configMapList, listOps)
+	if err != nil {
+		return nil, fmt.Errorf("error listing ConfigMaps: %w", err)
+	}
+	ownedConfigMaps := r.getConfigMapsToRemove(params.OtelCol.Spec.ConfigVersions, configMapList)
+	for i := range ownedConfigMaps {
+		ownedObjects[ownedConfigMaps[i].GetUID()] = &ownedConfigMaps[i]
+	}
+
 	return ownedObjects, nil
 }
 
@@ -132,6 +145,27 @@ func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Co
 		}
 	}
 	return ownedObjects, nil
+}
+
+// getConfigMapsToRemove returns a list of ConfigMaps to remove based on the number of ConfigMaps to keep.
+// It keeps the newest ConfigMap, the `configVersionsToKeep` next newest ConfigMaps, and returns the remainder.
+func (r *OpenTelemetryCollectorReconciler) getConfigMapsToRemove(configVersionsToKeep int, configMapList *corev1.ConfigMapList) []corev1.ConfigMap {
+	configVersionsToKeep = max(1, configVersionsToKeep)
+	ownedConfigMaps := []corev1.ConfigMap{}
+	sort.Slice(configMapList.Items, func(i, j int) bool {
+		iTime := configMapList.Items[i].GetCreationTimestamp().Time
+		jTime := configMapList.Items[j].GetCreationTimestamp().Time
+		// sort the ConfigMaps newest to oldest
+		return iTime.After(jTime)
+	})
+
+	for i := range configMapList.Items {
+		if i > configVersionsToKeep {
+			ownedConfigMaps = append(ownedConfigMaps, configMapList.Items[i])
+		}
+	}
+
+	return ownedConfigMaps
 }
 
 func (r *OpenTelemetryCollectorReconciler) getParams(instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {

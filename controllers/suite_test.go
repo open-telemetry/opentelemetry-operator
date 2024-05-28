@@ -50,6 +50,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -60,6 +61,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	// +kubebuilder:scaffold:imports
 )
@@ -479,4 +481,13 @@ func populateObjectIfExists(t testing.TB, object client.Object, namespacedName t
 		return false, err
 	}
 	return true, nil
+}
+
+func getConfigMapSHAFromString(configStr string) (string, error) {
+	var config v1beta1.Config
+	err := yaml.Unmarshal([]byte(configStr), &config)
+	if err != nil {
+		return "", err
+	}
+	return manifestutils.GetConfigMapSHA(config)
 }

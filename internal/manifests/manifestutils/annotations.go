@@ -44,7 +44,7 @@ func Annotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations []st
 		}
 	}
 
-	hash, err := getConfigMapSHA(instance.Spec.Config)
+	hash, err := GetConfigMapSHA(instance.Spec.Config)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func PodAnnotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations [
 		}
 	}
 
-	hash, err := getConfigMapSHA(instance.Spec.Config)
+	hash, err := GetConfigMapSHA(instance.Spec.Config)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func PodAnnotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations [
 	return podAnnotations, nil
 }
 
-func getConfigMapSHA(config v1beta1.Config) (string, error) {
+func GetConfigMapSHA(config v1beta1.Config) (string, error) {
 	b, err := json.Marshal(&config)
 	if err != nil {
 		return "", err
