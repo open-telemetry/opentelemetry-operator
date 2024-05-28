@@ -430,7 +430,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result: controllerruntime.Result{},
 					checks: []check[v1alpha1.OpenTelemetryCollector]{
 						func(t *testing.T, params v1alpha1.OpenTelemetryCollector) {
-							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.Collector(params.Name), params.Namespace))
+							configHash, _ := getConfigMapSHAFromString(params.Spec.Config)
+							configHash = configHash[:8]
+							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.ConfigMap(params.Name, configHash), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							exists, err = populateObjectIfExists(t, &appsv1.StatefulSet{}, namespacedObjectName(naming.Collector(params.Name), params.Namespace))
@@ -452,7 +454,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result: controllerruntime.Result{},
 					checks: []check[v1alpha1.OpenTelemetryCollector]{
 						func(t *testing.T, params v1alpha1.OpenTelemetryCollector) {
-							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.Collector(params.Name), params.Namespace))
+							configHash, _ := getConfigMapSHAFromString(params.Spec.Config)
+							configHash = configHash[:8]
+							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.ConfigMap(params.Name, configHash), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							actual := v1.ConfigMap{}
@@ -497,7 +501,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result: controllerruntime.Result{},
 					checks: []check[v1alpha1.OpenTelemetryCollector]{
 						func(t *testing.T, params v1alpha1.OpenTelemetryCollector) {
-							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.Collector(params.Name), params.Namespace))
+							configHash, _ := getConfigMapSHAFromString(params.Spec.Config)
+							configHash = configHash[:8]
+							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.ConfigMap(params.Name, configHash), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							actual := v1.ConfigMap{}

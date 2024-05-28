@@ -1,0 +1,17 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: enhancement
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: collector
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Keep multiple previous versions of the Collector ConfigMap, configurable via the ConfigVersions field.
+
+# One or more tracking issues related to the change
+issues: [2871]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  This change introduces a new field in the Collector ConfigMap, `ConfigVersions`, which allows users to specify the number of previous versions of the Collector ConfigMap to keep. The default value is 1, which means that the current and one previous version of the Collector ConfigMap are kept. By keeping historical versions of the configuration, we ensure that during a config upgrade the previous configuration is still available for running (non-upgraded) pods as well as for rollbacks. If we overwrite the original ConfigMap with the new configuration, any pod which restarts for any reason will get the new configuration, which makes rollouts impossible to control.
