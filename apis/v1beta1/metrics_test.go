@@ -224,9 +224,7 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 	cl := fake.NewClientBuilder().WithLists(list).WithScheme(scheme).Build()
 	reader := sdkmetric.NewManualReader()
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-	NewMetrics(provider, context.Background(), cl)
-	assert.NoError(t, err)
-
+	_, err = NewMetrics(provider, context.Background(), cl)
 	assert.NoError(t, err)
 
 	rm := metricdata.ResourceMetrics{}
