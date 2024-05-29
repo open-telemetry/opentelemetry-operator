@@ -134,10 +134,18 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 			testFunction: checkDelete,
 		},
 	}
-
+	schemeBuilder := runtime.NewSchemeBuilder(func(s *runtime.Scheme) error {
+		s.AddKnownTypes(GroupVersion, &OpenTelemetryCollector{}, &OpenTelemetryCollectorList{})
+		metav1.AddToGroupVersion(s, GroupVersion)
+		return nil
+	})
+	scheme := runtime.NewScheme()
+	err := schemeBuilder.AddToScheme(scheme)
+	require.NoError(t, err)
 	reader := sdkmetric.NewManualReader()
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-	crdMetrics, err := NewMetrics(provider)
+	cl := fake.NewClientBuilder().WithScheme(scheme).Build()
+	crdMetrics, err := NewMetrics(provider, context.Background(), cl)
 	assert.NoError(t, err)
 
 	for _, tt := range tests {
@@ -208,6 +216,7 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 	})
 	scheme := runtime.NewScheme()
 	err := schemeBuilder.AddToScheme(scheme)
+	require.NoError(t, err)
 	list := &OpenTelemetryCollectorList{
 		Items: []OpenTelemetryCollector{otelcollector1, otelcollector2},
 	}
@@ -215,10 +224,9 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 	cl := fake.NewClientBuilder().WithLists(list).WithScheme(scheme).Build()
 	reader := sdkmetric.NewManualReader()
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-	crdMetrics, err := NewMetrics(provider)
+	NewMetrics(provider, context.Background(), cl)
 	assert.NoError(t, err)
 
-	err = crdMetrics.Init(context.Background(), cl)
 	assert.NoError(t, err)
 
 	rm := metricdata.ResourceMetrics{}
