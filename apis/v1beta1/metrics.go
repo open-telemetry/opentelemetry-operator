@@ -43,7 +43,7 @@ const (
 	modeMetricName       = prefix + "info"
 )
 
-// TODO: Refactor this logic, centralize it.
+// TODO: Refactor this logic, centralize it. See: https://github.com/open-telemetry/opentelemetry-operator/issues/2603
 type components struct {
 	receivers  []string
 	processors []string
