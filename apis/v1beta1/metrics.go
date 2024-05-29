@@ -72,7 +72,7 @@ func BootstrapMetrics() (metric.MeterProvider, error) {
 	return sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter)), err
 }
 
-func NewMetrics(prv metric.MeterProvider) (*Metrics, error) {
+func NewMetrics(prv metric.MeterProvider, ctx context.Context, cl client.Client) (*Metrics, error) {
 	meter := prv.Meter(meterName)
 	modeCounter, err := meter.Int64UpDownCounter(modeMetricName)
 	if err != nil {
@@ -103,19 +103,24 @@ func NewMetrics(prv metric.MeterProvider) (*Metrics, error) {
 		return nil, err
 	}
 
-	return &Metrics{
+	m := &Metrics{
 		modeCounter:       modeCounter,
 		receiversCounter:  receiversCounter,
 		exporterCounter:   exporterCounter,
 		processorCounter:  processorCounter,
 		extensionsCounter: extensionsCounter,
 		connectorsCounter: connectorsCounter,
-	}, nil
+	}
 
+	err = m.init(ctx, cl)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // Init metrics from the first time the operator starts.
-func (m *Metrics) Init(ctx context.Context, cl client.Client) error {
+func (m *Metrics) init(ctx context.Context, cl client.Client) error {
 	opts := []client.ListOption{
 		client.MatchingLabels(map[string]string{
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
@@ -160,7 +165,7 @@ func (m *Metrics) updateGeneralCRMetricsComponents(ctx context.Context, collecto
 	))
 }
 func (m *Metrics) updateComponentCounters(ctx context.Context, collector *OpenTelemetryCollector, up bool) {
-	components := getComponentsFromConfigV1Beta1(collector.Spec.Config)
+	components := getComponentsFromConfig(collector.Spec.Config)
 	moveCounter(ctx, collector, components.receivers, m.receiversCounter, up)
 	moveCounter(ctx, collector, components.exporters, m.exporterCounter, up)
 	moveCounter(ctx, collector, components.processors, m.processorCounter, up)
@@ -188,7 +193,7 @@ func extractElements(elements map[string]interface{}) []string {
 	return items
 }
 
-func getComponentsFromConfigV1Beta1(yamlContent Config) *components {
+func getComponentsFromConfig(yamlContent Config) *components {
 
 	info := &components{
 		receivers: extractElements(yamlContent.Receivers.Object),

@@ -16,7 +16,9 @@ issues: [2829]
 subtext: |
   This change will add metrics to the OpenTelemetry operator about how the collector is used in the cluster,
   it will add the following metrics to the opentelemetry-operator metrics endpoint
+  ```
   opentelemetry_collector_receivers{collector_name="collector_name", namespace="ns", type="otlp"} 1
   opentelemetry_collector_exporters{collector_name="collector_name", namespace="ns", type="otlp"} 1
   opentelemetry_collector_processors{collector_name="collector_name", namespace="ns", type="otlp"} 1
   opentelemetry_collector_connectors{collector_name="collector_name", namespace="ns", type="myconnector"} 0
+  ```
