@@ -21,4 +21,5 @@ subtext: |
   opentelemetry_collector_exporters{collector_name="collector_name", namespace="ns", type="otlp"} 1
   opentelemetry_collector_processors{collector_name="collector_name", namespace="ns", type="otlp"} 1
   opentelemetry_collector_connectors{collector_name="collector_name", namespace="ns", type="myconnector"} 0
+  opentelemetry_collector_info{collector_name="simplest",namespace="default", type="deployment"} 1
   ```
