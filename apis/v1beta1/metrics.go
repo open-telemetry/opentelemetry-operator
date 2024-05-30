@@ -72,7 +72,7 @@ func BootstrapMetrics() (metric.MeterProvider, error) {
 	return sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter)), err
 }
 
-func NewMetrics(prv metric.MeterProvider, ctx context.Context, cl client.Client) (*Metrics, error) {
+func NewMetrics(prv metric.MeterProvider, ctx context.Context, cl client.Reader) (*Metrics, error) {
 	meter := prv.Meter(meterName)
 	modeCounter, err := meter.Int64UpDownCounter(modeMetricName)
 	if err != nil {
@@ -120,7 +120,7 @@ func NewMetrics(prv metric.MeterProvider, ctx context.Context, cl client.Client)
 }
 
 // Init metrics from the first time the operator starts.
-func (m *Metrics) init(ctx context.Context, cl client.Client) error {
+func (m *Metrics) init(ctx context.Context, cl client.Reader) error {
 	opts := []client.ListOption{
 		client.MatchingLabels(map[string]string{
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
