@@ -37,6 +37,7 @@ const (
 	EnvNodeName = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
 	EnvNodeIP   = "OTEL_NODE_IP"
 
+	FlagCRMetrics   = "enable-cr-metrics"
 	FlagApacheHttpd = "enable-apache-httpd-instrumentation"
 	FlagDotNet      = "enable-dotnet-instrumentation"
 	FlagGo          = "enable-go-instrumentation"
