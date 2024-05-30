@@ -99,7 +99,7 @@ func TestDownstreamParsers(t *testing.T) {
 				_, err := parser.Ports(logger, func() {})
 
 				// verify
-				assert.ErrorContains(t, err, "unsupported type")
+				assert.ErrorContains(t, err, "expected a map, got 'func'")
 			})
 
 			t.Run("assigns the expected port", func(t *testing.T) {

@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -30,8 +31,8 @@ var (
 // SingleEndpointConfig represents the minimal struct for a given YAML configuration input containing either
 // endpoint or listen_address.
 type SingleEndpointConfig struct {
-	Endpoint      string `json:"endpoint,omitempty"`
-	ListenAddress string `json:"listen_address,omitempty"`
+	Endpoint      string `mapstructure:"endpoint,omitempty"`
+	ListenAddress string `mapstructure:"listen_address,omitempty"`
 }
 
 func (g *SingleEndpointConfig) GetPortNumOrDefault(logger logr.Logger, p int32) int32 {
@@ -62,7 +63,7 @@ type SingleEndpointParser struct {
 
 func (s *SingleEndpointParser) Ports(logger logr.Logger, config interface{}) ([]corev1.ServicePort, error) {
 	singleEndpointConfig := &SingleEndpointConfig{}
-	if err := LoadMap[*SingleEndpointConfig](config, singleEndpointConfig); err != nil {
+	if err := mapstructure.Decode(config, singleEndpointConfig); err != nil {
 		return nil, err
 	}
 	if _, err := singleEndpointConfig.GetPortNum(); err != nil && s.svcPort.Port == UnsetPort {
