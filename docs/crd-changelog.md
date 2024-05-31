@@ -145,6 +145,9 @@ spec:
           key: value
 ```
 
+> [!NOTE]  
+> A `nil` selector now selects no resources, while an empty selector selects all of them. To get the old default behaviour, it's necessary to set `serviceMonitorSelector: {}`.
+
 ### Default Collector image
 
 The OpenTelemetry Collector maintainers recently introduced a [Collector distribution][k8s_distro] specifically aimed at 

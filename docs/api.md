@@ -43103,8 +43103,9 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         <td>object</td>
         <td>
           PodMonitors to be selected for target discovery.
-This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-PodMonitor's meta labels. The requirements are ANDed.<br/>
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -43126,8 +43127,9 @@ Default: "30s"<br/>
         <td>object</td>
         <td>
           ServiceMonitors to be selected for target discovery.
-This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-ServiceMonitor's meta labels. The requirements are ANDed.<br/>
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -43140,8 +43142,9 @@ ServiceMonitor's meta labels. The requirements are ANDed.<br/>
 
 
 PodMonitors to be selected for target discovery.
-This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-PodMonitor's meta labels. The requirements are ANDed.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.
 
 <table>
     <thead>
@@ -43224,8 +43227,9 @@ merge patch.<br/>
 
 
 ServiceMonitors to be selected for target discovery.
-This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-ServiceMonitor's meta labels. The requirements are ANDed.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.
 
 <table>
     <thead>

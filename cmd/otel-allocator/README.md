@@ -131,28 +131,7 @@ and jobs on the `/scrape_configs` and `/jobs` endpoints respectively.
 
 The CRs can be filtered by labels as documented here: [api.md#opentelemetrycollectorspectargetallocatorprometheuscr](../../docs/api.md#opentelemetrycollectorspectargetallocatorprometheuscr)
 
-The Prometheus Receiver in the deployed Collector also has to know where the Allocator service exists. This is done by a
-OpenTelemetry Collector Operator-specific config.
-
-```yaml
-  config: |
-    receivers:
-      prometheus:
-        config:
-          scrape_configs:
-          - job_name: 'otel-collector'
-        target_allocator:
-          endpoint: http://my-targetallocator-service
-          interval: 30s
-          collector_id: "${POD_NAME}"
-```
-
 Upstream documentation here: [PrometheusReceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver#opentelemetry-operator)
-
-The TargetAllocator service is named based on the `OpenTelemetryCollector` CR name. For example, if your Collector CR name is `my-collector`, then the TargetAllocator `service` and `deployment` will each be named `my-collector-targetallocator`, and the `pod` will be named `my-collector-targetallocator-<pod_id>`. `collector_id` should be unique per
-collector instance, such as the pod name. The `POD_NAME` environment variable is convenient since this is supplied
-to collector instance pods by default.
-
 
 ### RBAC
 
