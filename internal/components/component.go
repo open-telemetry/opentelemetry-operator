@@ -61,7 +61,7 @@ func WithProtocol(proto corev1.Protocol) PortBuilderOption {
 // components have a name like:
 // - mycomponent/custom
 // - mycomponent
-// we extract the "mycomponent" part and see if we have a parser for the component
+// we extract the "mycomponent" part and see if we have a parser for the component.
 func ComponentType(name string) string {
 	if strings.Contains(name, "/") {
 		return name[:strings.Index(name, "/")]
