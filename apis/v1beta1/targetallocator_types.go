@@ -31,13 +31,15 @@ type TargetAllocatorPrometheusCR struct {
 	// +kubebuilder:validation:Format:=duration
 	ScrapeInterval *metav1.Duration `json:"scrapeInterval,omitempty"`
 	// PodMonitors to be selected for target discovery.
-	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-	// PodMonitor's meta labels. The requirements are ANDed.
+	// A label selector is a label query over a set of resources. The result of matchLabels and
+	// matchExpressions are ANDed. An empty label selector matches all objects. A null
+	// label selector matches no objects.
 	// +optional
 	PodMonitorSelector *metav1.LabelSelector `json:"podMonitorSelector,omitempty"`
 	// ServiceMonitors to be selected for target discovery.
-	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-	// ServiceMonitor's meta labels. The requirements are ANDed.
+	// A label selector is a label query over a set of resources. The result of matchLabels and
+	// matchExpressions are ANDed. An empty label selector matches all objects. A null
+	// label selector matches no objects.
 	// +optional
 	ServiceMonitorSelector *metav1.LabelSelector `json:"serviceMonitorSelector,omitempty"`
 }
