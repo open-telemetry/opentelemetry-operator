@@ -119,6 +119,7 @@ func main() {
 		enableNginxInstrumentation       bool
 		enableNodeJSInstrumentation      bool
 		enableJavaInstrumentation        bool
+		enableCRMetrics                  bool
 		collectorImage                   string
 		targetAllocatorImage             string
 		operatorOpAMPBridgeImage         string
@@ -154,6 +155,8 @@ func main() {
 	pflag.BoolVar(&enableNginxInstrumentation, constants.FlagNginx, false, "Controls whether the operator supports nginx auto-instrumentation")
 	pflag.BoolVar(&enableNodeJSInstrumentation, constants.FlagNodeJS, true, "Controls whether the operator supports nodejs auto-instrumentation")
 	pflag.BoolVar(&enableJavaInstrumentation, constants.FlagJava, true, "Controls whether the operator supports java auto-instrumentation")
+	pflag.BoolVar(&enableCRMetrics, constants.FlagCRMetrics, false, "Controls whether exposing the CR metrics is enabled")
+
 	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&operatorOpAMPBridgeImage, "operator-opamp-bridge-image", "RELATED_IMAGE_OPERATOR_OPAMP_BRIDGE", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:%s", v.OperatorOpAMPBridge), "The default OpenTelemetry Operator OpAMP Bridge image. This image is used when no image is specified in the CustomResource.")
@@ -334,6 +337,7 @@ func main() {
 			}
 		}
 	}
+
 	if cfg.LabelsFilter() != nil {
 		for _, basePattern := range cfg.LabelsFilter() {
 			_, compileErr := regexp.Compile(basePattern)
@@ -372,7 +376,22 @@ func main() {
 	}
 
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer); err != nil {
+		var crdMetrics *otelv1beta1.Metrics
+
+		if enableCRMetrics {
+			meterProvider, metricsErr := otelv1beta1.BootstrapMetrics()
+			if metricsErr != nil {
+				setupLog.Error(metricsErr, "Error bootstrapping CRD metrics")
+			}
+
+			crdMetrics, err = otelv1beta1.NewMetrics(meterProvider, ctx, mgr.GetAPIReader())
+			if err != nil {
+				setupLog.Error(err, "Error init CRD metrics")
+			}
+
+		}
+
+		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
