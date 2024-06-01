@@ -51,6 +51,8 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
+require sigs.k8s.io/gateway-api v1.0.0 // indirect
+
 require (
 	cloud.google.com/go/auth v0.2.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.0 // indirect
@@ -212,7 +214,7 @@ require (
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/prometheus/procfs v0.15.0 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.26 // indirect
-	github.com/spf13/cobra v1.7.0 // indirect
+	github.com/spf13/cobra v1.8.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
