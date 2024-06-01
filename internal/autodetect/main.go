@@ -22,6 +22,7 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -35,6 +36,7 @@ type AutoDetect interface {
 	OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailability() (prometheus.Availability, error)
 	RBACPermissions(ctx context.Context) (autoRBAC.Availability, error)
+	CertManagerAvailability(ctx context.Context) (certmanager.Availability, error)
 }
 
 type autoDetect struct {
@@ -102,4 +104,34 @@ func (a *autoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availability
 	}
 
 	return autoRBAC.Available, nil
+}
+
+func (a *autoDetect) CertManagerAvailability(ctx context.Context) (certmanager.Availability, error) {
+	apiList, err := a.dcl.ServerGroups()
+	if err != nil {
+		return certmanager.NotAvailable, err
+	}
+
+	apiGroups := apiList.Groups
+	certManagerFound := false
+	for i := 0; i < len(apiGroups); i++ {
+		if apiGroups[i].Name == "cert-manager.io" {
+			certManagerFound = true
+			break
+		}
+	}
+
+	if !certManagerFound {
+		return certmanager.NotAvailable, nil
+	}
+
+	w, err := certmanager.CheckCertManagerPermissions(ctx, a.reviewer)
+	if err != nil {
+		return certmanager.NotAvailable, err
+	}
+	if w != nil {
+		return certmanager.NotAvailable, fmt.Errorf("missing permissions: %s", w)
+	}
+
+	return certmanager.Available, nil
 }

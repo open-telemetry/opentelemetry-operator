@@ -17,6 +17,7 @@ package targetallocator
 import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -41,6 +42,14 @@ func Build(params manifests.Params) ([]client.Object, error) {
 
 	if params.TargetAllocator.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServiceMonitor))
+	}
+
+	if params.Config.CertManagerAvailability() == certmanager.Available {
+		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(SelfSignedIssuer))
+		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(CACertificate))
+		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(CAIssuer))
+		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServingCertificate))
+		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ClientCertificate))
 	}
 
 	for _, factory := range resourceFactories {

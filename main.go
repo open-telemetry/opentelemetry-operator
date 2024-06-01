@@ -46,10 +46,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -132,6 +134,7 @@ func main() {
 		annotationsFilter                []string
 		webhookPort                      int
 		tlsOpt                           tlsConfig
+		enableTargetAllocatorMTLS        bool
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -163,6 +166,7 @@ func main() {
 	pflag.StringArrayVar(&annotationsFilter, "annotations-filter", []string{}, "Annotations to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --annotations-filter=.*filter.out will filter out annotations that looks like: annotation.filter.out: true")
 	pflag.StringVar(&tlsOpt.minVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
 	pflag.StringSliceVar(&tlsOpt.cipherSuites, "tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
+	pflag.BoolVar(&enableTargetAllocatorMTLS, constants.FlagTargetAllocatorMTLS, false, "Enable mTLS connection between the target allocator and the controller")
 	pflag.Parse()
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
@@ -195,6 +199,7 @@ func main() {
 		"enable-nginx-instrumentation", enableNginxInstrumentation,
 		"enable-nodejs-instrumentation", enableNodeJSInstrumentation,
 		"enable-java-instrumentation", enableJavaInstrumentation,
+		"enable-target-allocator-mtls", enableTargetAllocatorMTLS,
 	)
 
 	restConfig := ctrl.GetConfigOrDie()
@@ -303,6 +308,12 @@ func main() {
 		utilruntime.Must(routev1.Install(scheme))
 	} else {
 		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
+	}
+	if cfg.CertManagerAvailability() == certmanager.Available {
+		setupLog.Info("Cert-Manager is installed, adding to scheme.")
+		utilruntime.Must(cmv1.AddToScheme(scheme))
+	} else {
+		setupLog.Info("Cert-Manager is not installed, skipping adding to scheme.")
 	}
 
 	if cfg.AnnotationsFilter() != nil {
