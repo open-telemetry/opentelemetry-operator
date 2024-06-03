@@ -31,7 +31,7 @@ require (
 	go.opentelemetry.io/collector/featuregate v1.5.0
 	go.opentelemetry.io/otel v1.27.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.27.0
-	go.opentelemetry.io/otel/exporters/prometheus v0.48.0
+	go.opentelemetry.io/otel/exporters/prometheus v0.49.0
 	go.opentelemetry.io/otel/metric v1.27.0
 	go.opentelemetry.io/otel/sdk v1.27.0
 	go.opentelemetry.io/otel/sdk/metric v1.27.0
@@ -184,7 +184,7 @@ require (
 	github.com/prometheus/alertmanager v0.27.0 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
-	github.com/prometheus/procfs v0.12.0 // indirect
+	github.com/prometheus/procfs v0.15.0 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.26 // indirect
 	github.com/spf13/cobra v1.7.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
