@@ -5,6 +5,7 @@ metadata:
   creationTimestamp: null
   name: kafka
 spec:
+  namespace: chainsaw-kafka
   steps:
   - name: step-00
     try:
