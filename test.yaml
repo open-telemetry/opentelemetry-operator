@@ -1,18 +1,24 @@
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
-  name: test-annotations
+  name: simplest
   annotations:
-    annotation.filter.out: "true"
     configmanagement.gke.io/token: "asdfasdf"
 spec:
-  mode: daemonset
   config: |
     receivers:
-      jaeger:
+      otlp:
         protocols:
           grpc:
+          http:
     processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_percentage: 75
+        spike_limit_percentage: 15
+      batch:
+        send_batch_size: 10000
+        timeout: 10s
 
     exporters:
       debug:
@@ -20,6 +26,6 @@ spec:
     service:
       pipelines:
         traces:
-          receivers: [jaeger]
+          receivers: [otlp]
           processors: []
           exporters: [debug]
