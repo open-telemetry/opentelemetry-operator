@@ -4,6 +4,7 @@ metadata:
   name: test-annotations-collector
   annotations:
     annotation.filter.out: "true"
+    configmanagement.gke.io/token: "asdfasdf"
 spec:
   updateStrategy:
     rollingUpdate:

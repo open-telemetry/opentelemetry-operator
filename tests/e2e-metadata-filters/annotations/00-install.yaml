@@ -4,6 +4,7 @@ metadata:
   name: test-annotations
   annotations:
     annotation.filter.out: "true"
+    configmanagement.gke.io/token: "asdfasdf"
 spec:
   mode: daemonset
   config: |
