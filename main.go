@@ -140,7 +140,6 @@ func main() {
 		encodeLevelKey                   string
 		encodeTimeKey                    string
 		encodeLevelFormat                string
-		enableTargetAllocatorMTLS        bool
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -179,7 +178,6 @@ func main() {
 	pflag.StringVar(&encodeTimeKey, "zap-time-key", "timestamp", "The time key to be used in the customized Log Encoder")
 	pflag.StringVar(&encodeLevelFormat, "zap-level-format", "uppercase", "The level format to be used in the customized Log Encoder")
 	pflag.IntVar(&webhookPort, "webhook-port", 9443, "The port the webhook endpoint binds to.")
-	pflag.BoolVar(&enableTargetAllocatorMTLS, constants.FlagTargetAllocatorMTLS, false, "Enable mTLS connection between the target allocator and the controller")
 	pflag.Parse()
 
 	opts.EncoderConfigOptions = append(opts.EncoderConfigOptions, func(ec *zapcore.EncoderConfig) {
@@ -223,7 +221,6 @@ func main() {
 		"zap-level-key", encodeLevelKey,
 		"zap-time-key", encodeTimeKey,
 		"zap-level-format", encodeLevelFormat,
-		"enable-target-allocator-mtls", enableTargetAllocatorMTLS,
 	)
 
 	restConfig := ctrl.GetConfigOrDie()
