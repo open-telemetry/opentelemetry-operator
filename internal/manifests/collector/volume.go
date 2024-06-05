@@ -19,6 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -37,6 +38,22 @@ func Volumes(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector) []corev1
 			},
 		},
 	}}
+
+	if cfg.CertManagerAvailability() == certmanager.Available {
+		volumes = append(volumes, corev1.Volume{
+			Name: naming.TAClientCertificate(otelcol.Name),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: naming.TAClientCertificate(otelcol.Name),
+				},
+			},
+		}, corev1.Volume{
+			Name: "shared-ca-certificates",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		})
+	}
 
 	if len(otelcol.Spec.Volumes) > 0 {
 		volumes = append(volumes, otelcol.Spec.Volumes...)

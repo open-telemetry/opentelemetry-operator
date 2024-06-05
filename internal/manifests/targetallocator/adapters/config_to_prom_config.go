@@ -259,24 +259,23 @@ func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServi
 	return prometheus, nil
 }
 
-func WithTLSConfig(caFile, certFile, keyFile string) TAOption {
+func WithTLSConfig(caFile, certFile, keyFile, taServiceName string) TAOption {
 	return func(targetAllocatorCfg map[interface{}]interface{}) error {
-		if targetAllocatorCfg["tls"] == nil {
+		if _, exists := targetAllocatorCfg["tls"]; !exists {
 			targetAllocatorCfg["tls"] = make(map[interface{}]interface{})
 		}
 
-		targetAllocatorCfg, ok := targetAllocatorCfg["tls"].(map[interface{}]interface{})
-		if !ok {
-			return errorNotAMap("tls")
-		}
-		targetAllocatorCfg["tls"] = make(map[interface{}]interface{})
 		tlsCfg, ok := targetAllocatorCfg["tls"].(map[interface{}]interface{})
 		if !ok {
 			return errorNotAMap("tls")
 		}
+
 		tlsCfg["ca_file"] = caFile
 		tlsCfg["cert_file"] = certFile
 		tlsCfg["key_file"] = keyFile
+
+		targetAllocatorCfg["endpoint"] = fmt.Sprintf("https://%s:443", taServiceName)
+
 		return nil
 	}
 }

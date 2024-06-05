@@ -26,6 +26,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -359,4 +360,29 @@ func TestSecurityContext(t *testing.T) {
 
 	// verify
 	assert.Equal(t, securityContext, c.SecurityContext)
+}
+
+func TestContainerWithCertManagerAvailable(t *testing.T) {
+	// prepare
+	targetAllocator := v1beta1.TargetAllocator{}
+	cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+
+	// test
+	c := Container(cfg, logger, targetAllocator)
+
+	// verify
+	assert.Equal(t, "http", c.Ports[0].Name)
+	assert.Equal(t, int32(8080), c.Ports[0].ContainerPort)
+	assert.Equal(t, "https", c.Ports[1].Name)
+	assert.Equal(t, int32(8443), c.Ports[1].ContainerPort)
+
+	assert.Contains(t, c.VolumeMounts, corev1.VolumeMount{
+		Name:      naming.TAServerCertificate(""),
+		MountPath: "/tls",
+	})
+
+	assert.Contains(t, c.Args, "--enable-https-server")
+	assert.Contains(t, c.Args, "--https-ca-file=/tls/ca.crt")
+	assert.Contains(t, c.Args, "--https-tls-cert-file=/tls/tls.crt")
+	assert.Contains(t, c.Args, "--https-tls-key-file=/tls/tls.key")
 }

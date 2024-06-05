@@ -18,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -37,6 +38,17 @@ func Volumes(cfg config.Config, instance v1beta1.TargetAllocator) []corev1.Volum
 			},
 		},
 	}}
+
+	if cfg.CertManagerAvailability() == certmanager.Available {
+		volumes = append(volumes, corev1.Volume{
+			Name: naming.TAServerCertificate(instance.Name),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: naming.TAServerCertificate(instance.Name),
+				},
+			},
+		})
+	}
 
 	return volumes
 }

@@ -69,12 +69,17 @@ func ServingCertificate(params manifests.Params) *cmv1.Certificate {
 		},
 		Spec: cmv1.CertificateSpec{
 			DNSNames: []string{
+				naming.TAService(params.TargetAllocator.Name),
 				fmt.Sprintf("%s.%s.svc", naming.TAService(params.TargetAllocator.Name), params.TargetAllocator.Namespace),
 				fmt.Sprintf("%s.%s.svc.cluster.local", naming.TAService(params.TargetAllocator.Name), params.TargetAllocator.Namespace),
 			},
 			IssuerRef: cmmeta.ObjectReference{
 				Kind: "Issuer",
 				Name: naming.CAIssuer(params.TargetAllocator.Name),
+			},
+			Usages: []cmv1.KeyUsage{
+				cmv1.UsageClientAuth,
+				cmv1.UsageServerAuth,
 			},
 			SecretName: naming.TAServerCertificate(params.TargetAllocator.Name),
 			Subject: &cmv1.X509Subject{
@@ -97,12 +102,17 @@ func ClientCertificate(params manifests.Params) *cmv1.Certificate {
 		},
 		Spec: cmv1.CertificateSpec{
 			DNSNames: []string{
+				naming.TAService(params.TargetAllocator.Name),
 				fmt.Sprintf("%s.%s.svc", naming.TAService(params.TargetAllocator.Name), params.TargetAllocator.Namespace),
 				fmt.Sprintf("%s.%s.svc.cluster.local", naming.TAService(params.TargetAllocator.Name), params.TargetAllocator.Namespace),
 			},
 			IssuerRef: cmmeta.ObjectReference{
 				Kind: "Issuer",
 				Name: naming.CAIssuer(params.TargetAllocator.Name),
+			},
+			Usages: []cmv1.KeyUsage{
+				cmv1.UsageClientAuth,
+				cmv1.UsageServerAuth,
 			},
 			SecretName: naming.TAClientCertificate(params.TargetAllocator.Name),
 			Subject: &cmv1.X509Subject{

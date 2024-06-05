@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -85,6 +86,24 @@ func Container(cfg config.Config, logger logr.Logger, instance v1beta1.TargetAll
 				Port: intstr.FromInt(8080),
 			},
 		},
+	}
+
+	if cfg.CertManagerAvailability() == certmanager.Available {
+		ports = append(ports, corev1.ContainerPort{
+			Name:          "https",
+			ContainerPort: 8443,
+			Protocol:      corev1.ProtocolTCP,
+		})
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      naming.TAServerCertificate(instance.Name),
+			MountPath: "/tls",
+		})
+		args = append(args,
+			"--enable-https-server",
+			"--https-ca-file=/tls/ca.crt",
+			"--https-tls-cert-file=/tls/tls.crt",
+			"--https-tls-key-file=/tls/tls.key",
+		)
 	}
 
 	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)

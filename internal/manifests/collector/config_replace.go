@@ -41,7 +41,7 @@ type Config struct {
 	TargetAllocConfig *targetAllocator   `yaml:"target_allocator,omitempty"`
 }
 
-func ReplaceConfig(instance v1beta1.OpenTelemetryCollector) (string, error) {
+func ReplaceConfig(instance v1beta1.OpenTelemetryCollector, options ...ta.TAOption) (string, error) {
 	cfgStr, err := instance.Spec.Config.Yaml()
 	if err != nil {
 		return "", err
@@ -68,7 +68,7 @@ func ReplaceConfig(instance v1beta1.OpenTelemetryCollector) (string, error) {
 
 	// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
 	// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
-	updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
+	updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(instance.Name), options...)
 	if getCfgPromErr != nil {
 		return "", getCfgPromErr
 	}

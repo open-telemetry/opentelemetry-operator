@@ -18,8 +18,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
+	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -27,7 +29,12 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.ConfigMap(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
-	replacedConf, err := ReplaceConfig(params.OtelCol)
+	replaceCfgOpts := []ta.TAOption{}
+	if params.Config.CertManagerAvailability() == certmanager.Available {
+		replaceCfgOpts = append(replaceCfgOpts, ta.WithTLSConfig("/tls/ca.crt", "/tls/tls.crt", "/tls/tls.key", naming.TAService(params.OtelCol.Name)))
+	}
+
+	replacedConf, err := ReplaceConfig(params.OtelCol, replaceCfgOpts...)
 	if err != nil {
 		params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", "err", err)
 		return nil, err
