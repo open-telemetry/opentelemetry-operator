@@ -334,7 +334,6 @@ func main() {
 		setupLog.Info("Cert-Manager is installed, adding to scheme.")
 		utilruntime.Must(cmv1.AddToScheme(scheme))
 		setupLog.Info("Securing the connection between the target allocator and the collector")
-		cfg.ena
 	} else {
 		setupLog.Info("Cert-Manager is not installed, skipping adding to scheme.")
 	}
