@@ -2,6 +2,43 @@
 
 <!-- next version -->
 
+## 0.102.0
+
+### 💡 Enhancements 💡
+
+- `collector`: Add usage metrics for the collector (#2829)
+  This change will add metrics to the OpenTelemetry operator about how the collector is used in the cluster,
+  it will add the following metrics to the opentelemetry-operator metrics endpoint
+  ```
+  opentelemetry_collector_receivers{collector_name="collector_name", namespace="ns", type="otlp"} 1
+  opentelemetry_collector_exporters{collector_name="collector_name", namespace="ns", type="otlp"} 1
+  opentelemetry_collector_processors{collector_name="collector_name", namespace="ns", type="otlp"} 1
+  opentelemetry_collector_connectors{collector_name="collector_name", namespace="ns", type="myconnector"} 0
+  opentelemetry_collector_info{collector_name="simplest",namespace="default", type="deployment"} 1
+  ```
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fixes a bug that was preventing regexes from being loaded correctly. Now the filter provide is exactly what's used. (#3007)
+  This is technically a breaking change if a user relied on the previously broken regex functionality.
+  This change will actually fix their regex to work where it didn't before. I expect that users would rather their
+  regexes work than break silently.
+- `collector`: Upgrades to 0.102.1 which resolves a CVE in the configgrpc package. See [here](https://github.com/open-telemetry/opentelemetry-collector/pull/10323) for more details
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.102.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.102.1)
+* [OpenTelemetry Contrib - v0.102.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.102.1)
+* [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.51.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.51.0)
+* [Python - v0.45b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.45b0)
+* [Go - v0.13.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.13.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.101.0
 
 ### 💡 Enhancements 💡
