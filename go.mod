@@ -29,7 +29,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/collector/featuregate v1.8.0
-	go.opentelemetry.io/collector/featuregate v1.8.0
 	go.opentelemetry.io/otel v1.27.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.27.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.49.0
@@ -55,26 +54,7 @@ require (
 require (
 	cloud.google.com/go/auth v0.2.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.0.0-alpha.1 // indirect
-	github.com/knadh/koanf/maps v0.1.1 // indirect
-	github.com/knadh/koanf/providers/confmap v0.1.0 // indirect
-	github.com/knadh/koanf/v2 v2.1.1 // indirect
-	github.com/mitchellh/copystructure v1.2.0 // indirect
-	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
-	github.com/rs/cors v1.10.1 // indirect
-	go.opentelemetry.io/collector v0.101.0 // indirect
-	go.opentelemetry.io/collector/component v0.101.0 // indirect
-	go.opentelemetry.io/collector/config/configauth v0.101.0 // indirect
-	go.opentelemetry.io/collector/config/configcompression v1.8.0 // indirect
-	go.opentelemetry.io/collector/config/configopaque v1.8.0 // indirect
-	go.opentelemetry.io/collector/config/configtelemetry v0.101.0 // indirect
-	go.opentelemetry.io/collector/config/configtls v0.101.0 // indirect
-	go.opentelemetry.io/collector/config/internal v0.101.0 // indirect
-	go.opentelemetry.io/collector/confmap v0.101.0 // indirect
-	go.opentelemetry.io/collector/extension v0.101.0 // indirect
-	go.opentelemetry.io/collector/extension/auth v0.101.0 // indirect
-	go.opentelemetry.io/collector/pdata v1.8.0 // indirect
 	sigs.k8s.io/gateway-api v1.0.0 // indirect
 )
 
@@ -84,9 +64,7 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/efficientgo/core v1.0.0-rc.2 // indirect
 	github.com/envoyproxy/go-control-plane v0.12.0 // indirect
-	github.com/moby/docker-image-spec v1.3.1 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.26.0 // indirect
-	sigs.k8s.io/gateway-api v1.0.0 // indirect
 )
 
 require (
@@ -187,7 +165,6 @@ require (
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
-	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/kolo/xmlrpc v0.0.0-20220921171641-a4b6fa1dd06b // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
@@ -233,9 +210,6 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/goleak v1.3.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
-	golang.org/x/crypto v0.23.0 // indirect
-	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/crypto v0.23.0 // indirect
 	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a // indirect
 	golang.org/x/mod v0.17.0 // indirect
