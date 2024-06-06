@@ -365,7 +365,7 @@ func TestSecurityContext(t *testing.T) {
 
 func TestContainerWithCertManagerAvailable(t *testing.T) {
 	// prepare
-	targetAllocator := v1alpha1.TargetAllocator{}
+	targetAllocator := v1beta1.TargetAllocator{}
 	cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
 
 	// test
