@@ -30,7 +30,7 @@ spec:
       - args:
         - "--metrics-addr=127.0.0.1:8080"
         - "--enable-leader-election"
-        - "--zap-log-level=2"
+        - "--zap-log-level=info"
         - "--zap-time-encoding=rfc3339nano"
         - "--enable-nginx-instrumentation=true"
         image: controller
