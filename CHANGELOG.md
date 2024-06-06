@@ -35,7 +35,7 @@
 * [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
 * [Node.JS - v0.51.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.51.0)
 * [Python - v0.45b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.45b0)
-* [Go - v0.12.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.12.0-alpha)
+* [Go - v0.13.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.13.0-alpha)
 * [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
 * [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
 
