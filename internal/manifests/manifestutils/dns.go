@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package collector
+package manifestutils
 
 import (
 	corev1 "k8s.io/api/core/v1"
-
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-func getDNSPolicy(otelcol v1beta1.OpenTelemetryCollector) corev1.DNSPolicy {
+// Get the Pod DNS Policy depending on whether we're using a host network.
+func GetDNSPolicy(hostNetwork bool) corev1.DNSPolicy {
 	dnsPolicy := corev1.DNSClusterFirst
-	if otelcol.Spec.HostNetwork {
+	if hostNetwork {
 		dnsPolicy = corev1.DNSClusterFirstWithHostNet
 	}
 	return dnsPolicy
