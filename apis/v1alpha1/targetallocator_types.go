@@ -60,8 +60,6 @@ type TargetAllocatorStatus struct {
 type TargetAllocatorSpec struct {
 	// Common defines fields that are common to all OpenTelemetry CRD workloads.
 	v1beta1.OpenTelemetryCommonFields `json:",inline"`
-	// CollectorSelector is the selector for Collector Pods the target allocator will allocate targets to.
-	CollectorSelector metav1.LabelSelector `json:"collectorSelector,omitempty"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
 	// The current options are least-weighted, consistent-hashing and per-node. The default is
 	// consistent-hashing.
