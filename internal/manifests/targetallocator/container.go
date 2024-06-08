@@ -42,11 +42,20 @@ func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAl
 		ContainerPort: 8080,
 		Protocol:      corev1.ProtocolTCP,
 	})
+	for _, p := range instance.Spec.Ports {
+		ports = append(ports, corev1.ContainerPort{
+			Name:          p.Name,
+			ContainerPort: p.Port,
+			Protocol:      p.Protocol,
+			HostPort:      p.HostPort,
+		})
+	}
 
 	volumeMounts := []corev1.VolumeMount{{
 		Name:      naming.TAConfigMapVolume(),
 		MountPath: "/conf",
 	}}
+	volumeMounts = append(volumeMounts, instance.Spec.VolumeMounts...)
 
 	var envVars = instance.Spec.Env
 	if envVars == nil {
@@ -123,13 +132,16 @@ func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAl
 	return corev1.Container{
 		Name:            naming.TAContainer(),
 		Image:           image,
+		ImagePullPolicy: instance.Spec.ImagePullPolicy,
 		Ports:           ports,
-		Env:             envVars,
 		VolumeMounts:    volumeMounts,
-		Resources:       instance.Spec.Resources,
 		Args:            args,
+		Env:             envVars,
+		EnvFrom:         instance.Spec.EnvFrom,
+		Resources:       instance.Spec.Resources,
+		SecurityContext: instance.Spec.SecurityContext,
 		LivenessProbe:   livenessProbe,
 		ReadinessProbe:  readinessProbe,
-		SecurityContext: instance.Spec.SecurityContext,
+		Lifecycle:       instance.Spec.Lifecycle,
 	}
 }
