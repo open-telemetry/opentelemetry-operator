@@ -144,7 +144,7 @@ func TestStatefulSetVolumeClaimTemplates(t *testing.T) {
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			Mode: "statefulset",
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
 				VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "added-volume",
