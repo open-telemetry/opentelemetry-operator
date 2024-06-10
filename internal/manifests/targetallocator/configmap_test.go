@@ -58,9 +58,6 @@ config:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
 filter_strategy: relabel-config
-prometheus_cr:
-  pod_monitor_selector: null
-  service_monitor_selector: null
 `,
 		}
 		collector := collectorInstance()
@@ -94,9 +91,6 @@ collector_selector:
     app.kubernetes.io/part-of: opentelemetry
   matchexpressions: []
 filter_strategy: relabel-config
-prometheus_cr:
-  pod_monitor_selector: null
-  service_monitor_selector: null
 `,
 		}
 		collector := collectorInstance()
@@ -140,6 +134,7 @@ config:
       - 0.0.0.0:9999
 filter_strategy: relabel-config
 prometheus_cr:
+  enabled: true
   pod_monitor_selector:
     matchlabels:
       release: my-instance
@@ -151,6 +146,7 @@ prometheus_cr:
 `,
 		}
 		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.PrometheusCR.Enabled = true
 		targetAllocator.Spec.PrometheusCR.PodMonitorSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"release": "my-instance",
@@ -197,6 +193,7 @@ config:
       - 0.0.0.0:9999
 filter_strategy: relabel-config
 prometheus_cr:
+  enabled: true
   pod_monitor_selector: null
   scrape_interval: 30s
   service_monitor_selector: null
@@ -204,6 +201,7 @@ prometheus_cr:
 		}
 
 		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.PrometheusCR.Enabled = true
 		targetAllocator.Spec.PrometheusCR.ScrapeInterval = &metav1.Duration{Duration: time.Second * 30}
 		cfg := config.New()
 		params := manifests.Params{

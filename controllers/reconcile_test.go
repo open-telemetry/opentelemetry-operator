@@ -484,11 +484,6 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							taConfig["config"] = promConfig["config"]
 							taConfig["allocation_strategy"] = "consistent-hashing"
 							taConfig["filter_strategy"] = "relabel-config"
-							taConfig["prometheus_cr"] = map[string]any{
-								"scrape_interval":          "30s",
-								"pod_monitor_selector":     &metav1.LabelSelector{},
-								"service_monitor_selector": &metav1.LabelSelector{},
-							}
 							taConfigYAML, _ := yaml.Marshal(taConfig)
 							assert.Equal(t, string(taConfigYAML), actual.Data["targetallocator.yaml"])
 							assert.NotContains(t, actual.Data["targetallocator.yaml"], "0.0.0.0:10100")
