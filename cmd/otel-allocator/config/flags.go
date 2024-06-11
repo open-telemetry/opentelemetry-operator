@@ -75,7 +75,7 @@ func getPrometheusCREnabled(flagSet *pflag.FlagSet) (bool, error) {
 
 func getHttpsListenAddr(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
 	if changed = flagSet.Changed(listenAddrHttpsFlagName); !changed {
-		value, err = "", nil
+		value, err = ":8443", nil
 		return
 	}
 	value, err = flagSet.GetString(listenAddrHttpsFlagName)
