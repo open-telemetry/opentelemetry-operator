@@ -73,7 +73,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 			"enabled":            true,
 			"ca_file_path":       filepath.Join(manifestutils.TLSDirPath, manifestutils.CAFileName),
 			"tls_cert_file_path": filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSCertFileName),
-			"tls_key_file_path":  filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSCertFileName),
+			"tls_key_file_path":  filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSKeyFileName),
 		}
 	}
 

@@ -41,7 +41,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		replaceCfgOpts = append(replaceCfgOpts, ta.WithTLSConfig(
 			filepath.Join(manifestutils.TLSDirPath, manifestutils.CAFileName),
 			filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSCertFileName),
-			filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSCertFileName),
+			filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSKeyFileName),
 			naming.TAService(params.OtelCol.Name)),
 		)
 	}
