@@ -57,9 +57,7 @@ spec:
                 values:
                 - "true"
       containers:
-      - args:
-        - --enable-prometheus-cr-watcher
-        env:
+      - env:
         - name: TEST_ENV
           value: test
         - name: OTELCOL_NAMESPACE

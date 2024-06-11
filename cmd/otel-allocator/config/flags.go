@@ -69,8 +69,13 @@ func getListenAddr(flagSet *pflag.FlagSet) (string, error) {
 	return flagSet.GetString(listenAddrFlagName)
 }
 
-func getPrometheusCREnabled(flagSet *pflag.FlagSet) (bool, error) {
-	return flagSet.GetBool(prometheusCREnabledFlagName)
+func getPrometheusCREnabled(flagSet *pflag.FlagSet) (value bool, changed bool, err error) {
+	if changed = flagSet.Changed(prometheusCREnabledFlagName); !changed {
+		value, err = false, nil
+		return
+	}
+	value, err = flagSet.GetBool(prometheusCREnabledFlagName)
+	return
 }
 
 func getHttpsListenAddr(flagSet *pflag.FlagSet) (string, error) {

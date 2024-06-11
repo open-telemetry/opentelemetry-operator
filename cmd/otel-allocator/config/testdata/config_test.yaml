@@ -3,6 +3,7 @@ collector_selector:
     app.kubernetes.io/instance: default.test
     app.kubernetes.io/managed-by: opentelemetry-operator
 prometheus_cr:
+  enabled: true
   scrape_interval: 60s
 https:
   enabled: true
