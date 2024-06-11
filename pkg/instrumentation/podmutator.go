@@ -208,7 +208,12 @@ func NewMutator(logger logr.Logger, client client.Client, recorder record.EventR
 }
 
 func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod corev1.Pod) (corev1.Pod, error) {
-	logger := pm.Logger.WithValues("namespace", pod.Namespace, "name", pod.Name)
+	logger := pm.Logger.WithValues("namespace", pod.Namespace)
+	if pod.Name != "" {
+		logger = logger.WithValues("name", pod.Name)
+	} else if pod.GenerateName != "" {
+		logger = logger.WithValues("generateName", pod.GenerateName)
+	}
 
 	// We check if Pod is already instrumented.
 	if isAutoInstrumentationInjected(pod) {

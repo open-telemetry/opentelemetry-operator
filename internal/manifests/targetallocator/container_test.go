@@ -361,3 +361,25 @@ func TestSecurityContext(t *testing.T) {
 	// verify
 	assert.Equal(t, securityContext, c.SecurityContext)
 }
+
+func TestArgs(t *testing.T) {
+	// prepare
+	targetAllocator := v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Args: map[string]string{
+					"key":  "value",
+					"akey": "avalue",
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, targetAllocator)
+
+	// verify
+	expected := []string{"--akey=avalue", "--key=value"}
+	assert.Equal(t, expected, c.Args)
+}

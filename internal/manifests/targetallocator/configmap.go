@@ -36,7 +36,6 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	taSpec := instance.Spec
 
 	taConfig := make(map[interface{}]interface{})
-	prometheusCRConfig := make(map[interface{}]interface{})
 	taConfig["collector_selector"] = taSpec.CollectorSelector
 
 	// Add scrape configs if present
@@ -53,15 +52,18 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	}
 	taConfig["filter_strategy"] = taSpec.FilterStrategy
 
-	if taSpec.PrometheusCR.ScrapeInterval.Size() > 0 {
-		prometheusCRConfig["scrape_interval"] = taSpec.PrometheusCR.ScrapeInterval.Duration
-	}
+	if taSpec.PrometheusCR.Enabled {
+		prometheusCRConfig := map[interface{}]interface{}{
+			"enabled": true,
+		}
+		if taSpec.PrometheusCR.ScrapeInterval.Size() > 0 {
+			prometheusCRConfig["scrape_interval"] = taSpec.PrometheusCR.ScrapeInterval.Duration
+		}
 
-	prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
+		prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
 
-	prometheusCRConfig["pod_monitor_selector"] = taSpec.PrometheusCR.PodMonitorSelector
+		prometheusCRConfig["pod_monitor_selector"] = taSpec.PrometheusCR.PodMonitorSelector
 
-	if len(prometheusCRConfig) > 0 {
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 

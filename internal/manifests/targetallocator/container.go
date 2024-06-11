@@ -15,6 +15,9 @@
 package targetallocator
 
 import (
+	"fmt"
+	"sort"
+
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/operator-lib/proxy"
 	corev1 "k8s.io/api/core/v1"
@@ -90,9 +93,15 @@ func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAl
 	}
 
 	var args []string
-	if instance.Spec.PrometheusCR.Enabled {
-		args = append(args, "--enable-prometheus-cr-watcher")
+	// ensure that the args are ordered when moved to container.Args, so the output doesn't depend on map iteration
+	argsMap := instance.Spec.Args
+	if argsMap == nil {
+		argsMap = map[string]string{}
 	}
+	for k, v := range argsMap {
+		args = append(args, fmt.Sprintf("--%s=%s", k, v))
+	}
+	sort.Strings(args)
 	readinessProbe := &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{

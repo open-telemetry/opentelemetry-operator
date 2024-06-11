@@ -86,13 +86,13 @@ func HorizontalPodAutoscaler(params manifests.Params) (*autoscalingv2.Horizontal
 				Kind:       "OpenTelemetryCollector",
 				Name:       naming.OpenTelemetryCollector(params.OtelCol.Name),
 			},
-			MinReplicas: params.OtelCol.Spec.OpenTelemetryCommonFields.Autoscaler.MinReplicas,
+			MinReplicas: params.OtelCol.Spec.Autoscaler.MinReplicas,
 			MaxReplicas: func(max *int32) int32 {
 				if max == nil {
 					return 0
 				}
 				return *max
-			}(params.OtelCol.Spec.OpenTelemetryCommonFields.Autoscaler.MaxReplicas),
+			}(params.OtelCol.Spec.Autoscaler.MaxReplicas),
 			Metrics: metrics,
 		},
 	}
