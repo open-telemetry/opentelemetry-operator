@@ -31,7 +31,7 @@ func TestVolumeClaimAllowsUserToAdd(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			Mode: "statefulset",
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
 				VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "added-volume",
@@ -68,7 +68,7 @@ func TestVolumeClaimChecksForStatefulset(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			Mode: "daemonset",
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+			StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
 				VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "added-volume",

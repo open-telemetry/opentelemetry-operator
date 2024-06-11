@@ -202,11 +202,9 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			name: "Setting Autoscaler MaxReplicas",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Autoscaler: &AutoscalerSpec{
-							MaxReplicas: &five,
-							MinReplicas: &one,
-						},
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas: &five,
+						MinReplicas: &one,
 					},
 				},
 			},
@@ -222,17 +220,17 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
-						Autoscaler: &AutoscalerSpec{
-							TargetCPUUtilization: &defaultCPUTarget,
-							MaxReplicas:          &five,
-							MinReplicas:          &one,
-						},
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
 							MaxUnavailable: &intstr.IntOrString{
 								Type:   intstr.Int,
 								IntVal: 1,
 							},
 						},
+					},
+					Autoscaler: &AutoscalerSpec{
+						TargetCPUUtilization: &defaultCPUTarget,
+						MaxReplicas:          &five,
+						MinReplicas:          &one,
 					},
 				},
 			},
@@ -512,19 +510,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					Mode: ModeStatefulSet,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
 						Replicas: &three,
-						Autoscaler: &AutoscalerSpec{
-							MinReplicas: &one,
-							MaxReplicas: &five,
-							Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
-								ScaleDown: &autoscalingv2.HPAScalingRules{
-									StabilizationWindowSeconds: &three,
-								},
-								ScaleUp: &autoscalingv2.HPAScalingRules{
-									StabilizationWindowSeconds: &five,
-								},
-							},
-							TargetCPUUtilization: &five,
-						},
 						Ports: []PortsSpec{
 							{
 								ServicePort: v1.ServicePort{
@@ -540,6 +525,19 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 								},
 							},
 						},
+					},
+					Autoscaler: &AutoscalerSpec{
+						MinReplicas: &one,
+						MaxReplicas: &five,
+						Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+							ScaleDown: &autoscalingv2.HPAScalingRules{
+								StabilizationWindowSeconds: &three,
+							},
+							ScaleUp: &autoscalingv2.HPAScalingRules{
+								StabilizationWindowSeconds: &five,
+							},
+						},
+						TargetCPUUtilization: &five,
 					},
 					UpgradeStrategy: "adhoc",
 					TargetAllocator: TargetAllocatorEmbedded{
@@ -557,19 +555,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					Mode: ModeStatefulSet,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
 						Replicas: &three,
-						Autoscaler: &AutoscalerSpec{
-							MinReplicas: &one,
-							MaxReplicas: &five,
-							Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
-								ScaleDown: &autoscalingv2.HPAScalingRules{
-									StabilizationWindowSeconds: &three,
-								},
-								ScaleUp: &autoscalingv2.HPAScalingRules{
-									StabilizationWindowSeconds: &five,
-								},
-							},
-							TargetCPUUtilization: &five,
-						},
 						Ports: []PortsSpec{
 							{
 								ServicePort: v1.ServicePort{
@@ -585,6 +570,19 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 								},
 							},
 						},
+					},
+					Autoscaler: &AutoscalerSpec{
+						MinReplicas: &one,
+						MaxReplicas: &five,
+						Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+							ScaleDown: &autoscalingv2.HPAScalingRules{
+								StabilizationWindowSeconds: &three,
+							},
+							ScaleUp: &autoscalingv2.HPAScalingRules{
+								StabilizationWindowSeconds: &five,
+							},
+						},
+						TargetCPUUtilization: &five,
 					},
 					UpgradeStrategy: "adhoc",
 					TargetAllocator: TargetAllocatorEmbedded{
@@ -633,17 +631,17 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 								},
 							},
 						},
-						Autoscaler: &AutoscalerSpec{
-							Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
-								ScaleDown: &autoscalingv2.HPAScalingRules{
-									StabilizationWindowSeconds: &three,
-								},
-								ScaleUp: &autoscalingv2.HPAScalingRules{
-									StabilizationWindowSeconds: &five,
-								},
+					},
+					Autoscaler: &AutoscalerSpec{
+						Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+							ScaleDown: &autoscalingv2.HPAScalingRules{
+								StabilizationWindowSeconds: &three,
 							},
-							TargetCPUUtilization: &five,
+							ScaleUp: &autoscalingv2.HPAScalingRules{
+								StabilizationWindowSeconds: &five,
+							},
 						},
+						TargetCPUUtilization: &five,
 					},
 					TargetAllocator: TargetAllocatorEmbedded{
 						Enabled:      true,
@@ -658,7 +656,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeSidecar,
-					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+					StatefulSetCommonFields: StatefulSetCommonFields{
 						VolumeClaimTemplates: []v1.PersistentVolumeClaim{{}, {}},
 					},
 				},
@@ -774,10 +772,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid max replicas",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Autoscaler: &AutoscalerSpec{
-							MaxReplicas: &zero,
-						},
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas: &zero,
 					},
 				},
 			},
@@ -789,9 +785,9 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
 						Replicas: &five,
-						Autoscaler: &AutoscalerSpec{
-							MaxReplicas: &three,
-						},
+					},
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas: &three,
 					},
 				},
 			},
@@ -801,11 +797,9 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid min replicas, greater than max",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Autoscaler: &AutoscalerSpec{
-							MaxReplicas: &three,
-							MinReplicas: &five,
-						},
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas: &three,
+						MinReplicas: &five,
 					},
 				},
 			},
@@ -815,11 +809,9 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid min replicas, lesser than 1",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Autoscaler: &AutoscalerSpec{
-							MaxReplicas: &three,
-							MinReplicas: &zero,
-						},
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas: &three,
+						MinReplicas: &zero,
 					},
 				},
 			},
@@ -829,13 +821,11 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid autoscaler scale down",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Autoscaler: &AutoscalerSpec{
-							MaxReplicas: &three,
-							Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
-								ScaleDown: &autoscalingv2.HPAScalingRules{
-									StabilizationWindowSeconds: &zero,
-								},
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas: &three,
+						Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+							ScaleDown: &autoscalingv2.HPAScalingRules{
+								StabilizationWindowSeconds: &zero,
 							},
 						},
 					},
@@ -847,13 +837,11 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid autoscaler scale up",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Autoscaler: &AutoscalerSpec{
-							MaxReplicas: &three,
-							Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
-								ScaleUp: &autoscalingv2.HPAScalingRules{
-									StabilizationWindowSeconds: &zero,
-								},
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas: &three,
+						Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+							ScaleUp: &autoscalingv2.HPAScalingRules{
+								StabilizationWindowSeconds: &zero,
 							},
 						},
 					},
@@ -865,11 +853,9 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid autoscaler target cpu utilization",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Autoscaler: &AutoscalerSpec{
-							MaxReplicas:          &three,
-							TargetCPUUtilization: &zero,
-						},
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas:          &three,
+						TargetCPUUtilization: &zero,
 					},
 				},
 			},
@@ -879,11 +865,9 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "autoscaler minReplicas is less than maxReplicas",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Autoscaler: &AutoscalerSpec{
-							MaxReplicas: &one,
-							MinReplicas: &five,
-						},
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas: &one,
+						MinReplicas: &five,
 					},
 				},
 			},
@@ -893,13 +877,11 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid autoscaler metric type",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Autoscaler: &AutoscalerSpec{
-							MaxReplicas: &three,
-							Metrics: []MetricSpec{
-								{
-									Type: autoscalingv2.ResourceMetricSourceType,
-								},
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas: &three,
+						Metrics: []MetricSpec{
+							{
+								Type: autoscalingv2.ResourceMetricSourceType,
 							},
 						},
 					},
@@ -911,20 +893,18 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "invalid pod metric average value",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Autoscaler: &AutoscalerSpec{
-							MaxReplicas: &three,
-							Metrics: []MetricSpec{
-								{
-									Type: autoscalingv2.PodsMetricSourceType,
-									Pods: &autoscalingv2.PodsMetricSource{
-										Metric: autoscalingv2.MetricIdentifier{
-											Name: "custom1",
-										},
-										Target: autoscalingv2.MetricTarget{
-											Type:         autoscalingv2.AverageValueMetricType,
-											AverageValue: resource.NewQuantity(int64(0), resource.DecimalSI),
-										},
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas: &three,
+						Metrics: []MetricSpec{
+							{
+								Type: autoscalingv2.PodsMetricSourceType,
+								Pods: &autoscalingv2.PodsMetricSource{
+									Metric: autoscalingv2.MetricIdentifier{
+										Name: "custom1",
+									},
+									Target: autoscalingv2.MetricTarget{
+										Type:         autoscalingv2.AverageValueMetricType,
+										AverageValue: resource.NewQuantity(int64(0), resource.DecimalSI),
 									},
 								},
 							},
@@ -938,20 +918,18 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name: "utilization target is not valid with pod metrics",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
-					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Autoscaler: &AutoscalerSpec{
-							MaxReplicas: &three,
-							Metrics: []MetricSpec{
-								{
-									Type: autoscalingv2.PodsMetricSourceType,
-									Pods: &autoscalingv2.PodsMetricSource{
-										Metric: autoscalingv2.MetricIdentifier{
-											Name: "custom1",
-										},
-										Target: autoscalingv2.MetricTarget{
-											Type:               autoscalingv2.UtilizationMetricType,
-											AverageUtilization: &one,
-										},
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas: &three,
+						Metrics: []MetricSpec{
+							{
+								Type: autoscalingv2.PodsMetricSourceType,
+								Pods: &autoscalingv2.PodsMetricSource{
+									Metric: autoscalingv2.MetricIdentifier{
+										Name: "custom1",
+									},
+									Target: autoscalingv2.MetricTarget{
+										Type:               autoscalingv2.UtilizationMetricType,
+										AverageUtilization: &one,
 									},
 								},
 							},
