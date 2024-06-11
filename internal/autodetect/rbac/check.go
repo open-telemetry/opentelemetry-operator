@@ -17,50 +17,23 @@ package rbac
 import (
 	"context"
 	"fmt"
-	"os"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/autodetectutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
-
-const (
-	SA_ENV_VAR          = "SERVICE_ACCOUNT_NAME"
-	NAMESPACE_ENV_VAR   = "NAMESPACE"
-	NAMESPACE_FILE_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-)
-
-func getOperatorNamespace() (string, error) {
-	namespace := os.Getenv(NAMESPACE_ENV_VAR)
-	if namespace != "" {
-		return namespace, nil
-	}
-
-	nsBytes, err := os.ReadFile(NAMESPACE_FILE_PATH)
-	if err != nil {
-		return "", err
-	}
-	return string(nsBytes), nil
-}
-
-func getOperatorServiceAccount() (string, error) {
-	sa := os.Getenv(SA_ENV_VAR)
-	if sa == "" {
-		return sa, fmt.Errorf("%s env variable not found", SA_ENV_VAR)
-	}
-	return sa, nil
-}
 
 // CheckRBACPermissions checks if the operator has the needed permissions to create RBAC resources automatically.
 // If the RBAC is there, no errors nor warnings are returned.
 func CheckRBACPermissions(ctx context.Context, reviewer *rbac.Reviewer) (admission.Warnings, error) {
-	namespace, err := getOperatorNamespace()
+	namespace, err := autodetectutils.GetOperatorNamespace()
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", "not possible to check RBAC rules", err)
 	}
 
-	serviceAccount, err := getOperatorServiceAccount()
+	serviceAccount, err := autodetectutils.GetOperatorServiceAccount()
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", "not possible to check RBAC rules", err)
 	}

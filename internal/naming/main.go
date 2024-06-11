@@ -201,7 +201,17 @@ func TAServerCertificate(otelcol string) string {
 	return DNSName(Truncate("%s-ta-server-cert", 63, otelcol))
 }
 
+// TAServerCertificateSecretName returns the Secret name based on the instance.
+func TAServerCertificateSecretName(otelcol string) string {
+	return DNSName(Truncate("%s-ta-server-cert", 63, otelcol))
+}
+
 // TAClientCertificate returns the Certificate name based on the instance.
 func TAClientCertificate(otelcol string) string {
+	return DNSName(Truncate("%s-ta-client-cert", 63, otelcol))
+}
+
+// TAClientCertificateSecretName returns the Secret name based on the instance.
+func TAClientCertificateSecretName(otelcol string) string {
 	return DNSName(Truncate("%s-ta-client-cert", 63, otelcol))
 }

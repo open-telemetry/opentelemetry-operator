@@ -29,6 +29,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -96,11 +97,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		volumeMounts = append(volumeMounts,
 			corev1.VolumeMount{
 				Name:      naming.TAClientCertificate(otelcol.Name),
-				MountPath: "/tls"},
-			corev1.VolumeMount{
-				Name:      "shared-ca-certificates",
-				MountPath: "/etc/ssl/certs/ca-certificates.crt",
-				SubPath:   "ca-certificates.crt",
+				MountPath: manifestutils.TLSDirPath,
 			})
 	}
 

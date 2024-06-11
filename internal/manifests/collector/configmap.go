@@ -15,6 +15,8 @@
 package collector
 
 import (
+	"path/filepath"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -36,7 +38,12 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 
 	replaceCfgOpts := []ta.TAOption{}
 	if params.Config.CertManagerAvailability() == certmanager.Available {
-		replaceCfgOpts = append(replaceCfgOpts, ta.WithTLSConfig("/tls/ca.crt", "/tls/tls.crt", "/tls/tls.key", naming.TAService(params.OtelCol.Name)))
+		replaceCfgOpts = append(replaceCfgOpts, ta.WithTLSConfig(
+			filepath.Join(manifestutils.TLSDirPath, manifestutils.CAFileName),
+			filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSCertFileName),
+			filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSCertFileName),
+			naming.TAService(params.OtelCol.Name)),
+		)
 	}
 
 	replacedConf, err := ReplaceConfig(params.OtelCol, replaceCfgOpts...)

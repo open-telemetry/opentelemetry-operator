@@ -47,13 +47,8 @@ func Volumes(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector) []corev1
 			Name: naming.TAClientCertificate(otelcol.Name),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: naming.TAClientCertificate(otelcol.Name),
+					SecretName: naming.TAClientCertificateSecretName(otelcol.Name),
 				},
-			},
-		}, corev1.Volume{
-			Name: "shared-ca-certificates",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		})
 	}

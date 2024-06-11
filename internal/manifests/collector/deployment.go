@@ -19,7 +19,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -37,31 +36,6 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter())
 	if err != nil {
 		return nil, err
-	}
-
-	initContainers := params.OtelCol.Spec.InitContainers
-
-	if params.Config.CertManagerAvailability() == certmanager.Available {
-		initContainers = append(initContainers, corev1.Container{
-			Name:  "install-ca-cert",
-			Image: "alpine:latest",
-			Command: []string{
-				"/bin/sh",
-				"-c",
-				"apk --update add ca-certificates && update-ca-certificates && cp /etc/ssl/certs/ca-certificates.crt /shared/ca-certificates.crt",
-			},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      naming.TAClientCertificate(params.OtelCol.Name),
-					MountPath: "/usr/local/share/ca-certificates/ca.crt",
-					SubPath:   "ca.crt",
-				},
-				{
-					Name:      "shared-ca-certificates",
-					MountPath: "/shared",
-				},
-			},
-		})
 	}
 
 	return &appsv1.Deployment{
@@ -84,7 +58,7 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            ServiceAccountName(params.OtelCol),
-					InitContainers:                initContainers,
+					InitContainers:                params.OtelCol.Spec.InitContainers,
 					Containers:                    append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
 					Volumes:                       Volumes(params.Config, params.OtelCol),
 					DNSPolicy:                     getDNSPolicy(params.OtelCol),

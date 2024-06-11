@@ -44,10 +44,6 @@ func CACertificate(params manifests.Params) *cmv1.Certificate {
 				OrganizationalUnits: []string{"opentelemetry-operator"},
 			},
 			SecretName: naming.CACertificate(params.TargetAllocator.Name),
-			PrivateKey: &cmv1.CertificatePrivateKey{
-				Algorithm: "ECDSA",
-				Size:      256,
-			},
 			IssuerRef: cmmeta.ObjectReference{
 				Name: naming.SelfSignedIssuer(params.TargetAllocator.Name),
 				Kind: "Issuer",
