@@ -597,6 +597,15 @@ spec:
                     required:
                     - type
                     type: object
+                  appArmorProfile:
+                    properties:
+                      localhostProfile:
+                        type: string
+                      type:
+                        type: string
+                    required:
+                    - type
+                    type: object
                   supplementalGroups:
                     items:
                       format: int64
@@ -730,6 +739,15 @@ spec:
                         type: string
                     type: object
                   seccompProfile:
+                    properties:
+                      localhostProfile:
+                        type: string
+                      type:
+                        type: string
+                    required:
+                    - type
+                    type: object
+                  appArmorProfile:
                     properties:
                       localhostProfile:
                         type: string
