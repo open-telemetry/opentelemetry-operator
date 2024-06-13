@@ -361,6 +361,56 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 		},
 		{
+			name: "Defined PDB for target allocator per-node",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeDeployment,
+					TargetAllocator: TargetAllocatorEmbedded{
+						Enabled:            true,
+						AllocationStrategy: TargetAllocatorAllocationStrategyPerNode,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MinAvailable: &intstr.IntOrString{
+								Type:   intstr.String,
+								StrVal: "10%",
+							},
+						},
+					},
+				},
+			},
+			expected: OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeDeployment,
+					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Replicas:        &one,
+						ManagementState: ManagementStateManaged,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MaxUnavailable: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 1,
+							},
+						},
+					},
+					UpgradeStrategy: UpgradeStrategyAutomatic,
+					TargetAllocator: TargetAllocatorEmbedded{
+						Enabled:            true,
+						Replicas:           &one,
+						AllocationStrategy: TargetAllocatorAllocationStrategyPerNode,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MinAvailable: &intstr.IntOrString{
+								Type:   intstr.String,
+								StrVal: "10%",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "Undefined PDB for target allocator and consistent-hashing strategy",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
