@@ -33,6 +33,7 @@ spec:
         - "--zap-log-level=info"
         - "--zap-time-encoding=rfc3339nano"
         - "--enable-nginx-instrumentation=true"
+        - "--enable-target-allocator-mtls=false"
         image: controller
         name: manager
         livenessProbe:
