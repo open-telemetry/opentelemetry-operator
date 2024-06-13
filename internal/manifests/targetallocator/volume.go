@@ -39,7 +39,7 @@ func Volumes(cfg config.Config, instance v1alpha1.TargetAllocator) []corev1.Volu
 		},
 	}}
 
-	if cfg.CertManagerAvailability() == certmanager.Available {
+	if cfg.CertManagerAvailability() == certmanager.Available && cfg.EnableTargetAllocatorMTLS() {
 		volumes = append(volumes, corev1.Volume{
 			Name: naming.TAServerCertificate(instance.Name),
 			VolumeSource: corev1.VolumeSource{

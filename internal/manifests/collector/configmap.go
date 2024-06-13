@@ -37,7 +37,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, collectorName, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	replaceCfgOpts := []ta.TAOption{}
-	if params.Config.CertManagerAvailability() == certmanager.Available {
+	if params.Config.CertManagerAvailability() == certmanager.Available && params.Config.EnableTargetAllocatorMTLS() {
 		replaceCfgOpts = append(replaceCfgOpts, ta.WithTLSConfig(
 			filepath.Join(manifestutils.TLSDirPath, manifestutils.CAFileName),
 			filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSCertFileName),

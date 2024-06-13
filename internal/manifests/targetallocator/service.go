@@ -36,7 +36,7 @@ func Service(params manifests.Params) *corev1.Service {
 		Port:       80,
 		TargetPort: intstr.FromString("http")})
 
-	if params.Config.CertManagerAvailability() == certmanager.Available {
+	if params.Config.CertManagerAvailability() == certmanager.Available && params.Config.EnableTargetAllocatorMTLS() {
 		ports = append(ports, corev1.ServicePort{
 			Name:       "http-metrics",
 			Port:       443,

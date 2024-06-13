@@ -44,7 +44,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServiceMonitor))
 	}
 
-	if params.Config.CertManagerAvailability() == certmanager.Available {
+	if params.Config.CertManagerAvailability() == certmanager.Available && params.Config.EnableTargetAllocatorMTLS() {
 		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(SelfSignedIssuer))
 		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(CACertificate))
 		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(CAIssuer))

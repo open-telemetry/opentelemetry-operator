@@ -42,7 +42,7 @@ func Volumes(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector) []corev1
 		},
 	}}
 
-	if cfg.CertManagerAvailability() == certmanager.Available {
+	if cfg.CertManagerAvailability() == certmanager.Available && cfg.EnableTargetAllocatorMTLS() {
 		volumes = append(volumes, corev1.Volume{
 			Name: naming.TAClientCertificate(otelcol.Name),
 			VolumeSource: corev1.VolumeSource{

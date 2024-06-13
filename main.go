@@ -337,11 +337,12 @@ func main() {
 	if cfg.CertManagerAvailability() == certmanager.Available {
 		setupLog.Info("Cert-Manager is installed, adding to scheme.")
 		utilruntime.Must(cmv1.AddToScheme(scheme))
+
+		if cfg.EnableTargetAllocatorMTLS() {
+			setupLog.Info("Securing the connection between the target allocator and the collector")
+		}
 	} else {
 		setupLog.Info("Cert-Manager is not installed, skipping adding to scheme.")
-	}
-	if cfg.EnableTargetAllocatorMTLS() {
-		setupLog.Info("Securing the connection between the target allocator and the collector")
 	}
 	if cfg.AnnotationsFilter() != nil {
 		for _, basePattern := range cfg.AnnotationsFilter() {

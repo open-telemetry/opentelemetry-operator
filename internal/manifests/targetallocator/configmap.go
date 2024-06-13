@@ -70,7 +70,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 
-	if params.Config.CertManagerAvailability() == certmanager.Available {
+	if params.Config.CertManagerAvailability() == certmanager.Available && params.Config.EnableTargetAllocatorMTLS() {
 		taConfig["https"] = map[string]interface{}{
 			"enabled":            true,
 			"ca_file_path":       filepath.Join(manifestutils.TLSDirPath, manifestutils.CAFileName),
