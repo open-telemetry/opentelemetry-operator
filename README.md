@@ -434,6 +434,12 @@ ApacheHttpD:
 instrumentation.opentelemetry.io/apache-httpd-container-names: "apache1,apache2"
 ```
 
+NGINX:
+
+```bash
+instrumentation.opentelemetry.io/inject-nginx-container-names: "nginx1,nginx2"
+```
+
 SDK:
 
 ```bash
