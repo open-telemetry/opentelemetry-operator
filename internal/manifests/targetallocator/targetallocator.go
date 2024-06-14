@@ -28,10 +28,7 @@ const (
 // Build creates the manifest for the TargetAllocator resource.
 func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object
-	if !params.OtelCol.Spec.TargetAllocator.Enabled {
-		return resourceManifests, nil
-	}
-	resourceFactories := []manifests.K8sManifestFactory{
+	resourceFactories := []manifests.K8sManifestFactory[manifests.Params]{
 		manifests.Factory(ConfigMap),
 		manifests.Factory(Deployment),
 		manifests.FactoryWithoutError(ServiceAccount),
@@ -53,3 +50,13 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	}
 	return resourceManifests, nil
 }
+
+//type Params struct {
+//	Client          client.Client
+//	Recorder        record.EventRecorder
+//	Scheme          *runtime.Scheme
+//	Log             logr.Logger
+//	Collectors      []v1beta1.OpenTelemetryCollector
+//	TargetAllocator v1alpha1.TargetAllocator
+//	Config          config.Config
+//}
