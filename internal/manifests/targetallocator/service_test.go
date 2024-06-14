@@ -22,14 +22,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
 func TestServicePorts(t *testing.T) {
 	targetAllocator := targetAllocatorInstance()
 	cfg := config.New()
 
-	params := manifests.Params{
+	params := Params{
 		TargetAllocator: targetAllocator,
 		Config:          cfg,
 		Log:             logger,

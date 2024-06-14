@@ -51,8 +51,37 @@ func BuildCollector(params manifests.Params) ([]client.Object, error) {
 	builders := []manifests.Builder[manifests.Params]{
 		collector.Build,
 	}
+	var resources []client.Object
+	for _, builder := range builders {
+		objs, err := builder(params)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, objs...)
+	}
 	if params.OtelCol.Spec.TargetAllocator.Enabled {
-		builders = append(builders, targetallocator.Build)
+		taParams := targetallocator.Params{
+			Client:          params.Client,
+			Scheme:          params.Scheme,
+			Recorder:        params.Recorder,
+			Log:             params.Log,
+			Config:          params.Config,
+			Collector:       params.OtelCol,
+			TargetAllocator: params.TargetAllocator,
+		}
+		taResources, err := BuildTargetAllocator(taParams)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, taResources...)
+	}
+	return resources, nil
+}
+
+// BuildOpAMPBridge returns the generation and collected errors of all manifests for a given instance.
+func BuildOpAMPBridge(params manifests.Params) ([]client.Object, error) {
+	builders := []manifests.Builder[manifests.Params]{
+		opampbridge.Build,
 	}
 	var resources []client.Object
 	for _, builder := range builders {
@@ -65,10 +94,10 @@ func BuildCollector(params manifests.Params) ([]client.Object, error) {
 	return resources, nil
 }
 
-// BuildOpAMPBridge returns the generation and collected errors of all manifests for a given instance.
-func BuildOpAMPBridge(params manifests.Params) ([]client.Object, error) {
-	builders := []manifests.Builder[manifests.Params]{
-		opampbridge.Build,
+// BuildTargetAllocator returns the generation and collected errors of all manifests for a given instance.
+func BuildTargetAllocator(params targetallocator.Params) ([]client.Object, error) {
+	builders := []manifests.Builder[targetallocator.Params]{
+		targetallocator.Build,
 	}
 	var resources []client.Object
 	for _, builder := range builders {

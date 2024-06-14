@@ -25,7 +25,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
 func TestDesiredConfigMap(t *testing.T) {
@@ -38,8 +37,8 @@ func TestDesiredConfigMap(t *testing.T) {
 	collector := collectorInstance()
 	targetAllocator := targetAllocatorInstance()
 	cfg := config.New()
-	params := manifests.Params{
-		OtelCol:         collector,
+	params := Params{
+		Collector:       collector,
 		TargetAllocator: targetAllocator,
 		Config:          cfg,
 		Log:             logr.Discard(),

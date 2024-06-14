@@ -19,13 +19,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // Deployment builds the deployment for the given instance.
-func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
+func Deployment(params Params) (*appsv1.Deployment, error) {
 	name := naming.TargetAllocator(params.TargetAllocator.Name)
 	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 
