@@ -35,6 +35,15 @@ func TestDesiredConfigMap(t *testing.T) {
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/version":    "0.47.0",
 	}
+	collector := collectorInstance()
+	targetAllocator := targetAllocatorInstance()
+	cfg := config.New()
+	params := manifests.Params{
+		OtelCol:         collector,
+		TargetAllocator: targetAllocator,
+		Config:          cfg,
+		Log:             logr.Discard(),
+	}
 
 	t.Run("should return expected target allocator config map", func(t *testing.T) {
 		expectedLabels["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
@@ -60,15 +69,7 @@ config:
 filter_strategy: relabel-config
 `,
 		}
-		collector := collectorInstance()
-		targetAllocator := targetAllocatorInstance()
-		cfg := config.New()
-		params := manifests.Params{
-			OtelCol:         collector,
-			TargetAllocator: targetAllocator,
-			Config:          cfg,
-			Log:             logr.Discard(),
-		}
+
 		actual, err := ConfigMap(params)
 		require.NoError(t, err)
 
@@ -93,16 +94,9 @@ collector_selector:
 filter_strategy: relabel-config
 `,
 		}
-		collector := collectorInstance()
-		targetAllocator := targetAllocatorInstance()
+		targetAllocator = targetAllocatorInstance()
 		targetAllocator.Spec.ScrapeConfigs = []v1beta1.AnyConfig{}
-		cfg := config.New()
-		params := manifests.Params{
-			OtelCol:         collector,
-			TargetAllocator: targetAllocator,
-			Config:          cfg,
-			Log:             logr.Discard(),
-		}
+		params.TargetAllocator = targetAllocator
 		actual, err := ConfigMap(params)
 		require.NoError(t, err)
 
@@ -145,7 +139,7 @@ prometheus_cr:
     matchexpressions: []
 `,
 		}
-		targetAllocator := targetAllocatorInstance()
+		targetAllocator = targetAllocatorInstance()
 		targetAllocator.Spec.PrometheusCR.Enabled = true
 		targetAllocator.Spec.PrometheusCR.PodMonitorSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
@@ -156,12 +150,7 @@ prometheus_cr:
 			MatchLabels: map[string]string{
 				"release": "my-instance",
 			}}
-		cfg := config.New()
-		params := manifests.Params{
-			TargetAllocator: targetAllocator,
-			Config:          cfg,
-			Log:             logr.Discard(),
-		}
+		params.TargetAllocator = targetAllocator
 		actual, err := ConfigMap(params)
 		assert.NoError(t, err)
 
@@ -200,15 +189,10 @@ prometheus_cr:
 `,
 		}
 
-		targetAllocator := targetAllocatorInstance()
+		targetAllocator = targetAllocatorInstance()
 		targetAllocator.Spec.PrometheusCR.Enabled = true
 		targetAllocator.Spec.PrometheusCR.ScrapeInterval = &metav1.Duration{Duration: time.Second * 30}
-		cfg := config.New()
-		params := manifests.Params{
-			TargetAllocator: targetAllocator,
-			Config:          cfg,
-			Log:             logr.Discard(),
-		}
+		params.TargetAllocator = targetAllocator
 		actual, err := ConfigMap(params)
 		assert.NoError(t, err)
 

@@ -21,6 +21,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -36,7 +37,10 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	taSpec := instance.Spec
 
 	taConfig := make(map[interface{}]interface{})
-	taConfig["collector_selector"] = taSpec.CollectorSelector
+
+	taConfig["collector_selector"] = metav1.LabelSelector{
+		MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector),
+	}
 
 	// Add scrape configs if present
 	if instance.Spec.ScrapeConfigs != nil && len(instance.Spec.ScrapeConfigs) > 0 {

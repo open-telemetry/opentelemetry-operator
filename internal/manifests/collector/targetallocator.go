@@ -20,7 +20,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 )
 
@@ -30,10 +29,6 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 	taSpec := params.OtelCol.Spec.TargetAllocator
 	if !taSpec.Enabled {
 		return nil, nil
-	}
-
-	collectorSelector := metav1.LabelSelector{
-		MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 	}
 
 	configStr, err := params.OtelCol.Spec.Config.Yaml()
@@ -68,7 +63,6 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 				PodAnnotations:            params.OtelCol.Spec.PodAnnotations,
 				PodDisruptionBudget:       taSpec.PodDisruptionBudget,
 			},
-			CollectorSelector:  collectorSelector,
 			AllocationStrategy: taSpec.AllocationStrategy,
 			FilterStrategy:     taSpec.FilterStrategy,
 			ScrapeConfigs:      scrapeConfigs,
