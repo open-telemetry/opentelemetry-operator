@@ -40,7 +40,7 @@ var (
 		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
 		featuregate.WithRegisterFromVersion("v0.100.0"),
 	)
-
+	// EnableTargetAllocatorMTLS is the feature gate that enables mTLS between the target allocator and the collector.
 	EnableTargetAllocatorMTLS = featuregate.GlobalRegistry().MustRegister(
 		"operator.targetallocator.mtls",
 		featuregate.StageAlpha,
