@@ -19,6 +19,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -56,6 +57,7 @@ type options struct {
 	operatorOpAMPBridgeImage            string
 	openshiftRoutesAvailability         openshift.RoutesAvailability
 	prometheusCRAvailability            prometheus.Availability
+	certManagerAvailability             certmanager.Availability
 	labelsFilter                        []string
 	annotationsFilter                   []string
 }
@@ -203,6 +205,12 @@ func WithPrometheusCRAvailability(pcrd prometheus.Availability) Option {
 func WithRBACPermissions(rAuto autoRBAC.Availability) Option {
 	return func(o *options) {
 		o.createRBACPermissions = rAuto
+	}
+}
+
+func WithCertManagerAvailability(cmAvl certmanager.Availability) Option {
+	return func(o *options) {
+		o.certManagerAvailability = cmAvl
 	}
 }
 

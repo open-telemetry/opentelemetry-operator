@@ -15,12 +15,17 @@
 package collector
 
 import (
+	"path/filepath"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
+	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
@@ -32,7 +37,17 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	collectorName := naming.Collector(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, collectorName, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
-	replacedConf, err := ReplaceConfig(params.OtelCol)
+	replaceCfgOpts := []ta.TAOption{}
+	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+		replaceCfgOpts = append(replaceCfgOpts, ta.WithTLSConfig(
+			filepath.Join(manifestutils.TLSDirPath, manifestutils.CAFileName),
+			filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSCertFileName),
+			filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSKeyFileName),
+			naming.TAService(params.OtelCol.Name)),
+		)
+	}
+
+	replacedConf, err := ReplaceConfig(params.OtelCol, replaceCfgOpts...)
 	if err != nil {
 		params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", "err", err)
 		return nil, err

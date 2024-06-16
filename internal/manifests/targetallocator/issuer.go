@@ -15,44 +15,49 @@
 package targetallocator
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Service(params manifests.Params) *corev1.Service {
-	name := naming.TAService(params.TargetAllocator.Name)
+// SelfSignedIssuer returns a self-signed issuer for the given instance.
+func SelfSignedIssuer(params manifests.Params) *cmv1.Issuer {
+	name := naming.SelfSignedIssuer(params.TargetAllocator.Name)
 	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
-	selector := manifestutils.TASelectorLabels(params.TargetAllocator, ComponentOpenTelemetryTargetAllocator)
 
-	ports := make([]corev1.ServicePort, 0)
-	ports = append(ports, corev1.ServicePort{
-		Name:       "targetallocation",
-		Port:       80,
-		TargetPort: intstr.FromString("http")})
-
-	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
-		ports = append(ports, corev1.ServicePort{
-			Name:       "http-metrics",
-			Port:       443,
-			TargetPort: intstr.FromString("https")})
-	}
-
-	return &corev1.Service{
+	return &cmv1.Issuer{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      naming.TAService(params.TargetAllocator.Name),
+			Name:      name,
 			Namespace: params.TargetAllocator.Namespace,
 			Labels:    labels,
 		},
-		Spec: corev1.ServiceSpec{
-			Selector: selector,
-			Ports:    ports,
+		Spec: cmv1.IssuerSpec{
+			IssuerConfig: cmv1.IssuerConfig{
+				SelfSigned: &cmv1.SelfSignedIssuer{},
+			},
+		},
+	}
+}
+
+// CAIssuer returns a CA issuer for the given instance.
+func CAIssuer(params manifests.Params) *cmv1.Issuer {
+	name := naming.CAIssuer(params.TargetAllocator.Name)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+
+	return &cmv1.Issuer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: params.TargetAllocator.Namespace,
+			Labels:    labels,
+		},
+		Spec: cmv1.IssuerSpec{
+			IssuerConfig: cmv1.IssuerConfig{
+				CA: &cmv1.CAIssuer{
+					SecretName: naming.CACertificate(params.TargetAllocator.Name),
+				},
+			},
 		},
 	}
 }

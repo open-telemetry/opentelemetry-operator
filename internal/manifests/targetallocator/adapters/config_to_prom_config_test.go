@@ -518,3 +518,45 @@ func TestValidateTargetAllocatorConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestAddTAConfigToPromConfigWithTLSConfig(t *testing.T) {
+	t.Run("should return expected prom config map with TA config and TLS config", func(t *testing.T) {
+		cfg := map[interface{}]interface{}{
+			"config": map[interface{}]interface{}{
+				"scrape_configs": []interface{}{
+					map[interface{}]interface{}{
+						"job_name": "test_job",
+						"static_configs": []interface{}{
+							map[interface{}]interface{}{
+								"targets": []interface{}{
+									"localhost:9090",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		taServiceName := "test-targetallocator"
+
+		expectedResult := map[interface{}]interface{}{
+			"config": map[interface{}]interface{}{},
+			"target_allocator": map[interface{}]interface{}{
+				"endpoint":     "https://test-targetallocator:443",
+				"interval":     "30s",
+				"collector_id": "${POD_NAME}",
+				"tls": map[interface{}]interface{}{
+					"ca_file":   "ca.crt",
+					"cert_file": "tls.crt",
+					"key_file":  "tls.key",
+				},
+			},
+		}
+
+		result, err := ta.AddTAConfigToPromConfig(cfg, taServiceName, ta.WithTLSConfig("ca.crt", "tls.crt", "tls.key", taServiceName))
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedResult, result)
+	})
+}

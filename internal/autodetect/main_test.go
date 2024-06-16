@@ -33,6 +33,7 @@ import (
 	kubeTesting "k8s.io/client-go/testing"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/autodetectutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -243,8 +244,8 @@ func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			// These settings can be get from env vars
-			t.Setenv(autoRBAC.NAMESPACE_ENV_VAR, tt.namespace)
-			t.Setenv(autoRBAC.SA_ENV_VAR, tt.serviceAccount)
+			t.Setenv(autodetectutils.NAMESPACE_ENV_VAR, tt.namespace)
+			t.Setenv(autodetectutils.SA_ENV_VAR, tt.serviceAccount)
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {}))
 			defer server.Close()

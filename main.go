@@ -47,10 +47,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -328,7 +330,16 @@ func main() {
 	} else {
 		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
 	}
+	if cfg.CertManagerAvailability() == certmanager.Available {
+		setupLog.Info("Cert-Manager is installed, adding to scheme.")
+		utilruntime.Must(cmv1.AddToScheme(scheme))
 
+		if featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+			setupLog.Info("Securing the connection between the target allocator and the collector")
+		}
+	} else {
+		setupLog.Info("Cert-Manager is not installed, skipping adding to scheme.")
+	}
 	if cfg.AnnotationsFilter() != nil {
 		for _, basePattern := range cfg.AnnotationsFilter() {
 			_, compileErr := regexp.Compile(basePattern)
