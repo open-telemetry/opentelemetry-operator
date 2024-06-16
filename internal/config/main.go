@@ -70,7 +70,6 @@ type Config struct {
 	certManagerAvailability     certmanager.Availability
 	labelsFilter                []string
 	annotationsFilter           []string
-	enableTargetAllocatorMTLS   bool
 }
 
 // New constructs a new configuration based on the given options.
@@ -124,7 +123,6 @@ func New(opts ...Option) Config {
 		labelsFilter:                        o.labelsFilter,
 		annotationsFilter:                   o.annotationsFilter,
 		createRBACPermissions:               o.createRBACPermissions,
-		enableTargetAllocatorMTLS:           o.enableTargetAllocatorMTLS,
 	}
 }
 
@@ -252,11 +250,6 @@ func (c *Config) PrometheusCRAvailability() prometheus.Availability {
 // CertManagerAvailability represents the availability of the Cert-Manager.
 func (c *Config) CertManagerAvailability() certmanager.Availability {
 	return c.certManagerAvailability
-}
-
-// EnableTargetAllocatorMTLS returns true when the operator supports mTLS between the collector and the target allocator.
-func (c *Config) EnableTargetAllocatorMTLS() bool {
-	return c.enableTargetAllocatorMTLS
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.

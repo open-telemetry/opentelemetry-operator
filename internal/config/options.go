@@ -60,7 +60,6 @@ type options struct {
 	certManagerAvailability             certmanager.Availability
 	labelsFilter                        []string
 	annotationsFilter                   []string
-	enableTargetAllocatorMTLS           bool
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
@@ -212,12 +211,6 @@ func WithRBACPermissions(rAuto autoRBAC.Availability) Option {
 func WithCertManagerAvailability(cmAvl certmanager.Availability) Option {
 	return func(o *options) {
 		o.certManagerAvailability = cmAvl
-	}
-}
-
-func WithEnableTargetAllocatorMTLS(mtls bool) Option {
-	return func(o *options) {
-		o.enableTargetAllocatorMTLS = mtls
 	}
 }
 

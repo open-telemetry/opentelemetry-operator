@@ -40,6 +40,13 @@ var (
 		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
 		featuregate.WithRegisterFromVersion("v0.100.0"),
 	)
+
+	EnableTargetAllocatorMTLS = featuregate.GlobalRegistry().MustRegister(
+		"operator.targetallocator.mtls",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables mTLS between the target allocator and the collector"),
+		featuregate.WithRegisterFromVersion("v0.102.0"),
+	)
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.

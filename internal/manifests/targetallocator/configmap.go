@@ -26,6 +26,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
@@ -70,7 +71,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 
-	if params.Config.CertManagerAvailability() == certmanager.Available && params.Config.EnableTargetAllocatorMTLS() {
+	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		taConfig["https"] = map[string]interface{}{
 			"enabled":            true,
 			"ca_file_path":       filepath.Join(manifestutils.TLSDirPath, manifestutils.CAFileName),

@@ -23,6 +23,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func Service(params manifests.Params) *corev1.Service {
@@ -36,7 +37,7 @@ func Service(params manifests.Params) *corev1.Service {
 		Port:       80,
 		TargetPort: intstr.FromString("http")})
 
-	if params.Config.CertManagerAvailability() == certmanager.Available && params.Config.EnableTargetAllocatorMTLS() {
+	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		ports = append(ports, corev1.ServicePort{
 			Name:       "http-metrics",
 			Port:       443,

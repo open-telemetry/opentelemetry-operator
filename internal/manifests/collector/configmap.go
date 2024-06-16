@@ -25,6 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
@@ -37,7 +38,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, collectorName, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	replaceCfgOpts := []ta.TAOption{}
-	if params.Config.CertManagerAvailability() == certmanager.Available && params.Config.EnableTargetAllocatorMTLS() {
+	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		replaceCfgOpts = append(replaceCfgOpts, ta.WithTLSConfig(
 			filepath.Join(manifestutils.TLSDirPath, manifestutils.CAFileName),
 			filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSCertFileName),
