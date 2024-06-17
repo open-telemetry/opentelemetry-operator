@@ -183,9 +183,7 @@ func (r *OpenTelemetryCollectorReconciler) getParams(instance v1beta1.OpenTeleme
 	if err != nil {
 		return p, err
 	}
-	if targetAllocator != nil {
-		p.TargetAllocator = *targetAllocator
-	}
+	p.TargetAllocator = targetAllocator
 	return p, nil
 }
 

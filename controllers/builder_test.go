@@ -1988,7 +1988,7 @@ prometheus_cr:
 			}
 			targetAllocator, err := collector.TargetAllocator(params)
 			require.NoError(t, err)
-			params.TargetAllocator = *targetAllocator
+			params.TargetAllocator = targetAllocator
 			if len(tt.featuregates) > 0 {
 				fg := strings.Join(tt.featuregates, ",")
 				flagset := featuregate.Flags(colfeaturegate.GlobalRegistry())

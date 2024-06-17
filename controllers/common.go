@@ -59,7 +59,8 @@ func BuildCollector(params manifests.Params) ([]client.Object, error) {
 		}
 		resources = append(resources, objs...)
 	}
-	if params.OtelCol.Spec.TargetAllocator.Enabled {
+	// TODO: Remove this after TargetAllocator CRD is reconciled
+	if params.TargetAllocator != nil {
 		taParams := targetallocator.Params{
 			Client:          params.Client,
 			Scheme:          params.Scheme,
@@ -67,7 +68,7 @@ func BuildCollector(params manifests.Params) ([]client.Object, error) {
 			Log:             params.Log,
 			Config:          params.Config,
 			Collector:       params.OtelCol,
-			TargetAllocator: params.TargetAllocator,
+			TargetAllocator: *params.TargetAllocator,
 		}
 		taResources, err := BuildTargetAllocator(taParams)
 		if err != nil {

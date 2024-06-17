@@ -34,7 +34,7 @@ const (
 
 // add a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
 func add(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector, pod corev1.Pod, attributes []corev1.EnvVar) (corev1.Pod, error) {
-	otelColCfg, err := collector.ReplaceConfig(otelcol)
+	otelColCfg, err := collector.ReplaceConfig(otelcol, nil)
 	if err != nil {
 		return pod, err
 	}
