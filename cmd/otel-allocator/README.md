@@ -98,7 +98,7 @@ spec:
   mode: statefulset
   targetAllocator:
     enabled: true
-  config: |
+  config:
     receivers:
       prometheus:
         config:
@@ -109,7 +109,7 @@ spec:
             - targets: [ '0.0.0.0:8888' ]
 
     exporters:
-      logging:
+      logging: {}
 
     service:
       pipelines:
