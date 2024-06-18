@@ -191,7 +191,7 @@ cp -ar /opt/opentelemetry/* ${NGINX_AGENT_DIR_FULL} \n
 NGINX_VERSION=$(cat ${NGINX_AGENT_CONF_DIR_FULL}/version.txt) \n
 NGINX_AGENT_LOG_DIR=$(echo "${NGINX_AGENT_DIR_FULL}/logs" | sed 's,/,\\/,g') \n
 \n
-cat ${NGINX_AGENT_DIR_FULL}/conf/appdynamics_sdk_log4cxx.xml.template | sed 's,__agent_log_dir__,'${NGINX_AGENT_LOG_DIR}',g'  > ${NGINX_AGENT_DIR_FULL}/conf/appdynamics_sdk_log4cxx.xml \n
+cat ${NGINX_AGENT_DIR_FULL}/conf/opentelemetry_sdk_log4cxx.xml.template | sed 's,__agent_log_dir__,'${NGINX_AGENT_LOG_DIR}',g'  > ${NGINX_AGENT_DIR_FULL}/conf/opentelemetry_sdk_log4cxx.xml \n
 echo -e $OTEL_NGINX_AGENT_CONF > ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf \n
 sed -i "s,${NGINX_SID_PLACEHOLDER},${OTEL_NGINX_SERVICE_INSTANCE_ID},g" ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf \n
 sed -i "1s,^,load_module ${NGINX_AGENT_DIR_FULL}/WebServerModule/Nginx/${NGINX_VERSION}/ngx_http_opentelemetry_module.so;\\n,g" ${NGINX_AGENT_CONF_DIR_FULL}/${NGINX_CONFIG_FILE} \n
