@@ -21,6 +21,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -36,8 +37,10 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	taSpec := instance.Spec
 
 	taConfig := make(map[interface{}]interface{})
-	prometheusCRConfig := make(map[interface{}]interface{})
-	taConfig["collector_selector"] = taSpec.CollectorSelector
+
+	taConfig["collector_selector"] = metav1.LabelSelector{
+		MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector),
+	}
 
 	// Add scrape configs if present
 	if instance.Spec.ScrapeConfigs != nil && len(instance.Spec.ScrapeConfigs) > 0 {
@@ -53,15 +56,18 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	}
 	taConfig["filter_strategy"] = taSpec.FilterStrategy
 
-	if taSpec.PrometheusCR.ScrapeInterval.Size() > 0 {
-		prometheusCRConfig["scrape_interval"] = taSpec.PrometheusCR.ScrapeInterval.Duration
-	}
+	if taSpec.PrometheusCR.Enabled {
+		prometheusCRConfig := map[interface{}]interface{}{
+			"enabled": true,
+		}
+		if taSpec.PrometheusCR.ScrapeInterval.Size() > 0 {
+			prometheusCRConfig["scrape_interval"] = taSpec.PrometheusCR.ScrapeInterval.Duration
+		}
 
-	prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
+		prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
 
-	prometheusCRConfig["pod_monitor_selector"] = taSpec.PrometheusCR.PodMonitorSelector
+		prometheusCRConfig["pod_monitor_selector"] = taSpec.PrometheusCR.PodMonitorSelector
 
-	if len(prometheusCRConfig) > 0 {
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 

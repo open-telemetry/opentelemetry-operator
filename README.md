@@ -434,6 +434,12 @@ ApacheHttpD:
 instrumentation.opentelemetry.io/apache-httpd-container-names: "apache1,apache2"
 ```
 
+NGINX:
+
+```bash
+instrumentation.opentelemetry.io/inject-nginx-container-names: "nginx1,nginx2"
+```
+
 SDK:
 
 ```bash
@@ -732,6 +738,7 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes     | Cert-Manager |
 |------------------------|----------------| ------------ |
+| v0.102.0               | v1.23 to v1.30 | v1           |
 | v0.101.0               | v1.23 to v1.30 | v1           |
 | v0.100.0               | v1.23 to v1.29 | v1           |
 | v0.99.0                | v1.23 to v1.29 | v1           |
@@ -754,7 +761,6 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 | v0.82.0                | v1.19 to v1.27 | v1           |
 | v0.81.0                | v1.19 to v1.27 | v1           |
 | v0.80.0                | v1.19 to v1.27 | v1           |
-| v0.79.0                | v1.19 to v1.27 | v1           |
 
 ## Contributing and Developing
 

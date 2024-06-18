@@ -109,9 +109,10 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		return err
 	}
 
-	target.PrometheusCR.Enabled, err = getPrometheusCREnabled(flagSet)
-	if err != nil {
-		return err
+	if prometheusCREnabled, changed, flagErr := getPrometheusCREnabled(flagSet); flagErr != nil {
+		return flagErr
+	} else if changed {
+		target.PrometheusCR.Enabled = prometheusCREnabled
 	}
 
 	target.HTTPS.Enabled, err = getHttpsEnabled(flagSet)

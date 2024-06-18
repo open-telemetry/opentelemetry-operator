@@ -1392,6 +1392,7 @@ config:
       target_label: instance
 filter_strategy: relabel-config
 prometheus_cr:
+  enabled: true
   pod_monitor_selector: null
   service_monitor_selector: null
 `,
@@ -1426,7 +1427,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "dd0ff440929239a362ebc85256b89e109d37bd2c77b400bd2039582cbda56be5",
+									"opentelemetry-targetallocator-config/hash": "9d78d2ecfad18bad24dec7e9a825b4ce45657ecbb2e6b32845b585b7c15ea407",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1462,9 +1463,6 @@ prometheus_cr:
 												},
 											},
 										},
-										Args: []string{
-											"--enable-prometheus-cr-watcher",
-										},
 										Ports: []corev1.ContainerPort{
 											{
 												Name:          "http",
@@ -1497,8 +1495,9 @@ prometheus_cr:
 										},
 									},
 								},
-								DNSPolicy:          "",
-								ServiceAccountName: "test-targetallocator",
+								DNSPolicy:             "ClusterFirst",
+								ShareProcessNamespace: ptr.To(false),
+								ServiceAccountName:    "test-targetallocator",
 							},
 						},
 					},
@@ -1787,6 +1786,7 @@ config:
       target_label: instance
 filter_strategy: relabel-config
 prometheus_cr:
+  enabled: true
   pod_monitor_selector: null
   service_monitor_selector: null
 `,
@@ -1821,7 +1821,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "dd0ff440929239a362ebc85256b89e109d37bd2c77b400bd2039582cbda56be5",
+									"opentelemetry-targetallocator-config/hash": "9d78d2ecfad18bad24dec7e9a825b4ce45657ecbb2e6b32845b585b7c15ea407",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1857,9 +1857,6 @@ prometheus_cr:
 												},
 											},
 										},
-										Args: []string{
-											"--enable-prometheus-cr-watcher",
-										},
 										Ports: []corev1.ContainerPort{
 											{
 												Name:          "http",
@@ -1892,8 +1889,9 @@ prometheus_cr:
 										},
 									},
 								},
-								DNSPolicy:          "",
-								ServiceAccountName: "test-targetallocator",
+								DNSPolicy:             "ClusterFirst",
+								ShareProcessNamespace: ptr.To(false),
+								ServiceAccountName:    "test-targetallocator",
 							},
 						},
 					},

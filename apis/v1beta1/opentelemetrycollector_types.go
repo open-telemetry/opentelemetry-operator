@@ -80,6 +80,12 @@ type OpenTelemetryCollectorStatus struct {
 type OpenTelemetryCollectorSpec struct {
 	// OpenTelemetryCommonFields are fields that are on all OpenTelemetry CRD workloads.
 	OpenTelemetryCommonFields `json:",inline"`
+	// StatefulSetCommonFields are fields that are on all OpenTelemetry CRD workloads.
+	StatefulSetCommonFields `json:",inline"`
+	// Autoscaler specifies the pod autoscaling configuration to use
+	// for the workload.
+	// +optional
+	Autoscaler *AutoscalerSpec `json:"autoscaler,omitempty"`
 	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
 	// +optional
 	TargetAllocator TargetAllocatorEmbedded `json:"targetAllocator,omitempty"`

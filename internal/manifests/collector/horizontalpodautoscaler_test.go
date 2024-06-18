@@ -46,13 +46,11 @@ func TestHPA(t *testing.T) {
 				Name: "my-instance",
 			},
 			Spec: v1beta1.OpenTelemetryCollectorSpec{
-				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-					Autoscaler: &v1beta1.AutoscalerSpec{
-						MinReplicas:             &minReplicas,
-						MaxReplicas:             &maxReplicas,
-						TargetCPUUtilization:    &cpuUtilization,
-						TargetMemoryUtilization: &memoryUtilization,
-					},
+				Autoscaler: &v1beta1.AutoscalerSpec{
+					MinReplicas:             &minReplicas,
+					MaxReplicas:             &maxReplicas,
+					TargetCPUUtilization:    &cpuUtilization,
+					TargetMemoryUtilization: &memoryUtilization,
 				},
 			},
 		},
@@ -61,13 +59,11 @@ func TestHPA(t *testing.T) {
 				Name: "my-instance",
 			},
 			Spec: v1beta1.OpenTelemetryCollectorSpec{
-				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-					Autoscaler: &v1beta1.AutoscalerSpec{
-						MinReplicas:             &minReplicas,
-						MaxReplicas:             &maxReplicas,
-						TargetCPUUtilization:    &cpuUtilization,
-						TargetMemoryUtilization: &memoryUtilization,
-					},
+				Autoscaler: &v1beta1.AutoscalerSpec{
+					MinReplicas:             &minReplicas,
+					MaxReplicas:             &maxReplicas,
+					TargetCPUUtilization:    &cpuUtilization,
+					TargetMemoryUtilization: &memoryUtilization,
 				},
 			},
 		},
@@ -82,13 +78,11 @@ func TestHPA(t *testing.T) {
 					OtelCol: v1beta1.OpenTelemetryCollector{
 						ObjectMeta: otelcol.ObjectMeta,
 						Spec: v1beta1.OpenTelemetryCollectorSpec{
-							OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-								Autoscaler: &v1beta1.AutoscalerSpec{
-									MinReplicas:             otelcol.Spec.Autoscaler.MinReplicas,
-									MaxReplicas:             otelcol.Spec.Autoscaler.MaxReplicas,
-									TargetCPUUtilization:    otelcol.Spec.OpenTelemetryCommonFields.Autoscaler.TargetCPUUtilization,
-									TargetMemoryUtilization: otelcol.Spec.OpenTelemetryCommonFields.Autoscaler.TargetMemoryUtilization,
-								},
+							Autoscaler: &v1beta1.AutoscalerSpec{
+								MinReplicas:             otelcol.Spec.Autoscaler.MinReplicas,
+								MaxReplicas:             otelcol.Spec.Autoscaler.MaxReplicas,
+								TargetCPUUtilization:    otelcol.Spec.Autoscaler.TargetCPUUtilization,
+								TargetMemoryUtilization: otelcol.Spec.Autoscaler.TargetMemoryUtilization,
 							},
 						},
 					},
