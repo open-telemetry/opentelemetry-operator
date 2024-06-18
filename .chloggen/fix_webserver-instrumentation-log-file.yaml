@@ -8,7 +8,7 @@ component: auto-instrumentation
 note: Since webserver instrumentation 1.0.4, the configuration log file has been renamed from appdynamics_sdk_log4cxx.xml.template to opentelemetry_sdk_log4cxx.xml.template. The operator upgraded the webserver instrumentation version but haven't change the configuration file name.
 
 # One or more tracking issues related to the change
-issues: [#2978]
+issues: [2978]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
