@@ -21,12 +21,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget, error) {
+func PodDisruptionBudget(params Params) (*policyV1.PodDisruptionBudget, error) {
 	// defaulting webhook should set this if the strategy is compatible, but if unset then return nil.
 	if params.TargetAllocator.Spec.PodDisruptionBudget == nil {
 		params.Log.Info("pdb field is unset in Spec, skipping podDisruptionBudget creation")

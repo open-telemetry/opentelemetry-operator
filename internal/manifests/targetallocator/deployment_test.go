@@ -89,7 +89,7 @@ func TestDeploymentSecurityContext(t *testing.T) {
 
 	cfg := config.New()
 
-	params1 := manifests.Params{
+	params1 := Params{
 		TargetAllocator: targetallocator11,
 		Config:          cfg,
 		Log:             logger,
@@ -114,7 +114,7 @@ func TestDeploymentSecurityContext(t *testing.T) {
 
 	cfg = config.New()
 
-	params2 := manifests.Params{
+	params2 := Params{
 		TargetAllocator: targetAllocator2,
 		Config:          cfg,
 		Log:             logger,
@@ -133,8 +133,8 @@ func TestDeploymentNewDefault(t *testing.T) {
 	targetAllocator := targetAllocatorInstance()
 	cfg := config.New()
 
-	params := manifests.Params{
-		OtelCol:         otelcol,
+	params := Params{
+		Collector:       otelcol,
 		TargetAllocator: targetAllocator,
 		Config:          cfg,
 		Log:             logger,
@@ -167,8 +167,8 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	targetAllocator.Spec.PodAnnotations = testPodAnnotationValues
 	cfg := config.New()
 
-	params := manifests.Params{
-		OtelCol:         otelcol,
+	params := Params{
+		Collector:       otelcol,
 		TargetAllocator: targetAllocator,
 		Config:          cfg,
 		Log:             logger,
@@ -225,7 +225,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 	cfg := config.New()
 
-	params1 := manifests.Params{
+	params1 := Params{
 		TargetAllocator: targetAllocator1,
 		Config:          cfg,
 		Log:             logger,
@@ -250,7 +250,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 	cfg = config.New()
 
-	params2 := manifests.Params{
+	params2 := Params{
 		TargetAllocator: targetAllocator2,
 		Config:          cfg,
 		Log:             logger,
@@ -267,7 +267,7 @@ func TestDeploymentAffinity(t *testing.T) {
 
 	cfg := config.New()
 
-	params1 := manifests.Params{
+	params1 := Params{
 		TargetAllocator: targetAllocator1,
 		Config:          cfg,
 		Log:             logger,
@@ -290,7 +290,7 @@ func TestDeploymentAffinity(t *testing.T) {
 
 	cfg = config.New()
 
-	params2 := manifests.Params{
+	params2 := Params{
 		TargetAllocator: targetAllocator2,
 		Config:          cfg,
 		Log:             logger,
@@ -310,7 +310,7 @@ func TestDeploymentTolerations(t *testing.T) {
 	}
 
 	cfg := config.New()
-	params1 := manifests.Params{
+	params1 := Params{
 		TargetAllocator: targetAllocator1,
 		Config:          cfg,
 		Log:             logger,
@@ -332,7 +332,7 @@ func TestDeploymentTolerations(t *testing.T) {
 		},
 	}
 
-	params2 := manifests.Params{
+	params2 := Params{
 		TargetAllocator: targetAllocator2,
 		Config:          cfg,
 		Log:             logger,
@@ -355,7 +355,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 
 	cfg := config.New()
 
-	params1 := manifests.Params{
+	params1 := Params{
 		TargetAllocator: targetAllocator1,
 		Config:          cfg,
 		Log:             logger,
@@ -378,7 +378,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	}
 
 	cfg = config.New()
-	params2 := manifests.Params{
+	params2 := Params{
 		TargetAllocator: targetAllocator2,
 		Config:          cfg,
 		Log:             logger,
@@ -401,8 +401,8 @@ func TestDeploymentSetInitContainer(t *testing.T) {
 		},
 	}
 	otelcol := collectorInstance()
-	params := manifests.Params{
-		OtelCol:         otelcol,
+	params := Params{
+		Collector:       otelcol,
 		TargetAllocator: targetAllocator,
 		Config:          config.New(),
 		Log:             logger,
@@ -423,8 +423,8 @@ func TestDeploymentAdditionalContainers(t *testing.T) {
 		},
 	}
 	otelcol := collectorInstance()
-	params := manifests.Params{
-		OtelCol:         otelcol,
+	params := Params{
+		Collector:       otelcol,
 		TargetAllocator: targetAllocator,
 		Config:          config.New(),
 		Log:             logger,
@@ -441,8 +441,8 @@ func TestDeploymentHostNetwork(t *testing.T) {
 	// Test default
 	targetAllocator := targetAllocatorInstance()
 	otelcol := collectorInstance()
-	params := manifests.Params{
-		OtelCol:         otelcol,
+	params := Params{
+		Collector:       otelcol,
 		TargetAllocator: targetAllocator,
 		Config:          config.New(),
 		Log:             logger,
@@ -467,8 +467,8 @@ func TestDeploymentShareProcessNamespace(t *testing.T) {
 	// Test default
 	targetAllocator := targetAllocatorInstance()
 	otelcol := collectorInstance()
-	params := manifests.Params{
-		OtelCol:         otelcol,
+	params := Params{
+		Collector:       otelcol,
 		TargetAllocator: targetAllocator,
 		Config:          config.New(),
 		Log:             logger,
@@ -490,8 +490,8 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 	// Test default
 	targetAllocator := targetAllocatorInstance()
 	otelcol := collectorInstance()
-	params := manifests.Params{
-		OtelCol:         otelcol,
+	params := Params{
+		Collector:       otelcol,
 		TargetAllocator: targetAllocator,
 		Config:          config.New(),
 		Log:             logger,
@@ -513,8 +513,8 @@ func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
 	// Test default
 	targetAllocator := targetAllocatorInstance()
 	otelcol := collectorInstance()
-	params := manifests.Params{
-		OtelCol:         otelcol,
+	params := Params{
+		Collector:       otelcol,
 		TargetAllocator: targetAllocator,
 		Config:          config.New(),
 		Log:             logger,

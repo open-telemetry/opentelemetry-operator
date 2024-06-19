@@ -25,7 +25,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
 type test struct {
@@ -84,7 +83,7 @@ func TestPDBWithValidStrategy(t *testing.T) {
 					},
 				}
 				configuration := config.New()
-				pdb, err := PodDisruptionBudget(manifests.Params{
+				pdb, err := PodDisruptionBudget(Params{
 					Log:             logger,
 					Config:          configuration,
 					TargetAllocator: targetAllocator,
@@ -119,7 +118,7 @@ func TestPDBWithNotValidStrategy(t *testing.T) {
 				},
 			}
 			configuration := config.New()
-			pdb, err := PodDisruptionBudget(manifests.Params{
+			pdb, err := PodDisruptionBudget(Params{
 				Log:             logger,
 				Config:          configuration,
 				TargetAllocator: targetAllocator,
@@ -139,7 +138,7 @@ func TestNoPDB(t *testing.T) {
 		},
 	}
 	configuration := config.New()
-	pdb, err := PodDisruptionBudget(manifests.Params{
+	pdb, err := PodDisruptionBudget(Params{
 		Log:             logger,
 		Config:          configuration,
 		TargetAllocator: targetAllocator,
