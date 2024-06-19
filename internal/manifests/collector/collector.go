@@ -30,7 +30,7 @@ const (
 // Build creates the manifest for the collector resource.
 func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object
-	var manifestFactories []manifests.K8sManifestFactory
+	var manifestFactories []manifests.K8sManifestFactory[manifests.Params]
 	switch params.OtelCol.Spec.Mode {
 	case v1beta1.ModeDeployment:
 		manifestFactories = append(manifestFactories, manifests.Factory(Deployment))
@@ -43,7 +43,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	case v1beta1.ModeSidecar:
 		params.Log.V(5).Info("not building sidecar...")
 	}
-	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory{
+	manifestFactories = append(manifestFactories, []manifests.K8sManifestFactory[manifests.Params]{
 		manifests.Factory(ConfigMap),
 		manifests.Factory(HorizontalPodAutoscaler),
 		manifests.Factory(ServiceAccount),

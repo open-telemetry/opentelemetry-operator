@@ -20,7 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -30,7 +29,7 @@ const (
 	targetAllocatorFilename = "targetallocator.yaml"
 )
 
-func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
+func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	instance := params.TargetAllocator
 	name := naming.TAConfigMap(instance.Name)
 	labels := manifestutils.Labels(instance.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
@@ -39,7 +38,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	taConfig := make(map[interface{}]interface{})
 
 	taConfig["collector_selector"] = metav1.LabelSelector{
-		MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector),
+		MatchLabels: manifestutils.SelectorLabels(params.Collector.ObjectMeta, collector.ComponentOpenTelemetryCollector),
 	}
 
 	// Add scrape configs if present

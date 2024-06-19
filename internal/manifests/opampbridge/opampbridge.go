@@ -27,7 +27,7 @@ const (
 // Build creates the manifest for the OpAMPBridge resource.
 func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object
-	resourceFactories := []manifests.K8sManifestFactory{
+	resourceFactories := []manifests.K8sManifestFactory[manifests.Params]{
 		manifests.FactoryWithoutError(Deployment),
 		manifests.Factory(ConfigMap),
 		manifests.FactoryWithoutError(ServiceAccount),
