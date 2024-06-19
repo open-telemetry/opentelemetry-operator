@@ -11,14 +11,13 @@ opentelemetry-instrumentation==0.46b0
 opentelemetry-propagator-ot-trace==0.46b0
 
 # Copied in from https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/instrumentation
-# except for aws-lambda
 opentelemetry-instrumentation-aio-pika==0.46b0
 opentelemetry-instrumentation-aiohttp-client==0.46b0
 opentelemetry-instrumentation-aiopg==0.46b0
 opentelemetry-instrumentation-asgi==0.46b0
 opentelemetry-instrumentation-asyncio==0.46b0
 opentelemetry-instrumentation-asyncpg==0.46b0
-#opentelemetry-instrumentation-aws-lambda==0.46b0
+opentelemetry-instrumentation-aws-lambda==0.46b0
 opentelemetry-instrumentation-boto==0.46b0
 opentelemetry-instrumentation-boto3sqs==0.46b0
 opentelemetry-instrumentation-botocore==0.46b0
