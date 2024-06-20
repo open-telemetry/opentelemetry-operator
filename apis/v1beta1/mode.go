@@ -16,7 +16,7 @@ package v1beta1
 
 type (
 	// Mode represents how the collector should be deployed (deployment vs. daemonset)
-	// +kubebuilder:validation:Enum=daemonset;deployment;sidecar;statefulset
+	// +kubebuilder:validation:Enum=daemonset;deployment;sidecar;statefulset;opsramp
 	Mode string
 )
 
@@ -32,4 +32,7 @@ const (
 
 	// ModeStatefulSet specifies that the collector should be deployed as a Kubernetes StatefulSet.
 	ModeStatefulSet Mode = "statefulset"
+
+	// ModeOpsRamp specifies that the collector should be deployed as a Opsramp Agent Collector.
+	ModeOpsRamp Mode = "opsramp"
 )

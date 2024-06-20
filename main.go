@@ -364,6 +364,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = controllers.NewPodReconciler(controllers.PodReconcilerParams{
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryPodController"),
+		Scheme:   mgr.GetScheme(),
+		Config:   cfg,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryPodController")
+		os.Exit(1)
+	}
+
 	if err = controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("OpAMPBridge"),

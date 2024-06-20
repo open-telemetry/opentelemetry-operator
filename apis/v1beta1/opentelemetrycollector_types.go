@@ -89,9 +89,12 @@ type OpenTelemetryCollectorSpec struct {
 	// TargetAllocator indicates a value which determines whether to spawn a target allocation resource or not.
 	// +optional
 	TargetAllocator TargetAllocatorEmbedded `json:"targetAllocator,omitempty"`
-	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
+	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset, opsramp or sidecar)
 	// +optional
 	Mode Mode `json:"mode,omitempty"`
+	// NewMode represents how the collector should be deployed (deployment, daemonset, statefulset, opsramp or sidecar)
+	// +optional
+	NewMode Mode `json:"newmode,omitempty"`
 	// UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed
 	// +optional
 	UpgradeStrategy UpgradeStrategy `json:"upgradeStrategy"`

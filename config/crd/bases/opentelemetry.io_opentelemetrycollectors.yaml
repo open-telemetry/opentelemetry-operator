@@ -6517,6 +6517,15 @@ spec:
                 - deployment
                 - sidecar
                 - statefulset
+                - opsramp
+                type: string
+              newmode:
+                enum:
+                - daemonset
+                - deployment
+                - sidecar
+                - statefulset
+                - opsramp
                 type: string
               nodeSelector:
                 additionalProperties:
