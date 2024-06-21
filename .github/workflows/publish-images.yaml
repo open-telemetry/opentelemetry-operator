@@ -19,12 +19,12 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '~1.21.3'
+          go-version: '~1.22.4'
 
-      - name: Unshallow 
+      - name: Unshallow
         run: git fetch --prune --unshallow
 
-      - name: Describe the current state 
+      - name: Describe the current state
         run: git describe --tags
 
       - name: Set env vars for the job
@@ -41,7 +41,7 @@ jobs:
           grep -v '\#' versions.txt | grep autoinstrumentation-nginx | awk -F= '{print "AUTO_INSTRUMENTATION_NGINX_VERSION="$2}' >> $GITHUB_ENV
           echo "VERSION_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
           echo "VERSION=$(git describe --tags | sed 's/^v//')" >> $GITHUB_ENV
-      
+
       - name: Build the binary for each supported architecture
         run: |
           for platform in $(echo $PLATFORMS | tr "," "\n"); do
@@ -49,7 +49,7 @@ jobs:
             echo "Building manager for $arch"
             make manager ARCH=$arch
           done
-        
+
       - name: Docker meta
         id: docker_meta
         uses: docker/metadata-action@v5
