@@ -88,10 +88,11 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 		return nil, err
 	}
 
-	store := assets.NewStore(clientset.CoreV1(), clientset.CoreV1())
+	store := assets.NewStoreBuilder(clientset.CoreV1(), clientset.CoreV1())
 	promRegisterer := prometheusgoclient.NewRegistry()
 	operatorMetrics := operator.NewMetrics(promRegisterer)
-	eventRecorder := operator.NewEventRecorder(clientset, "target-allocator")
+	eventRecorderFactory := operator.NewEventRecorderFactory(false)
+	eventRecorder := eventRecorderFactory(clientset, "target-allocator")
 
 	nsMonInf, err := getNamespaceInformer(ctx, map[string]struct{}{v1.NamespaceAll: {}}, promOperatorLogger, clientset, operatorMetrics)
 	if err != nil {
@@ -131,7 +132,7 @@ type PrometheusCRWatcher struct {
 	podMonitorNamespaceSelector     *metav1.LabelSelector
 	serviceMonitorNamespaceSelector *metav1.LabelSelector
 	resourceSelector                *prometheus.ResourceSelector
-	store                           *assets.Store
+	store                           *assets.StoreBuilder
 }
 
 func getNamespaceInformer(ctx context.Context, allowList map[string]struct{}, promOperatorLogger log.Logger, clientset kubernetes.Interface, operatorMetrics *operator.Metrics) (cache.SharedIndexInformer, error) {
