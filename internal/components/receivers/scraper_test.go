@@ -73,7 +73,7 @@ func TestScraperParsers(t *testing.T) {
 				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// test
-				ports, err := parser.Ports(logger, map[string]interface{}{})
+				ports, err := parser.Ports(logger, tt.receiverName, map[string]interface{}{})
 
 				// verify
 				assert.NoError(t, err)
@@ -85,7 +85,7 @@ func TestScraperParsers(t *testing.T) {
 				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// test
-				ports, err := parser.Ports(logger, map[string]interface{}{
+				ports, err := parser.Ports(logger, tt.receiverName, map[string]interface{}{
 					"endpoint": "0.0.0.0:65535",
 				})
 

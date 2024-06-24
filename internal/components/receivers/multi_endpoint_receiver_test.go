@@ -187,6 +187,72 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 			},
 		},
 		{
+			receiverName: "otlp/test",
+			parserName:   "__otlp",
+			cases: []testCase{
+				{
+					name: "minimal config",
+					config: map[string]interface{}{
+						"protocols": map[string]interface{}{
+							"grpc": map[string]interface{}{},
+						},
+					},
+					expectedErr: nil,
+					expectedSvc: []corev1.ServicePort{
+						{
+							Name:        "otlp-test-grpc",
+							Port:        4317,
+							TargetPort:  intstr.FromInt32(4317),
+							AppProtocol: &grpc,
+						},
+					},
+				},
+				{
+					name: "grpc overridden",
+					config: map[string]interface{}{
+						"protocols": map[string]interface{}{
+							"grpc": map[string]interface{}{
+								"endpoint": "0.0.0.0:1234",
+							},
+						},
+					},
+					expectedErr: nil,
+					expectedSvc: []corev1.ServicePort{
+						{
+							Name:        "otlp-test-grpc",
+							Port:        1234,
+							TargetPort:  intstr.FromInt32(4317),
+							AppProtocol: &grpc,
+						},
+					},
+				},
+				{
+					name: "all defaults",
+					config: map[string]interface{}{
+						"protocols": map[string]interface{}{
+							"grpc": map[string]interface{}{},
+							"http": map[string]interface{}{},
+						},
+					},
+					expectedErr: nil,
+					expectedSvc: []corev1.ServicePort{
+						{
+							Name:        "otlp-test-grpc",
+							Port:        4317,
+							TargetPort:  intstr.FromInt32(4317),
+							AppProtocol: &grpc,
+						},
+						{
+							Name:        "otlp-test-http",
+							Port:        4318,
+							TargetPort:  intstr.FromInt32(4318),
+							AppProtocol: &http,
+						},
+					},
+				},
+			},
+		},
+		{
 			receiverName: "loki",
 			parserName:   "__loki",
 			cases: []testCase{
@@ -335,7 +401,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// test
-				_, err := parser.Ports(logger, []interface{}{"junk"})
+				_, err := parser.Ports(logger, tt.receiverName, []interface{}{"junk"})
 
 				// verify
 				assert.ErrorContains(t, err, "expected a map, got 'slice'")
@@ -345,7 +411,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// test
-				_, err := parser.Ports(logger, map[string]interface{}{
+				_, err := parser.Ports(logger, tt.receiverName, map[string]interface{}{
 					"protocols": map[string]interface{}{
 						"garbage": map[string]interface{}{},
 					},
@@ -360,7 +426,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 					parser := receivers.ReceiverFor(tt.receiverName)
 
 					// test
-					ports, err := parser.Ports(logger, kase.config)
+					ports, err := parser.Ports(logger, tt.receiverName, kase.config)
 					if kase.expectedErr != nil {
 						assert.EqualError(t, err, kase.expectedErr.Error())
 						return

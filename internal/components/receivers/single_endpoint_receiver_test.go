@@ -33,7 +33,7 @@ func TestParseEndpoint(t *testing.T) {
 	parser := receivers.ReceiverFor("myreceiver")
 
 	// test
-	ports, err := parser.Ports(logger, map[string]interface{}{
+	ports, err := parser.Ports(logger, "myreceiver", map[string]interface{}{
 		"endpoint": "0.0.0.0:1234",
 	})
 
@@ -49,7 +49,7 @@ func TestFailedToParseEndpoint(t *testing.T) {
 	parser := receivers.ReceiverFor("myreceiver")
 
 	// test
-	ports, err := parser.Ports(logger, map[string]interface{}{
+	ports, err := parser.Ports(logger, "myreceiver", map[string]interface{}{
 		"endpoint": "0.0.0.0",
 	})
 
@@ -96,7 +96,7 @@ func TestDownstreamParsers(t *testing.T) {
 				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// test throwing in pure junk
-				_, err := parser.Ports(logger, func() {})
+				_, err := parser.Ports(logger, tt.receiverName, func() {})
 
 				// verify
 				assert.ErrorContains(t, err, "expected a map, got 'func'")
@@ -107,7 +107,7 @@ func TestDownstreamParsers(t *testing.T) {
 				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// test
-				ports, err := parser.Ports(logger, map[string]interface{}{})
+				ports, err := parser.Ports(logger, tt.receiverName, map[string]interface{}{})
 
 				if tt.defaultPort == 0 {
 					assert.Len(t, ports, 0)
@@ -128,11 +128,11 @@ func TestDownstreamParsers(t *testing.T) {
 				var ports []corev1.ServicePort
 				var err error
 				if tt.listenAddrParser {
-					ports, err = parser.Ports(logger, map[string]interface{}{
+					ports, err = parser.Ports(logger, tt.receiverName, map[string]interface{}{
 						"listen_address": "0.0.0.0:65535",
 					})
 				} else {
-					ports, err = parser.Ports(logger, map[string]interface{}{
+					ports, err = parser.Ports(logger, tt.receiverName, map[string]interface{}{
 						"endpoint": "0.0.0.0:65535",
 					})
 				}

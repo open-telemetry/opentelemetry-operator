@@ -21,9 +21,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	go_yaml "gopkg.in/yaml.v3"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
 )
 
@@ -382,6 +386,163 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 			err = go_yaml.Unmarshal(collectorYaml, c)
 			require.NoError(t, err)
 			assert.Equalf(t, tt.want, c.GetEnabledComponents(), "GetEnabledComponents()")
+		})
+	}
+}
+
+func TestConfig_GetReceiverPorts(t *testing.T) {
+	tests := []struct {
+		name    string
+		file    string
+		want    []v1.ServicePort
+		wantErr bool
+	}{
+
+		{
+			name:    "connectors",
+			file:    "testdata/otelcol-connectors.yaml",
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "couchbase",
+			file: "testdata/otelcol-couchbase.yaml",
+			want: nil, // Couchbase uses a prometheus scraper, no ports should be opened
+		},
+		{
+			name: "demo",
+			file: "testdata/otelcol-demo.yaml",
+			want: []v1.ServicePort{
+				{
+					Name:        "otlp-grpc",
+					Protocol:    "",
+					AppProtocol: ptr.To("grpc"),
+					Port:        4317,
+					TargetPort:  intstr.FromInt32(4317),
+				},
+			},
+		},
+		{
+			name: "extensions",
+			file: "testdata/otelcol-extensions.yaml",
+			want: []v1.ServicePort{
+				{
+					Name:        "otlp-grpc",
+					Protocol:    "",
+					AppProtocol: ptr.To("grpc"),
+					Port:        4317,
+					TargetPort:  intstr.FromInt32(4317),
+				},
+			},
+		},
+		{
+			name: "filelog",
+			file: "testdata/otelcol-filelog.yaml",
+			want: nil,
+		},
+		{
+			name: "null",
+			file: "testdata/otelcol-null-values.yaml",
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			collectorYaml, err := os.ReadFile(tt.file)
+			require.NoError(t, err)
+
+			c := &Config{}
+			err = go_yaml.Unmarshal(collectorYaml, c)
+			require.NoError(t, err)
+			ports, err := c.GetReceiverPorts(logr.Discard())
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equalf(t, tt.want, ports, "GetReceiverPorts()")
+		})
+	}
+}
+
+func TestConfig_GetExporterPorts(t *testing.T) {
+	tests := []struct {
+		name    string
+		file    string
+		want    []v1.ServicePort
+		wantErr bool
+	}{
+
+		{
+			name:    "connectors",
+			file:    "testdata/otelcol-connectors.yaml",
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			name: "couchbase",
+			file: "testdata/otelcol-couchbase.yaml",
+			want: []v1.ServicePort{
+				{
+					Name: "prometheus",
+					Port: 9123,
+				},
+			},
+		},
+		{
+			name: "demo",
+			file: "testdata/otelcol-demo.yaml",
+			want: []v1.ServicePort{
+				{
+					Name: "prometheus",
+					Port: 8889,
+				},
+				{
+					Name: "otlp",
+					Port: 4317,
+				},
+				{
+					Name: "zipkin",
+					Port: 9411,
+				},
+			},
+		},
+		{
+			name: "extensions",
+			file: "testdata/otelcol-extensions.yaml",
+			want: []v1.ServicePort{
+				{
+					Name: "otlp",
+					Port: 4317,
+				},
+			},
+		},
+		{
+			name: "filelog",
+			file: "testdata/otelcol-filelog.yaml",
+			want: nil,
+		},
+		{
+			name: "null",
+			file: "testdata/otelcol-null-values.yaml",
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			collectorYaml, err := os.ReadFile(tt.file)
+			require.NoError(t, err)
+
+			c := &Config{}
+			err = go_yaml.Unmarshal(collectorYaml, c)
+			require.NoError(t, err)
+			ports, err := c.GetExporterPorts(logr.Discard())
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.ElementsMatchf(t, tt.want, ports, "GetReceiverPorts()")
 		})
 	}
 }

@@ -30,7 +30,7 @@ func Register(name string, p components.ComponentPortParser) {
 
 // IsRegistered checks whether a parser is registered with the given name.
 func IsRegistered(name string) bool {
-	_, ok := registry[name]
+	_, ok := registry[components.ComponentType(name)]
 	return ok
 }
 
@@ -136,6 +136,7 @@ var (
 		NewScraperParser("haproxy"),
 		NewScraperParser("flinkmetrics"),
 		NewScraperParser("couchdb"),
+		NewScraperParser("filelog"),
 	}
 )
 

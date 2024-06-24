@@ -37,7 +37,8 @@ func ParserFor(name string) components.ComponentPortParser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}
-	return components.NewSinglePortParser(components.ComponentType(name), components.UnsetPort)
+	// We want the default for exporters to fail silently.
+	return components.NewSilentSinglePortParser(components.ComponentType(name), components.UnsetPort)
 }
 
 var (

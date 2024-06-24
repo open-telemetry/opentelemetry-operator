@@ -139,6 +139,9 @@ type Config struct {
 	Service    Service    `json:"service" yaml:"service"`
 }
 
+// getPortsForComponentTypes gets the ports for the given ComponentType(s).
+// NOTE FOR REVIEWERS: we could also do this by introducing something in components that is aware of which retriever
+// is being used and pass the right config in where necessary...
 func (c *Config) getPortsForComponentTypes(logger logr.Logger, componentType ...ComponentType) ([]corev1.ServicePort, error) {
 	var ports []corev1.ServicePort
 	enabledComponents := c.GetEnabledComponents()
@@ -156,8 +159,12 @@ func (c *Config) getPortsForComponentTypes(logger logr.Logger, componentType ...
 			break
 		}
 		for componentName := range enabledComponents[cType] {
+			// NOTE FOR REVIEWERS:
+			// I don't love that we pass the component name in three different times here (to get the parser, to set
+			// the service name, to access in the object)
+			// Maybe in a followup this can be cleaned up?
 			parser := retriever(componentName)
-			if parsedPorts, err := parser.Ports(logger, cfg.Object[componentName]); err != nil {
+			if parsedPorts, err := parser.Ports(logger, componentName, cfg.Object[componentName]); err != nil {
 				return nil, err
 			} else {
 				ports = append(ports, parsedPorts...)

@@ -81,12 +81,12 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 		port, err = strconv.ParseInt(cleanedPortStr, 10, 32)
 
 		if err != nil {
-			return 0, err
+			return UnsetPort, err
 		}
 	}
 
 	if port == 0 {
-		return 0, PortNotFoundErr
+		return UnsetPort, PortNotFoundErr
 	}
 
 	return int32(port), err
@@ -95,10 +95,11 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 type ParserRetriever func(string) ComponentPortParser
 
 type ComponentPortParser interface {
-	// Ports returns the service ports parsed based on the exporter's configuration
-	Ports(logger logr.Logger, config interface{}) ([]corev1.ServicePort, error)
+	// Ports returns the service ports parsed based on the component's configuration where name is the component's name
+	// of the form "name" or "type/name"
+	Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error)
 
-	// ParserType returns the name of this parser
+	// ParserType returns the type of this parser
 	ParserType() string
 
 	// ParserName is an internal name for the parser
@@ -120,7 +121,7 @@ func GetPortsForConfig(logger logr.Logger, config map[string]interface{}, retrie
 	var ports []corev1.ServicePort
 	for componentName, componentDef := range config {
 		parser := retriever(componentName)
-		if parsedPorts, err := parser.Ports(logger, componentDef); err != nil {
+		if parsedPorts, err := parser.Ports(logger, componentName, componentDef); err != nil {
 			return nil, err
 		} else {
 			ports = append(ports, parsedPorts...)
