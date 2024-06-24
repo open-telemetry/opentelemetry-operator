@@ -41,6 +41,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
 	fcache "k8s.io/client-go/tools/cache/testing"
+	"k8s.io/utils/ptr"
 
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
@@ -339,11 +340,11 @@ func TestLoadConfig(t *testing.T) {
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
 								Port: "web",
-								RelabelConfigs: []*monitoringv1.RelabelConfig{
+								RelabelConfigs: []monitoringv1.RelabelConfig{
 									{
 										Action:      "keep",
 										Regex:       ".*(",
-										Replacement: "invalid",
+										Replacement: ptr.To("invalid"),
 										TargetLabel: "city",
 									},
 								},
@@ -434,11 +435,11 @@ func TestLoadConfig(t *testing.T) {
 						Endpoints: []monitoringv1.Endpoint{
 							{
 								Port: "web",
-								RelabelConfigs: []*monitoringv1.RelabelConfig{
+								RelabelConfigs: []monitoringv1.RelabelConfig{
 									{
 										Action:      "keep",
 										Regex:       ".*(",
-										Replacement: "invalid",
+										Replacement: ptr.To("invalid"),
 										TargetLabel: "city",
 									},
 								},
@@ -1103,10 +1104,11 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 		t.Fatal(t, err)
 	}
 
-	store := assets.NewStore(k8sClient.CoreV1(), k8sClient.CoreV1())
+	store := assets.NewStoreBuilder(k8sClient.CoreV1(), k8sClient.CoreV1())
 	promRegisterer := prometheusgoclient.NewRegistry()
 	operatorMetrics := operator.NewMetrics(promRegisterer)
-	eventRecorder := operator.NewEventRecorder(k8sClient, "target-allocator")
+	recorderFactory := operator.NewEventRecorderFactory(false)
+	eventRecorder := recorderFactory(k8sClient, "target-allocator")
 
 	source := fcache.NewFakeControllerSource()
 	source.Add(&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
