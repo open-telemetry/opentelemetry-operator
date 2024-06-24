@@ -24,7 +24,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
 func TestPodAnnotations(t *testing.T) {
@@ -40,8 +39,8 @@ func TestConfigMapHash(t *testing.T) {
 	cfg := config.New()
 	collector := collectorInstance()
 	targetAllocator := targetAllocatorInstance()
-	params := manifests.Params{
-		OtelCol:         collector,
+	params := Params{
+		Collector:       collector,
 		TargetAllocator: targetAllocator,
 		Config:          cfg,
 		Log:             logr.Discard(),

@@ -115,10 +115,6 @@ type OpenTelemetryCommonFields struct {
 	// Replicas is the number of pod instances for the underlying replicaset. Set this if you are not using autoscaling.
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
-	// Autoscaler specifies the pod autoscaling configuration to use
-	// for the workload.
-	// +optional
-	Autoscaler *AutoscalerSpec `json:"autoscaler,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
 	// for the generated workload.
 	// +optional
@@ -173,11 +169,6 @@ type OpenTelemetryCommonFields struct {
 	// List of sources to populate environment variables on the generated pods.
 	// +optional
 	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
-	// VolumeClaimTemplates will provide stable storage using PersistentVolumes.
-	// This only works with the following OpenTelemetryCollector mode's: statefulset.
-	// +optional
-	// +listType=atomic
-	VolumeClaimTemplates []v1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 	// Toleration to schedule the generated pods.
 	// This only works with the following OpenTelemetryCollector mode's: daemonset, statefulset, and deployment.
 	// +optional
@@ -233,4 +224,12 @@ type OpenTelemetryCommonFields struct {
 	//
 	// +optional
 	AdditionalContainers []v1.Container `json:"additionalContainers,omitempty"`
+}
+
+type StatefulSetCommonFields struct {
+	// VolumeClaimTemplates will provide stable storage using PersistentVolumes.
+	// This only works with the following OpenTelemetryCollector mode's: statefulset.
+	// +optional
+	// +listType=atomic
+	VolumeClaimTemplates []v1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 }

@@ -43,4 +43,4 @@ data:
                     - prometheus
 kind: ConfigMap
 metadata:
-  name: prometheus-cr-collector
+  name: prometheus-cr-collector-b88fa6e7

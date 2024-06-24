@@ -18,6 +18,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func TestDesiredConfigMap(t *testing.T) {
@@ -29,9 +32,6 @@ func TestDesiredConfigMap(t *testing.T) {
 	}
 
 	t.Run("should return expected collector config map", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
-		expectedLables["app.kubernetes.io/name"] = "test-collector"
-		expectedLables["app.kubernetes.io/version"] = "0.47.0"
 
 		expectedData := map[string]string{
 			"collector.yaml": `receivers:
@@ -58,10 +58,17 @@ service:
 		}
 
 		param := deploymentParams()
+		hash, _ := manifestutils.GetConfigMapSHA(param.OtelCol.Spec.Config)
+		expectedName := naming.ConfigMap("test", hash)
+
+		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
+		expectedLables["app.kubernetes.io/name"] = "test-collector"
+		expectedLables["app.kubernetes.io/version"] = "0.47.0"
+
 		actual, err := ConfigMap(param)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "test-collector", actual.Name)
+		assert.Equal(t, expectedName, actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, len(expectedData), len(actual.Data))
 		for k, expected := range expectedData {
@@ -70,10 +77,6 @@ service:
 	})
 
 	t.Run("should return expected escaped collector config map with target_allocator config block", func(t *testing.T) {
-		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
-		expectedLables["app.kubernetes.io/name"] = "test-collector"
-		expectedLables["app.kubernetes.io/version"] = "latest"
-
 		expectedData := map[string]string{
 			"collector.yaml": `exporters:
   debug:
@@ -97,11 +100,19 @@ service:
 
 		param, err := newParams("test/test-img", "testdata/http_sd_config_servicemonitor_test.yaml")
 		assert.NoError(t, err)
+
+		hash, _ := manifestutils.GetConfigMapSHA(param.OtelCol.Spec.Config)
+		expectedName := naming.ConfigMap("test", hash)
+
+		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
+		expectedLables["app.kubernetes.io/name"] = "test-collector"
+		expectedLables["app.kubernetes.io/version"] = "latest"
+
 		param.OtelCol.Spec.TargetAllocator.Enabled = true
 		actual, err := ConfigMap(param)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "test-collector", actual.Name)
+		assert.Equal(t, expectedName, actual.Name)
 		assert.Equal(t, expectedLables, actual.Labels)
 		assert.Equal(t, len(expectedData), len(actual.Data))
 		for k, expected := range expectedData {

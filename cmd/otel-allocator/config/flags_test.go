@@ -62,7 +62,10 @@ func TestFlagGetters(t *testing.T) {
 			name:          "GetPrometheusCREnabled",
 			flagArgs:      []string{"--" + prometheusCREnabledFlagName, "true"},
 			expectedValue: true,
-			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getPrometheusCREnabled(fs) },
+			getterFunc: func(fs *pflag.FlagSet) (interface{}, error) {
+				_, value, err := getPrometheusCREnabled(fs)
+				return value, err
+			},
 		},
 		{
 			name:        "InvalidFlag",

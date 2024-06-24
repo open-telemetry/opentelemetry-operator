@@ -24,8 +24,13 @@ import (
 )
 
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
-	name := naming.ConfigMap(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	hash, err := manifestutils.GetConfigMapSHA(params.OtelCol.Spec.Config)
+	if err != nil {
+		return nil, err
+	}
+	name := naming.ConfigMap(params.OtelCol.Name, hash)
+	collectorName := naming.Collector(params.OtelCol.Name)
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, collectorName, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 
 	replacedConf, err := ReplaceConfig(params.OtelCol)
 	if err != nil {

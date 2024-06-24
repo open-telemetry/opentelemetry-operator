@@ -19,14 +19,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func TestVolumeNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1beta1.TargetAllocator{}
+	otelcol := v1alpha1.TargetAllocator{}
 	cfg := config.New()
 
 	// test

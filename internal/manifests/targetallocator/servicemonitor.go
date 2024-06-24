@@ -18,13 +18,12 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // ServiceMonitor returns the service monitor for the given instance.
-func ServiceMonitor(params manifests.Params) *monitoringv1.ServiceMonitor {
+func ServiceMonitor(params Params) *monitoringv1.ServiceMonitor {
 	name := naming.TargetAllocator(params.TargetAllocator.Name)
 	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 

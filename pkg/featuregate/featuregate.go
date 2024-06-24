@@ -32,6 +32,14 @@ var (
 		featuregate.WithRegisterDescription("enables features associated to the Prometheus Operator"),
 		featuregate.WithRegisterFromVersion("v0.82.0"),
 	)
+	// SetGolangFlags is the feature gate that enables automatically setting GOMEMLIMIT and GOMAXPROCS for the
+	// collector, bridge, and target allocator.
+	SetGolangFlags = featuregate.GlobalRegistry().MustRegister(
+		"operator.golang.flags",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
+		featuregate.WithRegisterFromVersion("v0.100.0"),
+	)
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.

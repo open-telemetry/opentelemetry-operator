@@ -26,9 +26,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 )
 
 func TestTargetAllocator(t *testing.T) {
@@ -62,7 +62,7 @@ func TestTargetAllocator(t *testing.T) {
 	testCases := []struct {
 		name    string
 		input   v1beta1.OpenTelemetryCollector
-		want    *v1beta1.TargetAllocator
+		want    *v1alpha1.TargetAllocator
 		wantErr error
 	}{
 		{
@@ -87,12 +87,9 @@ func TestTargetAllocator(t *testing.T) {
 					},
 				},
 			},
-			want: &v1beta1.TargetAllocator{
+			want: &v1alpha1.TargetAllocator{
 				ObjectMeta: objectMetadata,
-				Spec: v1beta1.TargetAllocatorSpec{
-					CollectorSelector: metav1.LabelSelector{
-						MatchLabels: manifestutils.SelectorLabels(objectMetadata, ComponentOpenTelemetryCollector),
-					},
+				Spec: v1alpha1.TargetAllocatorSpec{
 					ScrapeConfigs: []v1beta1.AnyConfig{},
 				},
 			},
@@ -200,9 +197,9 @@ func TestTargetAllocator(t *testing.T) {
 					Config: otelcolConfig,
 				},
 			},
-			want: &v1beta1.TargetAllocator{
+			want: &v1alpha1.TargetAllocator{
 				ObjectMeta: objectMetadata,
-				Spec: v1beta1.TargetAllocatorSpec{
+				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas:     &replicas,
 						NodeSelector: map[string]string{"key": "value"},
@@ -280,9 +277,6 @@ func TestTargetAllocator(t *testing.T) {
 								IntVal: 1,
 							},
 						},
-					},
-					CollectorSelector: metav1.LabelSelector{
-						MatchLabels: manifestutils.SelectorLabels(objectMetadata, ComponentOpenTelemetryCollector),
 					},
 					AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyConsistentHashing,
 					FilterStrategy:     v1beta1.TargetAllocatorFilterStrategyRelabelConfig,

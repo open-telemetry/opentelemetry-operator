@@ -71,7 +71,7 @@ func TestExporterComponentParsers(t *testing.T) {
 				_, err := parser.Ports(logr.Discard(), func() {})
 
 				// verify
-				assert.ErrorContains(t, err, "unsupported type")
+				assert.ErrorContains(t, err, "expected a map, got ")
 			})
 
 			t.Run("assigns the expected port", func(t *testing.T) {

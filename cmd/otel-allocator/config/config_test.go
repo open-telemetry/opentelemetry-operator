@@ -59,6 +59,7 @@ func TestLoad(t *testing.T) {
 				},
 				FilterStrategy: DefaultFilterStrategy,
 				PrometheusCR: PrometheusCRConfig{
+					Enabled:        true,
 					ScrapeInterval: model.Duration(time.Second * 60),
 				},
 				HTTPS: HTTPSServerConfig{

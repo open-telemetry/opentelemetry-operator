@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -28,7 +29,7 @@ var _ ComponentPortParser = &MultiPortReceiver{}
 // MultiProtocolEndpointConfig represents the minimal struct for a given YAML configuration input containing a map to
 // a struct with either endpoint or listen_address.
 type MultiProtocolEndpointConfig struct {
-	Protocols map[string]*SingleEndpointConfig `json:"protocols"`
+	Protocols map[string]*SingleEndpointConfig `mapstructure:"protocols"`
 }
 
 // MultiPortOption allows the setting of options for a MultiPortReceiver.
@@ -43,7 +44,7 @@ type MultiPortReceiver struct {
 
 func (m *MultiPortReceiver) Ports(logger logr.Logger, config interface{}) ([]corev1.ServicePort, error) {
 	multiProtoEndpointCfg := &MultiProtocolEndpointConfig{}
-	if err := LoadMap[*MultiProtocolEndpointConfig](config, multiProtoEndpointCfg); err != nil {
+	if err := mapstructure.Decode(config, multiProtoEndpointCfg); err != nil {
 		return nil, err
 	}
 	var ports []corev1.ServicePort

@@ -430,7 +430,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result: controllerruntime.Result{},
 					checks: []check[v1alpha1.OpenTelemetryCollector]{
 						func(t *testing.T, params v1alpha1.OpenTelemetryCollector) {
-							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.Collector(params.Name), params.Namespace))
+							configHash, _ := getConfigMapSHAFromString(params.Spec.Config)
+							configHash = configHash[:8]
+							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.ConfigMap(params.Name, configHash), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							exists, err = populateObjectIfExists(t, &appsv1.StatefulSet{}, namespacedObjectName(naming.Collector(params.Name), params.Namespace))
@@ -452,7 +454,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result: controllerruntime.Result{},
 					checks: []check[v1alpha1.OpenTelemetryCollector]{
 						func(t *testing.T, params v1alpha1.OpenTelemetryCollector) {
-							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.Collector(params.Name), params.Namespace))
+							configHash, _ := getConfigMapSHAFromString(params.Spec.Config)
+							configHash = configHash[:8]
+							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.ConfigMap(params.Name, configHash), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							actual := v1.ConfigMap{}
@@ -480,11 +484,6 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							taConfig["config"] = promConfig["config"]
 							taConfig["allocation_strategy"] = "consistent-hashing"
 							taConfig["filter_strategy"] = "relabel-config"
-							taConfig["prometheus_cr"] = map[string]any{
-								"scrape_interval":          "30s",
-								"pod_monitor_selector":     &metav1.LabelSelector{},
-								"service_monitor_selector": &metav1.LabelSelector{},
-							}
 							taConfigYAML, _ := yaml.Marshal(taConfig)
 							assert.Equal(t, string(taConfigYAML), actual.Data["targetallocator.yaml"])
 							assert.NotContains(t, actual.Data["targetallocator.yaml"], "0.0.0.0:10100")
@@ -497,7 +496,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result: controllerruntime.Result{},
 					checks: []check[v1alpha1.OpenTelemetryCollector]{
 						func(t *testing.T, params v1alpha1.OpenTelemetryCollector) {
-							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.Collector(params.Name), params.Namespace))
+							configHash, _ := getConfigMapSHAFromString(params.Spec.Config)
+							configHash = configHash[:8]
+							exists, err := populateObjectIfExists(t, &v1.ConfigMap{}, namespacedObjectName(naming.ConfigMap(params.Name, configHash), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							actual := v1.ConfigMap{}

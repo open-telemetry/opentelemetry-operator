@@ -15,7 +15,6 @@
 package components
 
 import (
-	"encoding/json"
 	"errors"
 	"regexp"
 	"strconv"
@@ -38,7 +37,7 @@ type PortRetriever interface {
 	GetPortNumOrDefault(logr.Logger, int32) int32
 }
 
-type PortBuilderOption func(portBuilder *corev1.ServicePort)
+type PortBuilderOption func(*corev1.ServicePort)
 
 func WithTargetPort(targetPort int32) PortBuilderOption {
 	return func(servicePort *corev1.ServicePort) {
@@ -58,15 +57,15 @@ func WithProtocol(proto corev1.Protocol) PortBuilderOption {
 	}
 }
 
+// ComponentType returns the type for a given component name.
+// components have a name like:
+// - mycomponent/custom
+// - mycomponent
+// we extract the "mycomponent" part and see if we have a parser for the component.
 func ComponentType(name string) string {
-	// components have a name like:
-	// - mycomponent/custom
-	// - mycomponent
-	// we extract the "mycomponent" part and see if we have a parser for the component
 	if strings.Contains(name, "/") {
 		return name[:strings.Index(name, "/")]
 	}
-
 	return name
 }
 
@@ -77,7 +76,9 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 	r := regexp.MustCompile(":[0-9]+")
 
 	if r.MatchString(endpoint) {
-		port, err = strconv.ParseInt(strings.Replace(r.FindString(endpoint), ":", "", -1), 10, 32)
+		portStr := r.FindString(endpoint)
+		cleanedPortStr := strings.Replace(portStr, ":", "", -1)
+		port, err = strconv.ParseInt(cleanedPortStr, 10, 32)
 
 		if err != nil {
 			return 0, err
@@ -104,17 +105,15 @@ type ComponentPortParser interface {
 	ParserName() string
 }
 
-func LoadMap[T any](m interface{}, in T) error {
-	// Convert map to JSON bytes
-	yamlData, err := json.Marshal(m)
-	if err != nil {
-		return err
+func ConstructServicePort(current *corev1.ServicePort, port int32) corev1.ServicePort {
+	return corev1.ServicePort{
+		Name:        current.Name,
+		Port:        port,
+		TargetPort:  current.TargetPort,
+		NodePort:    current.NodePort,
+		AppProtocol: current.AppProtocol,
+		Protocol:    current.Protocol,
 	}
-	// Unmarshal YAML into the provided struct
-	if err := json.Unmarshal(yamlData, in); err != nil {
-		return err
-	}
-	return nil
 }
 
 func GetPortsForConfig(logger logr.Logger, config map[string]interface{}, retriever ParserRetriever) ([]corev1.ServicePort, error) {
@@ -128,15 +127,4 @@ func GetPortsForConfig(logger logr.Logger, config map[string]interface{}, retrie
 		}
 	}
 	return ports, nil
-}
-
-func ConstructServicePort(current *corev1.ServicePort, port int32) corev1.ServicePort {
-	return corev1.ServicePort{
-		Name:        current.Name,
-		Port:        port,
-		TargetPort:  current.TargetPort,
-		NodePort:    current.NodePort,
-		AppProtocol: current.AppProtocol,
-		Protocol:    current.Protocol,
-	}
 }

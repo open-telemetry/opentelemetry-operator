@@ -20,7 +20,7 @@ spec:
           items:
           - key: collector.yaml
             path: collector.yaml
-          name: stateful-collector
+          name: stateful-collector-31b1d381
         name: otc-internal
       - emptyDir: {}
         name: testvolume
@@ -57,9 +57,7 @@ spec:
                 values:
                 - "true"
       containers:
-      - args:
-        - --enable-prometheus-cr-watcher
-        env:
+      - env:
         - name: TEST_ENV
           value: test
         - name: OTELCOL_NAMESPACE

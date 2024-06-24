@@ -338,7 +338,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 				_, err := parser.Ports(logger, []interface{}{"junk"})
 
 				// verify
-				assert.ErrorContains(t, err, "cannot unmarshal array")
+				assert.ErrorContains(t, err, "expected a map, got 'slice'")
 			})
 			t.Run("good config, unknown protocol", func(t *testing.T) {
 				// prepare

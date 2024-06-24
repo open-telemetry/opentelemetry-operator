@@ -29,6 +29,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 // maxPortLen allows us to truncate a port name according to what is considered valid port syntax:
@@ -161,6 +162,28 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		} else {
 			logger.Error(err, "cannot create readiness probe.")
 		}
+	}
+
+	if featuregate.SetGolangFlags.IsEnabled() {
+		envVars = append(envVars, corev1.EnvVar{
+			Name: "GOMEMLIMIT",
+			ValueFrom: &corev1.EnvVarSource{
+				ResourceFieldRef: &corev1.ResourceFieldSelector{
+					Resource:      "limits.memory",
+					ContainerName: naming.Container(),
+				},
+			},
+		},
+			corev1.EnvVar{
+				Name: "GOMAXPROCS",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.cpu",
+						ContainerName: naming.Container(),
+					},
+				},
+			},
+		)
 	}
 
 	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)

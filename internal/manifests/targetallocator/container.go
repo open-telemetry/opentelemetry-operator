@@ -15,18 +15,22 @@
 package targetallocator
 
 import (
+	"fmt"
+	"sort"
+
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/operator-lib/proxy"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 // Container builds a container for the given TargetAllocator.
-func Container(cfg config.Config, logger logr.Logger, instance v1beta1.TargetAllocator) corev1.Container {
+func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAllocator) corev1.Container {
 	image := instance.Spec.Image
 	if len(image) == 0 {
 		image = cfg.TargetAllocatorImage()
@@ -38,11 +42,20 @@ func Container(cfg config.Config, logger logr.Logger, instance v1beta1.TargetAll
 		ContainerPort: 8080,
 		Protocol:      corev1.ProtocolTCP,
 	})
+	for _, p := range instance.Spec.Ports {
+		ports = append(ports, corev1.ContainerPort{
+			Name:          p.Name,
+			ContainerPort: p.Port,
+			Protocol:      p.Protocol,
+			HostPort:      p.HostPort,
+		})
+	}
 
 	volumeMounts := []corev1.VolumeMount{{
 		Name:      naming.TAConfigMapVolume(),
 		MountPath: "/conf",
 	}}
+	volumeMounts = append(volumeMounts, instance.Spec.VolumeMounts...)
 
 	var envVars = instance.Spec.Env
 	if envVars == nil {
@@ -66,10 +79,38 @@ func Container(cfg config.Config, logger logr.Logger, instance v1beta1.TargetAll
 		})
 	}
 
-	var args []string
-	if instance.Spec.PrometheusCR.Enabled {
-		args = append(args, "--enable-prometheus-cr-watcher")
+	if featuregate.SetGolangFlags.IsEnabled() {
+		envVars = append(envVars, corev1.EnvVar{
+			Name: "GOMEMLIMIT",
+			ValueFrom: &corev1.EnvVarSource{
+				ResourceFieldRef: &corev1.ResourceFieldSelector{
+					Resource:      "limits.memory",
+					ContainerName: naming.TAContainer(),
+				},
+			},
+		},
+			corev1.EnvVar{
+				Name: "GOMAXPROCS",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.cpu",
+						ContainerName: naming.TAContainer(),
+					},
+				},
+			},
+		)
 	}
+
+	var args []string
+	// ensure that the args are ordered when moved to container.Args, so the output doesn't depend on map iteration
+	argsMap := instance.Spec.Args
+	if argsMap == nil {
+		argsMap = map[string]string{}
+	}
+	for k, v := range argsMap {
+		args = append(args, fmt.Sprintf("--%s=%s", k, v))
+	}
+	sort.Strings(args)
 	readinessProbe := &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
@@ -91,13 +132,16 @@ func Container(cfg config.Config, logger logr.Logger, instance v1beta1.TargetAll
 	return corev1.Container{
 		Name:            naming.TAContainer(),
 		Image:           image,
+		ImagePullPolicy: instance.Spec.ImagePullPolicy,
 		Ports:           ports,
-		Env:             envVars,
 		VolumeMounts:    volumeMounts,
-		Resources:       instance.Spec.Resources,
 		Args:            args,
+		Env:             envVars,
+		EnvFrom:         instance.Spec.EnvFrom,
+		Resources:       instance.Spec.Resources,
+		SecurityContext: instance.Spec.SecurityContext,
 		LivenessProbe:   livenessProbe,
 		ReadinessProbe:  readinessProbe,
-		SecurityContext: instance.Spec.SecurityContext,
+		Lifecycle:       instance.Spec.Lifecycle,
 	}
 }

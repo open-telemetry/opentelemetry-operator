@@ -20,19 +20,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type Builder func(params Params) ([]client.Object, error)
+type Builder[Params any] func(params Params) ([]client.Object, error)
 
-type ManifestFactory[T client.Object] func(params Params) (T, error)
-type SimpleManifestFactory[T client.Object] func(params Params) T
-type K8sManifestFactory ManifestFactory[client.Object]
+type ManifestFactory[T client.Object, Params any] func(params Params) (T, error)
+type SimpleManifestFactory[T client.Object, Params any] func(params Params) T
+type K8sManifestFactory[Params any] ManifestFactory[client.Object, Params]
 
-func FactoryWithoutError[T client.Object](f SimpleManifestFactory[T]) K8sManifestFactory {
+func FactoryWithoutError[T client.Object, Params any](f SimpleManifestFactory[T, Params]) K8sManifestFactory[Params] {
 	return func(params Params) (client.Object, error) {
 		return f(params), nil
 	}
 }
 
-func Factory[T client.Object](f ManifestFactory[T]) K8sManifestFactory {
+func Factory[T client.Object, Params any](f ManifestFactory[T, Params]) K8sManifestFactory[Params] {
 	return func(params Params) (client.Object, error) {
 		return f(params)
 	}

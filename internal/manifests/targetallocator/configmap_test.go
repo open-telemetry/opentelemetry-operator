@@ -25,7 +25,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
 func TestDesiredConfigMap(t *testing.T) {
@@ -34,6 +33,15 @@ func TestDesiredConfigMap(t *testing.T) {
 		"app.kubernetes.io/instance":   "default.my-instance",
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/version":    "0.47.0",
+	}
+	collector := collectorInstance()
+	targetAllocator := targetAllocatorInstance()
+	cfg := config.New()
+	params := Params{
+		Collector:       collector,
+		TargetAllocator: targetAllocator,
+		Config:          cfg,
+		Log:             logr.Discard(),
 	}
 
 	t.Run("should return expected target allocator config map", func(t *testing.T) {
@@ -58,20 +66,9 @@ config:
       - 0.0.0.0:8888
       - 0.0.0.0:9999
 filter_strategy: relabel-config
-prometheus_cr:
-  pod_monitor_selector: null
-  service_monitor_selector: null
 `,
 		}
-		collector := collectorInstance()
-		targetAllocator := targetAllocatorInstance()
-		cfg := config.New()
-		params := manifests.Params{
-			OtelCol:         collector,
-			TargetAllocator: targetAllocator,
-			Config:          cfg,
-			Log:             logr.Discard(),
-		}
+
 		actual, err := ConfigMap(params)
 		require.NoError(t, err)
 
@@ -94,21 +91,11 @@ collector_selector:
     app.kubernetes.io/part-of: opentelemetry
   matchexpressions: []
 filter_strategy: relabel-config
-prometheus_cr:
-  pod_monitor_selector: null
-  service_monitor_selector: null
 `,
 		}
-		collector := collectorInstance()
-		targetAllocator := targetAllocatorInstance()
+		targetAllocator = targetAllocatorInstance()
 		targetAllocator.Spec.ScrapeConfigs = []v1beta1.AnyConfig{}
-		cfg := config.New()
-		params := manifests.Params{
-			OtelCol:         collector,
-			TargetAllocator: targetAllocator,
-			Config:          cfg,
-			Log:             logr.Discard(),
-		}
+		params.TargetAllocator = targetAllocator
 		actual, err := ConfigMap(params)
 		require.NoError(t, err)
 
@@ -140,6 +127,7 @@ config:
       - 0.0.0.0:9999
 filter_strategy: relabel-config
 prometheus_cr:
+  enabled: true
   pod_monitor_selector:
     matchlabels:
       release: my-instance
@@ -150,7 +138,8 @@ prometheus_cr:
     matchexpressions: []
 `,
 		}
-		targetAllocator := targetAllocatorInstance()
+		targetAllocator = targetAllocatorInstance()
+		targetAllocator.Spec.PrometheusCR.Enabled = true
 		targetAllocator.Spec.PrometheusCR.PodMonitorSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"release": "my-instance",
@@ -160,12 +149,7 @@ prometheus_cr:
 			MatchLabels: map[string]string{
 				"release": "my-instance",
 			}}
-		cfg := config.New()
-		params := manifests.Params{
-			TargetAllocator: targetAllocator,
-			Config:          cfg,
-			Log:             logr.Discard(),
-		}
+		params.TargetAllocator = targetAllocator
 		actual, err := ConfigMap(params)
 		assert.NoError(t, err)
 
@@ -197,20 +181,17 @@ config:
       - 0.0.0.0:9999
 filter_strategy: relabel-config
 prometheus_cr:
+  enabled: true
   pod_monitor_selector: null
   scrape_interval: 30s
   service_monitor_selector: null
 `,
 		}
 
-		targetAllocator := targetAllocatorInstance()
+		targetAllocator = targetAllocatorInstance()
+		targetAllocator.Spec.PrometheusCR.Enabled = true
 		targetAllocator.Spec.PrometheusCR.ScrapeInterval = &metav1.Duration{Duration: time.Second * 30}
-		cfg := config.New()
-		params := manifests.Params{
-			TargetAllocator: targetAllocator,
-			Config:          cfg,
-			Log:             logr.Discard(),
-		}
+		params.TargetAllocator = targetAllocator
 		actual, err := ConfigMap(params)
 		assert.NoError(t, err)
 

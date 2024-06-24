@@ -21,12 +21,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget, error) {
+func PodDisruptionBudget(params Params) (*policyV1.PodDisruptionBudget, error) {
 	// defaulting webhook should set this if the strategy is compatible, but if unset then return nil.
 	if params.TargetAllocator.Spec.PodDisruptionBudget == nil {
 		params.Log.Info("pdb field is unset in Spec, skipping podDisruptionBudget creation")
@@ -36,7 +35,8 @@ func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget
 	// defaulter doesn't set PodDisruptionBudget if the strategy isn't valid,
 	// if PodDisruptionBudget != nil and stategy isn't correct, users have set
 	// it wrongly
-	if params.TargetAllocator.Spec.AllocationStrategy != v1beta1.TargetAllocatorAllocationStrategyConsistentHashing {
+	if params.TargetAllocator.Spec.AllocationStrategy != v1beta1.TargetAllocatorAllocationStrategyConsistentHashing &&
+		params.TargetAllocator.Spec.AllocationStrategy != v1beta1.TargetAllocatorAllocationStrategyPerNode {
 		params.Log.V(4).Info("current allocation strategy not compatible, skipping podDisruptionBudget creation")
 		return nil, fmt.Errorf("target allocator pdb has been configured but the allocation strategy isn't not compatible")
 	}
