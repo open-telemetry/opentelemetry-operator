@@ -129,7 +129,7 @@ func newParams(taContainerImage string, file string, options ...config.Option) (
 	}
 	cfg := config.New(append(defaultOptions, options...)...)
 
-	return manifests.Params{
+	params := manifests.Params{
 		Config: cfg,
 		OtelCol: v1beta1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
@@ -168,5 +168,10 @@ func newParams(taContainerImage string, file string, options ...config.Option) (
 			},
 		},
 		Log: logger,
-	}, nil
+	}
+	targetAllocator, err := TargetAllocator(params)
+	if err == nil {
+		params.TargetAllocator = targetAllocator
+	}
+	return params, nil
 }
