@@ -17,6 +17,9 @@ package v1beta1
 import (
 	"context"
 	"fmt"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -342,6 +345,20 @@ func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollecto
 	// validate updateStrategy for Deployment
 	if r.Spec.Mode != ModeDeployment && len(r.Spec.DeploymentUpdateStrategy.Type) > 0 {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'deploymentUpdateStrategy'", r.Spec.Mode)
+	}
+	
+	_, err = collector.Build(manifests.Params{
+		Client:          nil,
+		Recorder:        nil,
+		Scheme:          nil,
+		Log:             logr.Logger{},
+		OtelCol:         OpenTelemetryCollector{},
+		TargetAllocator: nil,
+		OpAMPBridge:     v1alpha1.OpAMPBridge{},
+		Config:          config.Config{},
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return warnings, nil
