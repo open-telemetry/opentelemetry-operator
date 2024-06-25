@@ -2,6 +2,31 @@
 
 <!-- next version -->
 
+## 0.103.0
+
+### 💡 Enhancements 💡
+
+- `collector, target allocator, opamp`: Require Go 1.22 for building the operator (#2757)
+
+### 🧰 Bug fixes 🧰
+
+- `auto-instrumentation`: Fix webserver instrumentation log file name (#2978)
+  
+  Since webserver instrumentation 1.0.4, the configuration log file has been renamed from appdynamics_sdk_log4cxx.xml.template to opentelemetry_sdk_log4cxx.xml.template. The operator upgraded the webserver instrumentation version but haven't change the configuration file name.
+- `target-allocator`: Fixes a bug that didn't automatically create a PDB for a TA with per-node strategy (#2900)
+
+### Components
+
+* [OpenTelemetry Collector - v0.103.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.103.0)
+* [OpenTelemetry Contrib - v0.103.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.103.0)
+* [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.51.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.51.0)
+* [Python - v0.46b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.46b0)
+* [Go - v0.13.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.13.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.102.0
 
 ### 💡 Enhancements 💡
