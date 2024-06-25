@@ -42,14 +42,8 @@ const RecordBufferSize int = 10
 // ManagedInstances finds all the otelcol instances for the current operator and upgrades them, if necessary.
 func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 	u.Log.Info("looking for managed instances to upgrade")
-
-	opts := []client.ListOption{
-		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		}),
-	}
 	list := &v1beta1.OpenTelemetryCollectorList{}
-	if err := u.Client.List(ctx, list, opts...); err != nil {
+	if err := u.Client.List(ctx, list); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
 
