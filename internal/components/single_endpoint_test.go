@@ -284,7 +284,7 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := components.NewSinglePortParser(tt.fields.name, tt.fields.port, tt.fields.opts...)
-			got, err := s.Ports(logr.Discard(), "", tt.args.config)
+			got, err := s.Ports(logr.Discard(), tt.fields.name, tt.args.config)
 			if !tt.wantErr(t, err, fmt.Sprintf("Ports(%v)", tt.args.config)) {
 				return
 			}
@@ -394,7 +394,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := components.NewSilentSinglePortParser(tt.fields.name, tt.fields.port, tt.fields.opts...)
-			got, err := s.Ports(logr.Discard(), "", tt.args.config)
+			got, err := s.Ports(logr.Discard(), tt.fields.name, tt.args.config)
 			if !tt.wantErr(t, err, fmt.Sprintf("Ports(%v)", tt.args.config)) {
 				return
 			}

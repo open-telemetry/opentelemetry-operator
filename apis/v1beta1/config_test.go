@@ -512,7 +512,7 @@ func TestConfig_GetExporterPorts(t *testing.T) {
 			file: "testdata/otelcol-extensions.yaml",
 			want: []v1.ServicePort{
 				{
-					Name: "otlp",
+					Name: "otlp-auth",
 					Port: 4317,
 				},
 			},
