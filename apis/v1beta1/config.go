@@ -171,6 +171,11 @@ func (c *Config) getPortsForComponentTypes(logger logr.Logger, componentType ...
 			}
 		}
 	}
+
+	sort.Slice(ports, func(i, j int) bool {
+		return ports[i].Name < ports[j].Name
+	})
+
 	return ports, nil
 }
 
