@@ -712,7 +712,7 @@ spec:
 EOF
 ```
 
-### using opentelemetry.io* namespace for extracing resource
+### Setting instrumentation resource attributes via namespace annotations
 
 This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. These annotations can be used to add resource attributes to data produced by OpenTelemetry instrumentation.
 
