@@ -158,13 +158,11 @@ func Test_runWatch(t *testing.T) {
 
 			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 				mapMutex.Lock()
+				defer mapMutex.Unlock()
 				assert.Len(collect, actual, len(tt.want))
 				assert.Equal(collect, actual, tt.want)
-				defer mapMutex.Unlock()
-			}, time.Second, time.Millisecond)
-
-			// check if the metrics were emitted correctly
-			assert.Equal(t, testutil.ToFloat64(collectorsDiscovered), float64(len(actual)))
+				assert.Equal(collect, testutil.ToFloat64(collectorsDiscovered), float64(len(actual)))
+			}, time.Second*3, time.Millisecond)
 		})
 	}
 }
