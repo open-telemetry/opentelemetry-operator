@@ -40,7 +40,6 @@ data:
             traces:
                 exporters:
                     - debug
-                processors: []
                 receivers:
                     - jaeger
 kind: ConfigMap
