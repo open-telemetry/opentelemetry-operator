@@ -714,7 +714,7 @@ EOF
 
 ### using opentelemetry.io* namespace for extracing resource
 
-This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. These annotations can be used to extract resource information for OpenTelemetry instrumentation.
+This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. These annotations can be used to add resource attributes to data produced by OpenTelemetry instrumentation.
 
 ```yaml
 apiVersion: v1
