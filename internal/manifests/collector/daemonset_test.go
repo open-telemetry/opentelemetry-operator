@@ -591,3 +591,35 @@ func TestDaemonsetShareProcessNamespace(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
 }
+
+func TestDaemonSetDNSConfig(t *testing.T) {
+	// prepare
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PodDNSConfig: v1.PodDNSConfig{
+					Nameservers: []string{"8.8.8.8"},
+					Searches:    []string{"my.dns.search.suffix"},
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
+	// test
+	d, err := DaemonSet(params)
+	require.NoError(t, err)
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, v1.DNSPolicy("None"), d.Spec.Template.Spec.DNSPolicy)
+	assert.Equal(t, d.Spec.Template.Spec.DNSConfig.Nameservers, []string{"8.8.8.8"})
+}
