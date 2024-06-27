@@ -288,19 +288,19 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 	tests := []struct {
 		name string
 		file string
-		want map[ComponentType]map[string]interface{}
+		want map[ComponentKind]map[string]interface{}
 	}{
 
 		{
 			name: "connectors",
 			file: "testdata/otelcol-connectors.yaml",
-			want: map[ComponentType]map[string]interface{}{
-				ComponentTypeReceiver: {
+			want: map[ComponentKind]map[string]interface{}{
+				KindReceiver: {
 					"foo":   struct{}{},
 					"count": struct{}{},
 				},
-				ComponentTypeProcessor: {},
-				ComponentTypeExporter: {
+				KindProcessor: {},
+				KindExporter: {
 					"bar":   struct{}{},
 					"count": struct{}{},
 				},
@@ -309,16 +309,16 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 		{
 			name: "couchbase",
 			file: "testdata/otelcol-couchbase.yaml",
-			want: map[ComponentType]map[string]interface{}{
-				ComponentTypeReceiver: {
+			want: map[ComponentKind]map[string]interface{}{
+				KindReceiver: {
 					"prometheus/couchbase": struct{}{},
 				},
-				ComponentTypeProcessor: {
+				KindProcessor: {
 					"filter/couchbase":           struct{}{},
 					"metricstransform/couchbase": struct{}{},
 					"transform/couchbase":        struct{}{},
 				},
-				ComponentTypeExporter: {
+				KindExporter: {
 					"prometheus": struct{}{},
 				},
 			},
@@ -326,14 +326,14 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 		{
 			name: "demo",
 			file: "testdata/otelcol-demo.yaml",
-			want: map[ComponentType]map[string]interface{}{
-				ComponentTypeReceiver: {
+			want: map[ComponentKind]map[string]interface{}{
+				KindReceiver: {
 					"otlp": struct{}{},
 				},
-				ComponentTypeProcessor: {
+				KindProcessor: {
 					"batch": struct{}{},
 				},
-				ComponentTypeExporter: {
+				KindExporter: {
 					"debug":      struct{}{},
 					"zipkin":     struct{}{},
 					"otlp":       struct{}{},
@@ -344,12 +344,12 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 		{
 			name: "extensions",
 			file: "testdata/otelcol-extensions.yaml",
-			want: map[ComponentType]map[string]interface{}{
-				ComponentTypeReceiver: {
+			want: map[ComponentKind]map[string]interface{}{
+				KindReceiver: {
 					"otlp": struct{}{},
 				},
-				ComponentTypeProcessor: {},
-				ComponentTypeExporter: {
+				KindProcessor: {},
+				KindExporter: {
 					"otlp/auth": struct{}{},
 				},
 			},
@@ -357,12 +357,12 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 		{
 			name: "filelog",
 			file: "testdata/otelcol-filelog.yaml",
-			want: map[ComponentType]map[string]interface{}{
-				ComponentTypeReceiver: {
+			want: map[ComponentKind]map[string]interface{}{
+				KindReceiver: {
 					"filelog": struct{}{},
 				},
-				ComponentTypeProcessor: {},
-				ComponentTypeExporter: {
+				KindProcessor: {},
+				KindExporter: {
 					"debug": struct{}{},
 				},
 			},
@@ -370,10 +370,10 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 		{
 			name: "null",
 			file: "testdata/otelcol-null-values.yaml",
-			want: map[ComponentType]map[string]interface{}{
-				ComponentTypeReceiver:  {},
-				ComponentTypeProcessor: {},
-				ComponentTypeExporter:  {},
+			want: map[ComponentKind]map[string]interface{}{
+				KindReceiver:  {},
+				KindProcessor: {},
+				KindExporter:  {},
 			},
 		},
 	}
