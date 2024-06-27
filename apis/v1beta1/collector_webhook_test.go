@@ -1261,6 +1261,51 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	}
 }
 
+func TestOTELColValidateUpdateWebhook(t *testing.T) {
+	tests := []struct { //nolint:govet
+		name             string
+		otelcolOld       OpenTelemetryCollector
+		otelcolNew       OpenTelemetryCollector
+		expectedErr      string
+		expectedWarnings []string
+		shouldFailSar    bool
+	}{
+		{
+			name: "mode should not be changed",
+			otelcolOld: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{Mode: ModeStatefulSet},
+			},
+			otelcolNew: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{Mode: ModeDeployment},
+			},
+			expectedErr: "which does not support modification",
+		},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			cvw := &CollectorWebhook{
+				logger: logr.Discard(),
+				scheme: testScheme,
+				cfg: config.New(
+					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
+				),
+				reviewer: getReviewer(test.shouldFailSar),
+			}
+			ctx := context.Background()
+			warnings, err := cvw.ValidateUpdate(ctx, &test.otelcolOld, &test.otelcolNew)
+			if test.expectedErr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, test.expectedErr)
+			}
+			assert.Equal(t, len(test.expectedWarnings), len(warnings))
+			assert.ElementsMatch(t, warnings, test.expectedWarnings)
+		})
+	}
+}
+
 func getReviewer(shouldFailSAR bool) *rbac.Reviewer {
 	c := fake.NewSimpleClientset()
 	c.PrependReactor("create", "subjectaccessreviews", func(action kubeTesting.Action) (handled bool, ret runtime.Object, err error) {
