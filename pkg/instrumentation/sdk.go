@@ -479,6 +479,15 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 			res[string(k)] = v
 		}
 	}
+
+	for k, v := range pod.GetAnnotations() {
+		if strings.HasPrefix(k, constants.OtelAnnotationNamespace) {
+			key := strings.TrimSpace(strings.TrimPrefix(k, constants.OtelAnnotationNamespace))
+			if _, ok := res[key]; !ok {
+				res[key] = v
+			}
+		}
+	}
 	return res
 }
 

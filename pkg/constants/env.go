@@ -31,11 +31,12 @@ const (
 	AnnotationDefaultAutoInstrumentationApacheHttpd = InstrumentationPrefix + "default-auto-instrumentation-apache-httpd-image"
 	AnnotationDefaultAutoInstrumentationNginx       = InstrumentationPrefix + "default-auto-instrumentation-nginx-image"
 
-	EnvPodName  = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
-	EnvPodUID   = "OTEL_RESOURCE_ATTRIBUTES_POD_UID"
-	EnvPodIP    = "OTEL_POD_IP"
-	EnvNodeName = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
-	EnvNodeIP   = "OTEL_NODE_IP"
+	EnvPodName              = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
+	EnvPodUID               = "OTEL_RESOURCE_ATTRIBUTES_POD_UID"
+	EnvPodIP                = "OTEL_POD_IP"
+	EnvNodeName             = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
+	EnvNodeIP               = "OTEL_NODE_IP"
+	OtelAnnotationNamespace = "resource.opentelemetry.io/"
 
 	FlagCRMetrics   = "enable-cr-metrics"
 	FlagApacheHttpd = "enable-apache-httpd-instrumentation"
