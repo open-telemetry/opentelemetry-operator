@@ -6740,6 +6740,15 @@ spec:
                   - name
                   type: object
                 type: array
+              ipFamilies:
+                default: IPv4
+                items:
+                  type: string
+                type: array
+                x-kubernetes-list-type: atomic
+              ipFamilyPolicy:
+                default: SingleStack
+                type: string
               lifecycle:
                 properties:
                   postStart:
