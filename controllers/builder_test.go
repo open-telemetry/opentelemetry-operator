@@ -221,6 +221,7 @@ service:
 								},
 								ShareProcessNamespace: ptr.To(false),
 								DNSPolicy:             "ClusterFirst",
+								DNSConfig:             &corev1.PodDNSConfig{},
 								ServiceAccountName:    "test-collector",
 							},
 						},
@@ -471,6 +472,7 @@ service:
 								},
 								ShareProcessNamespace: ptr.To(false),
 								DNSPolicy:             "ClusterFirst",
+								DNSConfig:             &corev1.PodDNSConfig{},
 								ServiceAccountName:    "test-collector",
 							},
 						},
@@ -757,6 +759,7 @@ service:
 								},
 								ShareProcessNamespace: ptr.To(false),
 								DNSPolicy:             "ClusterFirst",
+								DNSConfig:             &corev1.PodDNSConfig{},
 								ServiceAccountName:    "my-special-sa",
 							},
 						},
@@ -1005,6 +1008,7 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 									},
 								},
 								DNSPolicy:          "ClusterFirst",
+								DNSConfig:          &corev1.PodDNSConfig{},
 								ServiceAccountName: "test-opamp-bridge",
 							},
 						},
@@ -1285,6 +1289,7 @@ service:
 								},
 								ShareProcessNamespace: ptr.To(false),
 								DNSPolicy:             "ClusterFirst",
+								DNSConfig:             &corev1.PodDNSConfig{},
 								ServiceAccountName:    "test-collector",
 							},
 						},
@@ -1496,6 +1501,7 @@ prometheus_cr:
 									},
 								},
 								DNSPolicy:             "ClusterFirst",
+								DNSConfig:             &corev1.PodDNSConfig{},
 								ShareProcessNamespace: ptr.To(false),
 								ServiceAccountName:    "test-targetallocator",
 							},
@@ -1679,6 +1685,7 @@ prometheus_cr:
 								},
 								ShareProcessNamespace: ptr.To(false),
 								DNSPolicy:             "ClusterFirst",
+								DNSConfig:             &corev1.PodDNSConfig{},
 								ServiceAccountName:    "test-collector",
 							},
 						},
@@ -1890,6 +1897,7 @@ prometheus_cr:
 									},
 								},
 								DNSPolicy:             "ClusterFirst",
+								DNSConfig:             &corev1.PodDNSConfig{},
 								ShareProcessNamespace: ptr.To(false),
 								ServiceAccountName:    "test-targetallocator",
 							},
@@ -1988,7 +1996,7 @@ prometheus_cr:
 			}
 			targetAllocator, err := collector.TargetAllocator(params)
 			require.NoError(t, err)
-			params.TargetAllocator = *targetAllocator
+			params.TargetAllocator = targetAllocator
 			if len(tt.featuregates) > 0 {
 				fg := strings.Join(tt.featuregates, ",")
 				flagset := featuregate.Flags(colfeaturegate.GlobalRegistry())

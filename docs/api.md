@@ -385,8 +385,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -505,8 +511,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -647,8 +659,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -767,8 +785,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1042,8 +1066,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1162,8 +1192,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1386,8 +1422,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1506,8 +1548,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1729,8 +1777,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1849,8 +1903,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2132,8 +2192,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2252,8 +2318,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2578,8 +2650,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2698,8 +2776,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2840,8 +2924,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2960,8 +3050,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3235,8 +3331,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3355,8 +3457,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3630,8 +3738,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3750,8 +3864,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4076,6 +4196,13 @@ typically used to set access tokens or other authorization headers.<br/>
         <td>
           PodAnnotations is the set of annotations that will be attached to
 OpAMPBridge pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opampbridgespecpoddnsconfig">podDnsConfig</a></b></td>
+        <td>object</td>
+        <td>
+          PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4716,12 +4843,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -4731,12 +4858,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -4980,12 +5107,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -4995,12 +5122,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -5324,12 +5451,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -5339,12 +5466,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -5588,12 +5715,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -5603,12 +5730,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -5933,8 +6060,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6053,8 +6186,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6130,8 +6269,14 @@ The ConfigMap to select from
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6166,8 +6311,14 @@ The Secret to select from
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6175,6 +6326,88 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         <td>boolean</td>
         <td>
           Specify whether the Secret must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.podDnsConfig
+<sup><sup>[↩ Parent](#opampbridgespec)</sup></sup>
+
+
+
+PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>nameservers</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS name server IP addresses.
+This will be appended to the base nameservers generated from DNSPolicy.
+Duplicated nameservers will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opampbridgespecpoddnsconfigoptionsindex">options</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of DNS resolver options.
+This will be merged with the base options generated from DNSPolicy.
+Duplicated entries will be removed. Resolution options given in Options
+will override those that appear in the base DNSPolicy.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>searches</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS search domains for host-name lookup.
+This will be appended to the base search paths generated from DNSPolicy.
+Duplicated search paths will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.podDnsConfig.options[index]
+<sup><sup>[↩ Parent](#opampbridgespecpoddnsconfig)</sup></sup>
+
+
+
+PodDNSConfigOption defines DNS resolver options of a pod.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6198,6 +6431,14 @@ PodSecurityContext will be set as the pod security context.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#opampbridgespecpodsecuritycontextapparmorprofile">appArmorProfile</a></b></td>
+        <td>object</td>
+        <td>
+          appArmorProfile is the AppArmor options to use by the containers in this pod.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>fsGroup</b></td>
         <td>integer</td>
         <td>
@@ -6320,6 +6561,48 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
 If unspecified, the options within a container's SecurityContext will be used.
 If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
 Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.podSecurityContext.appArmorProfile
+<sup><sup>[↩ Parent](#opampbridgespecpodsecuritycontext)</sup></sup>
+
+
+
+appArmorProfile is the AppArmor options to use by the containers in this pod.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime's default profile.
+  Unconfined - no AppArmor enforcement.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is "Localhost".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6733,6 +7016,15 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opampbridgespecsecuritycontextapparmorprofile">appArmorProfile</a></b></td>
+        <td>object</td>
+        <td>
+          appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opampbridgespecsecuritycontextcapabilities">capabilities</a></b></td>
         <td>object</td>
         <td>
@@ -6838,6 +7130,49 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
 If unspecified, the options from the PodSecurityContext will be used.
 If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
 Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.securityContext.appArmorProfile
+<sup><sup>[↩ Parent](#opampbridgespecsecuritycontext)</sup></sup>
+
+
+
+appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime's default profile.
+  Unconfined - no AppArmor enforcement.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is "Localhost".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -7394,7 +7729,9 @@ not contain ':'.<br/>
           mountPropagation determines how mounts are propagated from the host
 to container and the other way around.
 When not set, MountPropagationNone is used.
-This field is beta in 1.10.<br/>
+This field is beta in 1.10.
+When RecursiveReadOnly is set to IfPossible or to Enabled, MountPropagation must be None or unspecified
+(which defaults to None).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7403,6 +7740,32 @@ This field is beta in 1.10.<br/>
         <td>
           Mounted read-only if true, read-write otherwise (false or unspecified).
 Defaults to false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>recursiveReadOnly</b></td>
+        <td>string</td>
+        <td>
+          RecursiveReadOnly specifies whether read-only mounts should be handled
+recursively.
+
+
+If ReadOnly is false, this field has no meaning and must be unspecified.
+
+
+If ReadOnly is true, and this field is set to Disabled, the mount is not made
+recursively read-only.  If this field is set to IfPossible, the mount is made
+recursively read-only, if it is supported by the container runtime.  If this
+field is set to Enabled, the mount is made recursively read-only if it is
+supported by the container runtime, otherwise the pod will not be started and
+an error will be generated to indicate the reason.
+
+
+If this field is set to IfPossible or Enabled, MountPropagation must be set to
+None (or be unspecified, which defaults to None).
+
+
+If this field is not specified, it is treated as an equivalent of Disabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7969,8 +8332,14 @@ More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8055,8 +8424,14 @@ to OpenStack.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8112,8 +8487,14 @@ relative and may not contain the '..' path or start with '..'.<br/>
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8267,8 +8648,14 @@ secret object contains more than one secret, all secret references are passed.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8345,7 +8732,7 @@ DownwardAPIVolumeFile represents information to create the file containing the p
         <td><b><a href="#opampbridgespecvolumesindexdownwardapiitemsindexfieldref">fieldRef</a></b></td>
         <td>object</td>
         <td>
-          Required: Selects a field of the pod: only annotations, labels, name and namespace are supported.<br/>
+          Required: Selects a field of the pod: only annotations, labels, name, namespace and uid are supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8379,7 +8766,7 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
 
 
 
-Required: Selects a field of the pod: only annotations, labels, name and namespace are supported.
+Required: Selects a field of the pod: only annotations, labels, name, namespace and uid are supported.
 
 <table>
     <thead>
@@ -8735,7 +9122,7 @@ will be set by the persistentvolume controller if it exists.
 If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
 set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
 exists.
-More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
 (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.<br/>
         </td>
         <td>false</td>
@@ -9206,8 +9593,14 @@ scripts.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9582,8 +9975,14 @@ secretRef is the CHAP Secret for iSCSI target and initiator authentication
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10064,8 +10463,14 @@ relative and may not contain the '..' path or start with '..'.<br/>
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10184,7 +10589,7 @@ DownwardAPIVolumeFile represents information to create the file containing the p
         <td><b><a href="#opampbridgespecvolumesindexprojectedsourcesindexdownwardapiitemsindexfieldref">fieldRef</a></b></td>
         <td>object</td>
         <td>
-          Required: Selects a field of the pod: only annotations, labels, name and namespace are supported.<br/>
+          Required: Selects a field of the pod: only annotations, labels, name, namespace and uid are supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10218,7 +10623,7 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
 
 
 
-Required: Selects a field of the pod: only annotations, labels, name and namespace are supported.
+Required: Selects a field of the pod: only annotations, labels, name, namespace and uid are supported.
 
 <table>
     <thead>
@@ -10323,8 +10728,14 @@ relative and may not contain the '..' path or start with '..'.<br/>
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10627,8 +11038,14 @@ More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10754,8 +11171,14 @@ sensitive information. If this is not provided, Login operation will fail.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10964,8 +11387,14 @@ credentials.  If not specified, default values will be attempted.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11890,8 +12319,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12010,8 +12445,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12087,8 +12528,14 @@ The ConfigMap to select from
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -12123,8 +12570,14 @@ The Secret to select from
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13541,6 +13994,15 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexsecuritycontextapparmorprofile">appArmorProfile</a></b></td>
+        <td>object</td>
+        <td>
+          appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexsecuritycontextcapabilities">capabilities</a></b></td>
         <td>object</td>
         <td>
@@ -13646,6 +14108,49 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
 If unspecified, the options from the PodSecurityContext will be used.
 If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
 Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].securityContext.appArmorProfile
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexsecuritycontext)</sup></sup>
+
+
+
+appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime's default profile.
+  Unconfined - no AppArmor enforcement.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is "Localhost".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -14241,7 +14746,9 @@ not contain ':'.<br/>
           mountPropagation determines how mounts are propagated from the host
 to container and the other way around.
 When not set, MountPropagationNone is used.
-This field is beta in 1.10.<br/>
+This field is beta in 1.10.
+When RecursiveReadOnly is set to IfPossible or to Enabled, MountPropagation must be None or unspecified
+(which defaults to None).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14250,6 +14757,32 @@ This field is beta in 1.10.<br/>
         <td>
           Mounted read-only if true, read-write otherwise (false or unspecified).
 Defaults to false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>recursiveReadOnly</b></td>
+        <td>string</td>
+        <td>
+          RecursiveReadOnly specifies whether read-only mounts should be handled
+recursively.
+
+
+If ReadOnly is false, this field has no meaning and must be unspecified.
+
+
+If ReadOnly is true, and this field is set to Disabled, the mount is not made
+recursively read-only.  If this field is set to IfPossible, the mount is made
+recursively read-only, if it is supported by the container runtime.  If this
+field is set to Enabled, the mount is made recursively read-only if it is
+supported by the container runtime, otherwise the pod will not be started and
+an error will be generated to indicate the reason.
+
+
+If this field is set to IfPossible or Enabled, MountPropagation must be set to
+None (or be unspecified, which defaults to None).
+
+
+If this field is not specified, it is treated as an equivalent of Disabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14813,12 +15346,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -14828,12 +15361,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -15077,12 +15610,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -15092,12 +15625,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -15421,12 +15954,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -15436,12 +15969,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -15685,12 +16218,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -15700,12 +16233,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -16729,8 +17262,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16849,8 +17388,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16926,8 +17471,14 @@ The ConfigMap to select from
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -16962,8 +17513,14 @@ The Secret to select from
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -17537,8 +18094,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -17657,8 +18220,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -17734,8 +18303,14 @@ The ConfigMap to select from
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -17770,8 +18345,14 @@ The Secret to select from
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19188,6 +19769,15 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexsecuritycontextapparmorprofile">appArmorProfile</a></b></td>
+        <td>object</td>
+        <td>
+          appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecinitcontainersindexsecuritycontextcapabilities">capabilities</a></b></td>
         <td>object</td>
         <td>
@@ -19293,6 +19883,49 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
 If unspecified, the options from the PodSecurityContext will be used.
 If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
 Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].securityContext.appArmorProfile
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexsecuritycontext)</sup></sup>
+
+
+
+appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime's default profile.
+  Unconfined - no AppArmor enforcement.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is "Localhost".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19888,7 +20521,9 @@ not contain ':'.<br/>
           mountPropagation determines how mounts are propagated from the host
 to container and the other way around.
 When not set, MountPropagationNone is used.
-This field is beta in 1.10.<br/>
+This field is beta in 1.10.
+When RecursiveReadOnly is set to IfPossible or to Enabled, MountPropagation must be None or unspecified
+(which defaults to None).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19897,6 +20532,32 @@ This field is beta in 1.10.<br/>
         <td>
           Mounted read-only if true, read-write otherwise (false or unspecified).
 Defaults to false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>recursiveReadOnly</b></td>
+        <td>string</td>
+        <td>
+          RecursiveReadOnly specifies whether read-only mounts should be handled
+recursively.
+
+
+If ReadOnly is false, this field has no meaning and must be unspecified.
+
+
+If ReadOnly is true, and this field is set to Disabled, the mount is not made
+recursively read-only.  If this field is set to IfPossible, the mount is made
+recursively read-only, if it is supported by the container runtime.  If this
+field is set to Enabled, the mount is made recursively read-only if it is
+supported by the container runtime, otherwise the pod will not be started and
+an error will be generated to indicate the reason.
+
+
+If this field is set to IfPossible or Enabled, MountPropagation must be set to
+None (or be unspecified, which defaults to None).
+
+
+If this field is not specified, it is treated as an equivalent of Disabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -20678,6 +21339,14 @@ In sidecar mode, the opentelemetry-operator will ignore this setting.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecpodsecuritycontextapparmorprofile">appArmorProfile</a></b></td>
+        <td>object</td>
+        <td>
+          appArmorProfile is the AppArmor options to use by the containers in this pod.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>fsGroup</b></td>
         <td>integer</td>
         <td>
@@ -20800,6 +21469,48 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
 If unspecified, the options within a container's SecurityContext will be used.
 If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
 Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.podSecurityContext.appArmorProfile
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecpodsecuritycontext)</sup></sup>
+
+
+
+appArmorProfile is the AppArmor options to use by the containers in this pod.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime's default profile.
+  Unconfined - no AppArmor enforcement.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is "Localhost".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -21232,6 +21943,15 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecsecuritycontextapparmorprofile">appArmorProfile</a></b></td>
+        <td>object</td>
+        <td>
+          appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecsecuritycontextcapabilities">capabilities</a></b></td>
         <td>object</td>
         <td>
@@ -21337,6 +22057,49 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
 If unspecified, the options from the PodSecurityContext will be used.
 If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
 Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.securityContext.appArmorProfile
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecsecuritycontext)</sup></sup>
+
+
+
+appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime's default profile.
+  Unconfined - no AppArmor enforcement.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is "Localhost".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -22238,12 +23001,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -22253,12 +23016,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -22502,12 +23265,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -22517,12 +23280,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -22846,12 +23609,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -22861,12 +23624,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -23110,12 +23873,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -23125,12 +23888,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -23455,8 +24218,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23575,8 +24344,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -23712,6 +24487,14 @@ targetallocator.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorpodsecuritycontextapparmorprofile">appArmorProfile</a></b></td>
+        <td>object</td>
+        <td>
+          appArmorProfile is the AppArmor options to use by the containers in this pod.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>fsGroup</b></td>
         <td>integer</td>
         <td>
@@ -23834,6 +24617,48 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
 If unspecified, the options within a container's SecurityContext will be used.
 If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
 Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.podSecurityContext.appArmorProfile
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorpodsecuritycontext)</sup></sup>
+
+
+
+appArmorProfile is the AppArmor options to use by the containers in this pod.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime's default profile.
+  Unconfined - no AppArmor enforcement.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is "Localhost".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -24204,6 +25029,15 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorsecuritycontextapparmorprofile">appArmorProfile</a></b></td>
+        <td>object</td>
+        <td>
+          appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatorsecuritycontextcapabilities">capabilities</a></b></td>
         <td>object</td>
         <td>
@@ -24309,6 +25143,49 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
 If unspecified, the options from the PodSecurityContext will be used.
 If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
 Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.securityContext.appArmorProfile
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorsecuritycontext)</sup></sup>
+
+
+
+appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime's default profile.
+  Unconfined - no AppArmor enforcement.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is "Localhost".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -25473,7 +26350,7 @@ will be set by the persistentvolume controller if it exists.
 If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
 set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
 exists.
-More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
 (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.<br/>
         </td>
         <td>false</td>
@@ -25829,7 +26706,7 @@ should ignore the update for the purpose it was designed.<br/>
         <td>[]object</td>
         <td>
           conditions is the current Condition of persistent volume claim. If underlying persistent volume is being
-resized then the Condition will be set to 'ResizeStarted'.<br/>
+resized then the Condition will be set to 'Resizing'.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -25921,7 +26798,7 @@ PersistentVolumeClaimCondition contains details about state of pvc
         <td>string</td>
         <td>
           reason is a unique, this should be a short, machine understandable string that gives the reason
-for condition's last transition. If it reports "ResizeStarted" that means the underlying
+for condition's last transition. If it reports "Resizing" that means the underlying
 persistent volume is being resized.<br/>
         </td>
         <td>false</td>
@@ -26012,7 +26889,9 @@ not contain ':'.<br/>
           mountPropagation determines how mounts are propagated from the host
 to container and the other way around.
 When not set, MountPropagationNone is used.
-This field is beta in 1.10.<br/>
+This field is beta in 1.10.
+When RecursiveReadOnly is set to IfPossible or to Enabled, MountPropagation must be None or unspecified
+(which defaults to None).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26021,6 +26900,32 @@ This field is beta in 1.10.<br/>
         <td>
           Mounted read-only if true, read-write otherwise (false or unspecified).
 Defaults to false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>recursiveReadOnly</b></td>
+        <td>string</td>
+        <td>
+          RecursiveReadOnly specifies whether read-only mounts should be handled
+recursively.
+
+
+If ReadOnly is false, this field has no meaning and must be unspecified.
+
+
+If ReadOnly is true, and this field is set to Disabled, the mount is not made
+recursively read-only.  If this field is set to IfPossible, the mount is made
+recursively read-only, if it is supported by the container runtime.  If this
+field is set to Enabled, the mount is made recursively read-only if it is
+supported by the container runtime, otherwise the pod will not be started and
+an error will be generated to indicate the reason.
+
+
+If this field is set to IfPossible or Enabled, MountPropagation must be set to
+None (or be unspecified, which defaults to None).
+
+
+If this field is not specified, it is treated as an equivalent of Disabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26587,8 +27492,14 @@ More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -26673,8 +27584,14 @@ to OpenStack.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -26730,8 +27647,14 @@ relative and may not contain the '..' path or start with '..'.<br/>
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26885,8 +27808,14 @@ secret object contains more than one secret, all secret references are passed.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -26963,7 +27892,7 @@ DownwardAPIVolumeFile represents information to create the file containing the p
         <td><b><a href="#opentelemetrycollectorspecvolumesindexdownwardapiitemsindexfieldref">fieldRef</a></b></td>
         <td>object</td>
         <td>
-          Required: Selects a field of the pod: only annotations, labels, name and namespace are supported.<br/>
+          Required: Selects a field of the pod: only annotations, labels, name, namespace and uid are supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -26997,7 +27926,7 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
 
 
 
-Required: Selects a field of the pod: only annotations, labels, name and namespace are supported.
+Required: Selects a field of the pod: only annotations, labels, name, namespace and uid are supported.
 
 <table>
     <thead>
@@ -27353,7 +28282,7 @@ will be set by the persistentvolume controller if it exists.
 If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
 set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
 exists.
-More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
 (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.<br/>
         </td>
         <td>false</td>
@@ -27824,8 +28753,14 @@ scripts.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -28200,8 +29135,14 @@ secretRef is the CHAP Secret for iSCSI target and initiator authentication
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -28682,8 +29623,14 @@ relative and may not contain the '..' path or start with '..'.<br/>
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -28802,7 +29749,7 @@ DownwardAPIVolumeFile represents information to create the file containing the p
         <td><b><a href="#opentelemetrycollectorspecvolumesindexprojectedsourcesindexdownwardapiitemsindexfieldref">fieldRef</a></b></td>
         <td>object</td>
         <td>
-          Required: Selects a field of the pod: only annotations, labels, name and namespace are supported.<br/>
+          Required: Selects a field of the pod: only annotations, labels, name, namespace and uid are supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -28836,7 +29783,7 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
 
 
 
-Required: Selects a field of the pod: only annotations, labels, name and namespace are supported.
+Required: Selects a field of the pod: only annotations, labels, name, namespace and uid are supported.
 
 <table>
     <thead>
@@ -28941,8 +29888,14 @@ relative and may not contain the '..' path or start with '..'.<br/>
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -29245,8 +30198,14 @@ More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -29372,8 +30331,14 @@ sensitive information. If this is not provided, Login operation will fail.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -29582,8 +30547,14 @@ credentials.  If not specified, default values will be attempted.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -30029,6 +31000,13 @@ the generated pods.<br/>
         <td>
           PodDisruptionBudget specifies the pod disruption budget configuration to use
 for the generated workload.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecpoddnsconfig">podDnsConfig</a></b></td>
+        <td>object</td>
+        <td>
+          PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30738,8 +31716,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30858,8 +31842,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30935,8 +31925,14 @@ The ConfigMap to select from
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30971,8 +31967,14 @@ The Secret to select from
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -32389,6 +33391,15 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexsecuritycontextapparmorprofile-1">appArmorProfile</a></b></td>
+        <td>object</td>
+        <td>
+          appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindexsecuritycontextcapabilities-1">capabilities</a></b></td>
         <td>object</td>
         <td>
@@ -32494,6 +33505,49 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
 If unspecified, the options from the PodSecurityContext will be used.
 If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
 Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.additionalContainers[index].securityContext.appArmorProfile
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecadditionalcontainersindexsecuritycontext-1)</sup></sup>
+
+
+
+appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime's default profile.
+  Unconfined - no AppArmor enforcement.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is "Localhost".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -33089,7 +34143,9 @@ not contain ':'.<br/>
           mountPropagation determines how mounts are propagated from the host
 to container and the other way around.
 When not set, MountPropagationNone is used.
-This field is beta in 1.10.<br/>
+This field is beta in 1.10.
+When RecursiveReadOnly is set to IfPossible or to Enabled, MountPropagation must be None or unspecified
+(which defaults to None).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -33098,6 +34154,32 @@ This field is beta in 1.10.<br/>
         <td>
           Mounted read-only if true, read-write otherwise (false or unspecified).
 Defaults to false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>recursiveReadOnly</b></td>
+        <td>string</td>
+        <td>
+          RecursiveReadOnly specifies whether read-only mounts should be handled
+recursively.
+
+
+If ReadOnly is false, this field has no meaning and must be unspecified.
+
+
+If ReadOnly is true, and this field is set to Disabled, the mount is not made
+recursively read-only.  If this field is set to IfPossible, the mount is made
+recursively read-only, if it is supported by the container runtime.  If this
+field is set to Enabled, the mount is made recursively read-only if it is
+supported by the container runtime, otherwise the pod will not be started and
+an error will be generated to indicate the reason.
+
+
+If this field is set to IfPossible or Enabled, MountPropagation must be set to
+None (or be unspecified, which defaults to None).
+
+
+If this field is not specified, it is treated as an equivalent of Disabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -33661,12 +34743,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -33676,12 +34758,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -33925,12 +35007,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -33940,12 +35022,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -34269,12 +35351,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -34284,12 +35366,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -34533,12 +35615,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -34548,12 +35630,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -35681,8 +36763,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -35801,8 +36889,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -35878,8 +36972,14 @@ The ConfigMap to select from
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -35914,8 +37014,14 @@ The Secret to select from
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -36489,8 +37595,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -36609,8 +37721,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -36686,8 +37804,14 @@ The ConfigMap to select from
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -36722,8 +37846,14 @@ The Secret to select from
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -38140,6 +39270,15 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecinitcontainersindexsecuritycontextapparmorprofile-1">appArmorProfile</a></b></td>
+        <td>object</td>
+        <td>
+          appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecinitcontainersindexsecuritycontextcapabilities-1">capabilities</a></b></td>
         <td>object</td>
         <td>
@@ -38245,6 +39384,49 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
 If unspecified, the options from the PodSecurityContext will be used.
 If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
 Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.initContainers[index].securityContext.appArmorProfile
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecinitcontainersindexsecuritycontext-1)</sup></sup>
+
+
+
+appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime's default profile.
+  Unconfined - no AppArmor enforcement.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is "Localhost".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -38840,7 +40022,9 @@ not contain ':'.<br/>
           mountPropagation determines how mounts are propagated from the host
 to container and the other way around.
 When not set, MountPropagationNone is used.
-This field is beta in 1.10.<br/>
+This field is beta in 1.10.
+When RecursiveReadOnly is set to IfPossible or to Enabled, MountPropagation must be None or unspecified
+(which defaults to None).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -38849,6 +40033,32 @@ This field is beta in 1.10.<br/>
         <td>
           Mounted read-only if true, read-write otherwise (false or unspecified).
 Defaults to false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>recursiveReadOnly</b></td>
+        <td>string</td>
+        <td>
+          RecursiveReadOnly specifies whether read-only mounts should be handled
+recursively.
+
+
+If ReadOnly is false, this field has no meaning and must be unspecified.
+
+
+If ReadOnly is true, and this field is set to Disabled, the mount is not made
+recursively read-only.  If this field is set to IfPossible, the mount is made
+recursively read-only, if it is supported by the container runtime.  If this
+field is set to Enabled, the mount is made recursively read-only if it is
+supported by the container runtime, otherwise the pod will not be started and
+an error will be generated to indicate the reason.
+
+
+If this field is set to IfPossible or Enabled, MountPropagation must be set to
+None (or be unspecified, which defaults to None).
+
+
+If this field is not specified, it is treated as an equivalent of Disabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -39608,6 +40818,88 @@ evictions by specifying "100%".<br/>
 </table>
 
 
+### OpenTelemetryCollector.spec.podDnsConfig
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>nameservers</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS name server IP addresses.
+This will be appended to the base nameservers generated from DNSPolicy.
+Duplicated nameservers will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecpoddnsconfigoptionsindex">options</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of DNS resolver options.
+This will be merged with the base options generated from DNSPolicy.
+Duplicated entries will be removed. Resolution options given in Options
+will override those that appear in the base DNSPolicy.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>searches</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS search domains for host-name lookup.
+This will be appended to the base search paths generated from DNSPolicy.
+Duplicated search paths will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.podDnsConfig.options[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecpoddnsconfig)</sup></sup>
+
+
+
+PodDNSConfigOption defines DNS resolver options of a pod.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpenTelemetryCollector.spec.podSecurityContext
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
 
@@ -39630,6 +40922,14 @@ In sidecar mode, the opentelemetry-operator will ignore this setting.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspecpodsecuritycontextapparmorprofile-1">appArmorProfile</a></b></td>
+        <td>object</td>
+        <td>
+          appArmorProfile is the AppArmor options to use by the containers in this pod.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>fsGroup</b></td>
         <td>integer</td>
         <td>
@@ -39752,6 +41052,48 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
 If unspecified, the options within a container's SecurityContext will be used.
 If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
 Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.podSecurityContext.appArmorProfile
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecpodsecuritycontext-1)</sup></sup>
+
+
+
+appArmorProfile is the AppArmor options to use by the containers in this pod.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime's default profile.
+  Unconfined - no AppArmor enforcement.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is "Localhost".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -40275,6 +41617,15 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecsecuritycontextapparmorprofile-1">appArmorProfile</a></b></td>
+        <td>object</td>
+        <td>
+          appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecsecuritycontextcapabilities-1">capabilities</a></b></td>
         <td>object</td>
         <td>
@@ -40380,6 +41731,49 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
 If unspecified, the options from the PodSecurityContext will be used.
 If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
 Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.securityContext.appArmorProfile
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecsecuritycontext-1)</sup></sup>
+
+
+
+appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime's default profile.
+  Unconfined - no AppArmor enforcement.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is "Localhost".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -41282,12 +42676,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -41297,12 +42691,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -41546,12 +42940,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -41561,12 +42955,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -41890,12 +43284,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -41905,12 +43299,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -42154,12 +43548,12 @@ If it's null, this PodAffinityTerm matches with no Pods.<br/>
         <td>
           MatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key in (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MatchLabelKeys and LabelSelector.
-Also, MatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both matchLabelKeys and labelSelector.
+Also, matchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -42169,12 +43563,12 @@ This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature
         <td>
           MismatchLabelKeys is a set of pod label keys to select which pods will
 be taken into consideration. The keys are used to lookup values from the
-incoming pod labels, those key-value labels are merged with `LabelSelector` as `key notin (value)`
+incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)`
 to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
-The same key is forbidden to exist in both MismatchLabelKeys and LabelSelector.
-Also, MismatchLabelKeys cannot be set when LabelSelector isn't set.
+The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
 This is an alpha field and requires enabling MatchLabelKeysInPodAffinity feature gate.<br/>
         </td>
         <td>false</td>
@@ -42499,8 +43893,14 @@ Selects a key of a ConfigMap.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -42619,8 +44019,14 @@ Selects a key of a secret in the pod's namespace
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -42756,6 +44162,14 @@ targetallocator.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorpodsecuritycontextapparmorprofile-1">appArmorProfile</a></b></td>
+        <td>object</td>
+        <td>
+          appArmorProfile is the AppArmor options to use by the containers in this pod.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>fsGroup</b></td>
         <td>integer</td>
         <td>
@@ -42878,6 +44292,48 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
 If unspecified, the options within a container's SecurityContext will be used.
 If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
 Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.podSecurityContext.appArmorProfile
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorpodsecuritycontext-1)</sup></sup>
+
+
+
+appArmorProfile is the AppArmor options to use by the containers in this pod.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime's default profile.
+  Unconfined - no AppArmor enforcement.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is "Localhost".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -43419,6 +44875,15 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorsecuritycontextapparmorprofile-1">appArmorProfile</a></b></td>
+        <td>object</td>
+        <td>
+          appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatorsecuritycontextcapabilities-1">capabilities</a></b></td>
         <td>object</td>
         <td>
@@ -43524,6 +44989,49 @@ Note that this field cannot be set when spec.os.name is windows.<br/>
 If unspecified, the options from the PodSecurityContext will be used.
 If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
 Note that this field cannot be set when spec.os.name is linux.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.securityContext.appArmorProfile
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorsecuritycontext-1)</sup></sup>
+
+
+
+appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod's appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime's default profile.
+  Unconfined - no AppArmor enforcement.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>localhostProfile</b></td>
+        <td>string</td>
+        <td>
+          localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is "Localhost".<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -44584,7 +46092,7 @@ will be set by the persistentvolume controller if it exists.
 If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
 set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
 exists.
-More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
 (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.<br/>
         </td>
         <td>false</td>
@@ -44940,7 +46448,7 @@ should ignore the update for the purpose it was designed.<br/>
         <td>[]object</td>
         <td>
           conditions is the current Condition of persistent volume claim. If underlying persistent volume is being
-resized then the Condition will be set to 'ResizeStarted'.<br/>
+resized then the Condition will be set to 'Resizing'.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -45032,7 +46540,7 @@ PersistentVolumeClaimCondition contains details about state of pvc
         <td>string</td>
         <td>
           reason is a unique, this should be a short, machine understandable string that gives the reason
-for condition's last transition. If it reports "ResizeStarted" that means the underlying
+for condition's last transition. If it reports "Resizing" that means the underlying
 persistent volume is being resized.<br/>
         </td>
         <td>false</td>
@@ -45123,7 +46631,9 @@ not contain ':'.<br/>
           mountPropagation determines how mounts are propagated from the host
 to container and the other way around.
 When not set, MountPropagationNone is used.
-This field is beta in 1.10.<br/>
+This field is beta in 1.10.
+When RecursiveReadOnly is set to IfPossible or to Enabled, MountPropagation must be None or unspecified
+(which defaults to None).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -45132,6 +46642,32 @@ This field is beta in 1.10.<br/>
         <td>
           Mounted read-only if true, read-write otherwise (false or unspecified).
 Defaults to false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>recursiveReadOnly</b></td>
+        <td>string</td>
+        <td>
+          RecursiveReadOnly specifies whether read-only mounts should be handled
+recursively.
+
+
+If ReadOnly is false, this field has no meaning and must be unspecified.
+
+
+If ReadOnly is true, and this field is set to Disabled, the mount is not made
+recursively read-only.  If this field is set to IfPossible, the mount is made
+recursively read-only, if it is supported by the container runtime.  If this
+field is set to Enabled, the mount is made recursively read-only if it is
+supported by the container runtime, otherwise the pod will not be started and
+an error will be generated to indicate the reason.
+
+
+If this field is set to IfPossible or Enabled, MountPropagation must be set to
+None (or be unspecified, which defaults to None).
+
+
+If this field is not specified, it is treated as an equivalent of Disabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -45698,8 +47234,14 @@ More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -45784,8 +47326,14 @@ to OpenStack.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -45841,8 +47389,14 @@ relative and may not contain the '..' path or start with '..'.<br/>
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -45996,8 +47550,14 @@ secret object contains more than one secret, all secret references are passed.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -46074,7 +47634,7 @@ DownwardAPIVolumeFile represents information to create the file containing the p
         <td><b><a href="#opentelemetrycollectorspecvolumesindexdownwardapiitemsindexfieldref-1">fieldRef</a></b></td>
         <td>object</td>
         <td>
-          Required: Selects a field of the pod: only annotations, labels, name and namespace are supported.<br/>
+          Required: Selects a field of the pod: only annotations, labels, name, namespace and uid are supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -46108,7 +47668,7 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
 
 
 
-Required: Selects a field of the pod: only annotations, labels, name and namespace are supported.
+Required: Selects a field of the pod: only annotations, labels, name, namespace and uid are supported.
 
 <table>
     <thead>
@@ -46464,7 +48024,7 @@ will be set by the persistentvolume controller if it exists.
 If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
 set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
 exists.
-More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
 (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.<br/>
         </td>
         <td>false</td>
@@ -46935,8 +48495,14 @@ scripts.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -47311,8 +48877,14 @@ secretRef is the CHAP Secret for iSCSI target and initiator authentication
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -47793,8 +49365,14 @@ relative and may not contain the '..' path or start with '..'.<br/>
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -47913,7 +49491,7 @@ DownwardAPIVolumeFile represents information to create the file containing the p
         <td><b><a href="#opentelemetrycollectorspecvolumesindexprojectedsourcesindexdownwardapiitemsindexfieldref-1">fieldRef</a></b></td>
         <td>object</td>
         <td>
-          Required: Selects a field of the pod: only annotations, labels, name and namespace are supported.<br/>
+          Required: Selects a field of the pod: only annotations, labels, name, namespace and uid are supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -47947,7 +49525,7 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
 
 
 
-Required: Selects a field of the pod: only annotations, labels, name and namespace are supported.
+Required: Selects a field of the pod: only annotations, labels, name, namespace and uid are supported.
 
 <table>
     <thead>
@@ -48052,8 +49630,14 @@ relative and may not contain the '..' path or start with '..'.<br/>
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -48356,8 +49940,14 @@ More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -48483,8 +50073,14 @@ sensitive information. If this is not provided, Login operation will fail.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -48693,8 +50289,14 @@ credentials.  If not specified, default values will be attempted.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>

@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: poddnsconfig-collector
+spec:
+  template:
+    spec:
+      dnsConfig:
+        nameservers:
+          - 8.8.8.8
+        searches:
+          - my.dns.search.suffix
+status:
+  readyReplicas: 1

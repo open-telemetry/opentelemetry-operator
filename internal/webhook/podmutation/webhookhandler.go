@@ -46,7 +46,7 @@ type WebhookHandler interface {
 // the implementation.
 type podMutationWebhook struct {
 	client      client.Client
-	decoder     *admission.Decoder
+	decoder     admission.Decoder
 	logger      logr.Logger
 	podMutators []PodMutator
 	config      config.Config
@@ -58,7 +58,7 @@ type PodMutator interface {
 }
 
 // NewWebhookHandler creates a new WebhookHandler.
-func NewWebhookHandler(cfg config.Config, logger logr.Logger, decoder *admission.Decoder, cl client.Client, podMutators []PodMutator) WebhookHandler {
+func NewWebhookHandler(cfg config.Config, logger logr.Logger, decoder admission.Decoder, cl client.Client, podMutators []PodMutator) WebhookHandler {
 	return &podMutationWebhook{
 		config:      cfg,
 		decoder:     decoder,

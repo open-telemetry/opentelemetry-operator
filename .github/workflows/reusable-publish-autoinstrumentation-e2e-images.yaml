@@ -48,7 +48,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           tags: ${{ steps.meta.outputs.tags }}
           context: tests/instrumentation-e2e-apps/${{ inputs.language }}

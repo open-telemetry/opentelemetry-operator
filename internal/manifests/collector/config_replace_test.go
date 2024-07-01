@@ -31,8 +31,7 @@ func TestPrometheusParser(t *testing.T) {
 
 	t.Run("should update config with targetAllocator block if block not present", func(t *testing.T) {
 		// Set up the test scenario
-		param.OtelCol.Spec.TargetAllocator.Enabled = true
-		actualConfig, err := ReplaceConfig(param.OtelCol)
+		actualConfig, err := ReplaceConfig(param.OtelCol, param.TargetAllocator)
 		assert.NoError(t, err)
 
 		// Verify the expected changes in the config
@@ -57,9 +56,7 @@ func TestPrometheusParser(t *testing.T) {
 		paramTa, err := newParams("test/test-img", "testdata/http_sd_config_ta_test.yaml")
 		require.NoError(t, err)
 
-		paramTa.OtelCol.Spec.TargetAllocator.Enabled = true
-
-		actualConfig, err := ReplaceConfig(paramTa.OtelCol)
+		actualConfig, err := ReplaceConfig(paramTa.OtelCol, param.TargetAllocator)
 		assert.NoError(t, err)
 
 		// Verify the expected changes in the config
@@ -80,9 +77,7 @@ func TestPrometheusParser(t *testing.T) {
 	})
 
 	t.Run("should not update config with http_sd_config", func(t *testing.T) {
-		param.OtelCol.Spec.TargetAllocator.Enabled = false
-
-		actualConfig, err := ReplaceConfig(param.OtelCol)
+		actualConfig, err := ReplaceConfig(param.OtelCol, nil)
 		assert.NoError(t, err)
 
 		// prepare
@@ -120,25 +115,23 @@ func TestReplaceConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("should not modify config when TargetAllocator is disabled", func(t *testing.T) {
-		param.OtelCol.Spec.TargetAllocator.Enabled = false
 		expectedConfigBytes, err := os.ReadFile("testdata/relabel_config_original.yaml")
 		assert.NoError(t, err)
 		expectedConfig := string(expectedConfigBytes)
 
-		actualConfig, err := ReplaceConfig(param.OtelCol)
+		actualConfig, err := ReplaceConfig(param.OtelCol, nil)
 		assert.NoError(t, err)
 
 		assert.YAMLEq(t, expectedConfig, actualConfig)
 	})
 
 	t.Run("should remove scrape configs if TargetAllocator is enabled", func(t *testing.T) {
-		param.OtelCol.Spec.TargetAllocator.Enabled = true
 
 		expectedConfigBytes, err := os.ReadFile("testdata/config_expected_targetallocator.yaml")
 		assert.NoError(t, err)
 		expectedConfig := string(expectedConfigBytes)
 
-		actualConfig, err := ReplaceConfig(param.OtelCol)
+		actualConfig, err := ReplaceConfig(param.OtelCol, param.TargetAllocator)
 		assert.NoError(t, err)
 
 		assert.YAMLEq(t, expectedConfig, actualConfig)

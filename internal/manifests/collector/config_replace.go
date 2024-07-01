@@ -21,6 +21,7 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install" // Package install has the side-effect of registering all builtin.
 	"gopkg.in/yaml.v3"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
@@ -41,13 +42,15 @@ type Config struct {
 	TargetAllocConfig *targetAllocator   `yaml:"target_allocator,omitempty"`
 }
 
-func ReplaceConfig(instance v1beta1.OpenTelemetryCollector) (string, error) {
-	cfgStr, err := instance.Spec.Config.Yaml()
+func ReplaceConfig(otelcol v1beta1.OpenTelemetryCollector, targetAllocator *v1alpha1.TargetAllocator) (string, error) {
+	collectorSpec := otelcol.Spec
+	taEnabled := targetAllocator != nil
+	cfgStr, err := collectorSpec.Config.Yaml()
 	if err != nil {
 		return "", err
 	}
-	// Check if TargetAllocator is enabled, if not, return the original config
-	if !instance.Spec.TargetAllocator.Enabled {
+	// Check if TargetAllocator is present, if not, return the original config
+	if !taEnabled {
 		return cfgStr, nil
 	}
 
@@ -61,14 +64,14 @@ func ReplaceConfig(instance v1beta1.OpenTelemetryCollector) (string, error) {
 		return "", getCfgPromErr
 	}
 
-	validateCfgPromErr := ta.ValidatePromConfig(promCfgMap, instance.Spec.TargetAllocator.Enabled)
+	validateCfgPromErr := ta.ValidatePromConfig(promCfgMap, taEnabled)
 	if validateCfgPromErr != nil {
 		return "", validateCfgPromErr
 	}
 
 	// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
 	// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
-	updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(instance.Name))
+	updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(targetAllocator.Name))
 	if getCfgPromErr != nil {
 		return "", getCfgPromErr
 	}
