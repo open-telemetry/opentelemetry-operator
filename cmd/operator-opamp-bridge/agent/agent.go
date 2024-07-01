@@ -30,7 +30,7 @@ import (
 	"k8s.io/utils/clock"
 	"sigs.k8s.io/yaml"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/metrics"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
@@ -136,7 +136,7 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 }
 
 // getCollectorSelector destructures the collectors scale selector if present, if uses the labelmap from the operator.
-func (agent *Agent) getCollectorSelector(col v1alpha1.OpenTelemetryCollector) map[string]string {
+func (agent *Agent) getCollectorSelector(col v1beta1.OpenTelemetryCollector) map[string]string {
 	if len(col.Status.Scale.Selector) > 0 {
 		selMap := map[string]string{}
 		for _, kvPair := range strings.Split(col.Status.Scale.Selector, ",") {
