@@ -44,7 +44,7 @@ const (
 )
 
 // TODO: Refactor this logic, centralize it. See: https://github.com/open-telemetry/opentelemetry-operator/issues/2603
-type components struct {
+type componentDefinitions struct {
 	receivers  []string
 	processors []string
 	exporters  []string
@@ -193,9 +193,9 @@ func extractElements(elements map[string]interface{}) []string {
 	return items
 }
 
-func getComponentsFromConfig(yamlContent Config) *components {
+func getComponentsFromConfig(yamlContent Config) *componentDefinitions {
 
-	info := &components{
+	info := &componentDefinitions{
 		receivers: extractElements(yamlContent.Receivers.Object),
 		exporters: extractElements(yamlContent.Exporters.Object),
 	}

@@ -24,7 +24,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -107,18 +106,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[serviceTypeLabel] = BaseServiceType.String()
 
-	out, err := params.OtelCol.Spec.Config.Yaml()
-	if err != nil {
-		return nil, err
-	}
-
-	configFromString, err := adapters.ConfigFromString(out)
-	if err != nil {
-		params.Log.Error(err, "couldn't extract the configuration from the context")
-		return nil, err
-	}
-
-	ports, err := adapters.ConfigToPorts(params.Log, configFromString)
+	ports, err := params.OtelCol.Spec.Config.GetAllPorts(params.Log)
 	if err != nil {
 		return nil, err
 	}

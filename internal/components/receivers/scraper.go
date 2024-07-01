@@ -31,7 +31,7 @@ type ScraperParser struct {
 	componentType string
 }
 
-func (s *ScraperParser) Ports(logger logr.Logger, config interface{}) ([]corev1.ServicePort, error) {
+func (s *ScraperParser) Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error) {
 	return nil, nil
 }
 

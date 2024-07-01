@@ -319,7 +319,7 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := components.NewMultiPortReceiver(tt.fields.name, tt.fields.opts...)
-			got, err := m.Ports(logr.Discard(), tt.args.config)
+			got, err := m.Ports(logr.Discard(), tt.fields.name, tt.args.config)
 			if !tt.wantErr(t, err, fmt.Sprintf("Ports(%v)", tt.args.config)) {
 				return
 			}

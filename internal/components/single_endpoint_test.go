@@ -284,7 +284,117 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := components.NewSinglePortParser(tt.fields.name, tt.fields.port, tt.fields.opts...)
-			got, err := s.Ports(logr.Discard(), tt.args.config)
+			got, err := s.Ports(logr.Discard(), tt.fields.name, tt.args.config)
+			if !tt.wantErr(t, err, fmt.Sprintf("Ports(%v)", tt.args.config)) {
+				return
+			}
+			assert.ElementsMatchf(t, tt.want, got, "Ports(%v)", tt.args.config)
+		})
+	}
+}
+
+func TestNewSilentSinglePortParser_Ports(t *testing.T) {
+	type fields struct {
+		name string
+		port int32
+		opts []components.PortBuilderOption
+	}
+	type args struct {
+		config interface{}
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []corev1.ServicePort
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "ValidConfigWithPort",
+			fields: fields{
+				name: "testparser",
+				port: 8080,
+			},
+			args: args{
+				config: map[string]interface{}{
+					"port": 8080,
+				},
+			},
+			want: []corev1.ServicePort{
+				{Name: "testparser", Port: 8080},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "ValidConfigWithDefaultPort",
+			fields: fields{
+				name: "testparser",
+				port: 8080,
+			},
+			args: args{
+				config: map[string]interface{}{},
+			},
+			want: []corev1.ServicePort{
+				{Name: "testparser", Port: 8080},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "ConfigWithFixins",
+			fields: fields{
+				name: "testparser",
+				port: 8080,
+				opts: []components.PortBuilderOption{
+					components.WithTargetPort(4317),
+					components.WithProtocol(corev1.ProtocolTCP),
+					components.WithAppProtocol(&components.GrpcProtocol),
+				},
+			},
+			args: args{
+				config: map[string]interface{}{},
+			},
+			want: []corev1.ServicePort{
+				{
+					Name:        "testparser",
+					Port:        8080,
+					TargetPort:  intstr.FromInt32(4317),
+					Protocol:    corev1.ProtocolTCP,
+					AppProtocol: &components.GrpcProtocol,
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "InvalidConfigMissingPort",
+			fields: fields{
+				name: "testparser",
+				port: 0,
+			},
+			args: args{
+				config: map[string]interface{}{
+					"endpoint": "garbageeeee",
+				},
+			},
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		{
+			name: "ErrorParsingConfig",
+			fields: fields{
+				name: "testparser",
+				port: 8080,
+			},
+			args: args{
+				config: "invalid config",
+			},
+			want:    nil,
+			wantErr: assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := components.NewSilentSinglePortParser(tt.fields.name, tt.fields.port, tt.fields.opts...)
+			got, err := s.Ports(logr.Discard(), tt.fields.name, tt.args.config)
 			if !tt.wantErr(t, err, fmt.Sprintf("Ports(%v)", tt.args.config)) {
 				return
 			}

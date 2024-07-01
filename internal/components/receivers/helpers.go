@@ -30,12 +30,12 @@ func Register(name string, p components.ComponentPortParser) {
 
 // IsRegistered checks whether a parser is registered with the given name.
 func IsRegistered(name string) bool {
-	_, ok := registry[name]
+	_, ok := registry[components.ComponentType(name)]
 	return ok
 }
 
-// BuilderFor returns a parser builder for the given exporter name.
-func BuilderFor(name string) components.ComponentPortParser {
+// ReceiverFor returns a parser builder for the given exporter name.
+func ReceiverFor(name string) components.ComponentPortParser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}
@@ -136,6 +136,7 @@ var (
 		NewScraperParser("haproxy"),
 		NewScraperParser("flinkmetrics"),
 		NewScraperParser("couchdb"),
+		NewScraperParser("filelog"),
 	}
 )
 

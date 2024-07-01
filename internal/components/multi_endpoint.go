@@ -42,7 +42,7 @@ type MultiPortReceiver struct {
 	portMappings map[string]*corev1.ServicePort
 }
 
-func (m *MultiPortReceiver) Ports(logger logr.Logger, config interface{}) ([]corev1.ServicePort, error) {
+func (m *MultiPortReceiver) Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error) {
 	multiProtoEndpointCfg := &MultiProtocolEndpointConfig{}
 	if err := mapstructure.Decode(config, multiProtoEndpointCfg); err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (m *MultiPortReceiver) Ports(logger logr.Logger, config interface{}) ([]cor
 			port := defaultSvc.Port
 			if ec != nil {
 				port = ec.GetPortNumOrDefault(logger, port)
-				defaultSvc.Name = naming.PortName(fmt.Sprintf("%s-%s", m.name, protocol), port)
+				defaultSvc.Name = naming.PortName(fmt.Sprintf("%s-%s", name, protocol), port)
 			}
 			ports = append(ports, ConstructServicePort(defaultSvc, port))
 		} else {

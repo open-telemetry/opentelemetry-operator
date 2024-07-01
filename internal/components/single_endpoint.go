@@ -44,13 +44,15 @@ func (g *SingleEndpointConfig) GetPortNumOrDefault(logger logr.Logger, p int32) 
 	return num
 }
 
+// GetPortNum attempts to get the port for the given config. If it cannot, the UnsetPort and the given missingPortError
+// are returned.
 func (g *SingleEndpointConfig) GetPortNum() (int32, error) {
 	if len(g.Endpoint) > 0 {
 		return PortFromEndpoint(g.Endpoint)
 	} else if len(g.ListenAddress) > 0 {
 		return PortFromEndpoint(g.ListenAddress)
 	}
-	return 0, PortNotFoundErr
+	return UnsetPort, PortNotFoundErr
 }
 
 // SingleEndpointParser is a special parser for a generic receiver that has an endpoint or listen_address in its
@@ -59,20 +61,26 @@ type SingleEndpointParser struct {
 	name string
 
 	svcPort *corev1.ServicePort
+
+	// failSilently allows the parser to prevent the propagation of failure if the parser fails to set a port.
+	failSilently bool
 }
 
-func (s *SingleEndpointParser) Ports(logger logr.Logger, config interface{}) ([]corev1.ServicePort, error) {
+func (s *SingleEndpointParser) Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error) {
 	singleEndpointConfig := &SingleEndpointConfig{}
 	if err := mapstructure.Decode(config, singleEndpointConfig); err != nil {
 		return nil, err
 	}
 	if _, err := singleEndpointConfig.GetPortNum(); err != nil && s.svcPort.Port == UnsetPort {
 		logger.WithValues("receiver", s.name).Error(err, "couldn't parse the endpoint's port and no default port set")
+		if s.failSilently {
+			err = nil
+		}
 		return []corev1.ServicePort{}, err
 	}
 
 	port := singleEndpointConfig.GetPortNumOrDefault(logger, s.svcPort.Port)
-	s.svcPort.Name = naming.PortName(s.name, port)
+	s.svcPort.Name = naming.PortName(name, port)
 	return []corev1.ServicePort{ConstructServicePort(s.svcPort, port)}, nil
 }
 
@@ -93,4 +101,16 @@ func NewSinglePortParser(name string, port int32, opts ...PortBuilderOption) *Si
 		opt(servicePort)
 	}
 	return &SingleEndpointParser{name: name, svcPort: servicePort}
+}
+
+// NewSilentSinglePortParser returns a SingleEndpointParser that errors silently on failure to find a port.
+func NewSilentSinglePortParser(name string, port int32, opts ...PortBuilderOption) *SingleEndpointParser {
+	servicePort := &corev1.ServicePort{
+		Name: naming.PortName(name, port),
+		Port: port,
+	}
+	for _, opt := range opts {
+		opt(servicePort)
+	}
+	return &SingleEndpointParser{name: name, svcPort: servicePort, failSilently: true}
 }
