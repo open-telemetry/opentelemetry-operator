@@ -228,17 +228,19 @@ func (c Client) ListInstances() ([]v1beta1.OpenTelemetryCollector, error) {
 		return nil, err
 	}
 	managedCollectorLabelSelector := client.MatchingLabelsSelector{Selector: labelSelector.Add(*requirement)}
-	reportingCollectorLabelMatcher := client.MatchingLabels{ReportingLabelKey: "true"}
 
-	managedCollectors, listErr := c.listCollectors(ctx, managedCollectorLabelSelector)
-	if listErr != nil {
-		return nil, listErr
+	managedCollectors := v1beta1.OpenTelemetryCollectorList{}
+	err = c.k8sClient.List(ctx, &managedCollectors, managedCollectorLabelSelector)
+	if err != nil {
+		return nil, err
 	}
 	instances = append(instances, managedCollectors.Items...)
 
-	reportingCollectors, listErr := c.listCollectors(ctx, reportingCollectorLabelMatcher)
-	if listErr != nil {
-		return nil, listErr
+	reportingCollectorLabelMatcher := client.MatchingLabels{ReportingLabelKey: "true"}
+	reportingCollectors := v1beta1.OpenTelemetryCollectorList{}
+	err = c.k8sClient.List(ctx, &reportingCollectors, reportingCollectorLabelMatcher)
+	if err != nil {
+		return nil, err
 	}
 	instances = append(instances, reportingCollectors.Items...)
 
@@ -247,15 +249,6 @@ func (c Client) ListInstances() ([]v1beta1.OpenTelemetryCollector, error) {
 	}
 
 	return instances, nil
-}
-
-func (c Client) listCollectors(ctx context.Context, opts ...client.ListOption) (v1beta1.OpenTelemetryCollectorList, error) {
-	collectorsList := v1beta1.OpenTelemetryCollectorList{}
-	err := c.k8sClient.List(ctx, &collectorsList, opts...)
-	if err != nil {
-		return v1beta1.OpenTelemetryCollectorList{}, err
-	}
-	return collectorsList, nil
 }
 
 func (c Client) GetInstance(name string, namespace string) (*v1beta1.OpenTelemetryCollector, error) {
