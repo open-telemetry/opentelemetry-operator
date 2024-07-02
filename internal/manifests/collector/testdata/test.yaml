@@ -18,5 +18,4 @@ service:
   pipelines:
     metrics:
       receivers: [prometheus, jaeger]
-      processors: []
       exporters: [debug]

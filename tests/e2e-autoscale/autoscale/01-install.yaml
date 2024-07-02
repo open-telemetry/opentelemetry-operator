@@ -40,5 +40,4 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
           exporters: [logging]

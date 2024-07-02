@@ -32,5 +32,4 @@ service:
   pipelines:
     metrics:
       receivers: [prometheus]
-      processors: []
       exporters: [debug]

@@ -177,9 +177,8 @@ func Test_collectorUpdate(t *testing.T) {
 	require.NoError(t, err, "Should apply base config")
 
 	// Get the newly created collector
-	instance, err := c.GetInstance(name, namespace)
+	_, err = c.GetInstance(name, namespace)
 	require.NoError(t, err, "Should be able to get the newly created instance")
-	assert.Contains(t, instance.Spec.Config, "processors: []")
 
 	// Try updating with an invalid one
 	configmap.Body = []byte("empty, invalid!")
@@ -224,9 +223,8 @@ func Test_collectorDelete(t *testing.T) {
 	require.NoError(t, err, "Should apply base config")
 
 	// Get the newly created collector
-	instance, err := c.GetInstance(name, namespace)
+	_, err = c.GetInstance(name, namespace)
 	require.NoError(t, err, "Should be able to get the newly created instance")
-	assert.Contains(t, instance.Spec.Config, "processors: []")
 
 	// Delete it
 	err = c.Delete(name, namespace)

@@ -31293,19 +31293,19 @@ Pipeline is a struct of component type to a list of component IDs.
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>processors</b></td>
-        <td>[]string</td>
-        <td>
-          <br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b>receivers</b></td>
         <td>[]string</td>
         <td>
           <br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>processors</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
