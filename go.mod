@@ -17,7 +17,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oklog/run v1.1.0
 	github.com/oklog/ulid/v2 v2.1.0
-	github.com/open-telemetry/opamp-go v0.14.0
+	github.com/open-telemetry/opamp-go v0.15.0
 	github.com/openshift/api v0.0.0-20240124164020-e2ce40831f2e
 	github.com/operator-framework/operator-lib v0.14.0
 	github.com/prometheus-operator/prometheus-operator v0.75.0
