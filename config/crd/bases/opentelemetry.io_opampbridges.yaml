@@ -597,6 +597,29 @@ spec:
                 additionalProperties:
                   type: string
                 type: object
+              podDnsConfig:
+                properties:
+                  nameservers:
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: atomic
+                  options:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        value:
+                          type: string
+                      type: object
+                    type: array
+                    x-kubernetes-list-type: atomic
+                  searches:
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: atomic
+                type: object
               podSecurityContext:
                 properties:
                   appArmorProfile:

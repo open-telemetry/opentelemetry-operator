@@ -453,3 +453,33 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	assert.NotEmpty(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.Equal(t, testTopologySpreadConstraintValue, d2.Spec.Template.Spec.TopologySpreadConstraints)
 }
+
+func TestDeploymentDNSConfig(t *testing.T) {
+	// prepare
+	opAmpBridge := v1alpha1.OpAMPBridge{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.OpAMPBridgeSpec{
+			PodDNSConfig: v1.PodDNSConfig{
+				Nameservers: []string{"8.8.8.8"},
+				Searches:    []string{"my.dns.search.suffix"},
+			},
+		},
+	}
+
+	cfg := config.New()
+
+	params := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opAmpBridge,
+		Log:         logger,
+	}
+
+	// test
+	d := Deployment(params)
+	assert.Equal(t, "my-instance-opamp-bridge", d.Name)
+	assert.Equal(t, v1.DNSPolicy("None"), d.Spec.Template.Spec.DNSPolicy)
+	assert.Equal(t, d.Spec.Template.Spec.DNSConfig.Nameservers, []string{"8.8.8.8"})
+}

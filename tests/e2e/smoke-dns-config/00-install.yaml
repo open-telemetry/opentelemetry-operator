@@ -1,0 +1,28 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: poddnsconfig
+spec:
+  mode: "deployment"
+  podDnsConfig:
+    nameservers:
+      - 8.8.8.8
+    searches:
+      - my.dns.search.suffix
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+      batch:
+        timeout: 10s
+    exporters:
+      logging:
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [logging]

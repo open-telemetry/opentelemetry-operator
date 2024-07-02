@@ -105,6 +105,8 @@ type OpAMPBridgeSpec struct {
 	// https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 	// +optional
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
+	PodDNSConfig v1.PodDNSConfig `json:"podDnsConfig,omitempty"`
 }
 
 // OpAMPBridgeStatus defines the observed state of OpAMPBridge.

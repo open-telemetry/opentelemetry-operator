@@ -320,7 +320,6 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 		}
 
 		generatedConfig, err := w.configGenerator.GenerateServerConfiguration(
-			ctx,
 			"30s",
 			"",
 			nil,

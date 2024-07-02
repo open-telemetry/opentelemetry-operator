@@ -532,3 +532,36 @@ func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, gracePeriod, *d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
 }
+
+func TestDeploymentDNSConfig(t *testing.T) {
+	// Test default
+	otelcol := collectorInstance()
+	// prepare
+	targetAllocator := v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PodDNSConfig: v1.PodDNSConfig{
+					Nameservers: []string{"8.8.8.8"},
+					Searches:    []string{"my.dns.search.suffix"},
+				},
+			},
+		},
+	}
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          config.New(),
+		Log:             logger,
+	}
+
+	// test
+	d, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Equal(t, "my-instance-targetallocator", d.Name)
+	assert.Equal(t, v1.DNSPolicy("None"), d.Spec.Template.Spec.DNSPolicy)
+	assert.Equal(t, d.Spec.Template.Spec.DNSConfig.Nameservers, []string{"8.8.8.8"})
+}

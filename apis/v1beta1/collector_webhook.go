@@ -190,6 +190,9 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj run
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", oldObj)
 	}
 
+	if otelcolOld.Spec.Mode != otelcol.Spec.Mode {
+		return admission.Warnings{}, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support modification", otelcolOld.Spec.Mode)
+	}
 	warnings, err := c.validate(ctx, otelcol)
 	if err != nil {
 		return warnings, err

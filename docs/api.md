@@ -4199,6 +4199,13 @@ OpAMPBridge pods.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opampbridgespecpoddnsconfig">podDnsConfig</a></b></td>
+        <td>object</td>
+        <td>
+          PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opampbridgespecpodsecuritycontext">podSecurityContext</a></b></td>
         <td>object</td>
         <td>
@@ -6319,6 +6326,88 @@ TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://git
         <td>boolean</td>
         <td>
           Specify whether the Secret must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.podDnsConfig
+<sup><sup>[↩ Parent](#opampbridgespec)</sup></sup>
+
+
+
+PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>nameservers</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS name server IP addresses.
+This will be appended to the base nameservers generated from DNSPolicy.
+Duplicated nameservers will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opampbridgespecpoddnsconfigoptionsindex">options</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of DNS resolver options.
+This will be merged with the base options generated from DNSPolicy.
+Duplicated entries will be removed. Resolution options given in Options
+will override those that appear in the base DNSPolicy.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>searches</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS search domains for host-name lookup.
+This will be appended to the base search paths generated from DNSPolicy.
+Duplicated search paths will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.podDnsConfig.options[index]
+<sup><sup>[↩ Parent](#opampbridgespecpoddnsconfig)</sup></sup>
+
+
+
+PodDNSConfigOption defines DNS resolver options of a pod.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -30914,6 +31003,13 @@ for the generated workload.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecpoddnsconfig">podDnsConfig</a></b></td>
+        <td>object</td>
+        <td>
+          PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecpodsecuritycontext-1">podSecurityContext</a></b></td>
         <td>object</td>
         <td>
@@ -40716,6 +40812,88 @@ by specifying 0. This is a mutually exclusive setting with "minAvailable".<br/>
 "selector" will still be available after the eviction, i.e. even in the
 absence of the evicted pod.  So for example you can prevent all voluntary
 evictions by specifying "100%".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.podDnsConfig
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>nameservers</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS name server IP addresses.
+This will be appended to the base nameservers generated from DNSPolicy.
+Duplicated nameservers will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecpoddnsconfigoptionsindex">options</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of DNS resolver options.
+This will be merged with the base options generated from DNSPolicy.
+Duplicated entries will be removed. Resolution options given in Options
+will override those that appear in the base DNSPolicy.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>searches</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS search domains for host-name lookup.
+This will be appended to the base search paths generated from DNSPolicy.
+Duplicated search paths will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.podDnsConfig.options[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecpoddnsconfig)</sup></sup>
+
+
+
+PodDNSConfigOption defines DNS resolver options of a pod.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
