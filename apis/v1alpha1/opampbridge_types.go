@@ -112,7 +112,7 @@ type OpAMPBridgeSpec struct {
 	// +optional
 	IpFamilies []v1.IPFamily `json:"ipFamilies,omitempty"`
 	// IPFamilyPolicy represents the dual-stack-ness requested or required by a Service
-	IpFamilyPolicy v1.IPFamilyPolicy `json:"ipFamilyPolicy,omitempty"`
+	IpFamilyPolicy *v1.IPFamilyPolicy `json:"ipFamilyPolicy,omitempty"`
 }
 
 // OpAMPBridgeStatus defines the observed state of OpAMPBridge.

@@ -325,23 +325,26 @@ func TestServiceWithIpFamily(t *testing.T) {
 	})
 	t.Run("should return IPPolicy SingleStack", func(t *testing.T) {
 		params := deploymentParams()
-		params.OtelCol.Spec.IpFamilyPolicy = v1.IPFamilyPolicySingleStack
+		baseIpFamily := v1.IPFamilyPolicySingleStack
+		params.OtelCol.Spec.IpFamilyPolicy = &baseIpFamily
 		actual, err := Service(params)
 		assert.NoError(t, err)
-		assert.Equal(t, actual.Spec.IPFamilyPolicy, &params.OtelCol.Spec.IpFamilyPolicy)
+		assert.Equal(t, actual.Spec.IPFamilyPolicy, params.OtelCol.Spec.IpFamilyPolicy)
 	})
 	t.Run("should return IPPolicy PreferDualStack", func(t *testing.T) {
 		params := deploymentParams()
-		params.OtelCol.Spec.IpFamilyPolicy = v1.IPFamilyPolicyPreferDualStack
+		baseIpFamily := v1.IPFamilyPolicyPreferDualStack
+		params.OtelCol.Spec.IpFamilyPolicy = &baseIpFamily
 		actual, err := Service(params)
 		assert.NoError(t, err)
-		assert.Equal(t, actual.Spec.IPFamilyPolicy, &params.OtelCol.Spec.IpFamilyPolicy)
+		assert.Equal(t, actual.Spec.IPFamilyPolicy, params.OtelCol.Spec.IpFamilyPolicy)
 	})
 	t.Run("should return IPPolicy RequireDualStack ", func(t *testing.T) {
 		params := deploymentParams()
-		params.OtelCol.Spec.IpFamilyPolicy = v1.IPFamilyPolicyRequireDualStack
+		baseIpFamily := v1.IPFamilyPolicyRequireDualStack
+		params.OtelCol.Spec.IpFamilyPolicy = &baseIpFamily
 		actual, err := Service(params)
 		assert.NoError(t, err)
-		assert.Equal(t, actual.Spec.IPFamilyPolicy, &params.OtelCol.Spec.IpFamilyPolicy)
+		assert.Equal(t, actual.Spec.IPFamilyPolicy, params.OtelCol.Spec.IpFamilyPolicy)
 	})
 }

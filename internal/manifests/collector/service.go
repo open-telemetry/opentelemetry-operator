@@ -99,7 +99,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 				Port: metricsPort,
 			}},
 			IPFamilies:     params.OtelCol.Spec.IpFamilies,
-			IPFamilyPolicy: &params.OtelCol.Spec.IpFamilyPolicy,
+			IPFamilyPolicy: params.OtelCol.Spec.IpFamilyPolicy,
 		},
 	}, nil
 }
@@ -178,7 +178,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 			ClusterIP:             "",
 			Ports:                 ports,
 			IPFamilies:            params.OtelCol.Spec.IpFamilies,
-			IPFamilyPolicy:        &params.OtelCol.Spec.IpFamilyPolicy,
+			IPFamilyPolicy:        params.OtelCol.Spec.IpFamilyPolicy,
 		},
 	}, nil
 }

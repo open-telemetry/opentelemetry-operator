@@ -42,7 +42,7 @@ func Service(params Params) *corev1.Service {
 				TargetPort: intstr.FromString("http"),
 			}},
 			IPFamilies:     params.TargetAllocator.Spec.IpFamilies,
-			IPFamilyPolicy: &params.TargetAllocator.Spec.IpFamilyPolicy,
+			IPFamilyPolicy: params.TargetAllocator.Spec.IpFamilyPolicy,
 		},
 	}
 }

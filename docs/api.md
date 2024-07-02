@@ -30958,7 +30958,7 @@ https://kubernetes.io/docs/concepts/workloads/pods/init-containers/<br/>
           IPFamily represents the IP Family (IPv4 or IPv6). This type is used
 to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).<br/>
           <br/>
-            <i>Default</i>: IPv4<br/>
+            <i>Default</i>: [IPv4]<br/>
         </td>
         <td>false</td>
       </tr><tr>
