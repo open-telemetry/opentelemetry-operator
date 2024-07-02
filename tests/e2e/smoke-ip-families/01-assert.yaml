@@ -15,8 +15,7 @@ spec:
   ipFamilies:
     - IPv4
     - IPv6
-  ippolicyPolicy:
-    - PreferDualStack
+  ipFamilyPolicy: PreferDualStack
   ports:
   - appProtocol: grpc
     name: jaeger-grpc
@@ -44,8 +43,7 @@ spec:
   ipFamilies:
     - IPv4
     - IPv6
-  ippolicyPolicy:
-    - PreferDualStack
+  ipFamilyPolicy: PreferDualStack
   ports:
   - appProtocol: grpc
     name: jaeger-grpc

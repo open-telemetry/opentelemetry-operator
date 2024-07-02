@@ -14,8 +14,7 @@ metadata:
 spec:
   ipFamilies:
     - IPv4
-  ipFamilyPolicy:
-    - SingleStack
+  ipFamilyPolicy: SingleStack
   ports:
   - appProtocol: grpc
     name: jaeger-grpc
@@ -42,9 +41,7 @@ metadata:
 spec:
   ipFamilies:
     - IPv4
-    - IPv6
-  ipFamilyPolicy:
-    - PreferDualStack
+  ipFamilyPolicy: SingleStack
   ports:
   - appProtocol: grpc
     name: jaeger-grpc
