@@ -44,8 +44,10 @@ func Service(params manifests.Params) *corev1.Service {
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
-			Selector: selector,
-			Ports:    ports,
+			Selector:       selector,
+			Ports:          ports,
+			IPFamilies:     params.OpAMPBridge.Spec.IpFamilies,
+			IPFamilyPolicy: params.OpAMPBridge.Spec.IpFamilyPolicy,
 		},
 	}
 }

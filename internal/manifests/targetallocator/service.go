@@ -41,6 +41,8 @@ func Service(params Params) *corev1.Service {
 				Port:       80,
 				TargetPort: intstr.FromString("http"),
 			}},
+			IPFamilies:     params.TargetAllocator.Spec.IpFamilies,
+			IPFamilyPolicy: params.TargetAllocator.Spec.IpFamilyPolicy,
 		},
 	}
 }
