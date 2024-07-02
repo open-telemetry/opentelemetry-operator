@@ -440,7 +440,7 @@ func main() {
 
 		bv := func(collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
 			var warnings admission.Warnings
-			params, newErr := collectorReconciler.GetParams(collector)
+			params, newErr := collectorReconciler.GetParams(context.Background(), collector)
 			if err != nil {
 				warnings = append(warnings, newErr.Error())
 				return warnings

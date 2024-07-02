@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -49,6 +50,8 @@ import (
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
+
+const collectorTargetAllocatorLabelName = "opentelemetry.io/target-allocator"
 
 var (
 	ownedClusterObjectTypes = []client.Object{
@@ -168,7 +171,7 @@ func (r *OpenTelemetryCollectorReconciler) getConfigMapsToRemove(configVersionsT
 	return ownedConfigMaps
 }
 
-func (r *OpenTelemetryCollectorReconciler) GetParams(instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
+func (r *OpenTelemetryCollectorReconciler) GetParams(ctx context.Context, instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
 	p := manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
@@ -179,12 +182,26 @@ func (r *OpenTelemetryCollectorReconciler) GetParams(instance v1beta1.OpenTeleme
 	}
 
 	// generate the target allocator CR from the collector CR
-	targetAllocator, err := collector.TargetAllocator(p)
+	targetAllocator, err := r.getTargetAllocator(ctx, p)
 	if err != nil {
 		return p, err
 	}
 	p.TargetAllocator = targetAllocator
 	return p, nil
+}
+
+func (r *OpenTelemetryCollectorReconciler) getTargetAllocator(ctx context.Context, params manifests.Params) (*v1alpha1.TargetAllocator, error) {
+	otelcol := params.OtelCol
+	if taName, ok := otelcol.GetLabels()[collectorTargetAllocatorLabelName]; ok {
+		targetAllocator := &v1alpha1.TargetAllocator{}
+		taKey := client.ObjectKey{Name: taName, Namespace: otelcol.GetNamespace()}
+		err := r.Client.Get(ctx, taKey, targetAllocator)
+		if err != nil {
+			return nil, err
+		}
+		return targetAllocator, nil
+	}
+	return collector.TargetAllocator(params)
 }
 
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
@@ -230,7 +247,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	params, err := r.GetParams(instance)
+	params, err := r.GetParams(ctx, instance)
 	if err != nil {
 		log.Error(err, "Failed to create manifest.Params")
 		return ctrl.Result{}, err

@@ -98,7 +98,24 @@ func (r *TargetAllocatorReconciler) getCollector(ctx context.Context, instance v
 		return &collector, nil
 	}
 
-	return nil, nil
+	var collectors v1beta1.OpenTelemetryCollectorList
+	listOpts := []client.ListOption{
+		client.InNamespace(instance.GetNamespace()),
+		client.MatchingLabels{
+			collectorTargetAllocatorLabelName: instance.GetName(),
+		},
+	}
+	err := r.List(ctx, &collectors, listOpts...)
+	if err != nil {
+		return nil, err
+	}
+	if len(collectors.Items) == 0 {
+		return nil, nil
+	} else if len(collectors.Items) > 1 {
+		return nil, fmt.Errorf("found multiple OpenTelemetry collectors annotated with the same Target Allocator: %s/%s", instance.GetNamespace(), instance.GetName())
+	}
+
+	return &collectors.Items[0], nil
 }
 
 // NewTargetAllocatorReconciler creates a new reconciler for TargetAllocator objects.
@@ -195,6 +212,25 @@ func (r *TargetAllocatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		),
 	)
 
+	// watch collectors which have the target allocator label
+	collectorSelector := metav1.LabelSelector{
+		MatchExpressions: []metav1.LabelSelectorRequirement{
+			{
+				Key:      collectorTargetAllocatorLabelName,
+				Operator: metav1.LabelSelectorOpExists,
+			},
+		},
+	}
+	selectorPredicate, err := predicate.LabelSelectorPredicate(collectorSelector)
+	if err != nil {
+		return err
+	}
+	ctrlBuilder.Watches(
+		&v1beta1.OpenTelemetryCollector{},
+		handler.EnqueueRequestsFromMapFunc(getTargetAllocatorRequestsFromLabel),
+		builder.WithPredicates(selectorPredicate),
+	)
+
 	return ctrlBuilder.Complete(r)
 }
 
@@ -207,4 +243,18 @@ func getTargetAllocatorForCollector(_ context.Context, collector client.Object) 
 			},
 		},
 	}
+}
+
+func getTargetAllocatorRequestsFromLabel(_ context.Context, collector client.Object) []reconcile.Request {
+	if taName, ok := collector.GetLabels()[collectorTargetAllocatorLabelName]; ok {
+		return []reconcile.Request{
+			{
+				NamespacedName: types.NamespacedName{
+					Name:      taName,
+					Namespace: collector.GetNamespace(),
+				},
+			},
+		}
+	}
+	return []reconcile.Request{}
 }
