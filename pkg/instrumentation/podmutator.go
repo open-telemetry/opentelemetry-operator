@@ -22,6 +22,8 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -377,7 +379,7 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	}
 
 	if strings.EqualFold(instValue, "true") {
-		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns)
+		return pm.selectInstrumentationInstanceFromNamespace(ctx, ns, pod)
 	}
 
 	var instNamespacedName types.NamespacedName
@@ -396,18 +398,39 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	return otelInst, nil
 }
 
-func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (*v1alpha1.Instrumentation, error) {
+func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace, pod corev1.Pod) (*v1alpha1.Instrumentation, error) {
 	var otelInsts v1alpha1.InstrumentationList
 	if err := pm.Client.List(ctx, &otelInsts, client.InNamespace(ns.Name)); err != nil {
 		return nil, err
 	}
 
-	switch s := len(otelInsts.Items); {
+	// selector
+	var availableInstrument []v1alpha1.Instrumentation
+	for _, ins := range otelInsts.Items {
+		isMatch := true
+		if ins.Spec.Selector != nil {
+			labelSelector, err := v1.LabelSelectorAsSelector(ins.Spec.Selector)
+			if err != nil {
+				return nil, err
+			}
+			set := labels.Set(pod.GetLabels())
+			// selector not match
+			if !labelSelector.Matches(set) {
+				isMatch = false
+			}
+		}
+
+		if isMatch {
+			availableInstrument = append(availableInstrument, ins)
+		}
+	}
+
+	switch s := len(availableInstrument); {
 	case s == 0:
 		return nil, errNoInstancesAvailable
 	case s > 1:
 		return nil, errMultipleInstancesPossible
 	default:
-		return &otelInsts.Items[0], nil
+		return &availableInstrument[0], nil
 	}
 }

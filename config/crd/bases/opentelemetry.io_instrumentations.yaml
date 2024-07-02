@@ -1057,6 +1057,30 @@ spec:
                     - xray
                     type: string
                 type: object
+              selector:
+                properties:
+                  matchExpressions:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                        values:
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
             type: object
           status:
             type: object

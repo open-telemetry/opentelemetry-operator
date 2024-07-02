@@ -22,6 +22,13 @@ import (
 
 // InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumentation.
 type InstrumentationSpec struct {
+	// Selector is the label selector for affected Pods.
+	// This selector only takes effect when annotation: instrumentation.opentelemetry.io/inject-xx equal true.
+	// Unlike standard label selectors, `nil` means `everything`, and this is also the default.
+	// This may change in a future CRD version.
+	// +optional
+	Selector *metav1.LabelSelector `json:"selector,omitempty"`
+
 	// Exporter defines exporter configuration.
 	// +optional
 	Exporter `json:"exporter,omitempty"`
