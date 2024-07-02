@@ -798,7 +798,7 @@ Emeritus Target Allocator Maintainers
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
 - [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
-- [Mikołaj Świątek](https://github.com/swiatekm-sumo), Sumo Logic
+- [Mikołaj Świątek](https://github.com/swiatekm), Sumo Logic
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 
 Emeritus Maintainers
