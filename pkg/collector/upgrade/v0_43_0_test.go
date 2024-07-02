@@ -61,7 +61,6 @@ service:
   pipelines:
     traces: 
       receivers: [otlp/mtls]
-      processors: []
       exporters: [otlp]
 `,
 		},
@@ -99,7 +98,6 @@ service:
     traces:
       exporters:
       - otlp
-      processors: []
       receivers:
       - otlp/mtls
   telemetry:
@@ -121,7 +119,6 @@ service:
     traces:
       exporters:
       - otlp
-      processors: []
       receivers:
       - otlp/mtls
   telemetry:

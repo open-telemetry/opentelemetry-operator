@@ -18,5 +18,4 @@ spec:
       pipelines:
         traces:
           receivers: [kafka/traces]
-          processors: []
           exporters: [debug]

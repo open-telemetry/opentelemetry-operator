@@ -18,6 +18,5 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
           exporters: [debug]
   mode: sidecar

@@ -21,7 +21,6 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
           exporters: [debug]
 
 ---
@@ -48,7 +47,6 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
           exporters: [debug]
 
 ---
@@ -75,5 +73,4 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
           exporters: [debug]

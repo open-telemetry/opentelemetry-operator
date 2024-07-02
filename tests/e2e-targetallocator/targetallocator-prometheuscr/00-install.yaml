@@ -147,7 +147,6 @@ spec:
       pipelines:
         metrics:
           receivers: [prometheus]
-          processors: []
           exporters: [prometheus]
   mode: statefulset
   serviceAccount: collector

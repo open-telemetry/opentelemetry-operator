@@ -43,7 +43,6 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
           exporters: [debug]
 ---
 apiVersion: opentelemetry.io/v1alpha1
@@ -81,5 +80,4 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
           exporters: [debug]

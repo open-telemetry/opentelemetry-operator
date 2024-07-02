@@ -22,5 +22,4 @@ spec:
       pipelines:
         metrics:
           receivers: [otlp]
-          processors: []
           exporters: [prometheus/prod]

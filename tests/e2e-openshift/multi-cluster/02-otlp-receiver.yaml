@@ -27,7 +27,6 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
           exporters: [otlp]
   ingress:
     route:

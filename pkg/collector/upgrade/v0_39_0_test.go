@@ -101,7 +101,6 @@ service:
     metrics:
       exporters:
       - debug
-      processors: []
       receivers:
       - apache/mtls
       - apache
@@ -165,7 +164,6 @@ service:
     traces:
       exporters:
       - debug
-      processors: []
       receivers:
       - otlp/mtls
       - otlp

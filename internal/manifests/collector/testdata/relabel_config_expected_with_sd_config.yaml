@@ -51,6 +51,5 @@ service:
     metrics:
       exporters:
       - debug
-      processors: []
       receivers:
       - prometheus

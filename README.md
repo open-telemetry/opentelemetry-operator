@@ -121,7 +121,6 @@ spec:
       pipelines:
         traces:
           receivers: [jaeger]
-          processors: []
           exporters: [debug]
 EOF
 
@@ -629,7 +628,6 @@ spec:
       pipelines:
         metrics:
           receivers: [prometheus]
-          processors: []
           exporters: [debug]
 EOF
 ```
@@ -654,7 +652,6 @@ service:
   pipelines:
     metrics:
       receivers: [prometheus]
-      processors: []
       exporters: [debug]
 ```
 
@@ -713,7 +710,6 @@ spec:
       pipelines:
         metrics:
           receivers: [prometheus]
-          processors: []
           exporters: [debug]
 EOF
 ```

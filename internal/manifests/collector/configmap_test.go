@@ -53,7 +53,6 @@ service:
   pipelines:
     metrics:
       receivers: [prometheus, jaeger]
-      processors: []
       exporters: [debug]`,
 		}
 
@@ -92,7 +91,6 @@ service:
     metrics:
       exporters:
       - debug
-      processors: []
       receivers:
       - prometheus
 `,

@@ -83,7 +83,6 @@ service:
     metrics:
       exporters:
       - prometheusremotewrite
-      processors: []
       receivers:
       - influxdb
 `, res.Spec.Config)

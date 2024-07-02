@@ -52,7 +52,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: simplest-collector-17ca6c13
+  name: simplest-collector-ea71c537
 data:
   collector.yaml: |
     receivers:
@@ -67,6 +67,5 @@ data:
         traces:
           exporters:
             - debug
-          processors: []
           receivers:
             - otlp

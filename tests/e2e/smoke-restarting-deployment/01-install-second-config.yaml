@@ -18,6 +18,5 @@ spec:
       pipelines:
         traces:
           receivers: [jaeger, otlp]
-          processors: []
           exporters: [debug]
 
