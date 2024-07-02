@@ -1,0 +1,11 @@
+- op: add
+  path: "/spec/template/spec/containers/0/args"
+  value:
+    - --metrics-addr=127.0.0.1:8080
+    - --enable-leader-election
+    - --zap-log-level=info
+    - --zap-time-encoding=rfc3339nano
+    - --enable-nginx-instrumentation=true
+    - '--enable-go-instrumentation=true'
+    - '--enable-multi-instrumentation=true'
+    - '--feature-gates=+operator.observability.prometheus'

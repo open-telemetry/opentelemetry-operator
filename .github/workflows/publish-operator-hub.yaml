@@ -9,6 +9,7 @@ jobs:
     with:
       org: redhat-openshift-ecosystem
       repo: community-operators-prod
+      folder: openshift
     secrets:
       OPENTELEMETRYBOT_GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
 
@@ -17,5 +18,6 @@ jobs:
     with:
       org: k8s-operatorhub
       repo: community-operators
+      folder: community
     secrets:
       OPENTELEMETRYBOT_GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
