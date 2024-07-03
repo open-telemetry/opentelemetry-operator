@@ -5,6 +5,7 @@ metadata:
 spec:
   ipFamilies:
     - IPv4
+    - IPv6
   ipFamilyPolicy: PreferDualStack
   config:
     receivers:
