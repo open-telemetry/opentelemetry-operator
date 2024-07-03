@@ -59,6 +59,7 @@ func registerKnownTypes(s *k8sruntime.Scheme) error {
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.OpenTelemetryCollector{}, &v1alpha1.OpenTelemetryCollectorList{})
 	s.AddKnownTypes(v1beta1.GroupVersion, &v1beta1.OpenTelemetryCollector{}, &v1beta1.OpenTelemetryCollectorList{})
 	metav1.AddToGroupVersion(s, v1alpha1.GroupVersion)
+	metav1.AddToGroupVersion(s, v1beta1.GroupVersion)
 	return nil
 }
 
