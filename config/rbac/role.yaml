@@ -99,6 +99,8 @@ rules:
   - monitoring.coreos.com
   resources:
   - podmonitors
+  - probes
+  - scrapeconfigs
   - servicemonitors
   verbs:
   - create
