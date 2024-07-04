@@ -273,9 +273,12 @@ e2e-prometheuscr: chainsaw
 e2e-targetallocator: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator
 
-.PHONY: add-certmanager-rbac
-add-certmanager-rbac: 
-	./hack/add-certmanager-rbac.sh
+.PHONY: add-certmanager-permissions
+add-certmanager-permissions: 
+	# Kustomize only allows patches in the folder where the kustomization is located
+	# This folder is ignored by .gitignore
+	cp -r tests/e2e-ta-collector-mtls/certmanager-permissions config/rbac/certmanager-permissions
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path certmanager-permissions/certmanager.yaml
 
 # Target allocator collector mTLS end-to-tests
 .PHONY: e2e-ta-collector-mtls
