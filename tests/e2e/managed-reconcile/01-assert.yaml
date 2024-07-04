@@ -68,5 +68,4 @@ data:
       pipelines:
         traces:
           receivers: [jaeger, otlp]
-          processors: []
           exporters: [debug]

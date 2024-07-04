@@ -81,5 +81,4 @@ service:
   pipelines:
     logs:
       receivers: [filelog]
-      processors: []
       exporters: [debug]

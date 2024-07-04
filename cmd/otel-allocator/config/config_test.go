@@ -75,6 +75,7 @@ func TestLoad(t *testing.T) {
 						ScrapeTimeout:      model.Duration(10 * time.Second),
 						EvaluationInterval: model.Duration(60 * time.Second),
 					},
+					Runtime: promconfig.DefaultRuntimeConfig,
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
 							JobName:           "prometheus",
@@ -156,6 +157,7 @@ func TestLoad(t *testing.T) {
 						ScrapeTimeout:      model.Duration(10 * time.Second),
 						EvaluationInterval: model.Duration(60 * time.Second),
 					},
+					Runtime: promconfig.DefaultRuntimeConfig,
 					ScrapeConfigs: []*promconfig.ScrapeConfig{
 						{
 							JobName:           "prometheus",

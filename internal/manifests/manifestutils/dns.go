@@ -12,18 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package opampbridge
+package manifestutils
 
 import (
-	corev1 "k8s.io/api/core/v1"
+	"errors"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 )
 
-func getDNSPolicy(opampBridge v1alpha1.OpAMPBridge) corev1.DNSPolicy {
+var ErrorDNSPolicy = errors.New("when a dnsPolicy is set to None, the dnsConfig field has to be specified")
+
+// Get the Pod DNS Policy depending on whether we're using a host network.
+func GetDNSPolicy(hostNetwork bool, dnsConfig corev1.PodDNSConfig) corev1.DNSPolicy {
 	dnsPolicy := corev1.DNSClusterFirst
-	if opampBridge.Spec.HostNetwork {
+	if hostNetwork {
 		dnsPolicy = corev1.DNSClusterFirstWithHostNet
+	}
+	// If local DNS configuration is set, takes precedence of hostNetwork.
+	if dnsConfig.Nameservers != nil {
+		dnsPolicy = corev1.DNSNone
 	}
 	return dnsPolicy
 }

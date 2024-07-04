@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	go_yaml "gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -88,7 +89,7 @@ func TestDeploymentSecurityContext(t *testing.T) {
 
 	cfg := config.New()
 
-	params1 := manifests.Params{
+	params1 := Params{
 		TargetAllocator: targetallocator11,
 		Config:          cfg,
 		Log:             logger,
@@ -113,7 +114,7 @@ func TestDeploymentSecurityContext(t *testing.T) {
 
 	cfg = config.New()
 
-	params2 := manifests.Params{
+	params2 := Params{
 		TargetAllocator: targetAllocator2,
 		Config:          cfg,
 		Log:             logger,
@@ -132,8 +133,8 @@ func TestDeploymentNewDefault(t *testing.T) {
 	targetAllocator := targetAllocatorInstance()
 	cfg := config.New()
 
-	params := manifests.Params{
-		OtelCol:         otelcol,
+	params := Params{
+		Collector:       otelcol,
 		TargetAllocator: targetAllocator,
 		Config:          cfg,
 		Log:             logger,
@@ -166,8 +167,8 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	targetAllocator.Spec.PodAnnotations = testPodAnnotationValues
 	cfg := config.New()
 
-	params := manifests.Params{
-		OtelCol:         otelcol,
+	params := Params{
+		Collector:       otelcol,
 		TargetAllocator: targetAllocator,
 		Config:          cfg,
 		Log:             logger,
@@ -224,7 +225,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 	cfg := config.New()
 
-	params1 := manifests.Params{
+	params1 := Params{
 		TargetAllocator: targetAllocator1,
 		Config:          cfg,
 		Log:             logger,
@@ -249,7 +250,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 	cfg = config.New()
 
-	params2 := manifests.Params{
+	params2 := Params{
 		TargetAllocator: targetAllocator2,
 		Config:          cfg,
 		Log:             logger,
@@ -266,7 +267,7 @@ func TestDeploymentAffinity(t *testing.T) {
 
 	cfg := config.New()
 
-	params1 := manifests.Params{
+	params1 := Params{
 		TargetAllocator: targetAllocator1,
 		Config:          cfg,
 		Log:             logger,
@@ -289,7 +290,7 @@ func TestDeploymentAffinity(t *testing.T) {
 
 	cfg = config.New()
 
-	params2 := manifests.Params{
+	params2 := Params{
 		TargetAllocator: targetAllocator2,
 		Config:          cfg,
 		Log:             logger,
@@ -309,7 +310,7 @@ func TestDeploymentTolerations(t *testing.T) {
 	}
 
 	cfg := config.New()
-	params1 := manifests.Params{
+	params1 := Params{
 		TargetAllocator: targetAllocator1,
 		Config:          cfg,
 		Log:             logger,
@@ -331,7 +332,7 @@ func TestDeploymentTolerations(t *testing.T) {
 		},
 	}
 
-	params2 := manifests.Params{
+	params2 := Params{
 		TargetAllocator: targetAllocator2,
 		Config:          cfg,
 		Log:             logger,
@@ -354,7 +355,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 
 	cfg := config.New()
 
-	params1 := manifests.Params{
+	params1 := Params{
 		TargetAllocator: targetAllocator1,
 		Config:          cfg,
 		Log:             logger,
@@ -377,7 +378,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	}
 
 	cfg = config.New()
-	params2 := manifests.Params{
+	params2 := Params{
 		TargetAllocator: targetAllocator2,
 		Config:          cfg,
 		Log:             logger,
@@ -389,4 +390,178 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	assert.NotNil(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.NotEmpty(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.Equal(t, testTopologySpreadConstraintValue, d2.Spec.Template.Spec.TopologySpreadConstraints)
+}
+
+func TestDeploymentSetInitContainer(t *testing.T) {
+	// prepare
+	targetAllocator := targetAllocatorInstance()
+	targetAllocator.Spec.InitContainers = []v1.Container{
+		{
+			Name: "test",
+		},
+	}
+	otelcol := collectorInstance()
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          config.New(),
+		Log:             logger,
+	}
+
+	// test
+	d, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Len(t, d.Spec.Template.Spec.InitContainers, 1)
+}
+
+func TestDeploymentAdditionalContainers(t *testing.T) {
+	// prepare
+	targetAllocator := targetAllocatorInstance()
+	targetAllocator.Spec.AdditionalContainers = []v1.Container{
+		{
+			Name: "test",
+		},
+	}
+	otelcol := collectorInstance()
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          config.New(),
+		Log:             logger,
+	}
+
+	// test
+	d, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Len(t, d.Spec.Template.Spec.Containers, 2)
+	assert.Equal(t, v1.Container{Name: "test"}, d.Spec.Template.Spec.Containers[0])
+}
+
+func TestDeploymentHostNetwork(t *testing.T) {
+	// Test default
+	targetAllocator := targetAllocatorInstance()
+	otelcol := collectorInstance()
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          config.New(),
+		Log:             logger,
+	}
+
+	d1, err := Deployment(params)
+	require.NoError(t, err)
+
+	assert.Equal(t, d1.Spec.Template.Spec.HostNetwork, false)
+	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
+
+	// Test hostNetwork=true
+	params.TargetAllocator.Spec.HostNetwork = true
+
+	d2, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Equal(t, d2.Spec.Template.Spec.HostNetwork, true)
+	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
+}
+
+func TestDeploymentShareProcessNamespace(t *testing.T) {
+	// Test default
+	targetAllocator := targetAllocatorInstance()
+	otelcol := collectorInstance()
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          config.New(),
+		Log:             logger,
+	}
+
+	d1, err := Deployment(params)
+	require.NoError(t, err)
+	assert.False(t, *d1.Spec.Template.Spec.ShareProcessNamespace)
+
+	// Test ShareProcessNamespace=true
+	params.TargetAllocator.Spec.ShareProcessNamespace = true
+
+	d2, err := Deployment(params)
+	require.NoError(t, err)
+	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
+}
+
+func TestDeploymentPriorityClassName(t *testing.T) {
+	// Test default
+	targetAllocator := targetAllocatorInstance()
+	otelcol := collectorInstance()
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          config.New(),
+		Log:             logger,
+	}
+
+	d1, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Empty(t, d1.Spec.Template.Spec.PriorityClassName)
+
+	// Test PriorityClassName
+	params.TargetAllocator.Spec.PriorityClassName = "test-class"
+
+	d2, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Equal(t, params.TargetAllocator.Spec.PriorityClassName, d2.Spec.Template.Spec.PriorityClassName)
+}
+
+func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
+	// Test default
+	targetAllocator := targetAllocatorInstance()
+	otelcol := collectorInstance()
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          config.New(),
+		Log:             logger,
+	}
+
+	d1, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Nil(t, d1.Spec.Template.Spec.TerminationGracePeriodSeconds)
+
+	// Test TerminationGracePeriodSeconds
+	gracePeriod := int64(100)
+	params.TargetAllocator.Spec.TerminationGracePeriodSeconds = &gracePeriod
+
+	d2, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Equal(t, gracePeriod, *d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
+}
+
+func TestDeploymentDNSConfig(t *testing.T) {
+	// Test default
+	otelcol := collectorInstance()
+	// prepare
+	targetAllocator := v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PodDNSConfig: v1.PodDNSConfig{
+					Nameservers: []string{"8.8.8.8"},
+					Searches:    []string{"my.dns.search.suffix"},
+				},
+			},
+		},
+	}
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          config.New(),
+		Log:             logger,
+	}
+
+	// test
+	d, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Equal(t, "my-instance-targetallocator", d.Name)
+	assert.Equal(t, v1.DNSPolicy("None"), d.Spec.Template.Spec.DNSPolicy)
+	assert.Equal(t, d.Spec.Template.Spec.DNSConfig.Nameservers, []string{"8.8.8.8"})
 }

@@ -361,6 +361,56 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 		},
 		{
+			name: "Defined PDB for target allocator per-node",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeDeployment,
+					TargetAllocator: TargetAllocatorEmbedded{
+						Enabled:            true,
+						AllocationStrategy: TargetAllocatorAllocationStrategyPerNode,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MinAvailable: &intstr.IntOrString{
+								Type:   intstr.String,
+								StrVal: "10%",
+							},
+						},
+					},
+				},
+			},
+			expected: OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				Spec: OpenTelemetryCollectorSpec{
+					Mode: ModeDeployment,
+					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Replicas:        &one,
+						ManagementState: ManagementStateManaged,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MaxUnavailable: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 1,
+							},
+						},
+					},
+					UpgradeStrategy: UpgradeStrategyAutomatic,
+					TargetAllocator: TargetAllocatorEmbedded{
+						Enabled:            true,
+						Replicas:           &one,
+						AllocationStrategy: TargetAllocatorAllocationStrategyPerNode,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MinAvailable: &intstr.IntOrString{
+								Type:   intstr.String,
+								StrVal: "10%",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "Undefined PDB for target allocator and consistent-hashing strategy",
 			otelcol: OpenTelemetryCollector{
 				Spec: OpenTelemetryCollectorSpec{
@@ -1200,6 +1250,51 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			}
 			ctx := context.Background()
 			warnings, err := cvw.ValidateCreate(ctx, &test.otelcol)
+			if test.expectedErr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, test.expectedErr)
+			}
+			assert.Equal(t, len(test.expectedWarnings), len(warnings))
+			assert.ElementsMatch(t, warnings, test.expectedWarnings)
+		})
+	}
+}
+
+func TestOTELColValidateUpdateWebhook(t *testing.T) {
+	tests := []struct { //nolint:govet
+		name             string
+		otelcolOld       OpenTelemetryCollector
+		otelcolNew       OpenTelemetryCollector
+		expectedErr      string
+		expectedWarnings []string
+		shouldFailSar    bool
+	}{
+		{
+			name: "mode should not be changed",
+			otelcolOld: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{Mode: ModeStatefulSet},
+			},
+			otelcolNew: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{Mode: ModeDeployment},
+			},
+			expectedErr: "which does not support modification",
+		},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			cvw := &CollectorWebhook{
+				logger: logr.Discard(),
+				scheme: testScheme,
+				cfg: config.New(
+					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
+				),
+				reviewer: getReviewer(test.shouldFailSar),
+			}
+			ctx := context.Background()
+			warnings, err := cvw.ValidateUpdate(ctx, &test.otelcolOld, &test.otelcolNew)
 			if test.expectedErr == "" {
 				assert.NoError(t, err)
 			} else {

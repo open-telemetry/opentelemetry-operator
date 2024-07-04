@@ -149,7 +149,6 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: []
       exporters: [otlp]
 `, res.Spec.Config)
 }

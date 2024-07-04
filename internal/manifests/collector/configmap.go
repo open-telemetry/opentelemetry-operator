@@ -48,7 +48,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		)
 	}
 
-	replacedConf, err := ReplaceConfig(params.OtelCol, replaceCfgOpts...)
+	replacedConf, err := ReplaceConfig(params.OtelCol, params.TargetAllocator, replaceCfgOpts...)
 	if err != nil {
 		params.Log.V(2).Info("failed to update prometheus config to use sharded targets: ", "err", err)
 		return nil, err

@@ -23,7 +23,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -33,14 +33,17 @@ const (
 	targetAllocatorFilename = "targetallocator.yaml"
 )
 
-func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
+func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	instance := params.TargetAllocator
 	name := naming.TAConfigMap(instance.Name)
 	labels := manifestutils.Labels(instance.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 	taSpec := instance.Spec
 
 	taConfig := make(map[interface{}]interface{})
-	taConfig["collector_selector"] = taSpec.CollectorSelector
+
+	taConfig["collector_selector"] = metav1.LabelSelector{
+		MatchLabels: manifestutils.SelectorLabels(params.Collector.ObjectMeta, collector.ComponentOpenTelemetryCollector),
+	}
 
 	// Add scrape configs if present
 	if instance.Spec.ScrapeConfigs != nil && len(instance.Spec.ScrapeConfigs) > 0 {

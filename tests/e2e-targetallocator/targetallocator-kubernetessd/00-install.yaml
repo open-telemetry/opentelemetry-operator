@@ -152,7 +152,6 @@ spec:
       pipelines:
         metrics:
           receivers: [prometheus]
-          processors: []
           exporters: [prometheus]
   mode: daemonset
   serviceAccount: collector

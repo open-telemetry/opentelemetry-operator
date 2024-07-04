@@ -142,8 +142,8 @@ func ClusterRoleBinding(otelcol, namespace string) string {
 }
 
 // TAService returns the name to use for the TargetAllocator service.
-func TAService(otelcol string) string {
-	return DNSName(Truncate("%s-targetallocator", 63, otelcol))
+func TAService(taName string) string {
+	return DNSName(Truncate("%s-targetallocator", 63, taName))
 }
 
 // OpAMPBridgeService returns the name to use for the OpAMPBridge service.

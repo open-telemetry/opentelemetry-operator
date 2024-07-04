@@ -224,6 +224,8 @@ type OpenTelemetryCommonFields struct {
 	//
 	// +optional
 	AdditionalContainers []v1.Container `json:"additionalContainers,omitempty"`
+	// PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
+	PodDNSConfig v1.PodDNSConfig `json:"podDnsConfig,omitempty"`
 }
 
 type StatefulSetCommonFields struct {
