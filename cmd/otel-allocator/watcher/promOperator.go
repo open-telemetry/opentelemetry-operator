@@ -75,8 +75,12 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 				ScrapeInterval:                  monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
 				ServiceMonitorSelector:          cfg.PrometheusCR.ServiceMonitorSelector,
 				PodMonitorSelector:              cfg.PrometheusCR.PodMonitorSelector,
+				ProbeSelector:                   cfg.PrometheusCR.ProbeSelector,
+				ScrapeConfigSelector:            cfg.PrometheusCR.ScrapeConfigSelector,
 				ServiceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
 				PodMonitorNamespaceSelector:     cfg.PrometheusCR.PodMonitorNamespaceSelector,
+				ProbeNamespaceSelector:          cfg.PrometheusCR.ProbeNamespaceSelector,
+				ScrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
 			},
 		},
 	}
@@ -114,6 +118,8 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 		kubeConfigPath:                  cfg.KubeConfigFilePath,
 		podMonitorNamespaceSelector:     cfg.PrometheusCR.PodMonitorNamespaceSelector,
 		serviceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
+		probeNamespaceSelector:          cfg.PrometheusCR.ProbeNamespaceSelector,
+		scrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
 		resourceSelector:                resourceSelector,
 		store:                           store,
 	}, nil
@@ -131,6 +137,8 @@ type PrometheusCRWatcher struct {
 	kubeConfigPath                  string
 	podMonitorNamespaceSelector     *metav1.LabelSelector
 	serviceMonitorNamespaceSelector *metav1.LabelSelector
+	probeNamespaceSelector          *metav1.LabelSelector
+	scrapeConfigNamespaceSelector   *metav1.LabelSelector
 	resourceSelector                *prometheus.ResourceSelector
 	store                           *assets.StoreBuilder
 }
@@ -173,9 +181,21 @@ func getInformers(factory informers.FactoriesForNamespaces) (map[string]*informe
 		return nil, err
 	}
 
+	probeInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName))
+	if err != nil {
+		return nil, err
+	}
+
+	scrapeConfigInformers, err := informers.NewInformersForResource(factory, promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName))
+	if err != nil {
+		return nil, err
+	}
+
 	return map[string]*informers.ForResource{
 		monitoringv1.ServiceMonitorName: serviceMonitorInformers,
 		monitoringv1.PodMonitorName:     podMonitorInformers,
+		monitoringv1.ProbeName:          probeInformers,
+		promv1alpha1.ScrapeConfigName:   scrapeConfigInformers,
 	}, nil
 }
 
@@ -205,6 +225,8 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 				for name, selector := range map[string]*metav1.LabelSelector{
 					"PodMonitorNamespaceSelector":     w.podMonitorNamespaceSelector,
 					"ServiceMonitorNamespaceSelector": w.serviceMonitorNamespaceSelector,
+					"ProbeNamespaceSelector":          w.probeNamespaceSelector,
+					"ScrapeConfigNamespaceSelector":   w.scrapeConfigNamespaceSelector,
 				} {
 					sync, err := k8sutil.LabelSelectionHasChanged(old.Labels, cur.Labels, selector)
 					if err != nil {
@@ -319,6 +341,16 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 			return nil, err
 		}
 
+		probeInstances, err := w.resourceSelector.SelectProbes(ctx, w.informers[monitoringv1.ProbeName].ListAllByNamespace)
+		if err != nil {
+			return nil, err
+		}
+
+		scrapeConfigInstances, err := w.resourceSelector.SelectScrapeConfigs(ctx, w.informers[promv1alpha1.ScrapeConfigName].ListAllByNamespace)
+		if err != nil {
+			return nil, err
+		}
+
 		generatedConfig, err := w.configGenerator.GenerateServerConfiguration(
 			"30s",
 			"",
@@ -329,8 +361,8 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 			nil,
 			serviceMonitorInstances,
 			podMonitorInstances,
-			map[string]*monitoringv1.Probe{},
-			map[string]*promv1alpha1.ScrapeConfig{},
+			probeInstances,
+			scrapeConfigInstances,
 			w.store,
 			nil,
 			nil,

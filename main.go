@@ -27,6 +27,7 @@ import (
 
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	"github.com/spf13/pflag"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	"go.uber.org/zap/zapcore"
@@ -319,6 +320,7 @@ func main() {
 	if cfg.PrometheusCRAvailability() == prometheus.Available {
 		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
 		utilruntime.Must(monitoringv1.AddToScheme(scheme))
+		utilruntime.Must(promv1alpha1.AddToScheme(scheme))
 	} else {
 		setupLog.Info("Prometheus CRDs are not installed, skipping adding to scheme.")
 	}
