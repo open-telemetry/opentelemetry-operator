@@ -17,16 +17,17 @@ package processor
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/go-logr/logr"
-	rbacv1 "k8s.io/api/rbac/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/authz"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 )
 
 // ProcessorParser specifies the methods to implement to parse a processor.
 type ProcessorParser interface {
 	ParserName() string
-	GetRBACRules() []rbacv1.PolicyRule
+	GetRBACRules() []authz.DynamicRolePolicy
 }
 
 // Builder specifies the signature required for parser builders.
@@ -37,7 +38,7 @@ var registry = make(map[string]Builder)
 
 // BuilderFor returns a parser builder for the given processor name.
 func BuilderFor(name string) Builder {
-	return registry[processorType(name)]
+	return registry[parser.ComponentType(name)]
 }
 
 // For returns a new parser for the given processor name + config.
@@ -58,16 +59,4 @@ func Register(name string, builder Builder) {
 func IsRegistered(name string) bool {
 	_, ok := registry[name]
 	return ok
-}
-
-func processorType(name string) string {
-	// processors have a name like:
-	// - myprocessor/custom
-	// - myprocessor
-	// we extract the "myprocessor" part and see if we have a parser for the processor
-	if strings.Contains(name, "/") {
-		return name[:strings.Index(name, "/")]
-	}
-
-	return name
 }

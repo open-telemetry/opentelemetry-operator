@@ -20,6 +20,8 @@ import (
 
 	"github.com/go-logr/logr"
 	rbacv1 "k8s.io/api/rbac/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/authz"
 )
 
 var _ ProcessorParser = &K8sAttributesParser{}
@@ -49,7 +51,7 @@ func (o *K8sAttributesParser) ParserName() string {
 	return parserNameK8sAttributes
 }
 
-func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
+func (o *K8sAttributesParser) GetRBACRules() []authz.DynamicRolePolicy {
 	// These policies need to be added always
 	var prs []rbacv1.PolicyRule = []rbacv1.PolicyRule{
 		{
@@ -70,17 +72,17 @@ func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
 		// k8s.deployment.name is enabled by default so, replicasets permissions are needed
 		// https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/32248#discussion_r1560077826
 		prs = append(prs, replicasetPolicy)
-		return prs
+		return []authz.DynamicRolePolicy{{Rules: prs}}
 	}
 
 	metadataCfg, ok := extractCfg.(map[interface{}]interface{})["metadata"]
 	if !ok {
-		return prs
+		return []authz.DynamicRolePolicy{{Rules: prs}}
 	}
 
 	metadata, ok := metadataCfg.([]interface{})
 	if !ok {
-		return prs
+		return []authz.DynamicRolePolicy{{Rules: prs}}
 	}
 
 	for _, m := range metadata {
@@ -98,7 +100,7 @@ func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
 		}
 	}
 
-	return prs
+	return []authz.DynamicRolePolicy{{Rules: prs}}
 }
 
 func init() {

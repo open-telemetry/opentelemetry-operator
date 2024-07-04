@@ -15,48 +15,56 @@
 package adapters
 
 import (
-	"github.com/go-logr/logr"
-	rbacv1 "k8s.io/api/rbac/v1"
+	"fmt"
 
+	"github.com/go-logr/logr"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/authz"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/processor"
 )
 
 // ConfigToRBAC parses the OpenTelemetry Collector configuration and checks what RBAC resources are needed to be created.
-func ConfigToRBAC(logger logr.Logger, config map[interface{}]interface{}) []rbacv1.PolicyRule {
-	var policyRules []rbacv1.PolicyRule
-	processorsRaw, ok := config["processors"]
+func ConfigToRBAC(logger logr.Logger, config map[any]any) []authz.DynamicRolePolicy {
+	policyRules := configToRBACForComponentType(logger, config, ComponentTypeProcessor)
+	policyRules = append(policyRules, configToRBACForComponentType(logger, config, ComponentTypeExporter)...)
+	return policyRules
+}
+
+func configToRBACForComponentType(logger logr.Logger, config map[any]any, cType ComponentType) []authz.DynamicRolePolicy {
+	var policyRules []authz.DynamicRolePolicy
+	componentsRaw, ok := config[cType.Plural()]
 	if !ok {
-		logger.V(2).Info("no processors available as part of the configuration")
+		logger.V(2).Info(fmt.Sprintf("no %s available as part of the configuration", cType.String()))
 		return policyRules
 	}
 
-	processors, ok := processorsRaw.(map[interface{}]interface{})
+	components, ok := componentsRaw.(map[any]any)
 	if !ok {
-		logger.V(2).Info("processors doesn't contain valid components")
+		logger.V(2).Info(fmt.Sprintf("%s doesn't contain valid components", cType.String()))
 		return policyRules
 	}
 
-	enabledProcessors := getEnabledComponents(config, ComponentTypeProcessor)
+	enabledProcessors := getEnabledComponents(config, cType)
 
-	for key, val := range processors {
+	for key, val := range components {
 		if !enabledProcessors[key] {
 			continue
 		}
 
-		processorCfg, ok := val.(map[interface{}]interface{})
+		componentCfg, ok := val.(map[any]any)
 		if !ok {
-			logger.V(2).Info("processor doesn't seem to be a map of properties", "processor", key)
-			processorCfg = map[interface{}]interface{}{}
+			logger.V(2).Info(fmt.Sprintf("%s doesn't seem to be a map of properties", cType.String()), "component", key)
+			componentCfg = map[any]any{}
 		}
 
-		processorName := key.(string)
-		processorParser, err := processor.For(logger, processorName, processorCfg)
+		componentName := key.(string)
+		componentParser, err := processor.For(logger, componentName, componentCfg)
 		if err != nil {
-			logger.V(2).Info("no parser found for", "processor", processorName)
+			logger.V(2).Info(fmt.Sprintf("no parser found for %s", cType.String()), "component", componentName)
 			continue
 		}
 
-		policyRules = append(policyRules, processorParser.GetRBACRules()...)
+		policyRules = append(policyRules, componentParser.GetRBACRules()...)
 	}
 
 	return policyRules

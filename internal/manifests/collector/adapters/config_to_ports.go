@@ -32,10 +32,14 @@ const (
 	ComponentTypeReceiver ComponentType = iota
 	ComponentTypeExporter
 	ComponentTypeProcessor
+	ComponentTypeConnector
 )
 
 func (c ComponentType) String() string {
-	return [...]string{"receiver", "exporter", "processor"}[c]
+	return [...]string{"receiver", "exporter", "processor", "connector"}[c]
+}
+func (c ComponentType) Plural() string {
+	return fmt.Sprintf("%ss", c.String())
 }
 
 // ConfigToComponentPorts converts the incoming configuration object into a set of service ports required by the exporters.
@@ -91,8 +95,8 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 			cmptParser, err = exporterParser.For(logger, cmptName, exporter)
 		case ComponentTypeReceiver:
 			cmptParser, err = receiverParser.For(logger, cmptName, exporter)
-		case ComponentTypeProcessor:
-			logger.V(4).Info("processors don't provide a way to enable associated ports", "name", key)
+		case ComponentTypeProcessor, ComponentTypeConnector:
+			logger.V(4).Info("processors and connectors don't provide a way to enable associated ports", "name", key)
 		}
 
 		if err != nil {

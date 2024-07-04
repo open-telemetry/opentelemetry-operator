@@ -19,6 +19,8 @@ import (
 
 	"github.com/go-logr/logr"
 	rbacv1 "k8s.io/api/rbac/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/authz"
 )
 
 var _ ProcessorParser = &ResourceDetectionParser{}
@@ -48,17 +50,17 @@ func (o *ResourceDetectionParser) ParserName() string {
 	return parserNameResourceDetection
 }
 
-func (o *ResourceDetectionParser) GetRBACRules() []rbacv1.PolicyRule {
+func (o *ResourceDetectionParser) GetRBACRules() []authz.DynamicRolePolicy {
 	var prs []rbacv1.PolicyRule
 
 	detectorsCfg, ok := o.config["detectors"]
 	if !ok {
-		return prs
+		return []authz.DynamicRolePolicy{{Rules: prs}}
 	}
 
 	detectors, ok := detectorsCfg.([]interface{})
 	if !ok {
-		return prs
+		return []authz.DynamicRolePolicy{{Rules: prs}}
 	}
 	for _, d := range detectors {
 		detectorName := fmt.Sprint(d)
@@ -79,7 +81,7 @@ func (o *ResourceDetectionParser) GetRBACRules() []rbacv1.PolicyRule {
 			prs = append(prs, policy)
 		}
 	}
-	return prs
+	return []authz.DynamicRolePolicy{{Rules: prs}}
 }
 
 func init() {
