@@ -26,22 +26,6 @@ import (
 	receiverParser "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
 )
 
-//type ComponentType int
-//
-//const (
-//	ComponentTypeReceiver ComponentType = iota
-//	ComponentTypeExporter
-//	ComponentTypeProcessor
-//	ComponentTypeConnector
-//)
-//
-//func (c ComponentType) String() string {
-//	return [...]string{"receiver", "exporter", "processor", "connector"}[c]
-//}
-//func (c ComponentType) Plural() string {
-//	return fmt.Sprintf("%ss", c.String())
-//}
-
 // ConfigToComponentPorts converts the incoming configuration object into a set of service ports required by the exporters.
 func ConfigToComponentPorts(logger logr.Logger, cType parser.ComponentType, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
 	// now, we gather which ports we might need to open

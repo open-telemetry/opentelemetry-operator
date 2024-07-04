@@ -15,7 +15,10 @@
 package exporter
 
 import (
+	"strings"
+
 	"github.com/go-logr/logr"
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/authz"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
@@ -27,14 +30,14 @@ const (
 	parserNameLoadBalancing = "__loadbalancing"
 )
 
-// LBExporterParser parses the configuration for OTLP receivers.
+// LBExporterParser parses the configuration for loadbalancing exporters.
 type LBExporterParser struct {
-	config map[interface{}]interface{}
+	config map[any]any
 	logger logr.Logger
 	name   string
 }
 
-// NewLBExporterParser builds a new parser loadbalancing processor.
+// NewLBExporterParser builds a new parser loadbalancing exporters.
 func NewLBExporterParser(logger logr.Logger, name string, config map[any]any) parser.AuthzParser {
 	return &LBExporterParser{
 		logger: logger,
@@ -48,11 +51,49 @@ func (L LBExporterParser) ParserName() string {
 }
 
 func (L LBExporterParser) GetRBACRules() []authz.DynamicRolePolicy {
-	//TODO implement me
-	panic("implement me")
+	name, ns, ok := getService(L.config)
+	if !ok {
+		return []authz.DynamicRolePolicy{}
+	}
+
+	prs := []rbacv1.PolicyRule{
+		{
+			APIGroups:     []string{""},
+			Resources:     []string{"endpoints"},
+			Verbs:         []string{"get", "watch", "list"},
+			ResourceNames: []string{name},
+		},
+	}
+
+	return []authz.DynamicRolePolicy{
+		{
+			Namespaces: []string{ns},
+			Rules:      prs,
+		},
+	}
+}
+
+func getService(config map[any]any) (name, namespace string, ok bool) {
+	// key path: "resolver.k8s.service"
+	service := ""
+	if resolver, ok := config["resolver"].(map[any]any); ok {
+		if k8s, ok := resolver["k8s"].(map[any]any); ok {
+			service = k8s["service"].(string)
+		}
+	}
+	if service == "" {
+		return "", "", false
+	}
+	parts := strings.Split(service, ".")
+	if len(parts) == 1 {
+		// If there is no namespace, return an empty string "".
+		// This is considered safe for subsequent ClusterRole creation logic.
+		return parts[0], "", true
+	}
+
+	return parts[0], parts[1], true
 }
 
 func init() {
-	// TODO fy
 	parser.AuthzRegister(parser.ComponentTypeExporter, "loadbalancing", NewLBExporterParser)
 }

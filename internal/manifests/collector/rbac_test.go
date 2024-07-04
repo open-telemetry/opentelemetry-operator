@@ -20,6 +20,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	rbacv1 "k8s.io/api/rbac/v1"
+
+	_ "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/processor"
 )
 
 func TestDesiredClusterRoles(t *testing.T) {

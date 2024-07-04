@@ -38,8 +38,7 @@ func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
 		return nil, nil
 	}
 	rules := lo.Filter(adapters.ConfigToRBAC(params.Log, configFromString), func(policy authz.DynamicRolePolicy, _ int) bool {
-		// An empty namespace list indicates that the policy rules belong to ClusterRole resources.
-		return len(policy.Namespaces) == 0
+		return isClusterRolePolicy(policy)
 	})
 	if len(rules) == 0 {
 		return nil, nil
@@ -71,8 +70,7 @@ func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, er
 		return nil, nil
 	}
 	rules := lo.Filter(adapters.ConfigToRBAC(params.Log, configFromString), func(policy authz.DynamicRolePolicy, _ int) bool {
-		// An empty namespace list indicates that the policy rules belong to ClusterRole resources.
-		return len(policy.Namespaces) == 0
+		return isClusterRolePolicy(policy)
 	})
 	if len(rules) == 0 {
 		return nil, nil
@@ -114,8 +112,7 @@ func Role(params manifests.Params) ([]*rbacv1.Role, error) {
 		return nil, nil
 	}
 	rules := lo.Filter(adapters.ConfigToRBAC(params.Log, configFromString), func(policy authz.DynamicRolePolicy, _ int) bool {
-		// A non-empty namespace list indicates that the policy rules belong to Role resources.
-		return len(policy.Namespaces) != 0
+		return !isClusterRolePolicy(policy)
 	})
 	if len(rules) == 0 {
 		return nil, nil
@@ -153,8 +150,7 @@ func RoleBinding(params manifests.Params) ([]*rbacv1.RoleBinding, error) {
 		return nil, nil
 	}
 	rules := lo.Filter(adapters.ConfigToRBAC(params.Log, configFromString), func(policy authz.DynamicRolePolicy, _ int) bool {
-		// A non-empty namespace list indicates that the policy rules belong to Role resources.
-		return len(policy.Namespaces) != 0
+		return !isClusterRolePolicy(policy)
 	})
 	if len(rules) == 0 {
 		return nil, nil
@@ -189,4 +185,9 @@ func RoleBinding(params manifests.Params) ([]*rbacv1.RoleBinding, error) {
 		}
 	}
 	return roles, nil
+}
+
+func isClusterRolePolicy(policy authz.DynamicRolePolicy) bool {
+	// An empty namespace list indicates that the policy rules belong to ClusterRole resources.
+	return len(policy.Namespaces) == 0
 }

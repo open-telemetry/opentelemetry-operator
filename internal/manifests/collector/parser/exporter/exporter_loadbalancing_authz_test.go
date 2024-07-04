@@ -12,16 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package authz
+package exporter
 
 import (
-	rbacv1 "k8s.io/api/rbac/v1"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v2"
 )
 
-// DynamicRolePolicy includes a namespace list to indicate whether the rules need to be created within specific namespaces
-// - If the namespace list is non-empty, a Role will be created in all the specified namespaces
-// - If the namespace list is empty, a ClusterRole will be created.
-type DynamicRolePolicy struct {
-	Namespaces []string
-	Rules      []rbacv1.PolicyRule
+func Test_getService(t *testing.T) {
+	lbcfgStr := `routing_key: "service"
+protocol:
+  otlp:
+    timeout: 1s
+resolver:
+  # use k8s service resolver, if collector runs in kubernetes environment
+  k8s:
+    service: lb-svc.kube-public
+    ports:
+      - 15317
+      - 16317
+`
+	var config = make(map[any]any)
+	assert.NoError(t, yaml.Unmarshal([]byte(lbcfgStr), config))
+
+	gotName, gotNamespace, gotOk := getService(config)
+	assert.Equal(t, gotName, "lb-svc")
+	assert.Equal(t, gotNamespace, "kube-public")
+	assert.True(t, gotOk)
+
 }

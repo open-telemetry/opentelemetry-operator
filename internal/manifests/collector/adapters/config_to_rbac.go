@@ -24,10 +24,16 @@ import (
 )
 
 // ConfigToRBAC parses the OpenTelemetry Collector configuration and checks what RBAC resources are needed to be created.
-func ConfigToRBAC(logger logr.Logger, config map[any]any) []authz.DynamicRolePolicy {
-	policyRules := configToRBACForComponentType(logger, config, parser.ComponentTypeProcessor)
-	policyRules = append(policyRules, configToRBACForComponentType(logger, config, parser.ComponentTypeExporter)...)
-	return policyRules
+func ConfigToRBAC(logger logr.Logger, config map[any]any) (policyRules []authz.DynamicRolePolicy) {
+	componentTypes := []parser.ComponentType{
+		parser.ComponentTypeProcessor,
+		parser.ComponentTypeExporter,
+	}
+
+	for _, cType := range componentTypes {
+		policyRules = append(policyRules, configToRBACForComponentType(logger, config, cType)...)
+	}
+	return
 }
 
 func configToRBACForComponentType(logger logr.Logger, config map[any]any, cType parser.ComponentType) []authz.DynamicRolePolicy {
@@ -44,10 +50,10 @@ func configToRBACForComponentType(logger logr.Logger, config map[any]any, cType 
 		return policyRules
 	}
 
-	enabledProcessors := getEnabledComponents(config, cType)
+	enabledComponents := getEnabledComponents(config, cType)
 
 	for key, val := range components {
-		if !enabledProcessors[key] {
+		if !enabledComponents[key] {
 			continue
 		}
 

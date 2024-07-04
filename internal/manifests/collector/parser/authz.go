@@ -22,7 +22,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/authz"
 )
 
-// AuthzParser specifies the methods to implement to parse a processor.
+// AuthzParser specifies the methods to implement to parse a component.
 type AuthzParser interface {
 	ParserName() string
 	GetRBACRules() []authz.DynamicRolePolicy
@@ -34,7 +34,7 @@ type AuthzBuilder func(logr.Logger, string, map[interface{}]interface{}) AuthzPa
 // authzTypedRegistry holds a record of all known component parsers.
 var authzTypedRegistry = make(map[ComponentType]map[string]AuthzBuilder)
 
-// AuthzBuilderFor returns a parser builder for the given processor name.
+// AuthzBuilderFor returns a parser builder for the given component type + name.
 func AuthzBuilderFor(typ ComponentType, name string) AuthzBuilder {
 	if builders, ok := authzTypedRegistry[typ]; ok {
 		return builders[ComponentName(name)]
