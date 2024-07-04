@@ -1,15 +1,2 @@
 resources:
 - manager.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-images:
-- name: controller
-  newName: opentelemetry-operator/opentelemetry-operator
-  newTag: 0.102.0-72-g2ef561bc
-patches:
-- patch: '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--target-allocator-image=opentelemetry-operator/target-allocator:v0.102.0-72-g2ef561bc"}]'
-  target:
-    kind: Deployment
-- patch: '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--operator-opamp-bridge-image=opentelemetry-operator/operator-opamp-bridge:v0.102.0-72-g2ef561bc"}]'
-  target:
-    kind: Deployment

@@ -43,7 +43,7 @@ jobs:
          - group: e2e-metadata-filters
            setup: "add-operator-arg OPERATOR_ARG='--annotations-filter=.*filter.out --annotations-filter=config.*.gke.io.* --labels=.*filter.out' prepare-e2e"
          - group: e2e-ta-collector-mtls
-           setup: "add-operator-arg OPERATOR_ARG='--feature-gates=operator.targetallocator.mtls' prepare-e2e"
+           setup: "add-operator-arg OPERATOR_ARG='--feature-gates=operator.targetallocator.mtls' add-certmanager-rbac prepare-e2e"
          - group: e2e-automatic-rbac
            setup: "add-rbac-permissions-to-operator prepare-e2e"
     steps:

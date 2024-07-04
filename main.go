@@ -332,14 +332,14 @@ func main() {
 		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
 	}
 	if cfg.CertManagerAvailability() == certmanager.Available {
-		setupLog.Info("Cert-Manager is installed, adding to scheme.")
+		setupLog.Info("Cert-Manager is available to the operator, adding to scheme.")
 		utilruntime.Must(cmv1.AddToScheme(scheme))
 
 		if featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 			setupLog.Info("Securing the connection between the target allocator and the collector")
 		}
 	} else {
-		setupLog.Info("Cert-Manager is not installed, skipping adding to scheme.")
+		setupLog.Info("Cert-Manager is not available to the operator, skipping adding to scheme.")
 	}
 	if cfg.AnnotationsFilter() != nil {
 		for _, basePattern := range cfg.AnnotationsFilter() {

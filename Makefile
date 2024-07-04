@@ -273,6 +273,10 @@ e2e-prometheuscr: chainsaw
 e2e-targetallocator: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator
 
+.PHONY: add-certmanager-rbac
+add-certmanager-rbac: 
+	./hack/add-certmanager-rbac.sh
+
 # Target allocator collector mTLS end-to-tests
 .PHONY: e2e-ta-collector-mtls
 e2e-ta-collector-mtls: chainsaw
