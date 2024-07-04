@@ -33,12 +33,15 @@ data:
                 collector_id: ${POD_NAME}
                 endpoint: https://prometheus-cr-targetallocator:443
                 interval: 30s
+                tls:
+                    ca_file: /tls/ca.crt
+                    cert_file: /tls/tls.crt
+                    key_file: /tls/tls.key
     service:
         pipelines:
             metrics:
                 exporters:
                     - prometheus
-                processors: []
                 receivers:
                     - prometheus
 kind: ConfigMap
