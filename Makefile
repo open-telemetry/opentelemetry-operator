@@ -109,17 +109,17 @@ ci: generate fmt vet test ensure-generate-is-noop
 # Build manager binary
 .PHONY: manager
 manager: generate
-	CGO_ENABLED=0 GOOS=linux GOARCH=$(ARCH) go build -o bin/manager_${ARCH} -ldflags "${COMMON_LDFLAGS} ${OPERATOR_LDFLAGS}" main.go
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o bin/manager_${ARCH} -ldflags "${COMMON_LDFLAGS} ${OPERATOR_LDFLAGS}" main.go
 
 # Build target allocator binary
 .PHONY: targetallocator
 targetallocator:
-	CGO_ENABLED=0 GOOS=linux GOARCH=$(ARCH) go build -o cmd/otel-allocator/bin/targetallocator_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/otel-allocator
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/otel-allocator/bin/targetallocator_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/otel-allocator
 
 # Build opamp bridge binary
 .PHONY: operator-opamp-bridge
 operator-opamp-bridge: generate
-	CGO_ENABLED=0 GOOS=linux GOARCH=$(ARCH) go build -o cmd/operator-opamp-bridge/bin/opampbridge_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/operator-opamp-bridge
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/operator-opamp-bridge/bin/opampbridge_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/operator-opamp-bridge
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
@@ -175,10 +175,6 @@ add-rbac-permissions-to-operator: manifests kustomize
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
 deploy: set-image-controller
-	docker build -t ${IMG} .
-	docker build -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
-	k3d image import ${IMG} -c otel
-	k3d image import ${TARGETALLOCATOR_IMG} -c otel
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 	go run hack/check-operator-ready.go 300
 
@@ -312,11 +308,11 @@ container: manager
 # Push the container image, used only for local dev purposes
 .PHONY: container-push
 container-push:
-	k3d image import ${IMG} -c otel
+	docker push ${IMG}
 
 .PHONY: container-target-allocator-push
 container-target-allocator-push:
-	k3d image import ${TARGETALLOCATOR_IMG} -c otel
+	docker push ${TARGETALLOCATOR_IMG}
 
 .PHONY: container-operator-opamp-bridge-push
 container-operator-opamp-bridge-push:
