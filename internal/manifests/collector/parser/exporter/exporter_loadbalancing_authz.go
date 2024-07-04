@@ -18,9 +18,10 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/authz"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 )
 
-var _ AuthzParser = &LBExporterParser{}
+var _ parser.AuthzParser = &LBExporterParser{}
 
 const (
 	parserNameLoadBalancing = "__loadbalancing"
@@ -34,7 +35,7 @@ type LBExporterParser struct {
 }
 
 // NewLBExporterParser builds a new parser loadbalancing processor.
-func NewLBExporterParser(logger logr.Logger, name string, config map[any]any) AuthzParser {
+func NewLBExporterParser(logger logr.Logger, name string, config map[any]any) parser.AuthzParser {
 	return &LBExporterParser{
 		logger: logger,
 		name:   name,
@@ -53,5 +54,5 @@ func (L LBExporterParser) GetRBACRules() []authz.DynamicRolePolicy {
 
 func init() {
 	// TODO fy
-	AuthzRegister("loadbalancing", NewLBExporterParser)
+	parser.AuthzRegister(parser.ComponentTypeExporter, "loadbalancing", NewLBExporterParser)
 }

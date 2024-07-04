@@ -20,17 +20,17 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/authz"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/processor"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 )
 
 // ConfigToRBAC parses the OpenTelemetry Collector configuration and checks what RBAC resources are needed to be created.
 func ConfigToRBAC(logger logr.Logger, config map[any]any) []authz.DynamicRolePolicy {
-	policyRules := configToRBACForComponentType(logger, config, ComponentTypeProcessor)
-	policyRules = append(policyRules, configToRBACForComponentType(logger, config, ComponentTypeExporter)...)
+	policyRules := configToRBACForComponentType(logger, config, parser.ComponentTypeProcessor)
+	policyRules = append(policyRules, configToRBACForComponentType(logger, config, parser.ComponentTypeExporter)...)
 	return policyRules
 }
 
-func configToRBACForComponentType(logger logr.Logger, config map[any]any, cType ComponentType) []authz.DynamicRolePolicy {
+func configToRBACForComponentType(logger logr.Logger, config map[any]any, cType parser.ComponentType) []authz.DynamicRolePolicy {
 	var policyRules []authz.DynamicRolePolicy
 	componentsRaw, ok := config[cType.Plural()]
 	if !ok {
@@ -56,9 +56,8 @@ func configToRBACForComponentType(logger logr.Logger, config map[any]any, cType 
 			logger.V(2).Info(fmt.Sprintf("%s doesn't seem to be a map of properties", cType.String()), "component", key)
 			componentCfg = map[any]any{}
 		}
-
 		componentName := key.(string)
-		componentParser, err := processor.For(logger, componentName, componentCfg)
+		componentParser, err := parser.AuthzFor(logger, cType, componentName, componentCfg)
 		if err != nil {
 			logger.V(2).Info(fmt.Sprintf("no parser found for %s", cType.String()), "component", componentName)
 			continue

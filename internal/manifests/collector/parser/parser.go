@@ -15,23 +15,9 @@
 package parser
 
 import (
-	"strings"
-
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 )
-
-func ComponentType(name string) string {
-	// processors have a name like:
-	// - myprocessor/custom
-	// - myprocessor
-	// we extract the "myprocessor" part and see if we have a parser for the processor
-	if strings.Contains(name, "/") {
-		return name[:strings.Index(name, "/")]
-	}
-
-	return name
-}
 
 type ComponentPortParser interface {
 	// Ports returns the service ports parsed based on the exporter's configuration

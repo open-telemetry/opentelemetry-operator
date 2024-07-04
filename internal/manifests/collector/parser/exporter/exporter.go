@@ -25,7 +25,6 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/authz"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -35,7 +34,7 @@ var registry = make(map[string]parser.Builder)
 
 // BuilderFor returns a parser builder for the given exporter name.
 func BuilderFor(name string) parser.Builder {
-	return registry[parser.ComponentType(name)]
+	return registry[parser.ComponentName(name)]
 }
 
 // For returns a new parser for the given exporter name + config.
@@ -114,43 +113,4 @@ func portFromEndpoint(endpoint string) (int32, error) {
 	}
 
 	return int32(port), err
-}
-
-// ---
-
-//// ExporterAuthzParser specifies the methods to implement to parse a processor.
-//type ExporterAuthzParser interface {
-//	ParserName() string
-//	GetRBACRules() []authz.DynamicRolePolicy
-//}
-
-// AuthzParser specifies the methods to implement to parse a processor.
-type AuthzParser interface {
-	ParserName() string
-	GetRBACRules() []authz.DynamicRolePolicy
-}
-
-// AuthzBuilder specifies the signature required for parser builders.
-type AuthzBuilder func(logr.Logger, string, map[interface{}]interface{}) AuthzParser
-
-// registry holds a record of all known processor parsers.
-var authzRegistry = make(map[string]AuthzBuilder)
-
-// AuthzBuilderFor returns a parser builder for the given processor name.
-func AuthzBuilderFor(name string) AuthzBuilder {
-	return authzRegistry[parser.ComponentType(name)]
-}
-
-// AuthzFor returns a new parser for the given processor name + config.
-func AuthzFor(logger logr.Logger, name string, config map[interface{}]interface{}) (AuthzParser, error) {
-	builder := AuthzBuilderFor(name)
-	if builder == nil {
-		return nil, fmt.Errorf("no builders for %s", name)
-	}
-	return builder(logger, name, config), nil
-}
-
-// AuthzRegister adds a new parser builder to the list of known builders.
-func AuthzRegister(name string, builder AuthzBuilder) {
-	authzRegistry[name] = builder
 }

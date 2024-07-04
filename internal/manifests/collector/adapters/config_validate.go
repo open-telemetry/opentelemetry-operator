@@ -14,11 +14,15 @@
 
 package adapters
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
+)
 
 // Following Otel Doc: Configuring a receiver does not enable it. The receivers are enabled via pipelines within the service section.
 // getEnabledComponents returns all enabled components as a true flag set. If it can't find any receiver, it will return a nil interface.
-func getEnabledComponents(config map[interface{}]interface{}, componentType ComponentType) map[interface{}]bool {
+func getEnabledComponents(config map[interface{}]interface{}, componentType parser.ComponentType) map[interface{}]bool {
 	componentTypePlural := fmt.Sprintf("%ss", componentType.String())
 	cfgComponents, ok := config[componentTypePlural]
 	if !ok {

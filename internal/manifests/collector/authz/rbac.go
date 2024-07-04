@@ -15,7 +15,6 @@
 package authz
 
 import (
-	"github.com/go-logr/logr"
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
@@ -26,9 +25,4 @@ import (
 type DynamicRolePolicy struct {
 	Namespaces []string
 	Rules      []rbacv1.PolicyRule
-}
-
-// ConfigToRBAC parses the OpenTelemetry Collector configuration and checks what RBAC resources are needed to be created.
-func ConfigToRBAC(logger logr.Logger, componentConfig map[any]any) []DynamicRolePolicy {
-	return nil
 }

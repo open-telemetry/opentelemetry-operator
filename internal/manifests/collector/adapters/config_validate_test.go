@@ -18,6 +18,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 )
 
 func TestConfigValidate(t *testing.T) {
@@ -57,7 +59,7 @@ service:
 	require.NotEmpty(t, config)
 
 	// test
-	check := getEnabledComponents(config, ComponentTypeReceiver)
+	check := getEnabledComponents(config, parser.ComponentTypeReceiver)
 	require.NotEmpty(t, check)
 }
 
@@ -98,6 +100,6 @@ service:
 	require.NotEmpty(t, config)
 
 	// test
-	check := getEnabledComponents(config, ComponentTypeReceiver)
+	check := getEnabledComponents(config, parser.ComponentTypeReceiver)
 	require.Empty(t, check)
 }

@@ -21,23 +21,24 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/authz"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 )
 
-var _ ProcessorParser = &ResourceDetectionParser{}
+var _ parser.AuthzParser = &ResourceDetectionParser{}
 
 const (
 	parserNameResourceDetection = "__resourcedetection"
 )
 
-// PrometheusExporterParser parses the configuration for OTLP receivers.
+// ResourceDetectionParser parses the configuration for resourcedetection processor.
 type ResourceDetectionParser struct {
 	config map[interface{}]interface{}
 	logger logr.Logger
 	name   string
 }
 
-// NewPrometheusExporterParser builds a new parser for OTLP receivers.
-func NewResourceDetectionParser(logger logr.Logger, name string, config map[interface{}]interface{}) ProcessorParser {
+// NewResourceDetectionParser builds a new parser for resourcedetection processor.
+func NewResourceDetectionParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.AuthzParser {
 	return &ResourceDetectionParser{
 		logger: logger,
 		name:   name,
@@ -85,5 +86,5 @@ func (o *ResourceDetectionParser) GetRBACRules() []authz.DynamicRolePolicy {
 }
 
 func init() {
-	Register("resourcedetection", NewResourceDetectionParser)
+	parser.AuthzRegister(parser.ComponentTypeProcessor, "resourcedetection", NewResourceDetectionParser)
 }

@@ -26,24 +26,24 @@ import (
 	receiverParser "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/receiver"
 )
 
-type ComponentType int
-
-const (
-	ComponentTypeReceiver ComponentType = iota
-	ComponentTypeExporter
-	ComponentTypeProcessor
-	ComponentTypeConnector
-)
-
-func (c ComponentType) String() string {
-	return [...]string{"receiver", "exporter", "processor", "connector"}[c]
-}
-func (c ComponentType) Plural() string {
-	return fmt.Sprintf("%ss", c.String())
-}
+//type ComponentType int
+//
+//const (
+//	ComponentTypeReceiver ComponentType = iota
+//	ComponentTypeExporter
+//	ComponentTypeProcessor
+//	ComponentTypeConnector
+//)
+//
+//func (c ComponentType) String() string {
+//	return [...]string{"receiver", "exporter", "processor", "connector"}[c]
+//}
+//func (c ComponentType) Plural() string {
+//	return fmt.Sprintf("%ss", c.String())
+//}
 
 // ConfigToComponentPorts converts the incoming configuration object into a set of service ports required by the exporters.
-func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
+func ConfigToComponentPorts(logger logr.Logger, cType parser.ComponentType, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
 	// now, we gather which ports we might need to open
 	// for that, we get all the exporters and check their `endpoint` properties,
 	// extracting the port from it. The port name has to be a "DNS_LABEL", so, we try to make it follow the pattern:
@@ -91,11 +91,11 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 		var cmptParser parser.ComponentPortParser
 		var err error
 		switch cType {
-		case ComponentTypeExporter:
+		case parser.ComponentTypeExporter:
 			cmptParser, err = exporterParser.For(logger, cmptName, exporter)
-		case ComponentTypeReceiver:
+		case parser.ComponentTypeReceiver:
 			cmptParser, err = receiverParser.For(logger, cmptName, exporter)
-		case ComponentTypeProcessor, ComponentTypeConnector:
+		case parser.ComponentTypeProcessor, parser.ComponentTypeConnector:
 			logger.V(4).Info("processors and connectors don't provide a way to enable associated ports", "name", key)
 		}
 
@@ -123,13 +123,13 @@ func ConfigToComponentPorts(logger logr.Logger, cType ComponentType, config map[
 }
 
 func ConfigToPorts(logger logr.Logger, config map[interface{}]interface{}) ([]corev1.ServicePort, error) {
-	ports, err := ConfigToComponentPorts(logger, ComponentTypeReceiver, config)
+	ports, err := ConfigToComponentPorts(logger, parser.ComponentTypeReceiver, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the receivers")
 		return nil, err
 	}
 
-	exporterPorts, err := ConfigToComponentPorts(logger, ComponentTypeExporter, config)
+	exporterPorts, err := ConfigToComponentPorts(logger, parser.ComponentTypeExporter, config)
 	if err != nil {
 		logger.Error(err, "there was a problem while getting the ports from the exporters")
 		return nil, err

@@ -25,6 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -146,7 +147,7 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollec
 		return nil, err
 	}
 
-	ports, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeReceiver, configFromString)
+	ports, err := adapters.ConfigToComponentPorts(logger, parser.ComponentTypeReceiver, configFromString)
 	if err != nil {
 		logger.Error(err, "couldn't build the ingress for this instance")
 		return nil, err
