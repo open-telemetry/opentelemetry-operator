@@ -16,14 +16,13 @@ package targetallocator
 
 import (
 	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // SelfSignedIssuer returns a self-signed issuer for the given instance.
-func SelfSignedIssuer(params manifests.Params) *cmv1.Issuer {
+func SelfSignedIssuer(params Params) *cmv1.Issuer {
 	name := naming.SelfSignedIssuer(params.TargetAllocator.Name)
 	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 
@@ -42,7 +41,7 @@ func SelfSignedIssuer(params manifests.Params) *cmv1.Issuer {
 }
 
 // CAIssuer returns a CA issuer for the given instance.
-func CAIssuer(params manifests.Params) *cmv1.Issuer {
+func CAIssuer(params Params) *cmv1.Issuer {
 	name := naming.CAIssuer(params.TargetAllocator.Name)
 	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 

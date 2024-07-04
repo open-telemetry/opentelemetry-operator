@@ -21,13 +21,12 @@ import (
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // / CACertificate returns a CA Certificate for the given instance.
-func CACertificate(params manifests.Params) *cmv1.Certificate {
+func CACertificate(params Params) *cmv1.Certificate {
 	name := naming.CACertificate(params.TargetAllocator.Name)
 	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 
@@ -53,7 +52,7 @@ func CACertificate(params manifests.Params) *cmv1.Certificate {
 }
 
 // ServingCertificate returns a serving Certificate for the given instance.
-func ServingCertificate(params manifests.Params) *cmv1.Certificate {
+func ServingCertificate(params Params) *cmv1.Certificate {
 	name := naming.TAServerCertificate(params.TargetAllocator.Name)
 	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 
@@ -86,7 +85,7 @@ func ServingCertificate(params manifests.Params) *cmv1.Certificate {
 }
 
 // ClientCertificate returns a client Certificate for the given instance.
-func ClientCertificate(params manifests.Params) *cmv1.Certificate {
+func ClientCertificate(params Params) *cmv1.Certificate {
 	name := naming.TAClientCertificate(params.TargetAllocator.Name)
 	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 
