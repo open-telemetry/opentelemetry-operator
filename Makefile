@@ -273,6 +273,11 @@ e2e-prometheuscr: chainsaw
 e2e-targetallocator: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator
 
+# Target allocator collector mTLS end-to-tests
+.PHONY: e2e-ta-collector-mtls
+e2e-ta-collector-mtls: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-ta-collector-mtls
+
 # end-to-end-test for Annotations/Labels Filters
 .PHONY: e2e-metadata-filters
 e2e-metadata-filters: chainsaw

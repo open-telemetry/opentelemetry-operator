@@ -74,6 +74,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		taConfig["https"] = map[string]interface{}{
 			"enabled":            true,
+			"listen_addr":        ":8443",
 			"ca_file_path":       filepath.Join(manifestutils.TLSDirPath, manifestutils.CAFileName),
 			"tls_cert_file_path": filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSCertFileName),
 			"tls_key_file_path":  filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSKeyFileName),

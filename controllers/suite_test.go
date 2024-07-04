@@ -55,6 +55,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -99,6 +100,7 @@ type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
 	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
+	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 }
 
 func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, error) {
@@ -120,6 +122,13 @@ func (m *mockAutoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availabi
 		return m.RBACPermissionsFunc(ctx)
 	}
 	return autoRBAC.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) CertManagerAvailability(ctx context.Context) (certmanager.Availability, error) {
+	if m.CertManagerAvailabilityFunc != nil {
+		return m.CertManagerAvailabilityFunc(ctx)
+	}
+	return certmanager.NotAvailable, nil
 }
 
 func TestMain(m *testing.M) {
