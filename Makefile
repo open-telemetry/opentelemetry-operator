@@ -24,7 +24,7 @@ endif
 
 # Image URL to use all building/pushing image targets
 DOCKER_USER ?= open-telemetry
-IMG_PREFIX ?= opentelemetry-operator
+IMG_PREFIX ?= ghcr.io/${DOCKER_USER}/opentelemetry-operator
 IMG_REPO ?= opentelemetry-operator
 IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
