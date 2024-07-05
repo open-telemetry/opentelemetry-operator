@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metrics-app-secret
+type: Opaque
+stringData:
+  BASIC_AUTH_USERNAME: user
+  BASIC_AUTH_PASSWORD: t0p$ecreT
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-app
+  labels:
+    app: metrics-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metrics-app
+  template:
+    metadata:
+      labels:
+        app: metrics-app
+    spec:
+      containers:
+      - name: metrics-app
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-metrics-basic-auth:main
+        ports:
+        - containerPort: 9123
+        env:
+        - name: BASIC_AUTH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: metrics-app-secret
+              key: BASIC_AUTH_USERNAME
+        - name: BASIC_AUTH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: metrics-app-secret
+              key: BASIC_AUTH_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics-service
+  labels:
+    app: metrics-app
+spec:
+  ports:
+  - name: metrics
+    port: 9123
+    targetPort: 9123
+    protocol: TCP
+  selector:
+    app: metrics-app
+  type: ClusterIP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: metrics-servicemonitor
+  labels:
+    app: metrics-app
+spec:
+  selector:
+    matchLabels:
+      app: metrics-app
+  endpoints:
+  - port: metrics
+    interval: 30s
+    basicAuth:
+      username:
+        name: metrics-app-secret
+        key: BASIC_AUTH_USERNAME
+      password:
+        name: metrics-app-secret
+        key: BASIC_AUTH_PASSWORD
