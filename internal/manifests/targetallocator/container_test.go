@@ -24,10 +24,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	a "github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/collector/featuregate"
+	colfg "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -391,7 +391,7 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{}
 
-	flgs := a.Flags(featuregate.GlobalRegistry())
+	flgs := featuregate.Flags(colfg.GlobalRegistry())
 	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
 	require.NoError(t, err)
 
