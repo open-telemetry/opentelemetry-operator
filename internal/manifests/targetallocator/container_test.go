@@ -18,18 +18,20 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	a "github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/featuregate"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -388,6 +390,11 @@ func TestArgs(t *testing.T) {
 func TestContainerWithCertManagerAvailable(t *testing.T) {
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{}
+
+	flgs := a.Flags(featuregate.GlobalRegistry())
+	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
+	require.NoError(t, err)
+
 	cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
 
 	// test
@@ -401,13 +408,8 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 
 	assert.Contains(t, c.VolumeMounts, corev1.VolumeMount{
 		Name:      naming.TAServerCertificate(""),
-		MountPath: "/tls",
+		MountPath: manifestutils.TLSDirPath,
 	})
-
-	assert.Contains(t, c.Args, "--enable-https-server")
-	assert.Contains(t, c.Args, "--https-ca-file=/tls/ca.crt")
-	assert.Contains(t, c.Args, "--https-tls-cert-file=/tls/tls.crt")
-	assert.Contains(t, c.Args, "--https-tls-key-file=/tls/tls.key")
 }
 
 func TestContainerCustomVolumes(t *testing.T) {

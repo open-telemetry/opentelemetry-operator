@@ -78,7 +78,7 @@ func TestFlagGetters(t *testing.T) {
 			flagArgs:      []string{"--" + httpsEnabledFlagName, "true"},
 			expectedValue: true,
 			getterFunc: func(fs *pflag.FlagSet) (interface{}, error) {
-				_, value, err := getHttpsEnabled(fs)
+				value, _, err := getHttpsEnabled(fs)
 				return value, err
 			},
 		},
@@ -87,7 +87,7 @@ func TestFlagGetters(t *testing.T) {
 			flagArgs:      []string{"--" + httpsTLSKeyFilePathFlagName, "/path/to/tls.key"},
 			expectedValue: "/path/to/tls.key",
 			getterFunc: func(fs *pflag.FlagSet) (interface{}, error) {
-				_, value, err := getHttpsTLSKeyFilePath(fs)
+				value, _, err := getHttpsTLSKeyFilePath(fs)
 				return value, err
 			},
 		},
