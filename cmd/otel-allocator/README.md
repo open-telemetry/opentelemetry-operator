@@ -211,9 +211,42 @@ rules:
 
 ### Service / Pod monitor endpoint credentials
 
-If your service or pod monitor endpoints require credentials or other supported form of authentication (bearer token, basic auth, OAuth2 etc.), you need to ensure that the collector has access to this information. Due to some limitations in how the endpoints configuration is handled, target allocator currently does **not** support credentials provided via secrets. It is only possible to provide credentials in a file (for more details see issue https://github.com/open-telemetry/opentelemetry-operator/issues/1669).
+If your service or pod monitor endpoints require authentication (such as bearer tokens, basic auth, OAuth2, etc.), you must ensure that the collector has access to these credentials.
 
-In order to ensure your endpoints can be scraped, your collector instance needs to have the particular secret mounted as a file at the correct path.
+To secure the connection between the target allocator and the collector so that the secrets can be retrieved, mTLS is used. This involves the use of cert-manager to manage the CA, server, and client certificates.
+
+Prerequisites:
+- Ensure cert-manager is installed in your Kubernetes cluster.
+- Grant RBAC Permissions:
+
+    - The target allocator needs the appropriate RBAC permissions to get the secrets referenced in the Service / Pod monitor.
+
+    -  The operator needs the appropriate RBAC permissions to manage cert-manager resources. The following clusterRole can be used to grant the necessary permissions:
+
+        ```yaml
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          name:  opentelemetry-operator-controller-manager-cert-manager-role
+        rules:
+        - apiGroups:
+          - cert-manager.io
+          resources:
+          - issuers
+          - certificaterequests
+          - certificates
+          verbs:
+          - create
+          - get
+          - list
+          - watch
+          - update
+          - patch
+          - delete
+        ```
+
+- Enable the `operator.targetallocator.mtls` feature gate in the operator's deployment. 
+
 
 
 # Design
