@@ -249,13 +249,14 @@ func main() {
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
 		},
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "9f7554c3.opentelemetry.io",
-		LeaseDuration:          &leaseDuration,
-		RenewDeadline:          &renewDeadline,
-		RetryPeriod:            &retryPeriod,
-		PprofBindAddress:       pprofAddr,
+		HealthProbeBindAddress:        probeAddr,
+		LeaderElection:                enableLeaderElection,
+		LeaderElectionID:              "9f7554c3.opentelemetry.io",
+		LeaderElectionReleaseOnCancel: true,
+		LeaseDuration:                 &leaseDuration,
+		RenewDeadline:                 &renewDeadline,
+		RetryPeriod:                   &retryPeriod,
+		PprofBindAddress:              pprofAddr,
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port:    webhookPort,
 			TLSOpts: optionsTlSOptsFuncs,
@@ -427,6 +428,7 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
+	// NOTE: We enable LeaderElectionReleaseOnCancel, and to be safe we need to exit right after the manager does
 	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)

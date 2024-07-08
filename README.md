@@ -121,7 +121,6 @@ spec:
       pipelines:
         traces:
           receivers: [jaeger]
-          processors: []
           exporters: [debug]
 EOF
 
@@ -629,7 +628,6 @@ spec:
       pipelines:
         metrics:
           receivers: [prometheus]
-          processors: []
           exporters: [debug]
 EOF
 ```
@@ -654,7 +652,6 @@ service:
   pipelines:
     metrics:
       receivers: [prometheus]
-      processors: []
       exporters: [debug]
 ```
 
@@ -713,7 +710,6 @@ spec:
       pipelines:
         metrics:
           receivers: [prometheus]
-          processors: []
           exporters: [debug]
 EOF
 ```
@@ -728,39 +724,42 @@ By default, the OpenTelemetry Operator ensures consistent versioning between its
 
 When a custom `Spec.Image` is used with an `OpenTelemetryCollector` resource, the OpenTelemetry Operator will not manage this versioning and upgrading. In this scenario, it is best practice that the OpenTelemetry Operator version should match the underlying core version. Given a `OpenTelemetryCollector` resource with a `Spec.Image` configured to a custom image based on underlying OpenTelemetry Collector at version `0.40.0`, it is recommended that the OpenTelemetry Operator is kept at version `0.40.0`.
 
-### OpenTelemetry Operator vs. Kubernetes vs. Cert Manager
+### OpenTelemetry Operator vs. Kubernetes vs. Cert Manager vs Prometheus Operator
 
 We strive to be compatible with the widest range of Kubernetes versions as possible, but some changes to Kubernetes itself require us to break compatibility with older Kubernetes versions, be it because of code incompatibilities, or in the name of maintainability. Every released operator will support a specific range of Kubernetes versions, to be determined at the latest during the release.
 
 We use `cert-manager` for some features of this operator and the third column shows the versions of the `cert-manager` that are known to work with this operator's versions.
 
+The Target Allocator supports prometheus-operator CRDs like ServiceMonitor, and it does so by using packages imported from prometheus-operator itself. The table shows which version is shipped with a given operator version.
+Generally speaking, these are backwards compatible, but specific features require the appropriate package versions. 
+
 The OpenTelemetry Operator _might_ work on versions outside of the given range, but when opening new issues, please make sure to test your scenario on a supported version.
 
-| OpenTelemetry Operator | Kubernetes     | Cert-Manager |
-|------------------------|----------------| ------------ |
-| v0.103.0               | v1.23 to v1.30 | v1           |
-| v0.102.0               | v1.23 to v1.30 | v1           |
-| v0.101.0               | v1.23 to v1.30 | v1           |
-| v0.100.0               | v1.23 to v1.29 | v1           |
-| v0.99.0                | v1.23 to v1.29 | v1           |
-| v0.98.0                | v1.23 to v1.29 | v1           |
-| v0.97.0                | v1.23 to v1.29 | v1           |
-| v0.96.0                | v1.23 to v1.29 | v1           |
-| v0.95.0                | v1.23 to v1.29 | v1           |
-| v0.94.0                | v1.23 to v1.29 | v1           |
-| v0.93.0                | v1.23 to v1.29 | v1           |
-| v0.92.0                | v1.23 to v1.29 | v1           |
-| v0.91.0                | v1.23 to v1.29 | v1           |
-| v0.90.0                | v1.23 to v1.28 | v1           |
-| v0.89.0                | v1.23 to v1.28 | v1           |
-| v0.88.0                | v1.23 to v1.28 | v1           |
-| v0.87.0                | v1.23 to v1.28 | v1           |
-| v0.86.0                | v1.23 to v1.28 | v1           |
-| v0.85.0                | v1.19 to v1.28 | v1           |
-| v0.84.0                | v1.19 to v1.28 | v1           |
-| v0.83.0                | v1.19 to v1.27 | v1           |
-| v0.82.0                | v1.19 to v1.27 | v1           |
-| v0.81.0                | v1.19 to v1.27 | v1           |
+| OpenTelemetry Operator | Kubernetes     | Cert-Manager | Prometheus-Operator |
+|------------------------|----------------| ------------ |---------------------|
+| v0.103.0               | v1.23 to v1.30 | v1           | v0.74.0             |
+| v0.102.0               | v1.23 to v1.30 | v1           | v0.71.2             |
+| v0.101.0               | v1.23 to v1.30 | v1           | v0.71.2             |
+| v0.100.0               | v1.23 to v1.29 | v1           | v0.71.2             |
+| v0.99.0                | v1.23 to v1.29 | v1           | v0.71.2             |
+| v0.98.0                | v1.23 to v1.29 | v1           | v0.71.2             |
+| v0.97.0                | v1.23 to v1.29 | v1           | v0.71.2             |
+| v0.96.0                | v1.23 to v1.29 | v1           | v0.71.2             |
+| v0.95.0                | v1.23 to v1.29 | v1           | v0.71.2             |
+| v0.94.0                | v1.23 to v1.29 | v1           | v0.71.0             |
+| v0.93.0                | v1.23 to v1.29 | v1           | v0.71.0             |
+| v0.92.0                | v1.23 to v1.29 | v1           | v0.71.0             |
+| v0.91.0                | v1.23 to v1.29 | v1           | v0.70.0             |
+| v0.90.0                | v1.23 to v1.28 | v1           | v0.69.1             |
+| v0.89.0                | v1.23 to v1.28 | v1           | v0.69.1             |
+| v0.88.0                | v1.23 to v1.28 | v1           | v0.68.0             |
+| v0.87.0                | v1.23 to v1.28 | v1           | v0.68.0             |
+| v0.86.0                | v1.23 to v1.28 | v1           | v0.68.0             |
+| v0.85.0                | v1.19 to v1.28 | v1           | v0.67.1             |
+| v0.84.0                | v1.19 to v1.28 | v1           | v0.67.1             |
+| v0.83.0                | v1.19 to v1.27 | v1           | v0.67.1             |
+| v0.82.0                | v1.19 to v1.27 | v1           | v0.67.1             |
+| v0.81.0                | v1.19 to v1.27 | v1           | v0.66.0             |
 
 ## Contributing and Developing
 
@@ -795,7 +794,7 @@ Emeritus Target Allocator Maintainers
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
 - [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
-- [Mikołaj Świątek](https://github.com/swiatekm-sumo), Sumo Logic
+- [Mikołaj Świątek](https://github.com/swiatekm), Sumo Logic
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 
 Emeritus Maintainers

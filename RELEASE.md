@@ -49,4 +49,4 @@ The operator should be released within a week after the [OpenTelemetry collector
 | v0.106.0 | @yuriolisa      |
 | v0.107.0 | @TylerHelmuth   |
 | v0.108.0 | @jaronoff97     |
-| v0.109.0 | @swiatekm-sumo  |
+| v0.109.0 | @swiatekm       |

@@ -115,7 +115,6 @@ spec:
       pipelines:
         metrics:
           receivers: [prometheus]
-          processors: []
           exporters: [logging]
 ```
 
