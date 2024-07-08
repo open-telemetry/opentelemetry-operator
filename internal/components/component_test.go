@@ -15,11 +15,16 @@
 package components_test
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
 )
 
 func TestComponentType(t *testing.T) {
@@ -62,6 +67,71 @@ func TestReceiverParsePortFromEndpoint(t *testing.T) {
 			}
 
 			assert.EqualValues(t, tt.expected, val, "wrong port from endpoint %s: %d", tt.endpoint, val)
+		})
+	}
+}
+
+func TestGetPortsForConfig(t *testing.T) {
+	type args struct {
+		config    map[string]interface{}
+		retriever components.ParserRetriever
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []corev1.ServicePort
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "nothing",
+			args: args{
+				config:    nil,
+				retriever: receivers.ReceiverFor,
+			},
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		{
+			name: "bad config",
+			args: args{
+				config: map[string]interface{}{
+					"test": "garbage",
+				},
+				retriever: receivers.ReceiverFor,
+			},
+			want:    nil,
+			wantErr: assert.Error,
+		},
+		{
+			name: "receivers",
+			args: args{
+				config: map[string]interface{}{
+					"otlp": map[string]interface{}{
+						"protocols": map[string]interface{}{
+							"grpc": map[string]interface{}{},
+						},
+					},
+				},
+				retriever: receivers.ReceiverFor,
+			},
+			want: []corev1.ServicePort{
+				{
+					Name:        "otlp-grpc",
+					Port:        4317,
+					TargetPort:  intstr.FromInt32(4317),
+					AppProtocol: &components.GrpcProtocol,
+				},
+			},
+			wantErr: assert.NoError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := components.GetPortsForConfig(logr.Discard(), tt.args.config, tt.args.retriever)
+			if !tt.wantErr(t, err, fmt.Sprintf("GetPortsForConfig(%v)", tt.args.config)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "GetPortsForConfig(%v)", tt.args.config)
 		})
 	}
 }
