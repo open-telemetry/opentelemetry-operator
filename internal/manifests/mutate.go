@@ -194,7 +194,6 @@ func mutateConfigMap(existing, desired *corev1.ConfigMap) {
 }
 
 func mutateServiceAccount(existing, desired *corev1.ServiceAccount) {
-	existing.Annotations = desired.Annotations
 	existing.Labels = desired.Labels
 }
 
