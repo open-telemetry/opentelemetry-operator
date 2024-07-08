@@ -25,7 +25,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -105,19 +104,7 @@ func shouldCreateServiceMonitor(params manifests.Params) bool {
 }
 
 func endpointsFromConfig(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector) []monitoringv1.Endpoint {
-	// TODO: https://github.com/open-telemetry/opentelemetry-operator/issues/2603
-	cfgStr, err := otelcol.Spec.Config.Yaml()
-	if err != nil {
-		logger.V(2).Error(err, "Error while marshaling to YAML")
-		return []monitoringv1.Endpoint{}
-	}
-	c, err := adapters.ConfigFromString(cfgStr)
-	if err != nil {
-		logger.V(2).Error(err, "Error while parsing the configuration")
-		return []monitoringv1.Endpoint{}
-	}
-
-	exporterPorts, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeExporter, c)
+	exporterPorts, err := otelcol.Spec.Config.GetExporterPorts(logger)
 	if err != nil {
 		logger.Error(err, "couldn't build service monitors from configuration")
 		return []monitoringv1.Endpoint{}

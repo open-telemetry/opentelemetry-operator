@@ -24,18 +24,24 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components/exporters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
 )
 
-type ComponentType int
+type ComponentKind int
 
 const (
-	ComponentTypeReceiver ComponentType = iota
-	ComponentTypeExporter
-	ComponentTypeProcessor
+	KindReceiver ComponentKind = iota
+	KindExporter
+	KindProcessor
 )
 
-func (c ComponentType) String() string {
+func (c ComponentKind) String() string {
 	return [...]string{"receiver", "exporter", "processor"}[c]
 }
 
@@ -95,24 +101,24 @@ type Pipeline struct {
 }
 
 // GetEnabledComponents constructs a list of enabled components by component type.
-func (c *Config) GetEnabledComponents() map[ComponentType]map[string]interface{} {
-	toReturn := map[ComponentType]map[string]interface{}{
-		ComponentTypeReceiver:  {},
-		ComponentTypeProcessor: {},
-		ComponentTypeExporter:  {},
+func (c *Config) GetEnabledComponents() map[ComponentKind]map[string]interface{} {
+	toReturn := map[ComponentKind]map[string]interface{}{
+		KindReceiver:  {},
+		KindProcessor: {},
+		KindExporter:  {},
 	}
 	for _, pipeline := range c.Service.Pipelines {
 		if pipeline == nil {
 			continue
 		}
 		for _, componentId := range pipeline.Receivers {
-			toReturn[ComponentTypeReceiver][componentId] = struct{}{}
+			toReturn[KindReceiver][componentId] = struct{}{}
 		}
 		for _, componentId := range pipeline.Exporters {
-			toReturn[ComponentTypeExporter][componentId] = struct{}{}
+			toReturn[KindExporter][componentId] = struct{}{}
 		}
 		for _, componentId := range pipeline.Processors {
-			toReturn[ComponentTypeProcessor][componentId] = struct{}{}
+			toReturn[KindProcessor][componentId] = struct{}{}
 		}
 	}
 	return toReturn
@@ -131,6 +137,53 @@ type Config struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Extensions *AnyConfig `json:"extensions,omitempty" yaml:"extensions,omitempty"`
 	Service    Service    `json:"service" yaml:"service"`
+}
+
+// getPortsForComponentKinds gets the ports for the given ComponentKind(s).
+func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]corev1.ServicePort, error) {
+	var ports []corev1.ServicePort
+	enabledComponents := c.GetEnabledComponents()
+	for _, componentKind := range componentKinds {
+		var retriever components.ParserRetriever
+		var cfg AnyConfig
+		switch componentKind {
+		case KindReceiver:
+			retriever = receivers.ReceiverFor
+			cfg = c.Receivers
+		case KindExporter:
+			retriever = exporters.ParserFor
+			cfg = c.Exporters
+		case KindProcessor:
+			break
+		}
+		for componentName := range enabledComponents[componentKind] {
+			// TODO: Clean up the naming here and make it simpler to use a retriever.
+			parser := retriever(componentName)
+			if parsedPorts, err := parser.Ports(logger, componentName, cfg.Object[componentName]); err != nil {
+				return nil, err
+			} else {
+				ports = append(ports, parsedPorts...)
+			}
+		}
+	}
+
+	sort.Slice(ports, func(i, j int) bool {
+		return ports[i].Name < ports[j].Name
+	})
+
+	return ports, nil
+}
+
+func (c *Config) GetReceiverPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
+	return c.getPortsForComponentKinds(logger, KindReceiver)
+}
+
+func (c *Config) GetExporterPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
+	return c.getPortsForComponentKinds(logger, KindExporter)
+}
+
+func (c *Config) GetAllPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
+	return c.getPortsForComponentKinds(logger, KindReceiver, KindExporter)
 }
 
 // Yaml encodes the current object and returns it as a string.

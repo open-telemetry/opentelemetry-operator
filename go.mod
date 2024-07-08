@@ -21,15 +21,15 @@ require (
 	github.com/openshift/api v0.0.0-20240124164020-e2ce40831f2e
 	github.com/operator-framework/operator-lib v0.14.0
 	github.com/prometheus-operator/prometheus-operator v0.75.0
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.75.0
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.75.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.75.1
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.75.1
 	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/common v0.55.0
 	github.com/prometheus/prometheus v0.53.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
-	go.opentelemetry.io/collector/featuregate v1.10.0
+  go.opentelemetry.io/collector/featuregate v1.11.0
 	go.opentelemetry.io/otel v1.28.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.28.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.50.0
