@@ -48,7 +48,7 @@ data:
       - memory_limiter
       receivers:
       - otlp
-    endpoint: ws://opamp-server:4320/v1/opamp
+    endpoint: ws://e2e-test-app-bridge-server:4320/v1/opamp
 kind: ConfigMap
 metadata:
   name: test-opamp-bridge
