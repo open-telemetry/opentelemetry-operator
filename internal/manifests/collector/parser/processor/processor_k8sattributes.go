@@ -20,15 +20,18 @@ import (
 
 	"github.com/go-logr/logr"
 	rbacv1 "k8s.io/api/rbac/v1"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/authz"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 )
 
-var _ ProcessorParser = &K8sAttributesParser{}
+var _ parser.AuthzParser = &K8sAttributesParser{}
 
 const (
 	parserNameK8sAttributes = "__k8sattributes"
 )
 
-// PrometheusExporterParser parses the configuration for k8sattributes processor.
+// K8sAttributesParser parses the configuration for k8sattributes processor.
 type K8sAttributesParser struct {
 	config map[interface{}]interface{}
 	logger logr.Logger
@@ -36,7 +39,7 @@ type K8sAttributesParser struct {
 }
 
 // NewK8sAttributesParser builds a new parser k8sattributes processor.
-func NewK8sAttributesParser(logger logr.Logger, name string, config map[interface{}]interface{}) ProcessorParser {
+func NewK8sAttributesParser(logger logr.Logger, name string, config map[interface{}]interface{}) parser.AuthzParser {
 	return &K8sAttributesParser{
 		logger: logger,
 		name:   name,
@@ -49,9 +52,9 @@ func (o *K8sAttributesParser) ParserName() string {
 	return parserNameK8sAttributes
 }
 
-func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
+func (o *K8sAttributesParser) GetRBACRules() []authz.DynamicRolePolicy {
 	// These policies need to be added always
-	var prs []rbacv1.PolicyRule = []rbacv1.PolicyRule{
+	var prs = []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},
 			Resources: []string{"pods", "namespaces"},
@@ -70,17 +73,17 @@ func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
 		// k8s.deployment.name is enabled by default so, replicasets permissions are needed
 		// https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/32248#discussion_r1560077826
 		prs = append(prs, replicasetPolicy)
-		return prs
+		return []authz.DynamicRolePolicy{{Rules: prs}}
 	}
 
 	metadataCfg, ok := extractCfg.(map[interface{}]interface{})["metadata"]
 	if !ok {
-		return prs
+		return []authz.DynamicRolePolicy{{Rules: prs}}
 	}
 
 	metadata, ok := metadataCfg.([]interface{})
 	if !ok {
-		return prs
+		return []authz.DynamicRolePolicy{{Rules: prs}}
 	}
 
 	for _, m := range metadata {
@@ -98,9 +101,9 @@ func (o *K8sAttributesParser) GetRBACRules() []rbacv1.PolicyRule {
 		}
 	}
 
-	return prs
+	return []authz.DynamicRolePolicy{{Rules: prs}}
 }
 
 func init() {
-	Register("k8sattributes", NewK8sAttributesParser)
+	parser.AuthzRegister(parser.ComponentTypeProcessor, "k8sattributes", NewK8sAttributesParser)
 }

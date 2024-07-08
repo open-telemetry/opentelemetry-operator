@@ -14,17 +14,19 @@
 
 package adapters
 
-import "fmt"
+import (
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
+)
 
 // Following Otel Doc: Configuring a receiver does not enable it. The receivers are enabled via pipelines within the service section.
 // getEnabledComponents returns all enabled components as a true flag set. If it can't find any receiver, it will return a nil interface.
-func getEnabledComponents(config map[interface{}]interface{}, componentType ComponentType) map[interface{}]bool {
-	componentTypePlural := fmt.Sprintf("%ss", componentType.String())
+func getEnabledComponents(config map[any]any, componentType parser.ComponentType) map[interface{}]bool {
+	componentTypePlural := componentType.Plural()
 	cfgComponents, ok := config[componentTypePlural]
 	if !ok {
 		return nil
 	}
-	components, ok := cfgComponents.(map[interface{}]interface{})
+	components, ok := cfgComponents.(map[any]any)
 	if !ok {
 		return nil
 	}
@@ -41,12 +43,12 @@ func getEnabledComponents(config map[interface{}]interface{}, componentType Comp
 		availableComponents[componentID] = false
 	}
 
-	cfgService, withService := config["service"].(map[interface{}]interface{})
+	cfgService, withService := config["service"].(map[any]any)
 	if !withService {
 		return nil
 	}
 
-	pipeline, withPipeline := cfgService["pipelines"].(map[interface{}]interface{})
+	pipeline, withPipeline := cfgService["pipelines"].(map[any]any)
 	if !withPipeline {
 		return nil
 	}
@@ -71,7 +73,7 @@ func getEnabledComponents(config map[interface{}]interface{}, componentType Comp
 			}
 			//Condition will get information if there are multiple configured pipelines.
 			if len(pipelineV) > 0 {
-				pipelineDesc, ok := pipelineCfg.(map[interface{}]interface{})
+				pipelineDesc, ok := pipelineCfg.(map[any]any)
 				if !ok {
 					return nil
 				}

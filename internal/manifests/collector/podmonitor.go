@@ -25,6 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -77,7 +78,7 @@ func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1beta1.OpenTelemetr
 		logger.V(2).Error(err, "Error while parsing the configuration")
 		return []monitoringv1.PodMetricsEndpoint{}
 	}
-	exporterPorts, err := adapters.ConfigToComponentPorts(logger, adapters.ComponentTypeExporter, config)
+	exporterPorts, err := adapters.ConfigToComponentPorts(logger, parser.ComponentTypeExporter, config)
 	if err != nil {
 		logger.Error(err, "couldn't build endpoints to podMonitors from configuration")
 		return []monitoringv1.PodMetricsEndpoint{}

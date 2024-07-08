@@ -31,6 +31,7 @@ const (
 func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object
 	var manifestFactories []manifests.K8sManifestFactory[manifests.Params]
+	var manifestListFactories []manifests.K8sMultiManifestFactory[manifests.Params]
 	switch params.OtelCol.Spec.Mode {
 	case v1beta1.ModeDeployment:
 		manifestFactories = append(manifestFactories, manifests.Factory(Deployment))
@@ -66,6 +67,10 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			manifests.Factory(ClusterRole),
 			manifests.Factory(ClusterRoleBinding),
 		)
+		manifestListFactories = append(manifestListFactories,
+			manifests.MultiFactory(Role),
+			manifests.MultiFactory(RoleBinding),
+		)
 	}
 
 	for _, factory := range manifestFactories {
@@ -76,6 +81,19 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			resourceManifests = append(resourceManifests, res)
 		}
 	}
+	for _, factory := range manifestListFactories {
+		resList, err := factory(params)
+		if err != nil {
+			return nil, err
+		} else {
+			for _, res := range resList {
+				if manifests.ObjectIsNotNil(res) {
+					resourceManifests = append(resourceManifests, res)
+				}
+			}
+		}
+	}
+
 	routes, err := Routes(params)
 	if err != nil {
 		return nil, err

@@ -21,13 +21,17 @@ import (
 	"github.com/stretchr/testify/require"
 	rbacv1 "k8s.io/api/rbac/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/authz"
+	_ "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/exporter"
+	_ "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/parser/processor"
 )
 
 func TestConfigRBAC(t *testing.T) {
 	tests := []struct {
 		desc          string
 		config        string
-		expectedRules []rbacv1.PolicyRule
+		expectedRules []authz.DynamicRolePolicy
 	}{
 		{
 			desc: "No processors",
@@ -35,7 +39,7 @@ func TestConfigRBAC(t *testing.T) {
 service:
   traces:
     processors:`,
-			expectedRules: ([]rbacv1.PolicyRule)(nil),
+			expectedRules: ([]authz.DynamicRolePolicy)(nil),
 		},
 		{
 			desc: "processors no rbac",
@@ -45,7 +49,7 @@ service:
   pipelines:
     traces:
       processors: [batch]`,
-			expectedRules: ([]rbacv1.PolicyRule)(nil),
+			expectedRules: ([]authz.DynamicRolePolicy)(nil),
 		},
 		{
 			desc: "resourcedetection-processor k8s",
@@ -56,12 +60,14 @@ service:
   pipelines:
     traces:
       processors: [resourcedetection]`,
-			expectedRules: []rbacv1.PolicyRule{
-				{
-					APIGroups: []string{""},
-					Resources: []string{"nodes"},
-					Verbs:     []string{"get", "list"},
-				},
+			expectedRules: []authz.DynamicRolePolicy{{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{""},
+						Resources: []string{"nodes"},
+						Verbs:     []string{"get", "list"},
+					},
+				}},
 			},
 		},
 		{
@@ -73,12 +79,14 @@ service:
   pipelines:
     traces:
       processors: [resourcedetection]`,
-			expectedRules: []rbacv1.PolicyRule{
-				{
-					APIGroups: []string{"config.openshift.io"},
-					Resources: []string{"infrastructures", "infrastructures/status"},
-					Verbs:     []string{"get", "watch", "list"},
-				},
+			expectedRules: []authz.DynamicRolePolicy{{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"config.openshift.io"},
+						Resources: []string{"infrastructures", "infrastructures/status"},
+						Verbs:     []string{"get", "watch", "list"},
+					},
+				}},
 			},
 		},
 	}

@@ -20,6 +20,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	rbacv1 "k8s.io/api/rbac/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/authz"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -29,23 +31,25 @@ func TestK8sAttributesRBAC(t *testing.T) {
 	tests := []struct {
 		name          string
 		config        map[interface{}]interface{}
-		expectedRules []rbacv1.PolicyRule
+		expectedRules []authz.DynamicRolePolicy
 	}{
 		{
 			name:   "no extra parameters",
 			config: nil,
-			expectedRules: []rbacv1.PolicyRule{
-				{
-					APIGroups: []string{""},
-					Resources: []string{"pods", "namespaces"},
-					Verbs:     []string{"get", "watch", "list"},
+			expectedRules: []authz.DynamicRolePolicy{{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{""},
+						Resources: []string{"pods", "namespaces"},
+						Verbs:     []string{"get", "watch", "list"},
+					},
+					{
+						APIGroups: []string{"apps"},
+						Resources: []string{"replicasets"},
+						Verbs:     []string{"get", "watch", "list"},
+					},
 				},
-				{
-					APIGroups: []string{"apps"},
-					Resources: []string{"replicasets"},
-					Verbs:     []string{"get", "watch", "list"},
-				},
-			},
+			}},
 		},
 		{
 			name: "extract k8s.deployment.name",
@@ -56,18 +60,20 @@ func TestK8sAttributesRBAC(t *testing.T) {
 					},
 				},
 			},
-			expectedRules: []rbacv1.PolicyRule{
-				{
-					APIGroups: []string{""},
-					Resources: []string{"pods", "namespaces"},
-					Verbs:     []string{"get", "watch", "list"},
+			expectedRules: []authz.DynamicRolePolicy{{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{""},
+						Resources: []string{"pods", "namespaces"},
+						Verbs:     []string{"get", "watch", "list"},
+					},
+					{
+						APIGroups: []string{"apps"},
+						Resources: []string{"replicasets"},
+						Verbs:     []string{"get", "watch", "list"},
+					},
 				},
-				{
-					APIGroups: []string{"apps"},
-					Resources: []string{"replicasets"},
-					Verbs:     []string{"get", "watch", "list"},
-				},
-			},
+			}},
 		},
 		{
 			name: "extract k8s.deployment.uid",
@@ -78,18 +84,20 @@ func TestK8sAttributesRBAC(t *testing.T) {
 					},
 				},
 			},
-			expectedRules: []rbacv1.PolicyRule{
-				{
-					APIGroups: []string{""},
-					Resources: []string{"pods", "namespaces"},
-					Verbs:     []string{"get", "watch", "list"},
+			expectedRules: []authz.DynamicRolePolicy{{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{""},
+						Resources: []string{"pods", "namespaces"},
+						Verbs:     []string{"get", "watch", "list"},
+					},
+					{
+						APIGroups: []string{"apps"},
+						Resources: []string{"replicasets"},
+						Verbs:     []string{"get", "watch", "list"},
+					},
 				},
-				{
-					APIGroups: []string{"apps"},
-					Resources: []string{"replicasets"},
-					Verbs:     []string{"get", "watch", "list"},
-				},
-			},
+			}},
 		},
 		{
 			name: "extract k8s.pod.name",
@@ -100,13 +108,15 @@ func TestK8sAttributesRBAC(t *testing.T) {
 					},
 				},
 			},
-			expectedRules: []rbacv1.PolicyRule{
-				{
-					APIGroups: []string{""},
-					Resources: []string{"pods", "namespaces"},
-					Verbs:     []string{"get", "watch", "list"},
+			expectedRules: []authz.DynamicRolePolicy{{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{""},
+						Resources: []string{"pods", "namespaces"},
+						Verbs:     []string{"get", "watch", "list"},
+					},
 				},
-			},
+			}},
 		},
 		{
 			name: "extract k8s.node",
@@ -117,18 +127,20 @@ func TestK8sAttributesRBAC(t *testing.T) {
 					},
 				},
 			},
-			expectedRules: []rbacv1.PolicyRule{
-				{
-					APIGroups: []string{""},
-					Resources: []string{"pods", "namespaces"},
-					Verbs:     []string{"get", "watch", "list"},
+			expectedRules: []authz.DynamicRolePolicy{{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{""},
+						Resources: []string{"pods", "namespaces"},
+						Verbs:     []string{"get", "watch", "list"},
+					},
+					{
+						APIGroups: []string{""},
+						Resources: []string{"nodes"},
+						Verbs:     []string{"get", "watch", "list"},
+					},
 				},
-				{
-					APIGroups: []string{""},
-					Resources: []string{"nodes"},
-					Verbs:     []string{"get", "watch", "list"},
-				},
-			},
+			}},
 		},
 	}
 

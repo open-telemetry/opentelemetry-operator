@@ -141,6 +141,16 @@ func ClusterRoleBinding(otelcol, namespace string) string {
 	return DNSName(Truncate("%s-%s-collector", 63, otelcol, namespace))
 }
 
+// Role builds the cluster role name based on the instance.
+func Role(otelcol string, namespace string) string {
+	return DNSName(Truncate("%s-%s-role", 63, otelcol, namespace))
+}
+
+// RoleBinding builds the cluster role binding name based on the instance.
+func RoleBinding(otelcol, namespace string) string {
+	return DNSName(Truncate("%s-%s-collector", 63, otelcol, namespace))
+}
+
 // TAService returns the name to use for the TargetAllocator service.
 func TAService(taName string) string {
 	return DNSName(Truncate("%s-targetallocator", 63, taName))

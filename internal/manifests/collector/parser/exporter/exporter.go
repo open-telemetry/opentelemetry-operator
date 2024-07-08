@@ -34,7 +34,7 @@ var registry = make(map[string]parser.Builder)
 
 // BuilderFor returns a parser builder for the given exporter name.
 func BuilderFor(name string) parser.Builder {
-	return registry[exporterType(name)]
+	return registry[parser.ComponentName(name)]
 }
 
 // For returns a new parser for the given exporter name + config.
@@ -113,16 +113,4 @@ func portFromEndpoint(endpoint string) (int32, error) {
 	}
 
 	return int32(port), err
-}
-
-func exporterType(name string) string {
-	// exporters have a name like:
-	// - myexporter/custom
-	// - myexporter
-	// we extract the "myexporter" part and see if we have a parser for the exporter
-	if strings.Contains(name, "/") {
-		return name[:strings.Index(name, "/")]
-	}
-
-	return name
 }

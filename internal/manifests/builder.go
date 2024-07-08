@@ -26,6 +26,9 @@ type ManifestFactory[T client.Object, Params any] func(params Params) (T, error)
 type SimpleManifestFactory[T client.Object, Params any] func(params Params) T
 type K8sManifestFactory[Params any] ManifestFactory[client.Object, Params]
 
+type MultiManifestFactory[T client.Object, Params any] func(params Params) ([]T, error)
+type K8sMultiManifestFactory[Params any] func(params Params) ([]client.Object, error)
+
 func FactoryWithoutError[T client.Object, Params any](f SimpleManifestFactory[T, Params]) K8sManifestFactory[Params] {
 	return func(params Params) (client.Object, error) {
 		return f(params), nil
@@ -35,6 +38,20 @@ func FactoryWithoutError[T client.Object, Params any](f SimpleManifestFactory[T,
 func Factory[T client.Object, Params any](f ManifestFactory[T, Params]) K8sManifestFactory[Params] {
 	return func(params Params) (client.Object, error) {
 		return f(params)
+	}
+}
+
+func MultiFactory[T client.Object, Params any](f MultiManifestFactory[T, Params]) K8sMultiManifestFactory[Params] {
+	return func(params Params) ([]client.Object, error) {
+		objs, err := f(params)
+		if err != nil {
+			return nil, err
+		}
+		var clientObjs []client.Object
+		for _, obj := range objs {
+			clientObjs = append(clientObjs, obj)
+		}
+		return clientObjs, nil
 	}
 }
 
