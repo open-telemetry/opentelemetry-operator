@@ -24,9 +24,13 @@ func init() {
 	SchemeBuilder.Register(&TargetAllocator{}, &TargetAllocatorList{})
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:storageversion
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="Image",type="string",JSONPath=".status.image"
+// +kubebuilder:printcolumn:name="Management",type="string",JSONPath=".spec.managementState",description="Management State"
+// +operator-sdk:csv:customresourcedefinitions:displayName="Target Allocator"
+// +operator-sdk:csv:customresourcedefinitions:resources={{Pod,v1},{Deployment,apps/v1},{ConfigMaps,v1},{Service,v1},{ServiceAccount,v1},{PodDisruptionBudget,policy/v1}}
 
 // TargetAllocator is the Schema for the targetallocators API.
 type TargetAllocator struct {
@@ -37,7 +41,7 @@ type TargetAllocator struct {
 	Status TargetAllocatorStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // TargetAllocatorList contains a list of TargetAllocator.
 type TargetAllocatorList struct {
