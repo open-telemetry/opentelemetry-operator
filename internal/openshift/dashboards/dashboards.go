@@ -25,7 +25,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// The dashboard is created manually following the syntax from Grafana 5. For development purposes, this dashboard can be created just loading the JSON file
+// The dashboard is created manually following the syntax from Grafana 5. For development purposes, this dashboard can be created just by loading the JSON file
 // in a ConfigMap from the openshift-config-managed and adding the console.openshift.io/dashboard=true label.
 //
 //go:embed metrics-dashboard.json
