@@ -1,50 +1,44 @@
-apiVersion: v1
-automountServiceAccountToken: true
-kind: ServiceAccount
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: opamp-bridge
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: opamp-bridge
-rules:
-- apiGroups:
-  - opentelemetry.io
-  resources:
-  - opentelemetrycollectors
-  verbs:
-  - '*'
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - list
-  - get
----
-apiVersion: opentelemetry.io/v1alpha1
-kind: OpAMPBridge
-metadata:
-  name: test
+  name: e2e-test-app-bridge-server
 spec:
-  capabilities:
-    AcceptsOpAMPConnectionSettings: true
-    AcceptsOtherConnectionSettings: true
-    AcceptsRemoteConfig: true
-    AcceptsRestartCommand: true
-    ReportsEffectiveConfig: true
-    ReportsHealth: true
-    ReportsOwnLogs: true
-    ReportsOwnMetrics: true
-    ReportsOwnTraces: true
-    ReportsRemoteConfig: true
-    ReportsStatus: true
-  componentsAllowed:
-    exporters:
-    - logging
-    processors:
-    - memory_limiter
-    receivers:
-    - otlp
-  endpoint: ws://opamp-server:4320/v1/opamp
+  replicas: 1
+  selector:
+    matchLabels:
+      app: e2e-test-app-bridge-server
+  template:
+    metadata:
+      labels:
+        app: e2e-test-app-bridge-server
+    spec:
+      containers:
+        - name: e2e-test-app-bridge-server
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-bridge-server:main
+          ports:
+            - containerPort: 4320
+            - containerPort: 4321
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: e2e-test-app-bridge-server
+spec:
+  selector:
+    app: e2e-test-app-bridge-server
+  ports:
+    - protocol: TCP
+      port: 4320
+      targetPort: 4320
+      name: "opamp"
+    - protocol: TCP
+      port: 4321
+      targetPort: 4321
+      name: "http"
