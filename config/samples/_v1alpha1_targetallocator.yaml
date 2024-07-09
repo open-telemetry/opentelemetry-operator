@@ -1,0 +1,12 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  labels:
+    app.kubernetes.io/name: targetallocator
+    app.kubernetes.io/instance: targetallocator-sample
+    app.kubernetes.io/part-of: opentelemetry-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: opentelemetry-operator
+  name: targetallocator-sample
+spec:
+  # TODO(user): Add fields here
