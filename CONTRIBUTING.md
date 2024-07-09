@@ -199,7 +199,7 @@ When using OpenShift, the OLM is already installed.
 
 ### Create the bundle and related images
 
-The following commands will generate a bundle under `bundle/`, build an image with its contents, build and publish the operator image.
+The following commands will generate two bundles (one for regular Kubernetes and another one for OpenShift) under `bundle/`, build an image with its contents, build and publish the operator image.
 
 ```bash
 BUNDLE_IMG=docker.io/${USER}/opentelemetry-operator-bundle:latest IMG=docker.io/${USER}/opentelemetry-operator:latest make bundle container container-push bundle-build bundle-push
