@@ -96,6 +96,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			},
 		},
 	}
+	deploymentExtraPorts.Annotations = map[string]string{
+		"new-annotation": "new-value",
+	}
 	ingressParams := testCollectorAssertNoErr(t, "test-ingress", "", testFileIngress)
 	ingressParams.Spec.Ingress.Type = "ingress"
 	updatedIngressParams := testCollectorAssertNoErr(t, "test-ingress", "", testFileIngress)
@@ -164,9 +167,15 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 								"app.kubernetes.io/managed-by": "opentelemetry-operator",
 								"app.kubernetes.io/part-of":    "opentelemetry",
 							})
-							exists, err = populateObjectIfExists(t, &v1.ServiceAccount{}, namespacedObjectName(naming.ServiceAccount(params.Name), params.Namespace))
+							sa := &v1.ServiceAccount{}
+							exists, err = populateObjectIfExists(t, sa, namespacedObjectName(naming.ServiceAccount(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
+							assert.Equal(t, map[string]string{annotationName: "true"}, sa.Annotations)
+							saPatch := sa.DeepCopy()
+							saPatch.Annotations["user-defined-annotation"] = "value"
+							err = k8sClient.Patch(ctx, saPatch, client.MergeFrom(sa))
+							require.NoError(t, err)
 						},
 					},
 					wantErr:     assert.NoError,
@@ -198,6 +207,12 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 								"app.kubernetes.io/managed-by": "opentelemetry-operator",
 								"app.kubernetes.io/part-of":    "opentelemetry",
 							})
+
+							sa := &v1.ServiceAccount{}
+							exists, err = populateObjectIfExists(t, sa, namespacedObjectName(naming.ServiceAccount(params.Name), params.Namespace))
+							assert.NoError(t, err)
+							assert.True(t, exists)
+							assert.Equal(t, map[string]string{annotationName: "true", "user-defined-annotation": "value", "new-annotation": "new-value"}, sa.Annotations)
 						},
 					},
 					wantErr:     assert.NoError,
