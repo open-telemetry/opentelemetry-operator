@@ -2,6 +2,48 @@
 
 <!-- next version -->
 
+## 0.104.0
+
+### 🛑 Breaking changes 🛑
+
+- `collector`: The new collector release enables `component.UseLocalHostAsDefaultHost` by default. This mainly affects the `otlpreceiver`. But may has side effects on components like the `healthcheck extension`. The `operator` will change IPs not explicitly configured in the `otlpreceiver` configuration such as `:4317` or empty fields to `0.0.0.0` during the upgrade routine and when creating a CR.
+- `opamp`: Adds support for v1beta1 OpenTelemetry Collector API in the OpAMP Bridge (#2985)
+  This change adds support for the OpAMP Bridge to manage and apply OpenTelemetry Collectors using the v1beta1 API in 
+  the OpAMP Bridge. This change removes support for applying OpenTelemetry Collectors using the v1alpha1 API version.
+  The v1beta1 API is the latest version of the OpenTelemetry Collector API and is the recommended version for new 
+  deployments.
+
+### 💡 Enhancements 💡
+
+- `collector, target allocator`: If the target allocator is enabled, the collector featuregate `confmap.unifyEnvVarExpansion' is disabled. 
+- `operator`: Release leader election lease on exit (#3058)
+- `collector, target allocator, opamp`: Enabling PodDnsConfig for OpenTelemetry Collector, TargetAllocator and OpAMPBridge. (#2658)
+- `collector`: Make the `spec.mode` field of the `OpenTelemetryCollector` Custom Resource (CR) immutable (#3055)
+- `collector`: Improves the performance of port and configuration parsing in the operator (#2603)
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fix deletion issue of `otelcol` CR by making `spec.config.service.pipelines.processors` optional (#3075)
+  This change makes `spec.config.service.pipelines.processors` in `OpenTelemetryCollector` CRD optional, aligning with OTel Collector best practices. It resolves deletion issues by providing flexibility in CRD configuration, addressing conflicts between strict validation and practical uses.
+  Note: Updating the `opentelemetrycollectors.opentelemetry.io` CRD resource is required.
+  
+- `collector`: Allow annotations on service account to prevent infinite reconciliation on OpenShift and creating infinite pull secrets. (#3106)
+  On OpenShift 4.16 the platform automatically adds an annotation `openshift.io/internal-registry-pull-secret-ref: <simplest-collector-dockercfg-jwq66>`
+  to the service account which contains secret name with image pull secret.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.104.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.104.0)
+* [OpenTelemetry Contrib - v0.104.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.104.0)
+* [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.52.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.52.1)
+* [Python - v0.46b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.46b0)
+* [Go - v0.13.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.13.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.103.0
 
 ### 💡 Enhancements 💡
