@@ -25,7 +25,7 @@ spec:
             - -c
             - |
               for i in $(seq 30); do
-                if curl -m 1 -s http://prometheus-cr-collector:9090/metrics | grep "The Collector got the secret from the Target Allocator over mTLS"; then exit 0; fi
+                if curl -m 1 -s http://prometheus-cr-collector:9090/metrics | grep "Client was authenticated"; then exit 0; fi
                 sleep 5
               done
               exit 1
