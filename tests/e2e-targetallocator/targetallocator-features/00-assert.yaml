@@ -9,6 +9,7 @@ spec:
       containers:
       - args:
         - --config=/conf/collector.yaml
+        - --feature-gates=-confmap.unifyEnvVarExpansion
         name: otc-container
         volumeMounts:
         - mountPath: /conf

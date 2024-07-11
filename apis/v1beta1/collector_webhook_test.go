@@ -336,6 +336,9 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args: map[string]string{
+							"feature-gates": "-confmap.unifyEnvVarExpansion",
+						},
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -386,6 +389,9 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args: map[string]string{
+							"feature-gates": "-confmap.unifyEnvVarExpansion",
+						},
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -431,6 +437,9 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args: map[string]string{
+							"feature-gates": "-confmap.unifyEnvVarExpansion",
+						},
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -475,6 +484,9 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args: map[string]string{
+							"feature-gates": "-confmap.unifyEnvVarExpansion",
+						},
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -1324,4 +1336,39 @@ func getReviewer(shouldFailSAR bool) *rbac.Reviewer {
 		return true, sar, nil
 	})
 	return rbac.NewReviewer(c)
+}
+
+func TestTAUnifiyEnvVarExpansion(t *testing.T) {
+	otelcol := &OpenTelemetryCollector{
+		Spec: OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+				Args: nil,
+			},
+		},
+	}
+	TAUnifiyEnvVarExpansion(otelcol)
+	assert.Nil(t, otelcol.Spec.OpenTelemetryCommonFields.Args, "expect nil")
+	otelcol.Spec.TargetAllocator.Enabled = true
+	TAUnifiyEnvVarExpansion(otelcol)
+	assert.NotNil(t, otelcol.Spec.OpenTelemetryCommonFields.Args, "expect not nil")
+	expect := map[string]string{
+		"feature-gates": "-confmap.unifyEnvVarExpansion",
+	}
+	assert.EqualValues(t, otelcol.Spec.OpenTelemetryCommonFields.Args, expect)
+	TAUnifiyEnvVarExpansion(otelcol)
+	assert.EqualValues(t, otelcol.Spec.OpenTelemetryCommonFields.Args, expect)
+	expect = map[string]string{
+		"feature-gates": "-confmap.unifyEnvVarExpansion,+abc",
+	}
+	otelcol.Spec.OpenTelemetryCommonFields.Args = expect
+	TAUnifiyEnvVarExpansion(otelcol)
+	assert.EqualValues(t, otelcol.Spec.OpenTelemetryCommonFields.Args, expect)
+	otelcol.Spec.OpenTelemetryCommonFields.Args = map[string]string{
+		"feature-gates": "+abc",
+	}
+	TAUnifiyEnvVarExpansion(otelcol)
+	expect = map[string]string{
+		"feature-gates": "+abc,-confmap.unifyEnvVarExpansion",
+	}
+	assert.EqualValues(t, otelcol.Spec.OpenTelemetryCommonFields.Args, expect)
 }

@@ -94,6 +94,10 @@ var (
 			Version:        *semver.MustParse("0.104.0"),
 			upgradeV1beta1: upgrade0_104_0,
 		},
+		{
+			Version:        *semver.MustParse("0.104.0"),
+			upgradeV1beta1: upgrade0_104_0_TA,
+		},
 	}
 
 	// Latest represents the latest version that we need to upgrade. This is not necessarily the latest known version.

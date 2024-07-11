@@ -21,6 +21,15 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
+func upgrade0_104_0_TA(_ VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (*v1beta1.OpenTelemetryCollector, error) {
+	if !otelcol.Spec.TargetAllocator.Enabled {
+		return otelcol, nil
+	}
+
+	v1beta1.TAUnifiyEnvVarExpansion(otelcol)
+	return otelcol, nil
+}
+
 func upgrade0_104_0(u VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (*v1beta1.OpenTelemetryCollector, error) {
 	for key, rc := range otelcol.Spec.Config.Receivers.Object {
 		// check if otel is configured
