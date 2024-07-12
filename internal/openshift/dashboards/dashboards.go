@@ -18,7 +18,6 @@ import (
 	"context"
 	_ "embed"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,7 +35,17 @@ const (
 	configMapName                = "opentelemetry-collector"
 )
 
-func CreateOpenShiftDashboard(clientset kubernetes.Interface) error {
+type DashboardManagement struct {
+	clientset kubernetes.Interface
+}
+
+func NewDashboardManagement(clientset kubernetes.Interface) DashboardManagement {
+	return DashboardManagement{
+		clientset: clientset,
+	}
+}
+
+func (d DashboardManagement) Start(ctx context.Context) error {
 	cm := corev1.ConfigMap{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      configMapName,
@@ -50,13 +59,17 @@ func CreateOpenShiftDashboard(clientset kubernetes.Interface) error {
 		},
 	}
 
-	_, err := clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Create(context.TODO(), &cm, metav1.CreateOptions{})
+	_, err := d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Create(context.TODO(), &cm, metav1.CreateOptions{})
+	if err != nil {
+		return nil
+	}
+
+	<-ctx.Done()
+
+	err = d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Delete(context.TODO(), configMapName, metav1.DeleteOptions{})
 	return err
 }
 
-func DeleteOpenShiftDashboard(clientset kubernetes.Interface, logger logr.Logger) {
-	err := clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Delete(context.TODO(), configMapName, metav1.DeleteOptions{})
-	if err != nil {
-		logger.Error(err, "it was not possible to remove the dashboards configmap", "name", configMapName, "namespace", openshiftDashboardsNamespace)
-	}
+func (d DashboardManagement) NeedLeaderElection() bool {
+	return true
 }

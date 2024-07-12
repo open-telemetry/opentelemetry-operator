@@ -276,22 +276,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	clientset, clientErr := kubernetes.NewForConfig(mgr.GetConfig())
+	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
 	if err != nil {
-		setupLog.Error(clientErr, "failed to create kubernetes clientset")
+		setupLog.Error(err, "failed to create kubernetes clientset")
 	}
 
 	ctx := ctrl.SetupSignalHandler()
 
 	if createOpenShiftDashboard {
-		err = openshiftDashboards.CreateOpenShiftDashboard(clientset)
-		if err == nil {
-			ctrl.Log.Info("OpenShift dashboard for OpenTelemetryCollector monitoring created")
-			context.AfterFunc(ctx, func() {
-				openshiftDashboards.DeleteOpenShiftDashboard(clientset, ctrl.Log)
-			})
-		} else {
-			ctrl.Log.Error(err, "Something failed while creating the OpenShift dashboard for OpenTelemetryCollector monitoring")
+		dashErr := mgr.Add(openshiftDashboards.NewDashboardManagement(clientset))
+		if dashErr != nil {
+			setupLog.Error(dashErr, "failed to create the OpenShift dashboards")
 		}
 	}
 
