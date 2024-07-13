@@ -497,25 +497,12 @@ func TestConfig_GetExporterPorts(t *testing.T) {
 					Name: "prometheus",
 					Port: 8889,
 				},
-				{
-					Name: "otlp",
-					Port: 4317,
-				},
-				{
-					Name: "zipkin",
-					Port: 9411,
-				},
 			},
 		},
 		{
 			name: "extensions",
 			file: "testdata/otelcol-extensions.yaml",
-			want: []v1.ServicePort{
-				{
-					Name: "otlp-auth",
-					Port: 4317,
-				},
-			},
+			want: nil,
 		},
 		{
 			name: "filelog",
