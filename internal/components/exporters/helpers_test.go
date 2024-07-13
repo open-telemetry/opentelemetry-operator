@@ -34,8 +34,7 @@ func TestParserForReturns(t *testing.T) {
 		"endpoint": "localhost:9000",
 	})
 	assert.NoError(t, err)
-	assert.Len(t, ports, 1)
-	assert.Equal(t, ports[0].Port, int32(9000))
+	assert.Len(t, ports, 0) // Should use the nop parser
 }
 
 func TestCanRegister(t *testing.T) {
