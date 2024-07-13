@@ -53,8 +53,8 @@ func (m *MultiPortReceiver) Ports(logger logr.Logger, name string, config interf
 			port := defaultSvc.Port
 			if ec != nil {
 				port = ec.GetPortNumOrDefault(logger, port)
-				defaultSvc.Name = naming.PortName(fmt.Sprintf("%s-%s", name, protocol), port)
 			}
+			defaultSvc.Name = naming.PortName(fmt.Sprintf("%s-%s", name, protocol), port)
 			ports = append(ports, ConstructServicePort(defaultSvc, port))
 		} else {
 			return nil, fmt.Errorf("unknown protocol set: %s", protocol)
