@@ -117,7 +117,7 @@ type TargetAllocatorPrometheusCR struct {
 
 type (
 	// TargetAllocatorAllocationStrategy represent a strategy Target Allocator uses to distribute targets to each collector
-	// +kubebuilder:validation:Enum=least-weighted;consistent-hashing;per-node
+	// +kubebuilder:validation:Enum=least-weighted;consistent-hashing;per-node;job-average
 	TargetAllocatorAllocationStrategy string
 	// TargetAllocatorFilterStrategy represent a filtering strategy for targets before they are assigned to collectors
 	// +kubebuilder:validation:Enum="";relabel-config

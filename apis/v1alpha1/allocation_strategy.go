@@ -16,7 +16,7 @@ package v1alpha1
 
 type (
 	// OpenTelemetryTargetAllocatorAllocationStrategy represent which strategy to distribute target to each collector
-	// +kubebuilder:validation:Enum=least-weighted;consistent-hashing;per-node
+	// +kubebuilder:validation:Enum=least-weighted;consistent-hashing;per-node;job-average
 	OpenTelemetryTargetAllocatorAllocationStrategy string
 )
 
