@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -1247,6 +1248,9 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					config.WithTargetAllocatorImage("ta:v0.0.0"),
 				),
 				reviewer: getReviewer(test.shouldFailSar),
+				bv: func(col OpenTelemetryCollector) (admission.Warnings, error) {
+					return nil, fmt.Errorf("error1")
+				},
 			}
 			ctx := context.Background()
 			warnings, err := cvw.ValidateCreate(ctx, &test.otelcol)

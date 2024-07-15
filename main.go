@@ -19,6 +19,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"os"
 	"regexp"
 	"runtime"
@@ -50,10 +51,10 @@ import (
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
@@ -353,13 +354,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = controllers.NewReconciler(controllers.Params{
+	collectorReconciler := controllers.NewReconciler(controllers.Params{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
 		Scheme:   mgr.GetScheme(),
 		Config:   cfg,
 		Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
-	}).SetupWithManager(mgr); err != nil {
+	})
+
+	if err = collectorReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
 		os.Exit(1)
 	}
@@ -391,7 +394,19 @@ func main() {
 
 		}
 
-		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics); err != nil {
+		bv := func(collector otelv1beta1.OpenTelemetryCollector) (admission.Warnings, error) {
+			params, err := collectorReconciler.GetParams(collector)
+			if err != nil {
+				return nil, err
+			}
+			_, err = collectorManifests.Build(params)
+			if err != nil {
+				return nil, err
+			}
+			return nil, nil
+		}
+
+		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}

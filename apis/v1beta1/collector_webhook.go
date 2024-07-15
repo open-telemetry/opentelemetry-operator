@@ -17,9 +17,6 @@ package v1beta1
 import (
 	"context"
 	"fmt"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -80,6 +77,7 @@ type CollectorWebhook struct {
 	scheme   *runtime.Scheme
 	reviewer *rbac.Reviewer
 	metrics  *Metrics
+	bv       buildValidator
 }
 
 func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
@@ -178,8 +176,12 @@ func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object
 	if c.metrics != nil {
 		c.metrics.create(ctx, otelcol)
 	}
+	newWarnings, err := c.bv(*otelcol)
+	if err != nil {
+		return append(warnings, newWarnings...), err
+	}
 
-	return warnings, nil
+	return append(warnings, newWarnings...), nil
 }
 
 func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
@@ -346,20 +348,6 @@ func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollecto
 	if r.Spec.Mode != ModeDeployment && len(r.Spec.DeploymentUpdateStrategy.Type) > 0 {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'deploymentUpdateStrategy'", r.Spec.Mode)
 	}
-	
-	_, err = collector.Build(manifests.Params{
-		Client:          nil,
-		Recorder:        nil,
-		Scheme:          nil,
-		Log:             logr.Logger{},
-		OtelCol:         OpenTelemetryCollector{},
-		TargetAllocator: nil,
-		OpAMPBridge:     v1alpha1.OpAMPBridge{},
-		Config:          config.Config{},
-	})
-	if err != nil {
-		return nil, err
-	}
 
 	return warnings, nil
 }
@@ -471,13 +459,16 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	return nil
 }
 
-func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics) error {
+type buildValidator func(c OpenTelemetryCollector) (admission.Warnings, error)
+
+func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv buildValidator) error {
 	cvw := &CollectorWebhook{
 		reviewer: reviewer,
 		logger:   mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"),
 		scheme:   mgr.GetScheme(),
 		cfg:      cfg,
 		metrics:  metrics,
+		bv:       bv,
 	}
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&OpenTelemetryCollector{}).
