@@ -176,12 +176,14 @@ func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object
 	if c.metrics != nil {
 		c.metrics.create(ctx, otelcol)
 	}
-	newWarnings, err := c.bv(*otelcol)
-	if err != nil {
-		return append(warnings, newWarnings...), err
+	if c.bv != nil {
+		newWarnings, err := c.bv(*otelcol)
+		if err != nil {
+			return append(warnings, newWarnings...), err
+		}
+		warnings = append(warnings, newWarnings...)
 	}
-
-	return append(warnings, newWarnings...), nil
+	return warnings, nil
 }
 
 func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {

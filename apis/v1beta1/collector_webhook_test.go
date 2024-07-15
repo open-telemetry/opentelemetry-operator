@@ -1249,7 +1249,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				),
 				reviewer: getReviewer(test.shouldFailSar),
 				bv: func(col OpenTelemetryCollector) (admission.Warnings, error) {
-					return nil, fmt.Errorf("error1")
+					return nil, nil
 				},
 			}
 			ctx := context.Background()
