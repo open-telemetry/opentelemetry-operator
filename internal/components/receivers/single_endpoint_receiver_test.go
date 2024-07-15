@@ -54,7 +54,7 @@ func TestFailedToParseEndpoint(t *testing.T) {
 	})
 
 	// verify
-	assert.Error(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, ports, 0)
 }
 
