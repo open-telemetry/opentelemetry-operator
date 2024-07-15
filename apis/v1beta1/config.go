@@ -141,6 +141,7 @@ type Config struct {
 
 // getPortsForComponentKinds gets the ports for the given ComponentKind(s).
 func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]corev1.ServicePort, error) {
+
 	var ports []corev1.ServicePort
 	enabledComponents := c.GetEnabledComponents()
 	for _, componentKind := range componentKinds {

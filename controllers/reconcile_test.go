@@ -99,6 +99,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 	deploymentExtraPorts.Annotations = map[string]string{
 		"new-annotation": "new-value",
 	}
+	baseOTLPParams := testCollectorAssertNoErr(t, "test-otlp", "", otlpTestFile)
 	ingressParams := testCollectorAssertNoErr(t, "test-ingress", "", testFileIngress)
 	ingressParams.Spec.Ingress.Type = "ingress"
 	updatedIngressParams := testCollectorAssertNoErr(t, "test-ingress", "", testFileIngress)
@@ -213,6 +214,41 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							assert.Equal(t, map[string]string{annotationName: "true", "user-defined-annotation": "value", "new-annotation": "new-value"}, sa.Annotations)
+						},
+					},
+					wantErr:     assert.NoError,
+					validateErr: assert.NoError,
+				},
+			},
+		},
+
+		{
+			name: "otlp receiver collector",
+			args: args{
+				params:  baseOTLPParams,
+				updates: []v1alpha1.OpenTelemetryCollector{},
+			},
+			want: []want{
+				{
+					result: controllerruntime.Result{},
+					checks: []check[v1alpha1.OpenTelemetryCollector]{
+						func(t *testing.T, params v1alpha1.OpenTelemetryCollector) {
+							d := appsv1.StatefulSet{}
+							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(naming.Collector(params.Name), params.Namespace))
+							assert.NoError(t, err)
+							assert.True(t, exists)
+							assert.Equal(t, int32(1), *d.Spec.Replicas)
+							svc := &v1.Service{}
+							exists, err = populateObjectIfExists(t, svc, namespacedObjectName(naming.Service(params.Name), params.Namespace))
+							assert.NoError(t, err)
+							assert.True(t, exists)
+							assert.Equal(t, svc.Spec.Selector, map[string]string{
+								"app.kubernetes.io/component":  "opentelemetry-collector",
+								"app.kubernetes.io/instance":   "default.test-otlp",
+								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/part-of":    "opentelemetry",
+							})
+							assert.Len(t, svc.Spec.Ports, 4)
 						},
 					},
 					wantErr:     assert.NoError,
