@@ -59,15 +59,14 @@ func (d DashboardManagement) Start(ctx context.Context) error {
 		},
 	}
 
-	_, err := d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Create(context.TODO(), &cm, metav1.CreateOptions{})
+	_, err := d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Create(ctx, &cm, metav1.CreateOptions{})
 	if err != nil {
 		return nil
 	}
 
 	<-ctx.Done()
 
-	err = d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Delete(context.TODO(), configMapName, metav1.DeleteOptions{})
-	return err
+	return d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Delete(ctx, configMapName, metav1.DeleteOptions{})
 }
 
 func (d DashboardManagement) NeedLeaderElection() bool {
