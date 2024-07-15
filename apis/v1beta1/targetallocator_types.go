@@ -134,6 +134,10 @@ const (
 	// TargetAllocatorAllocationStrategyPerNode targets will be assigned to the collector on the node they reside on (use only with daemon set).
 	TargetAllocatorAllocationStrategyPerNode TargetAllocatorAllocationStrategy = "per-node"
 
+	// TargetAllocatorAllocationStrategyJobAverage targets will be assigned to the collector based on the number of targets that have been
+	// allocated to this job and the total number of all targets.
+	TargetAllocatorAllocationStrategyJobAverage TargetAllocatorAllocationStrategy = "job-average"
+
 	// TargetAllocatorFilterStrategyRelabelConfig targets will be consistently drops targets based on the relabel_config.
 	TargetAllocatorFilterStrategyRelabelConfig TargetAllocatorFilterStrategy = "relabel-config"
 )

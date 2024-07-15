@@ -29,4 +29,8 @@ const (
 
 	// OpenTelemetryTargetAllocatorAllocationStrategyPerNode targets will be assigned to the collector on the node they reside on (use only with daemon set).
 	OpenTelemetryTargetAllocatorAllocationStrategyPerNode OpenTelemetryTargetAllocatorAllocationStrategy = "per-node"
+
+	// OpenTelemetryTargetAllocatorAllocationStrategyJobAverage targets will be assigned to the collector based on the number of targets that have been
+	// allocated to this job and the total number of all targets.
+	OpenTelemetryTargetAllocatorAllocationStrategyJobAverage OpenTelemetryTargetAllocatorAllocationStrategy = "job-average"
 )

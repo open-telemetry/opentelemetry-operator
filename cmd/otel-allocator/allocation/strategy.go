@@ -139,4 +139,8 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	err = Register(jobAverageStrategyName, newJobAverageAllocator)
+	if err != nil {
+		panic(err)
+	}
 }

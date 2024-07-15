@@ -141,7 +141,7 @@ type TargetAllocatorEmbedded struct {
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 	// AllocationStrategy determines which strategy the target allocator should use for allocation.
-	// The current options are least-weighted, consistent-hashing and per-node. The default is
+	// The current options are least-weighted, consistent-hashing , per-node and job-average. The default is
 	// consistent-hashing.
 	// WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.
 	// +optional

@@ -70,3 +70,19 @@ func MakeNNewTargetsWithEmptyCollectors(n int, startingIndex int) map[string]*ta
 	}
 	return toReturn
 }
+
+func MakeNNewTargetsInMJobs(n, m int, startingIndex int) map[string]*target.Item {
+	if m > n {
+		m = n
+	}
+	toReturn := map[string]*target.Item{}
+	for i := startingIndex; i < n+startingIndex; i++ {
+		label := model.LabelSet{
+			"i":     model.LabelValue(strconv.Itoa(i)),
+			"total": model.LabelValue(strconv.Itoa(n + startingIndex)),
+		}
+		newTarget := target.NewItem(fmt.Sprintf("test-job-%d", i%m), fmt.Sprintf("test-url-%d", i), label, "")
+		toReturn[newTarget.Hash()] = newTarget
+	}
+	return toReturn
+}

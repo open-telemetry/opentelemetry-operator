@@ -483,6 +483,8 @@ func tov1alpha1TAAllocationStrategy(strategy v1beta1.TargetAllocatorAllocationSt
 		return OpenTelemetryTargetAllocatorAllocationStrategyPerNode
 	case v1beta1.TargetAllocatorAllocationStrategyLeastWeighted:
 		return OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted
+	case v1beta1.TargetAllocatorAllocationStrategyJobAverage:
+		return OpenTelemetryTargetAllocatorAllocationStrategyJobAverage
 	}
 	return ""
 }
@@ -502,6 +504,8 @@ func tov1beta1TAAllocationStrategy(strategy OpenTelemetryTargetAllocatorAllocati
 		return v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
 	case OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted:
 		return v1beta1.TargetAllocatorAllocationStrategyLeastWeighted
+	case OpenTelemetryTargetAllocatorAllocationStrategyJobAverage:
+		return v1beta1.TargetAllocatorAllocationStrategyJobAverage
 	}
 	return ""
 }
