@@ -25,11 +25,11 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.75.1
 	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/common v0.55.0
-	github.com/prometheus/prometheus v0.53.0
+	github.com/prometheus/prometheus v0.53.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
-  go.opentelemetry.io/collector/featuregate v1.11.0
+	go.opentelemetry.io/collector/featuregate v1.11.0
 	go.opentelemetry.io/otel v1.28.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.28.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.50.0
@@ -212,7 +212,7 @@ require (
 	google.golang.org/api v0.183.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240701130421-f6361c86f094 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240701130421-f6361c86f094 // indirect
-	google.golang.org/grpc v1.64.0 // indirect
+	google.golang.org/grpc v1.64.1 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

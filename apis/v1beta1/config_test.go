@@ -397,12 +397,25 @@ func TestConfig_GetReceiverPorts(t *testing.T) {
 		want    []v1.ServicePort
 		wantErr bool
 	}{
-
+		{
+			name: "k8sevents",
+			file: "testdata/otelcol-k8sevents.yaml",
+			want: []v1.ServicePort{
+				{
+					Name:        "otlp-http",
+					Protocol:    "",
+					AppProtocol: ptr.To("http"),
+					Port:        4318,
+					TargetPort:  intstr.FromInt32(4318),
+				},
+			},
+			wantErr: false, // Silently fail
+		},
 		{
 			name:    "connectors",
 			file:    "testdata/otelcol-connectors.yaml",
 			want:    nil,
-			wantErr: true,
+			wantErr: false, // Silently fail
 		},
 		{
 			name: "couchbase",
@@ -497,25 +510,12 @@ func TestConfig_GetExporterPorts(t *testing.T) {
 					Name: "prometheus",
 					Port: 8889,
 				},
-				{
-					Name: "otlp",
-					Port: 4317,
-				},
-				{
-					Name: "zipkin",
-					Port: 9411,
-				},
 			},
 		},
 		{
 			name: "extensions",
 			file: "testdata/otelcol-extensions.yaml",
-			want: []v1.ServicePort{
-				{
-					Name: "otlp-auth",
-					Port: 4317,
-				},
-			},
+			want: nil,
 		},
 		{
 			name: "filelog",

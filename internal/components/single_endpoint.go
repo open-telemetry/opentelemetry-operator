@@ -72,9 +72,11 @@ func (s *SingleEndpointParser) Ports(logger logr.Logger, name string, config int
 		return nil, err
 	}
 	if _, err := singleEndpointConfig.GetPortNum(); err != nil && s.svcPort.Port == UnsetPort {
-		logger.WithValues("receiver", s.name).Error(err, "couldn't parse the endpoint's port and no default port set")
 		if s.failSilently {
+			logger.WithValues("receiver", s.name).V(4).Info("couldn't parse the endpoint's port and no default port set", "error", err)
 			err = nil
+		} else {
+			logger.WithValues("receiver", s.name).Error(err, "couldn't parse the endpoint's port and no default port set")
 		}
 		return []corev1.ServicePort{}, err
 	}

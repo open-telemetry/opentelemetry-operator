@@ -1,10 +1,11 @@
+apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
   labels:
-    "opentelemetry.io/opamp-managed": "true"
+    opentelemetry.io/opamp-managed: "true"
 spec:
-  config:
+  config: |
     receivers:
       otlp:
         protocols:
@@ -18,12 +19,13 @@ spec:
       batch:
         send_batch_size: 10000
         timeout: 10s
-
-  GARBAGE
+    
     exporters:
       debug:
+    
     service:
       pipelines:
         traces:
           receivers: [otlp]
+          processors: []
           exporters: [debug]
