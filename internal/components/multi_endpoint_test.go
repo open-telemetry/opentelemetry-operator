@@ -154,9 +154,8 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 			},
 			want: []corev1.ServicePort{
 				{
-					Name:       "receiver2-http",
-					Port:       80,
-					TargetPort: intstr.FromInt32(80),
+					Name: "receiver2-http",
+					Port: 80,
 				},
 			},
 			wantErr: assert.NoError,
@@ -196,7 +195,6 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 				{
 					Name:        "receiver4-http",
 					Port:        80,
-					TargetPort:  intstr.FromInt(80),
 					AppProtocol: &components.HttpProtocol,
 				},
 			},
@@ -215,10 +213,9 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 			},
 			want: []corev1.ServicePort{
 				{
-					Name:       "receiver5-http",
-					Port:       80,
-					TargetPort: intstr.FromInt(80),
-					Protocol:   corev1.ProtocolTCP,
+					Name:     "receiver5-http",
+					Port:     80,
+					Protocol: corev1.ProtocolTCP,
 				},
 			},
 			wantErr: assert.NoError,
@@ -247,9 +244,8 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 					AppProtocol: &components.GrpcProtocol,
 				},
 				{
-					Name:       "receiver6-http",
-					Port:       80,
-					TargetPort: intstr.FromInt(80),
+					Name: "receiver6-http",
+					Port: 80,
 				},
 			},
 			wantErr: assert.NoError,
@@ -271,9 +267,8 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 			},
 			want: []corev1.ServicePort{
 				{
-					Name:       "receiver6-http",
-					Port:       80,
-					TargetPort: intstr.FromInt(80),
+					Name: "receiver6-http",
+					Port: 80,
 				},
 			},
 			wantErr: assert.NoError,

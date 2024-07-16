@@ -211,7 +211,7 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 				},
 			},
 			want: []corev1.ServicePort{
-				{Name: "testparser", Port: 8080, TargetPort: intstr.FromInt(8080)},
+				{Name: "testparser", Port: 8080},
 			},
 			wantErr: assert.NoError,
 		},
@@ -225,7 +225,7 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 				config: map[string]interface{}{},
 			},
 			want: []corev1.ServicePort{
-				{Name: "testparser", Port: 8080, TargetPort: intstr.FromInt(8080)},
+				{Name: "testparser", Port: 8080},
 			},
 			wantErr: assert.NoError,
 		},
@@ -321,7 +321,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 				},
 			},
 			want: []corev1.ServicePort{
-				{Name: "testparser", Port: 8080, TargetPort: intstr.FromInt(8080)},
+				{Name: "testparser", Port: 8080},
 			},
 			wantErr: assert.NoError,
 		},
@@ -335,7 +335,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 				config: map[string]interface{}{},
 			},
 			want: []corev1.ServicePort{
-				{Name: "testparser", Port: 8080, TargetPort: intstr.FromInt(8080)},
+				{Name: "testparser", Port: 8080},
 			},
 			wantErr: assert.NoError,
 		},

@@ -497,9 +497,8 @@ func TestConfig_GetExporterPorts(t *testing.T) {
 			file: "testdata/otelcol-couchbase.yaml",
 			want: []v1.ServicePort{
 				{
-					Name:       "prometheus",
-					Port:       9123,
-					TargetPort: intstr.FromInt(9123),
+					Name: "prometheus",
+					Port: 9123,
 				},
 			},
 		},
@@ -508,9 +507,8 @@ func TestConfig_GetExporterPorts(t *testing.T) {
 			file: "testdata/otelcol-demo.yaml",
 			want: []v1.ServicePort{
 				{
-					Name:       "prometheus",
-					Port:       8889,
-					TargetPort: intstr.FromInt(8889),
+					Name: "prometheus",
+					Port: 8889,
 				},
 			},
 		},
