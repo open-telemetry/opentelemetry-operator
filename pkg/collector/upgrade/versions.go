@@ -92,11 +92,11 @@ var (
 		},
 		{
 			Version:        *semver.MustParse("0.104.0"),
-			upgradeV1beta1: upgrade0_104_0,
+			upgradeV1beta1: upgrade0_104_0_TA,
 		},
 		{
 			Version:        *semver.MustParse("0.104.0"),
-			upgradeV1beta1: upgrade0_104_0_TA,
+			upgradeV1beta1: upgrade0_104_0,
 		},
 	}
 

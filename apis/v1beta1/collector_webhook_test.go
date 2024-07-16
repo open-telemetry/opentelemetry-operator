@@ -505,6 +505,58 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "default address otlp receiver",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Config: Config{
+						Receivers: AnyConfig{
+							Object: map[string]interface{}{
+								"otlp/something": map[string]interface{}{
+									"protocols": map[string]interface{}{
+										"http": nil,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				Spec: OpenTelemetryCollectorSpec{
+					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						ManagementState: ManagementStateManaged,
+						Replicas:        &one,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MaxUnavailable: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 1,
+							},
+						},
+					},
+					Config: Config{
+						Receivers: AnyConfig{
+							Object: map[string]interface{}{
+								"otlp/something": map[string]interface{}{
+									"protocols": map[string]interface{}{
+										"http": map[string]interface{}{
+											"endpoint": "0.0.0.0:4318",
+										},
+									},
+								},
+							},
+						},
+					},
+					Mode:            ModeDeployment,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {

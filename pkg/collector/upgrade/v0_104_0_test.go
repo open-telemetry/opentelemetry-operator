@@ -46,54 +46,34 @@ func Test0_104_0Upgrade(t *testing.T) {
 			Config: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
 					Object: map[string]interface{}{
-						"otlp": &v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"protocols": &v1beta1.AnyConfig{
-									Object: map[string]interface{}{
-										"grpc": &v1beta1.AnyConfig{},
-										"http": &v1beta1.AnyConfig{},
-									},
-								},
+						"otlp": map[string]interface{}{
+							"protocols": map[string]interface{}{
+								"grpc": nil,
+								"http": nil,
 							},
 						},
 						"otlp/nothing": &v1beta1.AnyConfig{
 							Object: map[string]interface{}{
-								"protocols": &v1beta1.AnyConfig{},
+								"protocols": nil,
 							},
 						},
-						"otlp/empty": &v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"protocols": &v1beta1.AnyConfig{
-									Object: map[string]interface{}{
-										"grpc": &v1beta1.AnyConfig{
-											Object: map[string]interface{}{
-												"endpoint": "",
-											},
-										},
-										"http": &v1beta1.AnyConfig{
-											Object: map[string]interface{}{
-												"endpoint": "",
-											},
-										},
-									},
+						"otlp/empty": map[string]interface{}{
+							"protocols": map[string]interface{}{
+								"grpc": map[string]interface{}{
+									"endpoint": "",
+								},
+								"http": map[string]interface{}{
+									"endpoint": "",
 								},
 							},
 						},
-						"otlp/something": &v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"protocols": &v1beta1.AnyConfig{
-									Object: map[string]interface{}{
-										"grpc": &v1beta1.AnyConfig{
-											Object: map[string]interface{}{
-												"endpoint": "123.123.123.123:8642",
-											},
-										},
-										"http": &v1beta1.AnyConfig{
-											Object: map[string]interface{}{
-												"endpoint": "123.123.123.123:8642",
-											},
-										},
-									},
+						"otlp/something": map[string]interface{}{
+							"protocols": map[string]interface{}{
+								"grpc": map[string]interface{}{
+									"endpoint": "123.123.123.123:8642",
+								},
+								"http": map[string]interface{}{
+									"endpoint": "123.123.123.123:8642",
 								},
 							},
 						},
@@ -115,67 +95,43 @@ func Test0_104_0Upgrade(t *testing.T) {
 		t.Errorf("expect err: nil but got: %v", err)
 	}
 
-	assert.EqualValues(t, &v1beta1.AnyConfig{
-		Object: map[string]interface{}{
-			"protocols": &v1beta1.AnyConfig{
-				Object: map[string]interface{}{
-					"grpc": &v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"endpoint": "0.0.0.0:4317",
-						},
-					},
-					"http": &v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"endpoint": "0.0.0.0:4318",
-						},
-					},
-				},
+	assert.EqualValues(t, map[string]interface{}{
+		"protocols": map[string]interface{}{
+			"grpc": map[string]interface{}{
+				"endpoint": "0.0.0.0:4317",
+			},
+			"http": map[string]interface{}{
+				"endpoint": "0.0.0.0:4318",
 			},
 		},
 	}, collectorInstance.Spec.Config.Receivers.Object["otlp"], "normal entry is not up-to-date")
 
 	assert.EqualValues(t, &v1beta1.AnyConfig{
 		Object: map[string]interface{}{
-			"protocols": &v1beta1.AnyConfig{},
+			"protocols": nil,
 		},
 	}, collectorInstance.Spec.Config.Receivers.Object["otlp/nothing"], "no updated expected")
 
-	assert.EqualValues(t, &v1beta1.AnyConfig{
-		Object: map[string]interface{}{
-			"protocols": &v1beta1.AnyConfig{
-				Object: map[string]interface{}{
-					"grpc": &v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"endpoint": "0.0.0.0:4317",
-						},
-					},
-					"http": &v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"endpoint": "0.0.0.0:4318",
-						},
-					},
-				},
+	assert.EqualValues(t, map[string]interface{}{
+		"protocols": map[string]interface{}{
+			"grpc": map[string]interface{}{
+				"endpoint": "0.0.0.0:4317",
+			},
+			"http": map[string]interface{}{
+				"endpoint": "0.0.0.0:4318",
 			},
 		},
 	}, collectorInstance.Spec.Config.Receivers.Object["otlp/empty"], "empty entry is not up-to-date")
 
-	assert.EqualValues(t, &v1beta1.AnyConfig{
-		Object: map[string]interface{}{
-			"protocols": &v1beta1.AnyConfig{
-				Object: map[string]interface{}{
-					"grpc": &v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"endpoint": "123.123.123.123:8642",
-						},
-					},
-					"http": &v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"endpoint": "123.123.123.123:8642",
-						},
-					},
-				},
+	assert.EqualValues(t, map[string]interface{}{
+		"protocols": map[string]interface{}{
+			"grpc": map[string]interface{}{
+				"endpoint": "123.123.123.123:8642",
+			},
+			"http": map[string]interface{}{
+				"endpoint": "123.123.123.123:8642",
 			},
 		},
-	}, collectorInstance.Spec.Config.Receivers.Object["otlp/something"], "endpoints exist, did  not expect an  update")
+	}, collectorInstance.Spec.Config.Receivers.Object["otlp/something"], "endpoints exist, did not expect an update")
 
 }
