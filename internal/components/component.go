@@ -110,7 +110,7 @@ func ConstructServicePort(current *corev1.ServicePort, port int32) corev1.Servic
 	return corev1.ServicePort{
 		Name:        current.Name,
 		Port:        port,
-		TargetPort:  current.TargetPort,
+		TargetPort:  intstr.FromInt32(port),
 		NodePort:    current.NodePort,
 		AppProtocol: current.AppProtocol,
 		Protocol:    current.Protocol,
