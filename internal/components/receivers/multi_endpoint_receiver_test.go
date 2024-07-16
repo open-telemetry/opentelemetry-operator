@@ -58,6 +58,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 						{
 							Name:        "jaeger-grpc",
 							Port:        14250,
+							TargetPort:  intstr.FromInt(14250),
 							Protocol:    corev1.ProtocolTCP,
 							AppProtocol: &grpc,
 						},
@@ -77,6 +78,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 						{
 							Name:        "jaeger-grpc",
 							Port:        1234,
+							TargetPort:  intstr.FromInt(1234),
 							Protocol:    corev1.ProtocolTCP,
 							AppProtocol: &grpc,
 						},
@@ -97,24 +99,28 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 						{
 							Name:        "jaeger-grpc",
 							Port:        14250,
+							TargetPort:  intstr.FromInt(14250),
 							Protocol:    corev1.ProtocolTCP,
 							AppProtocol: &grpc,
 						},
 						{
 							Name:        "port-14268",
 							Port:        14268,
+							TargetPort:  intstr.FromInt(14268),
 							Protocol:    corev1.ProtocolTCP,
 							AppProtocol: &http,
 						},
 						{
-							Name:     "port-6831",
-							Port:     6831,
-							Protocol: corev1.ProtocolUDP,
+							Name:       "port-6831",
+							Port:       6831,
+							TargetPort: intstr.FromInt(6831),
+							Protocol:   corev1.ProtocolUDP,
 						},
 						{
-							Name:     "port-6832",
-							Port:     6832,
-							Protocol: corev1.ProtocolUDP,
+							Name:       "port-6832",
+							Port:       6832,
+							TargetPort: intstr.FromInt(6832),
+							Protocol:   corev1.ProtocolUDP,
 						},
 					},
 				},
@@ -155,7 +161,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 						{
 							Name:        "otlp-grpc",
 							Port:        1234,
-							TargetPort:  intstr.FromInt32(4317),
+							TargetPort:  intstr.FromInt(1234),
 							AppProtocol: &grpc,
 						},
 					},
@@ -221,7 +227,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 						{
 							Name:        "otlp-test-grpc",
 							Port:        1234,
-							TargetPort:  intstr.FromInt32(4317),
+							TargetPort:  intstr.FromInt32(1234),
 							AppProtocol: &grpc,
 						},
 					},
@@ -287,7 +293,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 						{
 							Name:        "loki-grpc",
 							Port:        1234,
-							TargetPort:  intstr.FromInt32(9095),
+							TargetPort:  intstr.FromInt(1234),
 							AppProtocol: &grpc,
 						},
 					},
@@ -353,7 +359,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 						{
 							Name:        "skywalking-grpc",
 							Port:        1234,
-							TargetPort:  intstr.FromInt32(11800),
+							TargetPort:  intstr.FromInt(1234),
 							AppProtocol: &grpc,
 						},
 					},

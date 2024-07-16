@@ -247,7 +247,7 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 				{
 					Name:        "testparser",
 					Port:        8080,
-					TargetPort:  intstr.FromInt32(4317),
+					TargetPort:  intstr.FromInt32(8080),
 					Protocol:    corev1.ProtocolTCP,
 					AppProtocol: &components.GrpcProtocol,
 				},
@@ -357,7 +357,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 				{
 					Name:        "testparser",
 					Port:        8080,
-					TargetPort:  intstr.FromInt32(4317),
+					TargetPort:  intstr.FromInt32(8080),
 					Protocol:    corev1.ProtocolTCP,
 					AppProtocol: &components.GrpcProtocol,
 				},
