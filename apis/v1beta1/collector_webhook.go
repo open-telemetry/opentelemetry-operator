@@ -206,6 +206,13 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj run
 		c.metrics.update(ctx, otelcolOld, otelcol)
 	}
 
+	if c.bv != nil {
+		newWarnings, err := c.bv(*otelcol)
+		if err != nil {
+			return append(warnings, newWarnings...), err
+		}
+		warnings = append(warnings, newWarnings...)
+	}
 	return warnings, nil
 }
 
