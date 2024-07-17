@@ -458,13 +458,22 @@ func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.R
 		Complete()
 }
 
-// TAUnifyEnvVarExpansion enables confmap.unifyEnvVarExpansion featuregate on collector instances associated to TA..
+// TAUnifyEnvVarExpansion disables confmap.unifyEnvVarExpansion featuregate on
+// collector instances if a prometheus receiver is configured.
 // NOTE: We need this for now until 0.105.0 is out with this fix:
 // https://github.com/open-telemetry/opentelemetry-collector/commit/637b1f42fcb7cbb7ef8a50dcf41d0a089623a8b7
 func TAUnifyEnvVarExpansion(otelcol *OpenTelemetryCollector) {
-	if !otelcol.Spec.TargetAllocator.Enabled {
+	var enable bool
+	for receiver := range otelcol.Spec.Config.Receivers.Object {
+		if strings.Contains(receiver, "prometheus") {
+			enable = true
+			break
+		}
+	}
+	if !enable {
 		return
 	}
+
 	const (
 		baseFlag = "feature-gates"
 		fgFlag   = "-confmap.unifyEnvVarExpansion"

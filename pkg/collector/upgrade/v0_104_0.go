@@ -21,10 +21,6 @@ import (
 )
 
 func upgrade0_104_0_TA(_ VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (*v1beta1.OpenTelemetryCollector, error) {
-	if !otelcol.Spec.TargetAllocator.Enabled {
-		return otelcol, nil
-	}
-
 	v1beta1.TAUnifyEnvVarExpansion(otelcol)
 	return otelcol, nil
 }

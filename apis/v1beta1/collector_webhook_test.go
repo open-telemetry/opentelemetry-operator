@@ -336,9 +336,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Args: map[string]string{
-							"feature-gates": "-confmap.unifyEnvVarExpansion",
-						},
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -389,9 +386,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Args: map[string]string{
-							"feature-gates": "-confmap.unifyEnvVarExpansion",
-						},
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -437,9 +431,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Args: map[string]string{
-							"feature-gates": "-confmap.unifyEnvVarExpansion",
-						},
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -484,9 +475,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						Args: map[string]string{
-							"feature-gates": "-confmap.unifyEnvVarExpansion",
-						},
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -1400,7 +1388,9 @@ func TestTAUnifyEnvVarExpansion(t *testing.T) {
 	}
 	TAUnifyEnvVarExpansion(otelcol)
 	assert.Nil(t, otelcol.Spec.OpenTelemetryCommonFields.Args, "expect nil")
-	otelcol.Spec.TargetAllocator.Enabled = true
+	otelcol.Spec.Config.Receivers.Object = map[string]interface{}{
+		"prometheus": nil,
+	}
 	TAUnifyEnvVarExpansion(otelcol)
 	assert.NotNil(t, otelcol.Spec.OpenTelemetryCommonFields.Args, "expect not nil")
 	expect := map[string]string{
