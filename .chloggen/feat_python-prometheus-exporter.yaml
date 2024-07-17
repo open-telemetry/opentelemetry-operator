@@ -5,7 +5,7 @@ change_type: enhancement
 component: auto-instrumentation
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Python Automatic Instrumentation support for prometheus exporter
+note: Add Prometheus exporter to Python auto-instrumentation
 
 # One or more tracking issues related to the change
 issues: ["3122"]
