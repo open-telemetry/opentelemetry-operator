@@ -9,16 +9,16 @@ spec:
       volumes:
         - name: otc-internal
           configMap:
-            name: simple-collector-024c6417
+            name: simple-collector-8cd615bf
 status:
   readyReplicas: 1
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: simple-collector-024c6417
+  name: simple-collector-8cd615bf
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: simple-collector-bf36603a
+  name: simple-collector-d6f40475

@@ -26,9 +26,7 @@ func upgrade0_104_0_TA(_ VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector
 }
 
 func upgrade0_104_0(u VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (*v1beta1.OpenTelemetryCollector, error) {
-	if err := v1beta1.DefaultOTLPAddress(otelcol); err != nil {
-		return nil, err
-	}
+	v1beta1.ComponentUseLocalHostAsDefaultHost(otelcol)
 
 	const issueID = "https://github.com/open-telemetry/opentelemetry-collector/issues/8510"
 	warnStr := fmt.Sprintf(

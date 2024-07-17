@@ -117,6 +117,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				},
 				Spec: OpenTelemetryCollectorSpec{
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						ManagementState: ManagementStateManaged,
 						Replicas:        &one,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -152,6 +153,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            ModeSidecar,
 					UpgradeStrategy: "adhoc",
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &five,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -186,6 +188,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            ModeSidecar,
 					UpgradeStrategy: "adhoc",
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &five,
 						ManagementState: ManagementStateUnmanaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -218,6 +221,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            ModeDeployment,
 					UpgradeStrategy: UpgradeStrategyAutomatic,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -254,6 +258,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						ManagementState: ManagementStateManaged,
 						Replicas:        &one,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -297,6 +302,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -336,6 +342,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -386,6 +393,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -431,6 +439,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -475,6 +484,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: ManagementStateManaged,
 						PodDisruptionBudget: &PodDisruptionBudgetSpec{
@@ -490,58 +500,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						Replicas:           &one,
 						AllocationStrategy: TargetAllocatorAllocationStrategyLeastWeighted,
 					},
-				},
-			},
-		},
-		{
-			name: "default address otlp receiver",
-			otelcol: OpenTelemetryCollector{
-				Spec: OpenTelemetryCollectorSpec{
-					Config: Config{
-						Receivers: AnyConfig{
-							Object: map[string]interface{}{
-								"otlp/something": map[string]interface{}{
-									"protocols": map[string]interface{}{
-										"http": nil,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: OpenTelemetryCollector{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
-				},
-				Spec: OpenTelemetryCollectorSpec{
-					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
-						ManagementState: ManagementStateManaged,
-						Replicas:        &one,
-						PodDisruptionBudget: &PodDisruptionBudgetSpec{
-							MaxUnavailable: &intstr.IntOrString{
-								Type:   intstr.Int,
-								IntVal: 1,
-							},
-						},
-					},
-					Config: Config{
-						Receivers: AnyConfig{
-							Object: map[string]interface{}{
-								"otlp/something": map[string]interface{}{
-									"protocols": map[string]interface{}{
-										"http": map[string]interface{}{
-											"endpoint": "0.0.0.0:4318",
-										},
-									},
-								},
-							},
-						},
-					},
-					Mode:            ModeDeployment,
-					UpgradeStrategy: UpgradeStrategyAutomatic,
 				},
 			},
 		},

@@ -6,7 +6,6 @@
 
 ### 🛑 Breaking changes 🛑
 
-- `collector`: The new collector release enables `component.UseLocalHostAsDefaultHost` by default. This mainly affects the `otlpreceiver`. But may has side effects on components like the `healthcheck extension`. The `operator` will change IPs not explicitly configured in the `otlpreceiver` configuration such as `:4317` or empty fields to `0.0.0.0` during the upgrade routine and when creating a CR. More details in the [OpenTelemetry Collector Changelog](https://github.com/open-telemetry/opentelemetry-collector/blob/main/CHANGELOG.md#v1110v01040).
 - `opamp`: Adds support for v1beta1 OpenTelemetry Collector API in the OpAMP Bridge (#2985)
   This change adds support for the OpAMP Bridge to manage and apply OpenTelemetry Collectors using the v1beta1 API in 
   the OpAMP Bridge. This change removes support for applying OpenTelemetry Collectors using the v1alpha1 API version.
@@ -15,7 +14,7 @@
 
 ### 💡 Enhancements 💡
 
-- `collector`: set correct target port in services created based on the given otel config. (#3139)
+- `operator`: Disables `component.UseLocalHostAsDefaultHost` by default (#3139)
 - `collector`: Changes the default parser to silently fail. (#3133)
 - `collector, target allocator`: If the target allocator is enabled, the collector featuregate `confmap.unifyEnvVarExpansion' is disabled. (#3119) 
 - `operator`: Release leader election lease on exit (#3058)

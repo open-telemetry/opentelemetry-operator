@@ -29,7 +29,6 @@ import (
 )
 
 func Test0_104_0Upgrade(t *testing.T) {
-
 	collectorInstance := v1beta1.OpenTelemetryCollector{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "OpenTelemetryCollector",
@@ -42,45 +41,7 @@ func Test0_104_0Upgrade(t *testing.T) {
 		Status: v1beta1.OpenTelemetryCollectorStatus{
 			Version: "0.103.0",
 		},
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			Config: v1beta1.Config{
-				Receivers: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"otlp": map[string]interface{}{
-							"protocols": map[string]interface{}{
-								"grpc": nil,
-								"http": nil,
-							},
-						},
-						"otlp/nothing": &v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"protocols": nil,
-							},
-						},
-						"otlp/empty": map[string]interface{}{
-							"protocols": map[string]interface{}{
-								"grpc": map[string]interface{}{
-									"endpoint": "",
-								},
-								"http": map[string]interface{}{
-									"endpoint": "",
-								},
-							},
-						},
-						"otlp/something": map[string]interface{}{
-							"protocols": map[string]interface{}{
-								"grpc": map[string]interface{}{
-									"endpoint": "123.123.123.123:8642",
-								},
-								"http": map[string]interface{}{
-									"endpoint": "123.123.123.123:8642",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
 	versionUpgrade := &upgrade.VersionUpgrade{
@@ -90,48 +51,11 @@ func Test0_104_0Upgrade(t *testing.T) {
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
 
-	_, err := versionUpgrade.ManagedInstance(context.Background(), collectorInstance)
+	col, err := versionUpgrade.ManagedInstance(context.Background(), collectorInstance)
 	if err != nil {
 		t.Errorf("expect err: nil but got: %v", err)
 	}
-
-	assert.EqualValues(t, map[string]interface{}{
-		"protocols": map[string]interface{}{
-			"grpc": map[string]interface{}{
-				"endpoint": "0.0.0.0:4317",
-			},
-			"http": map[string]interface{}{
-				"endpoint": "0.0.0.0:4318",
-			},
-		},
-	}, collectorInstance.Spec.Config.Receivers.Object["otlp"], "normal entry is not up-to-date")
-
-	assert.EqualValues(t, &v1beta1.AnyConfig{
-		Object: map[string]interface{}{
-			"protocols": nil,
-		},
-	}, collectorInstance.Spec.Config.Receivers.Object["otlp/nothing"], "no updated expected")
-
-	assert.EqualValues(t, map[string]interface{}{
-		"protocols": map[string]interface{}{
-			"grpc": map[string]interface{}{
-				"endpoint": "0.0.0.0:4317",
-			},
-			"http": map[string]interface{}{
-				"endpoint": "0.0.0.0:4318",
-			},
-		},
-	}, collectorInstance.Spec.Config.Receivers.Object["otlp/empty"], "empty entry is not up-to-date")
-
-	assert.EqualValues(t, map[string]interface{}{
-		"protocols": map[string]interface{}{
-			"grpc": map[string]interface{}{
-				"endpoint": "123.123.123.123:8642",
-			},
-			"http": map[string]interface{}{
-				"endpoint": "123.123.123.123:8642",
-			},
-		},
-	}, collectorInstance.Spec.Config.Receivers.Object["otlp/something"], "endpoints exist, did not expect an update")
-
+	assert.EqualValues(t,
+		map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
+		col.Spec.Args, "missing featuregate")
 }
