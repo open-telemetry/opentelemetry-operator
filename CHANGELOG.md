@@ -7,6 +7,7 @@
 ### 💡 Enhancements 💡
 
 - `collector, target allocator, opamp`: Require Go 1.22 for building the operator (#2757)
+- `autoinstrumentation`: Python Automatic Instrumentation support for prometheus exporter (#3122)
 
 ### 🧰 Bug fixes 🧰
 
