@@ -1390,7 +1390,7 @@ func getReviewer(shouldFailSAR bool) *rbac.Reviewer {
 	return rbac.NewReviewer(c)
 }
 
-func TestTAUnifiyEnvVarExpansion(t *testing.T) {
+func TestTAUnifyEnvVarExpansion(t *testing.T) {
 	otelcol := &OpenTelemetryCollector{
 		Spec: OpenTelemetryCollectorSpec{
 			OpenTelemetryCommonFields: OpenTelemetryCommonFields{
@@ -1398,27 +1398,27 @@ func TestTAUnifiyEnvVarExpansion(t *testing.T) {
 			},
 		},
 	}
-	TAUnifiyEnvVarExpansion(otelcol)
+	TAUnifyEnvVarExpansion(otelcol)
 	assert.Nil(t, otelcol.Spec.OpenTelemetryCommonFields.Args, "expect nil")
 	otelcol.Spec.TargetAllocator.Enabled = true
-	TAUnifiyEnvVarExpansion(otelcol)
+	TAUnifyEnvVarExpansion(otelcol)
 	assert.NotNil(t, otelcol.Spec.OpenTelemetryCommonFields.Args, "expect not nil")
 	expect := map[string]string{
 		"feature-gates": "-confmap.unifyEnvVarExpansion",
 	}
 	assert.EqualValues(t, otelcol.Spec.OpenTelemetryCommonFields.Args, expect)
-	TAUnifiyEnvVarExpansion(otelcol)
+	TAUnifyEnvVarExpansion(otelcol)
 	assert.EqualValues(t, otelcol.Spec.OpenTelemetryCommonFields.Args, expect)
 	expect = map[string]string{
 		"feature-gates": "-confmap.unifyEnvVarExpansion,+abc",
 	}
 	otelcol.Spec.OpenTelemetryCommonFields.Args = expect
-	TAUnifiyEnvVarExpansion(otelcol)
+	TAUnifyEnvVarExpansion(otelcol)
 	assert.EqualValues(t, otelcol.Spec.OpenTelemetryCommonFields.Args, expect)
 	otelcol.Spec.OpenTelemetryCommonFields.Args = map[string]string{
 		"feature-gates": "+abc",
 	}
-	TAUnifiyEnvVarExpansion(otelcol)
+	TAUnifyEnvVarExpansion(otelcol)
 	expect = map[string]string{
 		"feature-gates": "+abc,-confmap.unifyEnvVarExpansion",
 	}

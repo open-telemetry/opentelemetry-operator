@@ -25,7 +25,7 @@ func upgrade0_104_0_TA(_ VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector
 		return otelcol, nil
 	}
 
-	v1beta1.TAUnifiyEnvVarExpansion(otelcol)
+	v1beta1.TAUnifyEnvVarExpansion(otelcol)
 	return otelcol, nil
 }
 

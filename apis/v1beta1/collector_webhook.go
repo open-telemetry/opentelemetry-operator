@@ -80,7 +80,7 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 	}
 
 	if otelcol.Spec.TargetAllocator.Enabled {
-		TAUnifiyEnvVarExpansion(otelcol)
+		TAUnifyEnvVarExpansion(otelcol)
 	}
 
 	if err := DefaultOTLPAddress(otelcol); err != nil {
@@ -458,10 +458,10 @@ func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.R
 		Complete()
 }
 
-// TAUnifiyEnvVarExpansion enables confmap.unifyEnvVarExpansion featuregate on collector instances associated to TA..
+// TAUnifyEnvVarExpansion enables confmap.unifyEnvVarExpansion featuregate on collector instances associated to TA..
 // NOTE: We need this for now until 0.105.0 is out with this fix:
 // https://github.com/open-telemetry/opentelemetry-collector/commit/637b1f42fcb7cbb7ef8a50dcf41d0a089623a8b7
-func TAUnifiyEnvVarExpansion(otelcol *OpenTelemetryCollector) {
+func TAUnifyEnvVarExpansion(otelcol *OpenTelemetryCollector) {
 	if !otelcol.Spec.TargetAllocator.Enabled {
 		return
 	}
