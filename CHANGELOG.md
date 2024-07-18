@@ -14,7 +14,7 @@
 
 ### 💡 Enhancements 💡
 
-- `operator`: Disables `component.UseLocalHostAsDefaultHost` by default (#3139)
+- `collector`: Since collector version `0.104.0` the collector listens on `localhost` instead of `0.0.0.0` by default ([collector#8510](https://github.com/open-telemetry/opentelemetry-collector/issues/8510)). To avoid breaking changes the `component.UseLocalHostAsDefaultHost` feature-gate is disabled by the Operator.  (#3139)
 - `collector`: Changes the default parser to silently fail. (#3133)
 - `collector, target allocator`: If the target allocator is enabled, the collector featuregate `confmap.unifyEnvVarExpansion' is disabled. (#3119) 
 - `operator`: Release leader election lease on exit (#3058)
