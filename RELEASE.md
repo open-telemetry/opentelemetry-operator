@@ -10,7 +10,7 @@ Steps to release a new version of the OpenTelemetry Operator:
       - The `autoinstrumentation-*` versions should match the latest supported versions in `autoinstrumentation/`.
         > [!WARNING]
         > DO NOT BUMP JAVA PAST `1.32.X` AND DO NOT BUMP .NET PAST `1.2.0`. Upgrades past these versions will introduce breaking HTTP semantic convention changes.
-   1. Check if the compatible OpenShift versions are updated in the `hack/add-openshift-annotations.sh` script.
+   1. Check if the compatible OpenShift versions are updated in the `Makefile`.
    1. Update the bundle by running `make bundle VERSION=$VERSION`.
    1. Change the compatibility matrix in the [readme](./README.md) file, using the OpenTelemetry Operator version to be released and the current latest Kubernetes version as the latest supported version. Remove the oldest entry.
    1. Update release schedule table, by moving the current release manager to the end of the table with updated release version.
