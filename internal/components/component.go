@@ -107,14 +107,18 @@ type ComponentPortParser interface {
 }
 
 func ConstructServicePort(current *corev1.ServicePort, port int32) corev1.ServicePort {
-	return corev1.ServicePort{
+	svc := corev1.ServicePort{
 		Name:        current.Name,
 		Port:        port,
-		TargetPort:  current.TargetPort,
 		NodePort:    current.NodePort,
 		AppProtocol: current.AppProtocol,
 		Protocol:    current.Protocol,
 	}
+
+	if port > 0 && current.TargetPort.IntValue() > 0 {
+		svc.TargetPort = intstr.FromInt32(port)
+	}
+	return svc
 }
 
 func GetPortsForConfig(logger logr.Logger, config map[string]interface{}, retriever ParserRetriever) ([]corev1.ServicePort, error) {

@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -331,6 +332,7 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, in
 
 	svcPorts := []v1.ServicePort{}
 	for _, p := range ports {
+		p.ServicePort.TargetPort = intstr.FromInt32(p.Port)
 		svcPorts = append(svcPorts, p.ServicePort)
 	}
 
