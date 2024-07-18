@@ -179,6 +179,16 @@ Enum=tracecontext;baggage;b3;b3multi;jaeger;xray;ottrace;none<br/>
           Sampler defines sampling configuration.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecselector">selector</a></b></td>
+        <td>object</td>
+        <td>
+          Selector is the label selector for affected Pods.
+This selector only takes effect when annotation: instrumentation.opentelemetry.io/inject-xx equal true.
+Unlike standard label selectors, `nil` means `everything`, and this is also the default.
+This may change in a future CRD version.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -4037,6 +4047,91 @@ The value will be set in the OTEL_TRACES_SAMPLER env var.
 The value can be for instance parentbased_always_on, parentbased_always_off, parentbased_traceidratio...<br/>
           <br/>
             <i>Enum</i>: always_on, always_off, traceidratio, parentbased_always_on, parentbased_always_off, parentbased_traceidratio, jaeger_remote, xray<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.selector
+<sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
+
+
+
+Selector is the label selector for affected Pods.
+This selector only takes effect when annotation: instrumentation.opentelemetry.io/inject-xx equal true.
+Unlike standard label selectors, `nil` means `everything`, and this is also the default.
+This may change in a future CRD version.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#instrumentationspecselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
