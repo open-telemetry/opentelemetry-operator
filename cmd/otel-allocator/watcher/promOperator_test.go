@@ -35,6 +35,7 @@ import (
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	kubeDiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
+	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -52,22 +53,6 @@ var defaultScrapeProtocols = []promconfig.ScrapeProtocol{
 	promconfig.OpenMetricsText0_0_1,
 	promconfig.PrometheusText0_0_4,
 }
-
-var scrapeProtocols = []monitoringv1.ScrapeProtocol{
-	"PrometheusText0.0.4",
-	"OpenMetricsText0.0.1",
-	"OpenMetricsText1.0.0",
-}
-var (
-	jobName                                 = "probe/test/probe-1/0"
-	scrapeInterval    monitoringv1.Duration = "30"
-	scrapeTimeout     monitoringv1.Duration = "10s"
-	honorTimestamps                         = true
-	honorLabels                             = false
-	scheme                                  = "http"
-	metricsPath                             = "/metrics"
-	enableCompression                       = true
-)
 
 func TestLoadConfig(t *testing.T) {
 
@@ -694,83 +679,14 @@ func TestLoadConfig(t *testing.T) {
 					Spec: monitoringv1.ProbeSpec{
 						JobName: "probe/test/probe-1/0",
 						ProberSpec: monitoringv1.ProberSpec{
-							URL: "localhost:50671",
+							URL:  "localhost:50671",
+							Path: "/metrics",
 						},
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "probe-test-2",
-						Namespace: "test",
-						Labels: map[string]string{
-							"testpod": "testpod",
-						},
-					},
-					Spec: monitoringv1.ProbeSpec{
-						JobName: "probe/test/probe-2/0",
-						ProberSpec: monitoringv1.ProberSpec{
-							URL: "localhost:50672",
-						},
-					},
-				},
-			},
-			cfg: allocatorconfig.Config{
-				PrometheusCR: allocatorconfig.PrometheusCRConfig{
-					ProbeSelector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{
-							"testpod": "testpod",
-						},
-					},
-				},
-			},
-			want: &promconfig.Config{
-				ScrapeConfigs: []*promconfig.ScrapeConfig{
-					{
-						JobName:         "probe/test/probe-1/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
-						ScrapeTimeout:   model.Duration(10 * time.Second),
-						HonorTimestamps: true,
-						HonorLabels:     false,
-						Scheme:          "http",
-						MetricsPath:     "/metrics",
-						ServiceDiscoveryConfigs: []discovery.Config{
-							&kubeDiscovery.SDConfig{
-								Role: "pod",
-								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
-									IncludeOwnNamespace: false,
-								},
-								HTTPClientConfig: config.DefaultHTTPClientConfig,
+						Targets: monitoringv1.ProbeTargets{
+							StaticConfig: &monitoringv1.ProbeTargetStaticConfig{
+								Targets: []string{"prometheus.io"},
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
-					},
-				},
-			},
-		},
-		{
-			name: "scrape config selector test",
-			scrapeConfigs: []*promv1alpha1.ScrapeConfig{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "probe-test-1",
-						Namespace: "test",
-						Labels: map[string]string{
-							"testpod": "testpod",
-						},
-					},
-					Spec: promv1alpha1.ScrapeConfigSpec{
-						JobName:           &jobName,
-						ScrapeInterval:    &scrapeInterval,
-						ScrapeProtocols:   scrapeProtocols,
-						ScrapeTimeout:     &scrapeTimeout,
-						HonorTimestamps:   &honorTimestamps,
-						HonorLabels:       &honorLabels,
-						Scheme:            &scheme,
-						MetricsPath:       &metricsPath,
-						EnableCompression: &enableCompression,
 					},
 				},
 			},
@@ -786,7 +702,7 @@ func TestLoadConfig(t *testing.T) {
 			want: &promconfig.Config{
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
-						JobName:         "probe/test/probe-1/0",
+						JobName:         "probe/test/probe-test-1",
 						ScrapeInterval:  model.Duration(30 * time.Second),
 						ScrapeProtocols: defaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
@@ -795,13 +711,18 @@ func TestLoadConfig(t *testing.T) {
 						Scheme:          "http",
 						MetricsPath:     "/metrics",
 						ServiceDiscoveryConfigs: []discovery.Config{
-							&kubeDiscovery.SDConfig{
-								Role: "pod",
-								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
-									IncludeOwnNamespace: false,
+							discovery.StaticConfig{
+								&targetgroup.Group{
+									Targets: []model.LabelSet{
+										map[model.LabelName]model.LabelValue{
+											"__address__": "prometheus.io",
+										},
+									},
+									Labels: map[model.LabelName]model.LabelValue{
+										"namespace": "test",
+									},
+									Source: "0",
 								},
-								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
 						HTTPClientConfig:  config.DefaultHTTPClientConfig,

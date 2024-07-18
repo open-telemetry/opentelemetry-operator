@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -226,6 +227,47 @@ func TestDesiredService(t *testing.T) {
 		assert.Equal(t, expected, *actual)
 	})
 
+	t.Run("should return service with OTLP ports", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{Config: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"otlp": map[string]interface{}{
+								"protocols": map[string]interface{}{
+									"grpc": nil,
+									"http": nil,
+								},
+							},
+						},
+					},
+					Exporters: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"otlp": map[string]interface{}{
+								"endpoint": "jaeger-allinone-collector-headless.chainsaw-otlp-metrics.svc:4317",
+							},
+						},
+					},
+					Service: v1beta1.Service{
+						Pipelines: map[string]*v1beta1.Pipeline{
+							"traces": {
+								Receivers: []string{"otlp"},
+								Exporters: []string{"otlp"},
+							},
+						},
+					},
+				}},
+			},
+		}
+
+		actual, err := Service(params)
+		assert.NotNil(t, actual)
+		assert.Len(t, actual.Spec.Ports, 2)
+		assert.NoError(t, err)
+	})
+
 }
 
 func TestHeadlessService(t *testing.T) {
@@ -290,6 +332,7 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, in
 
 	svcPorts := []v1.ServicePort{}
 	for _, p := range ports {
+		p.ServicePort.TargetPort = intstr.FromInt32(p.Port)
 		svcPorts = append(svcPorts, p.ServicePort)
 	}
 

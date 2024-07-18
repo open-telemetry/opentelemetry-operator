@@ -41,6 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/logger"
 )
 
@@ -56,7 +57,9 @@ var (
 
 func registerKnownTypes(s *k8sruntime.Scheme) error {
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.OpenTelemetryCollector{}, &v1alpha1.OpenTelemetryCollectorList{})
+	s.AddKnownTypes(v1beta1.GroupVersion, &v1beta1.OpenTelemetryCollector{}, &v1beta1.OpenTelemetryCollectorList{})
 	metav1.AddToGroupVersion(s, v1alpha1.GroupVersion)
+	metav1.AddToGroupVersion(s, v1beta1.GroupVersion)
 	return nil
 }
 

@@ -27,6 +27,7 @@ import (
 
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -91,6 +92,7 @@ const (
 	promFile                 = "testdata/test.yaml"
 	updatedPromFile          = "testdata/test_ta_update.yaml"
 	testFileIngress          = "testdata/ingress_testdata.yaml"
+	otlpTestFile             = "testdata/otlp_test.yaml"
 )
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
@@ -132,6 +134,7 @@ func TestMain(m *testing.M) {
 	}
 
 	utilruntime.Must(monitoringv1.AddToScheme(testScheme))
+	utilruntime.Must(promv1alpha1.AddToScheme(testScheme))
 	utilruntime.Must(networkingv1.AddToScheme(testScheme))
 	utilruntime.Must(routev1.AddToScheme(testScheme))
 	utilruntime.Must(v1alpha1.AddToScheme(testScheme))
@@ -139,7 +142,7 @@ func TestMain(m *testing.M) {
 
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
-		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD},
+		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD, testdata.ProbeCRD, testdata.ScrapeConfigCRD},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "config", "webhook")},
 		},
