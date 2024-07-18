@@ -77,7 +77,7 @@ type CollectorWebhook struct {
 	scheme   *runtime.Scheme
 	reviewer *rbac.Reviewer
 	metrics  *Metrics
-	bv       buildValidator
+	bv       BuildValidator
 }
 
 func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
@@ -468,9 +468,25 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	return nil
 }
 
-type buildValidator func(c OpenTelemetryCollector) (admission.Warnings, error)
+type BuildValidator func(c OpenTelemetryCollector) (admission.Warnings, error)
 
-func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv buildValidator) error {
+func NewCollectorWebhook(
+	logger logr.Logger,
+	scheme *runtime.Scheme,
+	cfg config.Config,
+	reviewer *rbac.Reviewer,
+	bv BuildValidator,
+) *CollectorWebhook {
+	return &CollectorWebhook{
+		logger:   logger,
+		scheme:   scheme,
+		cfg:      cfg,
+		reviewer: reviewer,
+		bv:       bv,
+	}
+}
+
+func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator) error {
 	cvw := &CollectorWebhook{
 		reviewer: reviewer,
 		logger:   mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"),
