@@ -49,6 +49,7 @@ spec:
     - mountPath: /etc/nginx
       name: otel-nginx-conf-dir
   - args:
+    - --feature-gates=-component.UseLocalHostAsDefaultHost
     - --config=env:OTEL_CONFIG
     name: otc-container
   initContainers:
