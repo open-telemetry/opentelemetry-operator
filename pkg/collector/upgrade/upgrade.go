@@ -37,7 +37,7 @@ type VersionUpgrade struct {
 	Log      logr.Logger
 }
 
-const RecordBufferSize int = 10
+const RecordBufferSize int = 100
 
 // ManagedInstances finds all the otelcol instances for the current operator and upgrades them, if necessary.
 func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {

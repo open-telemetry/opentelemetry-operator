@@ -5856,7 +5856,6 @@ spec:
                               type: array
                           required:
                           - exporters
-                          - processors
                           - receivers
                           type: object
                         type: object

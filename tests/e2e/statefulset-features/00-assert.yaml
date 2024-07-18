@@ -9,6 +9,7 @@ spec:
        containers:
        - args:
          - --config=/conf/collector.yaml
+         - --feature-gates=-component.UseLocalHostAsDefaultHost
          name: otc-container
          volumeMounts:
          - mountPath: /conf
@@ -20,7 +21,7 @@ spec:
            items:
            - key: collector.yaml
              path: collector.yaml
-           name: stateful-collector-f0fa6faa
+           name: stateful-collector-81dcbcb5
          name: otc-internal
        - emptyDir: {}
          name: testvolume

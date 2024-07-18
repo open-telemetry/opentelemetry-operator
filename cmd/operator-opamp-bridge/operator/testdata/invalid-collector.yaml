@@ -2,7 +2,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
@@ -24,5 +24,4 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
           exporters: [debug]
