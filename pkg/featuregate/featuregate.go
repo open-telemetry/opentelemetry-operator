@@ -40,6 +40,13 @@ var (
 		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
 		featuregate.WithRegisterFromVersion("v0.100.0"),
 	)
+	// DoNotUseLocalHostAsDefaultHost is the feature gate that, when enabled, binds unspecified receiver listener addresses to all interfaces.
+	DoNotUseLocalHostAsDefaultHost = featuregate.GlobalRegistry().MustRegister(
+		"operator.collector.UseLocalHostAsDefaultHost",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("reverts the effect of the enabled collector feature gate \"component.UseLocalHostAsDefaultHost\" which is disabled by default since Operator v0.104.0."),
+		featuregate.WithRegisterFromVersion("v0.105.0"),
+	)
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.

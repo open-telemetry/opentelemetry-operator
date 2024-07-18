@@ -30,6 +30,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
@@ -81,6 +82,12 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 
 	TAUnifyEnvVarExpansion(otelcol)
 	ComponentUseLocalHostAsDefaultHost(otelcol)
+
+	if featuregate.DoNotUseLocalHostAsDefaultHost.IsEnabled() {
+		if err := DoNotUseLocalHostAsDefaultHost(otelcol); err != nil {
+			return err
+		}
+	}
 
 	if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.MaxReplicas != nil {
 		if otelcol.Spec.Autoscaler.MinReplicas == nil {
@@ -502,4 +509,60 @@ func ComponentUseLocalHostAsDefaultHost(otelcol *OpenTelemetryCollector) {
 	} else if !strings.Contains(otelcol.Spec.Args[baseFlag], fgFlag) {
 		otelcol.Spec.Args[baseFlag] += ",-" + fgFlag
 	}
+}
+
+// DoNotUseLocalHostAsDefaultHost reverts the effect of component.UseLocalHostAsDefaultHost.
+// Unset endpoint entries are extended by the listener address 0.0.0.0.
+// Affected components are:
+// * OTLP Receiver.
+func DoNotUseLocalHostAsDefaultHost(otelcol *OpenTelemetryCollector) error {
+	return defaultOTLPAddress(otelcol)
+}
+
+// defaultOTLPAddress binds configured otlp receivers to 0.0.0.0 if nothing else
+// is explicitly defined.
+func defaultOTLPAddress(otelcol *OpenTelemetryCollector) error {
+	for key, rc := range otelcol.Spec.Config.Receivers.Object {
+		// check if otel is configured
+		if !strings.HasPrefix(key, "otlp") {
+			continue
+		}
+
+		cfg, ok := rc.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		protocols, ok := cfg["protocols"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		if _, exists := protocols["grpc"]; exists {
+			grpcConfig, ok := protocols["grpc"].(map[string]interface{})
+			if !ok {
+				grpcConfig = make(map[string]interface{})
+				protocols["grpc"] = grpcConfig
+			}
+
+			gEndpoint, ok := grpcConfig["endpoint"].(string)
+			if !ok || !strings.Contains(gEndpoint, ":") {
+				grpcConfig["endpoint"] = "0.0.0.0:4317"
+			}
+		}
+
+		if _, exists := protocols["http"]; exists {
+			httpConfig, ok := protocols["http"].(map[string]interface{})
+			if !ok {
+				httpConfig = make(map[string]interface{})
+				protocols["http"] = httpConfig
+			}
+
+			hEndpoint, ok := httpConfig["endpoint"].(string)
+			if !ok || !strings.Contains(hEndpoint, ":") {
+				httpConfig["endpoint"] = "0.0.0.0:4318"
+			}
+		}
+	}
+	return nil
 }
