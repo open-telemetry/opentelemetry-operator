@@ -23,6 +23,7 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	"github.com/prometheus-operator/prometheus-operator/pkg/assets"
 	fakemonitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
 	"github.com/prometheus-operator/prometheus-operator/pkg/informers"
@@ -34,6 +35,7 @@ import (
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	kubeDiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
+	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -58,6 +60,8 @@ func TestLoadConfig(t *testing.T) {
 		name            string
 		serviceMonitors []*monitoringv1.ServiceMonitor
 		podMonitors     []*monitoringv1.PodMonitor
+		scrapeConfigs   []*promv1alpha1.ScrapeConfig
+		probes          []*monitoringv1.Probe
 		want            *promconfig.Config
 		wantErr         bool
 		cfg             allocatorconfig.Config
@@ -662,6 +666,72 @@ func TestLoadConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "probe selector test",
+			probes: []*monitoringv1.Probe{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "probe-test-1",
+						Namespace: "test",
+						Labels: map[string]string{
+							"testpod": "testpod",
+						},
+					},
+					Spec: monitoringv1.ProbeSpec{
+						JobName: "probe/test/probe-1/0",
+						ProberSpec: monitoringv1.ProberSpec{
+							URL:  "localhost:50671",
+							Path: "/metrics",
+						},
+						Targets: monitoringv1.ProbeTargets{
+							StaticConfig: &monitoringv1.ProbeTargetStaticConfig{
+								Targets: []string{"prometheus.io"},
+							},
+						},
+					},
+				},
+			},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ProbeSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"testpod": "testpod",
+						},
+					},
+				},
+			},
+			want: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:         "probe/test/probe-test-1",
+						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeTimeout:   model.Duration(10 * time.Second),
+						HonorTimestamps: true,
+						HonorLabels:     false,
+						Scheme:          "http",
+						MetricsPath:     "/metrics",
+						ServiceDiscoveryConfigs: []discovery.Config{
+							discovery.StaticConfig{
+								&targetgroup.Group{
+									Targets: []model.LabelSet{
+										map[model.LabelName]model.LabelValue{
+											"__address__": "prometheus.io",
+										},
+									},
+									Labels: map[model.LabelName]model.LabelValue{
+										"namespace": "test",
+									},
+									Source: "0",
+								},
+							},
+						},
+						HTTPClientConfig:  config.DefaultHTTPClientConfig,
+						EnableCompression: true,
+					},
+				},
+			},
+		},
+		{
 			name: "service monitor namespace selector test",
 			serviceMonitors: []*monitoringv1.ServiceMonitor{
 				{
@@ -804,7 +874,7 @@ func TestLoadConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w, _ := getTestPrometheusCRWatcher(t, tt.serviceMonitors, tt.podMonitors, tt.cfg)
+			w, _ := getTestPrometheusCRWatcher(t, tt.serviceMonitors, tt.podMonitors, tt.probes, tt.scrapeConfigs, tt.cfg)
 
 			// Start namespace informers in order to populate cache.
 			go w.nsInformer.Run(w.stopChannel)
@@ -909,7 +979,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		ScrapeConfigs: []*promconfig.ScrapeConfig{},
 	}
 
-	w, source := getTestPrometheusCRWatcher(t, nil, podMonitors, cfg)
+	w, source := getTestPrometheusCRWatcher(t, nil, podMonitors, nil, nil, cfg)
 	events := make(chan Event, 1)
 	eventInterval := 5 * time.Millisecond
 
@@ -975,7 +1045,7 @@ func TestRateLimit(t *testing.T) {
 	eventInterval := 5 * time.Millisecond
 	cfg := allocatorconfig.Config{}
 
-	w, _ := getTestPrometheusCRWatcher(t, nil, nil, cfg)
+	w, _ := getTestPrometheusCRWatcher(t, nil, nil, nil, nil, cfg)
 	defer w.Close()
 	w.eventInterval = eventInterval
 
@@ -1038,7 +1108,7 @@ func TestRateLimit(t *testing.T) {
 
 // getTestPrometheusCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
 // and test secrets.
-func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.ServiceMonitor, podMonitors []*monitoringv1.PodMonitor, cfg allocatorconfig.Config) (*PrometheusCRWatcher, *fcache.FakeControllerSource) {
+func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.ServiceMonitor, podMonitors []*monitoringv1.PodMonitor, probes []*monitoringv1.Probe, scrapeConfigs []*promv1alpha1.ScrapeConfig, cfg allocatorconfig.Config) (*PrometheusCRWatcher, *fcache.FakeControllerSource) {
 	mClient := fakemonitoringclient.NewSimpleClientset()
 	for _, sm := range svcMonitors {
 		if sm != nil {
@@ -1051,6 +1121,24 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 	for _, pm := range podMonitors {
 		if pm != nil {
 			_, err := mClient.MonitoringV1().PodMonitors(pm.Namespace).Create(context.Background(), pm, metav1.CreateOptions{})
+			if err != nil {
+				t.Fatal(t, err)
+			}
+		}
+	}
+
+	for _, prb := range probes {
+		if prb != nil {
+			_, err := mClient.MonitoringV1().Probes(prb.Namespace).Create(context.Background(), prb, metav1.CreateOptions{})
+			if err != nil {
+				t.Fatal(t, err)
+			}
+		}
+	}
+
+	for _, scc := range scrapeConfigs {
+		if scc != nil {
+			_, err := mClient.MonitoringV1alpha1().ScrapeConfigs(scc.Namespace).Create(context.Background(), scc, metav1.CreateOptions{})
 			if err != nil {
 				t.Fatal(t, err)
 			}
@@ -1091,8 +1179,12 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 				ScrapeInterval:                  monitoringv1.Duration("30s"),
 				ServiceMonitorSelector:          cfg.PrometheusCR.ServiceMonitorSelector,
 				PodMonitorSelector:              cfg.PrometheusCR.PodMonitorSelector,
+				ProbeSelector:                   cfg.PrometheusCR.ProbeSelector,
+				ScrapeConfigSelector:            cfg.PrometheusCR.ScrapeConfigSelector,
 				ServiceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
 				PodMonitorNamespaceSelector:     cfg.PrometheusCR.PodMonitorNamespaceSelector,
+				ProbeNamespaceSelector:          cfg.PrometheusCR.ProbeNamespaceSelector,
+				ScrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
 			},
 		},
 	}
@@ -1132,6 +1224,8 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 		configGenerator:                 generator,
 		podMonitorNamespaceSelector:     cfg.PrometheusCR.PodMonitorNamespaceSelector,
 		serviceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
+		probeNamespaceSelector:          cfg.PrometheusCR.ProbeNamespaceSelector,
+		scrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
 		resourceSelector:                resourceSelector,
 		store:                           store,
 	}, source
