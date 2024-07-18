@@ -47,7 +47,7 @@ jobs:
           for platform in $(echo $PLATFORMS | tr "," "\n"); do
             arch=${platform#*/}
             echo "Building manager for $arch"
-            make manager ARCH=$arch
+            make manager must-gather ARCH=$arch
           done
 
       - name: Docker meta

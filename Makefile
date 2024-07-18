@@ -140,6 +140,9 @@ ci: generate fmt vet test ensure-generate-is-noop
 manager: generate
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o bin/manager_${ARCH} -ldflags "${COMMON_LDFLAGS} ${OPERATOR_LDFLAGS}" main.go
 
+must-gather:
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o bin/must-gather_${ARCH} -ldflags "${COMMON_LDFLAGS} ${OPERATOR_LDFLAGS}" ./cmd/gather/main.go
+
 # Build target allocator binary
 .PHONY: targetallocator
 targetallocator:
@@ -328,7 +331,7 @@ scorecard-tests: operator-sdk
 # buildx is used to ensure same results for arm based systems (m1/2 chips)
 .PHONY: container
 container: GOOS = linux
-container: manager
+container: manager must-gather
 	docker build -t ${IMG} .
 
 # Push the container image, used only for local dev purposes
