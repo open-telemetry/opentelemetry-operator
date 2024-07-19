@@ -12,14 +12,17 @@ import (
 )
 
 type Config struct {
-	CollectionDir    string
-	KubernetesClient client.Client
+	CollectionDir     string
+	OperatorName      string
+	OperatorNamespace string
+	KubernetesClient  client.Client
 }
 
 func NewConfig(scheme *runtime.Scheme) (Config, error) {
-	var kubeconfigPath string
-	var collectionDir string
+	var operatorName, operatorNamespace, kubeconfigPath, collectionDir string
 
+	pflag.StringVar(&operatorName, "operator-name", "opentelemetry-operator", "Operator name")
+	pflag.StringVar(&operatorNamespace, "operator-namespace", "", "Namespace where the operator was deployed")
 	pflag.StringVar(&kubeconfigPath, "kubeconfig-path", filepath.Join(homedir.HomeDir(), ".kube", "config"), "Absolute path to the KubeconfigPath file")
 	pflag.StringVar(&collectionDir, "collection-dir", filepath.Join(homedir.HomeDir(), "must-gather"), "Absolute path to the KubeconfigPath file")
 	pflag.Parse()
@@ -35,7 +38,9 @@ func NewConfig(scheme *runtime.Scheme) (Config, error) {
 	}
 
 	return Config{
-		CollectionDir:    collectionDir,
-		KubernetesClient: clusterClient,
+		CollectionDir:     collectionDir,
+		KubernetesClient:  clusterClient,
+		OperatorName:      operatorName,
+		OperatorNamespace: operatorNamespace,
 	}, nil
 }

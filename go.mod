@@ -19,6 +19,7 @@ require (
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/open-telemetry/opamp-go v0.14.0
 	github.com/openshift/api v0.0.0-20240124164020-e2ce40831f2e
+	github.com/operator-framework/api v0.24.0
 	github.com/operator-framework/operator-lib v0.14.0
 	github.com/prometheus-operator/prometheus-operator v0.75.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.75.1
@@ -183,7 +184,8 @@ require (
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.27 // indirect
-	github.com/spf13/cobra v1.7.0 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/spf13/cobra v1.8.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect

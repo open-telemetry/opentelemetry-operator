@@ -15,8 +15,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func createFolder(collectionDir string, otelCol *v1beta1.OpenTelemetryCollector) (string, error) {
-	outputDir := filepath.Join(collectionDir, otelCol.Namespace, otelCol.Name)
+func createOTELFolder(collectionDir string, otelCol *v1beta1.OpenTelemetryCollector) (string, error) {
+	outputDir := filepath.Join(collectionDir, "namespaces", otelCol.Namespace, otelCol.Name)
 	err := os.MkdirAll(outputDir, os.ModePerm)
 	if err != nil {
 		return "", err
@@ -38,8 +38,9 @@ func createFile(outputDir string, obj client.Object) (*os.File, error) {
 	}
 
 	kind = strings.ToLower(kind)
+	name := strings.ReplaceAll(obj.GetName(), ".", "-")
 
-	path := filepath.Join(outputDir, fmt.Sprintf("%s-%s.yaml", kind, obj.GetName()))
+	path := filepath.Join(outputDir, fmt.Sprintf("%s-%s.yaml", kind, name))
 	return os.Create(path)
 }
 

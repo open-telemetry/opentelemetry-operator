@@ -9,6 +9,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/gather/cluster"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/gather/config"
 	routev1 "github.com/openshift/api/route/v1"
+	operatorsv1 "github.com/operator-framework/api/pkg/operators/v1"
+	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -34,6 +36,8 @@ func init() {
 	utilruntime.Must(policyV1.AddToScheme(scheme))
 	utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	utilruntime.Must(routev1.AddToScheme(scheme))
+	utilruntime.Must(operatorsv1.AddToScheme(scheme))
+	utilruntime.Must(operatorsv1alpha1.AddToScheme(scheme))
 }
 
 func main() {
@@ -44,6 +48,8 @@ func main() {
 	}
 
 	cluster := cluster.NewCluster(&config)
+	cluster.GetOperatorDeploymentInfo()
+	cluster.GetOLMInfo()
 	cluster.GetOpenTelemetryCollectors()
 	cluster.GetInstrumentations()
 }
