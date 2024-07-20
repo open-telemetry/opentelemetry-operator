@@ -3,6 +3,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest-ippolicy
 spec:
+  upgradeStrategy: automatic
   ipFamilies:
     - IPv4
     - IPv6

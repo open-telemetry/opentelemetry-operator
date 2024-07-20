@@ -3,6 +3,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest-ipfamily
 spec:
+  upgradeStrategy: automatic
   ipFamilies:
     - IPv4
   ipFamilyPolicy: SingleStack
