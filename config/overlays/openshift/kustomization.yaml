@@ -1,0 +1,10 @@
+resources:
+- ../../default
+
+patches:
+ - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: controller-manager
+   path: manager-patch.yaml
