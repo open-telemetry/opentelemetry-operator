@@ -501,6 +501,7 @@ spec:
                 - --enable-nginx-instrumentation=true
                 - --enable-go-instrumentation=true
                 - --enable-multi-instrumentation=true
+                - --openshift-create-dashboard=true
                 - --feature-gates=+operator.observability.prometheus
                 env:
                 - name: SERVICE_ACCOUNT_NAME
