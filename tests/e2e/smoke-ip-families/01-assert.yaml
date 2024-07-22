@@ -36,8 +36,7 @@ kind: Service
 metadata:
   name: simplest-ippolicy-collector
 spec:
-  (clusterIPs != null):
-    (length(@)): 2
+  length(clusterIPs): 2
   ipFamilies:
     - IPv4
     - IPv6
