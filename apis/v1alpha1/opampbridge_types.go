@@ -107,6 +107,12 @@ type OpAMPBridgeSpec struct {
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
 	PodDNSConfig v1.PodDNSConfig `json:"podDnsConfig,omitempty"`
+	// IPFamily represents the IP Family (IPv4 or IPv6). This type is used
+	// to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).
+	// +optional
+	IpFamilies []v1.IPFamily `json:"ipFamilies,omitempty"`
+	// IPFamilyPolicy represents the dual-stack-ness requested or required by a Service
+	IpFamilyPolicy *v1.IPFamilyPolicy `json:"ipFamilyPolicy,omitempty"`
 }
 
 // OpAMPBridgeStatus defines the observed state of OpAMPBridge.
