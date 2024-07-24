@@ -893,6 +893,9 @@ func Test_CanUpdateIdentity(t *testing.T) {
 	})
 	assert.NotEqual(t, previousInstanceId, newId.String())
 	assert.Equal(t, agent.instanceId, newId)
+	parsedUUID, err := uuid.FromBytes(marshalledId)
+	require.NoError(t, err)
+	assert.Equal(t, newId, parsedUUID)
 }
 
 func getMessageDataFromConfigFile(filemap map[string]string) (*types.MessageData, error) {
