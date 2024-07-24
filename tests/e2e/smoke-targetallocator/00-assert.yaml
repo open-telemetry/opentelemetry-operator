@@ -25,7 +25,7 @@ data:
     collector_selector:
       matchlabels:
         app.kubernetes.io/component: opentelemetry-collector
-        app.kubernetes.io/instance: opentelemetry-operator-system.stateful
+        app.kubernetes.io/instance: ($namespace).stateful
         app.kubernetes.io/managed-by: opentelemetry-operator
         app.kubernetes.io/part-of: opentelemetry
       matchexpressions: []
