@@ -54,7 +54,14 @@ data:
             protocols:
                 grpc: null
         prometheus:
-            config: {}
+            config:
+                global:
+                    scrape_interval: 30s
+                    scrape_protocols:
+                        - PrometheusProto
+                        - OpenMetricsText1.0.0
+                        - OpenMetricsText0.0.1
+                        - PrometheusText0.0.4
             target_allocator:
                 collector_id: ${POD_NAME}
                 endpoint: http://stateful-targetallocator:80
