@@ -2,6 +2,28 @@
 
 <!-- next version -->
 
+## 0.105.0
+
+### 💡 Enhancements 💡
+
+- `collector`: Create automatically an OpenShift dashboard to visualize OpenTelemetry Collector metrics (#2995)
+  To enable this feature, you need to specify the `--openshift-create-dashboard` argument to the operator
+- `bundle`: Create an specific bundle for OpenShift environments. (#3054)
+- `collector`: Enabling ipFamilies and ipFamilyPolicy to be configured via OpenTelemetryCollector (#2958)
+- `auto-instrumentation`: Add Prometheus exporter to Python auto-instrumentation (#3122)
+
+### Components
+
+* [OpenTelemetry Collector - v0.105.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.105.0)
+* [OpenTelemetry Contrib - v0.105.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.105.0)
+* [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.52.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.52.1)
+* [Python - v0.46b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.46b0)
+* [Go - v0.13.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.13.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.104.0
 
 ### 🛑 Breaking changes 🛑
