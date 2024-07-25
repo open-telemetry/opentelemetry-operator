@@ -15,7 +15,6 @@
 package config
 
 import (
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -25,7 +24,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/oklog/ulid/v2"
+	"github.com/google/uuid"
 	opampclient "github.com/open-telemetry/opamp-go/client"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/spf13/pflag"
@@ -186,9 +185,13 @@ func keyValuePair(key string, value string) *protobufs.KeyValue {
 	}
 }
 
-func (c *Config) GetNewInstanceId() ulid.ULID {
-	entropy := ulid.Monotonic(rand.Reader, 0)
-	return ulid.MustNew(ulid.Timestamp(time.Now()), entropy)
+func (c *Config) GetNewInstanceId() uuid.UUID {
+	u, err := uuid.NewV7()
+	if err != nil {
+		// This really should never happen and if it does we should fail.
+		panic(err)
+	}
+	return u
 }
 
 func (c *Config) RemoteConfigEnabled() bool {

@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/oklog/ulid/v2"
+	"github.com/google/uuid"
 	"github.com/open-telemetry/opamp-go/client"
 	"github.com/open-telemetry/opamp-go/client/types"
 	"github.com/open-telemetry/opamp-go/protobufs"
@@ -44,7 +44,7 @@ type Agent struct {
 	startTime   uint64
 	lastHash    []byte
 
-	instanceId         ulid.ULID
+	instanceId         uuid.UUID
 	agentDescription   *protobufs.AgentDescription
 	remoteConfigStatus *protobufs.RemoteConfigStatus
 
@@ -211,7 +211,7 @@ func (agent *Agent) Start() error {
 	settings := types.StartSettings{
 		OpAMPServerURL: agent.config.Endpoint,
 		Header:         agent.config.Headers.ToHTTPHeader(),
-		InstanceUid:    agent.instanceId.String(),
+		InstanceUid:    types.InstanceUid(agent.instanceId),
 		Callbacks: types.CallbacksStruct{
 			OnConnectFunc:              agent.onConnect,
 			OnConnectFailedFunc:        agent.onConnectFailed,
@@ -274,7 +274,7 @@ func (agent *Agent) runHeartbeat() {
 
 // updateAgentIdentity receives a new instanced Id from the remote server and updates the agent's instanceID field.
 // The meter will be reinitialized by the onMessage function.
-func (agent *Agent) updateAgentIdentity(instanceId ulid.ULID) {
+func (agent *Agent) updateAgentIdentity(instanceId uuid.UUID) {
 	agent.logger.V(3).Info("Agent identity is being changed",
 		"old instanceId", agent.instanceId.String(),
 		"new instanceid", instanceId.String())
@@ -416,12 +416,12 @@ func (agent *Agent) onMessage(ctx context.Context, msg *types.MessageData) {
 	// The instance id is updated prior to the meter initialization so that the new meter will report using the updated
 	// instanceId.
 	if msg.AgentIdentification != nil {
-		newInstanceId, err := ulid.Parse(msg.AgentIdentification.NewInstanceUid)
+		uid, err := uuid.FromBytes(msg.AgentIdentification.NewInstanceUid)
 		if err != nil {
 			agent.logger.Error(err, "couldn't parse instance UID")
 			return
 		}
-		agent.updateAgentIdentity(newInstanceId)
+		agent.updateAgentIdentity(uid)
 	}
 
 	if msg.OwnMetricsConnSettings != nil {

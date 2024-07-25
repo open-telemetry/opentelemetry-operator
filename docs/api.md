@@ -4184,6 +4184,21 @@ typically used to set access tokens or other authorization headers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>ipFamilies</b></td>
+        <td>[]string</td>
+        <td>
+          IPFamily represents the IP Family (IPv4 or IPv6). This type is used
+to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ipFamilyPolicy</b></td>
+        <td>string</td>
+        <td>
+          IPFamilyPolicy represents the dual-stack-ness requested or required by a Service<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
         <td>
@@ -30934,6 +30949,23 @@ These init containers can be used to fetch secrets for injection into the
 configuration from external sources, run added checks, etc. Any errors during the execution of
 an initContainer will lead to a restart of the Pod. More info:
 https://kubernetes.io/docs/concepts/workloads/pods/init-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ipFamilies</b></td>
+        <td>[]string</td>
+        <td>
+          IPFamily represents the IP Family (IPv4 or IPv6). This type is used
+to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ipFamilyPolicy</b></td>
+        <td>string</td>
+        <td>
+          IPFamilyPolicy represents the dual-stack-ness requested or required by a Service<br/>
+          <br/>
+            <i>Default</i>: SingleStack<br/>
         </td>
         <td>false</td>
       </tr><tr>

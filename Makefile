@@ -35,6 +35,9 @@ TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:$(addprefix v,$
 OPERATOROPAMPBRIDGE_IMG_REPO ?= operator-opamp-bridge
 OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addprefix v,${VERSION})
 
+BRIDGETESTSERVER_IMG_REPO ?= e2e-test-app-bridge-server
+BRIDGETESTSERVER_IMG ?= ${IMG_PREFIX}/${BRIDGETESTSERVER_IMG_REPO}:ve2e
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -316,7 +319,7 @@ e2e-upgrade: undeploy chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade
 
 .PHONY: prepare-e2e
-prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge container-bridge-test-server start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
@@ -354,6 +357,11 @@ container-operator-opamp-bridge: GOOS = linux
 container-operator-opamp-bridge: operator-opamp-bridge
 	docker build -t ${OPERATOROPAMPBRIDGE_IMG} cmd/operator-opamp-bridge
 
+.PHONY: container-bridge-test-server
+container-bridge-test-server: GOOS = linux
+container-bridge-test-server:
+	docker build -t ${BRIDGETESTSERVER_IMG} tests/test-e2e-apps/bridge-server
+
 .PHONY: start-kind
 start-kind: kind
 ifeq (true,$(START_KIND_CLUSTER))
@@ -370,7 +378,7 @@ install-targetallocator-prometheus-crds:
 	./hack/install-targetallocator-prometheus-crds.sh
 
 .PHONY: load-image-all
-load-image-all: load-image-operator load-image-target-allocator load-image-operator-opamp-bridge
+load-image-all: load-image-operator load-image-target-allocator load-image-operator-opamp-bridge load-image-bridge-test-server
 
 .PHONY: load-image-operator
 load-image-operator: container kind
@@ -389,6 +397,9 @@ else
 	$(MAKE) container-target-allocator-push
 endif
 
+.PHONY: load-image-bridge-test-server
+load-image-bridge-test-server: container-bridge-test-server kind
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${BRIDGETESTSERVER_IMG}
 
 .PHONY: load-image-operator-opamp-bridge
 load-image-operator-opamp-bridge: container-operator-opamp-bridge kind
@@ -496,7 +507,7 @@ operator-sdk: $(LOCALBIN)
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: generate-bundle
 generate-bundle: kustomize operator-sdk manifests set-image-controller api-docs
-	sed -i 's/minKubeVersion: .*/minKubeVersion: $(MIN_KUBERNETES_VERSION)/' config/manifests/$(BUNDLE_VARIANT)/bases/opentelemetry-operator.clusterserviceversion.yaml
+	sed -e 's/minKubeVersion: .*/minKubeVersion: $(MIN_KUBERNETES_VERSION)/' config/manifests/$(BUNDLE_VARIANT)/bases/opentelemetry-operator.clusterserviceversion.yaml
 
 	$(OPERATOR_SDK) generate kustomize manifests -q --input-dir $(MANIFESTS_DIR) --output-dir $(MANIFESTS_DIR)
 	cd $(BUNDLE_DIR) && cp ../../PROJECT . && $(KUSTOMIZE) build ../../$(MANIFESTS_DIR) | $(OPERATOR_SDK) generate bundle $(BUNDLE_BUILD_GEN_FLAGS) && rm PROJECT
