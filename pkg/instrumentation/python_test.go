@@ -79,20 +79,16 @@ func TestInjectPythonSDK(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation", "/otel-auto-instrumentation-python"),
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_METRICS_EXPORTER",
 									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
-									Value: "http/protobuf",
 								},
 							},
 						},
@@ -156,20 +152,16 @@ func TestInjectPythonSDK(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s:%s", "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation", "/foo:/bar", "/otel-auto-instrumentation-python"),
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_METRICS_EXPORTER",
 									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
-									Value: "http/protobuf",
 								},
 							},
 						},
@@ -236,16 +228,12 @@ func TestInjectPythonSDK(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation", "/otel-auto-instrumentation-python"),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
 									Value: "http/protobuf",
 								},
 								{
 									Name:  "OTEL_METRICS_EXPORTER",
 									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
-									Value: "http/protobuf",
 								},
 							},
 						},
@@ -312,16 +300,84 @@ func TestInjectPythonSDK(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation", "/otel-auto-instrumentation-python"),
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "OTEL_EXPORTER_OTLP_PROTOCOL defined",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "somebackend",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-python",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-python",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-python",
+								MountPath: "/otel-auto-instrumentation-python",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-python",
+									MountPath: "/otel-auto-instrumentation-python",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "somebackend",
+								},
+								{
+									Name:  "PYTHONPATH",
+									Value: fmt.Sprintf("%s:%s", "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation", "/otel-auto-instrumentation-python"),
+								},
+								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
-									Value: "http/protobuf",
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
 								},
 							},
 						},
