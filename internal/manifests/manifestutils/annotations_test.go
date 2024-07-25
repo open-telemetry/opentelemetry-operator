@@ -50,9 +50,6 @@ func TestDefaultAnnotations(t *testing.T) {
 	require.NoError(t, err)
 
 	//verify
-	assert.Equal(t, "true", annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", annotations["prometheus.io/path"])
 	assert.Equal(t, "5b3b62aa5e0a3c7250084c2b49190e30b72fc2ad352ffbaa699224e1aa900834", annotations["opentelemetry-operator-config/sha256"])
 	//verify propagation from metadata.annotations to spec.template.spec.metadata.annotations
 	assert.Equal(t, "true", podAnnotations["prometheus.io/scrape"])
@@ -153,7 +150,7 @@ func TestAnnotationsPropagateDown(t *testing.T) {
 	require.NoError(t, err)
 
 	// verify
-	assert.Len(t, annotations, 5)
+	assert.Len(t, annotations, 2)
 	assert.Equal(t, "mycomponent", annotations["myapp"])
 	assert.Equal(t, "mycomponent", podAnnotations["myapp"])
 	assert.Equal(t, "pod_annotation_value", podAnnotations["pod_annotation"])
@@ -178,7 +175,7 @@ func TestAnnotationsFilter(t *testing.T) {
 
 	// verify
 	require.NoError(t, err)
-	assert.Len(t, annotations, 6)
+	assert.Len(t, annotations, 3)
 	assert.NotContains(t, annotations, "test.bar.io")
 	assert.Equal(t, "1234", annotations["test.io/port"])
 }

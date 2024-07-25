@@ -172,7 +172,10 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							exists, err = populateObjectIfExists(t, sa, namespacedObjectName(naming.ServiceAccount(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							assert.Equal(t, map[string]string{annotationName: "true"}, sa.Annotations)
+							assert.Equal(t, map[string]string{
+								annotationName:                         "true",
+								"opentelemetry-operator-config/sha256": "11d309a64c15c034827053656adb6be67c0885d11092dc63c976a65328bbbbe1",
+							}, sa.Annotations)
 							saPatch := sa.DeepCopy()
 							saPatch.Annotations["user-defined-annotation"] = "value"
 							err = k8sClient.Patch(ctx, saPatch, client.MergeFrom(sa))
@@ -213,7 +216,12 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							exists, err = populateObjectIfExists(t, sa, namespacedObjectName(naming.ServiceAccount(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
-							assert.Equal(t, map[string]string{annotationName: "true", "user-defined-annotation": "value", "new-annotation": "new-value"}, sa.Annotations)
+							assert.Equal(t, map[string]string{
+								annotationName:                         "true",
+								"user-defined-annotation":              "value",
+								"new-annotation":                       "new-value",
+								"opentelemetry-operator-config/sha256": "11d309a64c15c034827053656adb6be67c0885d11092dc63c976a65328bbbbe1",
+							}, sa.Annotations)
 						},
 					},
 					wantErr:     assert.NoError,
