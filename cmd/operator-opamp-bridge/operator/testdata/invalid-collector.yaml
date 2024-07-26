@@ -2,7 +2,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
-  config: |
+  config:
     receivers:
       otlp:
         protocols:

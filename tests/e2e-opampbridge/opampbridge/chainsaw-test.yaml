@@ -1,18 +1,102 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  creationTimestamp: null
   name: opampbridge
 spec:
   steps:
-  - name: step-00
-    try:
-    - apply:
-        file: 00-install.yaml
-    - assert:
-        file: 00-assert.yaml
-    catch:
-    - podLogs:
-        selector: app.kubernetes.io/component=opentelemetry-opamp-bridge
-    
+    - catch:
+        - podLogs:
+            selector: app=e2e-test-app-bridge-server
+      name: step-00
+      try:
+        - apply:
+            file: 00-install.yaml
+        - assert:
+            file: 00-assert.yaml
+    - catch:
+        - podLogs:
+            selector: app.kubernetes.io/component=opentelemetry-opamp-bridge
+      name: step-01
+      try:
+        - apply:
+            file: 01-install.yaml
+        - assert:
+            file: 01-assert.yaml
+    - name: Check effective config is empty for a valid agent id
+      try:
+        - script:
+            content: |
+              #!/bin/bash
+              # set -ex
+              # bridge_server_host=$(kubectl get service e2e-test-app-bridge-server -n $NAMESPACE -o jsonpath='{.spec.clusterIP}')
+              # curl -H "Content-Type: application/json" http://${bridge_server_host}:4321/agents
+              # TODO: Uncomment the above when proxying is available in chainsaw
+              kubectl get --raw /api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents
+            outputs:
+              - name: result
+                value: (json_parse($stdout))
+        - assert:
+            resource:
+              (length(values($result))): 1
+              (values($result)[0].status.sequence_num >= `2`): true
+              (values($result)[0].status.health.healthy): true
+              (length(values($result)[0].effective_config)): 0
+    - catch:
+        - podLogs:
+            selector: app.kubernetes.io/component=opentelemetry-opamp-bridge
+      name: step-02
+      try:
+        - apply:
+            file: 02-install.yaml
+        - assert:
+            file: 02-assert.yaml
+    - try:
+        - sleep:
+            duration: 1s
+    # Right now the heartbeat interval isn't configurable by the CRD for the bridge
+    # This means that it can take 45s to inform the server of the new collector
+    # By deleting the pod we can just shortcut that
+    - try:
+        - script:
+            content: |
+              #!/bin/bash
+              kubectl delete pod -l app.kubernetes.io/name=test-opamp-bridge -n $NAMESPACE
+    - try:
+        - sleep:
+            duration: 3s
+    - try:
+      - assert:
+          # specify resource inline
+          resource:
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: test-opamp-bridge
+            status:
+              readyReplicas: 1
+    - name: Check effective config is not empty
+      try:
+        - script:
+            content: |
+              #!/bin/bash
+              # set -ex
+              # bridge_server_host=$(kubectl get service e2e-test-app-bridge-server -n $NAMESPACE -o jsonpath='{.spec.clusterIP}')
+              # curl -H "Content-Type: application/json" http://${bridge_server_host}:4321/agents
+              # TODO: Uncomment the above when proxying is available in chainsaw
+              kubectl get --raw /api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents
+            outputs:
+              - name: result
+                value: (json_parse($stdout))
+        - assert:
+            resource:
+              # Note: often times here I need to assert the length and then get the 0th element
+              # it would be great if I could wildcard for the initial instance id key and then
+              # construct a compound key of `$NAMESPACE/simplest` for the collector I want to assert
+              (length(values($result))): 1
+              (values($result)[0].status.sequence_num >= `2`): true
+              (values($result)[0].status.health.healthy): true
+              (length(values($result)[0].status.health.component_health_map)): 1
+              (values(values($result)[0].status.health.component_health_map)[0].healthy): true
+              (length(values($result)[0].effective_config)): 1
+              (length(values($result)[0].status.effective_config.config_map.config_map)): 1
+              (length(values(values($result)[0].status.effective_config.config_map.config_map)[0].body) > `0`): true

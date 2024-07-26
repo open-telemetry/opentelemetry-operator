@@ -60,7 +60,7 @@ func (srv *Server) Start() {
 				},
 			},
 		},
-		ListenEndpoint: "127.0.0.1:4320",
+		ListenEndpoint: "0.0.0.0:4320",
 		HTTPMiddleware: otelhttp.NewMiddleware("/v1/opamp"),
 	}
 
@@ -110,8 +110,8 @@ func (srv *Server) onMessage(ctx context.Context, conn types.Connection, msg *pr
 		instanceId = data.InstanceId(u.Bytes())
 	} else if len(msg.InstanceUid) == 16 {
 		// This is a 16 byte, new style UID.
-		if parsedId, err := uuid.Parse(string(msg.InstanceUid)); err != nil {
-			srv.logger.Errorf(ctx, "Cannot parse UUID %s: %v", string(msg.InstanceUid), err)
+		if parsedId, err := uuid.FromBytes(msg.InstanceUid); err != nil {
+			srv.logger.Errorf(ctx, "Cannot parse UUID %s: %v", msg.InstanceUid, err)
 			return response
 		} else {
 			instanceId = data.InstanceId(parsedId)

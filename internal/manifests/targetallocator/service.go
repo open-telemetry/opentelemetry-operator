@@ -52,6 +52,8 @@ func Service(params Params) *corev1.Service {
 		Spec: corev1.ServiceSpec{
 			Selector: selector,
 			Ports:    ports,
+			IPFamilies:     params.TargetAllocator.Spec.IpFamilies,
+			IPFamilyPolicy: params.TargetAllocator.Spec.IpFamilyPolicy,
 		},
 	}
 }

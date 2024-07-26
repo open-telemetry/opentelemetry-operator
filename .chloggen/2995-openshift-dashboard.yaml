@@ -5,12 +5,12 @@ change_type: enhancement
 component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: "Make the `spec.mode` field of the `OpenTelemetryCollector` Custom Resource (CR) immutable"
+note: Create automatically an OpenShift dashboard to visualize OpenTelemetry Collector metrics
 
 # One or more tracking issues related to the change
-issues: [3055]
+issues: [2995]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: To enable this feature, you need to specify the `--openshift-create-dashboard` argument to the operator

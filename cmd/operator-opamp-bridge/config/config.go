@@ -15,7 +15,6 @@
 package config
 
 import (
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -25,7 +24,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/oklog/ulid/v2"
+	"github.com/google/uuid"
 	opampclient "github.com/open-telemetry/opamp-go/client"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/spf13/pflag"
@@ -41,6 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/logger"
 )
 
@@ -56,7 +56,9 @@ var (
 
 func registerKnownTypes(s *k8sruntime.Scheme) error {
 	s.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.OpenTelemetryCollector{}, &v1alpha1.OpenTelemetryCollectorList{})
+	s.AddKnownTypes(v1beta1.GroupVersion, &v1beta1.OpenTelemetryCollector{}, &v1beta1.OpenTelemetryCollectorList{})
 	metav1.AddToGroupVersion(s, v1alpha1.GroupVersion)
+	metav1.AddToGroupVersion(s, v1beta1.GroupVersion)
 	return nil
 }
 
@@ -183,9 +185,13 @@ func keyValuePair(key string, value string) *protobufs.KeyValue {
 	}
 }
 
-func (c *Config) GetNewInstanceId() ulid.ULID {
-	entropy := ulid.Monotonic(rand.Reader, 0)
-	return ulid.MustNew(ulid.Timestamp(time.Now()), entropy)
+func (c *Config) GetNewInstanceId() uuid.UUID {
+	u, err := uuid.NewV7()
+	if err != nil {
+		// This really should never happen and if it does we should fail.
+		panic(err)
+	}
+	return u
 }
 
 func (c *Config) RemoteConfigEnabled() bool {

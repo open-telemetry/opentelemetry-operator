@@ -10,4 +10,5 @@ gh release create \
     --notes-file ${NOTES_FILE} \
     --draft \
     "v${DESIRED_VERSION}" \
-    'dist/opentelemetry-operator.yaml#Installation manifest for Kubernetes'
+    'dist/opentelemetry-operator.yaml#Installation manifest for Kubernetes' \
+    'dist/opentelemetry-operator-openshift.yaml#Installation manifest for OpenShift'

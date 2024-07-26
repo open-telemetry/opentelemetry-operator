@@ -100,6 +100,7 @@ spec:
     - mountPath: /otel-auto-instrumentation-nodejs
       name: opentelemetry-auto-instrumentation-nodejs
   - args:
+    - --feature-gates=-component.UseLocalHostAsDefaultHost
     - --config=env:OTEL_CONFIG
     name: otc-container
   initContainers:

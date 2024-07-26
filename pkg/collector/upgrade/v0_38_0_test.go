@@ -82,8 +82,9 @@ service:
 
 	// verify
 	assert.Equal(t, map[string]string{
-		"--hii":  "hello",
-		"--arg1": "",
+		"--hii":         "hello",
+		"--arg1":        "",
+		"feature-gates": "-component.UseLocalHostAsDefaultHost",
 	}, res.Spec.Args)
 
 	// verify
@@ -148,7 +149,8 @@ service:
 	// verify
 	assert.YAMLEq(t, configWithLogging, res.Spec.Config)
 	assert.Equal(t, map[string]string{
-		"--hii":  "hello",
-		"--arg1": "",
+		"--hii":         "hello",
+		"--arg1":        "",
+		"feature-gates": "-component.UseLocalHostAsDefaultHost",
 	}, res.Spec.Args)
 }

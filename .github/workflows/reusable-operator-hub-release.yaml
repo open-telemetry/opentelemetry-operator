@@ -9,6 +9,9 @@ on:
       repo:
         type: string
         required: true
+      folder:
+        type: string
+        required: true
     secrets:
       OPENTELEMETRYBOT_GITHUB_TOKEN:
         required: true
@@ -54,7 +57,7 @@ jobs:
           VERSION: ${{ env.version }}
         run: |
           mkdir operators/opentelemetry-operator/${VERSION} 
-          cp -R ./tmp/bundle/* operators/opentelemetry-operator/${VERSION} 
+          cp -R ./tmp/bundle/${{ inputs.folder }}/* operators/opentelemetry-operator/${VERSION}
           rm -rf ./tmp
 
       - name: Use CLA approved github bot

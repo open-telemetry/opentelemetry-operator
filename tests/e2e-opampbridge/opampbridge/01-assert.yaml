@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-opamp-bridge
+spec:
+  template:
+    spec:
+      containers:
+      - env:
+        - name: OTELCOL_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        name: opamp-bridge-container
+        volumeMounts:
+        - mountPath: /conf
+          name: opamp-bridge-internal
+      volumes:
+      - configMap:
+          items:
+          - key: remoteconfiguration.yaml
+            path: remoteconfiguration.yaml
+          name: test-opamp-bridge
+        name: opamp-bridge-internal
+status:
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: v1
+data:
+  remoteconfiguration.yaml: |
+    capabilities:
+      AcceptsOpAMPConnectionSettings: true
+      AcceptsOtherConnectionSettings: true
+      AcceptsRemoteConfig: true
+      AcceptsRestartCommand: true
+      ReportsEffectiveConfig: true
+      ReportsHealth: true
+      ReportsOwnLogs: true
+      ReportsOwnMetrics: true
+      ReportsOwnTraces: true
+      ReportsRemoteConfig: true
+      ReportsStatus: true
+    componentsAllowed:
+      exporters:
+      - logging
+      processors:
+      - memory_limiter
+      receivers:
+      - otlp
+    endpoint: ws://e2e-test-app-bridge-server:4320/v1/opamp
+kind: ConfigMap
+metadata:
+  name: test-opamp-bridge
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-opamp-bridge
+spec:
+  ports:
+  - name: opamp-bridge
+    port: 80
+    protocol: TCP
+    targetPort: 8080

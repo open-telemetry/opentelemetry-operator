@@ -59,6 +59,7 @@ spec:
     - mountPath: /otel-auto-instrumentation-java
       name: opentelemetry-auto-instrumentation-java
   - args:
+    - --feature-gates=-component.UseLocalHostAsDefaultHost
     - --config=env:OTEL_CONFIG
     name: otc-container
   initContainers:

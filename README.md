@@ -38,8 +38,10 @@ spec:
     receivers:
       otlp:
         protocols:
-          grpc: {}
-          http: {}
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
     processors:
       memory_limiter:
         check_interval: 1s
@@ -737,6 +739,7 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes     | Cert-Manager | Prometheus-Operator |
 |------------------------|----------------| ------------ |---------------------|
+| v0.104.0               | v1.23 to v1.30 | v1           | v0.74.0             |
 | v0.103.0               | v1.23 to v1.30 | v1           | v0.74.0             |
 | v0.102.0               | v1.23 to v1.30 | v1           | v0.71.2             |
 | v0.101.0               | v1.23 to v1.30 | v1           | v0.71.2             |
@@ -759,7 +762,6 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 | v0.84.0                | v1.19 to v1.28 | v1           | v0.67.1             |
 | v0.83.0                | v1.19 to v1.27 | v1           | v0.67.1             |
 | v0.82.0                | v1.19 to v1.27 | v1           | v0.67.1             |
-| v0.81.0                | v1.19 to v1.27 | v1           | v0.66.0             |
 
 ## Contributing and Developing
 
