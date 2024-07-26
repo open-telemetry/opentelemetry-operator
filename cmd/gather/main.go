@@ -48,6 +48,7 @@ func main() {
 	}
 
 	cluster := cluster.NewCluster(&config)
+	cluster.GetOperatorLogs()
 	cluster.GetOperatorDeploymentInfo()
 	cluster.GetOLMInfo()
 	cluster.GetOpenTelemetryCollectors()

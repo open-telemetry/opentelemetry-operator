@@ -70,6 +70,31 @@ func (c *Cluster) getOperatorDeployment() (appsv1.Deployment, error) {
 
 }
 
+func (c *Cluster) GetOperatorLogs() error {
+	deployment, err := c.getOperatorDeployment()
+	if err != nil {
+		return err
+	}
+
+	labelSelector := labels.Set(deployment.Spec.Selector.MatchLabels).AsSelectorPreValidated()
+	operatorPods := corev1.PodList{}
+	err = c.config.KubernetesClient.List(context.TODO(), &operatorPods, &client.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		return err
+	}
+
+	pod := operatorPods.Items[0]
+	c.getPodLogs(pod.Name, pod.Namespace, "manager")
+	return nil
+}
+
+func (c *Cluster) getPodLogs(podName, namespace, container string) {
+	pods := c.config.KubernetesClientSet.CoreV1().Pods(namespace)
+	writeLogToFile(c.config.CollectionDir, podName, container, pods)
+}
+
 func (c *Cluster) GetOperatorDeploymentInfo() error {
 	err := os.MkdirAll(c.config.CollectionDir, os.ModePerm)
 	if err != nil {

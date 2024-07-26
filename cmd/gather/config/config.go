@@ -6,16 +6,18 @@ import (
 
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Config struct {
-	CollectionDir     string
-	OperatorName      string
-	OperatorNamespace string
-	KubernetesClient  client.Client
+	CollectionDir       string
+	OperatorName        string
+	OperatorNamespace   string
+	KubernetesClient    client.Client
+	KubernetesClientSet *kubernetes.Clientset
 }
 
 func NewConfig(scheme *runtime.Scheme) (Config, error) {
@@ -37,10 +39,16 @@ func NewConfig(scheme *runtime.Scheme) (Config, error) {
 		return Config{}, fmt.Errorf("Creating the Kubernetes client: %s\n", err)
 	}
 
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return Config{}, fmt.Errorf("Creating the Kubernetes clienset: %s\n", err)
+	}
+
 	return Config{
-		CollectionDir:     collectionDir,
-		KubernetesClient:  clusterClient,
-		OperatorName:      operatorName,
-		OperatorNamespace: operatorNamespace,
+		CollectionDir:       collectionDir,
+		KubernetesClient:    clusterClient,
+		KubernetesClientSet: clientset,
+		OperatorName:        operatorName,
+		OperatorNamespace:   operatorNamespace,
 	}, nil
 }
