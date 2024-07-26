@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: e2e-test-app-bridge-server
-          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-bridge-server:main
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-bridge-server:ve2e
           ports:
             - containerPort: 4320
             - containerPort: 4321

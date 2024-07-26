@@ -16,7 +16,6 @@ package agent
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
 	"os"
 	"sort"
@@ -24,7 +23,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/oklog/ulid/v2"
+	"github.com/google/uuid"
 	"github.com/open-telemetry/opamp-go/client"
 	"github.com/open-telemetry/opamp-go/client/types"
 	"github.com/open-telemetry/opamp-go/protobufs"
@@ -883,15 +882,20 @@ func Test_CanUpdateIdentity(t *testing.T) {
 	defer agent.Shutdown()
 	require.NoError(t, err, "should be able to start agent")
 	previousInstanceId := agent.instanceId.String()
-	entropy := ulid.Monotonic(rand.Reader, 0)
-	newId := ulid.MustNew(ulid.MaxTime(), entropy)
+	newId, err := uuid.NewV7()
+	require.NoError(t, err)
+	marshalledId, err := newId.MarshalBinary()
+	require.NoError(t, err)
 	agent.onMessage(context.Background(), &types.MessageData{
 		AgentIdentification: &protobufs.AgentIdentification{
-			NewInstanceUid: newId.String(),
+			NewInstanceUid: marshalledId,
 		},
 	})
 	assert.NotEqual(t, previousInstanceId, newId.String())
 	assert.Equal(t, agent.instanceId, newId)
+	parsedUUID, err := uuid.FromBytes(marshalledId)
+	require.NoError(t, err)
+	assert.Equal(t, newId, parsedUUID)
 }
 
 func getMessageDataFromConfigFile(filemap map[string]string) (*types.MessageData, error) {

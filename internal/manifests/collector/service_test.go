@@ -351,3 +351,43 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, in
 		},
 	}
 }
+
+func TestServiceWithIpFamily(t *testing.T) {
+	t.Run("should return IPFamilies for IPV4 and IPV6", func(t *testing.T) {
+		params := deploymentParams()
+		params.OtelCol.Spec.IpFamilies = []v1.IPFamily{
+			"IPv4",
+			"IPv6",
+		}
+		actual, err := Service(params)
+		assert.NoError(t, err)
+		assert.Equal(t, actual.Spec.IPFamilies, []v1.IPFamily{
+			"IPv4",
+			"IPv6",
+		})
+	})
+	t.Run("should return IPPolicy SingleStack", func(t *testing.T) {
+		params := deploymentParams()
+		baseIpFamily := v1.IPFamilyPolicySingleStack
+		params.OtelCol.Spec.IpFamilyPolicy = &baseIpFamily
+		actual, err := Service(params)
+		assert.NoError(t, err)
+		assert.Equal(t, actual.Spec.IPFamilyPolicy, params.OtelCol.Spec.IpFamilyPolicy)
+	})
+	t.Run("should return IPPolicy PreferDualStack", func(t *testing.T) {
+		params := deploymentParams()
+		baseIpFamily := v1.IPFamilyPolicyPreferDualStack
+		params.OtelCol.Spec.IpFamilyPolicy = &baseIpFamily
+		actual, err := Service(params)
+		assert.NoError(t, err)
+		assert.Equal(t, actual.Spec.IPFamilyPolicy, params.OtelCol.Spec.IpFamilyPolicy)
+	})
+	t.Run("should return IPPolicy RequireDualStack ", func(t *testing.T) {
+		params := deploymentParams()
+		baseIpFamily := v1.IPFamilyPolicyRequireDualStack
+		params.OtelCol.Spec.IpFamilyPolicy = &baseIpFamily
+		actual, err := Service(params)
+		assert.NoError(t, err)
+		assert.Equal(t, actual.Spec.IPFamilyPolicy, params.OtelCol.Spec.IpFamilyPolicy)
+	})
+}
