@@ -169,7 +169,7 @@ func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
 	}
 
-	warnings, err := c.validate(ctx, otelcol)
+	warnings, err := c.Validate(ctx, otelcol)
 	if err != nil {
 		return warnings, err
 	}
@@ -197,7 +197,7 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj run
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", oldObj)
 	}
 
-	warnings, err := c.validate(ctx, otelcol)
+	warnings, err := c.Validate(ctx, otelcol)
 	if err != nil {
 		return warnings, err
 	}
@@ -222,7 +222,7 @@ func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
 	}
 
-	warnings, err := c.validate(ctx, otelcol)
+	warnings, err := c.Validate(ctx, otelcol)
 	if err != nil {
 		return warnings, err
 	}
@@ -234,7 +234,7 @@ func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object
 	return warnings, nil
 }
 
-func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollector) (admission.Warnings, error) {
+func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollector) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 
 	nullObjects := r.Spec.Config.nullObjects()
@@ -468,6 +468,7 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	return nil
 }
 
+// BuildValidator is mostly used for testing purposes
 type BuildValidator func(c OpenTelemetryCollector) (admission.Warnings, error)
 
 func NewCollectorWebhook(
