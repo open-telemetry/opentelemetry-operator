@@ -5,7 +5,7 @@ change_type: bug_fix
 component: opamp
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Fixes the type for AnyConfig in the collector to allow for proper marshalling
+note: Fixes a bug where the collector was not being marshalled correctly by using a reference instead of a value.
 
 # One or more tracking issues related to the change
 issues: [3171]
