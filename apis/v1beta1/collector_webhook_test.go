@@ -1346,8 +1346,10 @@ func TestTAUnifyEnvVarExpansion(t *testing.T) {
 	}
 	TAUnifyEnvVarExpansion(otelcol)
 	assert.Nil(t, otelcol.Spec.OpenTelemetryCommonFields.Args, "expect nil")
-	otelcol.Spec.Config.Receivers.Object = map[string]interface{}{
-		"prometheus": nil,
+	otelcol.Spec.Config.Receivers = &AnyConfig{
+		Object: map[string]interface{}{
+			"prometheus": nil,
+		},
 	}
 	TAUnifyEnvVarExpansion(otelcol)
 	assert.NotNil(t, otelcol.Spec.OpenTelemetryCommonFields.Args, "expect not nil")
