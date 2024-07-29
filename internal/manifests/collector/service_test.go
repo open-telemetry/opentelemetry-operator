@@ -233,7 +233,7 @@ func TestDesiredService(t *testing.T) {
 			Log:    logger,
 			OtelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{Config: v1beta1.Config{
-					Receivers: &v1beta1.AnyConfig{
+					Receivers: v1beta1.AnyConfig{
 						Object: map[string]interface{}{
 							"otlp": map[string]interface{}{
 								"protocols": map[string]interface{}{
@@ -243,7 +243,7 @@ func TestDesiredService(t *testing.T) {
 							},
 						},
 					},
-					Exporters: &v1beta1.AnyConfig{
+					Exporters: v1beta1.AnyConfig{
 						Object: map[string]interface{}{
 							"otlp": map[string]interface{}{
 								"endpoint": "jaeger-allinone-collector-headless.chainsaw-otlp-metrics.svc:4317",

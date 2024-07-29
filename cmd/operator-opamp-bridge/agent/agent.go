@@ -291,7 +291,7 @@ func (agent *Agent) getEffectiveConfig(ctx context.Context) (*protobufs.Effectiv
 	}
 	instanceMap := map[string]*protobufs.AgentConfigFile{}
 	for _, instance := range instances {
-		marshaled, err := yaml.Marshal(instance)
+		marshaled, err := yaml.Marshal(&instance)
 		if err != nil {
 			agent.logger.Error(err, "failed to marhsal config")
 			return nil, err

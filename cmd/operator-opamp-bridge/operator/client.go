@@ -121,15 +121,10 @@ func (c Client) validateComponents(collectorConfig *v1beta1.Config) error {
 		return nil
 	}
 
-	configuredComponents := map[string]map[string]interface{}{}
-	if collectorConfig.Receivers != nil {
-		configuredComponents["receivers"] = collectorConfig.Receivers.Object
-	}
-	if collectorConfig.Processors != nil {
-		configuredComponents["processors"] = collectorConfig.Processors.Object
-	}
-	if collectorConfig.Exporters != nil {
-		configuredComponents["exporters"] = collectorConfig.Exporters.Object
+	configuredComponents := map[string]map[string]interface{}{
+		"receivers":  collectorConfig.Receivers.Object,
+		"processors": collectorConfig.Processors.Object,
+		"exporters":  collectorConfig.Exporters.Object,
 	}
 
 	var invalidComponents []string

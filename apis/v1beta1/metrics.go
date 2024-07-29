@@ -195,13 +195,9 @@ func extractElements(elements map[string]interface{}) []string {
 
 func getComponentsFromConfig(yamlContent Config) *componentDefinitions {
 
-	info := &componentDefinitions{}
-	if yamlContent.Receivers != nil {
-		info.receivers = extractElements(yamlContent.Receivers.Object)
-	}
-
-	if yamlContent.Exporters != nil {
-		info.exporters = extractElements(yamlContent.Exporters.Object)
+	info := &componentDefinitions{
+		receivers: extractElements(yamlContent.Receivers.Object),
+		exporters: extractElements(yamlContent.Exporters.Object),
 	}
 
 	if yamlContent.Processors != nil {

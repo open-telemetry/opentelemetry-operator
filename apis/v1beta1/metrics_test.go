@@ -80,7 +80,7 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 						"z/r": nil,
 					},
 				},
-				Exporters: &AnyConfig{
+				Exporters: AnyConfig{
 					Object: map[string]interface{}{
 						"w": nil,
 					},
@@ -108,7 +108,7 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 						"z/r": nil,
 					},
 				},
-				Exporters: &AnyConfig{
+				Exporters: AnyConfig{
 					Object: map[string]interface{}{
 						"w": nil,
 					},
@@ -200,7 +200,7 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 						"z/r": nil,
 					},
 				},
-				Exporters: &AnyConfig{
+				Exporters: AnyConfig{
 					Object: map[string]interface{}{
 						"w": nil,
 					},
