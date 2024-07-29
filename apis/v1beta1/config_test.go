@@ -117,7 +117,7 @@ func TestNullObjects_go_yaml(t *testing.T) {
 
 func TestConfigYaml(t *testing.T) {
 	cfg := &Config{
-		Receivers: AnyConfig{
+		Receivers: &AnyConfig{
 			Object: map[string]interface{}{
 				"otlp": nil,
 			},
@@ -127,7 +127,7 @@ func TestConfigYaml(t *testing.T) {
 				"modify_2000": "enabled",
 			},
 		},
-		Exporters: AnyConfig{
+		Exporters: &AnyConfig{
 			Object: map[string]interface{}{
 				"otlp/exporter": nil,
 			},

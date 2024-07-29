@@ -100,3 +100,40 @@ spec:
               (length(values($result)[0].effective_config)): 1
               (length(values($result)[0].status.effective_config.config_map.config_map)): 1
               (length(values(values($result)[0].status.effective_config.config_map.config_map)[0].body) > `0`): true
+    - name: Verify content is accurate
+      try:
+        - script:
+            content: |
+              #!/bin/bash
+              # set -ex
+              # bridge_server_host=$(kubectl get service e2e-test-app-bridge-server -n $NAMESPACE -o jsonpath='{.spec.clusterIP}')
+              # curl -H "Content-Type: application/json" http://${bridge_server_host}:4321/agents
+              # TODO: Uncomment the above when proxying is available in chainsaw
+              kubectl get --raw /api/v1/namespaces/$NAMESPACE/services/e2e-test-app-bridge-server:4321/proxy/agents
+            outputs:
+              - name: result
+                value: (json_parse($stdout))
+        - assert:
+            timeout: 30s
+            resource:
+              (parse_yaml(values(values($result)[0].effective_config)[0])):
+                metadata:
+                  name: simplest
+                spec:
+                  config:
+                    # Right now we can't match null values in chainsaw
+                    # Wait for https://github.com/kyverno/kyverno-json/pull/432 to merge
+                    exporters: (`{}`)
+                    receivers:
+                      jaeger:
+                        protocols: (`{}`)
+                      otlp:
+                        protocols: (`{}`)
+                    service:
+                      pipelines:
+                        traces:
+                          exporters:
+                            - debug
+                          receivers:
+                            - jaeger
+                            - otlp

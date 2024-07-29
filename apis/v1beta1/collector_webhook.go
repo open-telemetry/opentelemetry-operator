@@ -459,6 +459,9 @@ func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.R
 // https://github.com/open-telemetry/opentelemetry-collector/commit/637b1f42fcb7cbb7ef8a50dcf41d0a089623a8b7
 func TAUnifyEnvVarExpansion(otelcol *OpenTelemetryCollector) {
 	var enable bool
+	if otelcol.Spec.Config.Receivers == nil {
+		return
+	}
 	for receiver := range otelcol.Spec.Config.Receivers.Object {
 		if strings.Contains(receiver, "prometheus") {
 			enable = true

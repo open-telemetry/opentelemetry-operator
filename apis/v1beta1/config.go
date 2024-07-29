@@ -127,9 +127,9 @@ func (c *Config) GetEnabledComponents() map[ComponentKind]map[string]interface{}
 // Config encapsulates collector config.
 type Config struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Receivers AnyConfig `json:"receivers" yaml:"receivers"`
+	Receivers *AnyConfig `json:"receivers" yaml:"receivers"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Exporters AnyConfig `json:"exporters" yaml:"exporters"`
+	Exporters *AnyConfig `json:"exporters" yaml:"exporters"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Processors *AnyConfig `json:"processors,omitempty" yaml:"processors,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
@@ -146,7 +146,7 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 	enabledComponents := c.GetEnabledComponents()
 	for _, componentKind := range componentKinds {
 		var retriever components.ParserRetriever
-		var cfg AnyConfig
+		var cfg *AnyConfig
 		switch componentKind {
 		case KindReceiver:
 			retriever = receivers.ReceiverFor
@@ -156,6 +156,9 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 			cfg = c.Exporters
 		case KindProcessor:
 			break
+		}
+		if cfg == nil {
+			continue
 		}
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.
@@ -201,11 +204,15 @@ func (c *Config) Yaml() (string, error) {
 // Returns null objects in the config.
 func (c *Config) nullObjects() []string {
 	var nullKeys []string
-	if nulls := hasNullValue(c.Receivers.Object); len(nulls) > 0 {
-		nullKeys = append(nullKeys, addPrefix("receivers.", nulls)...)
+	if c.Receivers != nil {
+		if nulls := hasNullValue(c.Receivers.Object); len(nulls) > 0 {
+			nullKeys = append(nullKeys, addPrefix("receivers.", nulls)...)
+		}
 	}
-	if nulls := hasNullValue(c.Exporters.Object); len(nulls) > 0 {
-		nullKeys = append(nullKeys, addPrefix("exporters.", nulls)...)
+	if c.Exporters != nil {
+		if nulls := hasNullValue(c.Exporters.Object); len(nulls) > 0 {
+			nullKeys = append(nullKeys, addPrefix("exporters.", nulls)...)
+		}
 	}
 	if c.Processors != nil {
 		if nulls := hasNullValue(c.Processors.Object); len(nulls) > 0 {
