@@ -17,12 +17,12 @@ package v1beta1_test
 import (
 	"context"
 	"fmt"
-	"github.com/go-logr/logr"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"os"
+	"testing"
+
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
-	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -37,9 +37,12 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeTesting "k8s.io/client-go/testing"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"testing"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
 var (
