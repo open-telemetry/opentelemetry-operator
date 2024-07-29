@@ -526,7 +526,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type",
 		},
 		{
-			name: "invalid deployment mode incompabible with ingress settings",
+			name: "invalid deployment mode incompatible with ingress settings",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeSidecar,
@@ -535,9 +535,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: fmt.Sprintf("Ingress can only be used in combination with the modes: %s, %s, %s",
-				v1beta1.ModeDeployment, v1beta1.ModeDaemonSet, v1beta1.ModeStatefulSet,
-			),
+			expectedErr: fmt.Sprintf("Ingress can only be used in combination with the modes: %s, %s, %s", v1beta1.ModeDeployment, v1beta1.ModeDaemonSet, v1beta1.ModeStatefulSet),
 		},
 		{
 			name: "invalid mode with priorityClassName",
@@ -771,20 +769,22 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "the OpenTelemetry Collector mode is set to statefulset, which does not support the attribute 'deploymentUpdateStrategy'",
 		},
 		{
-			name: "",
+			name: "missing port for ingress type",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					Mode: v1beta1.ModeStatefulSet,
-					DeploymentUpdateStrategy: appsv1.DeploymentStrategy{
-						Type: "RollingUpdate",
-						RollingUpdate: &appsv1.RollingUpdateDeployment{
-							MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
-							MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Ports: []v1beta1.PortsSpec{
+							{
+								ServicePort: v1.ServicePort{},
+							},
 						},
+					},
+					Ingress: v1beta1.Ingress{
+						Type: v1beta1.IngressTypeIngress,
 					},
 				},
 			},
-			expectedErr: "",
+			expectedErr: "the OpenTelemetry Spec Ports configuration is incorrect",
 		},
 	}
 
@@ -798,7 +798,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			Config:  cfg,
 			OtelCol: collector,
 		}
-		_, err = collectorManifests.Build(params)
+		_, err := collectorManifests.Build(params)
 		if err != nil {
 			return nil, err
 		}
