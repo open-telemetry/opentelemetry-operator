@@ -79,7 +79,6 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 		otelcol.Spec.TargetAllocator.Replicas = &one
 	}
 
-	TAUnifyEnvVarExpansion(otelcol)
 	ComponentUseLocalHostAsDefaultHost(otelcol)
 
 	if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.MaxReplicas != nil {
@@ -451,37 +450,6 @@ func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.R
 		WithValidator(cvw).
 		WithDefaulter(cvw).
 		Complete()
-}
-
-// TAUnifyEnvVarExpansion disables confmap.unifyEnvVarExpansion featuregate on
-// collector instances if a prometheus receiver is configured.
-// NOTE: We need this for now until 0.105.0 is out with this fix:
-// https://github.com/open-telemetry/opentelemetry-collector/commit/637b1f42fcb7cbb7ef8a50dcf41d0a089623a8b7
-func TAUnifyEnvVarExpansion(otelcol *OpenTelemetryCollector) {
-	var enable bool
-	for receiver := range otelcol.Spec.Config.Receivers.Object {
-		if strings.Contains(receiver, "prometheus") {
-			enable = true
-			break
-		}
-	}
-	if !enable {
-		return
-	}
-
-	const (
-		baseFlag = "feature-gates"
-		fgFlag   = "confmap.unifyEnvVarExpansion"
-	)
-	if otelcol.Spec.Args == nil {
-		otelcol.Spec.Args = make(map[string]string)
-	}
-	args, ok := otelcol.Spec.Args[baseFlag]
-	if !ok || len(args) == 0 {
-		otelcol.Spec.Args[baseFlag] = "-" + fgFlag
-	} else if !strings.Contains(otelcol.Spec.Args[baseFlag], fgFlag) {
-		otelcol.Spec.Args[baseFlag] += ",-" + fgFlag
-	}
 }
 
 // ComponentUseLocalHostAsDefaultHost enables component.UseLocalHostAsDefaultHost
