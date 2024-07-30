@@ -11,9 +11,12 @@
 - `bundle`: Create an specific bundle for OpenShift environments. (#3054)
 - `collector`: Enabling ipFamilies and ipFamilyPolicy to be configured via OpenTelemetryCollector (#2958)
 - `auto-instrumentation`: Add Prometheus exporter to Python auto-instrumentation (#3122)
+- `collector`: Configmap, rbac, service, serviceaccount apply annotations-filter. (#3151)
 
 ### 🧰 Bug fixes 🧰
 
+- `collector`: Remove workaround for 0.104.0 that enabled feature-gate `confmap.unifyEnvVarExpansion` when Prometheus receiver was enabled. (#3142)
+- `opamp`: Fixes a bug where the collector was not being marshalled correctly by using a reference instead of a value. (#3171)
 - `auto-instrumentation`: Fixes a bug statefulSet wrong service.instance.id (#3157)
 
 ### Components
