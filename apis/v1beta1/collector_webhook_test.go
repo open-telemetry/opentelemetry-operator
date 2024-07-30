@@ -20,8 +20,6 @@ import (
 	"os"
 	"testing"
 
-	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
-
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,6 +40,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 

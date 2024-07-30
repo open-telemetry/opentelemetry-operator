@@ -182,9 +182,6 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj run
 
 	if c.bv != nil {
 		newWarnings := c.bv(*otelcol)
-		if err != nil {
-			return append(warnings, newWarnings...), err
-		}
 		warnings = append(warnings, newWarnings...)
 	}
 	return warnings, nil
