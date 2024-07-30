@@ -394,16 +394,19 @@ func main() {
 
 		}
 
-		bv := func(collector otelv1beta1.OpenTelemetryCollector) (admission.Warnings, error) {
+		bv := func(collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
+			var warnings admission.Warnings
 			params, err := collectorReconciler.GetParams(collector)
 			if err != nil {
-				return nil, err
+				warnings = append(warnings, err.Error())
+				return warnings
 			}
 			_, err = collectorManifests.Build(params)
 			if err != nil {
-				return nil, err
+				warnings = append(warnings, err.Error())
+				return warnings
 			}
-			return nil, nil
+			return warnings
 		}
 
 		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv); err != nil {

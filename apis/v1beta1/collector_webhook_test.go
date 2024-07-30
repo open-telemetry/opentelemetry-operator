@@ -99,7 +99,8 @@ func TestValidate(t *testing.T) {
 		},
 	}
 
-	bv := func(collector v1beta1.OpenTelemetryCollector) (admission.Warnings, error) {
+	bv := func(collector v1beta1.OpenTelemetryCollector) admission.Warnings {
+		var warnings admission.Warnings
 		cfg := config.New(
 			config.WithCollectorImage("default-collector"),
 			config.WithTargetAllocatorImage("default-ta-allocator"),
@@ -111,9 +112,10 @@ func TestValidate(t *testing.T) {
 		}
 		_, err := collectorManifests.Build(params)
 		if err != nil {
-			return nil, err
+			warnings := append(warnings, err.Error())
+			return warnings
 		}
-		return nil, nil
+		return nil
 	}
 
 	for _, tt := range tests {
@@ -546,7 +548,8 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 		},
 	}
 
-	bv := func(collector v1beta1.OpenTelemetryCollector) (admission.Warnings, error) {
+	bv := func(collector v1beta1.OpenTelemetryCollector) admission.Warnings {
+		var warnings admission.Warnings
 		cfg := config.New(
 			config.WithCollectorImage("default-collector"),
 			config.WithTargetAllocatorImage("default-ta-allocator"),
@@ -558,9 +561,10 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 		}
 		_, err := collectorManifests.Build(params)
 		if err != nil {
-			return nil, err
+			warnings := append(warnings, err.Error())
+			return warnings
 		}
-		return nil, nil
+		return nil
 	}
 
 	for _, test := range tests {
@@ -1311,7 +1315,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 		},
 	}
 
-	bv := func(collector v1beta1.OpenTelemetryCollector) (admission.Warnings, error) {
+	bv := func(collector v1beta1.OpenTelemetryCollector) admission.Warnings {
+		var warnings admission.Warnings
 		cfg := config.New(
 			config.WithCollectorImage("default-collector"),
 			config.WithTargetAllocatorImage("default-ta-allocator"),
@@ -1323,9 +1328,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 		}
 		_, err := collectorManifests.Build(params)
 		if err != nil {
-			return nil, err
+			warnings := append(warnings, err.Error())
+			return warnings
 		}
-		return nil, nil
+		return nil
 	}
 
 	for _, test := range tests {
