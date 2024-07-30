@@ -66,6 +66,7 @@ import (
 	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
 	// +kubebuilder:scaffold:imports
+	// +kubebuilder:object:generate=false
 )
 
 var (
