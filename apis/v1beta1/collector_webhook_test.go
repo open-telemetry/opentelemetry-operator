@@ -112,7 +112,7 @@ func TestValidate(t *testing.T) {
 		}
 		_, err := collectorManifests.Build(params)
 		if err != nil {
-			warnings := append(warnings, err.Error())
+			warnings = append(warnings, err.Error())
 			return warnings
 		}
 		return nil
@@ -571,7 +571,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 		}
 		_, err := collectorManifests.Build(params)
 		if err != nil {
-			warnings := append(warnings, err.Error())
+			warnings = append(warnings, err.Error())
 			return warnings
 		}
 		return nil
@@ -1338,7 +1338,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 		}
 		_, err := collectorManifests.Build(params)
 		if err != nil {
-			warnings := append(warnings, err.Error())
+			warnings = append(warnings, err.Error())
 			return warnings
 		}
 		return nil
@@ -1403,7 +1403,7 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 		}
 		_, err := collectorManifests.Build(params)
 		if err != nil {
-			warnings := append(warnings, err.Error())
+			warnings = append(warnings, err.Error())
 			return warnings
 		}
 		return nil

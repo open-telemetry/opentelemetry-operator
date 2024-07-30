@@ -152,9 +152,6 @@ func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object
 	}
 	if c.bv != nil {
 		newWarnings := c.bv(*otelcol)
-		if err != nil {
-			return append(warnings, newWarnings...), err
-		}
 		warnings = append(warnings, newWarnings...)
 	}
 	return warnings, nil
@@ -452,7 +449,7 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	return nil
 }
 
-// BuildValidator is mostly used for testing purposes
+// BuildValidator is mostly used for testing purposes.
 type BuildValidator func(c OpenTelemetryCollector) admission.Warnings
 
 func NewCollectorWebhook(
