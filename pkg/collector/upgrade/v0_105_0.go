@@ -15,7 +15,6 @@
 package upgrade
 
 import (
-	"fmt"
 	"slices"
 	"strings"
 
@@ -56,7 +55,6 @@ func RemoveFeatureGate(args map[string]string, feature string) map[string]string
 	features = slices.DeleteFunc(features, func(s string) bool {
 		return s == feature
 	})
-	fmt.Println(features)
 	if len(features) == 0 {
 		delete(args, featureGateFlag)
 	} else {
