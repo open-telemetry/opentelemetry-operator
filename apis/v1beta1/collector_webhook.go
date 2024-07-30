@@ -447,6 +447,7 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 }
 
 // BuildValidator is mostly used for testing purposes.
+// +kubebuilder:object:generate=false
 type BuildValidator func(c OpenTelemetryCollector) admission.Warnings
 
 func NewCollectorWebhook(
