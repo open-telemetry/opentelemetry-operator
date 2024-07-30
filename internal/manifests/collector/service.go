@@ -78,6 +78,11 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 	labels[monitoringLabel] = valueExists
 	labels[serviceTypeLabel] = MonitoringServiceType.String()
 
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	if err != nil {
+		return nil, err
+	}
+
 	metricsPort, err := params.OtelCol.Spec.Config.Service.MetricsPort()
 	if err != nil {
 		return nil, err
@@ -88,7 +93,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 			Name:        name,
 			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
-			Annotations: params.OtelCol.Annotations,
+			Annotations: annotations,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector:  manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
@@ -107,6 +112,11 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	name := naming.Service(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[serviceTypeLabel] = BaseServiceType.String()
+
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	if err != nil {
+		return nil, err
+	}
 
 	ports, err := params.OtelCol.Spec.Config.GetAllPorts(params.Log)
 	if err != nil {
@@ -158,7 +168,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 			Name:        naming.Service(params.OtelCol.Name),
 			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
-			Annotations: params.OtelCol.Annotations,
+			Annotations: annotations,
 		},
 		Spec: corev1.ServiceSpec{
 			InternalTrafficPolicy: &trafficPolicy,
