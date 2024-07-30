@@ -133,9 +133,7 @@ service:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
-						},
+						Annotations: map[string]string{},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &one,
@@ -236,9 +234,7 @@ service:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
-						},
+						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
 						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - logging\n      receivers:\n        - examplereceiver\n",
@@ -256,9 +252,7 @@ service:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
-						},
+						Annotations: map[string]string{},
 					},
 				},
 				&corev1.Service{
@@ -274,9 +268,7 @@ service:
 							"app.kubernetes.io/version":                        "latest",
 							"operator.opentelemetry.io/collector-service-type": "base",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
-						},
+						Annotations: map[string]string{},
 					},
 					Spec: corev1.ServiceSpec{
 						Ports: []corev1.ServicePort{
@@ -305,7 +297,6 @@ service:
 						},
 						Annotations: map[string]string{
 							"service.beta.openshift.io/serving-cert-secret-name": "test-collector-headless-tls",
-							"opentelemetry-operator-config/sha256":               "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
 						},
 					},
 					Spec: corev1.ServiceSpec{
@@ -334,9 +325,7 @@ service:
 							"operator.opentelemetry.io/collector-service-type":       "monitoring",
 							"operator.opentelemetry.io/collector-monitoring-service": "Exists",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
-						},
+						Annotations: map[string]string{},
 					},
 					Spec: corev1.ServiceSpec{
 						Ports: []corev1.ServicePort{
@@ -390,9 +379,7 @@ service:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
-						},
+						Annotations: map[string]string{},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &one,
@@ -493,9 +480,7 @@ service:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
-						},
+						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
 						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - logging\n      receivers:\n        - examplereceiver\n",
@@ -513,9 +498,7 @@ service:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
-						},
+						Annotations: map[string]string{},
 					},
 				},
 				&corev1.Service{
@@ -531,9 +514,7 @@ service:
 							"app.kubernetes.io/version":                        "latest",
 							"operator.opentelemetry.io/collector-service-type": "base",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
-						},
+						Annotations: map[string]string{},
 					},
 					Spec: corev1.ServiceSpec{
 						Ports: []corev1.ServicePort{
@@ -562,7 +543,6 @@ service:
 						},
 						Annotations: map[string]string{
 							"service.beta.openshift.io/serving-cert-secret-name": "test-collector-headless-tls",
-							"opentelemetry-operator-config/sha256":               "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
 						},
 					},
 					Spec: corev1.ServiceSpec{
@@ -591,9 +571,7 @@ service:
 							"operator.opentelemetry.io/collector-service-type":       "monitoring",
 							"operator.opentelemetry.io/collector-monitoring-service": "Exists",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
-						},
+						Annotations: map[string]string{},
 					},
 					Spec: corev1.ServiceSpec{
 						Ports: []corev1.ServicePort{
@@ -683,9 +661,7 @@ service:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
-						},
+						Annotations: map[string]string{},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &one,
@@ -786,9 +762,7 @@ service:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
-						},
+						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
 						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - logging\n      receivers:\n        - examplereceiver\n",
@@ -807,9 +781,7 @@ service:
 							"app.kubernetes.io/version":                        "latest",
 							"operator.opentelemetry.io/collector-service-type": "base",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
-						},
+						Annotations: map[string]string{},
 					},
 					Spec: corev1.ServiceSpec{
 						Ports: []corev1.ServicePort{
@@ -838,7 +810,6 @@ service:
 						},
 						Annotations: map[string]string{
 							"service.beta.openshift.io/serving-cert-secret-name": "test-collector-headless-tls",
-							"opentelemetry-operator-config/sha256":               "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
 						},
 					},
 					Spec: corev1.ServiceSpec{
@@ -867,9 +838,7 @@ service:
 							"operator.opentelemetry.io/collector-service-type":       "monitoring",
 							"operator.opentelemetry.io/collector-monitoring-service": "Exists",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
-						},
+						Annotations: map[string]string{},
 					},
 					Spec: corev1.ServiceSpec{
 						Ports: []corev1.ServicePort{
@@ -1217,9 +1186,7 @@ service:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
-						},
+						Annotations: map[string]string{},
 					},
 					Spec: appsv1.StatefulSetSpec{
 						ServiceName: "test-collector",
@@ -1321,9 +1288,7 @@ service:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
-						},
+						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
 						"collector.yaml": "exporters:\n    logging: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - logging\n            receivers:\n                - prometheus\n",
@@ -1341,9 +1306,7 @@ service:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
-						},
+						Annotations: map[string]string{},
 					},
 				},
 				&corev1.Service{
@@ -1360,9 +1323,7 @@ service:
 							"operator.opentelemetry.io/collector-service-type":       "monitoring",
 							"operator.opentelemetry.io/collector-monitoring-service": "Exists",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
-						},
+						Annotations: map[string]string{},
 					},
 					Spec: corev1.ServiceSpec{
 						Ports: []corev1.ServicePort{
@@ -1616,9 +1577,7 @@ prometheus_cr:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
-						},
+						Annotations: map[string]string{},
 					},
 					Spec: appsv1.StatefulSetSpec{
 						ServiceName: "test-collector",
@@ -1720,9 +1679,7 @@ prometheus_cr:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
-						},
+						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
 						"collector.yaml": "exporters:\n    logging: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - logging\n            receivers:\n                - prometheus\n",
@@ -1740,9 +1697,7 @@ prometheus_cr:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
-						},
+						Annotations: map[string]string{},
 					},
 				},
 				&corev1.Service{
@@ -1759,9 +1714,7 @@ prometheus_cr:
 							"operator.opentelemetry.io/collector-service-type":       "monitoring",
 							"operator.opentelemetry.io/collector-monitoring-service": "Exists",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
-						},
+						Annotations: map[string]string{},
 					},
 					Spec: corev1.ServiceSpec{
 						Ports: []corev1.ServicePort{

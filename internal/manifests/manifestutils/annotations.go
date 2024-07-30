@@ -22,7 +22,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-// Annotations return the annotations for OpenTelemetryCollector pod.
+// Annotations return the annotations for OpenTelemetryCollector resources.
 func Annotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations []string) (map[string]string, error) {
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
@@ -34,14 +34,6 @@ func Annotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations []st
 			}
 		}
 	}
-
-	hash, err := GetConfigMapSHA(instance.Spec.Config)
-	if err != nil {
-		return nil, err
-	}
-
-	// make sure sha256 for configMap is always calculated
-	annotations["opentelemetry-operator-config/sha256"] = hash
 
 	return annotations, nil
 }
@@ -84,6 +76,15 @@ func PodAnnotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations [
 			}
 		}
 	}
+
+	// make sure sha256 for configMap is always calculated
+	hash, err := GetConfigMapSHA(instance.Spec.Config)
+	if err != nil {
+		return nil, err
+	}
+
+	// Adding the ConfigMap Hash only to PodAnnotations
+	podAnnotations["opentelemetry-operator-config/sha256"] = hash
 
 	return podAnnotations, nil
 }

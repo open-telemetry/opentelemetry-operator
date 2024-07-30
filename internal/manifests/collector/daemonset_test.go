@@ -266,7 +266,7 @@ func TestDaemonsetFilterAnnotations(t *testing.T) {
 	d, err := DaemonSet(params)
 	require.NoError(t, err)
 
-	assert.Len(t, d.ObjectMeta.Annotations, 1)
+	assert.Len(t, d.ObjectMeta.Annotations, 0)
 	for k := range excludedAnnotations {
 		assert.NotContains(t, d.ObjectMeta.Annotations, k)
 	}

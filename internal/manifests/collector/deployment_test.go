@@ -348,7 +348,7 @@ func TestDeploymentFilterAnnotations(t *testing.T) {
 	d, err := Deployment(params)
 	require.NoError(t, err)
 
-	assert.Len(t, d.ObjectMeta.Annotations, 1)
+	assert.Len(t, d.ObjectMeta.Annotations, 0)
 	for k := range excludedAnnotations {
 		assert.NotContains(t, d.ObjectMeta.Annotations, k)
 	}

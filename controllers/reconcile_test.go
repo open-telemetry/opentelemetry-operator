@@ -173,8 +173,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							assert.Equal(t, map[string]string{
-								annotationName:                         "true",
-								"opentelemetry-operator-config/sha256": "11d309a64c15c034827053656adb6be67c0885d11092dc63c976a65328bbbbe1",
+								annotationName: "true",
 							}, sa.Annotations)
 							saPatch := sa.DeepCopy()
 							saPatch.Annotations["user-defined-annotation"] = "value"
@@ -217,10 +216,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.NoError(t, err)
 							assert.True(t, exists)
 							assert.Equal(t, map[string]string{
-								annotationName:                         "true",
-								"user-defined-annotation":              "value",
-								"new-annotation":                       "new-value",
-								"opentelemetry-operator-config/sha256": "11d309a64c15c034827053656adb6be67c0885d11092dc63c976a65328bbbbe1",
+								annotationName:            "true",
+								"user-defined-annotation": "value",
+								"new-annotation":          "new-value",
 							}, sa.Annotations)
 						},
 					},
