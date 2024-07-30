@@ -4,7 +4,7 @@ metadata:
   labels:
     "opentelemetry.io/opamp-managed": "true"
 spec:
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
@@ -26,5 +26,4 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
           exporters: [debug]

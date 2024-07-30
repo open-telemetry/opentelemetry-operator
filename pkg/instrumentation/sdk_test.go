@@ -191,6 +191,14 @@ func TestSDKInjection(t *testing.T) {
 									Value: "https://collector:4317",
 								},
 								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
 									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
@@ -212,7 +220,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.instance.id=project1.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).application-name,service.version=latest",
+									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.instance.id=project1.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).application-name,service.version=latest",
 								},
 							},
 						},
@@ -301,6 +309,14 @@ func TestSDKInjection(t *testing.T) {
 									Value: "always_on",
 								},
 								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
 									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
@@ -310,7 +326,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "foo=bar,k8s.container.name=other,service.version=explicitly_set,fromcr=val,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app",
+									Value: "foo=bar,k8s.container.name=other,service.version=explicitly_set,fromcr=val,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
 								},
 							},
 						},
@@ -371,6 +387,14 @@ func TestSDKInjection(t *testing.T) {
 									Value: "my-deployment",
 								},
 								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
 									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
@@ -380,7 +404,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=app,k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,service.instance.id=project1.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).application-name,service.version=latest",
+									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,service.instance.id=project1.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).application-name,service.version=latest",
 								},
 							},
 						},
@@ -1661,6 +1685,14 @@ func TestInjectNginx(t *testing.T) {
 									Value: "http://otlp-endpoint:4317",
 								},
 								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
 									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
@@ -1670,7 +1702,7 @@ func TestInjectNginx(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.namespace.name=ns,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=my-nginx-6c44bcbdd,service.instance.id=ns.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app",
+									Value: "k8s.container.name=app,k8s.namespace.name=ns,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ns.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app",
 								},
 							},
 						},

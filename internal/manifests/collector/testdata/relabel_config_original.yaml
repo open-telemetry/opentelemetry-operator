@@ -47,4 +47,3 @@ service:
       - debug
       receivers:
       - prometheus
-      processors: []

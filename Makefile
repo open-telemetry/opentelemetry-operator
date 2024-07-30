@@ -35,18 +35,8 @@ TARGETALLOCATOR_IMG ?= ${IMG_PREFIX}/${TARGETALLOCATOR_IMG_REPO}:$(addprefix v,$
 OPERATOROPAMPBRIDGE_IMG_REPO ?= operator-opamp-bridge
 OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addprefix v,${VERSION})
 
-# Options for 'bundle-build'
-ifneq ($(origin CHANNELS), undefined)
-BUNDLE_CHANNELS := --channels=$(CHANNELS)
-endif
-ifneq ($(origin DEFAULT_CHANNEL), undefined)
-BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
-endif
-BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
-
-MANIFEST_DIR ?= config/crd/bases
-# kubectl apply does not work on large CRDs.
-CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=0"
+BRIDGETESTSERVER_IMG_REPO ?= e2e-test-app-bridge-server
+BRIDGETESTSERVER_IMG ?= ${IMG_PREFIX}/${BRIDGETESTSERVER_IMG_REPO}:ve2e
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -84,6 +74,49 @@ LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
+# CHANNELS define the bundle channels used in the bundle.
+# Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
+# To re-generate a bundle for other specific channels without changing the standard setup, you can:
+# - use the CHANNELS as arg of the bundle target (e.g make bundle CHANNELS=candidate,fast,stable)
+# - use environment variables to overwrite this value (e.g export CHANNELS="candidate,fast,stable")
+ifneq ($(origin CHANNELS), undefined)
+BUNDLE_CHANNELS := --channels=$(CHANNELS)
+endif
+
+# DEFAULT_CHANNEL defines the default channel used in the bundle.
+# Add a new line here if you would like to change its default config. (E.g DEFAULT_CHANNEL = "stable")
+# To re-generate a bundle for any other default channel without changing the default setup, you can:
+# - use the DEFAULT_CHANNEL as arg of the bundle target (e.g make bundle DEFAULT_CHANNEL=stable)
+# - use environment variables to overwrite this value (e.g export DEFAULT_CHANNEL="stable")
+ifneq ($(origin DEFAULT_CHANNEL), undefined)
+BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
+endif
+BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
+
+# BUNDLE_GEN_FLAGS are the flags passed to the operator-sdk generate bundle command
+BUNDLE_GEN_FLAGS ?= -q --overwrite --version $(OPERATOR_VERSION) $(BUNDLE_METADATA_OPTS)
+
+# USE_IMAGE_DIGESTS defines if images are resolved via tags or digests
+# You can enable this value if you would like to use SHA Based Digests
+# To enable set flag to true
+USE_IMAGE_DIGESTS ?= false
+ifeq ($(USE_IMAGE_DIGESTS), true)
+	BUNDLE_GEN_FLAGS += --use-image-digests
+endif
+MANIFEST_DIR ?= config/crd/bases
+
+# kubectl apply does not work on large CRDs.
+CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=0"
+
+# Choose wich version to generate
+BUNDLE_VARIANT ?= community
+BUNDLE_DIR = ./bundle/$(BUNDLE_VARIANT)
+MANIFESTS_DIR = config/manifests/$(BUNDLE_VARIANT)
+BUNDLE_BUILD_GEN_FLAGS ?= $(BUNDLE_GEN_FLAGS) --output-dir . --kustomize-dir ../../$(MANIFESTS_DIR)
+
+MIN_KUBERNETES_VERSION ?= 1.23.0
+MIN_OPENSHIFT_VERSION ?= 4.12
+
 ## On MacOS, use gsed instead of sed, to make sed behavior
 ## consistent with Linux.
 SED ?= $(shell which gsed 2>/dev/null || which sed)
@@ -96,7 +129,6 @@ ensure-generate-is-noop: set-image-controller generate bundle
 	@git restore config/manager/kustomization.yaml
 	@git diff -s --exit-code apis/v1alpha1/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
 	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
-	@git diff -s --exit-code bundle.Dockerfile || (echo "Build failed: the bundle.Dockerfile file has been changed. The file should be the same as generated one. Run 'make bundle' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code docs/api.md || (echo "Build failed: the api.md file has been changed but the generated api.md file isn't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
 
 .PHONY: all
@@ -188,6 +220,7 @@ undeploy: set-image-controller
 release-artifacts: set-image-controller
 	mkdir -p dist
 	$(KUSTOMIZE) build config/default -o dist/opentelemetry-operator.yaml
+	$(KUSTOMIZE) build config/overlays/openshift -o dist/opentelemetry-operator-openshift.yaml
 
 # Generate manifests e.g. CRD, RBAC etc.
 .PHONY: manifests
@@ -286,11 +319,12 @@ e2e-upgrade: undeploy chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade
 
 .PHONY: prepare-e2e
-prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge container-bridge-test-server start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
-	$(OPERATOR_SDK) scorecard -w=5m bundle || (echo "scorecard test failed" && exit 1)
+	$(OPERATOR_SDK) scorecard -w=5m bundle/community || (echo "scorecard test for community bundle failed" && exit 1)
+	$(OPERATOR_SDK) scorecard -w=5m bundle/openshift || (echo "scorecard test for openshift bundle failed" && exit 1)
 
 
 # Build the container image, used only for local dev purposes
@@ -323,6 +357,11 @@ container-operator-opamp-bridge: GOOS = linux
 container-operator-opamp-bridge: operator-opamp-bridge
 	docker build -t ${OPERATOROPAMPBRIDGE_IMG} cmd/operator-opamp-bridge
 
+.PHONY: container-bridge-test-server
+container-bridge-test-server: GOOS = linux
+container-bridge-test-server:
+	docker build -t ${BRIDGETESTSERVER_IMG} tests/test-e2e-apps/bridge-server
+
 .PHONY: start-kind
 start-kind: kind
 ifeq (true,$(START_KIND_CLUSTER))
@@ -339,7 +378,7 @@ install-targetallocator-prometheus-crds:
 	./hack/install-targetallocator-prometheus-crds.sh
 
 .PHONY: load-image-all
-load-image-all: load-image-operator load-image-target-allocator load-image-operator-opamp-bridge
+load-image-all: load-image-operator load-image-target-allocator load-image-operator-opamp-bridge load-image-bridge-test-server
 
 .PHONY: load-image-operator
 load-image-operator: container kind
@@ -358,6 +397,9 @@ else
 	$(MAKE) container-target-allocator-push
 endif
 
+.PHONY: load-image-bridge-test-server
+load-image-bridge-test-server: container-bridge-test-server kind
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${BRIDGETESTSERVER_IMG}
 
 .PHONY: load-image-operator-opamp-bridge
 load-image-operator-opamp-bridge: container-operator-opamp-bridge kind
@@ -398,7 +440,7 @@ KUSTOMIZE_VERSION ?= v5.0.3
 CONTROLLER_TOOLS_VERSION ?= v0.14.0
 GOLANGCI_LINT_VERSION ?= v1.57.2
 KIND_VERSION ?= v0.20.0
-CHAINSAW_VERSION ?= v0.1.7
+CHAINSAW_VERSION ?= v0.2.5
 
 .PHONY: install-tools
 install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kind operator-sdk chainsaw
@@ -463,28 +505,53 @@ operator-sdk: $(LOCALBIN)
 	}
 
 # Generate bundle manifests and metadata, then validate generated files.
-.PHONY: bundle
-bundle: kustomize operator-sdk manifests set-image-controller api-docs
-	$(OPERATOR_SDK) generate kustomize manifests -q
-	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+.PHONY: generate-bundle
+generate-bundle: kustomize operator-sdk manifests set-image-controller api-docs
+	sed -e 's/minKubeVersion: .*/minKubeVersion: $(MIN_KUBERNETES_VERSION)/' config/manifests/$(BUNDLE_VARIANT)/bases/opentelemetry-operator.clusterserviceversion.yaml
+
+	$(OPERATOR_SDK) generate kustomize manifests -q --input-dir $(MANIFESTS_DIR) --output-dir $(MANIFESTS_DIR)
+	cd $(BUNDLE_DIR) && cp ../../PROJECT . && $(KUSTOMIZE) build ../../$(MANIFESTS_DIR) | $(OPERATOR_SDK) generate bundle $(BUNDLE_BUILD_GEN_FLAGS) && rm PROJECT
+
+	# Workaround for https://github.com/operator-framework/operator-sdk/issues/4992
+	echo "" >> bundle/$(BUNDLE_VARIANT)/bundle.Dockerfile
+	echo "LABEL com.redhat.openshift.versions=v$(MIN_OPENSHIFT_VERSION)" >> bundle/$(BUNDLE_VARIANT)/bundle.Dockerfile
+	echo "" >> bundle/$(BUNDLE_VARIANT)/metadata/annotations.yaml
+	echo "  com.redhat.openshift.versions: v$(MIN_OPENSHIFT_VERSION)" >> bundle/$(BUNDLE_VARIANT)/metadata/annotations.yaml
+
+	$(OPERATOR_SDK) bundle validate $(BUNDLE_DIR)
 	./hack/ignore-createdAt-bundle.sh
-	./hack/add-openshift-annotations.sh
-	$(OPERATOR_SDK) bundle validate ./bundle
+
+.PHONY: bundle
+bundle:
+	BUNDLE_VARIANT=community VERSION=$(VERSION) $(MAKE) generate-bundle
+	BUNDLE_VARIANT=openshift VERSION=$(VERSION) $(MAKE) generate-bundle
+
 
 .PHONY: reset
 reset: kustomize operator-sdk manifests
 	$(MAKE) VERSION=${OPERATOR_VERSION} set-image-controller
-	$(OPERATOR_SDK)  generate kustomize manifests -q
-	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version ${OPERATOR_VERSION} $(BUNDLE_METADATA_OPTS)
-	$(OPERATOR_SDK) bundle validate ./bundle
-	./hack/ignore-createdAt-bundle.sh
-	./hack/add-openshift-annotations.sh
+	$(OPERATOR_SDK)  generate kustomize manifests -q --input-dir config/manifests/community --output-dir config/manifests/community
+	$(OPERATOR_SDK)  generate kustomize manifests -q --input-dir config/manifests/openshift --output-dir config/manifests/openshift
+
+	$(KUSTOMIZE) build config/manifests/community | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS) --kustomize-dir config/manifests/community --output-dir bundle/community
+	$(KUSTOMIZE) build config/manifests/openshift |$(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS) --kustomize-dir config/manifests/openshift --output-dir bundle/openshift
+
+	# Workaround for https://github.com/operator-framework/operator-sdk/issues/4992
+	echo "" >> bundle/community/metadata/annotations.yaml
+	echo "  com.redhat.openshift.versions: v$(MIN_OPENSHIFT_VERSION)" >> bundle/community/metadata/annotations.yaml
+	echo "" >> bundle/openshift/metadata/annotations.yaml
+	echo "  com.redhat.openshift.versions: v$(MIN_OPENSHIFT_VERSION)" >> bundle/openshift/metadata/annotations.yaml
+
+	$(OPERATOR_SDK) bundle validate ./bundle/community
+	$(OPERATOR_SDK) bundle validate ./bundle/openshift
+	rm bundle.Dockerfile
 	git checkout config/manager/kustomization.yaml
+	./hack/ignore-createdAt-bundle.sh
 
 # Build the bundle image, used only for local dev purposes
 .PHONY: bundle-build
 bundle-build:
-	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+	docker build -f ./bundle/$(BUNDLE_VARIANT)/bundle.Dockerfile -t $(BUNDLE_IMG) ./bundle/$(BUNDLE_VARIANT)
 
 .PHONY: bundle-push
 bundle-push:

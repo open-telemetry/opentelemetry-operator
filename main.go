@@ -55,6 +55,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	openshiftDashboards "github.com/open-telemetry/opentelemetry-operator/internal/openshift/dashboards"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
@@ -112,6 +113,7 @@ func main() {
 		pprofAddr                        string
 		enableLeaderElection             bool
 		createRBACPermissions            bool
+		createOpenShiftDashboard         bool
 		enableMultiInstrumentation       bool
 		enableApacheHttpdInstrumentation bool
 		enableDotNetInstrumentation      bool
@@ -148,6 +150,7 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	pflag.BoolVar(&createRBACPermissions, "create-rbac-permissions", false, "Automatically create RBAC permissions needed by the processors (deprecated)")
+	pflag.BoolVar(&createOpenShiftDashboard, "openshift-create-dashboard", false, "Create an OpenShift dashboard for monitoring the OpenTelemetryCollector instances")
 	pflag.BoolVar(&enableMultiInstrumentation, "enable-multi-instrumentation", false, "Controls whether the operator supports multi instrumentation")
 	pflag.BoolVar(&enableApacheHttpdInstrumentation, constants.FlagApacheHttpd, true, "Controls whether the operator supports Apache HTTPD auto-instrumentation")
 	pflag.BoolVar(&enableDotNetInstrumentation, constants.FlagDotNet, true, "Controls whether the operator supports dotnet auto-instrumentation")
@@ -216,6 +219,7 @@ func main() {
 		"enable-nginx-instrumentation", enableNginxInstrumentation,
 		"enable-nodejs-instrumentation", enableNodeJSInstrumentation,
 		"enable-java-instrumentation", enableJavaInstrumentation,
+		"create-openshift-dashboard", createOpenShiftDashboard,
 		"zap-message-key", encodeMessageKey,
 		"zap-level-key", encodeLevelKey,
 		"zap-time-key", encodeTimeKey,
@@ -250,13 +254,14 @@ func main() {
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
 		},
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "9f7554c3.opentelemetry.io",
-		LeaseDuration:          &leaseDuration,
-		RenewDeadline:          &renewDeadline,
-		RetryPeriod:            &retryPeriod,
-		PprofBindAddress:       pprofAddr,
+		HealthProbeBindAddress:        probeAddr,
+		LeaderElection:                enableLeaderElection,
+		LeaderElectionID:              "9f7554c3.opentelemetry.io",
+		LeaderElectionReleaseOnCancel: true,
+		LeaseDuration:                 &leaseDuration,
+		RenewDeadline:                 &renewDeadline,
+		RetryPeriod:                   &retryPeriod,
+		PprofBindAddress:              pprofAddr,
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Port:    webhookPort,
 			TLSOpts: optionsTlSOptsFuncs,
@@ -277,8 +282,16 @@ func main() {
 		setupLog.Error(clientErr, "failed to create kubernetes clientset")
 	}
 
-	reviewer := rbac.NewReviewer(clientset)
 	ctx := ctrl.SetupSignalHandler()
+
+	if createOpenShiftDashboard {
+		dashErr := mgr.Add(openshiftDashboards.NewDashboardManagement(clientset))
+		if dashErr != nil {
+			setupLog.Error(dashErr, "failed to create the OpenShift dashboards")
+		}
+	}
+
+	reviewer := rbac.NewReviewer(clientset)
 
 	// builds the operator's configuration
 	ad, err := autodetect.New(restConfig, reviewer)
@@ -445,6 +458,7 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
+	// NOTE: We enable LeaderElectionReleaseOnCancel, and to be safe we need to exit right after the manager does
 	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)

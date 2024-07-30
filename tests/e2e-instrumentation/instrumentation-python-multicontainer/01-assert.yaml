@@ -110,6 +110,7 @@ spec:
     - mountPath: /otel-auto-instrumentation-python
       name: opentelemetry-auto-instrumentation-python
   - args:
+    - --feature-gates=-component.UseLocalHostAsDefaultHost
     - --config=env:OTEL_CONFIG
     name: otc-container
   initContainers:

@@ -170,6 +170,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						ManagementState: v1beta1.ManagementStateManaged,
 						Replicas:        &one,
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
@@ -205,6 +206,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            v1beta1.ModeSidecar,
 					UpgradeStrategy: "adhoc",
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &five,
 						ManagementState: v1beta1.ManagementStateManaged,
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
@@ -239,6 +241,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            v1beta1.ModeSidecar,
 					UpgradeStrategy: "adhoc",
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &five,
 						ManagementState: v1beta1.ManagementStateUnmanaged,
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
@@ -271,6 +274,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            v1beta1.ModeDeployment,
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
@@ -307,6 +311,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						ManagementState: v1beta1.ManagementStateManaged,
 						Replicas:        &one,
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
@@ -350,6 +355,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
@@ -389,6 +395,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
@@ -439,6 +446,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
@@ -484,6 +492,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
@@ -528,6 +537,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
@@ -1349,6 +1359,71 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			)
 			ctx := context.Background()
 			warnings, err := cvw.ValidateCreate(ctx, &test.otelcol)
+			if test.expectedErr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, test.expectedErr)
+			}
+			assert.Equal(t, len(test.expectedWarnings), len(warnings))
+			assert.ElementsMatch(t, warnings, test.expectedWarnings)
+		})
+	}
+}
+
+func TestOTELColValidateUpdateWebhook(t *testing.T) {
+	tests := []struct { //nolint:govet
+		name             string
+		otelcolOld       v1beta1.OpenTelemetryCollector
+		otelcolNew       v1beta1.OpenTelemetryCollector
+		expectedErr      string
+		expectedWarnings []string
+		shouldFailSar    bool
+	}{
+		{
+			name: "mode should not be changed",
+			otelcolOld: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{Mode: v1beta1.ModeStatefulSet},
+			},
+			otelcolNew: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{Mode: v1beta1.ModeDeployment},
+			},
+			expectedErr: "which does not support modification",
+		},
+	}
+	bv := func(collector v1beta1.OpenTelemetryCollector) admission.Warnings {
+		var warnings admission.Warnings
+		cfg := config.New(
+			config.WithCollectorImage("default-collector"),
+			config.WithTargetAllocatorImage("default-ta-allocator"),
+		)
+		params := manifests.Params{
+			Log:     logr.Discard(),
+			Config:  cfg,
+			OtelCol: collector,
+		}
+		_, err := collectorManifests.Build(params)
+		if err != nil {
+			warnings := append(warnings, err.Error())
+			return warnings
+		}
+		return nil
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			cvw := v1beta1.NewCollectorWebhook(
+				logr.Discard(),
+				testScheme,
+				config.New(
+					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
+				),
+				getReviewer(test.shouldFailSar),
+				bv,
+			)
+			ctx := context.Background()
+			warnings, err := cvw.ValidateUpdate(ctx, &test.otelcolOld, &test.otelcolNew)
 			if test.expectedErr == "" {
 				assert.NoError(t, err)
 			} else {

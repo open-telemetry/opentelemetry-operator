@@ -1,10 +1,11 @@
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
   labels:
     "opentelemetry.io/opamp-managed": "test-bridge"
 spec:
-  config: |
+  config:
     receivers:
       otlp:
         protocols:

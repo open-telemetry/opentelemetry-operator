@@ -91,6 +91,7 @@ const (
 	promFile                 = "testdata/test.yaml"
 	updatedPromFile          = "testdata/test_ta_update.yaml"
 	testFileIngress          = "testdata/ingress_testdata.yaml"
+	otlpTestFile             = "testdata/otlp_test.yaml"
 )
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
