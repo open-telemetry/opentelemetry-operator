@@ -1,4 +1,3 @@
-
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -39,6 +38,7 @@ config/manager/kustomization.yaml
 kubeconfig
 tests/_build/
 config/rbac/extra-permissions-operator/
+config/rbac/certmanager-permissions/
 
 # autoinstrumentation artifacts
 build

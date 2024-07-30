@@ -1,0 +1,63 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: prometheus-cr
+spec:
+  endpoints:
+    - port: monitoring
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: opentelemetry-operator
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-metrics
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-metrics
+          image: curlimages/curl
+          args:
+            - /bin/sh
+            - -c
+            - |
+              for i in $(seq 30); do
+                if curl -m 1 -s http://prometheus-cr-collector:9090/metrics | grep "Client was authenticated"; then exit 0; fi
+                sleep 5
+              done
+              exit 1
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-jobs
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-metrics
+          image: curlimages/curl
+          args:
+            - /bin/sh
+            - -c
+            - curl -s http://prometheus-cr-targetallocator/scrape_configs | grep "prometheus-cr"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-scrape-configs
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-metrics
+          image: curlimages/curl
+          args:
+            - /bin/sh
+            - -c
+            - curl -s http://prometheus-cr-targetallocator/jobs | grep "prometheus-cr"

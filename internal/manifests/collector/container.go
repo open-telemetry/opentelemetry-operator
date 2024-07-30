@@ -26,8 +26,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -88,6 +90,14 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 			corev1.VolumeMount{
 				Name:      naming.ConfigMapVolume(),
 				MountPath: "/conf",
+			})
+	}
+
+	if cfg.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+		volumeMounts = append(volumeMounts,
+			corev1.VolumeMount{
+				Name:      naming.TAClientCertificate(otelcol.Name),
+				MountPath: manifestutils.TLSDirPath,
 			})
 	}
 

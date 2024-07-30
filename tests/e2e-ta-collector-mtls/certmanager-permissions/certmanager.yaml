@@ -1,0 +1,17 @@
+- op: add
+  path: /rules/-
+  value:
+    apiGroups:
+    - cert-manager.io
+    resources:
+    - issuers
+    - certificaterequests
+    - certificates
+    verbs:
+    - create
+    - get
+    - list
+    - watch
+    - update
+    - patch
+    - delete
