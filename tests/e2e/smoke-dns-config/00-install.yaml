@@ -19,7 +19,7 @@ spec:
       batch:
         timeout: 10s
     exporters:
-      logging:
+      debug:
     service:
       pipelines:
         traces:
