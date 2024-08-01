@@ -56,7 +56,7 @@ spec:
     ReportsStatus: true
   componentsAllowed:
     exporters:
-      - logging
+      - debug
     processors:
       - memory_limiter
     receivers:
