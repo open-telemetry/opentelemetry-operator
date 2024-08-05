@@ -71,7 +71,7 @@ func ReplaceConfig(otelcol v1beta1.OpenTelemetryCollector, targetAllocator *v1al
 
 	// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
 	// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
-	updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(targetAllocator.Name))
+	updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(targetAllocator.Name), targetAllocator.Namespace)
 	if getCfgPromErr != nil {
 		return "", getCfgPromErr
 	}
