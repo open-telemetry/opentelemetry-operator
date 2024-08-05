@@ -2,7 +2,7 @@
 change_type: enhancement
 
 # The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
-component: collector
+component: auto-instrumentation
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
 note: set OTEL_EXPORTER_OTLP_PROTOCOL instead of signal specific env vars in python instrumentation
