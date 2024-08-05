@@ -94,6 +94,42 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 
 type ParserRetriever func(string) ComponentPortParser
 
+type ComponentParser interface {
+	ComponentDefaulter
+	ComponentPortParser
+}
+
+type ComponentDefaulter interface {
+	Default(config interface{}) error
+}
+
+type OptionDefault func(*Default)
+
+func WithComponentPortParser(cpp ComponentPortParser) OptionDefault {
+	return func(d *Default) {
+		d.ComponentPortParser = cpp
+	}
+}
+
+func NewComponentParser(opts ...OptionDefault) ComponentParser {
+	d := &Default{
+		ComponentPortParser: &NopParser{},
+		doDefault:           func(config interface{}) error { return nil },
+	}
+
+	for _, o := range opts {
+		o(d)
+	}
+	return d
+}
+
+type Default struct {
+	ComponentPortParser
+	doDefault func(config interface{}) error
+}
+
+func (d *Default) Default(config interface{}) error { return d.doDefault(config) }
+
 type ComponentPortParser interface {
 	// Ports returns the service ports parsed based on the component's configuration where name is the component's name
 	// of the form "name" or "type/name"

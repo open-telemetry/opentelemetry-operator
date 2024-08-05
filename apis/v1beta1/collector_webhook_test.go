@@ -38,6 +38,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
@@ -500,6 +501,97 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						Replicas:           &one,
 						AllocationStrategy: TargetAllocatorAllocationStrategyLeastWeighted,
 					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			cvw := &CollectorWebhook{
+				logger: logr.Discard(),
+				scheme: testScheme,
+				cfg: config.New(
+					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
+				),
+			}
+			ctx := context.Background()
+			err := cvw.Default(ctx, &test.otelcol)
+			assert.NoError(t, err)
+			assert.Equal(t, test.expected, test.otelcol)
+		})
+	}
+}
+
+func TestCollectorDefaultingWebhook_DoNotUseLocalHostAsDefaultHost(t *testing.T) {
+	if !featuregate.DoNotUseLocalHostAsDefaultHost.IsEnabled() {
+		return
+	}
+
+	one := int32(1)
+
+	if err := AddToScheme(testScheme); err != nil {
+		fmt.Printf("failed to register scheme: %v", err)
+		os.Exit(1)
+	}
+
+	tests := []struct {
+		name     string
+		otelcol  OpenTelemetryCollector
+		expected OpenTelemetryCollector
+	}{
+		{
+			name: "default address otlp receiver",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Config: Config{
+						Receivers: AnyConfig{
+							Object: map[string]interface{}{
+								"otlp/something": map[string]interface{}{
+									"protocols": map[string]interface{}{
+										"http": nil,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				Spec: OpenTelemetryCollectorSpec{
+					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
+						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
+						ManagementState: ManagementStateManaged,
+						Replicas:        &one,
+						PodDisruptionBudget: &PodDisruptionBudgetSpec{
+							MaxUnavailable: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 1,
+							},
+						},
+					},
+					Config: Config{
+						Receivers: AnyConfig{
+							Object: map[string]interface{}{
+								"otlp/something": map[string]interface{}{
+									"protocols": map[string]interface{}{
+										"http": map[string]interface{}{
+											"endpoint": "0.0.0.0:4318",
+										},
+									},
+								},
+							},
+						},
+					},
+					Mode:            ModeDeployment,
+					UpgradeStrategy: UpgradeStrategyAutomatic,
 				},
 			},
 		},
