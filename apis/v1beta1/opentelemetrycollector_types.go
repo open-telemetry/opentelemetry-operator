@@ -177,6 +177,11 @@ type TargetAllocatorEmbedded struct {
 	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.
 	// +optional
 	Image string `json:"image,omitempty"`
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	// Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
