@@ -330,6 +330,11 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, in
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[serviceTypeLabel] = BaseServiceType.String()
 
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	if err != nil {
+		return v1.Service{}
+	}
+
 	svcPorts := []v1.ServicePort{}
 	for _, p := range ports {
 		p.ServicePort.TargetPort = intstr.FromInt32(p.Port)
@@ -341,7 +346,7 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, in
 			Name:        name,
 			Namespace:   "default",
 			Labels:      labels,
-			Annotations: params.OtelCol.Annotations,
+			Annotations: annotations,
 		},
 		Spec: v1.ServiceSpec{
 			InternalTrafficPolicy: &internalTrafficPolicy,

@@ -22,10 +22,10 @@ spec:
     processors:
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
-          exporters: [logging]
+          exporters: [debug]

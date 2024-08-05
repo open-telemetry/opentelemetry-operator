@@ -60,9 +60,6 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	// verify
 	assert.Equal(t, "my-instance-collector", ss.Name)
 	assert.Equal(t, "my-instance-collector", ss.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", ss.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", ss.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", ss.Annotations["prometheus.io/path"])
 	assert.Equal(t, testTolerationValues, ss.Spec.Template.Spec.Tolerations)
 
 	assert.Len(t, ss.Spec.Template.Spec.Containers, 1)
@@ -361,7 +358,7 @@ func TestStatefulSetFilterAnnotations(t *testing.T) {
 	d, err := StatefulSet(params)
 	require.NoError(t, err)
 
-	assert.Len(t, d.ObjectMeta.Annotations, 4)
+	assert.Len(t, d.ObjectMeta.Annotations, 0)
 	for k := range excludedAnnotations {
 		assert.NotContains(t, d.ObjectMeta.Annotations, k)
 	}
@@ -535,9 +532,9 @@ func TestStatefulSetInitContainer(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", s.Name)
 	assert.Equal(t, "my-instance-collector", s.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", s.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", s.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", s.Annotations["prometheus.io/path"])
+	assert.Equal(t, "true", s.Spec.Template.Annotations["prometheus.io/scrape"])
+	assert.Equal(t, "8888", s.Spec.Template.Annotations["prometheus.io/port"])
+	assert.Equal(t, "/metrics", s.Spec.Template.Annotations["prometheus.io/path"])
 	assert.Len(t, s.Spec.Template.Spec.InitContainers, 1)
 }
 
@@ -619,9 +616,9 @@ func TestStatefulSetAdditionalContainers(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", s.Name)
 	assert.Equal(t, "my-instance-collector", s.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", s.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", s.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", s.Annotations["prometheus.io/path"])
+	assert.Equal(t, "true", s.Spec.Template.Annotations["prometheus.io/scrape"])
+	assert.Equal(t, "8888", s.Spec.Template.Annotations["prometheus.io/port"])
+	assert.Equal(t, "/metrics", s.Spec.Template.Annotations["prometheus.io/path"])
 	assert.Len(t, s.Spec.Template.Spec.Containers, 2)
 	assert.Equal(t, v1.Container{Name: "test"}, s.Spec.Template.Spec.Containers[0])
 }
