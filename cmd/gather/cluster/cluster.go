@@ -1,3 +1,17 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cluster
 
 import (
@@ -9,9 +23,6 @@ import (
 	"reflect"
 	"strings"
 
-	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/gather/config"
 	routev1 "github.com/openshift/api/route/v1"
 	operatorsv1 "github.com/operator-framework/api/pkg/operators/v1"
 	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -25,6 +36,10 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/gather/config"
 )
 
 type Cluster struct {
@@ -141,6 +156,7 @@ func (c *Cluster) GetOLMInfo() error {
 		return err
 	}
 	for _, o := range operators.Items {
+		o := o
 		writeToFile(outputDir, &o)
 
 	}
@@ -154,6 +170,7 @@ func (c *Cluster) GetOLMInfo() error {
 		return err
 	}
 	for _, o := range operatorGroups.Items {
+		o := o
 		if strings.Contains(o.Name, "opentelemetry") {
 			writeToFile(outputDir, &o)
 		}
@@ -168,6 +185,7 @@ func (c *Cluster) GetOLMInfo() error {
 		return err
 	}
 	for _, o := range subscriptions.Items {
+		o := o
 		writeToFile(outputDir, &o)
 
 	}
@@ -181,6 +199,7 @@ func (c *Cluster) GetOLMInfo() error {
 		return err
 	}
 	for _, o := range ips.Items {
+		o := o
 		writeToFile(outputDir, &o)
 	}
 
@@ -193,6 +212,7 @@ func (c *Cluster) GetOLMInfo() error {
 		return err
 	}
 	for _, o := range csvs.Items {
+		o := o
 		if strings.Contains(o.Name, "opentelemetry") {
 			writeToFile(outputDir, &o)
 		}
@@ -214,6 +234,7 @@ func (c *Cluster) GetOpenTelemetryCollectors() error {
 	errorDetected := false
 
 	for _, otelCol := range otelCols.Items {
+		otelCol := otelCol
 		err := c.processOTELCollector(&otelCol)
 		if err != nil {
 			log.Fatalln(err)
@@ -240,6 +261,7 @@ func (c *Cluster) GetInstrumentations() error {
 	errorDetected := false
 
 	for _, instr := range instrumentations.Items {
+		instr := instr
 		outputDir := filepath.Join(c.config.CollectionDir, instr.Namespace)
 		err := os.MkdirAll(outputDir, os.ModePerm)
 		if err != nil {

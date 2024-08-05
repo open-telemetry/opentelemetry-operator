@@ -1,13 +1,23 @@
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
 
-	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/gather/cluster"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/gather/config"
 	routev1 "github.com/openshift/api/route/v1"
 	operatorsv1 "github.com/operator-framework/api/pkg/operators/v1"
 	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -20,6 +30,11 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+
+	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/gather/cluster"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/gather/config"
 )
 
 var scheme *k8sruntime.Scheme
@@ -43,14 +58,29 @@ func init() {
 func main() {
 	config, err := config.NewConfig(scheme)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalln(err)
 		os.Exit(1)
 	}
 
 	cluster := cluster.NewCluster(&config)
-	cluster.GetOperatorLogs()
-	cluster.GetOperatorDeploymentInfo()
-	cluster.GetOLMInfo()
-	cluster.GetOpenTelemetryCollectors()
-	cluster.GetInstrumentations()
+	err = cluster.GetOperatorLogs()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = cluster.GetOperatorDeploymentInfo()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = cluster.GetOLMInfo()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = cluster.GetOpenTelemetryCollectors()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = cluster.GetInstrumentations()
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
