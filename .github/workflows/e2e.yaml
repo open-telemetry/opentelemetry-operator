@@ -57,7 +57,7 @@ jobs:
         path: bin
         key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
     - name: Install chainsaw
-      uses: kyverno/action-install-chainsaw@v0.2.7
+      uses: kyverno/action-install-chainsaw@v0.2.8
     - name: Install tools
       run: make install-tools
     - name: Prepare e2e tests

@@ -5,6 +5,7 @@ metadata:
   creationTimestamp: null
   name: targetallocator-kubernetessd
 spec:
+  namespace: chainsaw-targetallocator-kubernetessd
   steps:
   - name: step-00
     try:
