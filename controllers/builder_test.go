@@ -26,6 +26,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	policyV1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -219,6 +220,38 @@ service:
 								DNSConfig:             &corev1.PodDNSConfig{},
 								ServiceAccountName:    "test-collector",
 							},
+						},
+					},
+				},
+				&policyV1.PodDisruptionBudget{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-collector",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-collector",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-collector",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: map[string]string{},
+					},
+					Spec: policyV1.PodDisruptionBudgetSpec{
+						Selector: &v1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/component":  "opentelemetry-collector",
+								"app.kubernetes.io/instance":   "test.test",
+								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/name":       "test-collector",
+								"app.kubernetes.io/part-of":    "opentelemetry",
+								"app.kubernetes.io/version":    "latest",
+							},
+						},
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
 						},
 					},
 				},
@@ -465,6 +498,38 @@ service:
 								DNSConfig:             &corev1.PodDNSConfig{},
 								ServiceAccountName:    "test-collector",
 							},
+						},
+					},
+				},
+				&policyV1.PodDisruptionBudget{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-collector",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-collector",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-collector",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: map[string]string{},
+					},
+					Spec: policyV1.PodDisruptionBudgetSpec{
+						Selector: &v1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/component":  "opentelemetry-collector",
+								"app.kubernetes.io/instance":   "test.test",
+								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/name":       "test-collector",
+								"app.kubernetes.io/part-of":    "opentelemetry",
+								"app.kubernetes.io/version":    "latest",
+							},
+						},
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
 						},
 					},
 				},
@@ -747,6 +812,38 @@ service:
 								DNSConfig:             &corev1.PodDNSConfig{},
 								ServiceAccountName:    "my-special-sa",
 							},
+						},
+					},
+				},
+				&policyV1.PodDisruptionBudget{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-collector",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-collector",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-collector",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: map[string]string{},
+					},
+					Spec: policyV1.PodDisruptionBudgetSpec{
+						Selector: &v1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/component":  "opentelemetry-collector",
+								"app.kubernetes.io/instance":   "test.test",
+								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/name":       "test-collector",
+								"app.kubernetes.io/part-of":    "opentelemetry",
+								"app.kubernetes.io/version":    "latest",
+							},
+						},
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
 						},
 					},
 				},
@@ -1163,8 +1260,9 @@ service:
 						Mode:   "statefulset",
 						Config: goodConfig,
 						TargetAllocator: v1beta1.TargetAllocatorEmbedded{
-							Enabled:        true,
-							FilterStrategy: "relabel-config",
+							Enabled:            true,
+							FilterStrategy:     "relabel-config",
+							AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyConsistentHashing,
 							PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 								Enabled: true,
 							},
@@ -1274,6 +1372,38 @@ service:
 							},
 						},
 						PodManagementPolicy: "Parallel",
+					},
+				},
+				&policyV1.PodDisruptionBudget{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-collector",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-collector",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-collector",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: map[string]string{},
+					},
+					Spec: policyV1.PodDisruptionBudgetSpec{
+						Selector: &v1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/component":  "opentelemetry-collector",
+								"app.kubernetes.io/instance":   "test.test",
+								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/name":       "test-collector",
+								"app.kubernetes.io/part-of":    "opentelemetry",
+								"app.kubernetes.io/version":    "latest",
+							},
+						},
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
 					},
 				},
 				&corev1.ConfigMap{
@@ -1530,6 +1660,39 @@ prometheus_cr:
 						Selector: taSelectorLabels,
 					},
 				},
+				&policyV1.PodDisruptionBudget{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-targetallocator",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-targetallocator",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-targetallocator",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: map[string]string{
+							"opentelemetry-targetallocator-config/hash": "9d78d2ecfad18bad24dec7e9a825b4ce45657ecbb2e6b32845b585b7c15ea407",
+						},
+					},
+					Spec: policyV1.PodDisruptionBudgetSpec{
+						Selector: &v1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/component":  "opentelemetry-targetallocator",
+								"app.kubernetes.io/instance":   "test.test",
+								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/name":       "test-targetallocator",
+								"app.kubernetes.io/part-of":    "opentelemetry",
+							},
+						},
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
+					},
+				},
 			},
 			wantErr: false,
 		},
@@ -1553,7 +1716,8 @@ prometheus_cr:
 							PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 								Enabled: true,
 							},
-							FilterStrategy: "relabel-config",
+							AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyConsistentHashing,
+							FilterStrategy:     "relabel-config",
 							Observability: v1beta1.ObservabilitySpec{
 								Metrics: v1beta1.MetricsConfigSpec{
 									EnableMetrics: true,
@@ -1667,6 +1831,38 @@ prometheus_cr:
 						PodManagementPolicy: "Parallel",
 					},
 				},
+				&policyV1.PodDisruptionBudget{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-collector",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-collector",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-collector",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: map[string]string{},
+					},
+					Spec: policyV1.PodDisruptionBudgetSpec{
+						Selector: &v1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/component":  "opentelemetry-collector",
+								"app.kubernetes.io/instance":   "test.test",
+								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/name":       "test-collector",
+								"app.kubernetes.io/part-of":    "opentelemetry",
+								"app.kubernetes.io/version":    "latest",
+							},
+						},
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
+					},
+				},
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-collector-" + goodConfigHash,
@@ -1919,6 +2115,39 @@ prometheus_cr:
 							},
 						},
 						Selector: taSelectorLabels,
+					},
+				},
+				&policyV1.PodDisruptionBudget{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-targetallocator",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-targetallocator",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-targetallocator",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: map[string]string{
+							"opentelemetry-targetallocator-config/hash": "9d78d2ecfad18bad24dec7e9a825b4ce45657ecbb2e6b32845b585b7c15ea407",
+						},
+					},
+					Spec: policyV1.PodDisruptionBudgetSpec{
+						Selector: &v1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/component":  "opentelemetry-targetallocator",
+								"app.kubernetes.io/instance":   "test.test",
+								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/name":       "test-targetallocator",
+								"app.kubernetes.io/part-of":    "opentelemetry",
+							},
+						},
+						MaxUnavailable: &intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 1,
+						},
 					},
 				},
 				&monitoringv1.ServiceMonitor{

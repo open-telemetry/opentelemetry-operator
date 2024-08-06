@@ -27,16 +27,18 @@ import (
 )
 
 func PodDisruptionBudget(params Params) (*policyV1.PodDisruptionBudget, error) {
-
+	pdbSpec := params.TargetAllocator.Spec.PodDisruptionBudget.DeepCopy()
 	// defaulter doesn't set PodDisruptionBudget if the strategy isn't valid,
 	// if PodDisruptionBudget != nil and stategy isn't correct, users have set
 	// it wrongly
-	if params.TargetAllocator.Spec.AllocationStrategy != v1beta1.TargetAllocatorAllocationStrategyConsistentHashing &&
+	if pdbSpec != nil && params.TargetAllocator.Spec.AllocationStrategy != v1beta1.TargetAllocatorAllocationStrategyConsistentHashing &&
 		params.TargetAllocator.Spec.AllocationStrategy != v1beta1.TargetAllocatorAllocationStrategyPerNode {
 		params.Log.V(4).Info("current allocation strategy not compatible, skipping podDisruptionBudget creation")
 		return nil, fmt.Errorf("target allocator pdb has been configured but the allocation strategy isn't not compatible")
+	} else if pdbSpec == nil && params.TargetAllocator.Spec.AllocationStrategy == v1beta1.TargetAllocatorAllocationStrategyLeastWeighted {
+		params.Log.V(4).Info("current allocation strategy not compatible, skipping podDisruptionBudget creation")
+		return nil, nil
 	}
-	pdbSpec := params.TargetAllocator.Spec.PodDisruptionBudget.DeepCopy()
 	// if pdb isn't provided for target allocator and it's enabled
 	// using a valid strategy (consistent-hashing, per-node),
 	// we set MaxUnavailable 1, which will work even if there is

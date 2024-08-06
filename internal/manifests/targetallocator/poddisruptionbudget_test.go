@@ -164,8 +164,13 @@ func TestPDBWithNotValidStrategy(t *testing.T) {
 				TargetAllocator: targetAllocator,
 			})
 
-			// verify
-			assert.Error(t, err)
+			// verify that we error if the spec is set here
+			if test.spec.DeepCopy() != nil {
+				assert.Error(t, err)
+			} else {
+				// Should be no error if no one is attempting to set a PDB here
+				assert.NoError(t, err)
+			}
 			assert.Nil(t, pdb)
 		})
 	}
