@@ -98,7 +98,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 	if insts.Python.Instrumentation != nil {
 		otelinst := *insts.Python.Instrumentation
 		var err error
-		i.logger.V(1).Info("injecting Python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+		i.logger.V(1).Info("injecting Python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name, "spec", otelinst.Spec.Python)
 
 		pythonContainers := insts.Python.Containers
 
