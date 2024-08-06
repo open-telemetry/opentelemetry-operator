@@ -54,6 +54,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	openshiftDashboards "github.com/open-telemetry/opentelemetry-operator/internal/openshift/dashboards"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
@@ -366,13 +367,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = controllers.NewReconciler(controllers.Params{
+	collectorReconciler := controllers.NewReconciler(controllers.Params{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
 		Scheme:   mgr.GetScheme(),
 		Config:   cfg,
 		Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
-	}).SetupWithManager(mgr); err != nil {
+	})
+
+	if err = collectorReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
 		os.Exit(1)
 	}
@@ -404,7 +407,22 @@ func main() {
 
 		}
 
-		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics); err != nil {
+		bv := func(collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
+			var warnings admission.Warnings
+			params, newErr := collectorReconciler.GetParams(collector)
+			if newErr != nil {
+				warnings = append(warnings, newErr.Error())
+				return warnings
+			}
+			_, err = collectorManifests.Build(params)
+			if err != nil {
+				warnings = append(warnings, err.Error())
+				return warnings
+			}
+			return warnings
+		}
+
+		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
