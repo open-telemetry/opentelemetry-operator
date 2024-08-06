@@ -176,6 +176,7 @@ service:
 										},
 									},
 								},
+								ImagePullSecrets: []corev1.LocalObjectReference{},
 								Containers: []corev1.Container{
 									{
 										Name:  "otc-container",
@@ -422,6 +423,7 @@ service:
 										},
 									},
 								},
+								ImagePullSecrets: []corev1.LocalObjectReference{},
 								Containers: []corev1.Container{
 									{
 										Name:  "otc-container",
@@ -704,6 +706,7 @@ service:
 										},
 									},
 								},
+								ImagePullSecrets: []corev1.LocalObjectReference{},
 								Containers: []corev1.Container{
 									{
 										Name:  "otc-container",
@@ -1230,6 +1233,7 @@ service:
 										},
 									},
 								},
+								ImagePullSecrets: []corev1.LocalObjectReference{},
 								Containers: []corev1.Container{
 									{
 										Name:  "otc-container",
@@ -1621,6 +1625,7 @@ prometheus_cr:
 										},
 									},
 								},
+								ImagePullSecrets: []corev1.LocalObjectReference{},
 								Containers: []corev1.Container{
 									{
 										Name:  "otc-container",
