@@ -9,7 +9,7 @@ spec:
       containers:
       - args:
         - --config=/conf/collector.yaml
-        - --feature-gates=-confmap.unifyEnvVarExpansion,-component.UseLocalHostAsDefaultHost
+        - --feature-gates=-component.UseLocalHostAsDefaultHost
         name: otc-container
         volumeMounts:
         - mountPath: /conf

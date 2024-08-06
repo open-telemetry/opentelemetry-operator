@@ -44,16 +44,9 @@ func TestDefaultAnnotations(t *testing.T) {
 	}
 
 	// test
-	annotations, err := Annotations(otelcol, []string{})
-	require.NoError(t, err)
 	podAnnotations, err := PodAnnotations(otelcol, []string{})
 	require.NoError(t, err)
 
-	//verify
-	assert.Equal(t, "true", annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", annotations["prometheus.io/path"])
-	assert.Equal(t, "5b3b62aa5e0a3c7250084c2b49190e30b72fc2ad352ffbaa699224e1aa900834", annotations["opentelemetry-operator-config/sha256"])
 	//verify propagation from metadata.annotations to spec.template.spec.metadata.annotations
 	assert.Equal(t, "true", podAnnotations["prometheus.io/scrape"])
 	assert.Equal(t, "8888", podAnnotations["prometheus.io/port"])
@@ -87,7 +80,6 @@ func TestNonDefaultPodAnnotation(t *testing.T) {
 	assert.NotContains(t, annotations, "prometheus.io/scrape", "Prometheus scrape annotation should not exist")
 	assert.NotContains(t, annotations, "prometheus.io/port", "Prometheus port annotation should not exist")
 	assert.NotContains(t, annotations, "prometheus.io/path", "Prometheus path annotation should not exist")
-	assert.Equal(t, "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d", annotations["opentelemetry-operator-config/sha256"])
 	//verify propagation from metadata.annotations to spec.template.spec.metadata.annotations
 	assert.NotContains(t, podAnnotations, "prometheus.io/scrape", "Prometheus scrape annotation should not exist in pod annotations")
 	assert.NotContains(t, podAnnotations, "prometheus.io/port", "Prometheus port annotation should not exist in pod annotations")
@@ -102,9 +94,8 @@ func TestUserAnnotations(t *testing.T) {
 			Name:      "my-instance",
 			Namespace: "my-ns",
 			Annotations: map[string]string{"prometheus.io/scrape": "false",
-				"prometheus.io/port":                   "1234",
-				"prometheus.io/path":                   "/test",
-				"opentelemetry-operator-config/sha256": "shouldBeOverwritten",
+				"prometheus.io/port": "1234",
+				"prometheus.io/path": "/test",
 			},
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
@@ -129,7 +120,6 @@ func TestUserAnnotations(t *testing.T) {
 	assert.Equal(t, "false", annotations["prometheus.io/scrape"])
 	assert.Equal(t, "1234", annotations["prometheus.io/port"])
 	assert.Equal(t, "/test", annotations["prometheus.io/path"])
-	assert.Equal(t, "29cb15a4b87f8c6284e7c3377f6b6c5c74519f5aee8ca39a90b3cf3ca2043c4d", annotations["opentelemetry-operator-config/sha256"])
 	assert.Equal(t, "29cb15a4b87f8c6284e7c3377f6b6c5c74519f5aee8ca39a90b3cf3ca2043c4d", podAnnotations["opentelemetry-operator-config/sha256"])
 }
 
@@ -153,7 +143,7 @@ func TestAnnotationsPropagateDown(t *testing.T) {
 	require.NoError(t, err)
 
 	// verify
-	assert.Len(t, annotations, 5)
+	assert.Len(t, annotations, 1)
 	assert.Equal(t, "mycomponent", annotations["myapp"])
 	assert.Equal(t, "mycomponent", podAnnotations["myapp"])
 	assert.Equal(t, "pod_annotation_value", podAnnotations["pod_annotation"])
@@ -178,7 +168,7 @@ func TestAnnotationsFilter(t *testing.T) {
 
 	// verify
 	require.NoError(t, err)
-	assert.Len(t, annotations, 6)
+	assert.Len(t, annotations, 2)
 	assert.NotContains(t, annotations, "test.bar.io")
 	assert.Equal(t, "1234", annotations["test.io/port"])
 }

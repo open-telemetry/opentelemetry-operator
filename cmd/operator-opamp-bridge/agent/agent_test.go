@@ -528,6 +528,7 @@ func TestAgent_onMessage(t *testing.T) {
 						"name: " + testCollectorName,
 						"namespace: " + testNamespace,
 						"send_batch_size: 10000",
+						"grpc:",
 						"receivers:",
 						"- otlp",
 						"status:",
