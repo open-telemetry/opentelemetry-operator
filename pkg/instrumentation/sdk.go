@@ -411,6 +411,9 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 }
 
 func chooseServiceName(pod corev1.Pod, resources map[string]string, index int) string {
+	if name := chooseAnnotation(pod.Annotations, semconv.ServiceNameKey, constants.AnnotationAppName); name != "" {
+		return name
+	}
 	if name := resources[string(semconv.K8SDeploymentNameKey)]; name != "" {
 		return name
 	}
@@ -435,8 +438,22 @@ func chooseServiceName(pod corev1.Pod, resources map[string]string, index int) s
 	return pod.Spec.Containers[index].Name
 }
 
+func chooseAnnotation(annotations map[string]string, resource attribute.Key, key string) string {
+	if v := annotations[(constants.ResourceAttributeAnnotationPrefix + string(resource))]; v != "" {
+		return v
+	}
+	if v := annotations[key]; v != "" {
+		return v
+	}
+	return ""
+}
+
 // obtains version by splitting image string on ":" and extracting final element from resulting array.
 func chooseServiceVersion(pod corev1.Pod, index int) string {
+	v := chooseAnnotation(pod.Annotations, semconv.ServiceVersionKey, constants.AnnotationAppVersion)
+	if v != "" {
+		return v
+	}
 	parts := strings.Split(pod.Spec.Containers[index].Image, ":")
 	tag := parts[len(parts)-1]
 	//guard statement to handle case where image name has a port number
@@ -448,8 +465,12 @@ func chooseServiceVersion(pod corev1.Pod, index int) string {
 
 // creates the service.instance.id following the semantic defined by
 // https://github.com/open-telemetry/semantic-conventions/pull/312.
-func createServiceInstanceId(namespaceName, podName, containerName string) string {
-	var serviceInstanceId string
+func createServiceInstanceId(annotations map[string]string, namespaceName, podName, containerName string) string {
+	serviceInstanceId := chooseAnnotation(annotations, semconv.ServiceInstanceIDKey, constants.AnnotationAppInstance)
+	if serviceInstanceId != "" {
+		return serviceInstanceId
+	}
+
 	if namespaceName != "" && podName != "" && containerName != "" {
 		resNames := []string{namespaceName, podName, containerName}
 		serviceInstanceId = strings.Join(resNames, ".")
@@ -475,6 +496,15 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	}
 
 	res := map[string]string{}
+	for k, v := range pod.Annotations {
+		if strings.HasPrefix(k, constants.ResourceAttributeAnnotationPrefix) {
+			k = strings.TrimPrefix(k, constants.ResourceAttributeAnnotationPrefix)
+			if !existingRes[k] && k != string(semconv.ServiceNameKey) {
+				res[k] = v
+			}
+		}
+	}
+
 	for k, v := range otelinst.Spec.Resource.Attributes {
 		if !existingRes[k] {
 			res[k] = v
@@ -488,8 +518,12 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	k8sResources[semconv.K8SPodNameKey] = pod.Name
 	k8sResources[semconv.K8SPodUIDKey] = string(pod.UID)
 	k8sResources[semconv.K8SNodeNameKey] = pod.Spec.NodeName
-	k8sResources[semconv.ServiceInstanceIDKey] = createServiceInstanceId(ns.Name, fmt.Sprintf("$(%s)", constants.EnvPodName), pod.Spec.Containers[index].Name)
+	k8sResources[semconv.ServiceInstanceIDKey] = createServiceInstanceId(pod.Annotations, ns.Name, fmt.Sprintf("$(%s)", constants.EnvPodName), pod.Spec.Containers[index].Name)
 	i.addParentResourceLabels(ctx, otelinst.Spec.Resource.AddK8sUIDAttributes, ns, pod.ObjectMeta, k8sResources)
+	partOf := chooseAnnotation(pod.Annotations, semconv.ServiceNamespaceKey, constants.AnnotationAppPartOf)
+	if partOf != "" {
+		k8sResources[semconv.ServiceNamespaceKey] = partOf
+	}
 	for k, v := range k8sResources {
 		if !existingRes[string(k)] && v != "" {
 			res[string(k)] = v

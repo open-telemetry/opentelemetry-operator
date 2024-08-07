@@ -152,6 +152,13 @@ func TestSDKInjection(t *testing.T) {
 							APIVersion: "apps/v1",
 						},
 					},
+					Annotations: map[string]string{
+						"app.kubernetes.io/name":        "app-name",
+						"app.kubernetes.io/instance":    "app-id",
+						"app.kubernetes.io/version":     "v1",
+						"app.kubernetes.io/part-of":     "shop",
+						"opentelemetry.io/resource.foo": "bar",
+					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -167,6 +174,13 @@ func TestSDKInjection(t *testing.T) {
 					Namespace: "project1",
 					Name:      "app",
 					UID:       "pod-uid",
+					Annotations: map[string]string{
+						"app.kubernetes.io/name":        "app-name",
+						"app.kubernetes.io/instance":    "app-id",
+						"app.kubernetes.io/version":     "v1",
+						"app.kubernetes.io/part-of":     "shop",
+						"opentelemetry.io/resource.foo": "bar",
+					},
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							Kind:       "ReplicaSet",
@@ -184,7 +198,7 @@ func TestSDKInjection(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: "my-deployment",
+									Value: "app-name",
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
@@ -220,7 +234,135 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.instance.id=project1.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).application-name,service.version=latest",
+									Value: "foo=bar,k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.instance.id=app-id,service.namespace=shop,service.version=v1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "SDK env vars not defined - with explicit resource attributes annotations",
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "https://collector:4317",
+					},
+					Resource: v1alpha1.Resource{
+						AddK8sUIDAttributes: true,
+					},
+					Propagators: []v1alpha1.Propagator{"b3", "jaeger"},
+					Sampler: v1alpha1.Sampler{
+						Type:     "parentbased_traceidratio",
+						Argument: "0.25",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+					UID:       "pod-uid",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind:       "ReplicaSet",
+							Name:       "my-replicaset",
+							UID:        "rsuid",
+							APIVersion: "apps/v1",
+						},
+					},
+					Annotations: map[string]string{
+						"app.kubernetes.io/name":                        "app-name-hidden",
+						"app.kubernetes.io/instance":                    "app-id-hidden",
+						"app.kubernetes.io/version":                     "v1-hidden",
+						"app.kubernetes.io/part-of":                     "shop-hidden",
+						"opentelemetry.io/resource.foo":                 "bar",
+						"opentelemetry.io/resource.service.name":        "app-name",
+						"opentelemetry.io/resource.service.instance.id": "app-id",
+						"opentelemetry.io/resource.service.version":     "v1",
+						"opentelemetry.io/resource.service.namespace":   "shop",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "application-name",
+							Image: "app:latest",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "project1",
+					Name:      "app",
+					UID:       "pod-uid",
+					Annotations: map[string]string{
+						"app.kubernetes.io/name":                        "app-name-hidden",
+						"app.kubernetes.io/instance":                    "app-id-hidden",
+						"app.kubernetes.io/version":                     "v1-hidden",
+						"app.kubernetes.io/part-of":                     "shop-hidden",
+						"opentelemetry.io/resource.foo":                 "bar",
+						"opentelemetry.io/resource.service.name":        "app-name",
+						"opentelemetry.io/resource.service.instance.id": "app-id",
+						"opentelemetry.io/resource.service.version":     "v1",
+						"opentelemetry.io/resource.service.namespace":   "shop",
+					},
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							Kind:       "ReplicaSet",
+							Name:       "my-replicaset",
+							UID:        "rsuid",
+							APIVersion: "apps/v1",
+						},
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "application-name",
+							Image: "app:latest",
+							Env: []corev1.EnvVar{
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app-name",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "https://collector:4317",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_PROPAGATORS",
+									Value: "b3,jaeger",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.25",
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "foo=bar,k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.instance.id=app-id,service.namespace=shop,service.version=v1",
 								},
 							},
 						},
