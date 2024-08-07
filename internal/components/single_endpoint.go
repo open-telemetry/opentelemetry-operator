@@ -65,10 +65,18 @@ type SingleEndpointParser struct {
 
 	// failSilently allows the parser to prevent the propagation of failure if the parser fails to set a port.
 	failSilently bool
+	rbacGen      RBACRuleGenerator[SingleEndpointConfig]
 }
 
-func (s *SingleEndpointParser) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.PolicyRule, error) {
-	return nil, nil
+func (s *SingleEndpointParser) GetRBACRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error) {
+	if s.rbacGen == nil {
+		return nil, nil
+	}
+	var singleEndpointConfig SingleEndpointConfig
+	if err := mapstructure.Decode(config, &singleEndpointConfig); err != nil {
+		return nil, err
+	}
+	return s.rbacGen(logger, singleEndpointConfig)
 }
 
 func (s *SingleEndpointParser) Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error) {
@@ -111,7 +119,7 @@ func NewSinglePortParser(name string, port int32, opts ...PortBuilderOption) *Si
 }
 
 // NewSilentSinglePortParser returns a SingleEndpointParser that errors silently on failure to find a port.
-func NewSilentSinglePortParser(name string, port int32, opts ...PortBuilderOption) *SingleEndpointParser {
+func NewSilentSinglePortParser(name string, port int32, rbacGen RBACRuleGenerator[SingleEndpointConfig], opts ...PortBuilderOption) *SingleEndpointParser {
 	servicePort := &corev1.ServicePort{
 		Name: naming.PortName(name, port),
 		Port: port,
@@ -119,5 +127,5 @@ func NewSilentSinglePortParser(name string, port int32, opts ...PortBuilderOptio
 	for _, opt := range opts {
 		opt(servicePort)
 	}
-	return &SingleEndpointParser{name: name, svcPort: servicePort, failSilently: true}
+	return &SingleEndpointParser{name: name, svcPort: servicePort, rbacGen: rbacGen, failSilently: true}
 }

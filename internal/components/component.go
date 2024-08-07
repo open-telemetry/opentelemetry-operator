@@ -40,7 +40,7 @@ type PortRetriever interface {
 
 // RBACRuleGenerator is a function that generates a list of RBAC Rules given a configuration of type T
 // It's expected that type T is the configuration used by a parser.
-type RBACRuleGenerator[T any] func(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error)
+type RBACRuleGenerator[T any] func(logger logr.Logger, config T) ([]rbacv1.PolicyRule, error)
 type PortBuilderOption func(*corev1.ServicePort)
 
 func WithTargetPort(targetPort int32) PortBuilderOption {

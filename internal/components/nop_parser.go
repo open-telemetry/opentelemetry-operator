@@ -26,8 +26,7 @@ var (
 	_ Parser = &NopParser{}
 )
 
-// SingleEndpointParser is a special parser for a generic receiver that has an endpoint or listen_address in its
-// configuration. It doesn't self-register and should be created/used directly.
+// NopParser is a minimal processor mostly used for testing or coverage.
 type NopParser struct {
 	name string
 }

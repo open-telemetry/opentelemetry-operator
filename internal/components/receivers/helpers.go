@@ -39,7 +39,7 @@ func ReceiverFor(name string) components.Parser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}
-	return components.NewSilentSinglePortParser(components.ComponentType(name), components.UnsetPort)
+	return components.NewSilentSinglePortParser(components.ComponentType(name), components.UnsetPort, nil)
 }
 
 var (
