@@ -36,7 +36,7 @@ const (
 	AnnotationAppVersion  = "app.kubernetes.io/version"
 	AnnotationAppPartOf   = "app.kubernetes.io/part-of"
 
-	ResourceAttributeAnnotationPrefix = "opentelemetry.io/resource."
+	ResourceAttributeAnnotationPrefix = "resource.opentelemetry.io/"
 
 	EnvPodName  = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
 	EnvPodUID   = "OTEL_RESOURCE_ATTRIBUTES_POD_UID"

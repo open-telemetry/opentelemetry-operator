@@ -160,7 +160,7 @@ func TestSDKInjection(t *testing.T) {
 					},
 					Annotations: map[string]string{
 
-						"opentelemetry.io/resource.foo": "bar",
+						"resource.opentelemetry.io/foo": "bar",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -184,7 +184,7 @@ func TestSDKInjection(t *testing.T) {
 						"app.kubernetes.io/part-of":  "shop",
 					},
 					Annotations: map[string]string{
-						"opentelemetry.io/resource.foo": "bar",
+						"resource.opentelemetry.io/foo": "bar",
 					},
 					OwnerReferences: []metav1.OwnerReference{
 						{
@@ -284,11 +284,11 @@ func TestSDKInjection(t *testing.T) {
 						"app.kubernetes.io/part-of":  "shop-hidden",
 					},
 					Annotations: map[string]string{
-						"opentelemetry.io/resource.foo":                 "bar",
-						"opentelemetry.io/resource.service.name":        "app-name",
-						"opentelemetry.io/resource.service.instance.id": "app-id",
-						"opentelemetry.io/resource.service.version":     "v1",
-						"opentelemetry.io/resource.service.namespace":   "shop",
+						"resource.opentelemetry.io/foo":                 "bar",
+						"resource.opentelemetry.io/service.name":        "app-name",
+						"resource.opentelemetry.io/service.instance.id": "app-id",
+						"resource.opentelemetry.io/service.version":     "v1",
+						"resource.opentelemetry.io/service.namespace":   "shop",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -312,11 +312,11 @@ func TestSDKInjection(t *testing.T) {
 						"app.kubernetes.io/part-of":  "shop-hidden",
 					},
 					Annotations: map[string]string{
-						"opentelemetry.io/resource.foo":                 "bar",
-						"opentelemetry.io/resource.service.name":        "app-name",
-						"opentelemetry.io/resource.service.instance.id": "app-id",
-						"opentelemetry.io/resource.service.version":     "v1",
-						"opentelemetry.io/resource.service.namespace":   "shop",
+						"resource.opentelemetry.io/foo":                 "bar",
+						"resource.opentelemetry.io/service.name":        "app-name",
+						"resource.opentelemetry.io/service.instance.id": "app-id",
+						"resource.opentelemetry.io/service.version":     "v1",
+						"resource.opentelemetry.io/service.namespace":   "shop",
 					},
 					OwnerReferences: []metav1.OwnerReference{
 						{
