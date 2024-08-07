@@ -28,10 +28,9 @@ var (
 )
 
 // GenericParser serves as scaffolding for custom parsing logic by isolating
-// functionality to idempotent functions like RBACRuleGenerator
+// functionality to idempotent functions like RBACRuleGenerator.
 type GenericParser[T any] struct {
 	name    string
-	config  T
 	rbacGen RBACRuleGenerator[T]
 }
 

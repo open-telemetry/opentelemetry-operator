@@ -393,7 +393,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := components.NewSilentSinglePortParser(tt.fields.name, tt.fields.port, nil, tt.fields.opts...)
+			s := components.NewSilentSinglePortParser(tt.fields.name, tt.fields.port, tt.fields.opts...)
 			got, err := s.Ports(logr.Discard(), tt.fields.name, tt.args.config)
 			if !tt.wantErr(t, err, fmt.Sprintf("Ports(%v)", tt.args.config)) {
 				return

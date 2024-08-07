@@ -31,6 +31,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/exporters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components/processors"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
 )
 
@@ -155,7 +156,12 @@ func (c *Config) getRbacRulesForComponentKinds(logger logr.Logger, componentKind
 			retriever = exporters.ParserFor
 			cfg = c.Exporters
 		case KindProcessor:
-			break
+			retriever = processors.ProcessorFor
+			if c.Processors == nil {
+				cfg = AnyConfig{}
+			} else {
+				cfg = *c.Processors
+			}
 		}
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.

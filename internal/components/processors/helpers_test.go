@@ -32,7 +32,7 @@ func TestDownstreamParsers(t *testing.T) {
 		parserName    string
 	}{
 		{"k8sattributes", "k8sattributes", "__k8sattributes"},
-		{"opencensus", "opencensus", "__opencensus"},
+		{"resourcedetection", "resourcedetection", "__resourcedetection"},
 	} {
 		t.Run(tt.processorName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
@@ -50,7 +50,7 @@ func TestDownstreamParsers(t *testing.T) {
 				_, err := parser.Ports(logger, tt.processorName, func() {})
 
 				// verify
-				assert.ErrorContains(t, err, "expected a map, got 'func'")
+				assert.Nil(t, err)
 			})
 
 		})
