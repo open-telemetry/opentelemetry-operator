@@ -159,7 +159,6 @@ func TestSDKInjection(t *testing.T) {
 						"app.kubernetes.io/part-of":  "shop",
 					},
 					Annotations: map[string]string{
-
 						"resource.opentelemetry.io/foo": "bar",
 					},
 				},
