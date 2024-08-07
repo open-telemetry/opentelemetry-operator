@@ -2,6 +2,33 @@
 
 <!-- next version -->
 
+## 0.106.0
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fixes a bug where the operator would default the PDB in the wrong place. (#3198)
+- `operator`: The OpenShift dashboard shown namespaces where PodMonitors or ServiceMonitors were created even if they were not associated to OpenTelemetry Collectors. (#3196)
+  Now, the dashboard lists only those namespaces where there are OpenTelemetry Collectors.
+- `operator`: When there were multiple OpenTelemetry Collector, the dashboard doesn't allow to select them individually. (#3189)
+- `target allocator`: Fix collector to target allocator connection in clusters with proxy. (#3187)
+  On clusters with global proxy the collector might fail to talk to target allocator
+  because the endpoint is set to `<ta-service-name>:port` and therefore it will go to proxy
+  and request might be forwarded to internet. Clusters with proxy configure `NO_PROXY` to `.svc.cluster.local` so 
+  the calls to this endpoint will not go through the proxy.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.106.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.106.1)
+* [OpenTelemetry Contrib - v0.106.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.106.1)
+* [Java auto-instrumentation - v1.33.5](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.5)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.52.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.52.1)
+* [Python - v0.47b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.47b0)
+* [Go - v0.14.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.14.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.105.0
 
 ### 💡 Enhancements 💡
