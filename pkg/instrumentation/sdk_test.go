@@ -152,11 +152,14 @@ func TestSDKInjection(t *testing.T) {
 							APIVersion: "apps/v1",
 						},
 					},
+					Labels: map[string]string{
+						"app.kubernetes.io/name":     "app-name",
+						"app.kubernetes.io/instance": "app-id",
+						"app.kubernetes.io/version":  "v1",
+						"app.kubernetes.io/part-of":  "shop",
+					},
 					Annotations: map[string]string{
-						"app.kubernetes.io/name":        "app-name",
-						"app.kubernetes.io/instance":    "app-id",
-						"app.kubernetes.io/version":     "v1",
-						"app.kubernetes.io/part-of":     "shop",
+
 						"opentelemetry.io/resource.foo": "bar",
 					},
 				},
@@ -174,11 +177,13 @@ func TestSDKInjection(t *testing.T) {
 					Namespace: "project1",
 					Name:      "app",
 					UID:       "pod-uid",
+					Labels: map[string]string{
+						"app.kubernetes.io/name":     "app-name",
+						"app.kubernetes.io/instance": "app-id",
+						"app.kubernetes.io/version":  "v1",
+						"app.kubernetes.io/part-of":  "shop",
+					},
 					Annotations: map[string]string{
-						"app.kubernetes.io/name":        "app-name",
-						"app.kubernetes.io/instance":    "app-id",
-						"app.kubernetes.io/version":     "v1",
-						"app.kubernetes.io/part-of":     "shop",
 						"opentelemetry.io/resource.foo": "bar",
 					},
 					OwnerReferences: []metav1.OwnerReference{
@@ -272,11 +277,13 @@ func TestSDKInjection(t *testing.T) {
 							APIVersion: "apps/v1",
 						},
 					},
+					Labels: map[string]string{
+						"app.kubernetes.io/name":     "app-name-hidden",
+						"app.kubernetes.io/instance": "app-id-hidden",
+						"app.kubernetes.io/version":  "v1-hidden",
+						"app.kubernetes.io/part-of":  "shop-hidden",
+					},
 					Annotations: map[string]string{
-						"app.kubernetes.io/name":                        "app-name-hidden",
-						"app.kubernetes.io/instance":                    "app-id-hidden",
-						"app.kubernetes.io/version":                     "v1-hidden",
-						"app.kubernetes.io/part-of":                     "shop-hidden",
 						"opentelemetry.io/resource.foo":                 "bar",
 						"opentelemetry.io/resource.service.name":        "app-name",
 						"opentelemetry.io/resource.service.instance.id": "app-id",
@@ -298,11 +305,13 @@ func TestSDKInjection(t *testing.T) {
 					Namespace: "project1",
 					Name:      "app",
 					UID:       "pod-uid",
+					Labels: map[string]string{
+						"app.kubernetes.io/name":     "app-name-hidden",
+						"app.kubernetes.io/instance": "app-id-hidden",
+						"app.kubernetes.io/version":  "v1-hidden",
+						"app.kubernetes.io/part-of":  "shop-hidden",
+					},
 					Annotations: map[string]string{
-						"app.kubernetes.io/name":                        "app-name-hidden",
-						"app.kubernetes.io/instance":                    "app-id-hidden",
-						"app.kubernetes.io/version":                     "v1-hidden",
-						"app.kubernetes.io/part-of":                     "shop-hidden",
 						"opentelemetry.io/resource.foo":                 "bar",
 						"opentelemetry.io/resource.service.name":        "app-name",
 						"opentelemetry.io/resource.service.instance.id": "app-id",
