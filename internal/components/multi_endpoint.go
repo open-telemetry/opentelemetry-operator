@@ -20,11 +20,12 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-var _ ComponentPortParser = &MultiPortReceiver{}
+var _ Parser = &MultiPortReceiver{}
 
 // MultiProtocolEndpointConfig represents the minimal struct for a given YAML configuration input containing a map to
 // a struct with either endpoint or listen_address.
@@ -69,6 +70,10 @@ func (m *MultiPortReceiver) ParserType() string {
 
 func (m *MultiPortReceiver) ParserName() string {
 	return fmt.Sprintf("__%s", m.name)
+}
+
+func (m *MultiPortReceiver) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.PolicyRule, error) {
+	return nil, nil
 }
 
 func NewMultiPortReceiver(name string, opts ...MultiPortOption) *MultiPortReceiver {

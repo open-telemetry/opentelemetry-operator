@@ -20,12 +20,13 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 var (
-	_ ComponentPortParser = &SingleEndpointParser{}
+	_ Parser = &SingleEndpointParser{}
 )
 
 // SingleEndpointConfig represents the minimal struct for a given YAML configuration input containing either
@@ -64,6 +65,10 @@ type SingleEndpointParser struct {
 
 	// failSilently allows the parser to prevent the propagation of failure if the parser fails to set a port.
 	failSilently bool
+}
+
+func (s *SingleEndpointParser) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.PolicyRule, error) {
+	return nil, nil
 }
 
 func (s *SingleEndpointParser) Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error) {

@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -37,6 +38,9 @@ type PortRetriever interface {
 	GetPortNumOrDefault(logr.Logger, int32) int32
 }
 
+// RBACRuleGenerator is a function that generates a list of RBAC Rules given a configuration of type T
+// It's expected that type T is the configuration used by a parser.
+type RBACRuleGenerator[T any] func(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error)
 type PortBuilderOption func(*corev1.ServicePort)
 
 func WithTargetPort(targetPort int32) PortBuilderOption {
@@ -92,12 +96,15 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 	return int32(port), err
 }
 
-type ParserRetriever func(string) ComponentPortParser
+type ParserRetriever func(string) Parser
 
-type ComponentPortParser interface {
+type Parser interface {
 	// Ports returns the service ports parsed based on the component's configuration where name is the component's name
 	// of the form "name" or "type/name"
 	Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error)
+
+	// GetRBACRules returns the rbac rules for this component
+	GetRBACRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error)
 
 	// ParserType returns the type of this parser
 	ParserType() string

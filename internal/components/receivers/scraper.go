@@ -19,12 +19,13 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 )
 
 var (
-	_ components.ComponentPortParser = &ScraperParser{}
+	_ components.Parser = &ScraperParser{}
 )
 
 type ScraperParser struct {
@@ -41,6 +42,10 @@ func (s *ScraperParser) ParserType() string {
 
 func (s *ScraperParser) ParserName() string {
 	return fmt.Sprintf("__%s", s.componentType)
+}
+
+func (s *ScraperParser) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.PolicyRule, error) {
+	return nil, nil
 }
 
 func NewScraperParser(name string) *ScraperParser {
