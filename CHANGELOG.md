@@ -6,6 +6,7 @@
 
 ### 🧰 Bug fixes 🧰
 
+- `collector`: Fixes a bug where the operator would default the PDB in the wrong place. (#3198)
 - `operator`: The OpenShift dashboard shown namespaces where PodMonitors or ServiceMonitors were created even if they were not associated to OpenTelemetry Collectors. (#3196)
   Now, the dashboard lists only those namespaces where there are OpenTelemetry Collectors.
 - `operator`: When there were multiple OpenTelemetry Collector, the dashboard doesn't allow to select them individually. (#3189)
