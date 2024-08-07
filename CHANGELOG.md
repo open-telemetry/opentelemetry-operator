@@ -6,6 +6,8 @@
 
 ### 🧰 Bug fixes 🧰
 
+- `operator`: The OpenShift dashboard shown namespaces where PodMonitors or ServiceMonitors were created even if they were not associated to OpenTelemetry Collectors. (#3196)
+  Now, the dashboard lists only those namespaces where there are OpenTelemetry Collectors.
 - `operator`: When there were multiple OpenTelemetry Collector, the dashboard doesn't allow to select them individually. (#3189)
 - `target allocator`: Fix collector to target allocator connection in clusters with proxy. (#3187)
   On clusters with global proxy the collector might fail to talk to target allocator
