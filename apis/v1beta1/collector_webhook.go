@@ -445,8 +445,10 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	return nil
 }
 
-// BuildValidator is mostly used for testing purposes.
+// BuildValidator is //purpose and description
+// Kubebuilder is used for testing
 // +kubebuilder:object:generate=false
+
 type BuildValidator func(c OpenTelemetryCollector) admission.Warnings
 
 func NewCollectorWebhook(
@@ -454,6 +456,7 @@ func NewCollectorWebhook(
 	scheme *runtime.Scheme,
 	cfg config.Config,
 	reviewer *rbac.Reviewer,
+	metrics *Metrics,
 	bv BuildValidator,
 ) *CollectorWebhook {
 	return &CollectorWebhook{
@@ -461,19 +464,13 @@ func NewCollectorWebhook(
 		scheme:   scheme,
 		cfg:      cfg,
 		reviewer: reviewer,
+		metrics:  metrics,
 		bv:       bv,
 	}
 }
 
 func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator) error {
-	cvw := &CollectorWebhook{
-		reviewer: reviewer,
-		logger:   mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"),
-		scheme:   mgr.GetScheme(),
-		cfg:      cfg,
-		metrics:  metrics,
-		bv:       bv,
-	}
+	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, metrics, bv)
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&OpenTelemetryCollector{}).
 		WithValidator(cvw).

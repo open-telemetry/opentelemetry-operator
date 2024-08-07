@@ -18,6 +18,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sort"
 
 	"github.com/go-logr/logr"
@@ -73,6 +74,25 @@ type Params struct {
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
 	Config   config.Config
+}
+
+func (r *OpenTelemetryCollectorReconciler) Validate(otelcol v1beta1.OpenTelemetryCollector) admission.Warnings {
+	var warnings admission.Warnings
+	cfg := config.New(
+		config.WithCollectorImage("default-collector"),
+		config.WithTargetAllocatorImage("default-ta-allocator"),
+	)
+	params := manifests.Params{
+		Log:     logr.Discard(),
+		Config:  cfg,
+		OtelCol: otelcol,
+	}
+	_, err := collector.Build(params)
+	if err != nil {
+		warnings = append(warnings, err.Error())
+		return warnings
+	}
+	return nil
 }
 
 func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
