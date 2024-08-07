@@ -416,8 +416,8 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 		{
 			name: "policy v1 deployment collector",
 			args: args{
-				params:  testCollectorWithPDB(1, 0),
-				updates: []v1alpha1.OpenTelemetryCollector{testCollectorWithPDB(0, 1)},
+				params:  testCollectorWithModeAndReplicas("policytest", v1alpha1.ModeDeployment, 3),
+				updates: []v1alpha1.OpenTelemetryCollector{testCollectorWithPDB(1, 0)},
 			},
 			want: []want{
 				{
@@ -427,8 +427,8 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							actual := policyV1.PodDisruptionBudget{}
 							exists, pdbErr := populateObjectIfExists(t, &actual, namespacedObjectName(naming.HorizontalPodAutoscaler(params.Name), params.Namespace))
 							assert.NoError(t, pdbErr)
-							assert.Equal(t, int32(1), actual.Spec.MinAvailable.IntVal)
-							assert.Nil(t, actual.Spec.MaxUnavailable)
+							assert.Equal(t, int32(1), actual.Spec.MaxUnavailable.IntVal)
+							assert.Nil(t, actual.Spec.MinAvailable)
 							assert.True(t, exists)
 						},
 					},
@@ -442,8 +442,8 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							actual := policyV1.PodDisruptionBudget{}
 							exists, pdbErr := populateObjectIfExists(t, &actual, namespacedObjectName(naming.HorizontalPodAutoscaler(params.Name), params.Namespace))
 							assert.NoError(t, pdbErr)
-							assert.Nil(t, actual.Spec.MinAvailable)
-							assert.Equal(t, int32(1), actual.Spec.MaxUnavailable.IntVal)
+							assert.Nil(t, actual.Spec.MaxUnavailable)
+							assert.Equal(t, int32(1), actual.Spec.MinAvailable.IntVal)
 							assert.True(t, exists)
 						},
 					},

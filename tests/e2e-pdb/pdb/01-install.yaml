@@ -3,6 +3,8 @@ kind: OpenTelemetryCollector
 metadata:
   name: pdb
 spec:
+  podDisruptionBudget:
+    minAvailable: 1
   resources:
     limits:
       cpu: 500m
