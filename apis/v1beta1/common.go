@@ -151,6 +151,13 @@ type OpenTelemetryCommonFields struct {
 	// Image indicates the container image to use for the generated pods.
 	// +optional
 	Image string `json:"image,omitempty"`
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+	// If specified, these secrets will be passed to individual puller implementations for them to use.
+	// More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	// ImagePullPolicy indicates the pull policy to be used for retrieving the container image.
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`

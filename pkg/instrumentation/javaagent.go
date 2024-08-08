@@ -77,6 +77,8 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.
 				},
 			}})
 
+		pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, javaSpec.ImagePullSecrets...)
+
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      javaInitContainerName,
 			Image:     javaSpec.Image,

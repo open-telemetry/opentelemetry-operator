@@ -167,6 +167,13 @@ type OpenTelemetryCollectorSpec struct {
 	// Image indicates the container image to use for the OpenTelemetry Collector.
 	// +optional
 	Image string `json:"image,omitempty"`
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+	// If specified, these secrets will be passed to individual puller implementations for them to use.
+	// More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	// UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed
 	// +optional
 	UpgradeStrategy UpgradeStrategy `json:"upgradeStrategy"`
@@ -334,6 +341,13 @@ type OpenTelemetryTargetAllocator struct {
 	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.
 	// +optional
 	Image string `json:"image,omitempty"`
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+	// If specified, these secrets will be passed to individual puller implementations for them to use.
+	// More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	// Enabled indicates whether to use a target allocation mechanism for Prometheus targets or not.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`

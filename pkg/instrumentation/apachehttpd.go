@@ -143,6 +143,8 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 				},
 			}})
 
+		pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, apacheSpec.ImagePullSecrets...)
+
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:    apacheAgentInitContainerName,
 			Image:   apacheSpec.Image,

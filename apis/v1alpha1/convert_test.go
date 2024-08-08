@@ -169,6 +169,9 @@ func Test_tov1beta1AndBack(t *testing.T) {
 			Mode:            ModeDeployment,
 			ServiceAccount:  "foo",
 			Image:           "baz/bar:1.0",
+			ImagePullSecrets: []v1.LocalObjectReference{
+				v1.LocalObjectReference{Name: "foo"},
+			},
 			UpgradeStrategy: UpgradeStrategyAutomatic,
 			ImagePullPolicy: v1.PullAlways,
 			Config:          collectorCfg,
