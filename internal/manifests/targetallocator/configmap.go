@@ -41,11 +41,17 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		MatchLabels: manifestutils.SelectorLabels(params.Collector.ObjectMeta, collector.ComponentOpenTelemetryCollector),
 	}
 
+	// Set config if global or scrape configs set
+	config := map[string]interface{}{}
+	if instance.Spec.GlobalConfig.Object != nil {
+		config["global"] = instance.Spec.GlobalConfig
+	}
 	// Add scrape configs if present
 	if instance.Spec.ScrapeConfigs != nil && len(instance.Spec.ScrapeConfigs) > 0 {
-		taConfig["config"] = map[string]interface{}{
-			"scrape_configs": instance.Spec.ScrapeConfigs,
-		}
+		config["scrape_configs"] = instance.Spec.ScrapeConfigs
+	}
+	if len(config) != 0 {
+		taConfig["config"] = config
 	}
 
 	if len(taSpec.AllocationStrategy) > 0 {

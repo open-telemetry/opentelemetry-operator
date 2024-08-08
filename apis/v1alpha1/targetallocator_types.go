@@ -73,6 +73,9 @@ type TargetAllocatorSpec struct {
 	// +optional
 	// +kubebuilder:default:=relabel-config
 	FilterStrategy v1beta1.TargetAllocatorFilterStrategy `json:"filterStrategy,omitempty"`
+	// GlobalConfig configures the global configuration for Prometheus
+	// For the exact format, see https://github.com/prometheus/prometheus/blob/main/config/config.go#L409-L448
+	GlobalConfig v1beta1.AnyConfig `json:"global,omitempty"`
 	// ScrapeConfigs define static Prometheus scrape configurations for the target allocator.
 	// To use dynamic configurations from ServiceMonitors and PodMonitors, see the PrometheusCR section.
 	// For the exact format, see https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config.

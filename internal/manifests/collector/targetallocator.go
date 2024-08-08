@@ -15,6 +15,7 @@
 package collector
 
 import (
+	"github.com/mitchellh/mapstructure"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -36,6 +37,10 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 		return nil, err
 	}
 	scrapeConfigs, err := getScrapeConfigs(configStr)
+	if err != nil {
+		return nil, err
+	}
+	globalConfig, err := getGlobalConfig(params.OtelCol.Spec.Config)
 	if err != nil {
 		return nil, err
 	}
@@ -66,9 +71,28 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 			AllocationStrategy: taSpec.AllocationStrategy,
 			FilterStrategy:     taSpec.FilterStrategy,
 			ScrapeConfigs:      scrapeConfigs,
+			GlobalConfig:       globalConfig,
 			PrometheusCR:       taSpec.PrometheusCR,
 			Observability:      taSpec.Observability,
 		},
+	}, nil
+}
+
+func getGlobalConfig(otelConfig v1beta1.Config) (v1beta1.AnyConfig, error) {
+	// TODO: Eventually we should figure out a way to pull this in to the main specification for the TA
+	type promReceiverConfig struct {
+		Prometheus struct {
+			Config struct {
+				Global map[string]interface{} `mapstructure:"global"`
+			} `mapstructure:"config"`
+		} `mapstructure:"prometheus"`
+	}
+	decodedConfig := &promReceiverConfig{}
+	if err := mapstructure.Decode(otelConfig.Receivers.Object, decodedConfig); err != nil {
+		return v1beta1.AnyConfig{}, err
+	}
+	return v1beta1.AnyConfig{
+		Object: decodedConfig.Prometheus.Config.Global,
 	}, nil
 }
 

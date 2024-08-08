@@ -1248,6 +1248,8 @@ spec:
                 - ""
                 - relabel-config
                 type: string
+              global:
+                type: object
               hostNetwork:
                 type: boolean
               image:

@@ -118,6 +118,13 @@ collector_selector:
     app.kubernetes.io/part-of: opentelemetry
   matchexpressions: []
 config:
+  global:
+    scrape_interval: 30s
+    scrape_protocols:
+    - PrometheusProto
+    - OpenMetricsText1.0.0
+    - OpenMetricsText0.0.1
+    - PrometheusText0.0.4
   scrape_configs:
   - job_name: otel-collector
     scrape_interval: 10s
@@ -149,10 +156,15 @@ prometheus_cr:
 			MatchLabels: map[string]string{
 				"release": "my-instance",
 			}}
+		targetAllocator.Spec.GlobalConfig = v1beta1.AnyConfig{
+			Object: map[string]interface{}{
+				"scrape_interval":  "30s",
+				"scrape_protocols": []string{"PrometheusProto", "OpenMetricsText1.0.0", "OpenMetricsText0.0.1", "PrometheusText0.0.4"},
+			},
+		}
 		params.TargetAllocator = targetAllocator
 		actual, err := ConfigMap(params)
 		assert.NoError(t, err)
-
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
