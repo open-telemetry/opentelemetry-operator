@@ -27,9 +27,11 @@ import (
 	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/exporters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components/processors"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
 )
 
@@ -139,9 +141,43 @@ type Config struct {
 	Service    Service    `json:"service" yaml:"service"`
 }
 
+// getRbacRulesForComponentKinds gets the RBAC Rules for the given ComponentKind(s).
+func (c *Config) getRbacRulesForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]rbacv1.PolicyRule, error) {
+	var rules []rbacv1.PolicyRule
+	enabledComponents := c.GetEnabledComponents()
+	for _, componentKind := range componentKinds {
+		var retriever components.ParserRetriever
+		var cfg AnyConfig
+		switch componentKind {
+		case KindReceiver:
+			retriever = receivers.ReceiverFor
+			cfg = c.Receivers
+		case KindExporter:
+			retriever = exporters.ParserFor
+			cfg = c.Exporters
+		case KindProcessor:
+			retriever = processors.ProcessorFor
+			if c.Processors == nil {
+				cfg = AnyConfig{}
+			} else {
+				cfg = *c.Processors
+			}
+		}
+		for componentName := range enabledComponents[componentKind] {
+			// TODO: Clean up the naming here and make it simpler to use a retriever.
+			parser := retriever(componentName)
+			if parsedRules, err := parser.GetRBACRules(logger, cfg.Object[componentName]); err != nil {
+				return nil, err
+			} else {
+				rules = append(rules, parsedRules...)
+			}
+		}
+	}
+	return rules, nil
+}
+
 // getPortsForComponentKinds gets the ports for the given ComponentKind(s).
 func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]corev1.ServicePort, error) {
-
 	var ports []corev1.ServicePort
 	enabledComponents := c.GetEnabledComponents()
 	for _, componentKind := range componentKinds {
@@ -185,6 +221,10 @@ func (c *Config) GetExporterPorts(logger logr.Logger) ([]corev1.ServicePort, err
 
 func (c *Config) GetAllPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
 	return c.getPortsForComponentKinds(logger, KindReceiver, KindExporter)
+}
+
+func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error) {
+	return c.getRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor)
 }
 
 // Yaml encodes the current object and returns it as a string.

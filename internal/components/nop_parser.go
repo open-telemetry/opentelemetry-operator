@@ -19,19 +19,23 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 var (
-	_ ComponentPortParser = &NopParser{}
+	_ Parser = &NopParser{}
 )
 
-// SingleEndpointParser is a special parser for a generic receiver that has an endpoint or listen_address in its
-// configuration. It doesn't self-register and should be created/used directly.
+// NopParser is a minimal processor mostly used for testing or coverage.
 type NopParser struct {
 	name string
 }
 
 func (n *NopParser) Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error) {
+	return nil, nil
+}
+
+func (n *NopParser) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.PolicyRule, error) {
 	return nil, nil
 }
 
