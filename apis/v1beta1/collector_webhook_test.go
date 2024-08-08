@@ -111,9 +111,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			otelcol: OpenTelemetryCollector{},
 			expected: OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: OpenTelemetryCollectorSpec{
 					OpenTelemetryCommonFields: OpenTelemetryCommonFields{
@@ -139,9 +137,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: OpenTelemetryCollectorSpec{
 					Mode:            ModeSidecar,
@@ -168,9 +164,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: OpenTelemetryCollectorSpec{
 					Mode:            ModeSidecar,
@@ -195,9 +189,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: OpenTelemetryCollectorSpec{
 					Mode:            ModeDeployment,
@@ -227,9 +219,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
@@ -265,9 +255,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
@@ -305,9 +293,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
@@ -350,9 +336,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
@@ -390,9 +374,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
@@ -423,9 +405,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: OpenTelemetryCollectorSpec{
 					Mode: ModeDeployment,
