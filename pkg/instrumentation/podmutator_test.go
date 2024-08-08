@@ -1309,11 +1309,7 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
 									Value: "http/protobuf",
 								},
 								{
@@ -1514,11 +1510,7 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
 									Value: "http/protobuf",
 								},
 								{
@@ -1609,11 +1601,7 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
 									Value: "http/protobuf",
 								},
 								{
@@ -4065,20 +4053,16 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_METRICS_EXPORTER",
 									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
-									Value: "http/protobuf",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -4144,20 +4128,16 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_METRICS_EXPORTER",
 									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
-									Value: "http/protobuf",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -4850,20 +4830,16 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_METRICS_EXPORTER",
 									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
-									Value: "http/protobuf",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -4929,20 +4905,16 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_METRICS_EXPORTER",
 									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
-									Value: "http/protobuf",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",

@@ -25,12 +25,10 @@ spec:
       value: http://localhost:4318
     - name: PYTHONPATH
       value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
-    - name: OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
       value: http/protobuf
     - name: OTEL_METRICS_EXPORTER
       value: otlp
-    - name: OTEL_EXPORTER_OTLP_METRICS_PROTOCOL
-      value: http/protobuf
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
       value: "20"
     - name: OTEL_TRACES_SAMPLER
