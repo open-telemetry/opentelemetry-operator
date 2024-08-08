@@ -716,6 +716,25 @@ spec:
 EOF
 ```
 
+### Setting instrumentation resource attributes via namespace annotations
+
+This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. These annotations can be used to add resource attributes to data produced by OpenTelemetry instrumentation.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: example-pod
+  annotations:
+    resource.opentelemetry.io/service.name: "my-service"
+    resource.opentelemetry.io/service.version: "1.0.0"
+    resource.opentelemetry.io/environment: "production"
+spec:
+  containers:
+  - name: main-container
+    image: your-image:tag
+ ```
+
 ## Compatibility matrix
 
 ### OpenTelemetry Operator vs. OpenTelemetry Collector
