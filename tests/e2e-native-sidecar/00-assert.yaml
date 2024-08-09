@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+    sidecar.opentelemetry.io/inject: "true"
+  name: myapp
+status:
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
+  initContainerStatuses:
+  - name: otc-container
+    ready: true
+    started: true
