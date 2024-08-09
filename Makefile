@@ -332,7 +332,7 @@ scorecard-tests: operator-sdk
 .PHONY: container
 container: GOOS = linux
 container: manager
-	docker build -t ${IMG} .
+	docker build --load -t ${IMG} .
 
 # Push the container image, used only for local dev purposes
 .PHONY: container-push
@@ -350,17 +350,17 @@ container-operator-opamp-bridge-push:
 .PHONY: container-target-allocator
 container-target-allocator: GOOS = linux
 container-target-allocator: targetallocator
-	docker build -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
+	docker build --load -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
 
 .PHONY: container-operator-opamp-bridge
 container-operator-opamp-bridge: GOOS = linux
 container-operator-opamp-bridge: operator-opamp-bridge
-	docker build -t ${OPERATOROPAMPBRIDGE_IMG} cmd/operator-opamp-bridge
+	docker build --load -t ${OPERATOROPAMPBRIDGE_IMG} cmd/operator-opamp-bridge
 
 .PHONY: container-bridge-test-server
 container-bridge-test-server: GOOS = linux
 container-bridge-test-server:
-	docker build -t ${BRIDGETESTSERVER_IMG} tests/test-e2e-apps/bridge-server
+	docker build --load -t ${BRIDGETESTSERVER_IMG} tests/test-e2e-apps/bridge-server
 
 .PHONY: start-kind
 start-kind: kind
@@ -551,7 +551,7 @@ reset: kustomize operator-sdk manifests
 # Build the bundle image, used only for local dev purposes
 .PHONY: bundle-build
 bundle-build:
-	docker build -f ./bundle/$(BUNDLE_VARIANT)/bundle.Dockerfile -t $(BUNDLE_IMG) ./bundle/$(BUNDLE_VARIANT)
+	docker build --load -f ./bundle/$(BUNDLE_VARIANT)/bundle.Dockerfile -t $(BUNDLE_IMG) ./bundle/$(BUNDLE_VARIANT)
 
 .PHONY: bundle-push
 bundle-push:
