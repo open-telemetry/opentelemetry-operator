@@ -1,0 +1,13 @@
+change_type: enhancement
+
+component: instrumentation
+
+note: "introduced ability to set Otel resource attributes based on annotations for instrumentation"
+
+issues:
+  - 2181
+
+
+subtext: |
+
+  resource.opentelemetry.io/your-key: "your-value"
