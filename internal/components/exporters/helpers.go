@@ -19,10 +19,10 @@ import (
 )
 
 // registry holds a record of all known receiver parsers.
-var registry = make(map[string]components.ComponentPortParser)
+var registry = make(map[string]components.Parser)
 
 // Register adds a new parser builder to the list of known builders.
-func Register(name string, p components.ComponentPortParser) {
+func Register(name string, p components.Parser) {
 	registry[name] = p
 }
 
@@ -33,16 +33,16 @@ func IsRegistered(name string) bool {
 }
 
 // ParserFor returns a parser builder for the given exporter name.
-func ParserFor(name string) components.ComponentPortParser {
+func ParserFor(name string) components.Parser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}
 	// We want the default for exporters to fail silently.
-	return components.NewNopParser(components.ComponentType(name), components.UnsetPort)
+	return components.NewGenericParser[any](components.ComponentType(name), components.UnsetPort, nil)
 }
 
 var (
-	componentParsers = []components.ComponentPortParser{
+	componentParsers = []components.Parser{
 		components.NewSinglePortParser("prometheus", 8888),
 	}
 )
