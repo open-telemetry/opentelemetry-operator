@@ -445,7 +445,7 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	return nil
 }
 
-// BuildValidator is //purpose and description
+// BuildValidator enables running the manifest generators for the collector reconciler
 // Kubebuilder is used for testing
 // +kubebuilder:object:generate=false
 

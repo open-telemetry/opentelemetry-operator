@@ -5,7 +5,7 @@ change_type: enhancement
 component: operator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: added reconciliation errors for webhook events
+note: Added reconciliation errors for webhook events. The webhooks run the manifest generators to check for any errors.
 
 # One or more tracking issues related to the change
 issues: [2399]

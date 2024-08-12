@@ -366,15 +366,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	collectorReconciler := controllers.NewReconciler(controllers.Params{
+	if err = controllers.NewReconciler(controllers.Params{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
 		Scheme:   mgr.GetScheme(),
 		Config:   cfg,
 		Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
-	})
-
-	if err = collectorReconciler.SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
 		os.Exit(1)
 	}
