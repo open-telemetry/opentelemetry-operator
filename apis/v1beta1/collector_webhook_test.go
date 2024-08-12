@@ -172,12 +172,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						ManagementState: v1beta1.ManagementStateManaged,
 						Replicas:        &one,
-						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
-							MaxUnavailable: &intstr.IntOrString{
-								Type:   intstr.Int,
-								IntVal: 1,
-							},
-						},
 					},
 					Mode:            v1beta1.ModeDeployment,
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
@@ -208,12 +202,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &five,
 						ManagementState: v1beta1.ManagementStateManaged,
-						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
-							MaxUnavailable: &intstr.IntOrString{
-								Type:   intstr.Int,
-								IntVal: 1,
-							},
-						},
 					},
 				},
 			},
@@ -243,12 +231,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &five,
 						ManagementState: v1beta1.ManagementStateUnmanaged,
-						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
-							MaxUnavailable: &intstr.IntOrString{
-								Type:   intstr.Int,
-								IntVal: 1,
-							},
-						},
 					},
 				},
 			},
@@ -276,12 +258,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
-						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
-							MaxUnavailable: &intstr.IntOrString{
-								Type:   intstr.Int,
-								IntVal: 1,
-							},
-						},
 					},
 					Autoscaler: &v1beta1.AutoscalerSpec{
 						TargetCPUUtilization: &defaultCPUTarget,
@@ -313,12 +289,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						ManagementState: v1beta1.ManagementStateManaged,
 						Replicas:        &one,
-						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
-							MaxUnavailable: &intstr.IntOrString{
-								Type:   intstr.Int,
-								IntVal: 1,
-							},
-						},
 					},
 					Ingress: v1beta1.Ingress{
 						Type: v1beta1.IngressTypeRoute,
@@ -397,12 +367,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
-						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
-							MaxUnavailable: &intstr.IntOrString{
-								Type:   intstr.Int,
-								IntVal: 1,
-							},
-						},
 					},
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
 					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
@@ -448,12 +412,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
-						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
-							MaxUnavailable: &intstr.IntOrString{
-								Type:   intstr.Int,
-								IntVal: 1,
-							},
-						},
 					},
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
 					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
@@ -494,24 +452,12 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
-						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
-							MaxUnavailable: &intstr.IntOrString{
-								Type:   intstr.Int,
-								IntVal: 1,
-							},
-						},
 					},
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
 					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 						Enabled:            true,
 						Replicas:           &one,
 						AllocationStrategy: v1beta1.TargetAllocatorAllocationStrategyConsistentHashing,
-						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
-							MaxUnavailable: &intstr.IntOrString{
-								Type:   intstr.Int,
-								IntVal: 1,
-							},
-						},
 					},
 				},
 			},
@@ -539,12 +485,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
-						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
-							MaxUnavailable: &intstr.IntOrString{
-								Type:   intstr.Int,
-								IntVal: 1,
-							},
-						},
 					},
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
 					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
