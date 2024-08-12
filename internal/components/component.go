@@ -43,13 +43,12 @@ type PortRetriever interface {
 }
 
 type Option struct {
-	protocol     corev1.Protocol
-	appProtocol  *string
-	targetPort   intstr.IntOrString
-	nodePort     int32
-	failSilently bool
-	name         string
-	port         int32
+	protocol    corev1.Protocol
+	appProtocol *string
+	targetPort  intstr.IntOrString
+	nodePort    int32
+	name        string
+	port        int32
 }
 
 func NewOption(name string, port int32) *Option {
@@ -77,12 +76,6 @@ func (o *Option) ConstructServicePort() *corev1.ServicePort {
 }
 
 type PortBuilderOption func(*Option)
-
-func WithSilentFailure() PortBuilderOption {
-	return func(opt *Option) {
-		opt.failSilently = true
-	}
-}
 
 func WithTargetPort(targetPort int32) PortBuilderOption {
 	return func(opt *Option) {

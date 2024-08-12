@@ -48,12 +48,20 @@ func (g *SingleEndpointConfig) GetPortNum() (int32, error) {
 	return UnsetPort, PortNotFoundErr
 }
 
+func SilentSingleEndpointParser(logger logr.Logger, name string, o *Option, singleEndpointConfig *SingleEndpointConfig) ([]corev1.ServicePort, error) {
+	return internalSingleEndpointParser(logger, name, true, o, singleEndpointConfig)
+}
+
 func SingleEndpointParser(logger logr.Logger, name string, o *Option, singleEndpointConfig *SingleEndpointConfig) ([]corev1.ServicePort, error) {
+	return internalSingleEndpointParser(logger, name, false, o, singleEndpointConfig)
+}
+
+func internalSingleEndpointParser(logger logr.Logger, name string, failSilently bool, o *Option, singleEndpointConfig *SingleEndpointConfig) ([]corev1.ServicePort, error) {
 	if singleEndpointConfig == nil {
 		return nil, nil
 	}
 	if _, err := singleEndpointConfig.GetPortNum(); err != nil && o.port == UnsetPort {
-		if o.failSilently {
+		if failSilently {
 			logger.WithValues("receiver", o.name).V(4).Info("couldn't parse the endpoint's port and no default port set", "error", err)
 			err = nil
 		} else {
@@ -73,5 +81,5 @@ func NewSinglePortParser(name string, port int32, opts ...PortBuilderOption) *Ge
 
 // NewSilentSinglePortParser returns a SingleEndpointParser that errors silently on failure to find a port.
 func NewSilentSinglePortParser(name string, port int32, opts ...PortBuilderOption) *GenericParser[*SingleEndpointConfig] {
-	return NewGenericParser(name, port, SingleEndpointParser, append(opts, WithSilentFailure())...)
+	return NewGenericParser(name, port, SilentSingleEndpointParser, opts...)
 }
