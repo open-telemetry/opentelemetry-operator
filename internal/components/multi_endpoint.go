@@ -84,8 +84,8 @@ func NewMultiPortReceiver(name string, opts ...MultiPortOption) *MultiPortReceiv
 
 func WithPortMapping(name string, port int32, opts ...PortBuilderOption) MultiPortOption {
 	return func(parser *MultiPortReceiver) {
-		o := newOption(name, port)
-		o.apply(opts...)
-		parser.portMappings[name] = o.constructServicePort()
+		o := NewOption(name, port)
+		o.Apply(opts...)
+		parser.portMappings[name] = o.ConstructServicePort()
 	}
 }

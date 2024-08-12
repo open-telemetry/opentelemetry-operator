@@ -54,7 +54,7 @@ func (g *GenericParser[T]) ParserName() string {
 }
 
 func NewGenericParser[T any](name string, port int32, parser PortParser[T], opts ...PortBuilderOption) *GenericParser[T] {
-	o := newOption(name, port)
-	o.apply(opts...)
+	o := NewOption(name, port)
+	o.Apply(opts...)
 	return &GenericParser[T]{name: name, portParser: parser, option: o}
 }

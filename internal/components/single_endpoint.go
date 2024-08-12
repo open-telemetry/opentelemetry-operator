@@ -62,7 +62,7 @@ func SingleEndpointParser(logger logr.Logger, name string, o *Option, singleEndp
 		return []corev1.ServicePort{}, err
 	}
 	port := singleEndpointConfig.GetPortNumOrDefault(logger, o.port)
-	svcPort := o.constructServicePort()
+	svcPort := o.ConstructServicePort()
 	svcPort.Name = naming.PortName(name, port)
 	return []corev1.ServicePort{ConstructServicePort(svcPort, port)}, nil
 }
