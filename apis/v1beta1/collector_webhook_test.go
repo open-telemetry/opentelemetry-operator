@@ -47,22 +47,6 @@ var (
 	testScheme = scheme.Scheme
 )
 
-var cfgYaml = `receivers:
- examplereceiver:
-   endpoint: "0.0.0.0:12345"
- examplereceiver/settings:
-   endpoint: "0.0.0.0:12346"
- prometheus:
-   config:
-     scrape_configs:
-       - job_name: otel-collector
-         scrape_interval: 10s
- jaeger/custom:
-   protocols:
-     thrift_http:
-       endpoint: 0.0.0.0:15268
-`
-
 func TestValidate(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -538,6 +522,22 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 	}
 }
 
+var cfgYaml = `receivers:
+ examplereceiver:
+   endpoint: "0.0.0.0:12345"
+ examplereceiver/settings:
+   endpoint: "0.0.0.0:12346"
+ prometheus:
+   config:
+     scrape_configs:
+       - job_name: otel-collector
+         scrape_interval: 10s
+ jaeger/custom:
+   protocols:
+     thrift_http:
+       endpoint: 0.0.0.0:15268
+`
+
 func TestOTELColValidatingWebhook(t *testing.T) {
 	minusOne := int32(-1)
 	zero := int32(0)
@@ -545,11 +545,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	one := int32(1)
 	three := int32(3)
 	five := int32(5)
-
-	if err := v1beta1.AddToScheme(testScheme); err != nil {
-		fmt.Printf("failed to register scheme: %v", err)
-		os.Exit(1)
-	}
 
 	cfg := v1beta1.Config{}
 	err := yaml.Unmarshal([]byte(cfgYaml), &cfg)
