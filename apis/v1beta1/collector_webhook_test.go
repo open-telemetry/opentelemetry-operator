@@ -546,10 +546,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	three := int32(3)
 	five := int32(5)
 
-	if err := v1beta1.AddToScheme(testScheme); err != nil {
-		fmt.Printf("failed to register scheme: %v", err)
-		os.Exit(1)
-	}
+	v1beta1.AddToScheme(testScheme)
+    require.NoError(e, err)
 
 	cfg := v1beta1.Config{}
 	err := yaml.Unmarshal([]byte(cfgYaml), &cfg)
