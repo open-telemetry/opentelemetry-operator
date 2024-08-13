@@ -116,7 +116,8 @@ type OpenTelemetryCommonFields struct {
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
-	// for the generated workload.
+	// for the generated workload. By default, a PDB with a MaxUnavailable of one is set.
+	//
 	// +optional
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 	// SecurityContext configures the container security context for

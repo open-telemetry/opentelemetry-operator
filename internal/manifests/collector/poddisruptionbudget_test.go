@@ -29,38 +29,84 @@ import (
 )
 
 func TestPDB(t *testing.T) {
-	type test struct {
-		name           string
-		MinAvailable   *intstr.IntOrString
+	type expected struct {
 		MaxUnavailable *intstr.IntOrString
+		MinAvailable   *intstr.IntOrString
+	}
+	type test struct {
+		name     string
+		spec     *v1beta1.PodDisruptionBudgetSpec
+		expected expected
 	}
 	tests := []test{
 		{
+			name: "defaults",
+			spec: nil,
+			expected: expected{
+				MaxUnavailable: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 1,
+				},
+			},
+		},
+		{
 			name: "MinAvailable-int",
-			MinAvailable: &intstr.IntOrString{
-				Type:   intstr.Int,
-				IntVal: 1,
+			expected: expected{
+				MinAvailable: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 1,
+				},
+			},
+			spec: &v1beta1.PodDisruptionBudgetSpec{
+				MinAvailable: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 1,
+				},
 			},
 		},
 		{
 			name: "MinAvailable-string",
-			MinAvailable: &intstr.IntOrString{
-				Type:   intstr.String,
-				StrVal: "10%",
+			expected: expected{
+				MinAvailable: &intstr.IntOrString{
+					Type:   intstr.String,
+					StrVal: "10%",
+				},
+			},
+			spec: &v1beta1.PodDisruptionBudgetSpec{
+				MinAvailable: &intstr.IntOrString{
+					Type:   intstr.String,
+					StrVal: "10%",
+				},
 			},
 		},
 		{
 			name: "MaxUnavailable-int",
-			MaxUnavailable: &intstr.IntOrString{
-				Type:   intstr.Int,
-				IntVal: 1,
+			expected: expected{
+				MaxUnavailable: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 1,
+				},
+			},
+			spec: &v1beta1.PodDisruptionBudgetSpec{
+				MaxUnavailable: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 1,
+				},
 			},
 		},
 		{
 			name: "MaxUnavailable-string",
-			MaxUnavailable: &intstr.IntOrString{
-				Type:   intstr.String,
-				StrVal: "10%",
+			expected: expected{
+				MaxUnavailable: &intstr.IntOrString{
+					Type:   intstr.String,
+					StrVal: "10%",
+				},
+			},
+			spec: &v1beta1.PodDisruptionBudgetSpec{
+				MaxUnavailable: &intstr.IntOrString{
+					Type:   intstr.String,
+					StrVal: "10%",
+				},
 			},
 		},
 	}
@@ -76,10 +122,7 @@ func TestPDB(t *testing.T) {
 	for _, otelcol := range otelcols {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				otelcol.Spec.PodDisruptionBudget = &v1beta1.PodDisruptionBudgetSpec{
-					MinAvailable:   test.MinAvailable,
-					MaxUnavailable: test.MaxUnavailable,
-				}
+				otelcol.Spec.PodDisruptionBudget = test.spec.DeepCopy()
 				configuration := config.New()
 				pdb, err := PodDisruptionBudget(manifests.Params{
 					Log:     logger,
@@ -91,8 +134,8 @@ func TestPDB(t *testing.T) {
 				// verify
 				assert.Equal(t, "my-instance-collector", pdb.Name)
 				assert.Equal(t, "my-instance-collector", pdb.Labels["app.kubernetes.io/name"])
-				assert.Equal(t, test.MinAvailable, pdb.Spec.MinAvailable)
-				assert.Equal(t, test.MaxUnavailable, pdb.Spec.MaxUnavailable)
+				assert.Equal(t, test.expected.MinAvailable, pdb.Spec.MinAvailable)
+				assert.Equal(t, test.expected.MaxUnavailable, pdb.Spec.MaxUnavailable)
 			})
 		}
 	}

@@ -31431,7 +31431,7 @@ the generated pods.<br/>
         <td>object</td>
         <td>
           PodDisruptionBudget specifies the pod disruption budget configuration to use
-for the generated workload.<br/>
+for the generated workload. By default, a PDB with a MaxUnavailable of one is set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -41251,7 +41251,7 @@ The operator.observability.prometheus feature gate must be enabled to use this f
 
 
 PodDisruptionBudget specifies the pod disruption budget configuration to use
-for the generated workload.
+for the generated workload. By default, a PDB with a MaxUnavailable of one is set.
 
 <table>
     <thead>
@@ -42537,7 +42537,8 @@ The default is relabel-config.<br/>
         <td>object</td>
         <td>
           PodDisruptionBudget specifies the pod disruption budget configuration to use
-for the target allocator workload.<br/>
+for the target allocator workload. By default, a PDB with a MaxUnavailable of one is set for a valid
+allocation strategy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -44620,7 +44621,8 @@ The operator.observability.prometheus feature gate must be enabled to use this f
 
 
 PodDisruptionBudget specifies the pod disruption budget configuration to use
-for the target allocator workload.
+for the target allocator workload. By default, a PDB with a MaxUnavailable of one is set for a valid
+allocation strategy.
 
 <table>
     <thead>
