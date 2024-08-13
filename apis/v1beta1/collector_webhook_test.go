@@ -546,8 +546,11 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	three := int32(3)
 	five := int32(5)
 
+	err := v1beta1.AddToScheme(testScheme)
+	require.NoError(t, err)
+
 	cfg := v1beta1.Config{}
-	err := yaml.Unmarshal([]byte(cfgYaml), &cfg)
+	err = yaml.Unmarshal([]byte(cfgYaml), &cfg)
 	require.NoError(t, err)
 
 	tests := []struct { //nolint:govet
