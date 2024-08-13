@@ -18,8 +18,9 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sort"
+
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/go-logr/logr"
 	routev1 "github.com/openshift/api/route/v1"
