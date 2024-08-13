@@ -159,6 +159,7 @@ service:
 								},
 							},
 							Spec: corev1.PodSpec{
+								ImagePullSecrets: []corev1.LocalObjectReference{},
 								Volumes: []corev1.Volume{
 									{
 										Name: "otc-internal",
@@ -438,6 +439,7 @@ service:
 								},
 							},
 							Spec: corev1.PodSpec{
+								ImagePullSecrets: []corev1.LocalObjectReference{},
 								Volumes: []corev1.Volume{
 									{
 										Name: "otc-internal",
@@ -753,6 +755,7 @@ service:
 								},
 							},
 							Spec: corev1.PodSpec{
+								ImagePullSecrets: []corev1.LocalObjectReference{},
 								Volumes: []corev1.Volume{
 									{
 										Name: "otc-internal",
@@ -1313,6 +1316,7 @@ service:
 								},
 							},
 							Spec: corev1.PodSpec{
+								ImagePullSecrets: []corev1.LocalObjectReference{},
 								Volumes: []corev1.Volume{
 									{
 										Name: "otc-internal",
@@ -1771,6 +1775,7 @@ prometheus_cr:
 								},
 							},
 							Spec: corev1.PodSpec{
+								ImagePullSecrets: []corev1.LocalObjectReference{},
 								Volumes: []corev1.Volume{
 									{
 										Name: "otc-internal",
