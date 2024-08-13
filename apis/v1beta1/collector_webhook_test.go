@@ -20,11 +20,6 @@ import (
 	"os"
 	"testing"
 
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
-
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,9 +35,12 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeTesting "k8s.io/client-go/testing"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
