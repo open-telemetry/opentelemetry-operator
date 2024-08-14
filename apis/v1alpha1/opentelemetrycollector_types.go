@@ -538,7 +538,7 @@ type MetricsConfigSpec struct {
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
-	DisablePrometheusAnnotations bool `json:"DisablePrometheusAnnotations,omitempty"`
+	DisablePrometheusAnnotations bool `json:"disablePrometheusAnnotations,omitempty"`
 }
 
 // ObservabilitySpec defines how telemetry data gets handled.
