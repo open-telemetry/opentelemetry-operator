@@ -2344,7 +2344,7 @@ spec:
                 properties:
                   metrics:
                     properties:
-                      DisablePrometheusAnnotations:
+                      disablePrometheusAnnotations:
                         type: boolean
                       enableMetrics:
                         type: boolean
@@ -3112,7 +3112,7 @@ spec:
                     properties:
                       metrics:
                         properties:
-                          DisablePrometheusAnnotations:
+                          disablePrometheusAnnotations:
                             type: boolean
                           enableMetrics:
                             type: boolean

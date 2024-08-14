@@ -21272,7 +21272,7 @@ Metrics defines the metrics configuration for operands.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>DisablePrometheusAnnotations</b></td>
+        <td><b>disablePrometheusAnnotations</b></td>
         <td>boolean</td>
         <td>
           DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations
@@ -24424,7 +24424,7 @@ Metrics defines the metrics configuration for operands.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>DisablePrometheusAnnotations</b></td>
+        <td><b>disablePrometheusAnnotations</b></td>
         <td>boolean</td>
         <td>
           DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations
