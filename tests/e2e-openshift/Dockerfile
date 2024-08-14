@@ -18,7 +18,7 @@ RUN mkdir -p /tmp/go/bin $GOCACHE \
     && chmod -R 777 /tmp/go/bin $GOPATH $GOCACHE
 
 # Install dependencies required by test cases and debugging
-RUN apt-get update && apt-get install -y jq vim libreadline-dev
+RUN apt-get update && apt-get install -y jq vim libreadline-dev unzip
 
 # Install kuttl e2e
 RUN curl -LO https://github.com/kudobuilder/kuttl/releases/download/v0.15.0/kubectl-kuttl_0.15.0_linux_x86_64 \
@@ -33,6 +33,12 @@ RUN curl -LO https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/la
     && tar -xzf openshift-client-linux.tar.gz \
     && chmod +x oc kubectl \
     && mv oc kubectl /usr/local/bin/
+
+# Install the latest version of logcli
+RUN curl -LO https://github.com/grafana/loki/releases/latest/download/logcli-linux-amd64.zip \
+    && unzip logcli-linux-amd64.zip \
+    && chmod +x logcli-linux-amd64 \
+    && mv logcli-linux-amd64 /usr/local/bin/logcli
 
 # Set the working directory
 WORKDIR /tmp/opentelemetry-operator

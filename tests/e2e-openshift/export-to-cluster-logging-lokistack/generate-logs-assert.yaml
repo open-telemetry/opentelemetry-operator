@@ -1,0 +1,7 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: telemetrygen
+  namespace: chainsaw-incllogs
+status:
+  active: 1
