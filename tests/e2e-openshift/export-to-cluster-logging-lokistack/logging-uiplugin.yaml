@@ -1,0 +1,11 @@
+apiVersion: observability.openshift.io/v1alpha1
+kind: UIPlugin
+metadata:
+  name: logging
+spec:
+  logging:
+    logsLimit: 20
+    lokiStack:
+      name: logging-loki
+    timeout: 300s
+  type: Logging
