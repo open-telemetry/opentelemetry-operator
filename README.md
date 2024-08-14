@@ -717,7 +717,7 @@ spec:
 EOF
 ```
 
-### Setting instrumentation resource attributes via namespace annotations
+### Setting instrumentation resource attributes via annotations and labels
 
 This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. These annotations can be used to add resource attributes to data produced by OpenTelemetry instrumentation.
 
@@ -734,7 +734,31 @@ spec:
   containers:
   - name: main-container
     image: your-image:tag
- ```
+```
+
+You can also use labels to set resource attributes. 
+
+The following labels are supported:
+- `app.kubernetes.io/name` becomes `service.name`
+- `app.kubernetes.io/version` becomes `service.version`
+- `app.kubernetes.io/part-of` becomes `service.namespace`
+- `app.kubernetes.io/instance` becomes `service.instance.id`
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: example-pod
+  labels:
+    app.kubernetes.io/name: "my-service"
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/part-of: "shop"
+    app.kubernetes.io/instance: "my-service-123"
+spec:
+    containers:
+    - name: main-container
+      image: your-image:tag
+```
 
 ## Compatibility matrix
 

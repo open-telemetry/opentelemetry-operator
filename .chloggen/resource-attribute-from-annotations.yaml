@@ -1,16 +1,14 @@
-# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
-change_type: enhancement
+change_type: breaking
 
-# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
 component: auto-instrumentation
 
-# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
 note: Add support for k8s labels such as app.kubernetes.io/name and annotations for resource attributes
 
-# One or more tracking issues related to the change
 issues: [3112]
 
-# (Optional) One or more lines of additional information to render under the primary note.
-# These lines will be padded with 2 spaces and then inserted directly into the document.
-# Use pipe (|) for multiline entries.
-subtext:
+subtext: |
+  It's a breaking change because these annotations are well-known and widely used in the Kubernetes ecosystem. The following labels are supported:
+    - `app.kubernetes.io/name` becomes `service.name`
+    - `app.kubernetes.io/version` becomes `service.version`
+    - `app.kubernetes.io/part-of` becomes `service.namespace`
+    - `app.kubernetes.io/instance` becomes `service.instance.id`
