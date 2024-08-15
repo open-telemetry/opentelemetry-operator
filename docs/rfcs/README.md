@@ -12,9 +12,9 @@ open proposals with the proper SIGs.
 
 ## Process
 
-1. Copy and fill the template.md document
+1. Copy and fill the [template.md](./template.md) document
 2. Open a PR to get initial feedback on RFC
-3. The RFC must be brought before the SIG at least once prior to merge
+3. The RFC must be discussed at the Operator SIG Meeting at least once prior to merge
 4. Upon merge, the RFC's status will still be Draft. At this point, the RFC has been accepted and an implementation
 can be started
    1. The initial implementation's PR should change the status to accepted
@@ -22,10 +22,9 @@ can be started
 
 ## Recommendations
 
-During the RFC process, the template.md must be filled out. We recommend also doing the following:
+During the RFC process, the [template.md](./template.md) must be filled out. We recommend also doing the following:
 
 * Include a proof-of-concept to confirm the design
 * Share alternatives considered and tradeoffs
   * A valid alternative to consider is always "do nothing"
 * Pair with a SIG member to sort through unknowns / ask for help
- 
