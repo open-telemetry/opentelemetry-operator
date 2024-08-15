@@ -1,8 +1,11 @@
 # TITLE
 
 **Status:** *Draft*
+
 **Author:** <your-name>
+
 **Date:** <todays-date>
+
 
 ## Objective
 
