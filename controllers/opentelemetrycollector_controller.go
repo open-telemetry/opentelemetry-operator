@@ -78,16 +78,14 @@ type Params struct {
 
 func (r *OpenTelemetryCollectorReconciler) Validate(otelcol v1beta1.OpenTelemetryCollector) admission.Warnings {
 	var warnings admission.Warnings
-	cfg := config.New(
-		config.WithCollectorImage("default-collector"),
-		config.WithTargetAllocatorImage("default-ta-allocator"),
-	)
-	params := manifests.Params{
-		Log:     logr.Discard(),
-		Config:  cfg,
-		OtelCol: otelcol,
+
+	params, err := r.getParams(otelcol)
+	if err != nil {
+		warnings = append(warnings, err.Error())
+		return warnings
 	}
-	_, err := collector.Build(params)
+
+	_, err = collector.Build(params)
 	if err != nil {
 		warnings = append(warnings, err.Error())
 		return warnings
