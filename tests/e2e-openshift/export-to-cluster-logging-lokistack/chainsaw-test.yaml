@@ -1,0 +1,62 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: export-to-cluster-logging-lokistack
+spec:
+  namespace: chainsaw-incllogs
+  description: Tests shipping of logs to OpenShift in-cluster Logging LokiStack instance using OpenTelemetry collector. The tests requires the Loki, OpenTelemetry and Cluster Observability Operator to be installed along with logcli
+  steps:
+  - name: Create the OTEL collector instance
+    try:
+    - apply:
+        file: otel-collector.yaml
+    - assert:
+        file: otel-collector-assert.yaml
+  - name: Install Minio instance
+    try:
+    - apply:
+        file: install-minio.yaml
+    - assert:
+        file: install-minio-assert.yaml
+  - name: Create the LokiStack instance
+    try:
+    - apply:
+        file: install-loki.yaml
+    - assert:
+        file: install-loki-assert.yaml
+  - name: Check the status of LokiStack instance
+    try:
+    - script:
+        timeout: 5m
+        content: kubectl get --namespace openshift-logging lokistacks logging-loki -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
+  - name: Enable Logging UI. Not needed by test but can be used for debugging
+    try:
+    - apply:
+        file: logging-uiplugin.yaml
+    - assert:
+        file: logging-uiplugin-assert.yaml
+  - name: Generate logs
+    try:
+    - apply:
+        file: generate-logs.yaml
+    - assert:
+        file: generate-logs-assert.yaml
+  - name: Check logs in LokiStack instance
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_logs.sh
+    cleanup:
+    - delete:
+        ref:
+          apiVersion: loki.grafana.com/v1
+          kind: LokiStack
+          name: logging-loki
+          namespace: openshift-logging
+    - delete:
+        ref:
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          labels: 
+            app.kubernetes.io/instance: "logging-loki"
+          namespace: openshift-logging
