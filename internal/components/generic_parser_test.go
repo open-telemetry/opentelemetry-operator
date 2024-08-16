@@ -41,7 +41,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 	tests := []testCase[*components.SingleEndpointConfig]{
 		{
 			name: "valid config with endpoint",
-			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.SingleEndpointParser),
+			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.ParseSingleEndpoint),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -58,7 +58,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 		},
 		{
 			name: "valid config with listen_address",
-			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.SingleEndpointParser),
+			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.ParseSingleEndpoint),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -74,8 +74,26 @@ func TestGenericParser_GetPorts(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
+			name: "valid config with listen_address with option",
+			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.ParseSingleEndpoint, components.WithProtocol(corev1.ProtocolUDP)),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"listen_address": "0.0.0.0:9090",
+				},
+			},
+			want: []corev1.ServicePort{
+				{
+					Name:     "test",
+					Port:     9090,
+					Protocol: corev1.ProtocolUDP,
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
 			name: "invalid config with no endpoint or listen_address",
-			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.SingleEndpointParser),
+			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.ParseSingleEndpoint),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{},

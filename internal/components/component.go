@@ -64,7 +64,7 @@ func (o *Option) Apply(opts ...PortBuilderOption) {
 	}
 }
 
-func (o *Option) ConstructServicePort() *corev1.ServicePort {
+func (o *Option) GetServicePort() *corev1.ServicePort {
 	return &corev1.ServicePort{
 		Name:        naming.PortName(o.name, o.port),
 		Port:        o.port,
