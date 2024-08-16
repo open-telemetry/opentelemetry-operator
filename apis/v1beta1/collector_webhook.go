@@ -416,9 +416,7 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 }
 
 // BuildValidator enables running the manifest generators for the collector reconciler
-// Kubebuilder is used for testing
 // +kubebuilder:object:generate=false
-
 type BuildValidator func(c OpenTelemetryCollector) admission.Warnings
 
 func NewCollectorWebhook(
