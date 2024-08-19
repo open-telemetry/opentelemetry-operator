@@ -1,0 +1,828 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "opentelemetry.io/v1alpha1",
+          "kind": "Instrumentation",
+          "metadata": {
+            "name": "instrumentation"
+          },
+          "spec": {
+            "exporter": {
+              "endpoint": "http://otel-collector-headless:4317"
+            }
+          }
+        },
+        {
+          "apiVersion": "opentelemetry.io/v1alpha1",
+          "kind": "OpAMPBridge",
+          "metadata": {
+            "name": "opampbridge-sample"
+          },
+          "spec": {
+            "capabilities": {
+              "AcceptsOpAMPConnectionSettings": true,
+              "AcceptsOtherConnectionSettings": true,
+              "AcceptsRemoteConfig": true,
+              "AcceptsRestartCommand": true,
+              "ReportsEffectiveConfig": true,
+              "ReportsHealth": true,
+              "ReportsOwnLogs": true,
+              "ReportsOwnMetrics": true,
+              "ReportsOwnTraces": true,
+              "ReportsRemoteConfig": true,
+              "ReportsStatus": true
+            },
+            "componentsAllowed": {
+              "exporters": [
+                "logging"
+              ],
+              "processors": [
+                "memory_limiter"
+              ],
+              "receivers": [
+                "otlp"
+              ]
+            },
+            "endpoint": "ws://opamp-server:4320/v1/opamp"
+          }
+        },
+        {
+          "apiVersion": "opentelemetry.io/v1alpha1",
+          "kind": "OpenTelemetryCollector",
+          "metadata": {
+            "name": "otel"
+          },
+          "spec": {
+            "config": "receivers:\n  otlp:\n    protocols: \n      grpc: {}\n      http: {}\n\nexporters:\n  debug: {}\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      exporters: [debug]\n"
+          }
+        },
+        {
+          "apiVersion": "opentelemetry.io/v1beta1",
+          "kind": "OpenTelemetryCollector",
+          "metadata": {
+            "name": "otel"
+          },
+          "spec": {
+            "config": {
+              "exporters": {
+                "debug": {}
+              },
+              "receivers": {
+                "otlp": {
+                  "protocols": {
+                    "grpc": {},
+                    "http": {}
+                  }
+                }
+              },
+              "service": {
+                "pipelines": {
+                  "traces": {
+                    "exporters": [
+                      "debug"
+                    ],
+                    "receivers": [
+                      "otlp"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    capabilities: Deep Insights
+    categories: Logging & Tracing,Monitoring
+    certified: "false"
+    containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+    createdAt: "2024-08-14T11:18:33Z"
+    description: Provides the OpenTelemetry components, including the Collector
+    operators.operatorframework.io/builder: operator-sdk-v1.29.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+    repository: github.com/open-telemetry/opentelemetry-operator
+    support: OpenTelemetry Community
+  name: opentelemetry-operator.v0.107.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Instrumentation is the spec for OpenTelemetry instrumentation.
+      displayName: OpenTelemetry Instrumentation
+      kind: Instrumentation
+      name: instrumentations.opentelemetry.io
+      resources:
+      - kind: Pod
+        name: ""
+        version: v1
+      version: v1alpha1
+    - description: OpAMPBridge is the Schema for the opampbridges API.
+      displayName: OpAMP Bridge
+      kind: OpAMPBridge
+      name: opampbridges.opentelemetry.io
+      resources:
+      - kind: ConfigMaps
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: apps/v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      version: v1alpha1
+    - description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
+        API.
+      displayName: OpenTelemetry Collector
+      kind: OpenTelemetryCollector
+      name: opentelemetrycollectors.opentelemetry.io
+      resources:
+      - kind: ConfigMaps
+        name: ""
+        version: v1
+      - kind: DaemonSets
+        name: ""
+        version: apps/v1
+      - kind: Deployment
+        name: ""
+        version: apps/v1
+      - kind: Ingress
+        name: ""
+        version: networking/v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: StatefulSets
+        name: ""
+        version: apps/v1
+      specDescriptors:
+      - description: ObservabilitySpec defines how telemetry data gets handled.
+        displayName: Observability
+        path: observability
+      - description: Metrics defines the metrics configuration for operands.
+        displayName: Metrics Config
+        path: observability.metrics
+      - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
+          mode) should be created for the service managed by the OpenTelemetry Operator.
+          The operator.observability.prometheus feature gate must be enabled to use
+          this feature.
+        displayName: Create ServiceMonitors for OpenTelemetry Collector
+        path: observability.metrics.enableMetrics
+      - description: ObservabilitySpec defines how telemetry data gets handled.
+        displayName: Observability
+        path: targetAllocator.observability
+      - description: Metrics defines the metrics configuration for operands.
+        displayName: Metrics Config
+        path: targetAllocator.observability.metrics
+      - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
+          mode) should be created for the service managed by the OpenTelemetry Operator.
+          The operator.observability.prometheus feature gate must be enabled to use
+          this feature.
+        displayName: Create ServiceMonitors for OpenTelemetry Collector
+        path: targetAllocator.observability.metrics.enableMetrics
+      version: v1alpha1
+    - description: OpenTelemetryCollector is the Schema for the opentelemetrycollectors
+        API.
+      displayName: OpenTelemetry Collector
+      kind: OpenTelemetryCollector
+      name: opentelemetrycollectors.opentelemetry.io
+      resources:
+      - kind: ConfigMaps
+        name: ""
+        version: v1
+      - kind: DaemonSets
+        name: ""
+        version: apps/v1
+      - kind: Deployment
+        name: ""
+        version: apps/v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: StatefulSets
+        name: ""
+        version: apps/v1
+      specDescriptors:
+      - description: ObservabilitySpec defines how telemetry data gets handled.
+        displayName: Observability
+        path: observability
+      - description: Metrics defines the metrics configuration for operands.
+        displayName: Metrics Config
+        path: observability.metrics
+      - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
+          mode) should be created for the service managed by the OpenTelemetry Operator.
+          The operator.observability.prometheus feature gate must be enabled to use
+          this feature.
+        displayName: Create ServiceMonitors for OpenTelemetry Collector
+        path: observability.metrics.enableMetrics
+      - description: ObservabilitySpec defines how telemetry data gets handled.
+        displayName: Observability
+        path: targetAllocator.observability
+      - description: Metrics defines the metrics configuration for operands.
+        displayName: Metrics Config
+        path: targetAllocator.observability.metrics
+      - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
+          mode) should be created for the service managed by the OpenTelemetry Operator.
+          The operator.observability.prometheus feature gate must be enabled to use
+          this feature.
+        displayName: Create ServiceMonitors for OpenTelemetry Collector
+        path: targetAllocator.observability.metrics.enableMetrics
+      version: v1beta1
+  description: |-
+    OpenTelemetry is a collection of tools, APIs, and SDKs. You use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) for analysis in order to understand your software's performance and behavior.
+
+    ### Operator features
+
+    * **Sidecar injection** - annotate your pods and let the operator inject a sidecar.
+    * **Managed upgrades** - updating the operator will automatically update your OpenTelemetry collectors.
+    * **Deployment modes** - your collector can be deployed as sidecar, daemon set, or regular deployment.
+    * **Service port management** - the operator detects which ports need to be exposed based on the provided configuration.
+  displayName: Community OpenTelemetry Operator
+  icon:
+  - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHJvbGU9ImltZyIgdmlld0JveD0iLTEyLjcwIC0xMi43MCAxMDI0LjQwIDEwMjQuNDAiPjxzdHlsZT5zdmcge2VuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMTAwMCAxMDAwfTwvc3R5bGU+PHBhdGggZmlsbD0iI2Y1YTgwMCIgZD0iTTUyOC43IDU0NS45Yy00MiA0Mi00MiAxMTAuMSAwIDE1Mi4xczExMC4xIDQyIDE1Mi4xIDAgNDItMTEwLjEgMC0xNTIuMS0xMTAuMS00Mi0xNTIuMSAwem0xMTMuNyAxMTMuOGMtMjAuOCAyMC44LTU0LjUgMjAuOC03NS4zIDAtMjAuOC0yMC44LTIwLjgtNTQuNSAwLTc1LjMgMjAuOC0yMC44IDU0LjUtMjAuOCA3NS4zIDAgMjAuOCAyMC43IDIwLjggNTQuNSAwIDc1LjN6bTM2LjYtNjQzbC02NS45IDY1LjljLTEyLjkgMTIuOS0xMi45IDM0LjEgMCA0N2wyNTcuMyAyNTcuM2MxMi45IDEyLjkgMzQuMSAxMi45IDQ3IDBsNjUuOS02NS45YzEyLjktMTIuOSAxMi45LTM0LjEgMC00N0w3MjUuOSAxNi43Yy0xMi45LTEyLjktMzQtMTIuOS00Ni45IDB6TTIxNy4zIDg1OC44YzExLjctMTEuNyAxMS43LTMwLjggMC00Mi41bC0zMy41LTMzLjVjLTExLjctMTEuNy0zMC44LTExLjctNDIuNSAwTDcyLjEgODUybC0uMS4xLTE5LTE5Yy0xMC41LTEwLjUtMjcuNi0xMC41LTM4IDAtMTAuNSAxMC41LTEwLjUgMjcuNiAwIDM4bDExNCAxMTRjMTAuNSAxMC41IDI3LjYgMTAuNSAzOCAwczEwLjUtMjcuNiAwLTM4bC0xOS0xOSAuMS0uMSA2OS4yLTY5LjJ6Ii8+PHBhdGggZmlsbD0iIzQyNWNjNyIgZD0iTTU2NS45IDIwNS45TDQxOS41IDM1Mi4zYy0xMyAxMy0xMyAzNC40IDAgNDcuNGw5MC40IDkwLjRjNjMuOS00NiAxNTMuNS00MC4zIDIxMSAxNy4ybDczLjItNzMuMmMxMy0xMyAxMy0zNC40IDAtNDcuNEw2MTMuMyAyMDUuOWMtMTMtMTMuMS0zNC40LTEzLjEtNDcuNCAwem0tOTQgMzIyLjNsLTUzLjQtNTMuNGMtMTIuNS0xMi41LTMzLTEyLjUtNDUuNSAwTDE4NC43IDY2My4yYy0xMi41IDEyLjUtMTIuNSAzMyAwIDQ1LjVsMTA2LjcgMTA2LjdjMTIuNSAxMi41IDMzIDEyLjUgNDUuNSAwTDQ1OCA2OTQuMWMtMjUuNi01Mi45LTIxLTExNi44IDEzLjktMTY1Ljl6Ii8+PC9zdmc+
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - persistentvolumeclaims
+          - persistentvolumes
+          - pods
+          - serviceaccounts
+          - services
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - list
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          - deployments
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - autoscaling
+          resources:
+          - horizontalpodautoscalers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - infrastructures
+          - infrastructures/status
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - create
+          - get
+          - list
+          - update
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - podmonitors
+          - servicemonitors
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - ingresses
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - instrumentations
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - opampbridges
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - opampbridges/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - opampbridges/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - opentelemetrycollectors
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - opentelemetrycollectors/finalizers
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - opentelemetrycollectors/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          - routes/custom-host
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: opentelemetry-operator-controller-manager
+      deployments:
+      - label:
+          app.kubernetes.io/name: opentelemetry-operator
+          control-plane: controller-manager
+        name: opentelemetry-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app.kubernetes.io/name: opentelemetry-operator
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/name: opentelemetry-operator
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --metrics-addr=127.0.0.1:8080
+                - --enable-leader-election
+                - --zap-log-level=info
+                - --zap-time-encoding=rfc3339nano
+                - --enable-nginx-instrumentation=true
+                - --enable-go-instrumentation=true
+                - --enable-multi-instrumentation=true
+                - --openshift-create-dashboard=true
+                - --feature-gates=+operator.observability.prometheus
+                env:
+                - name: SERVICE_ACCOUNT_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: spec.serviceAccountName
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.107.0
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                ports:
+                - containerPort: 9443
+                  name: webhook-server
+                  protocol: TCP
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 64Mi
+                volumeMounts:
+                - mountPath: /tmp/k8s-webhook-server/serving-certs
+                  name: cert
+                  readOnly: true
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=0
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                  protocol: TCP
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 128Mi
+                  requests:
+                    cpu: 5m
+                    memory: 64Mi
+              serviceAccountName: opentelemetry-operator-controller-manager
+              terminationGracePeriodSeconds: 10
+              volumes:
+              - name: cert
+                secret:
+                  defaultMode: 420
+                  secretName: opentelemetry-operator-controller-manager-service-cert
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps/status
+          verbs:
+          - get
+          - update
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: opentelemetry-operator-controller-manager
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - opentelemetry
+  - tracing
+  - logging
+  - metrics
+  - monitoring
+  - troubleshooting
+  links:
+  - name: OpenTelemetry Operator
+    url: https://github.com/open-telemetry/opentelemetry-operator
+  maintainers:
+  - email: jpkroehling@redhat.com
+    name: Juraci Paixão Kröhling
+  maturity: alpha
+  minKubeVersion: 1.23.0
+  provider:
+    name: OpenTelemetry Community
+  version: 0.107.0
+  webhookdefinitions:
+  - admissionReviewVersions:
+    - v1alpha1
+    - v1beta1
+    containerPort: 443
+    conversionCRDs:
+    - opentelemetrycollectors.opentelemetry.io
+    deploymentName: opentelemetry-operator-controller-manager
+    generateName: copentelemetrycollectors.kb.io
+    sideEffects: None
+    targetPort: 9443
+    type: ConversionWebhook
+    webhookPath: /convert
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Fail
+    generateName: minstrumentation.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - instrumentations
+    sideEffects: None
+    targetPort: 9443
+    type: MutatingAdmissionWebhook
+    webhookPath: /mutate-opentelemetry-io-v1alpha1-instrumentation
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Fail
+    generateName: mopampbridge.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - opampbridges
+    sideEffects: None
+    targetPort: 9443
+    type: MutatingAdmissionWebhook
+    webhookPath: /mutate-opentelemetry-io-v1alpha1-opampbridge
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Fail
+    generateName: mopentelemetrycollectorbeta.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1beta1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - opentelemetrycollectors
+    sideEffects: None
+    targetPort: 9443
+    type: MutatingAdmissionWebhook
+    webhookPath: /mutate-opentelemetry-io-v1beta1-opentelemetrycollector
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Ignore
+    generateName: mpod.kb.io
+    rules:
+    - apiGroups:
+      - ""
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      resources:
+      - pods
+    sideEffects: None
+    targetPort: 9443
+    type: MutatingAdmissionWebhook
+    webhookPath: /mutate-v1-pod
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Fail
+    generateName: vinstrumentationcreateupdate.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - instrumentations
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-opentelemetry-io-v1alpha1-instrumentation
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Ignore
+    generateName: vinstrumentationdelete.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - DELETE
+      resources:
+      - instrumentations
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-opentelemetry-io-v1alpha1-instrumentation
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Fail
+    generateName: vopampbridgecreateupdate.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - opampbridges
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-opentelemetry-io-v1alpha1-opampbridge
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Ignore
+    generateName: vopampbridgedelete.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1alpha1
+      operations:
+      - DELETE
+      resources:
+      - opampbridges
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-opentelemetry-io-v1alpha1-opampbridge
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Fail
+    generateName: vopentelemetrycollectorcreateupdatebeta.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1beta1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - opentelemetrycollectors
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-opentelemetry-io-v1beta1-opentelemetrycollector
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: opentelemetry-operator-controller-manager
+    failurePolicy: Ignore
+    generateName: vopentelemetrycollectordeletebeta.kb.io
+    rules:
+    - apiGroups:
+      - opentelemetry.io
+      apiVersions:
+      - v1beta1
+      operations:
+      - DELETE
+      resources:
+      - opentelemetrycollectors
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-opentelemetry-io-v1beta1-opentelemetrycollector

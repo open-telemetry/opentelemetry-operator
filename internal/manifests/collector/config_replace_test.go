@@ -43,7 +43,7 @@ func TestPrometheusParser(t *testing.T) {
 		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
 		expectedTAConfig := map[interface{}]interface{}{
-			"endpoint":     "http://test-targetallocator:80",
+			"endpoint":     "http://test-targetallocator.default.svc.cluster.local:80",
 			"interval":     "30s",
 			"collector_id": "${POD_NAME}",
 		}
@@ -68,7 +68,7 @@ func TestPrometheusParser(t *testing.T) {
 		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
 		expectedTAConfig := map[interface{}]interface{}{
-			"endpoint":     "http://test-targetallocator:80",
+			"endpoint":     "http://test-targetallocator.default.svc.cluster.local:80",
 			"interval":     "30s",
 			"collector_id": "${POD_NAME}",
 		}

@@ -295,18 +295,18 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 		}
 	}
 
-	// Some attributes might be empty, we should get them via k8s downward API
-	if resourceMap[string(semconv.K8SPodNameKey)] == "" {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name: constants.EnvPodName,
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "metadata.name",
-				},
+	// Always retrieve the pod name from the Downward API. Ensure that the OTEL_RESOURCE_ATTRIBUTES_POD_NAME env exists.
+	container.Env = append(container.Env, corev1.EnvVar{
+		Name: constants.EnvPodName,
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "metadata.name",
 			},
-		})
-		resourceMap[string(semconv.K8SPodNameKey)] = fmt.Sprintf("$(%s)", constants.EnvPodName)
-	}
+		},
+	})
+	resourceMap[string(semconv.K8SPodNameKey)] = fmt.Sprintf("$(%s)", constants.EnvPodName)
+
+	// Some attributes might be empty, we should get them via k8s downward API
 	if otelinst.Spec.Resource.AddK8sUIDAttributes {
 		if resourceMap[string(semconv.K8SPodUIDKey)] == "" {
 			container.Env = append(container.Env, corev1.EnvVar{
@@ -477,6 +477,15 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	for k, v := range k8sResources {
 		if !existingRes[string(k)] && v != "" {
 			res[string(k)] = v
+		}
+	}
+
+	for k, v := range pod.GetAnnotations() {
+		if strings.HasPrefix(k, constants.OtelAnnotationNamespace) {
+			key := strings.TrimSpace(strings.TrimPrefix(k, constants.OtelAnnotationNamespace))
+			if _, ok := res[key]; !ok {
+				res[key] = v
+			}
 		}
 	}
 	return res

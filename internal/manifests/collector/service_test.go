@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -226,6 +227,47 @@ func TestDesiredService(t *testing.T) {
 		assert.Equal(t, expected, *actual)
 	})
 
+	t.Run("should return service with OTLP ports", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{Config: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"otlp": map[string]interface{}{
+								"protocols": map[string]interface{}{
+									"grpc": nil,
+									"http": nil,
+								},
+							},
+						},
+					},
+					Exporters: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"otlp": map[string]interface{}{
+								"endpoint": "jaeger-allinone-collector-headless.chainsaw-otlp-metrics.svc:4317",
+							},
+						},
+					},
+					Service: v1beta1.Service{
+						Pipelines: map[string]*v1beta1.Pipeline{
+							"traces": {
+								Receivers: []string{"otlp"},
+								Exporters: []string{"otlp"},
+							},
+						},
+					},
+				}},
+			},
+		}
+
+		actual, err := Service(params)
+		assert.NotNil(t, actual)
+		assert.Len(t, actual.Spec.Ports, 2)
+		assert.NoError(t, err)
+	})
+
 }
 
 func TestHeadlessService(t *testing.T) {
@@ -288,8 +330,14 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, in
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[serviceTypeLabel] = BaseServiceType.String()
 
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	if err != nil {
+		return v1.Service{}
+	}
+
 	svcPorts := []v1.ServicePort{}
 	for _, p := range ports {
+		p.ServicePort.TargetPort = intstr.FromInt32(p.Port)
 		svcPorts = append(svcPorts, p.ServicePort)
 	}
 
@@ -298,7 +346,7 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, in
 			Name:        name,
 			Namespace:   "default",
 			Labels:      labels,
-			Annotations: params.OtelCol.Annotations,
+			Annotations: annotations,
 		},
 		Spec: v1.ServiceSpec{
 			InternalTrafficPolicy: &internalTrafficPolicy,
@@ -307,4 +355,44 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, in
 			Ports:                 svcPorts,
 		},
 	}
+}
+
+func TestServiceWithIpFamily(t *testing.T) {
+	t.Run("should return IPFamilies for IPV4 and IPV6", func(t *testing.T) {
+		params := deploymentParams()
+		params.OtelCol.Spec.IpFamilies = []v1.IPFamily{
+			"IPv4",
+			"IPv6",
+		}
+		actual, err := Service(params)
+		assert.NoError(t, err)
+		assert.Equal(t, actual.Spec.IPFamilies, []v1.IPFamily{
+			"IPv4",
+			"IPv6",
+		})
+	})
+	t.Run("should return IPPolicy SingleStack", func(t *testing.T) {
+		params := deploymentParams()
+		baseIpFamily := v1.IPFamilyPolicySingleStack
+		params.OtelCol.Spec.IpFamilyPolicy = &baseIpFamily
+		actual, err := Service(params)
+		assert.NoError(t, err)
+		assert.Equal(t, actual.Spec.IPFamilyPolicy, params.OtelCol.Spec.IpFamilyPolicy)
+	})
+	t.Run("should return IPPolicy PreferDualStack", func(t *testing.T) {
+		params := deploymentParams()
+		baseIpFamily := v1.IPFamilyPolicyPreferDualStack
+		params.OtelCol.Spec.IpFamilyPolicy = &baseIpFamily
+		actual, err := Service(params)
+		assert.NoError(t, err)
+		assert.Equal(t, actual.Spec.IPFamilyPolicy, params.OtelCol.Spec.IpFamilyPolicy)
+	})
+	t.Run("should return IPPolicy RequireDualStack ", func(t *testing.T) {
+		params := deploymentParams()
+		baseIpFamily := v1.IPFamilyPolicyRequireDualStack
+		params.OtelCol.Spec.IpFamilyPolicy = &baseIpFamily
+		actual, err := Service(params)
+		assert.NoError(t, err)
+		assert.Equal(t, actual.Spec.IPFamilyPolicy, params.OtelCol.Spec.IpFamilyPolicy)
+	})
 }
