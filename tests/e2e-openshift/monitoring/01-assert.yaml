@@ -1,10 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    prometheus.io/path: /metrics
-    prometheus.io/port: "8888"
-    prometheus.io/scrape: "true"
   labels:
     app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/managed-by: opentelemetry-operator
@@ -20,15 +16,19 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
+    app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: cluster-collector-monitoring-collector
+    app.kubernetes.io/part-of: opentelemetry
   name: cluster-collector-monitoring-collector
 spec:
   endpoints:
   - port: monitoring
   selector:
     matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
       app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
       operator.opentelemetry.io/collector-service-type: monitoring
 ---
 apiVersion: v1
@@ -39,6 +39,7 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: cluster-collector-collector
     app.kubernetes.io/part-of: opentelemetry
+    operator.opentelemetry.io/collector-service-type: base
   name: cluster-collector-collector
 spec:
   ports:
@@ -57,7 +58,6 @@ spec:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/part-of: opentelemetry
   type: ClusterIP
-
 ---
 apiVersion: v1
 kind: Service
@@ -67,8 +67,8 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: cluster-collector-collector
     app.kubernetes.io/part-of: opentelemetry
-    operator.opentelemetry.io/collector-service-type: headless
     operator.opentelemetry.io/collector-headless-service: Exists
+    operator.opentelemetry.io/collector-service-type: headless
   name: cluster-collector-collector-headless
 spec:
   ports:
@@ -96,6 +96,8 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: cluster-collector-collector-monitoring
     app.kubernetes.io/part-of: opentelemetry
+    operator.opentelemetry.io/collector-monitoring-service: Exists
+    operator.opentelemetry.io/collector-service-type: monitoring
   name: cluster-collector-collector-monitoring
 spec:
   ports:
