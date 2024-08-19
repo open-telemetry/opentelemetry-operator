@@ -39,8 +39,8 @@ func ProcessorFor(name string) components.Parser {
 }
 
 var componentParsers = []components.Parser{
-	components.NewGenericParser[K8sAttributeConfig]("k8sattributes", GenerateK8SAttrRbacRules),
-	components.NewGenericParser[ResourceDetectionConfig]("resourcedetection", GenerateResourceDetectionRbacRules),
+	components.NewGenericParser[K8sAttributeConfig]("k8sattributes", components.UnsetPort, nil, GenerateK8SAttrRbacRules),
+	components.NewGenericParser[ResourceDetectionConfig]("resourcedetection", components.UnsetPort, nil, GenerateResourceDetectionRbacRules),
 }
 
 func init() {

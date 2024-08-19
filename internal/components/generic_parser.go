@@ -28,14 +28,12 @@ var (
 )
 
 // GenericParser serves as scaffolding for custom parsing logic by isolating
-// functionality to idempotent functions like RBACRuleGenerator.
+// functionality to idempotent functions.
 type GenericParser[T any] struct {
-	name    string
-	rbacGen RBACRuleGenerator[T]
-}
-
-func (g *GenericParser[T]) Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error) {
-	return nil, nil
+	name       string
+	option     *Option
+	portParser PortParser[T]
+	rbacGen    RBACRuleGenerator[T]
 }
 
 func (g *GenericParser[T]) GetRBACRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error) {
@@ -49,6 +47,17 @@ func (g *GenericParser[T]) GetRBACRules(logger logr.Logger, config interface{}) 
 	return g.rbacGen(logger, parsed)
 }
 
+func (g *GenericParser[T]) Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error) {
+	if g.portParser == nil {
+		return nil, nil
+	}
+	var parsed T
+	if err := mapstructure.Decode(config, &parsed); err != nil {
+		return nil, err
+	}
+	return g.portParser(logger, name, g.option, parsed)
+}
+
 func (g *GenericParser[T]) ParserType() string {
 	return ComponentType(g.name)
 }
@@ -57,6 +66,8 @@ func (g *GenericParser[T]) ParserName() string {
 	return fmt.Sprintf("__%s", g.name)
 }
 
-func NewGenericParser[T any](name string, rbacGen RBACRuleGenerator[T]) *GenericParser[T] {
-	return &GenericParser[T]{name: name, rbacGen: rbacGen}
+func NewGenericParser[T any](name string, port int32, parser PortParser[T], rbacGen RBACRuleGenerator[T], opts ...PortBuilderOption) *GenericParser[T] {
+	o := NewOption(name, port)
+	o.Apply(opts...)
+	return &GenericParser[T]{name: name, portParser: parser, rbacGen: rbacGen, option: o}
 }

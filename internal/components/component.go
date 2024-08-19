@@ -24,6 +24,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 var (
@@ -38,26 +40,62 @@ type PortRetriever interface {
 	GetPortNumOrDefault(logr.Logger, int32) int32
 }
 
+// PortParser is a function that returns a list of servicePorts given a config of type T.
+type PortParser[T any] func(logger logr.Logger, name string, o *Option, config T) ([]corev1.ServicePort, error)
+
 // RBACRuleGenerator is a function that generates a list of RBAC Rules given a configuration of type T
 // It's expected that type T is the configuration used by a parser.
 type RBACRuleGenerator[T any] func(logger logr.Logger, config T) ([]rbacv1.PolicyRule, error)
-type PortBuilderOption func(*corev1.ServicePort)
+type PortBuilderOption func(*Option)
+
+type Option struct {
+	protocol    corev1.Protocol
+	appProtocol *string
+	targetPort  intstr.IntOrString
+	nodePort    int32
+	name        string
+	port        int32
+}
+
+func NewOption(name string, port int32) *Option {
+	return &Option{
+		name: name,
+		port: port,
+	}
+}
+
+func (o *Option) Apply(opts ...PortBuilderOption) {
+	for _, opt := range opts {
+		opt(o)
+	}
+}
+
+func (o *Option) GetServicePort() *corev1.ServicePort {
+	return &corev1.ServicePort{
+		Name:        naming.PortName(o.name, o.port),
+		Port:        o.port,
+		Protocol:    o.protocol,
+		AppProtocol: o.appProtocol,
+		TargetPort:  o.targetPort,
+		NodePort:    o.nodePort,
+	}
+}
 
 func WithTargetPort(targetPort int32) PortBuilderOption {
-	return func(servicePort *corev1.ServicePort) {
-		servicePort.TargetPort = intstr.FromInt32(targetPort)
+	return func(opt *Option) {
+		opt.targetPort = intstr.FromInt32(targetPort)
 	}
 }
 
 func WithAppProtocol(proto *string) PortBuilderOption {
-	return func(servicePort *corev1.ServicePort) {
-		servicePort.AppProtocol = proto
+	return func(opt *Option) {
+		opt.appProtocol = proto
 	}
 }
 
 func WithProtocol(proto corev1.Protocol) PortBuilderOption {
-	return func(servicePort *corev1.ServicePort) {
-		servicePort.Protocol = proto
+	return func(opt *Option) {
+		opt.protocol = proto
 	}
 }
 

@@ -89,13 +89,8 @@ func NewMultiPortReceiver(name string, opts ...MultiPortOption) *MultiPortReceiv
 
 func WithPortMapping(name string, port int32, opts ...PortBuilderOption) MultiPortOption {
 	return func(parser *MultiPortReceiver) {
-		servicePort := &corev1.ServicePort{
-			Name: naming.PortName(fmt.Sprintf("%s-%s", parser.name, name), port),
-			Port: port,
-		}
-		for _, opt := range opts {
-			opt(servicePort)
-		}
-		parser.portMappings[name] = servicePort
+		o := NewOption(name, port)
+		o.Apply(opts...)
+		parser.portMappings[name] = o.GetServicePort()
 	}
 }
