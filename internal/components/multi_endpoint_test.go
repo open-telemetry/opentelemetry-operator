@@ -165,7 +165,7 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 			fields: fields{
 				name: "receiver3",
 				opts: []components.MultiPortOption{
-					components.WithPortMapping("http", 80, components.WithTargetPort(8080)),
+					components.WithPortMapping("http", 80, components.WithTargetPort[*components.MultiProtocolEndpointConfig](8080)),
 				},
 			},
 			args: args{
@@ -185,7 +185,7 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 			fields: fields{
 				name: "receiver4",
 				opts: []components.MultiPortOption{
-					components.WithPortMapping("http", 80, components.WithAppProtocol(&components.HttpProtocol)),
+					components.WithPortMapping("http", 80, components.WithAppProtocol[*components.MultiProtocolEndpointConfig](&components.HttpProtocol)),
 				},
 			},
 			args: args{
@@ -205,7 +205,7 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 			fields: fields{
 				name: "receiver5",
 				opts: []components.MultiPortOption{
-					components.WithPortMapping("http", 80, components.WithProtocol(corev1.ProtocolTCP)),
+					components.WithPortMapping("http", 80, components.WithProtocol[*components.MultiProtocolEndpointConfig](corev1.ProtocolTCP)),
 				},
 			},
 			args: args{
@@ -227,9 +227,9 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 				opts: []components.MultiPortOption{
 					components.WithPortMapping("http", 80),
 					components.WithPortMapping("grpc", 4317,
-						components.WithTargetPort(4317),
-						components.WithProtocol(corev1.ProtocolTCP),
-						components.WithAppProtocol(&components.GrpcProtocol)),
+						components.WithTargetPort[*components.MultiProtocolEndpointConfig](4317),
+						components.WithProtocol[*components.MultiProtocolEndpointConfig](corev1.ProtocolTCP),
+						components.WithAppProtocol[*components.MultiProtocolEndpointConfig](&components.GrpcProtocol)),
 				},
 			},
 			args: args{
@@ -257,9 +257,9 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 				opts: []components.MultiPortOption{
 					components.WithPortMapping("http", 80),
 					components.WithPortMapping("grpc", 4317,
-						components.WithTargetPort(4317),
-						components.WithProtocol(corev1.ProtocolTCP),
-						components.WithAppProtocol(&components.GrpcProtocol)),
+						components.WithTargetPort[*components.MultiProtocolEndpointConfig](4317),
+						components.WithProtocol[*components.MultiProtocolEndpointConfig](corev1.ProtocolTCP),
+						components.WithAppProtocol[*components.MultiProtocolEndpointConfig](&components.GrpcProtocol)),
 				},
 			},
 			args: args{

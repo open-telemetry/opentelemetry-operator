@@ -41,36 +41,38 @@ type PortRetriever interface {
 }
 
 // PortParser is a function that returns a list of servicePorts given a config of type T.
-type PortParser[T any] func(logger logr.Logger, name string, o *Option, config T) ([]corev1.ServicePort, error)
+type PortParser[T any] func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config T) ([]corev1.ServicePort, error)
 
 // RBACRuleGenerator is a function that generates a list of RBAC Rules given a configuration of type T
 // It's expected that type T is the configuration used by a parser.
 type RBACRuleGenerator[T any] func(logger logr.Logger, config T) ([]rbacv1.PolicyRule, error)
-type PortBuilderOption func(*Option)
+type PortBuilderOption[T any] func(*Option[T])
 
-type Option struct {
+type Option[T any] struct {
 	protocol    corev1.Protocol
 	appProtocol *string
 	targetPort  intstr.IntOrString
 	nodePort    int32
 	name        string
 	port        int32
+	portParser  PortParser[T]
+	rbacGen     RBACRuleGenerator[T]
 }
 
-func NewOption(name string, port int32) *Option {
-	return &Option{
+func NewOption[T any](name string, port int32) *Option[T] {
+	return &Option[T]{
 		name: name,
 		port: port,
 	}
 }
 
-func (o *Option) Apply(opts ...PortBuilderOption) {
+func (o *Option[T]) Apply(opts ...PortBuilderOption[T]) {
 	for _, opt := range opts {
 		opt(o)
 	}
 }
 
-func (o *Option) GetServicePort() *corev1.ServicePort {
+func (o *Option[T]) GetServicePort() *corev1.ServicePort {
 	return &corev1.ServicePort{
 		Name:        naming.PortName(o.name, o.port),
 		Port:        o.port,
@@ -81,20 +83,32 @@ func (o *Option) GetServicePort() *corev1.ServicePort {
 	}
 }
 
-func WithTargetPort(targetPort int32) PortBuilderOption {
-	return func(opt *Option) {
+func WithRBACRuleGenerator[T any](r RBACRuleGenerator[T]) PortBuilderOption[T] {
+	return func(opt *Option[T]) {
+		opt.rbacGen = r
+	}
+}
+
+func WithPortParser[T any](p PortParser[T]) PortBuilderOption[T] {
+	return func(opt *Option[T]) {
+		opt.portParser = p
+	}
+}
+
+func WithTargetPort[T any](targetPort int32) PortBuilderOption[T] {
+	return func(opt *Option[T]) {
 		opt.targetPort = intstr.FromInt32(targetPort)
 	}
 }
 
-func WithAppProtocol(proto *string) PortBuilderOption {
-	return func(opt *Option) {
+func WithAppProtocol[T any](proto *string) PortBuilderOption[T] {
+	return func(opt *Option[T]) {
 		opt.appProtocol = proto
 	}
 }
 
-func WithProtocol(proto corev1.Protocol) PortBuilderOption {
-	return func(opt *Option) {
+func WithProtocol[T any](proto corev1.Protocol) PortBuilderOption[T] {
+	return func(opt *Option[T]) {
 		opt.protocol = proto
 	}
 }

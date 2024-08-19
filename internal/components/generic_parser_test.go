@@ -42,7 +42,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 	tests := []testCase[*components.SingleEndpointConfig]{
 		{
 			name: "valid config with endpoint",
-			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.ParseSingleEndpoint, nil),
+			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.WithPortParser(components.ParseSingleEndpoint)),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -59,7 +59,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 		},
 		{
 			name: "valid config with listen_address",
-			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.ParseSingleEndpoint, nil),
+			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.WithPortParser(components.ParseSingleEndpoint)),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -76,7 +76,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 		},
 		{
 			name: "valid config with listen_address with option",
-			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.ParseSingleEndpoint, nil, components.WithProtocol(corev1.ProtocolUDP)),
+			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.WithPortParser(components.ParseSingleEndpoint), components.WithProtocol[*components.SingleEndpointConfig](corev1.ProtocolUDP)),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -94,7 +94,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 		},
 		{
 			name: "invalid config with no endpoint or listen_address",
-			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.ParseSingleEndpoint, nil),
+			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.WithPortParser(components.ParseSingleEndpoint)),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{},
@@ -144,7 +144,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 	tests := []testCase[components.SingleEndpointConfig]{
 		{
 			name: "valid config with endpoint",
-			g:    components.NewGenericParser[components.SingleEndpointConfig]("test", components.UnsetPort, nil, rbacGenFunc),
+			g:    components.NewGenericParser[components.SingleEndpointConfig]("test", components.UnsetPort, components.WithRBACRuleGenerator(rbacGenFunc)),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -162,7 +162,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 		},
 		{
 			name: "valid config with listen_address",
-			g:    components.NewGenericParser[components.SingleEndpointConfig]("test", components.UnsetPort, nil, rbacGenFunc),
+			g:    components.NewGenericParser[components.SingleEndpointConfig]("test", components.UnsetPort, components.WithRBACRuleGenerator(rbacGenFunc)),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -180,7 +180,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 		},
 		{
 			name: "invalid config with no endpoint or listen_address",
-			g:    components.NewGenericParser[components.SingleEndpointConfig]("test", components.UnsetPort, nil, rbacGenFunc),
+			g:    components.NewGenericParser[components.SingleEndpointConfig]("test", components.UnsetPort, components.WithRBACRuleGenerator(rbacGenFunc)),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{},

@@ -31,7 +31,7 @@ var (
 // functionality to idempotent functions.
 type GenericParser[T any] struct {
 	name       string
-	option     *Option
+	option     *Option[T]
 	portParser PortParser[T]
 	rbacGen    RBACRuleGenerator[T]
 }
@@ -55,7 +55,7 @@ func (g *GenericParser[T]) Ports(logger logr.Logger, name string, config interfa
 	if err := mapstructure.Decode(config, &parsed); err != nil {
 		return nil, err
 	}
-	return g.portParser(logger, name, g.option, parsed)
+	return g.portParser(logger, name, g.option.GetServicePort(), parsed)
 }
 
 func (g *GenericParser[T]) ParserType() string {
@@ -66,8 +66,8 @@ func (g *GenericParser[T]) ParserName() string {
 	return fmt.Sprintf("__%s", g.name)
 }
 
-func NewGenericParser[T any](name string, port int32, parser PortParser[T], rbacGen RBACRuleGenerator[T], opts ...PortBuilderOption) *GenericParser[T] {
-	o := NewOption(name, port)
+func NewGenericParser[T any](name string, port int32, opts ...PortBuilderOption[T]) *GenericParser[T] {
+	o := NewOption[T](name, port)
 	o.Apply(opts...)
-	return &GenericParser[T]{name: name, portParser: parser, rbacGen: rbacGen, option: o}
+	return &GenericParser[T]{name: name, portParser: o.portParser, rbacGen: o.rbacGen, option: o}
 }
