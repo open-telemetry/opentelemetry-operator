@@ -116,7 +116,8 @@ type OpenTelemetryCommonFields struct {
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
-	// for the generated workload.
+	// for the generated workload. By default, a PDB with a MaxUnavailable of one is set.
+	//
 	// +optional
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 	// SecurityContext configures the container security context for
@@ -226,6 +227,14 @@ type OpenTelemetryCommonFields struct {
 	AdditionalContainers []v1.Container `json:"additionalContainers,omitempty"`
 	// PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
 	PodDNSConfig v1.PodDNSConfig `json:"podDnsConfig,omitempty"`
+	// IPFamily represents the IP Family (IPv4 or IPv6). This type is used
+	// to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).
+	// +optional
+	IpFamilies []v1.IPFamily `json:"ipFamilies,omitempty"`
+	// IPFamilyPolicy represents the dual-stack-ness requested or required by a Service
+	// +kubebuilder:default:=SingleStack
+	// +optional
+	IpFamilyPolicy *v1.IPFamilyPolicy `json:"ipFamilyPolicy,omitempty"`
 }
 
 type StatefulSetCommonFields struct {

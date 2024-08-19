@@ -38,8 +38,10 @@ spec:
     receivers:
       otlp:
         protocols:
-          grpc: {}
-          http: {}
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
     processors:
       memory_limiter:
         check_interval: 1s
@@ -714,6 +716,25 @@ spec:
 EOF
 ```
 
+### Setting instrumentation resource attributes via namespace annotations
+
+This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. These annotations can be used to add resource attributes to data produced by OpenTelemetry instrumentation.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: example-pod
+  annotations:
+    resource.opentelemetry.io/service.name: "my-service"
+    resource.opentelemetry.io/service.version: "1.0.0"
+    resource.opentelemetry.io/environment: "production"
+spec:
+  containers:
+  - name: main-container
+    image: your-image:tag
+ ```
+
 ## Compatibility matrix
 
 ### OpenTelemetry Operator vs. OpenTelemetry Collector
@@ -737,6 +758,10 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes     | Cert-Manager | Prometheus-Operator |
 |------------------------|----------------| ------------ |---------------------|
+| v0.107.0               | v1.23 to v1.30 | v1           | v0.75.0             |
+| v0.106.0               | v1.23 to v1.30 | v1           | v0.75.0             |
+| v0.105.0               | v1.23 to v1.30 | v1           | v0.74.0             |
+| v0.104.0               | v1.23 to v1.30 | v1           | v0.74.0             |
 | v0.103.0               | v1.23 to v1.30 | v1           | v0.74.0             |
 | v0.102.0               | v1.23 to v1.30 | v1           | v0.71.2             |
 | v0.101.0               | v1.23 to v1.30 | v1           | v0.71.2             |
@@ -756,10 +781,6 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 | v0.87.0                | v1.23 to v1.28 | v1           | v0.68.0             |
 | v0.86.0                | v1.23 to v1.28 | v1           | v0.68.0             |
 | v0.85.0                | v1.19 to v1.28 | v1           | v0.67.1             |
-| v0.84.0                | v1.19 to v1.28 | v1           | v0.67.1             |
-| v0.83.0                | v1.19 to v1.27 | v1           | v0.67.1             |
-| v0.82.0                | v1.19 to v1.27 | v1           | v0.67.1             |
-| v0.81.0                | v1.19 to v1.27 | v1           | v0.66.0             |
 
 ## Contributing and Developing
 

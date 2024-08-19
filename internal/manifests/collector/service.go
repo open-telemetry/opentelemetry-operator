@@ -24,7 +24,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -79,6 +78,11 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 	labels[monitoringLabel] = valueExists
 	labels[serviceTypeLabel] = MonitoringServiceType.String()
 
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	if err != nil {
+		return nil, err
+	}
+
 	metricsPort, err := params.OtelCol.Spec.Config.Service.MetricsPort()
 	if err != nil {
 		return nil, err
@@ -89,7 +93,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 			Name:        name,
 			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
-			Annotations: params.OtelCol.Annotations,
+			Annotations: annotations,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector:  manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
@@ -98,6 +102,8 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 				Name: "monitoring",
 				Port: metricsPort,
 			}},
+			IPFamilies:     params.OtelCol.Spec.IpFamilies,
+			IPFamilyPolicy: params.OtelCol.Spec.IpFamilyPolicy,
 		},
 	}, nil
 }
@@ -107,18 +113,12 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[serviceTypeLabel] = BaseServiceType.String()
 
-	out, err := params.OtelCol.Spec.Config.Yaml()
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
 	if err != nil {
 		return nil, err
 	}
 
-	configFromString, err := adapters.ConfigFromString(out)
-	if err != nil {
-		params.Log.Error(err, "couldn't extract the configuration from the context")
-		return nil, err
-	}
-
-	ports, err := adapters.ConfigToPorts(params.Log, configFromString)
+	ports, err := params.OtelCol.Spec.Config.GetAllPorts(params.Log)
 	if err != nil {
 		return nil, err
 	}
@@ -168,13 +168,15 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 			Name:        naming.Service(params.OtelCol.Name),
 			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
-			Annotations: params.OtelCol.Annotations,
+			Annotations: annotations,
 		},
 		Spec: corev1.ServiceSpec{
 			InternalTrafficPolicy: &trafficPolicy,
 			Selector:              manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			ClusterIP:             "",
 			Ports:                 ports,
+			IPFamilies:            params.OtelCol.Spec.IpFamilies,
+			IPFamilyPolicy:        params.OtelCol.Spec.IpFamilyPolicy,
 		},
 	}, nil
 }

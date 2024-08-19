@@ -16,9 +16,9 @@ status:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: simple-collector-d6f40475
+  name: simple-collector-8cd615bf
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: simple-collector-8cd615bf
+  name: simple-collector-d6f40475

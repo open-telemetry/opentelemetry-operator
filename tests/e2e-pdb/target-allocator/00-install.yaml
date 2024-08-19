@@ -25,9 +25,9 @@ spec:
         config:
           scrape_configs: []
     exporters:
-      logging:
+      debug:
     service:
       pipelines:
         metrics:
           receivers: [prometheus]
-          exporters: [logging]
+          exporters: [debug]

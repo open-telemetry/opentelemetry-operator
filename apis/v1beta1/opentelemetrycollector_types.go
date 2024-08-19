@@ -216,7 +216,8 @@ type TargetAllocatorEmbedded struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
 	Observability ObservabilitySpec `json:"observability,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
-	// for the target allocator workload.
+	// for the target allocator workload. By default, a PDB with a MaxUnavailable of one is set for a valid
+	// allocation strategy.
 	//
 	// +optional
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`

@@ -6,4 +6,4 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/component: opentelemetry-collector
-  minAvailable: 1
+  maxUnavailable: 1

@@ -4184,6 +4184,21 @@ typically used to set access tokens or other authorization headers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>ipFamilies</b></td>
+        <td>[]string</td>
+        <td>
+          IPFamily represents the IP Family (IPv4 or IPv6). This type is used
+to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ipFamilyPolicy</b></td>
+        <td>string</td>
+        <td>
+          IPFamilyPolicy represents the dual-stack-ness requested or required by a Service<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
         <td>
@@ -30937,6 +30952,23 @@ https://kubernetes.io/docs/concepts/workloads/pods/init-containers/<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>ipFamilies</b></td>
+        <td>[]string</td>
+        <td>
+          IPFamily represents the IP Family (IPv4 or IPv6). This type is used
+to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ipFamilyPolicy</b></td>
+        <td>string</td>
+        <td>
+          IPFamilyPolicy represents the dual-stack-ness requested or required by a Service<br/>
+          <br/>
+            <i>Default</i>: SingleStack<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspeclifecycle-1">lifecycle</a></b></td>
         <td>object</td>
         <td>
@@ -30999,7 +31031,7 @@ the generated pods.<br/>
         <td>object</td>
         <td>
           PodDisruptionBudget specifies the pod disruption budget configuration to use
-for the generated workload.<br/>
+for the generated workload. By default, a PDB with a MaxUnavailable of one is set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -40783,7 +40815,7 @@ The operator.observability.prometheus feature gate must be enabled to use this f
 
 
 PodDisruptionBudget specifies the pod disruption budget configuration to use
-for the generated workload.
+for the generated workload. By default, a PDB with a MaxUnavailable of one is set.
 
 <table>
     <thead>
@@ -42062,7 +42094,8 @@ The default is relabel-config.<br/>
         <td>object</td>
         <td>
           PodDisruptionBudget specifies the pod disruption budget configuration to use
-for the target allocator workload.<br/>
+for the target allocator workload. By default, a PDB with a MaxUnavailable of one is set for a valid
+allocation strategy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -44109,7 +44142,8 @@ The operator.observability.prometheus feature gate must be enabled to use this f
 
 
 PodDisruptionBudget specifies the pod disruption budget configuration to use
-for the target allocator workload.
+for the target allocator workload. By default, a PDB with a MaxUnavailable of one is set for a valid
+allocation strategy.
 
 <table>
     <thead>
