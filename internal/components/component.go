@@ -34,7 +34,7 @@ var (
 	PortNotFoundErr       = errors.New("port should not be empty")
 )
 
-// PortParser is a function that returns a list servicePorts given a config of type T.
+// PortParser is a function that returns a list of servicePorts given a config of type T.
 type PortParser[T any] func(logger logr.Logger, name string, o *Option, config T) ([]corev1.ServicePort, error)
 
 type PortRetriever interface {
