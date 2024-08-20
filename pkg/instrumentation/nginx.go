@@ -186,7 +186,7 @@ NGINX_SID_VALUE=$5 \n
 echo "Input Parameters: $@" \n
 set -x \n
 \n
-cp -ar /opt/opentelemetry/* ${NGINX_AGENT_DIR_FULL} \n
+cp -r /opt/opentelemetry/* ${NGINX_AGENT_DIR_FULL} \n
 \n
 NGINX_VERSION=$(cat ${NGINX_AGENT_CONF_DIR_FULL}/version.txt) \n
 NGINX_AGENT_LOG_DIR=$(echo "${NGINX_AGENT_DIR_FULL}/logs" | sed 's,/,\\/,g') \n
