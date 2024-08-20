@@ -46,7 +46,7 @@ type PortParser[T any] func(logger logr.Logger, name string, defaultPort *corev1
 // RBACRuleGenerator is a function that generates a list of RBAC Rules given a configuration of type T
 // It's expected that type T is the configuration used by a parser.
 type RBACRuleGenerator[T any] func(logger logr.Logger, config T) ([]rbacv1.PolicyRule, error)
-type PortBuilderOption[T any] func(*Option[T])
+type ParserOption[T any] func(*Option[T])
 
 type Option[T any] struct {
 	protocol    corev1.Protocol
@@ -66,7 +66,7 @@ func NewOption[T any](name string, port int32) *Option[T] {
 	}
 }
 
-func (o *Option[T]) Apply(opts ...PortBuilderOption[T]) {
+func (o *Option[T]) Apply(opts ...ParserOption[T]) {
 	for _, opt := range opts {
 		opt(o)
 	}
@@ -83,31 +83,31 @@ func (o *Option[T]) GetServicePort() *corev1.ServicePort {
 	}
 }
 
-func WithRBACRuleGenerator[T any](r RBACRuleGenerator[T]) PortBuilderOption[T] {
+func WithRBACRuleGenerator[T any](r RBACRuleGenerator[T]) ParserOption[T] {
 	return func(opt *Option[T]) {
 		opt.rbacGen = r
 	}
 }
 
-func WithPortParser[T any](p PortParser[T]) PortBuilderOption[T] {
+func WithPortParser[T any](p PortParser[T]) ParserOption[T] {
 	return func(opt *Option[T]) {
 		opt.portParser = p
 	}
 }
 
-func WithTargetPort[T any](targetPort int32) PortBuilderOption[T] {
+func WithTargetPort[T any](targetPort int32) ParserOption[T] {
 	return func(opt *Option[T]) {
 		opt.targetPort = intstr.FromInt32(targetPort)
 	}
 }
 
-func WithAppProtocol[T any](proto *string) PortBuilderOption[T] {
+func WithAppProtocol[T any](proto *string) ParserOption[T] {
 	return func(opt *Option[T]) {
 		opt.appProtocol = proto
 	}
 }
 
-func WithProtocol[T any](proto corev1.Protocol) PortBuilderOption[T] {
+func WithProtocol[T any](proto corev1.Protocol) ParserOption[T] {
 	return func(opt *Option[T]) {
 		opt.protocol = proto
 	}

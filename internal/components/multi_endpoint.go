@@ -87,7 +87,7 @@ func NewMultiPortReceiver(name string, opts ...MultiPortOption) *MultiPortReceiv
 	return multiReceiver
 }
 
-func WithPortMapping(name string, port int32, opts ...PortBuilderOption[*MultiProtocolEndpointConfig]) MultiPortOption {
+func WithPortMapping(name string, port int32, opts ...ParserOption[*MultiProtocolEndpointConfig]) MultiPortOption {
 	return func(parser *MultiPortReceiver) {
 		o := NewOption[*MultiProtocolEndpointConfig](name, port)
 		o.Apply(opts...)

@@ -111,7 +111,7 @@ func TestSingleEndpointParser_ParserName(t *testing.T) {
 	type fields struct {
 		name string
 		port int32
-		opts []components.PortBuilderOption[*components.SingleEndpointConfig]
+		opts []components.ParserOption[*components.SingleEndpointConfig]
 	}
 	tests := []struct {
 		name   string
@@ -130,7 +130,7 @@ func TestSingleEndpointParser_ParserName(t *testing.T) {
 			name: "with port mapping without builder options",
 			fields: fields{
 				name: "receiver2",
-				opts: []components.PortBuilderOption[*components.SingleEndpointConfig]{
+				opts: []components.ParserOption[*components.SingleEndpointConfig]{
 					components.WithTargetPort[*components.SingleEndpointConfig](8080),
 				},
 			},
@@ -149,7 +149,7 @@ func TestSingleEndpointParser_ParserType(t *testing.T) {
 	type fields struct {
 		name string
 		port int32
-		opts []components.PortBuilderOption[*components.SingleEndpointConfig]
+		opts []components.ParserOption[*components.SingleEndpointConfig]
 	}
 	tests := []struct {
 		name   string
@@ -168,7 +168,7 @@ func TestSingleEndpointParser_ParserType(t *testing.T) {
 			name: "with port mapping without builder options",
 			fields: fields{
 				name: "receiver2/test",
-				opts: []components.PortBuilderOption[*components.SingleEndpointConfig]{
+				opts: []components.ParserOption[*components.SingleEndpointConfig]{
 					components.WithTargetPort[*components.SingleEndpointConfig](80),
 				},
 			},
@@ -187,7 +187,7 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 	type fields struct {
 		name string
 		port int32
-		opts []components.PortBuilderOption[*components.SingleEndpointConfig]
+		opts []components.ParserOption[*components.SingleEndpointConfig]
 	}
 	type args struct {
 		config interface{}
@@ -234,7 +234,7 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 			fields: fields{
 				name: "testparser",
 				port: 8080,
-				opts: []components.PortBuilderOption[*components.SingleEndpointConfig]{
+				opts: []components.ParserOption[*components.SingleEndpointConfig]{
 					components.WithTargetPort[*components.SingleEndpointConfig](4317),
 					components.WithProtocol[*components.SingleEndpointConfig](corev1.ProtocolTCP),
 					components.WithAppProtocol[*components.SingleEndpointConfig](&components.GrpcProtocol),
@@ -297,7 +297,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 	type fields struct {
 		name string
 		port int32
-		opts []components.PortBuilderOption[*components.SingleEndpointConfig]
+		opts []components.ParserOption[*components.SingleEndpointConfig]
 	}
 	type args struct {
 		config interface{}
@@ -344,7 +344,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 			fields: fields{
 				name: "testparser",
 				port: 8080,
-				opts: []components.PortBuilderOption[*components.SingleEndpointConfig]{
+				opts: []components.ParserOption[*components.SingleEndpointConfig]{
 					components.WithTargetPort[*components.SingleEndpointConfig](4317),
 					components.WithProtocol[*components.SingleEndpointConfig](corev1.ProtocolTCP),
 					components.WithAppProtocol[*components.SingleEndpointConfig](&components.GrpcProtocol),
