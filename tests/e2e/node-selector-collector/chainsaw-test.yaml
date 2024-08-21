@@ -39,14 +39,8 @@ spec:
     - name: step-02
       description: back to no nodeSelector
       try:
-        - command: # while update is not supported on 0.1.7, but 0.1.9 https://kyverno.github.io/chainsaw/0.1.9/operations/update/
-            entrypoint: kubectl
-            args:
-              - -n
-              - ${NAMESPACE}
-              - replace
-              - -f
-              - 00-install-collectors-without-node-selector.yaml
+        - apply:
+            file: 00-install-collectors-without-node-selector.yaml
         # deployment
         - assert:
             file: 00-assert-deployment-without-node-selector.yaml
