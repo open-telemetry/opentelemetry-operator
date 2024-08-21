@@ -42,7 +42,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 	tests := []testCase[*components.SingleEndpointConfig]{
 		{
 			name: "valid config with endpoint",
-			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.WithPortParser(components.ParseSingleEndpoint)),
+			g:    components.NewSinglePortParserBuilder("test", 0).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -59,7 +59,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 		},
 		{
 			name: "valid config with listen_address",
-			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.WithPortParser(components.ParseSingleEndpoint)),
+			g:    components.NewSinglePortParserBuilder("test", 0).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -76,7 +76,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 		},
 		{
 			name: "valid config with listen_address with option",
-			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.WithPortParser(components.ParseSingleEndpoint), components.WithProtocol[*components.SingleEndpointConfig](corev1.ProtocolUDP)),
+			g:    components.NewSinglePortParserBuilder("test", 0).WithProtocol(corev1.ProtocolUDP).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -94,7 +94,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 		},
 		{
 			name: "invalid config with no endpoint or listen_address",
-			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0, components.WithPortParser(components.ParseSingleEndpoint)),
+			g:    components.NewSinglePortParserBuilder("test", 0).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{},
@@ -128,7 +128,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 		wantErr assert.ErrorAssertionFunc
 	}
 
-	rbacGenFunc := func(logger logr.Logger, config components.SingleEndpointConfig) ([]rbacv1.PolicyRule, error) {
+	rbacGenFunc := func(logger logr.Logger, config *components.SingleEndpointConfig) ([]rbacv1.PolicyRule, error) {
 		if config.Endpoint == "" && config.ListenAddress == "" {
 			return nil, fmt.Errorf("either endpoint or listen_address must be specified")
 		}
@@ -141,10 +141,10 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 		}, nil
 	}
 
-	tests := []testCase[components.SingleEndpointConfig]{
+	tests := []testCase[*components.SingleEndpointConfig]{
 		{
 			name: "valid config with endpoint",
-			g:    components.NewGenericParser[components.SingleEndpointConfig]("test", components.UnsetPort, components.WithRBACRuleGenerator(rbacGenFunc)),
+			g:    components.NewSinglePortParserBuilder("test", 0).WithRbacGen(rbacGenFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -162,7 +162,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 		},
 		{
 			name: "valid config with listen_address",
-			g:    components.NewGenericParser[components.SingleEndpointConfig]("test", components.UnsetPort, components.WithRBACRuleGenerator(rbacGenFunc)),
+			g:    components.NewSinglePortParserBuilder("test", 0).WithRbacGen(rbacGenFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -180,10 +180,30 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 		},
 		{
 			name: "invalid config with no endpoint or listen_address",
-			g:    components.NewGenericParser[components.SingleEndpointConfig]("test", components.UnsetPort, components.WithRBACRuleGenerator(rbacGenFunc)),
+			g:    components.NewSinglePortParserBuilder("test", 0).WithRbacGen(rbacGenFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{},
+			},
+			want:    nil,
+			wantErr: assert.Error,
+		},
+		{
+			name: "Generic works",
+			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{},
+			},
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		{
+			name: "failed to parse config",
+			g:    components.NewSinglePortParserBuilder("test", 0).WithRbacGen(rbacGenFunc).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: func() {},
 			},
 			want:    nil,
 			wantErr: assert.Error,

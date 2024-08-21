@@ -43,7 +43,7 @@ func ParserFor(name string) components.Parser {
 
 var (
 	componentParsers = []components.Parser{
-		components.NewSinglePortParser("prometheus", 8888),
+		components.NewSinglePortParserBuilder("prometheus", 8888).MustBuild(),
 	}
 )
 

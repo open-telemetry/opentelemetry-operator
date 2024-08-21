@@ -79,15 +79,6 @@ func internalParseSingleEndpoint(logger logr.Logger, name string, failSilently b
 	return []corev1.ServicePort{ConstructServicePort(svcPort, port)}, nil
 }
 
-func NewSinglePortParser(name string, port int32, opts ...ParserOption[*SingleEndpointConfig]) *GenericParser[*SingleEndpointConfig] {
-	return NewGenericParser(name, port, append(opts, WithPortParser(ParseSingleEndpoint))...)
-}
-
-// NewSilentSinglePortParser returns a ParseSingleEndpoint that errors silently on failure to find a port.
-func NewSilentSinglePortParser(name string, port int32, opts ...ParserOption[*SingleEndpointConfig]) *GenericParser[*SingleEndpointConfig] {
-	return NewGenericParser(name, port, append(opts, WithPortParser(ParseSingleEndpointSilent))...)
-}
-
 func NewSinglePortParserBuilder(name string, port int32) Builder[*SingleEndpointConfig] {
 	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpoint)
 }

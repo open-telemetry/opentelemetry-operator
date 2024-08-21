@@ -39,7 +39,7 @@ func ReceiverFor(name string) components.Parser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}
-	return components.NewSilentSinglePortParser(components.ComponentType(name), components.UnsetPort)
+	return components.NewSilentSinglePortParserBuilder(components.ComponentType(name), components.UnsetPort).MustBuild()
 }
 
 // NewScraperParser is an instance of a generic parser that returns nothing when called and never fails.
@@ -49,58 +49,46 @@ func NewScraperParser(name string) *components.GenericParser[any] {
 
 var (
 	componentParsers = []components.Parser{
-		components.NewMultiPortReceiver("otlp",
-			components.WithPortMapping(
-				"grpc",
-				4317,
-				components.WithAppProtocol[*components.MultiProtocolEndpointConfig](&components.GrpcProtocol),
-				components.WithTargetPort[*components.MultiProtocolEndpointConfig](4317),
-			), components.WithPortMapping(
-				"http",
-				4318,
-				components.WithAppProtocol[*components.MultiProtocolEndpointConfig](&components.HttpProtocol),
-				components.WithTargetPort[*components.MultiProtocolEndpointConfig](4318),
-			),
-		),
-		components.NewMultiPortReceiver("skywalking",
-			components.WithPortMapping(components.GrpcProtocol, 11800,
-				components.WithTargetPort[*components.MultiProtocolEndpointConfig](11800),
-				components.WithAppProtocol[*components.MultiProtocolEndpointConfig](&components.GrpcProtocol),
-			),
-			components.WithPortMapping(components.HttpProtocol, 12800,
-				components.WithTargetPort[*components.MultiProtocolEndpointConfig](12800),
-				components.WithAppProtocol[*components.MultiProtocolEndpointConfig](&components.HttpProtocol),
-			)),
-		components.NewMultiPortReceiver("jaeger",
-			components.WithPortMapping(components.GrpcProtocol, 14250,
-				components.WithTargetPort[*components.MultiProtocolEndpointConfig](14250),
-				components.WithProtocol[*components.MultiProtocolEndpointConfig](corev1.ProtocolTCP),
-				components.WithAppProtocol[*components.MultiProtocolEndpointConfig](&components.GrpcProtocol),
-			),
-			components.WithPortMapping("thrift_http", 14268,
-				components.WithTargetPort[*components.MultiProtocolEndpointConfig](14268),
-				components.WithProtocol[*components.MultiProtocolEndpointConfig](corev1.ProtocolTCP),
-				components.WithAppProtocol[*components.MultiProtocolEndpointConfig](&components.HttpProtocol),
-			),
-			components.WithPortMapping("thrift_compact", 6831,
-				components.WithTargetPort[*components.MultiProtocolEndpointConfig](6831),
-				components.WithProtocol[*components.MultiProtocolEndpointConfig](corev1.ProtocolUDP),
-			),
-			components.WithPortMapping("thrift_binary", 6832,
-				components.WithTargetPort[*components.MultiProtocolEndpointConfig](6832),
-				components.WithProtocol[*components.MultiProtocolEndpointConfig](corev1.ProtocolUDP),
-			),
-		),
-		components.NewMultiPortReceiver("loki",
-			components.WithPortMapping(components.GrpcProtocol, 9095,
-				components.WithTargetPort[*components.MultiProtocolEndpointConfig](9095),
-				components.WithAppProtocol[*components.MultiProtocolEndpointConfig](&components.GrpcProtocol),
-			),
-			components.WithPortMapping(components.HttpProtocol, 3100,
-				components.WithTargetPort[*components.MultiProtocolEndpointConfig](3100),
-				components.WithAppProtocol[*components.MultiProtocolEndpointConfig](&components.HttpProtocol),
-			),
-		),
+		components.NewMultiPortReceiverBuilder("otlp").
+			AddPortMapping(components.NewProtocolBuilder("grpc", 4317).
+				WithAppProtocol(&components.GrpcProtocol).
+				WithTargetPort(4317)).
+			AddPortMapping(components.NewProtocolBuilder("http", 4318).
+				WithAppProtocol(&components.HttpProtocol).
+				WithTargetPort(4318)).
+			MustBuild(),
+		components.NewMultiPortReceiverBuilder("skywalking").
+			AddPortMapping(components.NewProtocolBuilder(components.GrpcProtocol, 11800).
+				WithTargetPort(11800).
+				WithAppProtocol(&components.GrpcProtocol)).
+			AddPortMapping(components.NewProtocolBuilder(components.HttpProtocol, 12800).
+				WithTargetPort(12800).
+				WithAppProtocol(&components.HttpProtocol)).
+			MustBuild(),
+		components.NewMultiPortReceiverBuilder("jaeger").
+			AddPortMapping(components.NewProtocolBuilder(components.GrpcProtocol, 14250).
+				WithTargetPort(14250).
+				WithProtocol(corev1.ProtocolTCP).
+				WithAppProtocol(&components.GrpcProtocol)).
+			AddPortMapping(components.NewProtocolBuilder("thrift_http", 14268).
+				WithTargetPort(14268).
+				WithProtocol(corev1.ProtocolTCP).
+				WithAppProtocol(&components.HttpProtocol)).
+			AddPortMapping(components.NewProtocolBuilder("thrift_compact", 6831).
+				WithTargetPort(6831).
+				WithProtocol(corev1.ProtocolUDP)).
+			AddPortMapping(components.NewProtocolBuilder("thrift_binary", 6832).
+				WithTargetPort(6832).
+				WithProtocol(corev1.ProtocolUDP)).
+			MustBuild(),
+		components.NewMultiPortReceiverBuilder("loki").
+			AddPortMapping(components.NewProtocolBuilder(components.GrpcProtocol, 9095).
+				WithTargetPort(9095).
+				WithAppProtocol(&components.GrpcProtocol)).
+			AddPortMapping(components.NewProtocolBuilder(components.HttpProtocol, 3100).
+				WithTargetPort(3100).
+				WithAppProtocol(&components.HttpProtocol)).
+			MustBuild(),
 		components.NewSinglePortParserBuilder("awsxray", 2000).
 			WithTargetPort(2000).
 			MustBuild(),

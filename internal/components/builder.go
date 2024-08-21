@@ -19,12 +19,55 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
+
+type ParserOption[T any] func(*Option[T])
+
+type Option[T any] struct {
+	protocol    corev1.Protocol
+	appProtocol *string
+	targetPort  intstr.IntOrString
+	nodePort    int32
+	name        string
+	port        int32
+	portParser  PortParser[T]
+	rbacGen     RBACRuleGenerator[T]
+}
+
+func NewEmptyOption[T any]() *Option[T] {
+	return &Option[T]{}
+}
+
+func NewOption[T any](name string, port int32) *Option[T] {
+	return &Option[T]{
+		name: name,
+		port: port,
+	}
+}
+
+func (o *Option[T]) Apply(opts ...ParserOption[T]) {
+	for _, opt := range opts {
+		opt(o)
+	}
+}
+
+func (o *Option[T]) GetServicePort() *corev1.ServicePort {
+	return &corev1.ServicePort{
+		Name:        naming.PortName(o.name, o.port),
+		Port:        o.port,
+		Protocol:    o.protocol,
+		AppProtocol: o.appProtocol,
+		TargetPort:  o.targetPort,
+		NodePort:    o.nodePort,
+	}
+}
 
 type Builder[T any] []ParserOption[T]
 
 func NewBuilder[T any]() Builder[T] {
-	return make([]ParserOption[T], 8)
+	return []ParserOption[T]{}
 }
 
 func (b Builder[T]) WithProtocol(protocol corev1.Protocol) Builder[T] {

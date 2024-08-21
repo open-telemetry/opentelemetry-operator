@@ -24,8 +24,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 var (
@@ -46,76 +44,6 @@ type PortParser[T any] func(logger logr.Logger, name string, defaultPort *corev1
 // RBACRuleGenerator is a function that generates a list of RBAC Rules given a configuration of type T
 // It's expected that type T is the configuration used by a parser.
 type RBACRuleGenerator[T any] func(logger logr.Logger, config T) ([]rbacv1.PolicyRule, error)
-type ParserOption[T any] func(*Option[T])
-
-type Option[T any] struct {
-	protocol    corev1.Protocol
-	appProtocol *string
-	targetPort  intstr.IntOrString
-	nodePort    int32
-	name        string
-	port        int32
-	portParser  PortParser[T]
-	rbacGen     RBACRuleGenerator[T]
-}
-
-func NewEmptyOption[T any]() *Option[T] {
-	return &Option[T]{}
-}
-
-func NewOption[T any](name string, port int32) *Option[T] {
-	return &Option[T]{
-		name: name,
-		port: port,
-	}
-}
-
-func (o *Option[T]) Apply(opts ...ParserOption[T]) {
-	for _, opt := range opts {
-		opt(o)
-	}
-}
-
-func (o *Option[T]) GetServicePort() *corev1.ServicePort {
-	return &corev1.ServicePort{
-		Name:        naming.PortName(o.name, o.port),
-		Port:        o.port,
-		Protocol:    o.protocol,
-		AppProtocol: o.appProtocol,
-		TargetPort:  o.targetPort,
-		NodePort:    o.nodePort,
-	}
-}
-
-func WithRBACRuleGenerator[T any](r RBACRuleGenerator[T]) ParserOption[T] {
-	return func(opt *Option[T]) {
-		opt.rbacGen = r
-	}
-}
-
-func WithPortParser[T any](p PortParser[T]) ParserOption[T] {
-	return func(opt *Option[T]) {
-		opt.portParser = p
-	}
-}
-
-func WithTargetPort[T any](targetPort int32) ParserOption[T] {
-	return func(opt *Option[T]) {
-		opt.targetPort = intstr.FromInt32(targetPort)
-	}
-}
-
-func WithAppProtocol[T any](proto *string) ParserOption[T] {
-	return func(opt *Option[T]) {
-		opt.appProtocol = proto
-	}
-}
-
-func WithProtocol[T any](proto corev1.Protocol) ParserOption[T] {
-	return func(opt *Option[T]) {
-		opt.protocol = proto
-	}
-}
 
 // ComponentType returns the type for a given component name.
 // components have a name like:

@@ -35,12 +35,12 @@ func ProcessorFor(name string) components.Parser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}
-	return components.NewSilentSinglePortParser(components.ComponentType(name), components.UnsetPort)
+	return components.NewGenericParser[any](components.ComponentType(name), components.UnsetPort)
 }
 
 var componentParsers = []components.Parser{
-	components.NewGenericParser[K8sAttributeConfig]("k8sattributes", components.UnsetPort, components.WithRBACRuleGenerator(GenerateK8SAttrRbacRules)),
-	components.NewGenericParser[ResourceDetectionConfig]("resourcedetection", components.UnsetPort, components.WithRBACRuleGenerator(GenerateResourceDetectionRbacRules)),
+	components.NewBuilder[K8sAttributeConfig]().WithName("k8sattributes").WithRbacGen(GenerateK8SAttrRbacRules).MustBuild(),
+	components.NewBuilder[ResourceDetectionConfig]().WithName("resourcedetection").WithRbacGen(GenerateResourceDetectionRbacRules).MustBuild(),
 }
 
 func init() {

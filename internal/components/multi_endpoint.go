@@ -76,21 +76,42 @@ func (m *MultiPortReceiver) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.Pol
 	return nil, nil
 }
 
-func NewMultiPortReceiver(name string, opts ...MultiPortOption) *MultiPortReceiver {
-	multiReceiver := &MultiPortReceiver{
-		name:         name,
-		portMappings: map[string]*corev1.ServicePort{},
-	}
-	for _, opt := range opts {
-		opt(multiReceiver)
-	}
-	return multiReceiver
+type MultiPortBuilder[T any] []Builder[T]
+
+func NewMultiPortReceiverBuilder(name string) MultiPortBuilder[*MultiProtocolEndpointConfig] {
+	return append(MultiPortBuilder[*MultiProtocolEndpointConfig]{}, NewBuilder[*MultiProtocolEndpointConfig]().WithName(name))
 }
 
-func WithPortMapping(name string, port int32, opts ...ParserOption[*MultiProtocolEndpointConfig]) MultiPortOption {
-	return func(parser *MultiPortReceiver) {
-		o := NewOption[*MultiProtocolEndpointConfig](name, port)
-		o.Apply(opts...)
-		parser.portMappings[name] = o.GetServicePort()
+func NewProtocolBuilder(name string, port int32) Builder[*MultiProtocolEndpointConfig] {
+	return NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithPort(port)
+}
+
+func (mp MultiPortBuilder[T]) AddPortMapping(builder Builder[T]) MultiPortBuilder[T] {
+	return append(mp, builder)
+}
+
+func (mp MultiPortBuilder[T]) Build() (*MultiPortReceiver, error) {
+	if len(mp) < 1 {
+		return nil, fmt.Errorf("must provide at least one port mapping")
+	}
+	multiReceiver := &MultiPortReceiver{
+		name:         mp[0].MustBuild().name,
+		portMappings: map[string]*corev1.ServicePort{},
+	}
+	for _, bu := range mp[1:] {
+		built, err := bu.Build()
+		if err != nil {
+			return nil, err
+		}
+		multiReceiver.portMappings[built.name] = built.option.GetServicePort()
+	}
+	return multiReceiver, nil
+}
+
+func (mp MultiPortBuilder[T]) MustBuild() *MultiPortReceiver {
+	if p, err := mp.Build(); err != nil {
+		panic(err)
+	} else {
+		return p
 	}
 }
