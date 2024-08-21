@@ -1319,6 +1319,7 @@ func (in *TargetAllocatorList) DeepCopyObject() runtime.Object {
 func (in *TargetAllocatorSpec) DeepCopyInto(out *TargetAllocatorSpec) {
 	*out = *in
 	in.OpenTelemetryCommonFields.DeepCopyInto(&out.OpenTelemetryCommonFields)
+	in.GlobalConfig.DeepCopyInto(&out.GlobalConfig)
 	if in.ScrapeConfigs != nil {
 		in, out := &in.ScrapeConfigs, &out.ScrapeConfigs
 		*out = make([]v1beta1.AnyConfig, len(*in))
