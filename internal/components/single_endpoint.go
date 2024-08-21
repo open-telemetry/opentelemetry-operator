@@ -87,3 +87,11 @@ func NewSinglePortParser(name string, port int32, opts ...ParserOption[*SingleEn
 func NewSilentSinglePortParser(name string, port int32, opts ...ParserOption[*SingleEndpointConfig]) *GenericParser[*SingleEndpointConfig] {
 	return NewGenericParser(name, port, append(opts, WithPortParser(ParseSingleEndpointSilent))...)
 }
+
+func NewSinglePortParserBuilder(name string, port int32) Builder[*SingleEndpointConfig] {
+	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpoint)
+}
+
+func NewSilentSinglePortParserBuilder(name string, port int32) Builder[*SingleEndpointConfig] {
+	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpointSilent)
+}

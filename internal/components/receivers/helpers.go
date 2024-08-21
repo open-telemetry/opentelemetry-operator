@@ -44,7 +44,7 @@ func ReceiverFor(name string) components.Parser {
 
 // NewScraperParser is an instance of a generic parser that returns nothing when called and never fails.
 func NewScraperParser(name string) *components.GenericParser[any] {
-	return components.NewGenericParser[any](name, components.UnsetPort)
+	return components.NewBuilder[any]().WithName(name).WithPort(components.UnsetPort).MustBuild()
 }
 
 var (
@@ -101,20 +101,52 @@ var (
 				components.WithAppProtocol[*components.MultiProtocolEndpointConfig](&components.HttpProtocol),
 			),
 		),
-		components.NewSinglePortParser("awsxray", 2000, components.WithTargetPort[*components.SingleEndpointConfig](2000)),
-		components.NewSinglePortParser("carbon", 2003, components.WithTargetPort[*components.SingleEndpointConfig](2003)),
-		components.NewSinglePortParser("collectd", 8081, components.WithTargetPort[*components.SingleEndpointConfig](8081)),
-		components.NewSinglePortParser("fluentforward", 8006, components.WithTargetPort[*components.SingleEndpointConfig](8006)),
-		components.NewSinglePortParser("influxdb", 8086, components.WithTargetPort[*components.SingleEndpointConfig](8086)),
-		components.NewSinglePortParser("opencensus", 55678, components.WithAppProtocol[*components.SingleEndpointConfig](nil), components.WithTargetPort[*components.SingleEndpointConfig](55678)),
-		components.NewSinglePortParser("sapm", 7276, components.WithTargetPort[*components.SingleEndpointConfig](7276)),
-		components.NewSinglePortParser("signalfx", 9943, components.WithTargetPort[*components.SingleEndpointConfig](9943)),
-		components.NewSinglePortParser("splunk_hec", 8088, components.WithTargetPort[*components.SingleEndpointConfig](8088)),
-		components.NewSinglePortParser("statsd", 8125, components.WithProtocol[*components.SingleEndpointConfig](corev1.ProtocolUDP), components.WithTargetPort[*components.SingleEndpointConfig](8125)),
-		components.NewSinglePortParser("tcplog", components.UnsetPort, components.WithProtocol[*components.SingleEndpointConfig](corev1.ProtocolTCP)),
-		components.NewSinglePortParser("udplog", components.UnsetPort, components.WithProtocol[*components.SingleEndpointConfig](corev1.ProtocolUDP)),
-		components.NewSinglePortParser("wavefront", 2003, components.WithTargetPort[*components.SingleEndpointConfig](2003)),
-		components.NewSinglePortParser("zipkin", 9411, components.WithAppProtocol[*components.SingleEndpointConfig](&components.HttpProtocol), components.WithProtocol[*components.SingleEndpointConfig](corev1.ProtocolTCP), components.WithTargetPort[*components.SingleEndpointConfig](3100)),
+		components.NewSinglePortParserBuilder("awsxray", 2000).
+			WithTargetPort(2000).
+			MustBuild(),
+		components.NewSinglePortParserBuilder("carbon", 2003).
+			WithTargetPort(2003).
+			MustBuild(),
+		components.NewSinglePortParserBuilder("collectd", 8081).
+			WithTargetPort(8081).
+			MustBuild(),
+		components.NewSinglePortParserBuilder("fluentforward", 8006).
+			WithTargetPort(8006).
+			MustBuild(),
+		components.NewSinglePortParserBuilder("influxdb", 8086).
+			WithTargetPort(8086).
+			MustBuild(),
+		components.NewSinglePortParserBuilder("opencensus", 55678).
+			WithAppProtocol(nil).
+			WithTargetPort(55678).
+			MustBuild(),
+		components.NewSinglePortParserBuilder("sapm", 7276).
+			WithTargetPort(7276).
+			MustBuild(),
+		components.NewSinglePortParserBuilder("signalfx", 9943).
+			WithTargetPort(9943).
+			MustBuild(),
+		components.NewSinglePortParserBuilder("splunk_hec", 8088).
+			WithTargetPort(8088).
+			MustBuild(),
+		components.NewSinglePortParserBuilder("statsd", 8125).
+			WithProtocol(corev1.ProtocolUDP).
+			WithTargetPort(8125).
+			MustBuild(),
+		components.NewSinglePortParserBuilder("tcplog", components.UnsetPort).
+			WithProtocol(corev1.ProtocolTCP).
+			MustBuild(),
+		components.NewSinglePortParserBuilder("udplog", components.UnsetPort).
+			WithProtocol(corev1.ProtocolUDP).
+			MustBuild(),
+		components.NewSinglePortParserBuilder("wavefront", 2003).
+			WithTargetPort(2003).
+			MustBuild(),
+		components.NewSinglePortParserBuilder("zipkin", 9411).
+			WithAppProtocol(&components.HttpProtocol).
+			WithProtocol(corev1.ProtocolTCP).
+			WithTargetPort(3100).
+			MustBuild(),
 		NewScraperParser("prometheus"),
 		NewScraperParser("kubeletstats"),
 		NewScraperParser("sshcheck"),

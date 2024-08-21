@@ -59,6 +59,10 @@ type Option[T any] struct {
 	rbacGen     RBACRuleGenerator[T]
 }
 
+func NewEmptyOption[T any]() *Option[T] {
+	return &Option[T]{}
+}
+
 func NewOption[T any](name string, port int32) *Option[T] {
 	return &Option[T]{
 		name: name,
