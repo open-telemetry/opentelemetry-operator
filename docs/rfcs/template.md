@@ -1,6 +1,6 @@
 # TITLE
 
-**Status:** *Draft*
+**Status:** [*Draft* | *Accepted*]
 
 **Author:** <your-name>
 
