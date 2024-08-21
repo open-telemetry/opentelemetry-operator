@@ -147,6 +147,10 @@ func isValidContainersAnnotation(containersAnnotation string) error {
 
 func configureLanguageContainers(inst *instrumentationWithContainers, annotation string, ns metav1.ObjectMeta, pod metav1.ObjectMeta) error {
 	annotationValue := annotationValue(ns, pod, annotation)
+	if annotationValue == "" {
+		return nil
+	}
+
 	if err := isValidContainersAnnotation(annotationValue); err != nil {
 		return err
 	}

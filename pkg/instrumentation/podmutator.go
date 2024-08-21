@@ -63,51 +63,76 @@ type languageInstrumentations struct {
 }
 
 // Check if specific containers are provided for configured instrumentation.
-func (langInsts languageInstrumentations) areContainerNamesConfiguredForMultipleInstrumentations() (bool, error) {
+func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bool, error) {
 	var instrWithoutContainers int
 	var instrWithContainers int
 	var allContainers []string
+	var instrumentationWithNoContainers bool
 
 	// Check for instrumentations with and without containers.
 	if langInsts.Java.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.Java)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.Java)
 		allContainers = append(allContainers, langInsts.Java.Containers...)
+		if len(langInsts.Java.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
 	}
 	if langInsts.NodeJS.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.NodeJS)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.NodeJS)
 		allContainers = append(allContainers, langInsts.NodeJS.Containers...)
+		if len(langInsts.NodeJS.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
 	}
 	if langInsts.Python.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.Python)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.Python)
 		allContainers = append(allContainers, langInsts.Python.Containers...)
+		if len(langInsts.Python.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
 	}
 	if langInsts.DotNet.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.DotNet)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.DotNet)
 		allContainers = append(allContainers, langInsts.DotNet.Containers...)
+		if len(langInsts.DotNet.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
 	}
 	if langInsts.ApacheHttpd.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.ApacheHttpd)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.ApacheHttpd)
 		allContainers = append(allContainers, langInsts.ApacheHttpd.Containers...)
+		if len(langInsts.ApacheHttpd.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
 	}
 	if langInsts.Nginx.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.Nginx)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.Nginx)
 		allContainers = append(allContainers, langInsts.Nginx.Containers...)
+		if len(langInsts.Nginx.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
 	}
 	if langInsts.Go.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.Go)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.Go)
 		allContainers = append(allContainers, langInsts.Go.Containers...)
+		if len(langInsts.Go.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
 	}
 	if langInsts.Sdk.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.Sdk)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.Sdk)
 		allContainers = append(allContainers, langInsts.Sdk.Containers...)
+		if len(langInsts.Sdk.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
 	}
 
 	// Look for duplicated containers.
@@ -130,6 +155,12 @@ func (langInsts languageInstrumentations) areContainerNamesConfiguredForMultiple
 		return false, fmt.Errorf("instrumentation configuration not provided")
 	}
 
+	enabledInstrumentations := instrWithContainers + instrWithoutContainers
+
+	if enabledInstrumentations > 1 && instrumentationWithNoContainers {
+		return false, fmt.Errorf("multiple instrumentations without specifing containers")
+	}
+
 	return true, nil
 }
 
@@ -150,7 +181,6 @@ func (langInsts *languageInstrumentations) setCommonInstrumentedContainers(ns co
 	if langInsts.Java.Instrumentation != nil {
 		langInsts.Java.Containers = containers
 	}
-
 	if langInsts.NodeJS.Instrumentation != nil {
 		langInsts.NodeJS.Containers = containers
 	}
@@ -191,13 +221,13 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns meta
 	if err := configureLanguageContainers(&langInsts.Go, annotationInjectGoContainersName, ns, pod); err != nil {
 		return err
 	}
-	if err := configureLanguageContainers(&langInsts.ApacheHttpd, annotationInjectNginxContainersName, ns, pod); err != nil {
+	if err := configureLanguageContainers(&langInsts.ApacheHttpd, annotationInjectApacheHttpd, ns, pod); err != nil {
 		return err
 	}
-	if err := configureLanguageContainers(&langInsts.Nginx, annotationInjectJavaContainersName, ns, pod); err != nil {
+	if err := configureLanguageContainers(&langInsts.Nginx, annotationInjectNginx, ns, pod); err != nil {
 		return err
 	}
-	if err := configureLanguageContainers(&langInsts.Sdk, annotationInjectSdkContainersName, ns, pod); err != nil {
+	if err := configureLanguageContainers(&langInsts.Sdk, annotationInjectSdk, ns, pod); err != nil {
 		return err
 	}
 	return nil
@@ -353,7 +383,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		}
 
 		// We check if provided annotations and instrumentations are valid
-		ok, msg := insts.areContainerNamesConfiguredForMultipleInstrumentations()
+		ok, msg := insts.areInstrumentedContainersCorrect()
 		if !ok {
 			logger.V(1).Error(msg, "skipping instrumentation injection")
 			return pod, nil
