@@ -65,8 +65,3 @@ func (g *GenericParser[T]) ParserType() string {
 func (g *GenericParser[T]) ParserName() string {
 	return fmt.Sprintf("__%s", g.name)
 }
-
-func NewGenericParser[T any](name string, port int32) *GenericParser[T] {
-	o := NewOption[T](name, port)
-	return &GenericParser[T]{name: name, portParser: o.portParser, rbacGen: o.rbacGen, option: o}
-}

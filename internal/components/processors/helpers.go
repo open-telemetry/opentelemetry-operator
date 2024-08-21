@@ -35,7 +35,7 @@ func ProcessorFor(name string) components.Parser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}
-	return components.NewGenericParser[any](components.ComponentType(name), components.UnsetPort)
+	return components.NewBuilder[any]().WithName(name).MustBuild()
 }
 
 var componentParsers = []components.Parser{

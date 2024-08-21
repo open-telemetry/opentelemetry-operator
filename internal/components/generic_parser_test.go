@@ -190,7 +190,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 		},
 		{
 			name: "Generic works",
-			g:    components.NewGenericParser[*components.SingleEndpointConfig]("test", 0),
+			g:    components.NewBuilder[*components.SingleEndpointConfig]().WithName("test").MustBuild(),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{},

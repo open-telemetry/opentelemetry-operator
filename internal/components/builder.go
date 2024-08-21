@@ -40,13 +40,6 @@ func NewEmptyOption[T any]() *Option[T] {
 	return &Option[T]{}
 }
 
-func NewOption[T any](name string, port int32) *Option[T] {
-	return &Option[T]{
-		name: name,
-		port: port,
-	}
-}
-
 func (o *Option[T]) Apply(opts ...ParserOption[T]) {
 	for _, opt := range opts {
 		opt(o)
