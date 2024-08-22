@@ -6,6 +6,7 @@ metadata:
     node-selector-mode: without
 spec:
   mode: deployment
+  nodeSelector:
   config: |
     receivers:
       otlp:
@@ -32,6 +33,7 @@ metadata:
     node-selector-mode: without
 spec:
   mode: daemonset
+  nodeSelector:
   config: |
     receivers:
       otlp:
@@ -58,6 +60,7 @@ metadata:
     node-selector-mode: without
 spec:
   mode: statefulset
+  nodeSelector:
   config: |
     receivers:
       otlp:
