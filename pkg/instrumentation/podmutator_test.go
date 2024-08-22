@@ -4888,7 +4888,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ok, msg := test.instrumentations.areContainerNamesConfiguredForMultipleInstrumentations()
+			ok, msg := test.instrumentations.areInstrumentedContainersCorrect()
 			assert.Equal(t, test.expectedStatus, ok)
 			assert.Equal(t, test.expectedMsg, msg)
 		})

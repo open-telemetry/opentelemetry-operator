@@ -158,7 +158,7 @@ func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bo
 	enabledInstrumentations := instrWithContainers + instrWithoutContainers
 
 	if enabledInstrumentations > 1 && instrumentationWithNoContainers {
-		return false, fmt.Errorf("multiple instrumentations without specifing containers")
+		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
 	}
 
 	return true, nil
