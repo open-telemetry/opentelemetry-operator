@@ -31,16 +31,15 @@ data:
             config: {}
             target_allocator:
                 collector_id: ${POD_NAME}
-                endpoint: http://prometheus-cr-targetallocator:80
+                endpoint: http://prometheus-cr-targetallocator.chainsaw-targetallocator-prometheuscr.svc.cluster.local:80
                 interval: 30s
     service:
         pipelines:
             metrics:
                 exporters:
                     - prometheus
-                processors: []
                 receivers:
                     - prometheus
 kind: ConfigMap
 metadata:
-  name: prometheus-cr-collector-b88fa6e7
+  name: prometheus-cr-collector-52e1d2ae

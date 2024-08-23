@@ -58,6 +58,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 						{
 							Name:        "jaeger-grpc",
 							Port:        14250,
+							TargetPort:  intstr.FromInt(14250),
 							Protocol:    corev1.ProtocolTCP,
 							AppProtocol: &grpc,
 						},
@@ -77,6 +78,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 						{
 							Name:        "jaeger-grpc",
 							Port:        1234,
+							TargetPort:  intstr.FromInt(1234),
 							Protocol:    corev1.ProtocolTCP,
 							AppProtocol: &grpc,
 						},
@@ -97,24 +99,28 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 						{
 							Name:        "jaeger-grpc",
 							Port:        14250,
+							TargetPort:  intstr.FromInt(14250),
 							Protocol:    corev1.ProtocolTCP,
 							AppProtocol: &grpc,
 						},
 						{
 							Name:        "port-14268",
 							Port:        14268,
+							TargetPort:  intstr.FromInt(14268),
 							Protocol:    corev1.ProtocolTCP,
 							AppProtocol: &http,
 						},
 						{
-							Name:     "port-6831",
-							Port:     6831,
-							Protocol: corev1.ProtocolUDP,
+							Name:       "port-6831",
+							Port:       6831,
+							TargetPort: intstr.FromInt(6831),
+							Protocol:   corev1.ProtocolUDP,
 						},
 						{
-							Name:     "port-6832",
-							Port:     6832,
-							Protocol: corev1.ProtocolUDP,
+							Name:       "port-6832",
+							Port:       6832,
+							TargetPort: intstr.FromInt(6832),
+							Protocol:   corev1.ProtocolUDP,
 						},
 					},
 				},
@@ -155,7 +161,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 						{
 							Name:        "otlp-grpc",
 							Port:        1234,
-							TargetPort:  intstr.FromInt32(4317),
+							TargetPort:  intstr.FromInt(1234),
 							AppProtocol: &grpc,
 						},
 					},
@@ -178,6 +184,72 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 						},
 						{
 							Name:        "otlp-http",
+							Port:        4318,
+							TargetPort:  intstr.FromInt32(4318),
+							AppProtocol: &http,
+						},
+					},
+				},
+			},
+		},
+		{
+			receiverName: "otlp/test",
+			parserName:   "__otlp",
+			cases: []testCase{
+				{
+					name: "minimal config",
+					config: map[string]interface{}{
+						"protocols": map[string]interface{}{
+							"grpc": map[string]interface{}{},
+						},
+					},
+					expectedErr: nil,
+					expectedSvc: []corev1.ServicePort{
+						{
+							Name:        "otlp-test-grpc",
+							Port:        4317,
+							TargetPort:  intstr.FromInt32(4317),
+							AppProtocol: &grpc,
+						},
+					},
+				},
+				{
+					name: "grpc overridden",
+					config: map[string]interface{}{
+						"protocols": map[string]interface{}{
+							"grpc": map[string]interface{}{
+								"endpoint": "0.0.0.0:1234",
+							},
+						},
+					},
+					expectedErr: nil,
+					expectedSvc: []corev1.ServicePort{
+						{
+							Name:        "otlp-test-grpc",
+							Port:        1234,
+							TargetPort:  intstr.FromInt32(1234),
+							AppProtocol: &grpc,
+						},
+					},
+				},
+				{
+					name: "all defaults",
+					config: map[string]interface{}{
+						"protocols": map[string]interface{}{
+							"grpc": map[string]interface{}{},
+							"http": map[string]interface{}{},
+						},
+					},
+					expectedErr: nil,
+					expectedSvc: []corev1.ServicePort{
+						{
+							Name:        "otlp-test-grpc",
+							Port:        4317,
+							TargetPort:  intstr.FromInt32(4317),
+							AppProtocol: &grpc,
+						},
+						{
+							Name:        "otlp-test-http",
 							Port:        4318,
 							TargetPort:  intstr.FromInt32(4318),
 							AppProtocol: &http,
@@ -221,7 +293,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 						{
 							Name:        "loki-grpc",
 							Port:        1234,
-							TargetPort:  intstr.FromInt32(9095),
+							TargetPort:  intstr.FromInt(1234),
 							AppProtocol: &grpc,
 						},
 					},
@@ -287,7 +359,7 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 						{
 							Name:        "skywalking-grpc",
 							Port:        1234,
-							TargetPort:  intstr.FromInt32(11800),
+							TargetPort:  intstr.FromInt(1234),
 							AppProtocol: &grpc,
 						},
 					},
@@ -326,26 +398,26 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 			})
 
 			t.Run("is found by name", func(t *testing.T) {
-				p := receivers.BuilderFor(tt.receiverName)
+				p := receivers.ReceiverFor(tt.receiverName)
 				assert.Equal(t, tt.parserName, p.ParserName())
 			})
 
 			t.Run("bad config errors", func(t *testing.T) {
 				// prepare
-				parser := receivers.BuilderFor(tt.receiverName)
+				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// test
-				_, err := parser.Ports(logger, []interface{}{"junk"})
+				_, err := parser.Ports(logger, tt.receiverName, []interface{}{"junk"})
 
 				// verify
 				assert.ErrorContains(t, err, "expected a map, got 'slice'")
 			})
 			t.Run("good config, unknown protocol", func(t *testing.T) {
 				// prepare
-				parser := receivers.BuilderFor(tt.receiverName)
+				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// test
-				_, err := parser.Ports(logger, map[string]interface{}{
+				_, err := parser.Ports(logger, tt.receiverName, map[string]interface{}{
 					"protocols": map[string]interface{}{
 						"garbage": map[string]interface{}{},
 					},
@@ -357,10 +429,10 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 			for _, kase := range tt.cases {
 				t.Run(kase.name, func(t *testing.T) {
 					// prepare
-					parser := receivers.BuilderFor(tt.receiverName)
+					parser := receivers.ReceiverFor(tt.receiverName)
 
 					// test
-					ports, err := parser.Ports(logger, kase.config)
+					ports, err := parser.Ports(logger, tt.receiverName, kase.config)
 					if kase.expectedErr != nil {
 						assert.EqualError(t, err, kase.expectedErr.Error())
 						return

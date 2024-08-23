@@ -21,29 +21,34 @@ import (
 )
 
 // registry holds a record of all known receiver parsers.
-var registry = make(map[string]components.ComponentPortParser)
+var registry = make(map[string]components.Parser)
 
 // Register adds a new parser builder to the list of known builders.
-func Register(name string, p components.ComponentPortParser) {
+func Register(name string, p components.Parser) {
 	registry[name] = p
 }
 
 // IsRegistered checks whether a parser is registered with the given name.
 func IsRegistered(name string) bool {
-	_, ok := registry[name]
+	_, ok := registry[components.ComponentType(name)]
 	return ok
 }
 
-// BuilderFor returns a parser builder for the given exporter name.
-func BuilderFor(name string) components.ComponentPortParser {
+// ReceiverFor returns a parser builder for the given exporter name.
+func ReceiverFor(name string) components.Parser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}
-	return components.NewSinglePortParser(components.ComponentType(name), components.UnsetPort)
+	return components.NewSilentSinglePortParser(components.ComponentType(name), components.UnsetPort)
+}
+
+// NewScraperParser is an instance of a generic parser that returns nothing when called and never fails.
+func NewScraperParser(name string) *components.GenericParser[any] {
+	return components.NewGenericParser[any](name, components.UnsetPort, nil)
 }
 
 var (
-	componentParsers = []components.ComponentPortParser{
+	componentParsers = []components.Parser{
 		components.NewMultiPortReceiver("otlp",
 			components.WithPortMapping(
 				"grpc",
@@ -68,17 +73,21 @@ var (
 			)),
 		components.NewMultiPortReceiver("jaeger",
 			components.WithPortMapping(components.GrpcProtocol, 14250,
+				components.WithTargetPort(14250),
 				components.WithProtocol(corev1.ProtocolTCP),
 				components.WithAppProtocol(&components.GrpcProtocol),
 			),
 			components.WithPortMapping("thrift_http", 14268,
+				components.WithTargetPort(14268),
 				components.WithProtocol(corev1.ProtocolTCP),
 				components.WithAppProtocol(&components.HttpProtocol),
 			),
 			components.WithPortMapping("thrift_compact", 6831,
+				components.WithTargetPort(6831),
 				components.WithProtocol(corev1.ProtocolUDP),
 			),
 			components.WithPortMapping("thrift_binary", 6832,
+				components.WithTargetPort(6832),
 				components.WithProtocol(corev1.ProtocolUDP),
 			),
 		),
@@ -92,20 +101,20 @@ var (
 				components.WithAppProtocol(&components.HttpProtocol),
 			),
 		),
-		components.NewSinglePortParser("awsxray", 2000),
-		components.NewSinglePortParser("carbon", 2003),
-		components.NewSinglePortParser("collectd", 8081),
-		components.NewSinglePortParser("fluentforward", 8006),
-		components.NewSinglePortParser("influxdb", 8086),
-		components.NewSinglePortParser("opencensus", 55678, components.WithAppProtocol(nil)),
-		components.NewSinglePortParser("sapm", 7276),
-		components.NewSinglePortParser("signalfx", 9943),
-		components.NewSinglePortParser("splunk_hec", 8088),
-		components.NewSinglePortParser("statsd", 8125, components.WithProtocol(corev1.ProtocolUDP)),
+		components.NewSinglePortParser("awsxray", 2000, components.WithTargetPort(2000)),
+		components.NewSinglePortParser("carbon", 2003, components.WithTargetPort(2003)),
+		components.NewSinglePortParser("collectd", 8081, components.WithTargetPort(8081)),
+		components.NewSinglePortParser("fluentforward", 8006, components.WithTargetPort(8006)),
+		components.NewSinglePortParser("influxdb", 8086, components.WithTargetPort(8086)),
+		components.NewSinglePortParser("opencensus", 55678, components.WithAppProtocol(nil), components.WithTargetPort(55678)),
+		components.NewSinglePortParser("sapm", 7276, components.WithTargetPort(7276)),
+		components.NewSinglePortParser("signalfx", 9943, components.WithTargetPort(9943)),
+		components.NewSinglePortParser("splunk_hec", 8088, components.WithTargetPort(8088)),
+		components.NewSinglePortParser("statsd", 8125, components.WithProtocol(corev1.ProtocolUDP), components.WithTargetPort(8125)),
 		components.NewSinglePortParser("tcplog", components.UnsetPort, components.WithProtocol(corev1.ProtocolTCP)),
 		components.NewSinglePortParser("udplog", components.UnsetPort, components.WithProtocol(corev1.ProtocolUDP)),
-		components.NewSinglePortParser("wavefront", 2003),
-		components.NewSinglePortParser("zipkin", 9411, components.WithAppProtocol(&components.HttpProtocol), components.WithProtocol(corev1.ProtocolTCP)),
+		components.NewSinglePortParser("wavefront", 2003, components.WithTargetPort(2003)),
+		components.NewSinglePortParser("zipkin", 9411, components.WithAppProtocol(&components.HttpProtocol), components.WithProtocol(corev1.ProtocolTCP), components.WithTargetPort(3100)),
 		NewScraperParser("prometheus"),
 		NewScraperParser("kubeletstats"),
 		NewScraperParser("sshcheck"),
@@ -136,6 +145,7 @@ var (
 		NewScraperParser("haproxy"),
 		NewScraperParser("flinkmetrics"),
 		NewScraperParser("couchdb"),
+		NewScraperParser("filelog"),
 	}
 )
 

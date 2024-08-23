@@ -4184,6 +4184,21 @@ typically used to set access tokens or other authorization headers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>ipFamilies</b></td>
+        <td>[]string</td>
+        <td>
+          IPFamily represents the IP Family (IPv4 or IPv6). This type is used
+to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ipFamilyPolicy</b></td>
+        <td>string</td>
+        <td>
+          IPFamilyPolicy represents the dual-stack-ness requested or required by a Service<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
         <td>
@@ -4196,6 +4211,13 @@ typically used to set access tokens or other authorization headers.<br/>
         <td>
           PodAnnotations is the set of annotations that will be attached to
 OpAMPBridge pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opampbridgespecpoddnsconfig">podDnsConfig</a></b></td>
+        <td>object</td>
+        <td>
+          PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6319,6 +6341,88 @@ TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://git
         <td>boolean</td>
         <td>
           Specify whether the Secret must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.podDnsConfig
+<sup><sup>[↩ Parent](#opampbridgespec)</sup></sup>
+
+
+
+PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>nameservers</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS name server IP addresses.
+This will be appended to the base nameservers generated from DNSPolicy.
+Duplicated nameservers will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opampbridgespecpoddnsconfigoptionsindex">options</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of DNS resolver options.
+This will be merged with the base options generated from DNSPolicy.
+Duplicated entries will be removed. Resolution options given in Options
+will override those that appear in the base DNSPolicy.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>searches</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS search domains for host-name lookup.
+This will be appended to the base search paths generated from DNSPolicy.
+Duplicated search paths will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.podDnsConfig.options[index]
+<sup><sup>[↩ Parent](#opampbridgespecpoddnsconfig)</sup></sup>
+
+
+
+PodDNSConfigOption defines DNS resolver options of a pod.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -30848,6 +30952,23 @@ https://kubernetes.io/docs/concepts/workloads/pods/init-containers/<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>ipFamilies</b></td>
+        <td>[]string</td>
+        <td>
+          IPFamily represents the IP Family (IPv4 or IPv6). This type is used
+to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ipFamilyPolicy</b></td>
+        <td>string</td>
+        <td>
+          IPFamilyPolicy represents the dual-stack-ness requested or required by a Service<br/>
+          <br/>
+            <i>Default</i>: SingleStack<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspeclifecycle-1">lifecycle</a></b></td>
         <td>object</td>
         <td>
@@ -30910,7 +31031,14 @@ the generated pods.<br/>
         <td>object</td>
         <td>
           PodDisruptionBudget specifies the pod disruption budget configuration to use
-for the generated workload.<br/>
+for the generated workload. By default, a PDB with a MaxUnavailable of one is set.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecpoddnsconfig">podDnsConfig</a></b></td>
+        <td>object</td>
+        <td>
+          PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -31197,19 +31325,19 @@ Pipeline is a struct of component type to a list of component IDs.
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>processors</b></td>
-        <td>[]string</td>
-        <td>
-          <br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b>receivers</b></td>
         <td>[]string</td>
         <td>
           <br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>processors</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -40687,7 +40815,7 @@ The operator.observability.prometheus feature gate must be enabled to use this f
 
 
 PodDisruptionBudget specifies the pod disruption budget configuration to use
-for the generated workload.
+for the generated workload. By default, a PDB with a MaxUnavailable of one is set.
 
 <table>
     <thead>
@@ -40716,6 +40844,88 @@ by specifying 0. This is a mutually exclusive setting with "minAvailable".<br/>
 "selector" will still be available after the eviction, i.e. even in the
 absence of the evicted pod.  So for example you can prevent all voluntary
 evictions by specifying "100%".<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.podDnsConfig
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>nameservers</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS name server IP addresses.
+This will be appended to the base nameservers generated from DNSPolicy.
+Duplicated nameservers will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecpoddnsconfigoptionsindex">options</a></b></td>
+        <td>[]object</td>
+        <td>
+          A list of DNS resolver options.
+This will be merged with the base options generated from DNSPolicy.
+Duplicated entries will be removed. Resolution options given in Options
+will override those that appear in the base DNSPolicy.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>searches</b></td>
+        <td>[]string</td>
+        <td>
+          A list of DNS search domains for host-name lookup.
+This will be appended to the base search paths generated from DNSPolicy.
+Duplicated search paths will be removed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.podDnsConfig.options[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspecpoddnsconfig)</sup></sup>
+
+
+
+PodDNSConfigOption defines DNS resolver options of a pod.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -41884,7 +42094,8 @@ The default is relabel-config.<br/>
         <td>object</td>
         <td>
           PodDisruptionBudget specifies the pod disruption budget configuration to use
-for the target allocator workload.<br/>
+for the target allocator workload. By default, a PDB with a MaxUnavailable of one is set for a valid
+allocation strategy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -43931,7 +44142,8 @@ The operator.observability.prometheus feature gate must be enabled to use this f
 
 
 PodDisruptionBudget specifies the pod disruption budget configuration to use
-for the target allocator workload.
+for the target allocator workload. By default, a PDB with a MaxUnavailable of one is set for a valid
+allocation strategy.
 
 <table>
     <thead>

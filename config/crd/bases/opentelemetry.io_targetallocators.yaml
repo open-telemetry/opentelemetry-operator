@@ -1248,6 +1248,8 @@ spec:
                 - ""
                 - relabel-config
                 type: string
+              global:
+                type: object
               hostNetwork:
                 type: boolean
               image:
@@ -1929,6 +1931,13 @@ spec:
                   - name
                   type: object
                 type: array
+              ipFamilies:
+                items:
+                  type: string
+                type: array
+              ipFamilyPolicy:
+                default: SingleStack
+                type: string
               lifecycle:
                 properties:
                   postStart:
@@ -2088,6 +2097,29 @@ spec:
                     - type: integer
                     - type: string
                     x-kubernetes-int-or-string: true
+                type: object
+              podDnsConfig:
+                properties:
+                  nameservers:
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: atomic
+                  options:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        value:
+                          type: string
+                      type: object
+                    type: array
+                    x-kubernetes-list-type: atomic
+                  searches:
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: atomic
                 type: object
               podSecurityContext:
                 properties:

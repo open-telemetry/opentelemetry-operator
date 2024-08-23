@@ -97,9 +97,6 @@ func TestDeploymentNewDefault(t *testing.T) {
 	// verify
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
 	assert.Equal(t, testTolerationValues, d.Spec.Template.Spec.Tolerations)
 
 	assert.Len(t, d.Spec.Template.Spec.Containers, 1)
@@ -351,7 +348,7 @@ func TestDeploymentFilterAnnotations(t *testing.T) {
 	d, err := Deployment(params)
 	require.NoError(t, err)
 
-	assert.Len(t, d.ObjectMeta.Annotations, 4)
+	assert.Len(t, d.ObjectMeta.Annotations, 0)
 	for k := range excludedAnnotations {
 		assert.NotContains(t, d.ObjectMeta.Annotations, k)
 	}
@@ -571,9 +568,9 @@ func TestDeploymentSetInitContainer(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
+	assert.Equal(t, "true", d.Spec.Template.Annotations["prometheus.io/scrape"])
+	assert.Equal(t, "8888", d.Spec.Template.Annotations["prometheus.io/port"])
+	assert.Equal(t, "/metrics", d.Spec.Template.Annotations["prometheus.io/path"])
 	assert.Len(t, d.Spec.Template.Spec.InitContainers, 1)
 }
 
@@ -654,9 +651,9 @@ func TestDeploymentAdditionalContainers(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
+	assert.Equal(t, "true", d.Spec.Template.Annotations["prometheus.io/scrape"])
+	assert.Equal(t, "8888", d.Spec.Template.Annotations["prometheus.io/port"])
+	assert.Equal(t, "/metrics", d.Spec.Template.Annotations["prometheus.io/path"])
 	assert.Len(t, d.Spec.Template.Spec.Containers, 2)
 	assert.Equal(t, v1.Container{Name: "test"}, d.Spec.Template.Spec.Containers[0])
 }
@@ -704,4 +701,36 @@ func TestDeploymentShareProcessNamespace(t *testing.T) {
 	d2, err := Deployment(params2)
 	require.NoError(t, err)
 	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
+}
+
+func TestDeploymentDNSConfig(t *testing.T) {
+	// prepare
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PodDNSConfig: v1.PodDNSConfig{
+					Nameservers: []string{"8.8.8.8"},
+					Searches:    []string{"my.dns.search.suffix"},
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
+	// test
+	d, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, v1.DNSPolicy("None"), d.Spec.Template.Spec.DNSPolicy)
+	assert.Equal(t, d.Spec.Template.Spec.DNSConfig.Nameservers, []string{"8.8.8.8"})
 }

@@ -22,20 +22,11 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-// Annotations return the annotations for OpenTelemetryCollector pod.
+// Annotations return the annotations for OpenTelemetryCollector resources.
 func Annotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations []string) (map[string]string, error) {
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
 
-	// Enable Prometheus annotations by default if DisablePrometheusAnnotations is nil or true
-	if !instance.Spec.Observability.Metrics.DisablePrometheusAnnotations {
-		// Set default Prometheus annotations
-		annotations["prometheus.io/scrape"] = "true"
-		annotations["prometheus.io/port"] = "8888"
-		annotations["prometheus.io/path"] = "/metrics"
-	}
-
-	// allow override of prometheus annotations
 	if nil != instance.ObjectMeta.Annotations {
 		for k, v := range instance.ObjectMeta.Annotations {
 			if !IsFilteredSet(k, filterAnnotations) {
@@ -43,14 +34,6 @@ func Annotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations []st
 			}
 		}
 	}
-
-	hash, err := GetConfigMapSHA(instance.Spec.Config)
-	if err != nil {
-		return nil, err
-	}
-
-	// make sure sha256 for configMap is always calculated
-	annotations["opentelemetry-operator-config/sha256"] = hash
 
 	return annotations, nil
 }
@@ -78,11 +61,29 @@ func PodAnnotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations [
 		}
 	}
 
+	// Enable Prometheus annotations by default if DisablePrometheusAnnotations is nil or true
+	if !instance.Spec.Observability.Metrics.DisablePrometheusAnnotations {
+		// Set default Prometheus annotations
+		prometheusAnnotations := map[string]string{
+			"prometheus.io/scrape": "true",
+			"prometheus.io/port":   "8888",
+			"prometheus.io/path":   "/metrics",
+		}
+		// Default Prometheus annotations do not override existing
+		for kMeta, vMeta := range prometheusAnnotations {
+			if _, ok := podAnnotations[kMeta]; !ok {
+				podAnnotations[kMeta] = vMeta
+			}
+		}
+	}
+
+	// make sure sha256 for configMap is always calculated
 	hash, err := GetConfigMapSHA(instance.Spec.Config)
 	if err != nil {
 		return nil, err
 	}
-	// make sure sha256 for configMap is always calculated
+
+	// Adding the ConfigMap Hash only to PodAnnotations
 	podAnnotations["opentelemetry-operator-config/sha256"] = hash
 
 	return podAnnotations, nil

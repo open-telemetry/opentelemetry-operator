@@ -15,7 +15,7 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: prometheus-kubernetessd-collector-8236b782
+  name: prometheus-kubernetessd-collector-699cdaa1
 data:
   collector.yaml: |
     exporters:
@@ -26,14 +26,13 @@ data:
             config: {}
             target_allocator:
                 collector_id: ${POD_NAME}
-                endpoint: http://prometheus-kubernetessd-targetallocator:80
+                endpoint: http://prometheus-kubernetessd-targetallocator.chainsaw-targetallocator-kubernetessd.svc.cluster.local:80
                 interval: 30s
     service:
         pipelines:
             metrics:
                 exporters:
                     - prometheus
-                processors: []
                 receivers:
                     - prometheus
 ---

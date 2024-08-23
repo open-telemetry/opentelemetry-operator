@@ -2,6 +2,131 @@
 
 <!-- next version -->
 
+## 0.107.0
+
+### 💡 Enhancements 💡
+
+- `instrumentation`: introduced ability to set Otel resource attributes based on annotations for instrumentation (#2181)
+  
+  resource.opentelemetry.io/your-key: "your-value"
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fix example for labels-filter startup parameter --label. (#3201)
+
+### Components
+
+* [OpenTelemetry Collector - v0.107.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.107.0)
+* [OpenTelemetry Contrib - v0.107.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.107.0)
+* [Java auto-instrumentation - v1.33.5](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.5)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.52.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.52.1)
+* [Python - v0.47b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.47b0)
+* [Go - v0.14.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.14.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.106.0
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fixes a bug where the operator would default the PDB in the wrong place. (#3198)
+- `operator`: The OpenShift dashboard shown namespaces where PodMonitors or ServiceMonitors were created even if they were not associated to OpenTelemetry Collectors. (#3196)
+  Now, the dashboard lists only those namespaces where there are OpenTelemetry Collectors.
+- `operator`: When there were multiple OpenTelemetry Collector, the dashboard doesn't allow to select them individually. (#3189)
+- `target allocator`: Fix collector to target allocator connection in clusters with proxy. (#3187)
+  On clusters with global proxy the collector might fail to talk to target allocator
+  because the endpoint is set to `<ta-service-name>:port` and therefore it will go to proxy
+  and request might be forwarded to internet. Clusters with proxy configure `NO_PROXY` to `.svc.cluster.local` so 
+  the calls to this endpoint will not go through the proxy.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.106.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.106.1)
+* [OpenTelemetry Contrib - v0.106.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.106.1)
+* [Java auto-instrumentation - v1.33.5](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.5)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.52.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.52.1)
+* [Python - v0.47b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.47b0)
+* [Go - v0.14.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.14.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.105.0
+
+### 💡 Enhancements 💡
+
+- `collector`: Create automatically an OpenShift dashboard to visualize OpenTelemetry Collector metrics (#2995)
+  To enable this feature, you need to specify the `--openshift-create-dashboard` argument to the operator
+- `bundle`: Create an specific bundle for OpenShift environments. (#3054)
+- `collector`: Enabling ipFamilies and ipFamilyPolicy to be configured via OpenTelemetryCollector (#2958)
+- `auto-instrumentation`: Add Prometheus exporter to Python auto-instrumentation (#3122)
+- `collector`: Configmap, rbac, service, serviceaccount apply annotations-filter. (#3151)
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Remove workaround for 0.104.0 that enabled feature-gate `confmap.unifyEnvVarExpansion` when Prometheus receiver was enabled. (#3142)
+- `opamp`: Fixes a bug where the collector was not being marshalled correctly by using a reference instead of a value. (#3171)
+- `auto-instrumentation`: Fixes a bug statefulSet wrong service.instance.id (#3157)
+
+### Components
+
+* [OpenTelemetry Collector - v0.105.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.105.0)
+* [OpenTelemetry Contrib - v0.105.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.105.0)
+* [Java auto-instrumentation - v1.33.5](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.5)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.52.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.52.1)
+* [Python - v0.46b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.46b0)
+* [Go - v0.13.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.13.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.104.0
+
+### 🛑 Breaking changes 🛑
+
+- `opamp`: Adds support for v1beta1 OpenTelemetry Collector API in the OpAMP Bridge (#2985)
+  This change adds support for the OpAMP Bridge to manage and apply OpenTelemetry Collectors using the v1beta1 API in 
+  the OpAMP Bridge. This change removes support for applying OpenTelemetry Collectors using the v1alpha1 API version.
+  The v1beta1 API is the latest version of the OpenTelemetry Collector API and is the recommended version for new 
+  deployments.
+
+### 💡 Enhancements 💡
+
+- `collector`: Since collector version `0.104.0` the collector listens on `localhost` instead of `0.0.0.0` by default ([collector#8510](https://github.com/open-telemetry/opentelemetry-collector/issues/8510)). To avoid breaking changes the `component.UseLocalHostAsDefaultHost` feature-gate is disabled by the Operator.  (#3119)
+- `collector`: Changes the default parser to silently fail. (#3133)
+- `collector, target allocator`: If the target allocator is enabled, the collector featuregate `confmap.unifyEnvVarExpansion' is disabled. (#3119) 
+- `operator`: Release leader election lease on exit (#3058)
+- `collector, target allocator, opamp`: Enabling PodDnsConfig for OpenTelemetry Collector, TargetAllocator and OpAMPBridge. (#2658)
+- `collector`: Make the `spec.mode` field of the `OpenTelemetryCollector` Custom Resource (CR) immutable (#3055)
+- `collector`: Improves the performance of port and configuration parsing in the operator (#2603)
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fixes a bug where an exporter would cause a port collision (#3124)
+- `collector`: Fix deletion issue of `otelcol` CR by making `spec.config.service.pipelines.processors` optional (#3075)
+  This change makes `spec.config.service.pipelines.processors` in `OpenTelemetryCollector` CRD optional, aligning with OTel Collector best practices. It resolves deletion issues by providing flexibility in CRD configuration, addressing conflicts between strict validation and practical uses.
+  Note: Updating the `opentelemetrycollectors.opentelemetry.io` CRD resource is required.
+  
+- `collector`: Allow annotations on service account to prevent infinite reconciliation on OpenShift and creating infinite pull secrets. (#3106)
+  On OpenShift 4.16 the platform automatically adds an annotation `openshift.io/internal-registry-pull-secret-ref: <simplest-collector-dockercfg-jwq66>`
+  to the service account which contains secret name with image pull secret.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.104.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.104.0)
+* [OpenTelemetry Contrib - v0.104.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.104.0)
+* [Java auto-instrumentation - v1.32.1](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.32.1)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.52.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.52.1)
+* [Python - v0.46b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.46b0)
+* [Go - v0.13.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.13.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.103.0
 
 ### 💡 Enhancements 💡

@@ -1309,11 +1309,7 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
 									Value: "http/protobuf",
 								},
 								{
@@ -1514,11 +1510,7 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
 									Value: "http/protobuf",
 								},
 								{
@@ -1609,11 +1601,7 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
 									Value: "http/protobuf",
 								},
 								{
@@ -3193,6 +3181,14 @@ func TestMutatePod(t *testing.T) {
 									Value: "http://otlp-endpoint:4317",
 								},
 								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
 									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
@@ -3202,7 +3198,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=nginx,k8s.namespace.name=req-namespace,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=my-nginx-6c44bcbdd,service.instance.id=req-namespace.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).nginx",
+									Value: "k8s.container.name=nginx,k8s.namespace.name=req-namespace,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=req-namespace.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).nginx",
 								},
 							},
 						},
@@ -4057,20 +4053,16 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_METRICS_EXPORTER",
 									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
-									Value: "http/protobuf",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -4136,20 +4128,16 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_METRICS_EXPORTER",
 									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
-									Value: "http/protobuf",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -4842,20 +4830,16 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_METRICS_EXPORTER",
 									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
-									Value: "http/protobuf",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -4921,20 +4905,16 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_METRICS_EXPORTER",
 									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
-									Value: "http/protobuf",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",

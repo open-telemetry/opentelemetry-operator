@@ -24,7 +24,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-var _ ComponentPortParser = &MultiPortReceiver{}
+var _ Parser = &MultiPortReceiver{}
 
 // MultiProtocolEndpointConfig represents the minimal struct for a given YAML configuration input containing a map to
 // a struct with either endpoint or listen_address.
@@ -42,7 +42,7 @@ type MultiPortReceiver struct {
 	portMappings map[string]*corev1.ServicePort
 }
 
-func (m *MultiPortReceiver) Ports(logger logr.Logger, config interface{}) ([]corev1.ServicePort, error) {
+func (m *MultiPortReceiver) Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error) {
 	multiProtoEndpointCfg := &MultiProtocolEndpointConfig{}
 	if err := mapstructure.Decode(config, multiProtoEndpointCfg); err != nil {
 		return nil, err
@@ -53,8 +53,8 @@ func (m *MultiPortReceiver) Ports(logger logr.Logger, config interface{}) ([]cor
 			port := defaultSvc.Port
 			if ec != nil {
 				port = ec.GetPortNumOrDefault(logger, port)
-				defaultSvc.Name = naming.PortName(fmt.Sprintf("%s-%s", m.name, protocol), port)
 			}
+			defaultSvc.Name = naming.PortName(fmt.Sprintf("%s-%s", name, protocol), port)
 			ports = append(ports, ConstructServicePort(defaultSvc, port))
 		} else {
 			return nil, fmt.Errorf("unknown protocol set: %s", protocol)
@@ -84,13 +84,8 @@ func NewMultiPortReceiver(name string, opts ...MultiPortOption) *MultiPortReceiv
 
 func WithPortMapping(name string, port int32, opts ...PortBuilderOption) MultiPortOption {
 	return func(parser *MultiPortReceiver) {
-		servicePort := &corev1.ServicePort{
-			Name: naming.PortName(fmt.Sprintf("%s-%s", parser.name, name), port),
-			Port: port,
-		}
-		for _, opt := range opts {
-			opt(servicePort)
-		}
-		parser.portMappings[name] = servicePort
+		o := NewOption(name, port)
+		o.Apply(opts...)
+		parser.portMappings[name] = o.GetServicePort()
 	}
 }

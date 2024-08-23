@@ -61,7 +61,6 @@ service:
   pipelines:
     traces: 
       receivers: [otlp/mtls]
-      processors: []
       exporters: [otlp]
 `,
 		},
@@ -83,6 +82,7 @@ service:
 	assert.Equal(t, map[string]string{
 		"--test-upgrade43": "true",
 		"--test-arg1":      "otel",
+		"feature-gates":    "-component.UseLocalHostAsDefaultHost",
 	}, res.Spec.Args)
 
 	// verify
@@ -99,7 +99,6 @@ service:
     traces:
       exporters:
       - otlp
-      processors: []
       receivers:
       - otlp/mtls
   telemetry:
@@ -121,7 +120,6 @@ service:
     traces:
       exporters:
       - otlp
-      processors: []
       receivers:
       - otlp/mtls
   telemetry:
@@ -145,6 +143,7 @@ service:
 	assert.Equal(t, map[string]string{
 		"--test-upgrade43": "true",
 		"--test-arg1":      "otel",
+		"feature-gates":    "-component.UseLocalHostAsDefaultHost",
 	}, res.Spec.Args)
 
 }
