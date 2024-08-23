@@ -23,6 +23,7 @@ import (
 	semver "github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -67,23 +68,36 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 			u.Recorder.Event(&original, "Error", "Upgrade", msg)
 			continue
 		}
-
 		if !reflect.DeepEqual(upgraded, list.Items[i]) {
 			// the resource update overrides the status, so, keep it so that we can reset it later
 			st := upgraded.Status
-			patch := client.MergeFrom(&original)
-			if err := u.Client.Patch(ctx, &upgraded, patch); err != nil {
+			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				col := v1beta1.OpenTelemetryCollector{}
+				err = u.Client.Get(ctx, client.ObjectKeyFromObject(&original), &col)
+				if err != nil {
+					return err
+				}
+				var upgradedErr error
+				upgraded, upgradedErr = u.ManagedInstance(ctx, col)
+				if upgradedErr != nil {
+					return upgradedErr
+				}
+				if err := u.Client.Update(ctx, &upgraded); err != nil {
+					return err
+				}
+				return nil
+			})
+			if err != nil {
 				itemLogger.Error(err, "failed to apply changes to instance")
-				continue
+				return err
 			}
 
 			// the status object requires its own update
 			upgraded.Status = st
-			if err := u.Client.Status().Patch(ctx, &upgraded, patch); err != nil {
+			if err := u.Client.Status().Patch(ctx, &upgraded, client.MergeFrom(&original)); err != nil {
 				itemLogger.Error(err, "failed to apply changes to instance's status object")
 				continue
 			}
-
 			itemLogger.Info("instance upgraded", "version", upgraded.Status.Version)
 		}
 	}
