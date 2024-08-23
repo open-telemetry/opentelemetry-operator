@@ -71,25 +71,25 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 		if !reflect.DeepEqual(upgraded, list.Items[i]) {
 			// the resource update overrides the status, so, keep it so that we can reset it later
 			st := upgraded.Status
-			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			upgradeErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				col := v1beta1.OpenTelemetryCollector{}
 				err = u.Client.Get(ctx, client.ObjectKeyFromObject(&original), &col)
 				if err != nil {
 					return err
 				}
-				var upgradedErr error
-				upgraded, upgradedErr = u.ManagedInstance(ctx, col)
-				if upgradedErr != nil {
-					return upgradedErr
+				var versionUpgradeErr error
+				upgraded, versionUpgradeErr = u.ManagedInstance(ctx, col)
+				if versionUpgradeErr != nil {
+					return versionUpgradeErr
 				}
 				if err := u.Client.Update(ctx, &upgraded); err != nil {
 					return err
 				}
 				return nil
 			})
-			if err != nil {
-				itemLogger.Error(err, "failed to apply changes to instance")
-				return err
+			if upgradeErr != nil {
+				itemLogger.Error(upgradeErr, "failed to apply changes to instance")
+				return upgradeErr
 			}
 
 			// the status object requires its own update
