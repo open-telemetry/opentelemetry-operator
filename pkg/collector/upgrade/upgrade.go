@@ -72,13 +72,13 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 			// the resource update overrides the status, so, keep it so that we can reset it later
 			st := upgraded.Status
 			upgradeErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				col := v1beta1.OpenTelemetryCollector{}
-				err = u.Client.Get(ctx, client.ObjectKeyFromObject(&original), &col)
+				objKey := client.ObjectKeyFromObject(&original)
+				err = u.Client.Get(ctx, objKey, &original)
 				if err != nil {
 					return err
 				}
 				var versionUpgradeErr error
-				upgraded, versionUpgradeErr = u.ManagedInstance(ctx, col)
+				upgraded, versionUpgradeErr = u.ManagedInstance(ctx, original)
 				if versionUpgradeErr != nil {
 					return versionUpgradeErr
 				}
