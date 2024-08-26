@@ -124,6 +124,7 @@ rules:
   - opentelemetry.io
   resources:
   - instrumentations
+  - opentelemetrycollectors
   verbs:
   - get
   - list
@@ -152,31 +153,7 @@ rules:
   - opentelemetry.io
   resources:
   - opampbridges/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - opentelemetry.io
-  resources:
-  - opentelemetrycollectors
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - opentelemetry.io
-  resources:
   - opentelemetrycollectors/finalizers
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - opentelemetry.io
-  resources:
   - opentelemetrycollectors/status
   verbs:
   - get
