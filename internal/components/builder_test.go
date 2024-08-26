@@ -44,11 +44,12 @@ func TestBuilder_Build(t *testing.T) {
 		conf interface{}
 	}
 	type testCase[T any] struct {
-		name    string
-		fields  fields[T]
-		params  params
-		want    want
-		wantErr assert.ErrorAssertionFunc
+		name        string
+		fields      fields[T]
+		params      params
+		want        want
+		wantErr     assert.ErrorAssertionFunc
+		wantRbacErr assert.ErrorAssertionFunc
 	}
 	examplePortParser := func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config sampleConfig) ([]corev1.ServicePort, error) {
 		if defaultPort != nil {
@@ -82,7 +83,8 @@ func TestBuilder_Build(t *testing.T) {
 				},
 				rules: nil,
 			},
-			wantErr: assert.NoError,
+			wantErr:     assert.NoError,
+			wantRbacErr: assert.NoError,
 		},
 		{
 			name: "missing name",
@@ -94,8 +96,9 @@ func TestBuilder_Build(t *testing.T) {
 			params: params{
 				conf: sampleConfig{},
 			},
-			want:    want{},
-			wantErr: assert.Error,
+			want:        want{},
+			wantErr:     assert.Error,
+			wantRbacErr: assert.NoError,
 		},
 		{
 			name: "complete configuration with RBAC rules",
@@ -105,44 +108,102 @@ func TestBuilder_Build(t *testing.T) {
 					WithPort(443).
 					WithProtocol(corev1.ProtocolTCP).
 					WithRbacGen(func(logger logr.Logger, config sampleConfig) ([]rbacv1.PolicyRule, error) {
-						return []rbacv1.PolicyRule{
+						rules := []rbacv1.PolicyRule{
 							{
-								APIGroups: []string{""},
-								Resources: []string{"pods"},
-								Verbs:     []string{"get", "list"},
+								NonResourceURLs: []string{config.example},
+								APIGroups:       []string{""},
+								Resources:       []string{"pods"},
+								Verbs:           []string{"get", "list"},
 							},
-						}, nil
+						}
+						if config.number > 100 {
+							rules = append(rules, rbacv1.PolicyRule{
+								APIGroups: []string{""},
+								Resources: []string{"nodes"},
+								Verbs:     []string{"get", "list"},
+							})
+						}
+						return rules, nil
 					}),
 			},
 			params: params{
-				conf: sampleConfig{},
+				conf: sampleConfig{
+					example: "test",
+					number:  100,
+					m: map[string]interface{}{
+						"key": "value",
+					},
+				},
 			},
 			want: want{
 				name:  "__secure-service",
 				ports: nil,
 				rules: []rbacv1.PolicyRule{
 					{
-						APIGroups: []string{""},
-						Resources: []string{"pods"},
-						Verbs:     []string{"get", "list"},
+						NonResourceURLs: []string{"test"},
+						APIGroups:       []string{""},
+						Resources:       []string{"pods"},
+						Verbs:           []string{"get", "list"},
 					},
 				},
 			},
-			wantErr: assert.NoError,
+			wantErr:     assert.NoError,
+			wantRbacErr: assert.NoError,
+		},
+		{
+			name: "complete configuration with RBAC rules errors",
+			fields: fields[sampleConfig]{
+				b: components.NewBuilder[sampleConfig]().
+					WithName("secure-service").
+					WithPort(443).
+					WithProtocol(corev1.ProtocolTCP).
+					WithRbacGen(func(logger logr.Logger, config sampleConfig) ([]rbacv1.PolicyRule, error) {
+						rules := []rbacv1.PolicyRule{
+							{
+								NonResourceURLs: []string{config.example},
+								APIGroups:       []string{""},
+								Resources:       []string{"pods"},
+								Verbs:           []string{"get", "list"},
+							},
+						}
+						if v, ok := config.m["key"]; ok && v == "value" {
+							return nil, fmt.Errorf("errors from function")
+						}
+						return rules, nil
+					}),
+			},
+			params: params{
+				conf: sampleConfig{
+					example: "test",
+					number:  100,
+					m: map[string]interface{}{
+						"key": "value",
+					},
+				},
+			},
+			want: want{
+				name:  "__secure-service",
+				ports: nil,
+				rules: nil,
+			},
+			wantErr:     assert.NoError,
+			wantRbacErr: assert.Error,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.fields.b.Build()
-			if tt.wantErr(t, err, fmt.Sprintf("WantErr()")) && err != nil {
+			if tt.wantErr(t, err, "WantErr()") && err != nil {
 				return
 			}
 			assert.Equalf(t, tt.want.name, got.ParserName(), "ParserName()")
 			ports, err := got.Ports(logr.Discard(), got.ParserType(), tt.params.conf)
 			assert.NoError(t, err)
 			assert.Equalf(t, tt.want.ports, ports, "Ports()")
-			rules, err := got.GetRBACRules(logr.Discard(), tt.params.conf)
-			assert.NoError(t, err)
+			rules, rbacErr := got.GetRBACRules(logr.Discard(), tt.params.conf)
+			if tt.wantRbacErr(t, rbacErr, "WantRbacErr()") && rbacErr != nil {
+				return
+			}
 			assert.Equalf(t, tt.want.rules, rules, "GetRBACRules()")
 		})
 	}
