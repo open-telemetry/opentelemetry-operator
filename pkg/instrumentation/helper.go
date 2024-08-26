@@ -145,7 +145,8 @@ func isValidContainersAnnotation(containersAnnotation string) error {
 	return nil
 }
 
-func configureLanguageContainers(inst *instrumentationWithContainers, annotation string, ns metav1.ObjectMeta, pod metav1.ObjectMeta) error {
+// setContainersFromAnnotation sets the containers associated to one intrumentation based on the content of the provided annotation.
+func setContainersFromAnnotation(inst *instrumentationWithContainers, annotation string, ns metav1.ObjectMeta, pod metav1.ObjectMeta) error {
 	annotationValue := annotationValue(ns, pod, annotation)
 	if annotationValue == "" {
 		return nil

@@ -206,29 +206,49 @@ func (langInsts *languageInstrumentations) setCommonInstrumentedContainers(ns co
 }
 
 func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns metav1.ObjectMeta, pod metav1.ObjectMeta) error {
-	if err := configureLanguageContainers(&langInsts.Java, annotationInjectJavaContainersName, ns, pod); err != nil {
-		return err
+	inst := []struct {
+		iwc        *instrumentationWithContainers
+		annotation string
+	}{
+		{
+			iwc:        &langInsts.Java,
+			annotation: annotationInjectJavaContainersName,
+		},
+		{
+			iwc:        &langInsts.NodeJS,
+			annotation: annotationInjectNodeJSContainersName,
+		},
+		{
+			iwc:        &langInsts.Python,
+			annotation: annotationInjectPythonContainersName,
+		},
+		{
+			iwc:        &langInsts.DotNet,
+			annotation: annotationInjectDotnetContainersName,
+		},
+		{
+			iwc:        &langInsts.Go,
+			annotation: annotationInjectGoContainersName,
+		},
+		{
+			iwc:        &langInsts.ApacheHttpd,
+			annotation: annotationInjectApacheHttpd,
+		},
+		{
+			iwc:        &langInsts.Nginx,
+			annotation: annotationInjectNginx,
+		},
+		{
+			iwc:        &langInsts.Sdk,
+			annotation: annotationInjectSdk,
+		},
 	}
-	if err := configureLanguageContainers(&langInsts.NodeJS, annotationInjectNodeJSContainersName, ns, pod); err != nil {
-		return err
-	}
-	if err := configureLanguageContainers(&langInsts.Python, annotationInjectPythonContainersName, ns, pod); err != nil {
-		return err
-	}
-	if err := configureLanguageContainers(&langInsts.DotNet, annotationInjectDotnetContainersName, ns, pod); err != nil {
-		return err
-	}
-	if err := configureLanguageContainers(&langInsts.Go, annotationInjectGoContainersName, ns, pod); err != nil {
-		return err
-	}
-	if err := configureLanguageContainers(&langInsts.ApacheHttpd, annotationInjectApacheHttpd, ns, pod); err != nil {
-		return err
-	}
-	if err := configureLanguageContainers(&langInsts.Nginx, annotationInjectNginx, ns, pod); err != nil {
-		return err
-	}
-	if err := configureLanguageContainers(&langInsts.Sdk, annotationInjectSdk, ns, pod); err != nil {
-		return err
+
+	for _, i := range inst {
+		i := i
+		if err := setContainersFromAnnotation(i.iwc, i.annotation, ns, pod); err != nil {
+			return err
+		}
 	}
 	return nil
 }
