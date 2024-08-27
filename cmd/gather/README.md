@@ -1,7 +1,8 @@
 # OpenTelemetry Operator Must-Gather
 
-The OpenTelemetry Operator `must-gather` tool is designed to collect comprehensive information about OpenTelemetry components within an OpenShift cluster.
-This utility extends the functionality of [OpenShift must-gather](https://github.com/openshift/must-gather) by specifically targeting and retrieving data related to the OpenTelemetry Operator, helping in diagnostics and troubleshooting.
+The OpenTelemetry Operator `must-gather` tool is designed to collect comprehensive information about OpenTelemetry components within an OpenShift cluster. This utility extends the functionality of [OpenShift must-gather](https://github.com/openshift/must-gather) by specifically targeting and retrieving data related to the OpenTelemetry Operator, helping in diagnostics and troubleshooting.
+
+Note that you can use this utility too to gather information about the objects deployed by the OpenTelemetry Operator if you don't use OpenShift.
 
 ## What is a Must-Gather?
 
@@ -26,4 +27,4 @@ You can use the image in your machine with the following command:
 docker run --entrypoint=/must-gather <operator-image> --help
 ```
 
-Note that you can use this utility too to gather information about the objects deployed by the OpenTelemetry Operator if you don't use OpenShift.
+This is the recommended way to do it if you are not using OpenShift.
