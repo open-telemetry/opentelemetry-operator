@@ -82,8 +82,9 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 				if versionUpgradeErr != nil {
 					return versionUpgradeErr
 				}
-				if err := u.Client.Update(ctx, &upgraded); err != nil {
-					return err
+				patch := client.MergeFrom(&original)
+				if patchErr := u.Client.Patch(ctx, &upgraded, patch); patchErr != nil {
+					return patchErr
 				}
 				return nil
 			})
