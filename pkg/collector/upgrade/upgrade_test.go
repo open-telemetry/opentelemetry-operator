@@ -157,7 +157,7 @@ func TestEnvVarUpdates(t *testing.T) {
 	err = k8sClient.Get(context.Background(), nsn, persisted)
 	assert.NoError(t, err)
 	assert.Equal(t, upgrade.Latest.String(), persisted.Status.Version)
-	assert.NotContainsf(t, persisted.Spec.OpenTelemetryCommonFields.Args["feature-gates"], "-confmap.unifyEnvVarExpansion", "still has env var")
+	assert.NotContainsf(t, persisted.Spec.Args["feature-gates"], "-confmap.unifyEnvVarExpansion", "still has env var")
 
 	// cleanup
 	assert.NoError(t, k8sClient.Delete(context.Background(), &collectorInstance))
