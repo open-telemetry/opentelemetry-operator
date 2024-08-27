@@ -71,9 +71,9 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 			// the resource update overrides the status, so, keep it so that we can reset it later
 			st := upgraded.Status
 			patch := client.MergeFrom(&original)
-			if upgradeErr := u.Client.Patch(ctx, &upgraded, patch); upgradeErr != nil {
-				itemLogger.Error(upgradeErr, "failed to apply changes to instance")
-				return upgradeErr
+			if err := u.Client.Patch(ctx, &upgraded, patch); err != nil {
+				itemLogger.Error(err, "failed to apply changes to instance")
+				continue
 			}
 
 			// the status object requires its own update
