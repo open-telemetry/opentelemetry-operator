@@ -78,7 +78,7 @@ func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 
 			// the status object requires its own update
 			upgraded.Status = st
-			if err := u.Client.Status().Patch(ctx, &upgraded, client.MergeFrom(&original)); err != nil {
+			if err := u.Client.Status().Patch(ctx, &upgraded, patch); err != nil {
 				itemLogger.Error(err, "failed to apply changes to instance's status object")
 				continue
 			}
