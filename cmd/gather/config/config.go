@@ -21,6 +21,7 @@ import (
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,27 +36,31 @@ type Config struct {
 }
 
 func NewConfig(scheme *runtime.Scheme) (Config, error) {
-	var operatorName, operatorNamespace, kubeconfigPath, collectionDir string
+	var operatorName, operatorNamespace, collectionDir string
 
 	pflag.StringVar(&operatorName, "operator-name", "opentelemetry-operator", "Operator name")
 	pflag.StringVar(&operatorNamespace, "operator-namespace", "", "Namespace where the operator was deployed")
-	pflag.StringVar(&kubeconfigPath, "kubeconfig-path", filepath.Join(homedir.HomeDir(), ".kube", "config"), "Absolute path to the KubeconfigPath file")
-	pflag.StringVar(&collectionDir, "collection-dir", filepath.Join(homedir.HomeDir(), "must-gather"), "Absolute path to the KubeconfigPath file")
+	pflag.StringVar(&collectionDir, "collection-dir", filepath.Join(homedir.HomeDir(), "/must-gather"), "Absolute path to the KubeconfigPath file")
 	pflag.Parse()
 
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
-	if err != nil {
-		return Config{}, fmt.Errorf("Error reading the kubeconfig: %w\n", err)
+	var config *rest.Config
+	config, err1 := rest.InClusterConfig()
+	if err1 != nil {
+		var err2 error
+		config, err2 = clientcmd.BuildConfigFromFlags("", "")
+		if err2 != nil {
+			return Config{}, fmt.Errorf("it was not possible to connect to connecto Kubernetes: [%w, %w]", err1, err2)
+		}
 	}
 
 	clusterClient, err := client.New(config, client.Options{Scheme: scheme})
 	if err != nil {
-		return Config{}, fmt.Errorf("Creating the Kubernetes client: %w\n", err)
+		return Config{}, fmt.Errorf("creating the Kubernetes client: %w\n", err)
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return Config{}, fmt.Errorf("Creating the Kubernetes clienset: %w\n", err)
+		return Config{}, fmt.Errorf("creating the Kubernetes clienset: %w\n", err)
 	}
 
 	return Config{

@@ -10,21 +10,27 @@ The `must-gather` tool is a utility that collects logs, cluster information, and
 
 ## Usage
 
+First, you will need to build and push the image:
+```sh
+make container-must-gather container-must-gather-push
+```
+
 To run the must-gather tool for the OpenTelemetry Operator, use one of the following commands, depending on how you want to source the image and the namespace where the operator is deployed.
 
 ### Using the image from the Operator deployment
 
-If you want to use the image directly from the existing OpenTelemetry Operator deployment, run the following command:
+If you want to use the image in a running cluster, you need to run the following command:
 
 ```sh
-oc adm must-gather --image=$(oc -n opentelemetry-operator-system get deployment.apps/opentelemetry-operator-controller-manager -o jsonpath='{.spec.template.spec.containers[?(@.name == "manager")].image}') -- /must-gather --namespace opentelemetry-operator-system
+oc adm must-gather --image=<must-gather-image> -- /usr/bin/must-gather --operator-namespace opentelemetry-operator-system
 ```
 
-### Using the image from a local machine
+### Using it as a CLI
 
-You can use the image in your machine with the following command:
+You only need to build and run:
 ```sh
-docker run --entrypoint=/must-gather <operator-image> --help
+make must-gather
+./bin/must-gather --help
 ```
 
 This is the recommended way to do it if you are not using OpenShift.
