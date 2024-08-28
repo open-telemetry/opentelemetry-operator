@@ -15,10 +15,12 @@
 package targetallocator
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -96,8 +98,19 @@ filter_strategy: relabel-config
 		targetAllocator = targetAllocatorInstance()
 		targetAllocator.Spec.ScrapeConfigs = []v1beta1.AnyConfig{}
 		params.TargetAllocator = targetAllocator
-		actual, err := ConfigMap(params)
+		collectorWithoutPrometheusReceiver := collectorInstance()
+		collectorWithoutPrometheusReceiver.Spec.Config.Receivers.Object["prometheus"] = map[string]any{
+			"config": map[string]any{
+				"scrape_configs": []any{},
+			},
+		}
+		testParams := Params{
+			Collector:       collectorWithoutPrometheusReceiver,
+			TargetAllocator: targetAllocator,
+		}
+		actual, err := ConfigMap(testParams)
 		require.NoError(t, err)
+		params.Collector = collector
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedLabels, actual.Labels)
@@ -213,4 +226,366 @@ prometheus_cr:
 
 	})
 
+}
+
+func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
+	testCases := []struct {
+		name    string
+		input   v1beta1.Config
+		want    []v1beta1.AnyConfig
+		wantErr error
+	}{
+		{
+			name: "empty scrape configs list",
+			input: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"prometheus": map[string]any{
+							"config": map[string]any{
+								"scrape_configs": []any{},
+							},
+						},
+					},
+				},
+			},
+			want: []v1beta1.AnyConfig{},
+		},
+		{
+			name: "no scrape configs key",
+			input: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"prometheus": map[string]any{
+							"config": map[string]any{},
+						},
+					},
+				},
+			},
+			wantErr: fmt.Errorf("no scrape_configs available as part of the configuration"),
+		},
+		{
+			name: "one scrape config",
+			input: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"prometheus": map[string]any{
+							"config": map[string]any{
+								"scrape_configs": []any{
+									map[string]any{
+										"job": "somejob",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []v1beta1.AnyConfig{
+				{Object: map[string]interface{}{"job": "somejob"}},
+			},
+		},
+		{
+			name: "regex substitution",
+			input: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"prometheus": map[string]any{
+							"config": map[string]any{
+								"scrape_configs": []any{
+									map[string]any{
+										"job": "somejob",
+										"metric_relabel_configs": []map[string]any{
+											{
+												"action":      "labelmap",
+												"regex":       "label_(.+)",
+												"replacement": "$$1",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []v1beta1.AnyConfig{
+				{Object: map[string]interface{}{
+					"job": "somejob",
+					"metric_relabel_configs": []any{
+						map[any]any{
+							"action":      "labelmap",
+							"regex":       "label_(.+)",
+							"replacement": "$1",
+						},
+					},
+				}},
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.name, func(t *testing.T) {
+			configStr, err := testCase.input.Yaml()
+			require.NoError(t, err)
+			actual, err := getScrapeConfigsFromOtelConfig(configStr)
+			assert.Equal(t, testCase.wantErr, err)
+			assert.Equal(t, testCase.want, actual)
+		})
+	}
+}
+
+func TestGetGlobalConfigFromOtelConfig(t *testing.T) {
+	type args struct {
+		otelConfig v1beta1.Config
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    v1beta1.AnyConfig
+		wantErr error
+	}{
+		{
+			name: "Valid Global Config",
+			args: args{
+				otelConfig: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"prometheus": map[string]interface{}{
+								"config": map[string]interface{}{
+									"global": map[string]interface{}{
+										"scrape_interval":  "15s",
+										"scrape_protocols": []string{"PrometheusProto", "OpenMetricsText1.0.0", "OpenMetricsText0.0.1", "PrometheusText0.0.4"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: v1beta1.AnyConfig{
+				Object: map[string]interface{}{
+					"scrape_interval":  "15s",
+					"scrape_protocols": []string{"PrometheusProto", "OpenMetricsText1.0.0", "OpenMetricsText0.0.1", "PrometheusText0.0.4"},
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Invalid Global Config - Missing Global",
+			args: args{
+				otelConfig: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"prometheus": map[string]interface{}{
+								"config": map[string]interface{}{},
+							},
+						},
+					},
+				},
+			},
+			want:    v1beta1.AnyConfig{},
+			wantErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getGlobalConfigFromOtelConfig(tt.args.otelConfig)
+			assert.Equal(t, tt.wantErr, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestGetScrapeConfigs(t *testing.T) {
+	type args struct {
+		taScrapeConfigs []v1beta1.AnyConfig
+		collectorConfig v1beta1.Config
+	}
+	testCases := []struct {
+		name    string
+		args    args
+		want    []v1beta1.AnyConfig
+		wantErr error
+	}{
+		{
+			name: "no scrape configs",
+			args: args{
+				taScrapeConfigs: []v1beta1.AnyConfig{},
+				collectorConfig: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"prometheus": map[string]any{
+								"config": map[string]any{
+									"scrape_configs": []any{},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []v1beta1.AnyConfig{},
+		},
+		{
+			name: "scrape configs in both ta and collector",
+			args: args{
+				taScrapeConfigs: []v1beta1.AnyConfig{
+					{
+						Object: map[string]any{
+							"job": "ta",
+						},
+					},
+				},
+				collectorConfig: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"prometheus": map[string]any{
+								"config": map[string]any{
+									"scrape_configs": []any{
+										map[string]any{
+											"job": "collector",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: []v1beta1.AnyConfig{
+				{Object: map[string]any{"job": "ta"}},
+				{Object: map[string]any{"job": "collector"}},
+			},
+		},
+		{
+			name: "no scrape configs key",
+			args: args{
+				taScrapeConfigs: []v1beta1.AnyConfig{},
+				collectorConfig: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"prometheus": map[string]any{
+								"config": map[string]any{},
+							},
+						},
+					},
+				},
+			},
+			wantErr: fmt.Errorf("no scrape_configs available as part of the configuration"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.name, func(t *testing.T) {
+			actual, err := getScrapeConfigs(testCase.args.taScrapeConfigs, testCase.args.collectorConfig)
+			assert.Equal(t, testCase.wantErr, err)
+			assert.Equal(t, testCase.want, actual)
+		})
+	}
+}
+
+func TestGetGlobalConfig(t *testing.T) {
+	type args struct {
+		taGlobalConfig  v1beta1.AnyConfig
+		collectorConfig v1beta1.Config
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    map[string]any
+		wantErr error
+	}{
+		{
+			name: "Valid Global Config in both TA and Collector, TA wins",
+			args: args{
+				collectorConfig: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"prometheus": map[string]interface{}{
+								"config": map[string]interface{}{
+									"global": map[string]interface{}{
+										"scrape_interval": "15s",
+									},
+								},
+							},
+						},
+					},
+				},
+				taGlobalConfig: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"scrape_protocols": []string{"PrometheusProto"},
+					},
+				},
+			},
+			want: map[string]interface{}{
+				"scrape_protocols": []string{"PrometheusProto"},
+			},
+		},
+		{
+			name: "Valid Global Config in TA, not in Collector",
+			args: args{
+				collectorConfig: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"prometheus": map[string]interface{}{
+								"config": map[string]interface{}{},
+							},
+						},
+					},
+				},
+				taGlobalConfig: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"scrape_protocols": []string{"PrometheusProto"},
+					},
+				},
+			},
+			want: map[string]interface{}{
+				"scrape_protocols": []string{"PrometheusProto"},
+			},
+		},
+		{
+			name: "Valid Global Config in Collector, not in TA",
+			args: args{
+				collectorConfig: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"prometheus": map[string]interface{}{
+								"config": map[string]interface{}{
+									"global": map[string]interface{}{
+										"scrape_interval": "15s",
+									},
+								},
+							},
+						},
+					},
+				},
+				taGlobalConfig: v1beta1.AnyConfig{},
+			},
+			want: map[string]interface{}{
+				"scrape_interval": "15s",
+			},
+		},
+		{
+			name: "Invalid Global Config in Collector, not in TA",
+			args: args{
+				collectorConfig: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"prometheus": "invalid_value",
+						},
+					},
+				},
+				taGlobalConfig: v1beta1.AnyConfig{},
+			},
+			wantErr: &mapstructure.Error{Errors: []string{"'prometheus' expected a map, got 'string'"}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getGlobalConfig(tt.args.taGlobalConfig, tt.args.collectorConfig)
+			assert.Equal(t, tt.wantErr, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }
