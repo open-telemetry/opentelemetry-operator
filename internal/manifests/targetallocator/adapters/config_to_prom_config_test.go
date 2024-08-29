@@ -539,6 +539,7 @@ func TestAddTAConfigToPromConfigWithTLSConfig(t *testing.T) {
 		}
 
 		taServiceName := "test-targetallocator"
+		taServiceNamespace := "default"
 
 		expectedResult := map[interface{}]interface{}{
 			"config": map[interface{}]interface{}{},
@@ -554,7 +555,7 @@ func TestAddTAConfigToPromConfigWithTLSConfig(t *testing.T) {
 			},
 		}
 
-		result, err := ta.AddTAConfigToPromConfig(cfg, taServiceName, ta.WithTLSConfig("ca.crt", "tls.crt", "tls.key", taServiceName))
+		result, err := ta.AddTAConfigToPromConfig(cfg, taServiceName, taServiceNamespace, ta.WithTLSConfig("ca.crt", "tls.crt", "tls.key", taServiceName))
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResult, result)
