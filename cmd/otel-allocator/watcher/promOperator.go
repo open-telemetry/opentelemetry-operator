@@ -42,6 +42,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/retry"
 
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
 )
@@ -101,14 +102,23 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 	eventRecorderFactory := operator.NewEventRecorderFactory(false)
 	eventRecorder := eventRecorderFactory(clientset, "target-allocator")
 
-	nsMonInf, err := getNamespaceInformer(ctx, map[string]struct{}{v1.NamespaceAll: {}}, promOperatorLogger, clientset, operatorMetrics)
+	var nsMonInf cache.SharedIndexInformer
+	getNamespaceInformerErr := retry.OnError(retry.DefaultRetry,
+		func(err error) bool {
+			logger.Error(err, "Retrying namespace informer creation in promOperator CRD watcher")
+			return true
+		}, func() error {
+			nsMonInf, err = getNamespaceInformer(ctx, map[string]struct{}{v1.NamespaceAll: {}}, promOperatorLogger, clientset, operatorMetrics)
+			return err
+		})
+	if getNamespaceInformerErr != nil {
+		logger.Error(getNamespaceInformerErr, "Failed to create namespace informer in promOperator CRD watcher")
+		return nil, getNamespaceInformerErr
+	}
+
+	resourceSelector, err = prometheus.NewResourceSelector(promOperatorSlogLogger, prom, store, nsMonInf, operatorMetrics, eventRecorder)
 	if err != nil {
-		logger.Error(err, "Failed to create namespace informer in promOperator CRD watcher")
-	} else {
-		resourceSelector, err = prometheus.NewResourceSelector(promOperatorSlogLogger, prom, store, nsMonInf, operatorMetrics, eventRecorder)
-		if err != nil {
-			logger.Error(err, "Failed to create resource selector in promOperator CRD watcher")
-		}
+		logger.Error(err, "Failed to create resource selector in promOperator CRD watcher")
 	}
 
 	return &PrometheusCRWatcher{
