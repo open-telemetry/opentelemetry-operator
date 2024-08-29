@@ -78,7 +78,7 @@ type Params struct {
 
 func (r *OpenTelemetryCollectorReconciler) Validate(otelcol v1beta1.OpenTelemetryCollector) admission.Warnings {
 	var warnings admission.Warnings
-	
+
 	params := manifests.Params{
 		Log:     logr.Discard(),
 		Config:  r.config,
