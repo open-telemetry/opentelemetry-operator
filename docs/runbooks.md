@@ -10,7 +10,7 @@ See [`README.md`](../README.md) for more details about the OpenTelemetry Operato
 |-:|-|
 | Meaning | The OpenTelemetry Operator cannot succeed in the reconciliation step, probably because of a misconfigured OpenTelemetryCollector. |
 | Impact | No impact on already running deployments or new correct ones. |
-| Diagnosis | Check manager logs for reasons why this might happen. <br> <br> Example: `failed to create objects for <podName>: Deployment.apps "<deploymentName>" is invalid: spec.template.spec.containers[0].env[1].valueFrom: Invalid value: "": may not be specified when "value" is not empty`|
+| Diagnosis | Check manager logs for reasons why this might happen. |
 | Mitigation | Find out which OpenTelemetryCollector is causing the errors and fix the config. |
 
 ### [WorkqueueDepth](#workqueuedepth)
