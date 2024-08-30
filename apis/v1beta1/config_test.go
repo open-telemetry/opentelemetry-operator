@@ -143,7 +143,7 @@ func TestConfigYaml(t *testing.T) {
 			},
 		},
 		Service: Service{
-			Extensions: &[]string{"addon"},
+			Extensions: []string{"addon"},
 			Telemetry: &AnyConfig{
 				Object: map[string]interface{}{
 					"insights": "yeah!",

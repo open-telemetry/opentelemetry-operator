@@ -15,7 +15,6 @@
 package collector
 
 import (
-	"errors"
 	"fmt"
 	"path"
 	"sort"
@@ -27,7 +26,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -41,12 +39,6 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 	image := otelcol.Spec.Image
 	if len(image) == 0 {
 		image = cfg.CollectorImage()
-	}
-
-	configYaml, err := otelcol.Spec.Config.Yaml()
-	if err != nil {
-		logger.Error(err, "could not convert json to yaml")
-		return corev1.Container{}
 	}
 
 	// build container ports from service ports
@@ -140,28 +132,13 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		})
 	}
 
-	var livenessProbe *corev1.Probe
-	var readinessProbe *corev1.Probe
-	if configFromString, err := adapters.ConfigFromString(configYaml); err == nil {
-		if probe, err := getProbe(configFromString, otelcol.Spec.LivenessProbe); err == nil {
-			livenessProbe = probe
-		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {
-			logger.V(4).Info("extensions not configured, skipping liveness probe creation")
-		} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
-			logger.V(4).Info("healthcheck extension not configured, skipping liveness probe creation")
-		} else {
-			logger.Error(err, "cannot create liveness probe.")
-		}
-
-		if probe, err := getProbe(configFromString, otelcol.Spec.ReadinessProbe); err == nil {
-			readinessProbe = probe
-		} else if errors.Is(err, adapters.ErrNoServiceExtensions) {
-			logger.V(4).Info("extensions not configured, skipping readiness probe creation")
-		} else if errors.Is(err, adapters.ErrNoServiceExtensionHealthCheck) {
-			logger.V(4).Info("healthcheck extension not configured, skipping readiness probe creation")
-		} else {
-			logger.Error(err, "cannot create readiness probe.")
-		}
+	livenessProbe, livenessProbeErr := otelcol.Spec.Config.GetLivenessProbe(logger)
+	if livenessProbeErr != nil {
+		logger.Error(livenessProbeErr, "cannot create liveness probe.")
+	}
+	readinessProbe, readinessProbeErr := otelcol.Spec.Config.GetReadinessProbe(logger)
+	if readinessProbeErr != nil {
+		logger.Error(readinessProbeErr, "cannot create readiness probe.")
 	}
 
 	if featuregate.SetGolangFlags.IsEnabled() {
@@ -255,30 +232,4 @@ func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPo
 		return ports[i].Name < ports[j].Name
 	})
 	return ports
-}
-
-func getProbe(config map[interface{}]interface{}, probeConfig *v1beta1.Probe) (*corev1.Probe, error) {
-	probe, err := adapters.ConfigToContainerProbe(config)
-	if err != nil {
-		return nil, err
-	}
-	if probeConfig != nil {
-		if probeConfig.InitialDelaySeconds != nil {
-			probe.InitialDelaySeconds = *probeConfig.InitialDelaySeconds
-		}
-		if probeConfig.PeriodSeconds != nil {
-			probe.PeriodSeconds = *probeConfig.PeriodSeconds
-		}
-		if probeConfig.FailureThreshold != nil {
-			probe.FailureThreshold = *probeConfig.FailureThreshold
-		}
-		if probeConfig.SuccessThreshold != nil {
-			probe.SuccessThreshold = *probeConfig.SuccessThreshold
-		}
-		if probeConfig.TimeoutSeconds != nil {
-			probe.TimeoutSeconds = *probeConfig.TimeoutSeconds
-		}
-		probe.TerminationGracePeriodSeconds = probeConfig.TerminationGracePeriodSeconds
-	}
-	return probe, nil
 }
