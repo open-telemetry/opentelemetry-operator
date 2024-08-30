@@ -5,7 +5,6 @@ metadata:
   creationTimestamp: null
   name: smoke-targetallocator
 spec:
-  namespace: chainsaw-smoke-targetallocator
   steps:
   - name: step-00
     try:
