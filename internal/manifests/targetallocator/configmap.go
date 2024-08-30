@@ -15,6 +15,7 @@
 package targetallocator
 
 import (
+	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,6 +23,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
@@ -43,13 +45,22 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 
 	// Set config if global or scrape configs set
 	config := map[string]interface{}{}
-	if instance.Spec.GlobalConfig.Object != nil {
-		config["global"] = instance.Spec.GlobalConfig
+	globalConfig, err := getGlobalConfig(taSpec.GlobalConfig, params.Collector.Spec.Config)
+	if err != nil {
+		return nil, err
 	}
-	// Add scrape configs if present
-	if instance.Spec.ScrapeConfigs != nil && len(instance.Spec.ScrapeConfigs) > 0 {
-		config["scrape_configs"] = instance.Spec.ScrapeConfigs
+	if len(globalConfig) > 0 {
+		config["global"] = globalConfig
 	}
+
+	scrapeConfigs, err := getScrapeConfigs(taSpec.ScrapeConfigs, params.Collector.Spec.Config)
+	if err != nil {
+		return nil, err
+	}
+	if len(scrapeConfigs) > 0 {
+		config["scrape_configs"] = scrapeConfigs
+	}
+
 	if len(config) != 0 {
 		taConfig["config"] = config
 	}
@@ -92,4 +103,78 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			targetAllocatorFilename: string(taConfigYAML),
 		},
 	}, nil
+}
+
+func getGlobalConfig(taGlobalConfig v1beta1.AnyConfig, collectorConfig v1beta1.Config) (map[string]any, error) {
+	// global config from the target allocator has priority
+	if len(taGlobalConfig.Object) > 0 {
+		return taGlobalConfig.Object, nil
+	}
+
+	collectorGlobalConfig, err := getGlobalConfigFromOtelConfig(collectorConfig)
+	if err != nil {
+		return nil, err
+	}
+	return collectorGlobalConfig.Object, nil
+}
+
+func getScrapeConfigs(taScrapeConfigs []v1beta1.AnyConfig, collectorConfig v1beta1.Config) ([]v1beta1.AnyConfig, error) {
+	scrapeConfigs := []v1beta1.AnyConfig{}
+
+	// we take scrape configs from both the target allocator spec and the collector config
+	if len(taScrapeConfigs) > 0 {
+		scrapeConfigs = append(scrapeConfigs, taScrapeConfigs...)
+	}
+
+	configStr, err := collectorConfig.Yaml()
+	if err != nil {
+		return nil, err
+	}
+
+	collectorScrapeConfigs, err := getScrapeConfigsFromOtelConfig(configStr)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(scrapeConfigs, collectorScrapeConfigs...), nil
+}
+
+func getGlobalConfigFromOtelConfig(otelConfig v1beta1.Config) (v1beta1.AnyConfig, error) {
+	// TODO: Eventually we should figure out a way to pull this in to the main specification for the TA
+	type promReceiverConfig struct {
+		Prometheus struct {
+			Config struct {
+				Global map[string]interface{} `mapstructure:"global"`
+			} `mapstructure:"config"`
+		} `mapstructure:"prometheus"`
+	}
+	decodedConfig := &promReceiverConfig{}
+	if err := mapstructure.Decode(otelConfig.Receivers.Object, decodedConfig); err != nil {
+		return v1beta1.AnyConfig{}, err
+	}
+	return v1beta1.AnyConfig{
+		Object: decodedConfig.Prometheus.Config.Global,
+	}, nil
+}
+
+func getScrapeConfigsFromOtelConfig(otelcolConfig string) ([]v1beta1.AnyConfig, error) {
+	// Collector supports environment variable substitution, but the TA does not.
+	// TA Scrape Configs should have a single "$", as it does not support env var substitution
+	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(otelcolConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	scrapeConfigs, err := adapters.GetScrapeConfigsFromPromConfig(prometheusReceiverConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	v1beta1scrapeConfigs := make([]v1beta1.AnyConfig, len(scrapeConfigs))
+
+	for i, config := range scrapeConfigs {
+		v1beta1scrapeConfigs[i] = v1beta1.AnyConfig{Object: config}
+	}
+
+	return v1beta1scrapeConfigs, nil
 }
