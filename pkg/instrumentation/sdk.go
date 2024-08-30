@@ -448,8 +448,8 @@ func chooseServiceName(pod corev1.Pod, useLabelsForResourceAttributes bool, reso
 
 // chooseLabelOrAnnotation returns the value of the label or annotation with the given key.
 // The precedence is as follows:
-// 1. annotation with key resource.opentelemetry.io/<resource>
-// 2. label with key labelKey
+// 1. annotation with key resource.opentelemetry.io/<resource>.
+// 2. label with key labelKey.
 func chooseLabelOrAnnotation(pod corev1.Pod, useLabelsForResourceAttributes bool, resource attribute.Key, labelKey string) string {
 	if v := pod.Annotations[(constants.ResourceAttributeAnnotationPrefix + string(resource))]; v != "" {
 		return v
@@ -464,8 +464,8 @@ func chooseLabelOrAnnotation(pod corev1.Pod, useLabelsForResourceAttributes bool
 
 // chooseServiceVersion returns the service version to be used in the instrumentation.
 // The precedence is as follows:
-// 1. label or annotation with key "service.version" or "app.kubernetes.io/version"
-// 2. image tag (by splitting image string on ":" and extracting final element from resulting array)
+// 1. label or annotation with key "service.version" or "app.kubernetes.io/version".
+// 2. image tag (by splitting image string on ":" and extracting final element from resulting array).
 func chooseServiceVersion(pod corev1.Pod, useLabelsForResourceAttributes bool, index int) string {
 	v := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceVersionKey, constants.LabelAppVersion)
 	if v != "" {
