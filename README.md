@@ -12,6 +12,7 @@ The operator manages:
 ## Documentation
 
 - [API docs](./docs/api.md)
+- [Offical Telemetry Operator page](https://opentelemetry.io/docs/kubernetes/operator/)
 
 ## Helm Charts
 
