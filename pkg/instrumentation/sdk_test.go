@@ -202,7 +202,7 @@ func TestSDKInjection(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: "app-name",
+									Value: "my-deployment",
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
@@ -238,7 +238,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "foo=bar,k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.instance.id=app-id,service.namespace=shop,service.version=v1",
+									Value: "foo=bar,k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.instance.id=project1.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).application-name,service.version=latest",
 								},
 							},
 						},
@@ -247,7 +247,7 @@ func TestSDKInjection(t *testing.T) {
 			},
 		},
 		{
-			name: "SDK env vars not defined - with explicit resource attributes annotations",
+			name: "SDK env vars not defined - use labels for resource attributes",
 			inst: v1alpha1.Instrumentation{
 				Spec: v1alpha1.InstrumentationSpec{
 					Exporter: v1alpha1.Exporter{
@@ -260,6 +260,9 @@ func TestSDKInjection(t *testing.T) {
 					Sampler: v1alpha1.Sampler{
 						Type:     "parentbased_traceidratio",
 						Argument: "0.25",
+					},
+					Defaults: v1alpha1.Defaults{
+						UseLabelsForResourceAttributes: true,
 					},
 				},
 			},
@@ -277,17 +280,13 @@ func TestSDKInjection(t *testing.T) {
 						},
 					},
 					Labels: map[string]string{
-						"app.kubernetes.io/name":     "app-name-hidden",
-						"app.kubernetes.io/instance": "app-id-hidden",
-						"app.kubernetes.io/version":  "v1-hidden",
-						"app.kubernetes.io/part-of":  "shop-hidden",
+						"app.kubernetes.io/name":     "app-name",
+						"app.kubernetes.io/instance": "app-id",
+						"app.kubernetes.io/version":  "v1",
+						"app.kubernetes.io/part-of":  "shop",
 					},
 					Annotations: map[string]string{
-						"resource.opentelemetry.io/foo":                 "bar",
-						"resource.opentelemetry.io/service.name":        "app-name",
-						"resource.opentelemetry.io/service.instance.id": "app-id",
-						"resource.opentelemetry.io/service.version":     "v1",
-						"resource.opentelemetry.io/service.namespace":   "shop",
+						"resource.opentelemetry.io/foo": "bar",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -305,17 +304,13 @@ func TestSDKInjection(t *testing.T) {
 					Name:      "app",
 					UID:       "pod-uid",
 					Labels: map[string]string{
-						"app.kubernetes.io/name":     "app-name-hidden",
-						"app.kubernetes.io/instance": "app-id-hidden",
-						"app.kubernetes.io/version":  "v1-hidden",
-						"app.kubernetes.io/part-of":  "shop-hidden",
+						"app.kubernetes.io/name":     "app-name",
+						"app.kubernetes.io/instance": "app-id",
+						"app.kubernetes.io/version":  "v1",
+						"app.kubernetes.io/part-of":  "shop",
 					},
 					Annotations: map[string]string{
-						"resource.opentelemetry.io/foo":                 "bar",
-						"resource.opentelemetry.io/service.name":        "app-name",
-						"resource.opentelemetry.io/service.instance.id": "app-id",
-						"resource.opentelemetry.io/service.version":     "v1",
-						"resource.opentelemetry.io/service.namespace":   "shop",
+						"resource.opentelemetry.io/foo": "bar",
 					},
 					OwnerReferences: []metav1.OwnerReference{
 						{
@@ -395,12 +390,21 @@ func TestSDKInjection(t *testing.T) {
 						Type:     "parentbased_traceidratio",
 						Argument: "0.25",
 					},
+					Defaults: v1alpha1.Defaults{
+						UseLabelsForResourceAttributes: true,
+					},
 				},
 			},
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "project1",
 					Name:      "app",
+					Labels: map[string]string{
+						"app.kubernetes.io/name":     "not-used",
+						"app.kubernetes.io/instance": "not-used",
+						"app.kubernetes.io/version":  "not-used",
+						"app.kubernetes.io/part-of":  "not-used",
+					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -409,7 +413,7 @@ func TestSDKInjection(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: "explicitly_set",
+									Value: "explicit-name",
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
@@ -425,7 +429,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "foo=bar,k8s.container.name=other,service.version=explicitly_set,",
+									Value: "foo=bar,k8s.container.name=other,service.version=explicit-version,service.namespace=explicit-ns,service.instance.id=explicit-id,",
 								},
 							},
 						},
@@ -436,6 +440,12 @@ func TestSDKInjection(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "project1",
 					Name:      "app",
+					Labels: map[string]string{
+						"app.kubernetes.io/name":     "not-used",
+						"app.kubernetes.io/instance": "not-used",
+						"app.kubernetes.io/version":  "not-used",
+						"app.kubernetes.io/part-of":  "not-used",
+					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -444,7 +454,7 @@ func TestSDKInjection(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_SERVICE_NAME",
-									Value: "explicitly_set",
+									Value: "explicit-name",
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
@@ -476,7 +486,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "foo=bar,k8s.container.name=other,service.version=explicitly_set,fromcr=val,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
+									Value: "foo=bar,k8s.container.name=other,service.version=explicit-version,service.namespace=explicit-ns,service.instance.id=explicit-id,fromcr=val,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)",
 								},
 							},
 						},
@@ -779,7 +789,7 @@ func TestSDKInjection(t *testing.T) {
 			inj := sdkInjector{
 				client: k8sClient,
 			}
-			pod := inj.injectCommonSDKConfig(context.Background(), test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod, 0, 0)
+			pod := inj.injectCommonSDKConfig(context.Background(), test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod, test.inst.Spec.Defaults.UseLabelsForResourceAttributes, 0, 0)
 			_, err = json.MarshalIndent(pod, "", "  ")
 			assert.NoError(t, err)
 			assert.Equal(t, test.expected, pod)
@@ -2289,10 +2299,13 @@ func TestParentResourceLabels(t *testing.T) {
 
 func TestChooseServiceName(t *testing.T) {
 	tests := []struct {
-		name                string
-		resources           map[string]string
-		index               int
-		expectedServiceName string
+		name                           string
+		resources                      map[string]string
+		index                          int
+		expectedServiceName            string
+		useLabelsForResourceAttributes bool
+		labelValue                     string
+		annotationValue                string
 	}{
 		{
 			name:                "first container",
@@ -2313,6 +2326,48 @@ func TestChooseServiceName(t *testing.T) {
 			},
 			index:               0,
 			expectedServiceName: "my-pod",
+		},
+		{
+			name: "from pod label - useLabelsForResourceAttributes=false",
+			resources: map[string]string{
+				string(semconv.K8SPodNameKey): "my-pod",
+			},
+			index:                          0,
+			labelValue:                     "annotation",
+			useLabelsForResourceAttributes: false,
+			expectedServiceName:            "my-pod",
+		},
+		{
+			name: "from pod label - useLabelsForResourceAttributes=true",
+			resources: map[string]string{
+				string(semconv.K8SPodNameKey): "my-pod",
+			},
+			index:                          0,
+			labelValue:                     "label",
+			useLabelsForResourceAttributes: true,
+			expectedServiceName:            "label",
+		},
+		{
+			name: "from pod annotation - useLabelsForResourceAttributes=false",
+			resources: map[string]string{
+				string(semconv.K8SPodNameKey): "my-pod",
+			},
+			index:                          0,
+			annotationValue:                "annotation",
+			labelValue:                     "label",
+			useLabelsForResourceAttributes: false,
+			expectedServiceName:            "annotation",
+		},
+		{
+			name: "from pod annotation - useLabelsForResourceAttributes=true",
+			resources: map[string]string{
+				string(semconv.K8SPodNameKey): "my-pod",
+			},
+			index:                          0,
+			annotationValue:                "annotation",
+			labelValue:                     "label",
+			useLabelsForResourceAttributes: true,
+			expectedServiceName:            "annotation",
 		},
 		{
 			name: "from replicaset",
@@ -2374,13 +2429,21 @@ func TestChooseServiceName(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			serviceName := chooseServiceName(corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/name": test.labelValue,
+					},
+					Annotations: map[string]string{
+						"resource.opentelemetry.io/service.name": test.annotationValue,
+					},
+				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{Name: "1st"},
 						{Name: "2nd"},
 					},
 				},
-			}, test.resources, test.index)
+			}, test.useLabelsForResourceAttributes, test.resources, test.index)
 
 			assert.Equal(t, test.expectedServiceName, serviceName)
 		})

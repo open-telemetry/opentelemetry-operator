@@ -31,10 +31,10 @@ const (
 	AnnotationDefaultAutoInstrumentationApacheHttpd = InstrumentationPrefix + "default-auto-instrumentation-apache-httpd-image"
 	AnnotationDefaultAutoInstrumentationNginx       = InstrumentationPrefix + "default-auto-instrumentation-nginx-image"
 
-	AnnotationAppName     = "app.kubernetes.io/name"
-	AnnotationAppInstance = "app.kubernetes.io/instance"
-	AnnotationAppVersion  = "app.kubernetes.io/version"
-	AnnotationAppPartOf   = "app.kubernetes.io/part-of"
+	LabelAppName     = "app.kubernetes.io/name"
+	LabelAppInstance = "app.kubernetes.io/instance"
+	LabelAppVersion  = "app.kubernetes.io/version"
+	LabelAppPartOf   = "app.kubernetes.io/part-of"
 
 	ResourceAttributeAnnotationPrefix = "resource.opentelemetry.io/"
 
