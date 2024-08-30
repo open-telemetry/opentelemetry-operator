@@ -26,14 +26,16 @@ import (
 type ParserOption[T any] func(*Option[T])
 
 type Option[T any] struct {
-	protocol    corev1.Protocol
-	appProtocol *string
-	targetPort  intstr.IntOrString
-	nodePort    int32
-	name        string
-	port        int32
-	portParser  PortParser[T]
-	rbacGen     RBACRuleGenerator[T]
+	protocol     corev1.Protocol
+	appProtocol  *string
+	targetPort   intstr.IntOrString
+	nodePort     int32
+	name         string
+	port         int32
+	portParser   PortParser[T]
+	rbacGen      RBACRuleGenerator[T]
+	livenessGen  ProbeGenerator[T]
+	readinessGen ProbeGenerator[T]
 }
 
 func NewEmptyOption[T any]() *Option[T] {
@@ -103,14 +105,31 @@ func (b Builder[T]) WithRbacGen(rbacGen RBACRuleGenerator[T]) Builder[T] {
 		o.rbacGen = rbacGen
 	})
 }
+func (b Builder[T]) WithLivenessGen(livenessGen ProbeGenerator[T]) Builder[T] {
+	return append(b, func(o *Option[T]) {
+		o.livenessGen = livenessGen
+	})
+}
+func (b Builder[T]) WithReadinessGen(readinessGen ProbeGenerator[T]) Builder[T] {
+	return append(b, func(o *Option[T]) {
+		o.readinessGen = readinessGen
+	})
+}
 
 func (b Builder[T]) Build() (*GenericParser[T], error) {
 	o := NewEmptyOption[T]()
 	o.Apply(b...)
-	if len(o.name) == 0 {
+	if len(o.name) == 0 || o == nil {
 		return nil, fmt.Errorf("invalid option struct, no name specified")
 	}
-	return &GenericParser[T]{name: o.name, portParser: o.portParser, rbacGen: o.rbacGen, option: o}, nil
+	return &GenericParser[T]{
+		name:         o.name,
+		portParser:   o.portParser,
+		rbacGen:      o.rbacGen,
+		livenessGen:  o.livenessGen,
+		readinessGen: o.readinessGen,
+		option:       o,
+	}, nil
 }
 
 func (b Builder[T]) MustBuild() *GenericParser[T] {

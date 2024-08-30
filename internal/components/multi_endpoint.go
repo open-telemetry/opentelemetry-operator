@@ -72,6 +72,14 @@ func (m *MultiPortReceiver) ParserName() string {
 	return fmt.Sprintf("__%s", m.name)
 }
 
+func (m *MultiPortReceiver) GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+	return nil, nil
+}
+
+func (m *MultiPortReceiver) GetReadinessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+	return nil, nil
+}
+
 func (m *MultiPortReceiver) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.PolicyRule, error) {
 	return nil, nil
 }

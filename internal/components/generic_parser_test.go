@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 )
@@ -217,6 +218,157 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 				return
 			}
 			assert.Equalf(t, tt.want, got, "GetRBACRules(%v, %v)", tt.args.logger, tt.args.config)
+		})
+	}
+}
+
+func TestGenericParser_GetProbe(t *testing.T) {
+	type args struct {
+		logger logr.Logger
+		config interface{}
+	}
+	type testCase[T any] struct {
+		name             string
+		g                *components.GenericParser[T]
+		args             args
+		livenessProbe    *corev1.Probe
+		readinessProbe   *corev1.Probe
+		wantLivenessErr  assert.ErrorAssertionFunc
+		wantReadinessErr assert.ErrorAssertionFunc
+	}
+	probeFunc := func(logger logr.Logger, config *components.SingleEndpointConfig) (*corev1.Probe, error) {
+		if config.Endpoint == "" && config.ListenAddress == "" {
+			return nil, fmt.Errorf("either endpoint or listen_address must be specified")
+		}
+		return &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/hello",
+					Port: intstr.FromInt32(8080),
+				},
+			},
+		}, nil
+	}
+
+	tests := []testCase[*components.SingleEndpointConfig]{
+		{
+			name: "valid config with endpoint",
+			g:    components.NewSinglePortParserBuilder("test", 0).WithReadinessGen(probeFunc).WithLivenessGen(probeFunc).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"endpoint": "http://localhost:8080",
+				},
+			},
+			livenessProbe: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/hello",
+						Port: intstr.FromInt32(8080),
+					},
+				},
+			},
+			readinessProbe: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/hello",
+						Port: intstr.FromInt32(8080),
+					},
+				},
+			},
+			wantLivenessErr:  assert.NoError,
+			wantReadinessErr: assert.NoError,
+		},
+		{
+			name: "valid config with listen_address",
+			g:    components.NewSinglePortParserBuilder("test", 0).WithReadinessGen(probeFunc).WithLivenessGen(probeFunc).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"listen_address": "0.0.0.0:9090",
+				},
+			},
+			livenessProbe: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/hello",
+						Port: intstr.FromInt32(8080),
+					},
+				},
+			},
+			readinessProbe: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/hello",
+						Port: intstr.FromInt32(8080),
+					},
+				},
+			},
+			wantLivenessErr:  assert.NoError,
+			wantReadinessErr: assert.NoError,
+		},
+		{
+			name: "readiness invalid config with no endpoint or listen_address",
+			g:    components.NewSinglePortParserBuilder("test", 0).WithReadinessGen(probeFunc).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{},
+			},
+			readinessProbe:   nil,
+			livenessProbe:    nil,
+			wantReadinessErr: assert.Error,
+			wantLivenessErr:  assert.NoError,
+		},
+		{
+			name: "liveness invalid config with no endpoint or listen_address",
+			g:    components.NewSinglePortParserBuilder("test", 0).WithLivenessGen(probeFunc).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{},
+			},
+			readinessProbe:   nil,
+			livenessProbe:    nil,
+			wantReadinessErr: assert.NoError,
+			wantLivenessErr:  assert.Error,
+		},
+		{
+			name: "liveness failed to parse config",
+			g:    components.NewSinglePortParserBuilder("test", 0).WithLivenessGen(probeFunc).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: func() {},
+			},
+			livenessProbe:    nil,
+			readinessProbe:   nil,
+			wantLivenessErr:  assert.Error,
+			wantReadinessErr: assert.NoError,
+		},
+		{
+			name: "readiness failed to parse config",
+			g:    components.NewSinglePortParserBuilder("test", 0).WithReadinessGen(probeFunc).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: func() {},
+			},
+			livenessProbe:    nil,
+			readinessProbe:   nil,
+			wantLivenessErr:  assert.NoError,
+			wantReadinessErr: assert.Error,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			livenessProbe, err := tt.g.GetLivenessProbe(tt.args.logger, tt.args.config)
+			if !tt.wantLivenessErr(t, err, fmt.Sprintf("GetLivenessProbe(%v, %v)", tt.args.logger, tt.args.config)) {
+				return
+			}
+			assert.Equalf(t, tt.livenessProbe, livenessProbe, "GetLivenessProbe(%v, %v)", tt.args.logger, tt.args.config)
+			readinessProbe, err := tt.g.GetReadinessProbe(tt.args.logger, tt.args.config)
+			if !tt.wantReadinessErr(t, err, fmt.Sprintf("GetReadinessProbe(%v, %v)", tt.args.logger, tt.args.config)) {
+				return
+			}
+			assert.Equalf(t, tt.readinessProbe, readinessProbe, "GetReadinessProbe(%v, %v)", tt.args.logger, tt.args.config)
 		})
 	}
 }
