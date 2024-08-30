@@ -415,9 +415,9 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 
 // chooseServiceName returns the service name to be used in the instrumentation.
 // The precedence is as follows:
-// 1. label or annotation with key "service.name" or "app.kubernetes.io/name"
-// 2. k8s resource name (deployment, replicaset, statefulset, daemonset, cronjob, job, pod)
-// 3. container name
+// 1. label or annotation with key "service.name" or "app.kubernetes.io/name".
+// 2. k8s resource name (deployment, replicaset, statefulset, daemonset, cronjob, job, pod).
+// 3. container name.
 func chooseServiceName(pod corev1.Pod, useLabelsForResourceAttributes bool, resources map[string]string, index int) string {
 	if name := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceNameKey, constants.LabelAppName); name != "" {
 		return name
