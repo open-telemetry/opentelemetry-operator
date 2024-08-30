@@ -96,6 +96,13 @@ InstrumentationSpec defines the desired state of OpenTelemetry SDK and instrumen
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecdefaults">defaults</a></b></td>
+        <td>object</td>
+        <td>
+          Defaults defines default values for the instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#instrumentationspecdotnet">dotnet</a></b></td>
         <td>object</td>
         <td>
@@ -881,6 +888,33 @@ inside a container.<br/>
           Request is the name chosen for a request in the referenced claim.
 If empty, everything from the claim is made available, otherwise
 only the result of this request.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.defaults
+<sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
+
+
+
+Defaults defines default values for the instrumentation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>useLabelsForResourceAttributes</b></td>
+        <td>boolean</td>
+        <td>
+          UseLabelsForResourceAttributes defines whether to use common labels for resource attributes.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
