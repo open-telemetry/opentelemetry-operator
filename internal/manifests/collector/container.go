@@ -135,10 +135,14 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 	livenessProbe, livenessProbeErr := otelcol.Spec.Config.GetLivenessProbe(logger)
 	if livenessProbeErr != nil {
 		logger.Error(livenessProbeErr, "cannot create liveness probe.")
+	} else {
+		defaultProbeSettings(livenessProbe, otelcol.Spec.LivenessProbe)
 	}
 	readinessProbe, readinessProbeErr := otelcol.Spec.Config.GetReadinessProbe(logger)
 	if readinessProbeErr != nil {
 		logger.Error(readinessProbeErr, "cannot create readiness probe.")
+	} else {
+		defaultProbeSettings(readinessProbe, otelcol.Spec.ReadinessProbe)
 	}
 
 	if featuregate.SetGolangFlags.IsEnabled() {
@@ -232,4 +236,25 @@ func portMapToList(portMap map[string]corev1.ContainerPort) []corev1.ContainerPo
 		return ports[i].Name < ports[j].Name
 	})
 	return ports
+}
+
+func defaultProbeSettings(probe *corev1.Probe, probeConfig *v1beta1.Probe) {
+	if probe != nil && probeConfig != nil {
+		if probeConfig.InitialDelaySeconds != nil {
+			probe.InitialDelaySeconds = *probeConfig.InitialDelaySeconds
+		}
+		if probeConfig.PeriodSeconds != nil {
+			probe.PeriodSeconds = *probeConfig.PeriodSeconds
+		}
+		if probeConfig.FailureThreshold != nil {
+			probe.FailureThreshold = *probeConfig.FailureThreshold
+		}
+		if probeConfig.SuccessThreshold != nil {
+			probe.SuccessThreshold = *probeConfig.SuccessThreshold
+		}
+		if probeConfig.TimeoutSeconds != nil {
+			probe.TimeoutSeconds = *probeConfig.TimeoutSeconds
+		}
+		probe.TerminationGracePeriodSeconds = probeConfig.TerminationGracePeriodSeconds
+	}
 }
