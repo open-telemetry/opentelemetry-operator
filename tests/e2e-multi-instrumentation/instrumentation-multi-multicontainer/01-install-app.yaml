@@ -12,7 +12,6 @@ spec:
       labels:
         app: pod-with-multi-instrumentation
       annotations:
-        instrumentation.opentelemetry.io/container-names: "shouldnt-be-instrumented"
         instrumentation.opentelemetry.io/dotnet-container-names: "dotnetapp"
         instrumentation.opentelemetry.io/inject-dotnet: "true"
         instrumentation.opentelemetry.io/inject-java: "true"
@@ -59,12 +58,4 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
-        - name: shouldnt-be-instrumented
-          image: rabbitmq:3
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-          env:
-            - name: TEST
-              value: test
+

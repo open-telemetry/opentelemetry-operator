@@ -4186,789 +4186,6 @@ func TestMutatePod(t *testing.T) {
 			),
 		},
 		{
-			name: "multi instrumentation for multiple containers feature gate enabled, container-names not used",
-			ns: corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "multi-instrumentation-multi-containers-cn",
-				},
-			},
-			inst: v1alpha1.Instrumentation{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "example-inst",
-					Namespace: "multi-instrumentation-multi-containers-cn",
-				},
-				Spec: v1alpha1.InstrumentationSpec{
-					DotNet: v1alpha1.DotNet{
-						Image: "otel/dotnet:1",
-						Env: []corev1.EnvVar{
-							{
-								Name:  "OTEL_LOG_LEVEL",
-								Value: "debug",
-							},
-						},
-					},
-					Java: v1alpha1.Java{
-						Image: "otel/java:1",
-						Env: []corev1.EnvVar{
-							{
-								Name:  "OTEL_LOG_LEVEL",
-								Value: "debug",
-							},
-						},
-					},
-					NodeJS: v1alpha1.NodeJS{
-						Image: "otel/nodejs:1",
-						Env: []corev1.EnvVar{
-							{
-								Name:  "OTEL_LOG_LEVEL",
-								Value: "debug",
-							},
-						},
-					},
-					Python: v1alpha1.Python{
-						Image: "otel/python:1",
-						Env: []corev1.EnvVar{
-							{
-								Name:  "OTEL_LOG_LEVEL",
-								Value: "debug",
-							},
-						},
-					},
-					Exporter: v1alpha1.Exporter{
-						Endpoint: "http://collector:12345",
-					},
-				},
-			},
-			pod: corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						annotationInjectDotNet:               "true",
-						annotationInjectJava:                 "true",
-						annotationInjectNodeJS:               "true",
-						annotationInjectPython:               "true",
-						annotationInjectDotnetContainersName: "dotnet1,dotnet2",
-						annotationInjectJavaContainersName:   "java1,java2",
-						annotationInjectNodeJSContainersName: "nodejs1,nodejs2",
-						annotationInjectPythonContainersName: "python1,python2",
-						annotationInjectContainerName:        "should-not-be-instrumented1,should-not-be-instrumented2",
-					},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name: "dotnet1",
-						},
-						{
-							Name: "dotnet2",
-						},
-						{
-							Name: "java1",
-						},
-						{
-							Name: "java2",
-						},
-						{
-							Name: "nodejs1",
-						},
-						{
-							Name: "nodejs2",
-						},
-						{
-							Name: "python1",
-						},
-						{
-							Name: "python2",
-						},
-						{
-							Name: "should-not-be-instrumented1",
-						},
-						{
-							Name: "should-not-be-instrumented2",
-						},
-					},
-				},
-			},
-			expected: corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						annotationInjectDotNet:               "true",
-						annotationInjectJava:                 "true",
-						annotationInjectNodeJS:               "true",
-						annotationInjectPython:               "true",
-						annotationInjectDotnetContainersName: "dotnet1,dotnet2",
-						annotationInjectJavaContainersName:   "java1,java2",
-						annotationInjectNodeJSContainersName: "nodejs1,nodejs2",
-						annotationInjectPythonContainersName: "python1,python2",
-						annotationInjectContainerName:        "should-not-be-instrumented1,should-not-be-instrumented2",
-					},
-				},
-				Spec: corev1.PodSpec{
-					Volumes: []corev1.Volume{
-						{
-							Name: javaVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									SizeLimit: &defaultVolumeLimitSize,
-								},
-							},
-						},
-						{
-							Name: nodejsVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									SizeLimit: &defaultVolumeLimitSize,
-								},
-							},
-						},
-						{
-							Name: pythonVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									SizeLimit: &defaultVolumeLimitSize,
-								},
-							},
-						},
-						{
-							Name: dotnetVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									SizeLimit: &defaultVolumeLimitSize,
-								},
-							},
-						},
-					},
-					InitContainers: []corev1.Container{
-						{
-							Name:    javaInitContainerName,
-							Image:   "otel/java:1",
-							Command: []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      javaVolumeName,
-								MountPath: javaInstrMountPath,
-							}},
-						},
-						{
-							Name:    nodejsInitContainerName,
-							Image:   "otel/nodejs:1",
-							Command: []string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      nodejsVolumeName,
-								MountPath: nodejsInstrMountPath,
-							}},
-						},
-						{
-							Name:    pythonInitContainerName,
-							Image:   "otel/python:1",
-							Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      pythonVolumeName,
-								MountPath: pythonInstrMountPath,
-							}},
-						},
-						{
-							Name:    dotnetInitContainerName,
-							Image:   "otel/dotnet:1",
-							Command: []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
-							VolumeMounts: []corev1.VolumeMount{{
-								Name:      dotnetVolumeName,
-								MountPath: dotnetInstrMountPath,
-							}},
-						},
-					},
-					Containers: []corev1.Container{
-						{
-							Name: "dotnet1",
-							Env: []corev1.EnvVar{
-								{
-									Name: "OTEL_NODE_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.hostIP",
-										},
-									},
-								},
-								{
-									Name: "OTEL_POD_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.podIP",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_LOG_LEVEL",
-									Value: "debug",
-								},
-								{
-									Name:  envDotNetCoreClrEnableProfiling,
-									Value: dotNetCoreClrEnableProfilingEnabled,
-								},
-								{
-									Name:  envDotNetCoreClrProfiler,
-									Value: dotNetCoreClrProfilerID,
-								},
-								{
-									Name:  envDotNetCoreClrProfilerPath,
-									Value: dotNetCoreClrProfilerGlibcPath,
-								},
-								{
-									Name:  envDotNetStartupHook,
-									Value: dotNetStartupHookPath,
-								},
-								{
-									Name:  envDotNetAdditionalDeps,
-									Value: dotNetAdditionalDepsPath,
-								},
-								{
-									Name:  envDotNetOTelAutoHome,
-									Value: dotNetOTelAutoHomePath,
-								},
-								{
-									Name:  envDotNetSharedStore,
-									Value: dotNetSharedStorePath,
-								},
-								{
-									Name:  "OTEL_SERVICE_NAME",
-									Value: "dotnet1",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://collector:12345",
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
-										},
-									},
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "spec.nodeName",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=dotnet1,k8s.namespace.name=multi-instrumentation-multi-containers-cn,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers-cn.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).dotnet1",
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      dotnetVolumeName,
-									MountPath: dotnetInstrMountPath,
-								},
-							},
-						},
-						{
-							Name: "dotnet2",
-							Env: []corev1.EnvVar{
-								{
-									Name: "OTEL_NODE_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.hostIP",
-										},
-									},
-								},
-								{
-									Name: "OTEL_POD_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.podIP",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_LOG_LEVEL",
-									Value: "debug",
-								},
-								{
-									Name:  envDotNetCoreClrEnableProfiling,
-									Value: dotNetCoreClrEnableProfilingEnabled,
-								},
-								{
-									Name:  envDotNetCoreClrProfiler,
-									Value: dotNetCoreClrProfilerID,
-								},
-								{
-									Name:  envDotNetCoreClrProfilerPath,
-									Value: dotNetCoreClrProfilerGlibcPath,
-								},
-								{
-									Name:  envDotNetStartupHook,
-									Value: dotNetStartupHookPath,
-								},
-								{
-									Name:  envDotNetAdditionalDeps,
-									Value: dotNetAdditionalDepsPath,
-								},
-								{
-									Name:  envDotNetOTelAutoHome,
-									Value: dotNetOTelAutoHomePath,
-								},
-								{
-									Name:  envDotNetSharedStore,
-									Value: dotNetSharedStorePath,
-								},
-								{
-									Name:  "OTEL_SERVICE_NAME",
-									Value: "dotnet2",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://collector:12345",
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
-										},
-									},
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "spec.nodeName",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=dotnet2,k8s.namespace.name=multi-instrumentation-multi-containers-cn,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers-cn.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).dotnet2",
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      dotnetVolumeName,
-									MountPath: dotnetInstrMountPath,
-								},
-							},
-						},
-						{
-							Name: "java1",
-							Env: []corev1.EnvVar{
-								{
-									Name: "OTEL_NODE_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.hostIP",
-										},
-									},
-								},
-								{
-									Name: "OTEL_POD_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.podIP",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_LOG_LEVEL",
-									Value: "debug",
-								},
-								{
-									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaAgent,
-								},
-								{
-									Name:  "OTEL_SERVICE_NAME",
-									Value: "java1",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://collector:12345",
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
-										},
-									},
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "spec.nodeName",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=java1,k8s.namespace.name=multi-instrumentation-multi-containers-cn,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers-cn.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).java1",
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      javaVolumeName,
-									MountPath: javaInstrMountPath,
-								},
-							},
-						},
-						{
-							Name: "java2",
-							Env: []corev1.EnvVar{
-								{
-									Name: "OTEL_NODE_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.hostIP",
-										},
-									},
-								},
-								{
-									Name: "OTEL_POD_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.podIP",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_LOG_LEVEL",
-									Value: "debug",
-								},
-								{
-									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaAgent,
-								},
-								{
-									Name:  "OTEL_SERVICE_NAME",
-									Value: "java2",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://collector:12345",
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
-										},
-									},
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "spec.nodeName",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=java2,k8s.namespace.name=multi-instrumentation-multi-containers-cn,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers-cn.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).java2",
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      javaVolumeName,
-									MountPath: javaInstrMountPath,
-								},
-							},
-						},
-						{
-							Name: "nodejs1",
-							Env: []corev1.EnvVar{
-								{
-									Name: "OTEL_NODE_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.hostIP",
-										},
-									},
-								},
-								{
-									Name: "OTEL_POD_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.podIP",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_LOG_LEVEL",
-									Value: "debug",
-								},
-								{
-									Name:  "NODE_OPTIONS",
-									Value: nodeRequireArgument,
-								},
-								{
-									Name:  "OTEL_SERVICE_NAME",
-									Value: "nodejs1",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://collector:12345",
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
-										},
-									},
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "spec.nodeName",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=nodejs1,k8s.namespace.name=multi-instrumentation-multi-containers-cn,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers-cn.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).nodejs1",
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      nodejsVolumeName,
-									MountPath: nodejsInstrMountPath,
-								},
-							},
-						},
-						{
-							Name: "nodejs2",
-							Env: []corev1.EnvVar{
-								{
-									Name: "OTEL_NODE_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.hostIP",
-										},
-									},
-								},
-								{
-									Name: "OTEL_POD_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.podIP",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_LOG_LEVEL",
-									Value: "debug",
-								},
-								{
-									Name:  "NODE_OPTIONS",
-									Value: nodeRequireArgument,
-								},
-								{
-									Name:  "OTEL_SERVICE_NAME",
-									Value: "nodejs2",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://collector:12345",
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
-										},
-									},
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "spec.nodeName",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=nodejs2,k8s.namespace.name=multi-instrumentation-multi-containers-cn,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers-cn.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).nodejs2",
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      nodejsVolumeName,
-									MountPath: nodejsInstrMountPath,
-								},
-							},
-						},
-						{
-							Name: "python1",
-							Env: []corev1.EnvVar{
-								{
-									Name: "OTEL_NODE_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.hostIP",
-										},
-									},
-								},
-								{
-									Name: "OTEL_POD_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.podIP",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_LOG_LEVEL",
-									Value: "debug",
-								},
-								{
-									Name:  "PYTHONPATH",
-									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
-									Name:  "OTEL_TRACES_EXPORTER",
-									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_METRICS_EXPORTER",
-									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_SERVICE_NAME",
-									Value: "python1",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://collector:12345",
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
-										},
-									},
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "spec.nodeName",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=python1,k8s.namespace.name=multi-instrumentation-multi-containers-cn,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers-cn.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).python1",
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      pythonVolumeName,
-									MountPath: pythonInstrMountPath,
-								},
-							},
-						},
-						{
-							Name: "python2",
-							Env: []corev1.EnvVar{
-								{
-									Name: "OTEL_NODE_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.hostIP",
-										},
-									},
-								},
-								{
-									Name: "OTEL_POD_IP",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "status.podIP",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_LOG_LEVEL",
-									Value: "debug",
-								},
-								{
-									Name:  "PYTHONPATH",
-									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
-									Name:  "OTEL_TRACES_EXPORTER",
-									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_METRICS_EXPORTER",
-									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_SERVICE_NAME",
-									Value: "python2",
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://collector:12345",
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
-										},
-									},
-								},
-								{
-									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "spec.nodeName",
-										},
-									},
-								},
-								{
-									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=python2,k8s.namespace.name=multi-instrumentation-multi-containers-cn,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers-cn.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).python2",
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      pythonVolumeName,
-									MountPath: pythonInstrMountPath,
-								},
-							},
-						},
-						{
-							Name: "should-not-be-instrumented1",
-						},
-						{
-							Name: "should-not-be-instrumented2",
-						},
-					},
-				},
-			},
-			config: config.New(
-				config.WithEnableMultiInstrumentation(true),
-				config.WithEnableDotNetInstrumentation(true),
-				config.WithEnablePythonInstrumentation(true),
-				config.WithEnableNodeJSInstrumentation(true),
-			),
-		},
-		{
 			name: "multi instrumentation for multiple containers feature gate disabled, multiple instrumentation annotations set",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -5598,50 +4815,6 @@ func TestMutatePod(t *testing.T) {
 	}
 }
 
-func TestSingleInstrumentationEnabled(t *testing.T) {
-	tests := []struct {
-		name             string
-		instrumentations languageInstrumentations
-		expectedStatus   bool
-		expectedMsg      string
-	}{
-		{
-			name: "Single instrumentation enabled",
-			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
-				NodeJS: instrumentationWithContainers{Instrumentation: nil},
-			},
-			expectedStatus: true,
-			expectedMsg:    "Java",
-		},
-		{
-			name: "Multiple instrumentations enabled",
-			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
-				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
-			},
-			expectedStatus: false,
-			expectedMsg:    "",
-		},
-		{
-			name: "Instrumentations disabled",
-			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: nil},
-				NodeJS: instrumentationWithContainers{Instrumentation: nil},
-			},
-			expectedStatus: false,
-			expectedMsg:    "",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			ok := test.instrumentations.isSingleInstrumentationEnabled()
-			assert.Equal(t, test.expectedStatus, ok)
-		})
-	}
-}
-
 func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -5661,8 +4834,8 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 		{
 			name: "Multiple instrumentations enabled with containers",
 			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "java"},
-				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "nodejs"},
+				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: []string{"java"}},
+				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: []string{"nodejs"}},
 			},
 			expectedStatus: true,
 			expectedMsg:    nil,
@@ -5679,7 +4852,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 		{
 			name: "Multiple instrumentations enabled with containers for single instrumentation",
 			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "test"},
+				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: []string{"test"}},
 				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
 			},
 			expectedStatus: false,
@@ -5696,8 +4869,8 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 		{
 			name: "Multiple instrumentations enabled with duplicated containers",
 			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "app,app1,java"},
-				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "app1,app,nodejs"},
+				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: []string{"app", "app1", "java"}},
+				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: []string{"app1", "app", "nodejs"}},
 			},
 			expectedStatus: false,
 			expectedMsg:    fmt.Errorf("duplicated container names detected: [app app1]"),
@@ -5705,8 +4878,8 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 		{
 			name: "Multiple instrumentations enabled with duplicated containers for single instrumentation",
 			instrumentations: languageInstrumentations{
-				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "app,app,java"},
-				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "nodejs"},
+				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: []string{"app", "app", "java"}},
+				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: []string{"nodejs"}},
 			},
 			expectedStatus: false,
 			expectedMsg:    fmt.Errorf("duplicated container names detected: [app]"),
@@ -5715,7 +4888,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ok, msg := test.instrumentations.areContainerNamesConfiguredForMultipleInstrumentations()
+			ok, msg := test.instrumentations.areInstrumentedContainersCorrect()
 			assert.Equal(t, test.expectedStatus, ok)
 			assert.Equal(t, test.expectedMsg, msg)
 		})
@@ -5727,6 +4900,8 @@ func TestInstrumentationLanguageContainersSet(t *testing.T) {
 		name                     string
 		instrumentations         languageInstrumentations
 		containers               string
+		pod                      corev1.Pod
+		ns                       corev1.Namespace
 		expectedInstrumentations languageInstrumentations
 	}{
 		{
@@ -5735,23 +4910,37 @@ func TestInstrumentationLanguageContainersSet(t *testing.T) {
 				NodeJS: instrumentationWithContainers{Instrumentation: nil},
 				Python: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
 			},
-			containers: "python,python1",
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectContainerName: "python,python1",
+					},
+				},
+			},
+			ns: corev1.Namespace{},
 			expectedInstrumentations: languageInstrumentations{
 				NodeJS: instrumentationWithContainers{Instrumentation: nil},
-				Python: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: "python,python1"},
+				Python: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: []string{"python", "python1"}},
 			},
 		},
 		{
-			name:                     "Set containers when all instrumentations disabled",
-			instrumentations:         languageInstrumentations{},
-			containers:               "python,python1",
+			name:             "Set containers when all instrumentations disabled",
+			instrumentations: languageInstrumentations{},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectContainerName: "python,python1",
+					},
+				},
+			},
 			expectedInstrumentations: languageInstrumentations{},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			test.instrumentations.setInstrumentationLanguageContainers(test.containers)
+			err := test.instrumentations.setCommonInstrumentedContainers(test.ns, test.pod)
+			assert.NoError(t, err)
 			assert.Equal(t, test.expectedInstrumentations, test.instrumentations)
 		})
 	}
