@@ -717,7 +717,9 @@ spec:
 EOF
 ```
 
-### Setting instrumentation resource attributes via annotations and labels
+### Configure resource attributes
+
+### Configure resource attributes with annotations
 
 This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. These annotations can be used to add resource attributes to data produced by OpenTelemetry instrumentation.
 
@@ -735,6 +737,8 @@ spec:
   - name: main-container
     image: your-image:tag
 ```
+
+### Configure resource attributes with labels
 
 You can also use common labels to set resource attributes. 
 
@@ -772,15 +776,16 @@ spec:
     useLabelsForResourceAttributes: true
 ```
 
-#### Priority for setting resource attributes
+### Priority for setting resource attributes
 
 The priority for setting resource attributes is as follows (first found wins):
 
-- Resource attributes set via `OTEL_RESOURCE_ATTRIBUTES` and `OTEL_SERVICE_NAME` environment variables
-- Resource attributes calculated from the pod's metadata (e.g. `k8s.pod.name`)
-- Resource attributes set via the `Instrumentation` CR (in the `spec.resource.resourceAttributes` section)
-- Resource attributes set via annotations (with the `resource.opentelemetry.io/` prefix)
-- Resource attributes set via labels (e.g. `app.kubernetes.io/name`)
+1. Resource attributes set via `OTEL_RESOURCE_ATTRIBUTES` and `OTEL_SERVICE_NAME` environment variables
+2. Resource attributes calculated from the pod's metadata (e.g. `k8s.pod.name`)
+3. Resource attributes set via the `Instrumentation` CR (in the `spec.resource.resourceAttributes` section)
+4. Resource attributes set via annotations (with the `resource.opentelemetry.io/` prefix)
+5. Resource attributes set via labels (e.g. `app.kubernetes.io/name`) 
+   if the `Instrumentation` CR has defaults.useLabelsForResourceAttributes=true (see above)
 
 This priority is applied for each resource attribute separately, so it is possible to set some attributes via 
 annotations and others via labels.

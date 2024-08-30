@@ -789,7 +789,7 @@ func TestSDKInjection(t *testing.T) {
 			inj := sdkInjector{
 				client: k8sClient,
 			}
-			pod := inj.injectCommonSDKConfig(context.Background(), test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod, test.inst.Spec.Defaults.UseLabelsForResourceAttributes, 0, 0)
+			pod := inj.injectCommonSDKConfig(context.Background(), test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod, 0, 0)
 			_, err = json.MarshalIndent(pod, "", "  ")
 			assert.NoError(t, err)
 			assert.Equal(t, test.expected, pod)
