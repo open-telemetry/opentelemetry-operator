@@ -1,4 +1,4 @@
-name: "Publish operator"
+name: "Publish Python Auto-Instrumentation"
 
 on:
   push:
@@ -12,7 +12,7 @@ env:
 
 jobs:
   publish:
-    name: Publish container images
+    name: Publish must-gather container image
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -24,21 +24,8 @@ jobs:
       - name: Unshallow
         run: git fetch --prune --unshallow
 
-      - name: Describe the current state
-        run: git describe --tags
-
       - name: Set env vars for the job
         run: |
-          grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print "OTELCOL_VERSION="$2}' >> $GITHUB_ENV
-          grep -v '\#' versions.txt | grep targetallocator | awk -F= '{print "TARGETALLOCATOR_VERSION="$2}' >> $GITHUB_ENV
-          grep -v '\#' versions.txt | grep operator-opamp-bridge | awk -F= '{print "OPERATOR_OPAMP_BRIDGE_VERSION="$2}' >> $GITHUB_ENV
-          grep -v '\#' versions.txt | grep autoinstrumentation-java | awk -F= '{print "AUTO_INSTRUMENTATION_JAVA_VERSION="$2}' >> $GITHUB_ENV
-          grep -v '\#' versions.txt | grep autoinstrumentation-nodejs | awk -F= '{print "AUTO_INSTRUMENTATION_NODEJS_VERSION="$2}' >> $GITHUB_ENV
-          grep -v '\#' versions.txt | grep autoinstrumentation-python | awk -F= '{print "AUTO_INSTRUMENTATION_PYTHON_VERSION="$2}' >> $GITHUB_ENV
-          grep -v '\#' versions.txt | grep autoinstrumentation-dotnet | awk -F= '{print "AUTO_INSTRUMENTATION_DOTNET_VERSION="$2}' >> $GITHUB_ENV
-          grep -v '\#' versions.txt | grep autoinstrumentation-go | awk -F= '{print "AUTO_INSTRUMENTATION_GO_VERSION="$2}' >> $GITHUB_ENV
-          grep -v '\#' versions.txt | grep autoinstrumentation-apache-httpd | awk -F= '{print "AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION="$2}' >> $GITHUB_ENV
-          grep -v '\#' versions.txt | grep autoinstrumentation-nginx | awk -F= '{print "AUTO_INSTRUMENTATION_NGINX_VERSION="$2}' >> $GITHUB_ENV
           echo "VERSION_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
           echo "VERSION=$(git describe --tags | sed 's/^v//')" >> $GITHUB_ENV
 
@@ -46,8 +33,8 @@ jobs:
         run: |
           for platform in $(echo $PLATFORMS | tr "," "\n"); do
             arch=${platform#*/}
-            echo "Building manager for $arch"
-            make manager ARCH=$arch
+            echo "Building must-gather for $arch"
+            make must-gather ARCH=$arch
           done
 
       - name: Docker meta
@@ -55,8 +42,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            otel/opentelemetry-operator
-            ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+            otel/opentelemetry-operator-must-gather
+            ghcr.io/open-telemetry/opentelemetry-operator/must-gather
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -92,11 +79,11 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Operator image
+      - name: Build and push must-gather image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile
+          file: ./cmd/gather/Dockerfile
           platforms: ${{ env.PLATFORMS }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.docker_meta.outputs.tags }}

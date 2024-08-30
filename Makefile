@@ -147,7 +147,7 @@ manager: generate
 
 .PHONY: must-gather
 must-gather:
-	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o bin/must-gather_${ARCH} -ldflags "${COMMON_LDFLAGS} ${OPERATOR_LDFLAGS}" ./cmd/gather/main.go
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o bin/must-gather_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/gather/main.go
 
 # Build target allocator binary
 .PHONY: targetallocator
