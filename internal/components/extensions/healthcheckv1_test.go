@@ -83,7 +83,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 			want: &corev1.Probe{
 				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "",
+						Path: "/",
 						Port: intstr.FromInt32(9090),
 					},
 				},
@@ -101,7 +101,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 			want: &corev1.Probe{
 				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "",
+						Path: "/",
 						Port: intstr.FromInt32(extensions.DefaultHealthcheckV1Port),
 					},
 				},
@@ -118,7 +118,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 			want: &corev1.Probe{
 				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "",
+						Path: "/",
 						Port: intstr.FromInt32(7070),
 					},
 				},
@@ -135,7 +135,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 			want: &corev1.Probe{
 				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "",
+						Path: "/",
 						Port: intstr.FromInt32(extensions.DefaultHealthcheckV1Port),
 					},
 				},

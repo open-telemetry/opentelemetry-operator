@@ -22,7 +22,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 )
 
-const DefaultHealthcheckV1Port = 13133
+const (
+	DefaultHealthcheckV1Path = "/"
+	DefaultHealthcheckV1Port = 13133
+)
 
 type healthcheckV1Config struct {
 	components.SingleEndpointConfig `mapstructure:",squash"`
@@ -32,10 +35,14 @@ type healthcheckV1Config struct {
 // HealthCheckV1Probe returns the probe configuration for the healthcheck v1 extension.
 // Right now no TLS config is parsed.
 func HealthCheckV1Probe(logger logr.Logger, config healthcheckV1Config) (*corev1.Probe, error) {
+	path := config.Path
+	if len(path) == 0 {
+		path = DefaultHealthcheckV1Path
+	}
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
-				Path: config.Path,
+				Path: path,
 				Port: intstr.FromInt32(config.GetPortNumOrDefault(logger, DefaultHealthcheckV1Port)),
 			},
 		},

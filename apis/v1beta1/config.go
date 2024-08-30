@@ -168,6 +168,8 @@ func (c *Config) getRbacRulesForComponentKinds(logger logr.Logger, componentKind
 			} else {
 				cfg = *c.Processors
 			}
+		case KindExtension:
+			continue
 		}
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.
@@ -197,7 +199,9 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 			retriever = exporters.ParserFor
 			cfg = c.Exporters
 		case KindProcessor:
-			break
+			continue
+		case KindExtension:
+			continue
 		}
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.
