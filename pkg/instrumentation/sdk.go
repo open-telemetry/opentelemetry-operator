@@ -413,6 +413,11 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 	return pod
 }
 
+// chooseServiceName returns the service name to be used in the instrumentation.
+// The precedence is as follows:
+// 1. label or annotation with key "service.name" or "app.kubernetes.io/name"
+// 2. k8s resource name (deployment, replicaset, statefulset, daemonset, cronjob, job, pod)
+// 3. container name
 func chooseServiceName(pod corev1.Pod, useLabelsForResourceAttributes bool, resources map[string]string, index int) string {
 	if name := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceNameKey, constants.LabelAppName); name != "" {
 		return name
@@ -441,6 +446,10 @@ func chooseServiceName(pod corev1.Pod, useLabelsForResourceAttributes bool, reso
 	return pod.Spec.Containers[index].Name
 }
 
+// chooseLabelOrAnnotation returns the value of the label or annotation with the given key.
+// The precedence is as follows:
+// 1. annotation with key resource.opentelemetry.io/<resource>
+// 2. label with key labelKey
 func chooseLabelOrAnnotation(pod corev1.Pod, useLabelsForResourceAttributes bool, resource attribute.Key, labelKey string) string {
 	if v := pod.Annotations[(constants.ResourceAttributeAnnotationPrefix + string(resource))]; v != "" {
 		return v
@@ -453,7 +462,10 @@ func chooseLabelOrAnnotation(pod corev1.Pod, useLabelsForResourceAttributes bool
 	return ""
 }
 
-// obtains version by splitting image string on ":" and extracting final element from resulting array.
+// chooseServiceVersion returns the service version to be used in the instrumentation.
+// The precedence is as follows:
+// 1. label or annotation with key "service.version" or "app.kubernetes.io/version"
+// 2. image tag (by splitting image string on ":" and extracting final element from resulting array)
 func chooseServiceVersion(pod corev1.Pod, useLabelsForResourceAttributes bool, index int) string {
 	v := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceVersionKey, constants.LabelAppVersion)
 	if v != "" {
@@ -468,8 +480,11 @@ func chooseServiceVersion(pod corev1.Pod, useLabelsForResourceAttributes bool, i
 	return tag
 }
 
-// creates the service.instance.id following the semantic defined by
-// https://github.com/open-telemetry/semantic-conventions/pull/312.
+// chooseServiceInstanceId returns the service.instance.id to be used in the instrumentation.
+// The precedence is as follows:
+//  1. annotation with key "service.instance.id" or "app.kubernetes.io/instance"
+//  2. namespace name + pod name + container name
+//     (as defined by https://opentelemetry.io/docs/specs/semconv/resource/#service-experimental)
 func createServiceInstanceId(pod corev1.Pod, useLabelsForResourceAttributes bool, namespaceName, podName, containerName string) string {
 	serviceInstanceId := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceInstanceIDKey, constants.LabelAppInstance)
 	if serviceInstanceId != "" {
