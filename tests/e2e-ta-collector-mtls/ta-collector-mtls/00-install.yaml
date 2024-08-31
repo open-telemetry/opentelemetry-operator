@@ -158,3 +158,32 @@ spec:
       enabled: true
       scrapeInterval: 1s
     serviceAccount: ta
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-serving-over-https
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-ta
+          image: curlimages/curl
+          volumeMounts:
+            - name: tls-secret
+              mountPath: /etc/tls
+              readOnly: true
+          args:
+            - /bin/sh
+            - -c
+            - |
+              curl -s \
+                --cert /etc/tls/tls.crt \
+                --key /etc/tls/tls.key \
+                --cacert /etc/tls/ca.crt \
+                https://prometheus-cr-targetallocator:443
+      volumes:
+        - name: tls-secret
+          secret:
+            secretName: prometheus-cr-ta-client-cert

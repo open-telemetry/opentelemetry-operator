@@ -20,6 +20,21 @@ kind: ConfigMap
 metadata:
   name: prometheus-cr-targetallocator
 ---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: prometheus-cr-ca-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: prometheus-cr-ta-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: prometheus-cr-ta-client-cert
+---
 apiVersion: v1
 data:
   collector.yaml: |
@@ -47,3 +62,25 @@ data:
 kind: ConfigMap
 metadata:
   name: prometheus-cr-collector-52e1d2ae
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/managed-by: opentelemetry-operator
+spec:
+  containers:
+  - name: ta-container
+    ports:
+    - containerPort: 8080
+      name: http
+    - containerPort: 8443
+      name: https
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-serving-over-https
+status:
+  succeeded: 1
