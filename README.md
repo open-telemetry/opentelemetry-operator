@@ -781,11 +781,11 @@ spec:
 The priority for setting resource attributes is as follows (first found wins):
 
 1. Resource attributes set via `OTEL_RESOURCE_ATTRIBUTES` and `OTEL_SERVICE_NAME` environment variables
-2. Resource attributes calculated from the pod's metadata (e.g. `k8s.pod.name`)
-3. Resource attributes set via the `Instrumentation` CR (in the `spec.resource.resourceAttributes` section)
-4. Resource attributes set via annotations (with the `resource.opentelemetry.io/` prefix)
-5. Resource attributes set via labels (e.g. `app.kubernetes.io/name`) 
+2. Resource attributes set via annotations (with the `resource.opentelemetry.io/` prefix)
+3. Resource attributes set via labels (e.g. `app.kubernetes.io/name`) 
    if the `Instrumentation` CR has defaults.useLabelsForResourceAttributes=true (see above)
+4. Resource attributes calculated from the pod's metadata (e.g. `k8s.pod.name`)
+5. Resource attributes set via the `Instrumentation` CR (in the `spec.resource.resourceAttributes` section)
 
 This priority is applied for each resource attribute separately, so it is possible to set some attributes via 
 annotations and others via labels.

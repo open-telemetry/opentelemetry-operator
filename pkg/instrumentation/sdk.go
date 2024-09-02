@@ -515,30 +515,18 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 		}
 	}
 
-	// attributes and labels from the pod have the lowest precedence - they are overridden by later values
 	res := map[string]string{}
-	for k, v := range pod.Annotations {
-		if strings.HasPrefix(k, constants.ResourceAttributeAnnotationPrefix) {
-			k = strings.TrimPrefix(k, constants.ResourceAttributeAnnotationPrefix)
-			if !existingRes[k] && k != string(semconv.ServiceNameKey) {
-				res[k] = v
-			}
-		}
-	}
-	useLabelsForResourceAttributes := otelinst.Spec.Defaults.UseLabelsForResourceAttributes
-	partOf := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceNamespaceKey, constants.LabelAppPartOf)
-	if partOf != "" && !existingRes[string(semconv.ServiceNamespaceKey)] {
-		res[string(semconv.ServiceNamespaceKey)] = partOf
-	}
 
-	// entries from the CRD have higher precedence
+	// entries from the CRD have the lowest precedence - they are overridden by later values
 	for k, v := range otelinst.Spec.Resource.Attributes {
 		if !existingRes[k] {
 			res[k] = v
 		}
 	}
 
-	// k8s resources have the highest precedence (except for values set in environment variables)
+	useLabelsForResourceAttributes := otelinst.Spec.Defaults.UseLabelsForResourceAttributes
+
+	// k8s resources have a higher precedence than CRD entries
 	k8sResources := map[attribute.Key]string{}
 	k8sResources[semconv.K8SNamespaceNameKey] = ns.Name
 	k8sResources[semconv.K8SContainerNameKey] = pod.Spec.Containers[index].Name
@@ -555,6 +543,21 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 			res[string(k)] = v
 		}
 	}
+
+	// attributes and labels from the pod have the highest precedence (except for values set in environment variables)
+	for k, v := range pod.Annotations {
+		if strings.HasPrefix(k, constants.ResourceAttributeAnnotationPrefix) {
+			k = strings.TrimPrefix(k, constants.ResourceAttributeAnnotationPrefix)
+			if !existingRes[k] && k != string(semconv.ServiceNameKey) {
+				res[k] = v
+			}
+		}
+	}
+	partOf := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceNamespaceKey, constants.LabelAppPartOf)
+	if partOf != "" && !existingRes[string(semconv.ServiceNamespaceKey)] {
+		res[string(semconv.ServiceNamespaceKey)] = partOf
+	}
+
 	return res
 }
 
