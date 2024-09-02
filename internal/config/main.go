@@ -17,7 +17,6 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -154,7 +153,6 @@ func (c *Config) AutoDetect() error {
 	cmAvl, err := c.autoDetect.CertManagerAvailability(context.Background())
 	if err != nil {
 		c.logger.V(2).Info("the cert manager crd and permissions are not set for the operator", "reason", err)
-		fmt.Print(err)
 	}
 	c.certManagerAvailability = cmAvl
 	c.logger.V(2).Info("the cert manager crd and permissions are set for the operator", "availability", cmAvl)

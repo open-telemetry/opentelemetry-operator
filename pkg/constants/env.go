@@ -46,6 +46,4 @@ const (
 	FlagNginx       = "enable-nginx-instrumentation"
 	FlagNodeJS      = "enable-nodejs-instrumentation"
 	FlagJava        = "enable-java-instrumentation"
-
-	FlagTargetAllocatorMTLS = "enable-target-allocator-mtls"
 )
