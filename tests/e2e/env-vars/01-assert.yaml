@@ -21,7 +21,7 @@ spec:
           apiVersion: v1
           fieldPath: status.podIP
     - name: OTEL_SERVICE_NAME
-      value: my-deploy
+      value: my-app
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
@@ -36,6 +36,7 @@ spec:
           fieldPath: spec.nodeName
     - name: OTEL_RESOURCE_ATTRIBUTES
       value:
+        ( contains(@, 'foo=bar') ): true
         ( contains(@, 'k8s.container.name=myapp') ): true
         ( contains(@, 'k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME)') ): true
         ( contains(@, 'k8s.replicaset.name=my-deploy-') ): true
