@@ -13,7 +13,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: targetallocator-prometheuscr
+  name: (join('-', ['ta', $namespace]))
 rules:
 - apiGroups:
   - ""
@@ -72,7 +72,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: collector-prometheuscr
+  name: (join('-', ['collector', $namespace]))
 rules:
 - apiGroups:
   - ""
@@ -108,7 +108,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: targetallocator-prometheuscr
+  name: (join('-', ['ta', $namespace]))
 subjects:
 - kind: ServiceAccount
   name: ta
@@ -121,7 +121,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: collector-prometheuscr
+  name: (join('-', ['collector', $namespace]))
 subjects:
 - kind: ServiceAccount
   name: collector
