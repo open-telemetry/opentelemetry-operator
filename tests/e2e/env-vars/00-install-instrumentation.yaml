@@ -5,3 +5,6 @@ metadata:
 spec:
   exporter:
     endpoint: http://localhost:4317
+  defaults:
+    useLabelsForResourceAttributes: true
+
