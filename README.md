@@ -717,7 +717,7 @@ spec:
 EOF
 ```
 
-### Configure resource attributes
+## Configure resource attributes
 
 ### Configure resource attributes with annotations
 
