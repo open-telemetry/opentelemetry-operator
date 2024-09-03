@@ -19,4 +19,4 @@ componentsAllowed:
     - memory_limiter
     - batch
   exporters:
-    - logging
+    - debug
