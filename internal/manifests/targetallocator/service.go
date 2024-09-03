@@ -38,7 +38,7 @@ func Service(params Params) *corev1.Service {
 
 	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		ports = append(ports, corev1.ServicePort{
-			Name:       "http-metrics",
+			Name:       "targetallocation-https",
 			Port:       443,
 			TargetPort: intstr.FromString("https")})
 	}
