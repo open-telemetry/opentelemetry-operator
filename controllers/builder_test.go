@@ -430,7 +430,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
+									"opentelemetry-operator-config/sha256": "2d266e55025628659355f1271b689d6fb53648ef6cd5595831f5835d18e59a25",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
