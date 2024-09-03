@@ -77,12 +77,12 @@ func TestBuildCollector(t *testing.T) {
   examplereceiver:
     endpoint: "0.0.0.0:12345"
 exporters:
-  logging:
+  debug:
 service:
   pipelines:
     metrics:
       receivers: [examplereceiver]
-      exporters: [logging]
+      exporters: [debug]
 `
 
 	goodConfig := v1beta1.Config{}
@@ -270,7 +270,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
-						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - logging\n      receivers:\n        - examplereceiver\n",
+						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  debug: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - debug\n      receivers:\n        - examplereceiver\n",
 					},
 				},
 				&corev1.ServiceAccount{
@@ -548,7 +548,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
-						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - logging\n      receivers:\n        - examplereceiver\n",
+						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  debug: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - debug\n      receivers:\n        - examplereceiver\n",
 					},
 				},
 				&corev1.ServiceAccount{
@@ -862,7 +862,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
-						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - logging\n      receivers:\n        - examplereceiver\n",
+						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  debug: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - debug\n      receivers:\n        - examplereceiver\n",
 					},
 				},
 				&corev1.Service{
@@ -1010,7 +1010,7 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 							v1alpha1.OpAMPBridgeCapabilityReportsHealth:                  true,
 							v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig:            true,
 						},
-						ComponentsAllowed: map[string][]string{"receivers": {"otlp"}, "processors": {"memory_limiter"}, "exporters": {"logging"}},
+						ComponentsAllowed: map[string][]string{"receivers": {"otlp"}, "processors": {"memory_limiter"}, "exporters": {"debug"}},
 					},
 				},
 			},
@@ -1125,7 +1125,7 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
   ReportsStatus: true
 componentsAllowed:
   exporters:
-  - logging
+  - debug
   processors:
   - memory_limiter
   receivers:
@@ -1218,12 +1218,12 @@ receivers:
           target_label: 'job'
           replacement: '$$1_$2'
 exporters:
-  logging:
+  debug:
 service:
   pipelines:
     metrics:
       receivers: [prometheus]
-      exporters: [logging]
+      exporters: [debug]
 `
 
 	goodConfig := v1beta1.Config{}
@@ -1421,7 +1421,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
-						"collector.yaml": "exporters:\n    logging: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator.test.svc.cluster.local:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - logging\n            receivers:\n                - prometheus\n",
+						"collector.yaml": "exporters:\n    debug: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator.test.svc.cluster.local:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - debug\n            receivers:\n                - prometheus\n",
 					},
 				},
 				&corev1.ServiceAccount{
@@ -1878,7 +1878,7 @@ prometheus_cr:
 						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
-						"collector.yaml": "exporters:\n    logging: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator.test.svc.cluster.local:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - logging\n            receivers:\n                - prometheus\n",
+						"collector.yaml": "exporters:\n    debug: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator.test.svc.cluster.local:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - debug\n            receivers:\n                - prometheus\n",
 					},
 				},
 				&corev1.ServiceAccount{
