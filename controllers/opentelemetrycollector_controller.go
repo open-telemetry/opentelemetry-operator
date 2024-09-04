@@ -21,16 +21,6 @@ import (
 	"sort"
 
 	"github.com/go-logr/logr"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
-	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -47,6 +37,17 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
+	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (

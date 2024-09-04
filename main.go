@@ -19,12 +19,13 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"os"
 	"regexp"
 	"runtime"
 	"strings"
 	"time"
+
+	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -409,14 +410,14 @@ func main() {
 
 		bv := func(collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
 			var warnings admission.Warnings
-			params, err := collectorReconciler.GetParams(collector)
+			params, newErr := collectorReconciler.GetParams(collector)
 			if err != nil {
-				warnings = append(warnings, err.Error())
+				warnings = append(warnings, newErr.Error())
 				return warnings
 			}
-			_, err = collectorManifests.Build(params)
-			if err != nil {
-				warnings = append(warnings, err.Error())
+			_, newErr = collectorManifests.Build(params)
+			if newErr != nil {
+				warnings = append(warnings, newErr.Error())
 				return warnings
 			}
 			return warnings
