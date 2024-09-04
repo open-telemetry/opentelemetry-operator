@@ -859,7 +859,19 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "targetCPUUtilization should be greater than 0 and less than 100",
+			expectedErr: "targetCPUUtilization should be greater than 0",
+		},
+		{
+			name: "invalid autoscaler target memory utilization",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas:             &three,
+						TargetMemoryUtilization: &zero,
+					},
+				},
+			},
+			expectedErr: "targetMemoryUtilization should be greater than 0",
 		},
 		{
 			name: "autoscaler minReplicas is less than maxReplicas",
