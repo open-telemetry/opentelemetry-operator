@@ -19,6 +19,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"os"
 	"regexp"
 	"runtime"
@@ -366,13 +367,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = controllers.NewReconciler(controllers.Params{
+	collectorReconciler := controllers.NewReconciler(controllers.Params{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
 		Scheme:   mgr.GetScheme(),
 		Config:   cfg,
 		Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
-	}).SetupWithManager(mgr); err != nil {
+	})
+
+	if err = collectorReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
 		os.Exit(1)
 	}
@@ -404,10 +407,22 @@ func main() {
 
 		}
 
-		reconciler := controllers.NewReconciler(controllers.Params{})
-		bv := otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, reconciler.Validate)
+		bv := func(collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
+			var warnings admission.Warnings
+			params, err := collectorReconciler.GetParams(collector)
+			if err != nil {
+				warnings = append(warnings, err.Error())
+				return warnings
+			}
+			_, err = collectorManifests.Build(params)
+			if err != nil {
+				warnings = append(warnings, err.Error())
+				return warnings
+			}
+			return warnings
+		}
 
-		if err = bv; err != nil {
+		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}

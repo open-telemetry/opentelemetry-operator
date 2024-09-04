@@ -21,6 +21,16 @@ import (
 	"sort"
 
 	"github.com/go-logr/logr"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
+	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -37,18 +47,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
-	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
@@ -74,22 +72,6 @@ type Params struct {
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
 	Config   config.Config
-}
-
-func (r *OpenTelemetryCollectorReconciler) Validate(otelcol v1beta1.OpenTelemetryCollector) admission.Warnings {
-	var warnings admission.Warnings
-
-	params := manifests.Params{
-		Log:     logr.Discard(),
-		Config:  r.config,
-		OtelCol: otelcol,
-	}
-	_, err := collector.Build(params)
-	if err != nil {
-		warnings = append(warnings, err.Error())
-		return warnings
-	}
-	return nil
 }
 
 func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
@@ -185,7 +167,7 @@ func (r *OpenTelemetryCollectorReconciler) getConfigMapsToRemove(configVersionsT
 	return ownedConfigMaps
 }
 
-func (r *OpenTelemetryCollectorReconciler) getParams(instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
+func (r *OpenTelemetryCollectorReconciler) GetParams(instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
 	p := manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
@@ -246,7 +228,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	params, err := r.getParams(instance)
+	params, err := r.GetParams(instance)
 	if err != nil {
 		log.Error(err, "Failed to create manifest.Params")
 		return ctrl.Result{}, err
