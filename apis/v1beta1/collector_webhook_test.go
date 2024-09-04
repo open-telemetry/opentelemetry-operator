@@ -921,6 +921,18 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "targetCPUUtilization should be greater than 0 and less than 100",
 		},
 		{
+			name: "autoscaler minReplicas is less than maxReplicas",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Autoscaler: &v1beta1.AutoscalerSpec{
+						MaxReplicas: &one,
+						MinReplicas: &five,
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas",
+		},
+		{
 			name: "invalid autoscaler metric type",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
