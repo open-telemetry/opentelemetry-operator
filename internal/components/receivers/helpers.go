@@ -101,7 +101,7 @@ var (
 				components.WithAppProtocol(&components.HttpProtocol),
 			),
 		),
-		components.NewSinglePortParser("awsxray", 2000, components.WithTargetPort(2000)),
+		components.NewSinglePortParser("awsxray", 2000, components.WithProtocol(corev1.ProtocolUDP), components.WithTargetPort(2000)),
 		components.NewSinglePortParser("carbon", 2003, components.WithTargetPort(2003)),
 		components.NewSinglePortParser("collectd", 8081, components.WithTargetPort(8081)),
 		components.NewSinglePortParser("fluentforward", 8006, components.WithTargetPort(8006)),
