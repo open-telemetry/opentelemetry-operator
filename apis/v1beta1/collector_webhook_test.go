@@ -902,9 +902,9 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 		},
 		{
 			name: "invalid autoscaler target memory utilization",
-			otelcol: OpenTelemetryCollector{
-				Spec: OpenTelemetryCollectorSpec{
-					Autoscaler: &AutoscalerSpec{
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Autoscaler: &v1beta1.AutoscalerSpec{
 						MaxReplicas:             &three,
 						TargetMemoryUtilization: &zero,
 					},
