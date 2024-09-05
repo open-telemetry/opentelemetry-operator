@@ -38,7 +38,7 @@ metadata:
             },
             "componentsAllowed": {
               "exporters": [
-                "logging"
+                "debug"
               ],
               "processors": [
                 "memory_limiter"
@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2024-08-14T11:18:29Z"
+    createdAt: "2024-09-03T20:25:40Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -262,8 +262,6 @@ spec:
           - ""
           resources:
           - configmaps
-          - persistentvolumeclaims
-          - persistentvolumes
           - pods
           - serviceaccounts
           - services
@@ -378,6 +376,7 @@ spec:
           - opentelemetry.io
           resources:
           - instrumentations
+          - opentelemetrycollectors
           verbs:
           - get
           - list
@@ -406,31 +405,7 @@ spec:
           - opentelemetry.io
           resources:
           - opampbridges/status
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - opentelemetry.io
-          resources:
-          - opentelemetrycollectors
-          verbs:
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - opentelemetry.io
-          resources:
           - opentelemetrycollectors/finalizers
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - opentelemetry.io
-          resources:
           - opentelemetrycollectors/status
           verbs:
           - get

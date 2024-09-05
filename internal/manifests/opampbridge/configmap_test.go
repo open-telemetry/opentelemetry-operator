@@ -52,7 +52,7 @@ func TestDesiredConfigMap(t *testing.T) {
   ReportsStatus: true
 componentsAllowed:
   exporters:
-  - logging
+  - debug
   processors:
   - memory_limiter
   receivers:
@@ -109,7 +109,7 @@ headers:
 						v1alpha1.OpAMPBridgeCapabilityReportsHealth:                  true,
 						v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig:            true,
 					},
-					ComponentsAllowed: map[string][]string{"receivers": {"otlp"}, "processors": {"memory_limiter"}, "exporters": {"logging"}},
+					ComponentsAllowed: map[string][]string{"receivers": {"otlp"}, "processors": {"memory_limiter"}, "exporters": {"debug"}},
 				},
 			}
 

@@ -12,6 +12,7 @@ The operator manages:
 ## Documentation
 
 - [API docs](./docs/api.md)
+- [Offical Telemetry Operator page](https://opentelemetry.io/docs/kubernetes/operator/)
 
 ## Helm Charts
 
@@ -815,7 +816,7 @@ Emeritus Target Allocator Maintainers
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
 - [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
-- [Mikołaj Świątek](https://github.com/swiatekm), Sumo Logic
+- [Mikołaj Świątek](https://github.com/swiatekm), Elastic
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 
 Emeritus Maintainers

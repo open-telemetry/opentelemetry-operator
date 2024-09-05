@@ -62,9 +62,11 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		var err error
 		i.logger.V(1).Info("injecting Java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		javaContainers := insts.Java.Containers
+		if len(insts.Java.Containers) == 0 {
+			insts.Java.Containers = []string{pod.Spec.Containers[0].Name}
+		}
 
-		for _, container := range strings.Split(javaContainers, ",") {
+		for _, container := range insts.Java.Containers {
 			index := getContainerIndex(container, pod)
 			pod, err = injectJavaagent(otelinst.Spec.Java, pod, index)
 			if err != nil {
@@ -81,9 +83,11 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		var err error
 		i.logger.V(1).Info("injecting NodeJS instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		nodejsContainers := insts.NodeJS.Containers
+		if len(insts.NodeJS.Containers) == 0 {
+			insts.NodeJS.Containers = []string{pod.Spec.Containers[0].Name}
+		}
 
-		for _, container := range strings.Split(nodejsContainers, ",") {
+		for _, container := range insts.NodeJS.Containers {
 			index := getContainerIndex(container, pod)
 			pod, err = injectNodeJSSDK(otelinst.Spec.NodeJS, pod, index)
 			if err != nil {
@@ -100,9 +104,11 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		var err error
 		i.logger.V(1).Info("injecting Python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		pythonContainers := insts.Python.Containers
+		if len(insts.Python.Containers) == 0 {
+			insts.Python.Containers = []string{pod.Spec.Containers[0].Name}
+		}
 
-		for _, container := range strings.Split(pythonContainers, ",") {
+		for _, container := range insts.Python.Containers {
 			index := getContainerIndex(container, pod)
 			pod, err = injectPythonSDK(otelinst.Spec.Python, pod, index)
 			if err != nil {
@@ -119,9 +125,11 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		var err error
 		i.logger.V(1).Info("injecting DotNet instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		dotnetContainers := insts.DotNet.Containers
+		if len(insts.DotNet.Containers) == 0 {
+			insts.DotNet.Containers = []string{pod.Spec.Containers[0].Name}
+		}
 
-		for _, container := range strings.Split(dotnetContainers, ",") {
+		for _, container := range insts.DotNet.Containers {
 			index := getContainerIndex(container, pod)
 			pod, err = injectDotNetSDK(otelinst.Spec.DotNet, pod, index, insts.DotNet.AdditionalAnnotations[annotationDotNetRuntime])
 			if err != nil {
@@ -139,10 +147,12 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		var err error
 		i.logger.V(1).Info("injecting Go instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		goContainers := insts.Go.Containers
+		if len(insts.Go.Containers) == 0 {
+			insts.Go.Containers = []string{pod.Spec.Containers[0].Name}
+		}
 
 		// Go instrumentation supports only single container instrumentation.
-		index := getContainerIndex(goContainers, pod)
+		index := getContainerIndex(insts.Go.Containers[0], pod)
 		pod, err = injectGoSDK(otelinst.Spec.Go, pod, cfg)
 		if err != nil {
 			i.logger.Info("Skipping Go SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
@@ -163,9 +173,11 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		otelinst := *insts.ApacheHttpd.Instrumentation
 		i.logger.V(1).Info("injecting Apache Httpd instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		apacheHttpdContainers := insts.ApacheHttpd.Containers
+		if len(insts.ApacheHttpd.Containers) == 0 {
+			insts.ApacheHttpd.Containers = []string{pod.Spec.Containers[0].Name}
+		}
 
-		for _, container := range strings.Split(apacheHttpdContainers, ",") {
+		for _, container := range insts.ApacheHttpd.Containers {
 			index := getContainerIndex(container, pod)
 			// Apache agent is configured via config files rather than env vars.
 			// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
@@ -181,9 +193,11 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		otelinst := *insts.Nginx.Instrumentation
 		i.logger.V(1).Info("injecting Nginx instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		nginxContainers := insts.Nginx.Containers
+		if len(insts.Nginx.Containers) == 0 {
+			insts.Nginx.Containers = []string{pod.Spec.Containers[0].Name}
+		}
 
-		for _, container := range strings.Split(nginxContainers, ",") {
+		for _, container := range insts.Nginx.Containers {
 			index := getContainerIndex(container, pod)
 			// Nginx agent is configured via config files rather than env vars.
 			// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
@@ -197,9 +211,11 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		otelinst := *insts.Sdk.Instrumentation
 		i.logger.V(1).Info("injecting sdk-only instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		sdkContainers := insts.Sdk.Containers
+		if len(insts.Sdk.Containers) == 0 {
+			insts.Sdk.Containers = []string{pod.Spec.Containers[0].Name}
+		}
 
-		for _, container := range strings.Split(sdkContainers, ",") {
+		for _, container := range insts.Sdk.Containers {
 			index := getContainerIndex(container, pod)
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)

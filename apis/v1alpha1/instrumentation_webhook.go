@@ -91,10 +91,6 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	if r.Labels == nil {
 		r.Labels = map[string]string{}
 	}
-	if r.Labels["app.kubernetes.io/managed-by"] == "" {
-		r.Labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
-	}
-
 	if r.Spec.Java.Image == "" {
 		r.Spec.Java.Image = w.cfg.AutoInstrumentationJavaImage()
 	}
