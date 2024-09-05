@@ -16,7 +16,7 @@
 
 - `auto-instrumentation`: Fix file copy for NGINX auto-instrumentation for non-root workloads. (#2726)
 - `target allocator`: Retrying failed namespace informer creation in promOperator CRD watcher, then exit if creation issue cannot be resolved (#3216)
-- `target allocator`: Rollback 3187 (#3242)
+- `target allocator`: Rollback #3187 (#3242)
   This Rollsback 3187 which breaks TargetAllocator config for clusters with custom domains.
 - `auto-instrumentation`: Fixes a bug that was preventing auto instrumentation from getting correct images. (#3014)
   This PR removes the restriction on the operator to only upgrade manually applied CRDs. This meant
