@@ -40,7 +40,7 @@ data:
                         - PrometheusText0.0.4
             target_allocator:
                 collector_id: ${POD_NAME}
-                endpoint: http://stateful-targetallocator.chainsaw-smoke-targetallocator.svc.cluster.local:80
+                endpoint: http://stateful-targetallocator:80
                 interval: 30s
     service:
         pipelines:
