@@ -64,9 +64,6 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 	if otelcol.Labels == nil {
 		otelcol.Labels = map[string]string{}
 	}
-	if otelcol.Labels["app.kubernetes.io/managed-by"] == "" {
-		otelcol.Labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
-	}
 
 	// We can default to one because dependent objects Deployment and HorizontalPodAutoScaler
 	// default to 1 as well.
