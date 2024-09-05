@@ -148,9 +148,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			otelcol: v1beta1.OpenTelemetryCollector{},
 			expected: v1beta1.OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
@@ -176,9 +174,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: v1beta1.OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode:            v1beta1.ModeSidecar,
@@ -205,9 +201,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: v1beta1.OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode:            v1beta1.ModeSidecar,
@@ -232,9 +226,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: v1beta1.OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode:            v1beta1.ModeDeployment,
@@ -264,9 +256,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: v1beta1.OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
@@ -302,9 +292,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: v1beta1.OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
@@ -342,9 +330,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: v1beta1.OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
@@ -387,9 +373,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: v1beta1.OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
@@ -427,9 +411,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: v1beta1.OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
@@ -460,9 +442,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			},
 			expected: v1beta1.OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/managed-by": "opentelemetry-operator",
-					},
+					Labels: map[string]string{},
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
@@ -918,7 +898,19 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "targetCPUUtilization should be greater than 0 and less than 100",
+			expectedErr: "targetCPUUtilization should be greater than 0",
+		},
+		{
+			name: "invalid autoscaler target memory utilization",
+			otelcol: OpenTelemetryCollector{
+				Spec: OpenTelemetryCollectorSpec{
+					Autoscaler: &AutoscalerSpec{
+						MaxReplicas:             &three,
+						TargetMemoryUtilization: &zero,
+					},
+				},
+			},
+			expectedErr: "targetMemoryUtilization should be greater than 0",
 		},
 		{
 			name: "autoscaler minReplicas is less than maxReplicas",

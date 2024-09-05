@@ -22,4 +22,4 @@ spec:
     processors:
     - memory_limiter
     exporters:
-    - logging
+    - debug

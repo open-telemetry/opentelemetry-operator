@@ -52,23 +52,23 @@ func (o *OpAMPBridgeWebhook) Default(ctx context.Context, obj runtime.Object) er
 	return o.defaulter(opampBridge)
 }
 
-func (c OpAMPBridgeWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (o *OpAMPBridgeWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	opampBridge, ok := obj.(*OpAMPBridge)
 	if !ok {
 		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", obj)
 	}
-	return c.validate(opampBridge)
+	return o.validate(opampBridge)
 }
 
-func (c OpAMPBridgeWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (o *OpAMPBridgeWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	opampBridge, ok := newObj.(*OpAMPBridge)
 	if !ok {
 		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", newObj)
 	}
-	return c.validate(opampBridge)
+	return o.validate(opampBridge)
 }
 
-func (o OpAMPBridgeWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (o *OpAMPBridgeWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	opampBridge, ok := obj.(*OpAMPBridge)
 	if !ok || opampBridge == nil {
 		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", obj)
@@ -76,7 +76,7 @@ func (o OpAMPBridgeWebhook) ValidateDelete(ctx context.Context, obj runtime.Obje
 	return o.validate(opampBridge)
 }
 
-func (o OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
+func (o *OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
 	if len(r.Spec.UpgradeStrategy) == 0 {
 		r.Spec.UpgradeStrategy = UpgradeStrategyAutomatic
 	}
@@ -84,10 +84,6 @@ func (o OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
 	if r.Labels == nil {
 		r.Labels = map[string]string{}
 	}
-	if r.Labels["app.kubernetes.io/managed-by"] == "" {
-		r.Labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
-	}
-
 	one := int32(1)
 	if r.Spec.Replicas == nil {
 		r.Spec.Replicas = &one
@@ -104,7 +100,7 @@ func (o OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
 	return nil
 }
 
-func (o OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error) {
+func (o *OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 
 	// validate OpAMP server endpoint

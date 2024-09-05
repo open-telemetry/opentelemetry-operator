@@ -10,7 +10,7 @@ receivers:
       scrape_configs:
       - honor_labels: true
         http_sd_configs:
-        - url: http://test-targetallocator.default.svc.cluster.local:80/jobs/service-x/targets?collector_id=$POD_NAME
+        - url: http://test-targetallocator:80/jobs/service-x/targets?collector_id=$POD_NAME
         job_name: service-x
         metric_relabel_configs:
         - action: keep

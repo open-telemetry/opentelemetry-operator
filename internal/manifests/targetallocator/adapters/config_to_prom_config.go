@@ -196,7 +196,7 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 // This function removes any existing service discovery configurations (e.g., `sd_configs`, `dns_sd_configs`, `file_sd_configs`, etc.)
 // from the `scrape_configs` section and adds a single `http_sd_configs` configuration.
 // The `http_sd_configs` points to the TA (Target Allocator) endpoint that provides the list of targets for the given job.
-func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceName string, taNamespace string) (map[interface{}]interface{}, error) {
+func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceName string) (map[interface{}]interface{}, error) {
 	prometheusConfigProperty, ok := prometheus["config"]
 	if !ok {
 		return nil, errorNoComponent("prometheusConfig")
@@ -249,7 +249,7 @@ func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServi
 		escapedJob := url.QueryEscape(jobName)
 		scrapeConfig["http_sd_configs"] = []interface{}{
 			map[string]interface{}{
-				"url": fmt.Sprintf("http://%s.%s.svc.cluster.local:80/jobs/%s/targets?collector_id=$POD_NAME", taServiceName, taNamespace, escapedJob),
+				"url": fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", taServiceName, escapedJob),
 			},
 		}
 	}
@@ -260,7 +260,7 @@ func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServi
 // AddTAConfigToPromConfig adds or updates the target_allocator configuration in the Prometheus configuration.
 // If the `EnableTargetAllocatorRewrite` feature flag for the target allocator is enabled, this function
 // removes the existing scrape_configs from the collector's Prometheus configuration as it's not required.
-func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceName string, taNamespace string) (map[interface{}]interface{}, error) {
+func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceName string) (map[interface{}]interface{}, error) {
 	prometheusConfigProperty, ok := prometheus["config"]
 	if !ok {
 		return nil, errorNoComponent("prometheusConfig")
@@ -281,7 +281,7 @@ func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceNa
 		return nil, errorNotAMap("target_allocator")
 	}
 
-	targetAllocatorCfg["endpoint"] = fmt.Sprintf("http://%s.%s.svc.cluster.local:80", taServiceName, taNamespace)
+	targetAllocatorCfg["endpoint"] = fmt.Sprintf("http://%s:80", taServiceName)
 	targetAllocatorCfg["interval"] = "30s"
 	targetAllocatorCfg["collector_id"] = "${POD_NAME}"
 

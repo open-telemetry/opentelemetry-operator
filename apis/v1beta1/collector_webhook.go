@@ -65,9 +65,6 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 	if otelcol.Labels == nil {
 		otelcol.Labels = map[string]string{}
 	}
-	if otelcol.Labels["app.kubernetes.io/managed-by"] == "" {
-		otelcol.Labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
-	}
 
 	// We can default to one because dependent objects Deployment and HorizontalPodAutoScaler
 	// default to 1 as well.
@@ -386,11 +383,11 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp should be one or more")
 		}
 	}
-	if autoscaler.TargetCPUUtilization != nil && (*autoscaler.TargetCPUUtilization < int32(1) || *autoscaler.TargetCPUUtilization > int32(99)) {
-		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0 and less than 100")
+	if autoscaler.TargetCPUUtilization != nil && *autoscaler.TargetCPUUtilization < int32(1) {
+		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0")
 	}
-	if autoscaler.TargetMemoryUtilization != nil && (*autoscaler.TargetMemoryUtilization < int32(1) || *autoscaler.TargetMemoryUtilization > int32(99)) {
-		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0 and less than 100")
+	if autoscaler.TargetMemoryUtilization != nil && *autoscaler.TargetMemoryUtilization < int32(1) {
+		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0")
 	}
 
 	for _, metric := range autoscaler.Metrics {

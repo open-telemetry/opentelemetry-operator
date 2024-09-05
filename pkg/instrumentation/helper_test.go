@@ -170,12 +170,12 @@ func TestDuplicatedContainers(t *testing.T) {
 	}{
 		{
 			name:               "No duplicates",
-			containers:         []string{"app1,app2", "app3", "app4,app5"},
+			containers:         []string{"app1", "app2", "app3", "app4", "app5"},
 			expectedDuplicates: nil,
 		},
 		{
 			name:               "Duplicates in containers",
-			containers:         []string{"app1,app2", "app1", "app1,app3,app4", "app4"},
+			containers:         []string{"app1", "app2", "app1", "app1", "app3", "app4", "app4"},
 			expectedDuplicates: fmt.Errorf("duplicated container names detected: [app1 app4]"),
 		},
 	}
@@ -196,12 +196,12 @@ func TestInstrWithContainers(t *testing.T) {
 	}{
 		{
 			name:           "No containers",
-			containers:     instrumentationWithContainers{Containers: ""},
+			containers:     instrumentationWithContainers{Containers: []string{}},
 			expectedResult: 0,
 		},
 		{
 			name:           "With containers",
-			containers:     instrumentationWithContainers{Containers: "ct1"},
+			containers:     instrumentationWithContainers{Containers: []string{"ct1"}},
 			expectedResult: 1,
 		},
 	}
@@ -222,12 +222,12 @@ func TestInstrWithoutContainers(t *testing.T) {
 	}{
 		{
 			name:           "No containers",
-			containers:     instrumentationWithContainers{Containers: ""},
+			containers:     instrumentationWithContainers{Containers: []string{}},
 			expectedResult: 1,
 		},
 		{
 			name:           "With containers",
-			containers:     instrumentationWithContainers{Containers: "ct1"},
+			containers:     instrumentationWithContainers{Containers: []string{"ct1"}},
 			expectedResult: 0,
 		},
 	}

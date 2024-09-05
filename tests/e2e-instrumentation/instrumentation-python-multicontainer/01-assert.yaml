@@ -20,14 +20,12 @@ spec:
           fieldPath: status.podIP
     - name: PYTHONPATH
       value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
     - name: OTEL_TRACES_EXPORTER
       value: otlp
-    - name: OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
-      value: http/protobuf
     - name: OTEL_METRICS_EXPORTER
       value: otlp
-    - name: OTEL_EXPORTER_OTLP_METRICS_PROTOCOL
-      value: http/protobuf
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
@@ -70,14 +68,12 @@ spec:
           fieldPath: status.podIP
     - name: PYTHONPATH
       value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
     - name: OTEL_TRACES_EXPORTER
       value: otlp
-    - name: OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
-      value: http/protobuf
     - name: OTEL_METRICS_EXPORTER
       value: otlp
-    - name: OTEL_EXPORTER_OTLP_METRICS_PROTOCOL
-      value: http/protobuf
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
     - name: OTEL_EXPORTER_OTLP_TIMEOUT

@@ -2,6 +2,47 @@
 
 <!-- next version -->
 
+## 0.108.0
+
+### 💡 Enhancements 💡
+
+- `auto-instrumentation`: set OTEL_EXPORTER_OTLP_PROTOCOL instead of signal specific env vars in python instrumentation (#3165)
+- `collector`: Allow autoscaler targetCPUUtilization and TargetMemoryUtilization to be greater than 99 (#3258)
+- `auto-instrumentation`: Not ignore the `instrumentation.opentelemetry.io/container-names` annotation when the multi-instrumentation is enabled (#3090)
+- `operator`: Support for Kubernetes `1.31` version. (#3247)
+- `target allocator`: introduces the global field in the TA config to allow for setting scrape protocols (#3160)
+
+### 🧰 Bug fixes 🧰
+
+- `auto-instrumentation`: Fix file copy for NGINX auto-instrumentation for non-root workloads. (#2726)
+- `target allocator`: Retrying failed namespace informer creation in promOperator CRD watcher, then exit if creation issue cannot be resolved (#3216)
+- `target allocator`: Rollback #3187 (#3242)
+  This Rollsback 3187 which breaks TargetAllocator config for clusters with custom domains.
+- `auto-instrumentation`: Fixes a bug that was preventing auto instrumentation from getting correct images. (#3014)
+  This PR removes the restriction on the operator to only upgrade manually applied CRDs. This meant
+  that resources applied by helm were not upgraded at all. The solution was to remove the restriction
+  we had on querying the label app.kubernetes.io/managed-by=opentelemetry-operator, thereby upgrading
+  ALL CRDs in the cluster.
+  
+- `collector`: Fixes a bug that was preventing upgrade patches from reliably applying. (#3074)
+  A bug was discovered in the process of testing the PR that was failing to remove the environment
+  variables introduced in the 0.104.0 upgrade. The fix was to take a deepcopy of the object and update that.
+  
+- `collector`: Don't unnecessarily take ownership of PersistentVolumes and PersistentVolumeClaims (#3042)
+- `awsxray-receiver`: Switched the protocol of awsxray-receiver to UDP from TCP (#3261)
+
+### Components
+
+* [OpenTelemetry Collector - v0.108.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.108.0)
+* [OpenTelemetry Contrib - v0.108.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.108.0)
+* [Java auto-instrumentation - v1.33.5](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.5)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.52.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.52.1)
+* [Python - v0.48b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.48b0)
+* [Go - v0.14.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.14.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.107.0
 
 ### 💡 Enhancements 💡

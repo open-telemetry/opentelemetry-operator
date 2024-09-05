@@ -21,10 +21,10 @@ import (
 )
 
 // registry holds a record of all known receiver parsers.
-var registry = make(map[string]components.ComponentPortParser)
+var registry = make(map[string]components.Parser)
 
 // Register adds a new parser builder to the list of known builders.
-func Register(name string, p components.ComponentPortParser) {
+func Register(name string, p components.Parser) {
 	registry[name] = p
 }
 
@@ -35,15 +35,20 @@ func IsRegistered(name string) bool {
 }
 
 // ReceiverFor returns a parser builder for the given exporter name.
-func ReceiverFor(name string) components.ComponentPortParser {
+func ReceiverFor(name string) components.Parser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}
 	return components.NewSilentSinglePortParser(components.ComponentType(name), components.UnsetPort)
 }
 
+// NewScraperParser is an instance of a generic parser that returns nothing when called and never fails.
+func NewScraperParser(name string) *components.GenericParser[any] {
+	return components.NewGenericParser[any](name, components.UnsetPort, nil)
+}
+
 var (
-	componentParsers = []components.ComponentPortParser{
+	componentParsers = []components.Parser{
 		components.NewMultiPortReceiver("otlp",
 			components.WithPortMapping(
 				"grpc",
@@ -96,7 +101,7 @@ var (
 				components.WithAppProtocol(&components.HttpProtocol),
 			),
 		),
-		components.NewSinglePortParser("awsxray", 2000, components.WithTargetPort(2000)),
+		components.NewSinglePortParser("awsxray", 2000, components.WithProtocol(corev1.ProtocolUDP), components.WithTargetPort(2000)),
 		components.NewSinglePortParser("carbon", 2003, components.WithTargetPort(2003)),
 		components.NewSinglePortParser("collectd", 8081, components.WithTargetPort(8081)),
 		components.NewSinglePortParser("fluentforward", 8006, components.WithTargetPort(8006)),
