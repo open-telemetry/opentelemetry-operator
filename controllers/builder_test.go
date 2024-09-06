@@ -1421,7 +1421,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
-						"collector.yaml": "exporters:\n    debug: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator.test.svc.cluster.local:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - debug\n            receivers:\n                - prometheus\n",
+						"collector.yaml": "exporters:\n    debug: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - debug\n            receivers:\n                - prometheus\n",
 					},
 				},
 				&corev1.ServiceAccount{
@@ -1878,7 +1878,7 @@ prometheus_cr:
 						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
-						"collector.yaml": "exporters:\n    debug: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator.test.svc.cluster.local:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - debug\n            receivers:\n                - prometheus\n",
+						"collector.yaml": "exporters:\n    debug: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - debug\n            receivers:\n                - prometheus\n",
 					},
 				},
 				&corev1.ServiceAccount{
