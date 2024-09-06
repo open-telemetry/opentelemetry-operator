@@ -5,7 +5,6 @@ metadata:
   creationTimestamp: null
   name: targetallocator-prometheuscr
 spec:
-  namespace: chainsaw-targetallocator-prometheuscr
   steps:
   - name: step-00
     try:
