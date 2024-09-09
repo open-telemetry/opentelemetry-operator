@@ -13,4 +13,4 @@ issues: [3149]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext: "The new utility was added to the operator container so it can be run without adding any new container. It can be run from the /must-gather path"
+subtext: "The new utility is available as part of a new container image"
