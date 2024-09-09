@@ -547,9 +547,9 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	// attributes and labels from the pod have the highest precedence (except for values set in environment variables)
 	for k, v := range pod.Annotations {
 		if strings.HasPrefix(k, constants.ResourceAttributeAnnotationPrefix) {
-			k = strings.TrimPrefix(k, constants.ResourceAttributeAnnotationPrefix)
-			if !existingRes[k] && k != string(semconv.ServiceNameKey) {
-				res[k] = v
+			key := strings.TrimPrefix(k, constants.ResourceAttributeAnnotationPrefix)
+			if !existingRes[key] && key != string(semconv.ServiceNameKey) {
+				res[key] = v
 			}
 		}
 	}
