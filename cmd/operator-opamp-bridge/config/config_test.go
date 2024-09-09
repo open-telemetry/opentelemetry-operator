@@ -118,7 +118,7 @@ func TestLoad(t *testing.T) {
 						"batch",
 					},
 					"exporters": {
-						"logging",
+						"debug",
 					},
 				},
 			},

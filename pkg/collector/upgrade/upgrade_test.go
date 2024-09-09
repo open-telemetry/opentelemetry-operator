@@ -84,6 +84,85 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 	}
 }
 
+func TestEnvVarUpdates(t *testing.T) {
+	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
+	collectorInstance := v1beta1.OpenTelemetryCollector{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "OpenTelemetryCollector",
+			APIVersion: "v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      nsn.Name,
+			Namespace: nsn.Namespace,
+		},
+		Status: v1beta1.OpenTelemetryCollectorStatus{
+			Version: "0.104.0",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Args: map[string]string{
+					"foo":           "bar",
+					"feature-gates": "+baz,-confmap.unifyEnvVarExpansion",
+				},
+			},
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"prometheus": []interface{}{},
+					},
+				},
+				Exporters: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"debug": []interface{}{},
+					},
+				},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"metrics": {
+							Exporters:  []string{"debug"},
+							Processors: nil,
+							Receivers:  []string{"prometheus"},
+						},
+					},
+				},
+			},
+		},
+	}
+	err := k8sClient.Create(context.Background(), &collectorInstance)
+	require.NoError(t, err)
+
+	collectorInstance.Status.Version = "0.104.0"
+	err = k8sClient.Status().Update(context.Background(), &collectorInstance)
+	require.NoError(t, err)
+	// sanity check
+	persisted := &v1beta1.OpenTelemetryCollector{}
+	err = k8sClient.Get(context.Background(), nsn, persisted)
+	require.NoError(t, err)
+	require.Equal(t, collectorInstance.Status.Version, persisted.Status.Version)
+
+	currentV := version.Get()
+	currentV.OpenTelemetryCollector = "0.105.0"
+	up := &upgrade.VersionUpgrade{
+		Log:      logger,
+		Version:  currentV,
+		Client:   k8sClient,
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+	}
+
+	// test
+	err = up.ManagedInstances(context.Background())
+	assert.NoError(t, err)
+
+	// verify
+	err = k8sClient.Get(context.Background(), nsn, persisted)
+	assert.NoError(t, err)
+	assert.Equal(t, upgrade.Latest.String(), persisted.Status.Version)
+	assert.NotContainsf(t, persisted.Spec.Args["feature-gates"], "-confmap.unifyEnvVarExpansion", "still has env var")
+
+	// cleanup
+	assert.NoError(t, k8sClient.Delete(context.Background(), &collectorInstance))
+}
+
 func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
 	for _, tt := range []struct {
 		desc      string

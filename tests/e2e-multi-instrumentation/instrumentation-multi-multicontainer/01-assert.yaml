@@ -2,7 +2,6 @@ apiVersion: v1
 kind: Pod
 metadata:
   annotations:
-    instrumentation.opentelemetry.io/container-names: shouldnt-be-instrumented
     instrumentation.opentelemetry.io/dotnet-container-names: dotnetapp
     instrumentation.opentelemetry.io/inject-dotnet: "true"
     instrumentation.opentelemetry.io/inject-java: "true"
@@ -195,13 +194,6 @@ spec:
       readOnly: true
     - mountPath: /otel-auto-instrumentation-python
       name: opentelemetry-auto-instrumentation-python
-  - env:
-    - name: TEST
-      value: test
-    name: shouldnt-be-instrumented
-    volumeMounts:
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
   - args:
     - --feature-gates=-component.UseLocalHostAsDefaultHost
     - --config=env:OTEL_CONFIG
@@ -246,9 +238,6 @@ status:
     ready: true
     started: true
   - name: pythonapp
-    ready: true
-    started: true
-  - name: shouldnt-be-instrumented
     ready: true
     started: true
   initContainerStatuses:

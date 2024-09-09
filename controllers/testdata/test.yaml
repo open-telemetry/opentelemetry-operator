@@ -12,10 +12,10 @@ receivers:
             - targets: [ '0.0.0.0:8888', '0.0.0.0:9999' ]
 
 exporters:
-  logging:
+  debug:
 
 service:
   pipelines:
     metrics:
       receivers: [prometheus, jaeger]
-      exporters: [logging]
+      exporters: [debug]

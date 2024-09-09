@@ -650,7 +650,10 @@ func TestInjectJava(t *testing.T) {
 		},
 	}
 	insts := languageInstrumentations{
-		Java: instrumentationWithContainers{Instrumentation: &inst, Containers: ""},
+		Java: instrumentationWithContainers{
+			Instrumentation: &inst,
+			Containers:      []string{"app"},
+		},
 	}
 	inj := sdkInjector{
 		logger: logr.Discard(),
@@ -771,7 +774,10 @@ func TestInjectNodeJS(t *testing.T) {
 		},
 	}
 	insts := languageInstrumentations{
-		NodeJS: instrumentationWithContainers{Instrumentation: &inst, Containers: ""},
+		NodeJS: instrumentationWithContainers{
+			Instrumentation: &inst,
+			Containers:      []string{"app"},
+		},
 	}
 	inj := sdkInjector{
 		logger: logr.Discard(),
@@ -891,7 +897,10 @@ func TestInjectPython(t *testing.T) {
 		},
 	}
 	insts := languageInstrumentations{
-		Python: instrumentationWithContainers{Instrumentation: &inst, Containers: ""},
+		Python: instrumentationWithContainers{
+			Instrumentation: &inst,
+			Containers:      []string{"app"},
+		},
 	}
 
 	inj := sdkInjector{
@@ -1023,7 +1032,10 @@ func TestInjectDotNet(t *testing.T) {
 		},
 	}
 	insts := languageInstrumentations{
-		DotNet: instrumentationWithContainers{Instrumentation: &inst, Containers: ""},
+		DotNet: instrumentationWithContainers{
+			Instrumentation: &inst,
+			Containers:      []string{"app"},
+		},
 	}
 	inj := sdkInjector{
 		logger: logr.Discard(),
@@ -1169,13 +1181,15 @@ func TestInjectGo(t *testing.T) {
 		{
 			name: "shared process namespace disabled",
 			insts: languageInstrumentations{
-				Go: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{
-					Spec: v1alpha1.InstrumentationSpec{
-						Go: v1alpha1.Go{
-							Image: "otel/go:1",
+				Go: instrumentationWithContainers{
+					Containers: []string{"app"},
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							Go: v1alpha1.Go{
+								Image: "otel/go:1",
+							},
 						},
 					},
-				},
 				},
 			},
 			pod: corev1.Pod{
@@ -1202,13 +1216,15 @@ func TestInjectGo(t *testing.T) {
 		{
 			name: "OTEL_GO_AUTO_TARGET_EXE not set",
 			insts: languageInstrumentations{
-				Go: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{
-					Spec: v1alpha1.InstrumentationSpec{
-						Go: v1alpha1.Go{
-							Image: "otel/go:1",
+				Go: instrumentationWithContainers{
+					Containers: []string{"app"},
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							Go: v1alpha1.Go{
+								Image: "otel/go:1",
+							},
 						},
 					},
-				},
 				},
 			},
 			pod: corev1.Pod{
@@ -1233,19 +1249,21 @@ func TestInjectGo(t *testing.T) {
 		{
 			name: "OTEL_GO_AUTO_TARGET_EXE set by inst",
 			insts: languageInstrumentations{
-				Go: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{
-					Spec: v1alpha1.InstrumentationSpec{
-						Go: v1alpha1.Go{
-							Image: "otel/go:1",
-							Env: []corev1.EnvVar{
-								{
-									Name:  "OTEL_GO_AUTO_TARGET_EXE",
-									Value: "foo",
+				Go: instrumentationWithContainers{
+					Containers: []string{"app"},
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							Go: v1alpha1.Go{
+								Image: "otel/go:1",
+								Env: []corev1.EnvVar{
+									{
+										Name:  "OTEL_GO_AUTO_TARGET_EXE",
+										Value: "foo",
+									},
 								},
 							},
 						},
 					},
-				},
 				},
 			},
 			pod: corev1.Pod{
@@ -1345,7 +1363,7 @@ func TestInjectGo(t *testing.T) {
 			name: "OTEL_GO_AUTO_TARGET_EXE set by annotation",
 			insts: languageInstrumentations{
 				Go: instrumentationWithContainers{
-					Containers: "",
+					Containers: []string{"app"},
 					Instrumentation: &v1alpha1.Instrumentation{
 						Spec: v1alpha1.InstrumentationSpec{
 							Go: v1alpha1.Go{
@@ -1494,7 +1512,7 @@ func TestInjectApacheHttpd(t *testing.T) {
 							},
 						},
 					},
-					Containers: "",
+					Containers: []string{"app"},
 				},
 			},
 			pod: corev1.Pod{
@@ -1672,7 +1690,7 @@ func TestInjectNginx(t *testing.T) {
 							},
 						},
 					},
-					Containers: "",
+					Containers: []string{"app"},
 				},
 			},
 			pod: corev1.Pod{
@@ -1841,7 +1859,7 @@ func TestInjectSdkOnly(t *testing.T) {
 		},
 	}
 	insts := languageInstrumentations{
-		Sdk: instrumentationWithContainers{Instrumentation: &inst, Containers: ""},
+		Sdk: instrumentationWithContainers{Instrumentation: &inst, Containers: []string{"app"}},
 	}
 
 	inj := sdkInjector{

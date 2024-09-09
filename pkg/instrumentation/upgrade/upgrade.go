@@ -79,14 +79,8 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 // ManagedInstances upgrades managed instances by the opentelemetry-operator.
 func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 	u.Logger.Info("looking for managed Instrumentation instances to upgrade")
-
-	opts := []client.ListOption{
-		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		}),
-	}
 	list := &v1alpha1.InstrumentationList{}
-	if err := u.Client.List(ctx, list, opts...); err != nil {
+	if err := u.Client.List(ctx, list); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
 
