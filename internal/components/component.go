@@ -38,12 +38,12 @@ type PortRetriever interface {
 	GetPortNumOrDefault(logr.Logger, int32) int32
 }
 
-// PortParser is a function that returns a list of servicePorts given a config of type T.
-type PortParser[T any] func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config T) ([]corev1.ServicePort, error)
+// PortParser is a function that returns a list of servicePorts given a config of type Config.
+type PortParser[ComponentConfigType any] func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config ComponentConfigType) ([]corev1.ServicePort, error)
 
-// RBACRuleGenerator is a function that generates a list of RBAC Rules given a configuration of type T
-// It's expected that type T is the configuration used by a parser.
-type RBACRuleGenerator[T any] func(logger logr.Logger, config T) ([]rbacv1.PolicyRule, error)
+// RBACRuleGenerator is a function that generates a list of RBAC Rules given a configuration of type Config
+// It's expected that type Config is the configuration used by a parser.
+type RBACRuleGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) ([]rbacv1.PolicyRule, error)
 
 // ComponentType returns the type for a given component name.
 // components have a name like:

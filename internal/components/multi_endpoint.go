@@ -76,7 +76,7 @@ func (m *MultiPortReceiver) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.Pol
 	return nil, nil
 }
 
-type MultiPortBuilder[T any] []Builder[T]
+type MultiPortBuilder[ComponentConfigType any] []Builder[ComponentConfigType]
 
 func NewMultiPortReceiverBuilder(name string) MultiPortBuilder[*MultiProtocolEndpointConfig] {
 	return append(MultiPortBuilder[*MultiProtocolEndpointConfig]{}, NewBuilder[*MultiProtocolEndpointConfig]().WithName(name))
@@ -86,11 +86,11 @@ func NewProtocolBuilder(name string, port int32) Builder[*MultiProtocolEndpointC
 	return NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithPort(port)
 }
 
-func (mp MultiPortBuilder[T]) AddPortMapping(builder Builder[T]) MultiPortBuilder[T] {
+func (mp MultiPortBuilder[ComponentConfigType]) AddPortMapping(builder Builder[ComponentConfigType]) MultiPortBuilder[ComponentConfigType] {
 	return append(mp, builder)
 }
 
-func (mp MultiPortBuilder[T]) Build() (*MultiPortReceiver, error) {
+func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, error) {
 	if len(mp) < 1 {
 		return nil, fmt.Errorf("must provide at least one port mapping")
 	}
@@ -108,7 +108,7 @@ func (mp MultiPortBuilder[T]) Build() (*MultiPortReceiver, error) {
 	return multiReceiver, nil
 }
 
-func (mp MultiPortBuilder[T]) MustBuild() *MultiPortReceiver {
+func (mp MultiPortBuilder[ComponentConfigType]) MustBuild() *MultiPortReceiver {
 	if p, err := mp.Build(); err != nil {
 		panic(err)
 	} else {

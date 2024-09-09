@@ -31,7 +31,7 @@ var (
 // functionality to idempotent functions.
 type GenericParser[T any] struct {
 	name       string
-	option     *Option[T]
+	option     *Settings[T]
 	portParser PortParser[T]
 	rbacGen    RBACRuleGenerator[T]
 }
