@@ -6,7 +6,7 @@ retract v1.51.0
 
 require (
 	dario.cat/mergo v1.0.1
-	github.com/Masterminds/semver/v3 v3.2.1
+	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buraksezer/consistent v0.10.0
 	github.com/cespare/xxhash/v2 v2.3.0
@@ -20,17 +20,17 @@ require (
 	github.com/oklog/run v1.1.0
 	github.com/open-telemetry/opamp-go v0.15.0
 	github.com/openshift/api v0.0.0-20240124164020-e2ce40831f2e
-	github.com/operator-framework/operator-lib v0.14.0
+	github.com/operator-framework/operator-lib v0.15.0
 	github.com/prometheus-operator/prometheus-operator v0.76.0
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.76.0
-	github.com/prometheus/client_golang v1.20.2
-	github.com/prometheus/common v0.55.0
-	github.com/prometheus/prometheus v0.54.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.1
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.76.1
+	github.com/prometheus/client_golang v1.20.3
+	github.com/prometheus/common v0.59.1
+	github.com/prometheus/prometheus v0.54.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
-	go.opentelemetry.io/collector/featuregate v1.13.0
+	go.opentelemetry.io/collector/featuregate v1.14.1
 	go.opentelemetry.io/otel v1.29.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.29.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.51.0

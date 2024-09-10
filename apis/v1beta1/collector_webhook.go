@@ -47,6 +47,7 @@ type CollectorWebhook struct {
 	scheme   *runtime.Scheme
 	reviewer *rbac.Reviewer
 	metrics  *Metrics
+	bv       BuildValidator
 }
 
 func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
@@ -63,9 +64,6 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 
 	if otelcol.Labels == nil {
 		otelcol.Labels = map[string]string{}
-	}
-	if otelcol.Labels["app.kubernetes.io/managed-by"] == "" {
-		otelcol.Labels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
 	}
 
 	// We can default to one because dependent objects Deployment and HorizontalPodAutoScaler
@@ -111,14 +109,17 @@ func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
 	}
 
-	warnings, err := c.validate(ctx, otelcol)
+	warnings, err := c.Validate(ctx, otelcol)
 	if err != nil {
 		return warnings, err
 	}
 	if c.metrics != nil {
 		c.metrics.create(ctx, otelcol)
 	}
-
+	if c.bv != nil {
+		newWarnings := c.bv(*otelcol)
+		warnings = append(warnings, newWarnings...)
+	}
 	return warnings, nil
 }
 
@@ -136,7 +137,7 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj run
 	if otelcolOld.Spec.Mode != otelcol.Spec.Mode {
 		return admission.Warnings{}, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support modification", otelcolOld.Spec.Mode)
 	}
-	warnings, err := c.validate(ctx, otelcol)
+	warnings, err := c.Validate(ctx, otelcol)
 	if err != nil {
 		return warnings, err
 	}
@@ -145,6 +146,10 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj run
 		c.metrics.update(ctx, otelcolOld, otelcol)
 	}
 
+	if c.bv != nil {
+		newWarnings := c.bv(*otelcol)
+		warnings = append(warnings, newWarnings...)
+	}
 	return warnings, nil
 }
 
@@ -154,7 +159,7 @@ func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object
 		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
 	}
 
-	warnings, err := c.validate(ctx, otelcol)
+	warnings, err := c.Validate(ctx, otelcol)
 	if err != nil {
 		return warnings, err
 	}
@@ -166,7 +171,7 @@ func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object
 	return warnings, nil
 }
 
-func (c CollectorWebhook) validate(ctx context.Context, r *OpenTelemetryCollector) (admission.Warnings, error) {
+func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollector) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 
 	nullObjects := r.Spec.Config.nullObjects()
@@ -378,11 +383,11 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp should be one or more")
 		}
 	}
-	if autoscaler.TargetCPUUtilization != nil && (*autoscaler.TargetCPUUtilization < int32(1) || *autoscaler.TargetCPUUtilization > int32(99)) {
-		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0 and less than 100")
+	if autoscaler.TargetCPUUtilization != nil && *autoscaler.TargetCPUUtilization < int32(1) {
+		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0")
 	}
-	if autoscaler.TargetMemoryUtilization != nil && (*autoscaler.TargetMemoryUtilization < int32(1) || *autoscaler.TargetMemoryUtilization > int32(99)) {
-		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0 and less than 100")
+	if autoscaler.TargetMemoryUtilization != nil && *autoscaler.TargetMemoryUtilization < int32(1) {
+		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0")
 	}
 
 	for _, metric := range autoscaler.Metrics {
@@ -407,14 +412,30 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	return nil
 }
 
-func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics) error {
-	cvw := &CollectorWebhook{
-		reviewer: reviewer,
-		logger:   mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"),
-		scheme:   mgr.GetScheme(),
+// BuildValidator enables running the manifest generators for the collector reconciler
+// +kubebuilder:object:generate=false
+type BuildValidator func(c OpenTelemetryCollector) admission.Warnings
+
+func NewCollectorWebhook(
+	logger logr.Logger,
+	scheme *runtime.Scheme,
+	cfg config.Config,
+	reviewer *rbac.Reviewer,
+	metrics *Metrics,
+	bv BuildValidator,
+) *CollectorWebhook {
+	return &CollectorWebhook{
+		logger:   logger,
+		scheme:   scheme,
 		cfg:      cfg,
+		reviewer: reviewer,
 		metrics:  metrics,
+		bv:       bv,
 	}
+}
+
+func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator) error {
+	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, metrics, bv)
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&OpenTelemetryCollector{}).
 		WithValidator(cvw).

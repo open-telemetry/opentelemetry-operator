@@ -109,13 +109,13 @@ spec:
             - targets: [ '0.0.0.0:8888' ]
 
     exporters:
-      logging: {}
+      debug: {}
 
     service:
       pipelines:
         metrics:
           receivers: [prometheus]
-          exporters: [logging]
+          exporters: [debug]
 ```
 
 In essence, Prometheus Receiver configs are overridden with a `http_sd_config` directive that points to the

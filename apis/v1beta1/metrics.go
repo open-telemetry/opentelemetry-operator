@@ -121,13 +121,8 @@ func NewMetrics(prv metric.MeterProvider, ctx context.Context, cl client.Reader)
 
 // Init metrics from the first time the operator starts.
 func (m *Metrics) init(ctx context.Context, cl client.Reader) error {
-	opts := []client.ListOption{
-		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		}),
-	}
 	list := &OpenTelemetryCollectorList{}
-	if err := cl.List(ctx, list, opts...); err != nil {
+	if err := cl.List(ctx, list); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
 

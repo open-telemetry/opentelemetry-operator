@@ -80,12 +80,12 @@ func TestBuildCollector(t *testing.T) {
   examplereceiver:
     endpoint: "0.0.0.0:12345"
 exporters:
-  logging:
+  debug:
 service:
   pipelines:
     metrics:
       receivers: [examplereceiver]
-      exporters: [logging]
+      exporters: [debug]
 `
 
 	goodConfig := v1beta1.Config{}
@@ -155,7 +155,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
+									"opentelemetry-operator-config/sha256": "2d266e55025628659355f1271b689d6fb53648ef6cd5595831f5835d18e59a25",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -273,7 +273,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
-						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - logging\n      receivers:\n        - examplereceiver\n",
+						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  debug: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - debug\n      receivers:\n        - examplereceiver\n",
 					},
 				},
 				&corev1.ServiceAccount{
@@ -433,7 +433,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
+									"opentelemetry-operator-config/sha256": "2d266e55025628659355f1271b689d6fb53648ef6cd5595831f5835d18e59a25",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -551,7 +551,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
-						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - logging\n      receivers:\n        - examplereceiver\n",
+						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  debug: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - debug\n      receivers:\n        - examplereceiver\n",
 					},
 				},
 				&corev1.ServiceAccount{
@@ -747,7 +747,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "6f6f11da374b2c1e42fc78fbe55e2d9bcc2f5998ab63a631b49c478e8c0f6af8",
+									"opentelemetry-operator-config/sha256": "2d266e55025628659355f1271b689d6fb53648ef6cd5595831f5835d18e59a25",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -865,7 +865,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
-						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  logging: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - logging\n      receivers:\n        - examplereceiver\n",
+						"collector.yaml": "receivers:\n  examplereceiver:\n    endpoint: 0.0.0.0:12345\nexporters:\n  debug: null\nservice:\n  pipelines:\n    metrics:\n      exporters:\n        - debug\n      receivers:\n        - examplereceiver\n",
 					},
 				},
 				&corev1.Service{
@@ -1013,7 +1013,7 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 							v1alpha1.OpAMPBridgeCapabilityReportsHealth:                  true,
 							v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig:            true,
 						},
-						ComponentsAllowed: map[string][]string{"receivers": {"otlp"}, "processors": {"memory_limiter"}, "exporters": {"logging"}},
+						ComponentsAllowed: map[string][]string{"receivers": {"otlp"}, "processors": {"memory_limiter"}, "exporters": {"debug"}},
 					},
 				},
 			},
@@ -1032,7 +1032,7 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-opampbridge-config/hash": "bd5cfc0df684966e25597a2847d5a3bae2c2b037d8bf10e7ea402ebe4d41c9f0",
+							"opentelemetry-opampbridge-config/hash": "05e1dc681267a9bc28fc2877ab464a98b9bd043843f14ffc0b4a394b5c86ba9f",
 						},
 					},
 					Spec: appsv1.DeploymentSpec{
@@ -1128,7 +1128,7 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
   ReportsStatus: true
 componentsAllowed:
   exporters:
-  - logging
+  - debug
   processors:
   - memory_limiter
   receivers:
@@ -1221,12 +1221,12 @@ receivers:
           target_label: 'job'
           replacement: '$$1_$2'
 exporters:
-  logging:
+  debug:
 service:
   pipelines:
     metrics:
       receivers: [prometheus]
-      exporters: [logging]
+      exporters: [debug]
 `
 
 	goodConfig := v1beta1.Config{}
@@ -1307,7 +1307,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
+									"opentelemetry-operator-config/sha256": "42773025f65feaf30df59a306a9e38f1aaabe94c8310983beaddb7f648d699b0",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -1425,7 +1425,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
-						"collector.yaml": "exporters:\n    logging: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator.test.svc.cluster.local:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - logging\n            receivers:\n                - prometheus\n",
+						"collector.yaml": "exporters:\n    debug: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - debug\n            receivers:\n                - prometheus\n",
 					},
 				},
 				&corev1.ServiceAccount{
@@ -1764,7 +1764,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
+									"opentelemetry-operator-config/sha256": "42773025f65feaf30df59a306a9e38f1aaabe94c8310983beaddb7f648d699b0",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -1882,7 +1882,7 @@ prometheus_cr:
 						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
-						"collector.yaml": "exporters:\n    logging: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator.test.svc.cluster.local:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - logging\n            receivers:\n                - prometheus\n",
+						"collector.yaml": "exporters:\n    debug: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: http://test-targetallocator:80\n            interval: 30s\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - debug\n            receivers:\n                - prometheus\n",
 					},
 				},
 				&corev1.ServiceAccount{
