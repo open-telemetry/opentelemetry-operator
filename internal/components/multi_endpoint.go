@@ -103,7 +103,7 @@ func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, err
 		if err != nil {
 			return nil, err
 		}
-		multiReceiver.portMappings[built.name] = built.option.GetServicePort()
+		multiReceiver.portMappings[built.name] = built.settings.GetServicePort()
 	}
 	return multiReceiver, nil
 }

@@ -108,7 +108,7 @@ func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigTyp
 	o := NewEmptySettings[ComponentConfigType]()
 	o.Apply(b...)
 	if len(o.name) == 0 {
-		return nil, fmt.Errorf("invalid option struct, no name specified")
+		return nil, fmt.Errorf("invalid settings struct, no name specified")
 	}
 	return &GenericParser[ComponentConfigType]{name: o.name, portParser: o.portParser, rbacGen: o.rbacGen, option: o}, nil
 }
