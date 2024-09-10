@@ -45,7 +45,7 @@ var (
 		"operator.targetallocator.mtls",
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("enables mTLS between the target allocator and the collector"),
-		featuregate.WithRegisterFromVersion("v0.108.0"),
+		featuregate.WithRegisterFromVersion("v0.109.0"),
 	)
 )
 
