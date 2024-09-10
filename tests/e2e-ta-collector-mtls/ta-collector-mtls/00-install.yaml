@@ -132,8 +132,6 @@ kind: OpenTelemetryCollector
 metadata:
   name: prometheus-cr
 spec:
-  # Can be removed once operator is updated to use opentelemetry-collector-contrib:0.108.0
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.108.0
   config: |
     receivers:
       prometheus:
