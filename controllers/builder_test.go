@@ -152,7 +152,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "2d266e55025628659355f1271b689d6fb53648ef6cd5595831f5835d18e59a25",
+									"opentelemetry-operator-config/sha256": "0e4f000d343bffbb2720617c6f76215a5cbb53ade9032e29372bdf7f22b52225",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -430,7 +430,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "2d266e55025628659355f1271b689d6fb53648ef6cd5595831f5835d18e59a25",
+									"opentelemetry-operator-config/sha256": "0e4f000d343bffbb2720617c6f76215a5cbb53ade9032e29372bdf7f22b52225",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -744,7 +744,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "2d266e55025628659355f1271b689d6fb53648ef6cd5595831f5835d18e59a25",
+									"opentelemetry-operator-config/sha256": "0e4f000d343bffbb2720617c6f76215a5cbb53ade9032e29372bdf7f22b52225",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -1303,7 +1303,7 @@ service:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "42773025f65feaf30df59a306a9e38f1aaabe94c8310983beaddb7f648d699b0",
+									"opentelemetry-operator-config/sha256": "451c0c2de4a1081f7c4c636174a00b45a0df08a75968f657bcfa06b8fd98e0c6",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -1760,7 +1760,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "42773025f65feaf30df59a306a9e38f1aaabe94c8310983beaddb7f648d699b0",
+									"opentelemetry-operator-config/sha256": "451c0c2de4a1081f7c4c636174a00b45a0df08a75968f657bcfa06b8fd98e0c6",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",

@@ -546,3 +546,70 @@ func TestConfig_GetExporterPorts(t *testing.T) {
 		})
 	}
 }
+
+func TestAnyConfig_MarshalJSON(t *testing.T) {
+	tests := []struct {
+		name    string
+		config  AnyConfig
+		want    string
+		wantErr bool
+	}{
+		{
+			name:   "nil Object",
+			config: AnyConfig{},
+			want:   "{}",
+		},
+		{
+			name: "empty Object",
+			config: AnyConfig{
+				Object: map[string]interface{}{},
+			},
+			want: "{}",
+		},
+		{
+			name: "Object with nil value",
+			config: AnyConfig{
+				Object: map[string]interface{}{
+					"key": nil,
+				},
+			},
+			want: `{"key":null}`,
+		},
+		{
+			name: "Object with empty map value",
+			config: AnyConfig{
+				Object: map[string]interface{}{
+					"key": map[string]interface{}{},
+				},
+			},
+			want: `{"key":{}}`,
+		},
+		{
+			name: "Object with non-empty values",
+			config: AnyConfig{
+				Object: map[string]interface{}{
+					"string": "value",
+					"number": 42,
+					"bool":   true,
+					"map": map[string]interface{}{
+						"nested": "data",
+					},
+				},
+			},
+			want: `{"bool":true,"map":{"nested":"data"},"number":42,"string":"value"}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.config.MarshalJSON()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AnyConfig.MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if string(got) != tt.want {
+				t.Errorf("AnyConfig.MarshalJSON() = %v, want %v", string(got), tt.want)
+			}
+		})
+	}
+}

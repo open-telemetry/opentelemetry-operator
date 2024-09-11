@@ -15,6 +15,8 @@
 package v1beta1
 
 import (
+	"encoding/json"
+
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,6 +53,21 @@ type OpenTelemetryCollector struct {
 
 // Hub exists to allow for conversion.
 func (*OpenTelemetryCollector) Hub() {}
+
+func (o *OpenTelemetryCollector) MarshalJSON() ([]byte, error) {
+	type Alias OpenTelemetryCollector
+	specJSON, err := json.Marshal(&o.Spec)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(&struct {
+		*Alias
+		Spec json.RawMessage `json:"spec,omitempty"`
+	}{
+		Alias: (*Alias)(o),
+		Spec:  specJSON,
+	})
+}
 
 //+kubebuilder:object:root=true
 
@@ -141,6 +158,21 @@ type OpenTelemetryCollectorSpec struct {
 	// This is only applicable to Deployment mode.
 	// +optional
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
+}
+
+func (s *OpenTelemetryCollectorSpec) MarshalJSON() ([]byte, error) {
+	type Alias OpenTelemetryCollectorSpec
+	configJSON, err := json.Marshal(s.Config)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(&struct {
+		*Alias
+		Config json.RawMessage `json:"config,omitempty"`
+	}{
+		Alias:  (*Alias)(s),
+		Config: configJSON,
+	})
 }
 
 // TargetAllocatorEmbedded defines the configuration for the Prometheus target allocator, embedded in the

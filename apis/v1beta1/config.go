@@ -86,11 +86,24 @@ func (c *AnyConfig) UnmarshalJSON(b []byte) error {
 }
 
 // MarshalJSON specifies how to convert this object into JSON.
-func (c *AnyConfig) MarshalJSON() ([]byte, error) {
-	if c == nil {
+func (c AnyConfig) MarshalJSON() ([]byte, error) {
+	if c.Object == nil {
 		return []byte("{}"), nil
 	}
-	return json.Marshal(c.Object)
+
+	nonNilMap := make(map[string]interface{})
+
+	for k, v := range c.Object {
+		if v == nil {
+			nonNilMap[k] = nil
+		} else if emptyMap, ok := v.(map[string]interface{}); ok && len(emptyMap) == 0 {
+			nonNilMap[k] = emptyMap
+		} else {
+			nonNilMap[k] = v
+		}
+	}
+
+	return json.Marshal(nonNilMap)
 }
 
 // Pipeline is a struct of component type to a list of component IDs.
@@ -196,6 +209,21 @@ func (c *Config) Yaml() (string, error) {
 		return "", err
 	}
 	return buf.String(), nil
+}
+
+func (c Config) MarshalJSON() ([]byte, error) {
+	type Alias Config
+	receiversJSON, err := json.Marshal(c.Receivers)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(&struct {
+		*Alias
+		Receivers json.RawMessage `json:"receivers,omitempty"`
+	}{
+		Alias:     (*Alias)(&c),
+		Receivers: receiversJSON,
+	})
 }
 
 // Returns null objects in the config.
