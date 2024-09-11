@@ -36,9 +36,9 @@ type InstrumentationSpec struct {
 	// +optional
 	Propagators []Propagator `json:"propagators,omitempty"`
 
-	// Sampler defines sampling configuration.
+	// SamplerConfig defines sampling configuration.
 	// +optional
-	Sampler `json:"sampler,omitempty"`
+	SamplerConfig `json:"sampler,omitempty"`
 
 	// Env defines common env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
@@ -98,8 +98,8 @@ type Exporter struct {
 	Endpoint string `json:"endpoint,omitempty"`
 }
 
-// Sampler defines sampling configuration.
-type Sampler struct {
+// SamplerConfig defines sampling configuration.
+type SamplerConfig struct {
 	// Type defines sampler type.
 	// The value will be set in the OTEL_TRACES_SAMPLER env var.
 	// The value can be for instance parentbased_always_on, parentbased_always_off, parentbased_traceidratio...

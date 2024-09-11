@@ -176,7 +176,7 @@ Enum=tracecontext;baggage;b3;b3multi;jaeger;xray;ottrace;none<br/>
         <td><b><a href="#instrumentationspecsampler">sampler</a></b></td>
         <td>object</td>
         <td>
-          Sampler defines sampling configuration.<br/>
+          SamplerConfig defines sampling configuration.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4016,7 +4016,7 @@ For example environment: dev<br/>
 
 
 
-Sampler defines sampling configuration.
+SamplerConfig defines sampling configuration.
 
 <table>
     <thead>

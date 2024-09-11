@@ -63,7 +63,7 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 			name: "sampler configuration not present",
 			inst: Instrumentation{
 				Spec: InstrumentationSpec{
-					Sampler: Sampler{},
+					SamplerConfig: SamplerConfig{},
 				},
 			},
 			warnings: []string{"sampler type not set"},
@@ -73,7 +73,7 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 			err:  "spec.sampler.argument is not a number",
 			inst: Instrumentation{
 				Spec: InstrumentationSpec{
-					Sampler: Sampler{
+					SamplerConfig: SamplerConfig{
 						Type:     ParentBasedTraceIDRatio,
 						Argument: "abc",
 					},
@@ -85,7 +85,7 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 			err:  "spec.sampler.argument should be in rage [0..1]",
 			inst: Instrumentation{
 				Spec: InstrumentationSpec{
-					Sampler: Sampler{
+					SamplerConfig: SamplerConfig{
 						Type:     ParentBasedTraceIDRatio,
 						Argument: "1.99",
 					},
@@ -96,7 +96,7 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 			name: "argument is a number",
 			inst: Instrumentation{
 				Spec: InstrumentationSpec{
-					Sampler: Sampler{
+					SamplerConfig: SamplerConfig{
 						Type:     ParentBasedTraceIDRatio,
 						Argument: "0.99",
 					},
@@ -107,7 +107,7 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 			name: "argument is missing",
 			inst: Instrumentation{
 				Spec: InstrumentationSpec{
-					Sampler: Sampler{
+					SamplerConfig: SamplerConfig{
 						Type: ParentBasedTraceIDRatio,
 					},
 				},
@@ -172,7 +172,7 @@ func TestInstrumentationJaegerRemote(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				inst := Instrumentation{
 					Spec: InstrumentationSpec{
-						Sampler: Sampler{
+						SamplerConfig: SamplerConfig{
 							Type:     sampler,
 							Argument: test.arg,
 						},
