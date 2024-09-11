@@ -451,11 +451,11 @@ func chooseServiceName(pod corev1.Pod, useLabelsForResourceAttributes bool, reso
 // 1. annotation with key resource.opentelemetry.io/<resource>.
 // 2. label with key labelKey.
 func chooseLabelOrAnnotation(pod corev1.Pod, useLabelsForResourceAttributes bool, resource attribute.Key, labelKey string) string {
-	if v := pod.Annotations[(constants.ResourceAttributeAnnotationPrefix + string(resource))]; v != "" {
+	if v := pod.GetAnnotations()[(constants.ResourceAttributeAnnotationPrefix + string(resource))]; v != "" {
 		return v
 	}
 	if useLabelsForResourceAttributes {
-		if v := pod.Labels[labelKey]; v != "" {
+		if v := pod.GetLabels()[labelKey]; v != "" {
 			return v
 		}
 	}
@@ -545,7 +545,7 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	}
 
 	// attributes and labels from the pod have the highest precedence (except for values set in environment variables)
-	for k, v := range pod.Annotations {
+	for k, v := range pod.GetAnnotations() {
 		if strings.HasPrefix(k, constants.ResourceAttributeAnnotationPrefix) {
 			key := strings.TrimPrefix(k, constants.ResourceAttributeAnnotationPrefix)
 			if !existingRes[key] && key != string(semconv.ServiceNameKey) {
