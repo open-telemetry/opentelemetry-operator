@@ -125,9 +125,9 @@ func isInstrWithoutContainers(inst instrumentationWithContainers) int {
 }
 
 func instrVolume(volume corev1.Volume, name string, volumeSizeLimit *resource.Quantity) (corev1.Volume, error) {
-	if reflect.ValueOf(volume).IsValid() && volumeSizeLimit != nil {
+	if !reflect.ValueOf(volume).IsZero() && volumeSizeLimit != nil {
 		return volume, fmt.Errorf("both Volume and VolumeSizeLimit cannot be defined simultaneously")
-	} else if reflect.ValueOf(volume).IsValid() {
+	} else if !reflect.ValueOf(volume).IsZero() {
 		return volume, nil
 	}
 
