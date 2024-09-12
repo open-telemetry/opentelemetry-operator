@@ -16,6 +16,7 @@ package instrumentation
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -121,6 +122,22 @@ func isInstrWithoutContainers(inst instrumentationWithContainers) int {
 	}
 
 	return 0
+}
+
+func instrVolume(volume corev1.Volume, name string, volumeSizeLimit *resource.Quantity) (corev1.Volume, error) {
+	if reflect.ValueOf(volume).IsValid() && volumeSizeLimit != nil {
+		return volume, fmt.Errorf("both Volume and VolumeSizeLimit cannot be defined simultaneously")
+	} else if reflect.ValueOf(volume).IsValid() {
+		return volume, nil
+	}
+
+	return corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{
+				SizeLimit: volumeSize(volumeSizeLimit),
+			},
+		}}, nil
 }
 
 func volumeSize(quantity *resource.Quantity) *resource.Quantity {

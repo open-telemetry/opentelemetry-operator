@@ -64,6 +64,8 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[index]
 
+	volume, _ := instrVolume(apacheSpec.Volume, apacheAgentVolume, apacheSpec.VolumeSizeLimit)
+
 	// inject env vars
 	for _, env := range apacheSpec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
@@ -135,14 +137,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 	// Copy OTEL module to a shared volume
 	if isApacheInitContainerMissing(pod, apacheAgentInitContainerName) {
 		// Inject volume for agent
-		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: apacheAgentVolume,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{
-					SizeLimit: volumeSize(apacheSpec.VolumeSizeLimit),
-				},
-			}})
-
+		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:    apacheAgentInitContainerName,
 			Image:   apacheSpec.Image,
