@@ -20,6 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
@@ -184,6 +185,94 @@ func TestDuplicatedContainers(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ok := findDuplicatedContainers(test.containers)
 			assert.Equal(t, test.expectedDuplicates, ok)
+		})
+	}
+}
+
+func TestInstrVolume(t *testing.T) {
+	tests := []struct {
+		name            string
+		volume          corev1.Volume
+		volumeName      string
+		volumeSizeLimit *resource.Quantity
+		expected        corev1.Volume
+		err             error
+	}{
+		{
+			name: "With volume",
+			volume: corev1.Volume{
+				Name: "vol1",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: &resource.Quantity{},
+					},
+				}},
+			volumeName:      "default-vol",
+			volumeSizeLimit: nil,
+			expected: corev1.Volume{
+				Name: "vol1",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: &resource.Quantity{},
+					},
+				}},
+			err: nil,
+		},
+		{
+			name:            "With volume size limit",
+			volume:          corev1.Volume{},
+			volumeName:      "default-vol",
+			volumeSizeLimit: &defaultVolumeLimitSize,
+			expected: corev1.Volume{
+				Name: "default-vol",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: &defaultVolumeLimitSize,
+					},
+				}},
+			err: nil,
+		},
+		{
+			name:            "No volume or size limit",
+			volume:          corev1.Volume{},
+			volumeName:      "default-vol",
+			volumeSizeLimit: nil,
+			expected: corev1.Volume{
+				Name: "default-vol",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: &defaultSize,
+					},
+				}},
+			err: nil,
+		},
+		{
+			name: "With volume and size limit",
+			volume: corev1.Volume{
+				Name: "vol1",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: &resource.Quantity{},
+					},
+				}},
+			volumeName:      "default-vol",
+			volumeSizeLimit: &defaultVolumeLimitSize,
+			expected: corev1.Volume{
+				Name: "vol1",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: &resource.Quantity{},
+					},
+				}},
+			err: fmt.Errorf("both Volume and VolumeSizeLimit cannot be defined simultaneously"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res, err := instrVolume(test.volume, test.volumeName, test.volumeSizeLimit)
+			assert.Equal(t, test.expected, res)
+			assert.Equal(t, test.err, err)
 		})
 	}
 }
