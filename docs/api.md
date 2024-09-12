@@ -247,6 +247,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>volume</b></td>
+        <td>[Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core)</td>
+        <td>
+          Volume defines the volume used for auto-instrumentation. Cannot be used with <b>volumeLimitSize</b>.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
@@ -924,6 +931,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td>object</td>
         <td>
           Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volume</b></td>
+        <td>[Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core)</td>
+        <td>
+          Volume defines the volume used for auto-instrumentation. Cannot be used with <b>volumeLimitSize</b>.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1637,6 +1651,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>volume</b></td>
+        <td>[Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core)</td>
+        <td>
+          Volume defines the volume used for auto-instrumentation. Cannot be used with <b>volumeLimitSize</b>.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
@@ -2052,6 +2073,13 @@ All extensions are copied to a single directory; if a JAR with the same name exi
         <td>object</td>
         <td>
           Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volume</b></td>
+        <td>[Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core)</td>
+        <td>
+          Volume defines the volume used for auto-instrumentation. Cannot be used with <b>volumeLimitSize</b>.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2513,6 +2541,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td>object</td>
         <td>
           Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volume</b></td>
+        <td>[Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core)</td>
+        <td>
+          Volume defines the volume used for auto-instrumentation. Cannot be used with <b>volumeLimitSize</b>.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3196,6 +3231,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>volume</b></td>
+        <td>[Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core)</td>
+        <td>
+          Volume defines the volume used for auto-instrumentation. Cannot be used with <b>volumeLimitSize</b>.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
@@ -3603,6 +3645,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td>object</td>
         <td>
           Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volume</b></td>
+        <td>[Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core)</td>
+        <td>
+          Volume defines the volume used for auto-instrumentation. Cannot be used with <b>volumeLimitSize</b>.<br/>
         </td>
         <td>false</td>
       </tr><tr>
