@@ -60,6 +60,11 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 		return pod, err
 	}
 
+	volume, err := instrVolume(dotNetSpec.Volume, dotnetVolumeName, dotNetSpec.VolumeSizeLimit)
+	if err != nil {
+		return pod, err
+	}
+
 	// check if OTEL_DOTNET_AUTO_HOME env var is already set in the container
 	// if it is already set, then we assume that .NET Auto-instrumentation is already configured for this container
 	if getIndexOfEnv(container.Env, envDotNetOTelAutoHome) > -1 {
@@ -110,27 +115,20 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 	setDotNetEnvVar(container, envDotNetSharedStore, dotNetSharedStorePath, concatEnvValues)
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-		Name:      dotnetVolumeName,
+		Name:      volume.Name,
 		MountPath: dotnetInstrMountPath,
 	})
 
 	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod, dotnetInitContainerName) {
-		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: dotnetVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{
-					SizeLimit: volumeSize(dotNetSpec.VolumeSizeLimit),
-				},
-			}})
-
+		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      dotnetInitContainerName,
 			Image:     dotNetSpec.Image,
 			Command:   []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
 			Resources: dotNetSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
-				Name:      dotnetVolumeName,
+				Name:      volume.Name,
 				MountPath: dotnetInstrMountPath,
 			}},
 		})

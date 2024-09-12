@@ -37,6 +37,11 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (cor
 		return pod, err
 	}
 
+	volume, err := instrVolume(nodeJSSpec.Volume, nodejsVolumeName, nodeJSSpec.VolumeSizeLimit)
+	if err != nil {
+		return pod, err
+	}
+
 	// inject NodeJS instrumentation spec env vars.
 	for _, env := range nodeJSSpec.Env {
 		idx := getIndexOfEnv(container.Env, env.Name)
@@ -56,27 +61,20 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (cor
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-		Name:      nodejsVolumeName,
+		Name:      volume.Name,
 		MountPath: nodejsInstrMountPath,
 	})
 
 	// We just inject Volumes and init containers for the first processed container
 	if isInitContainerMissing(pod, nodejsInitContainerName) {
-		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: nodejsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{
-					SizeLimit: volumeSize(nodeJSSpec.VolumeSizeLimit),
-				},
-			}})
-
+		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      nodejsInitContainerName,
 			Image:     nodeJSSpec.Image,
 			Command:   []string{"cp", "-r", "/autoinstrumentation/.", nodejsInstrMountPath},
 			Resources: nodeJSSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
-				Name:      nodejsVolumeName,
+				Name:      volume.Name,
 				MountPath: nodejsInstrMountPath,
 			}},
 		})

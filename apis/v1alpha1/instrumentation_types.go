@@ -120,6 +120,10 @@ type Java struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
+	// Volume defines the volume used for auto-instrumentation.
+	// The default volume is an emptyDir with size limit VolumeSizeLimit
+	Volume corev1.Volume `json:"volume,omitempty"`
+
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
@@ -154,6 +158,10 @@ type NodeJS struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
+	// Volume defines the volume used for auto-instrumentation.
+	// The default volume is an emptyDir with size limit VolumeSizeLimit
+	Volume corev1.Volume `json:"volume,omitempty"`
+
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
@@ -174,6 +182,10 @@ type Python struct {
 	// Image is a container image with Python SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// Volume defines the volume used for auto-instrumentation.
+	// The default volume is an emptyDir with size limit VolumeSizeLimit
+	Volume corev1.Volume `json:"volume,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
@@ -196,6 +208,10 @@ type DotNet struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
+	// Volume defines the volume used for auto-instrumentation.
+	// The default volume is an emptyDir with size limit VolumeSizeLimit
+	Volume corev1.Volume `json:"volume,omitempty"`
+
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
@@ -214,6 +230,10 @@ type Go struct {
 	// Image is a container image with Go SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// Volume defines the volume used for auto-instrumentation.
+	// The default volume is an emptyDir with size limit VolumeSizeLimit
+	Volume corev1.Volume `json:"volume,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
@@ -235,6 +255,10 @@ type ApacheHttpd struct {
 	// Image is a container image with Apache SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// Volume defines the volume used for auto-instrumentation.
+	// The default volume is an emptyDir with size limit VolumeSizeLimit
+	Volume corev1.Volume `json:"volume,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
@@ -271,6 +295,10 @@ type Nginx struct {
 	// Image is a container image with Nginx SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// Volume defines the volume used for auto-instrumentation.
+	// The default volume is an emptyDir with size limit VolumeSizeLimit
+	Volume corev1.Volume `json:"volume,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
