@@ -15,9 +15,13 @@
 package v1beta1
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -26,10 +30,215 @@ import (
 	"github.com/stretchr/testify/require"
 	go_yaml "gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/yaml"
 )
+
+func TestCreateConfigInKubernetesEmptyValues(t *testing.T) {
+	testScheme := scheme.Scheme
+	err := AddToScheme(testScheme)
+	require.NoError(t, err)
+
+	testEnv := &envtest.Environment{
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
+	}
+
+	cfg, err := testEnv.Start()
+	require.NoError(t, err)
+	defer func() {
+		errStop := testEnv.Stop()
+		require.NoError(t, errStop)
+	}()
+
+	k8sClient, err := client.New(cfg, client.Options{Scheme: testScheme})
+	if err != nil {
+		fmt.Printf("failed to setup a Kubernetes client: %v", err)
+		os.Exit(1)
+	}
+
+	newCollector := &OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-collector",
+			Namespace: "default",
+		},
+		Spec: OpenTelemetryCollectorSpec{
+			UpgradeStrategy: UpgradeStrategyNone,
+			Config: Config{
+				Exporters: AnyConfig{
+					Object: map[string]interface{}{
+						"logging": map[string]interface{}{},
+					},
+				},
+				Receivers: AnyConfig{
+					Object: map[string]interface{}{
+						"otlp": map[string]interface{}{
+							"protocols": map[string]interface{}{
+								"grpc": map[string]interface{}{},
+								"http": map[string]interface{}{},
+							},
+						},
+					},
+				},
+				Service: Service{
+					Pipelines: map[string]*Pipeline{
+						"traces": {
+							Receivers: []string{"otlp"},
+							Exporters: []string{"logging"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err = k8sClient.Create(context.TODO(), newCollector)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Fetch the created OpenTelemetryCollector
+	otelCollector := &OpenTelemetryCollector{}
+	err = k8sClient.Get(context.TODO(), types.NamespacedName{
+		Name:      "my-collector",
+		Namespace: "default",
+	}, otelCollector)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	jsonData, err := json.Marshal(otelCollector.Spec)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	require.Contains(t, string(jsonData), "{\"grpc\":{},\"http\":{}}")
+
+	unmarshalledCollector := &OpenTelemetryCollector{}
+	err = json.Unmarshal(jsonData, &unmarshalledCollector.Spec)
+	require.NoError(t, err)
+
+	require.NotNil(t, unmarshalledCollector.Spec.Config.Receivers.Object["otlp"])
+
+	otlpReceiver, ok := unmarshalledCollector.Spec.Config.Receivers.Object["otlp"].(map[string]interface{})
+	require.True(t, ok, "otlp receiver should be a map")
+	protocols, ok := otlpReceiver["protocols"].(map[string]interface{})
+	require.True(t, ok, "protocols should be a map")
+
+	grpc, ok := protocols["grpc"]
+	require.True(t, ok, "grpc protocol should exist")
+	require.NotNil(t, grpc, "grpc protocol should be nil")
+
+	http, ok := protocols["http"]
+	require.True(t, ok, "http protocol should exist")
+	require.NotNil(t, http, "http protocol should be nil")
+}
+
+func TestCreateConfigInKubernetesNullValues(t *testing.T) {
+	testScheme := scheme.Scheme
+	err := AddToScheme(testScheme)
+	require.NoError(t, err)
+
+	testEnv := &envtest.Environment{
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
+	}
+
+	cfg, err := testEnv.Start()
+	require.NoError(t, err)
+	defer func() {
+		errStop := testEnv.Stop()
+		require.NoError(t, errStop)
+	}()
+
+	k8sClient, err := client.New(cfg, client.Options{Scheme: testScheme})
+	if err != nil {
+		fmt.Printf("failed to setup a Kubernetes client: %v", err)
+		os.Exit(1)
+	}
+
+	newCollector := &OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-collector",
+			Namespace: "default",
+		},
+		Spec: OpenTelemetryCollectorSpec{
+			UpgradeStrategy: UpgradeStrategyNone,
+			Config: Config{
+				Exporters: AnyConfig{
+					Object: map[string]interface{}{
+						"logging": map[string]interface{}{},
+					},
+				},
+				Receivers: AnyConfig{
+					Object: map[string]interface{}{
+						"otlp": map[string]interface{}{
+							"protocols": map[string]interface{}{
+								"grpc": nil,
+								"http": nil,
+							},
+						},
+					},
+				},
+				Service: Service{
+					Pipelines: map[string]*Pipeline{
+						"traces": {
+							Receivers: []string{"otlp"},
+							Exporters: []string{"logging"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err = k8sClient.Create(context.TODO(), newCollector)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Fetch the created OpenTelemetryCollector
+	otelCollector := &OpenTelemetryCollector{}
+	err = k8sClient.Get(context.TODO(), types.NamespacedName{
+		Name:      "my-collector",
+		Namespace: "default",
+	}, otelCollector)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	jsonData, err := json.Marshal(otelCollector.Spec)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	require.Contains(t, string(jsonData), "{\"grpc\":null,\"http\":null")
+
+	unmarshalledCollector := &OpenTelemetryCollector{}
+	err = json.Unmarshal(jsonData, &unmarshalledCollector.Spec)
+	require.NoError(t, err)
+
+	require.NotNil(t, unmarshalledCollector.Spec.Config.Receivers.Object["otlp"])
+
+	otlpReceiver, ok := unmarshalledCollector.Spec.Config.Receivers.Object["otlp"].(map[string]interface{})
+	require.True(t, ok, "otlp receiver should be a map")
+	protocols, ok := otlpReceiver["protocols"].(map[string]interface{})
+	require.True(t, ok, "protocols should be a map")
+
+	grpc, ok := protocols["grpc"]
+	require.True(t, ok, "grpc protocol should exist")
+	require.Nil(t, grpc, "grpc protocol should be nil")
+
+	http, ok := protocols["http"]
+	require.True(t, ok, "http protocol should exist")
+	require.Nil(t, http, "http protocol should be nil")
+}
 
 func TestConfigFiles(t *testing.T) {
 	files, err := os.ReadDir("./testdata")
@@ -543,6 +752,73 @@ func TestConfig_GetExporterPorts(t *testing.T) {
 			}
 			require.NoError(t, err)
 			assert.ElementsMatchf(t, tt.want, ports, "GetReceiverPorts()")
+		})
+	}
+}
+
+func TestAnyConfig_MarshalJSON(t *testing.T) {
+	tests := []struct {
+		name    string
+		config  AnyConfig
+		want    string
+		wantErr bool
+	}{
+		{
+			name:   "nil Object",
+			config: AnyConfig{},
+			want:   "{}",
+		},
+		{
+			name: "empty Object",
+			config: AnyConfig{
+				Object: map[string]interface{}{},
+			},
+			want: "{}",
+		},
+		{
+			name: "Object with nil value",
+			config: AnyConfig{
+				Object: map[string]interface{}{
+					"key": nil,
+				},
+			},
+			want: `{"key":null}`,
+		},
+		{
+			name: "Object with empty map value",
+			config: AnyConfig{
+				Object: map[string]interface{}{
+					"key": map[string]interface{}{},
+				},
+			},
+			want: `{"key":{}}`,
+		},
+		{
+			name: "Object with non-empty values",
+			config: AnyConfig{
+				Object: map[string]interface{}{
+					"string": "value",
+					"number": 42,
+					"bool":   true,
+					"map": map[string]interface{}{
+						"nested": "data",
+					},
+				},
+			},
+			want: `{"bool":true,"map":{"nested":"data"},"number":42,"string":"value"}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.config.MarshalJSON()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AnyConfig.MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if string(got) != tt.want {
+				t.Errorf("AnyConfig.MarshalJSON() = %v, want %v", string(got), tt.want)
+			}
 		})
 	}
 }
