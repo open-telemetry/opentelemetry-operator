@@ -124,20 +124,19 @@ func isInstrWithoutContainers(inst instrumentationWithContainers) int {
 	return 0
 }
 
-func instrVolume(volume corev1.Volume, name string, volumeSizeLimit *resource.Quantity) (corev1.Volume, error) {
-	if !reflect.ValueOf(volume).IsZero() && volumeSizeLimit != nil {
-		return volume, fmt.Errorf("both Volume and VolumeSizeLimit cannot be defined simultaneously")
-	} else if !reflect.ValueOf(volume).IsZero() {
-		return volume, nil
+// Return volume if defined, otherwise return emptyDir with given name and size limit.
+func instrVolume(volume corev1.Volume, name string, quantity *resource.Quantity) corev1.Volume {
+	if !reflect.ValueOf(volume).IsZero() {
+		return volume
 	}
 
 	return corev1.Volume{
 		Name: name,
 		VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{
-				SizeLimit: volumeSize(volumeSizeLimit),
+				SizeLimit: volumeSize(quantity),
 			},
-		}}, nil
+		}}
 }
 
 func volumeSize(quantity *resource.Quantity) *resource.Quantity {

@@ -17,6 +17,7 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -236,6 +237,37 @@ func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings
 	default:
 		return warnings, fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Sampler.Type)
 	}
+
+	var err error
+	err = validateInstrVolume(r.Spec.ApacheHttpd.Volume, r.Spec.ApacheHttpd.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.apachehttpd.volume and spec.apachehttpd.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.DotNet.Volume, r.Spec.DotNet.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.dotnet.volume and spec.dotnet.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.Go.Volume, r.Spec.Go.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.go.volume and spec.go.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.Java.Volume, r.Spec.Java.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.java.volume and spec.java.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.Nginx.Volume, r.Spec.Nginx.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.nginx.volume and spec.nginx.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.NodeJS.Volume, r.Spec.NodeJS.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.nodejs.volume and spec.nodejs.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.Python.Volume, r.Spec.Python.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.python.volume and spec.python.volumeSizeLimit cannot both be defined: %w", err)
+	}
+
 	return warnings, nil
 }
 
@@ -266,6 +298,13 @@ func validateJaegerRemoteSamplerArgument(argument string) error {
 				return fmt.Errorf("initialSamplingRate should be in rage [0..1]: %s", kv[1])
 			}
 		}
+	}
+	return nil
+}
+
+func validateInstrVolume(volume corev1.Volume, volumeSizeLimit *resource.Quantity) error {
+	if !reflect.ValueOf(volume).IsZero() && volumeSizeLimit != nil {
+		return fmt.Errorf("unable to resolve volume size")
 	}
 	return nil
 }

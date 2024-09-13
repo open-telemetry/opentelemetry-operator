@@ -35,15 +35,12 @@ const (
 )
 
 func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, error) {
+	volume := instrVolume(pythonSpec.Volume, pythonVolumeName, pythonSpec.VolumeSizeLimit)
+
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
 	err := validateContainerEnv(container.Env, envPythonPath)
-	if err != nil {
-		return pod, err
-	}
-
-	volume, err := instrVolume(pythonSpec.Volume, pythonVolumeName, pythonSpec.VolumeSizeLimit)
 	if err != nil {
 		return pod, err
 	}

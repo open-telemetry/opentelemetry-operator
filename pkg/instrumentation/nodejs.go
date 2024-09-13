@@ -29,15 +29,12 @@ const (
 )
 
 func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (corev1.Pod, error) {
+	volume := instrVolume(nodeJSSpec.Volume, nodejsVolumeName, nodeJSSpec.VolumeSizeLimit)
+
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
 	err := validateContainerEnv(container.Env, envNodeOptions)
-	if err != nil {
-		return pod, err
-	}
-
-	volume, err := instrVolume(nodeJSSpec.Volume, nodejsVolumeName, nodeJSSpec.VolumeSizeLimit)
 	if err != nil {
 		return pod, err
 	}

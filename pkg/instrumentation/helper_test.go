@@ -191,12 +191,11 @@ func TestDuplicatedContainers(t *testing.T) {
 
 func TestInstrVolume(t *testing.T) {
 	tests := []struct {
-		name            string
-		volume          corev1.Volume
-		volumeName      string
-		volumeSizeLimit *resource.Quantity
-		expected        corev1.Volume
-		err             error
+		name       string
+		volume     corev1.Volume
+		volumeName string
+		quantity   *resource.Quantity
+		expected   corev1.Volume
 	}{
 		{
 			name: "With volume",
@@ -207,8 +206,8 @@ func TestInstrVolume(t *testing.T) {
 						SizeLimit: &resource.Quantity{},
 					},
 				}},
-			volumeName:      "default-vol",
-			volumeSizeLimit: nil,
+			volumeName: "default-vol",
+			quantity:   nil,
 			expected: corev1.Volume{
 				Name: "vol1",
 				VolumeSource: corev1.VolumeSource{
@@ -216,13 +215,12 @@ func TestInstrVolume(t *testing.T) {
 						SizeLimit: &resource.Quantity{},
 					},
 				}},
-			err: nil,
 		},
 		{
-			name:            "With volume size limit",
-			volume:          corev1.Volume{},
-			volumeName:      "default-vol",
-			volumeSizeLimit: &defaultVolumeLimitSize,
+			name:       "With volume size limit",
+			volume:     corev1.Volume{},
+			volumeName: "default-vol",
+			quantity:   &defaultVolumeLimitSize,
 			expected: corev1.Volume{
 				Name: "default-vol",
 				VolumeSource: corev1.VolumeSource{
@@ -230,13 +228,12 @@ func TestInstrVolume(t *testing.T) {
 						SizeLimit: &defaultVolumeLimitSize,
 					},
 				}},
-			err: nil,
 		},
 		{
-			name:            "No volume or size limit",
-			volume:          corev1.Volume{},
-			volumeName:      "default-vol",
-			volumeSizeLimit: nil,
+			name:       "No volume or size limit",
+			volume:     corev1.Volume{},
+			volumeName: "default-vol",
+			quantity:   nil,
 			expected: corev1.Volume{
 				Name: "default-vol",
 				VolumeSource: corev1.VolumeSource{
@@ -244,7 +241,6 @@ func TestInstrVolume(t *testing.T) {
 						SizeLimit: &defaultSize,
 					},
 				}},
-			err: nil,
 		},
 		{
 			name: "With volume and size limit",
@@ -255,8 +251,8 @@ func TestInstrVolume(t *testing.T) {
 						SizeLimit: &resource.Quantity{},
 					},
 				}},
-			volumeName:      "default-vol",
-			volumeSizeLimit: &defaultVolumeLimitSize,
+			volumeName: "default-vol",
+			quantity:   &defaultVolumeLimitSize,
 			expected: corev1.Volume{
 				Name: "vol1",
 				VolumeSource: corev1.VolumeSource{
@@ -264,15 +260,13 @@ func TestInstrVolume(t *testing.T) {
 						SizeLimit: &resource.Quantity{},
 					},
 				}},
-			err: fmt.Errorf("both Volume and VolumeSizeLimit cannot be defined simultaneously"),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res, err := instrVolume(test.volume, test.volumeName, test.volumeSizeLimit)
+			res := instrVolume(test.volume, test.volumeName, test.quantity)
 			assert.Equal(t, test.expected, res)
-			assert.Equal(t, test.err, err)
 		})
 	}
 }
