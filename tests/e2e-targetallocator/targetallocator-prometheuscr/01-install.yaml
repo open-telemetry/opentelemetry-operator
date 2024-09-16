@@ -45,7 +45,9 @@ spec:
           args:
             - /bin/sh
             - -c
-            - curl -s http://prometheus-cr-targetallocator/scrape_configs | grep "prometheus-cr"
+            - >
+              curl -s http://prometheus-cr-targetallocator/scrape_configs |
+              grep "prometheus-cr" && grep "PrometheusProto"
 ---
 apiVersion: batch/v1
 kind: Job
