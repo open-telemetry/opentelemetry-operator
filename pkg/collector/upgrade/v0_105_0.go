@@ -34,7 +34,7 @@ func upgrade0_105_0(_ VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (
 	}
 
 	envVarExpansionFeatureFlag := "-confmap.unifyEnvVarExpansion"
-	otelcol.Spec.Args = RemoveFeatureGate(otelcol.Spec.Args, envVarExpansionFeatureFlag)
+	otelcol.Spec.OpenTelemetryCommonFields.Args = RemoveFeatureGate(otelcol.Spec.OpenTelemetryCommonFields.Args, envVarExpansionFeatureFlag)
 
 	return otelcol, nil
 }

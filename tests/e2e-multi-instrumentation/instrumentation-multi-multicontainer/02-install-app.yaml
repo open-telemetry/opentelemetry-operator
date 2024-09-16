@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-with-multi-instrumentation2
+spec:
+  selector:
+    matchLabels:
+      app: pod-with-multi-instrumentation2
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pod-with-multi-instrumentation2
+      annotations:
+        instrumentation.opentelemetry.io/container-names: "dotnetapp"
+        instrumentation.opentelemetry.io/inject-dotnet: "true"
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 3000
+      containers:
+        - name: dotnetapp
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-dotnet:main
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+          - name: ASPNETCORE_URLS
+            value: "http://+:8083"
+        - name: javaapp
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]

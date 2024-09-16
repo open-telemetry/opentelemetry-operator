@@ -38,7 +38,7 @@ metadata:
             },
             "componentsAllowed": {
               "exporters": [
-                "logging"
+                "debug"
               ],
               "processors": [
                 "memory_limiter"
@@ -99,13 +99,13 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2024-08-14T11:18:33Z"
+    createdAt: "2024-09-05T15:16:58Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.107.0
+  name: opentelemetry-operator.v0.108.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -262,8 +262,6 @@ spec:
           - ""
           resources:
           - configmaps
-          - persistentvolumeclaims
-          - persistentvolumes
           - pods
           - serviceaccounts
           - services
@@ -378,6 +376,7 @@ spec:
           - opentelemetry.io
           resources:
           - instrumentations
+          - opentelemetrycollectors
           verbs:
           - get
           - list
@@ -406,31 +405,7 @@ spec:
           - opentelemetry.io
           resources:
           - opampbridges/status
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - opentelemetry.io
-          resources:
-          - opentelemetrycollectors
-          verbs:
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - opentelemetry.io
-          resources:
           - opentelemetrycollectors/finalizers
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - opentelemetry.io
-          resources:
           - opentelemetrycollectors/status
           verbs:
           - get
@@ -508,7 +483,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.107.0
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.108.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -616,7 +591,7 @@ spec:
   minKubeVersion: 1.23.0
   provider:
     name: OpenTelemetry Community
-  version: 0.107.0
+  version: 0.108.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1alpha1

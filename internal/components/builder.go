@@ -23,30 +23,30 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-type ParserOption[T any] func(*Option[T])
+type ParserOption[ComponentConfigType any] func(*Settings[ComponentConfigType])
 
-type Option[T any] struct {
+type Settings[ComponentConfigType any] struct {
 	protocol    corev1.Protocol
 	appProtocol *string
 	targetPort  intstr.IntOrString
 	nodePort    int32
 	name        string
 	port        int32
-	portParser  PortParser[T]
-	rbacGen     RBACRuleGenerator[T]
+	portParser  PortParser[ComponentConfigType]
+	rbacGen     RBACRuleGenerator[ComponentConfigType]
 }
 
-func NewEmptyOption[T any]() *Option[T] {
-	return &Option[T]{}
+func NewEmptySettings[ComponentConfigType any]() *Settings[ComponentConfigType] {
+	return &Settings[ComponentConfigType]{}
 }
 
-func (o *Option[T]) Apply(opts ...ParserOption[T]) {
+func (o *Settings[ComponentConfigType]) Apply(opts ...ParserOption[ComponentConfigType]) {
 	for _, opt := range opts {
 		opt(o)
 	}
 }
 
-func (o *Option[T]) GetServicePort() *corev1.ServicePort {
+func (o *Settings[ComponentConfigType]) GetServicePort() *corev1.ServicePort {
 	return &corev1.ServicePort{
 		Name:        naming.PortName(o.name, o.port),
 		Port:        o.port,
@@ -57,63 +57,63 @@ func (o *Option[T]) GetServicePort() *corev1.ServicePort {
 	}
 }
 
-type Builder[T any] []ParserOption[T]
+type Builder[ComponentConfigType any] []ParserOption[ComponentConfigType]
 
-func NewBuilder[T any]() Builder[T] {
-	return []ParserOption[T]{}
+func NewBuilder[ComponentConfigType any]() Builder[ComponentConfigType] {
+	return []ParserOption[ComponentConfigType]{}
 }
 
-func (b Builder[T]) WithProtocol(protocol corev1.Protocol) Builder[T] {
-	return append(b, func(o *Option[T]) {
+func (b Builder[ComponentConfigType]) WithProtocol(protocol corev1.Protocol) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.protocol = protocol
 	})
 }
-func (b Builder[T]) WithAppProtocol(appProtocol *string) Builder[T] {
-	return append(b, func(o *Option[T]) {
+func (b Builder[ComponentConfigType]) WithAppProtocol(appProtocol *string) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.appProtocol = appProtocol
 	})
 }
-func (b Builder[T]) WithTargetPort(targetPort int32) Builder[T] {
-	return append(b, func(o *Option[T]) {
+func (b Builder[ComponentConfigType]) WithTargetPort(targetPort int32) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.targetPort = intstr.FromInt32(targetPort)
 	})
 }
-func (b Builder[T]) WithNodePort(nodePort int32) Builder[T] {
-	return append(b, func(o *Option[T]) {
+func (b Builder[ComponentConfigType]) WithNodePort(nodePort int32) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.nodePort = nodePort
 	})
 }
-func (b Builder[T]) WithName(name string) Builder[T] {
-	return append(b, func(o *Option[T]) {
+func (b Builder[ComponentConfigType]) WithName(name string) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.name = name
 	})
 }
-func (b Builder[T]) WithPort(port int32) Builder[T] {
-	return append(b, func(o *Option[T]) {
+func (b Builder[ComponentConfigType]) WithPort(port int32) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.port = port
 	})
 }
-func (b Builder[T]) WithPortParser(portParser PortParser[T]) Builder[T] {
-	return append(b, func(o *Option[T]) {
+func (b Builder[ComponentConfigType]) WithPortParser(portParser PortParser[ComponentConfigType]) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.portParser = portParser
 	})
 }
-func (b Builder[T]) WithRbacGen(rbacGen RBACRuleGenerator[T]) Builder[T] {
-	return append(b, func(o *Option[T]) {
+func (b Builder[ComponentConfigType]) WithRbacGen(rbacGen RBACRuleGenerator[ComponentConfigType]) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.rbacGen = rbacGen
 	})
 }
 
-func (b Builder[T]) Build() (*GenericParser[T], error) {
-	o := NewEmptyOption[T]()
+func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigType], error) {
+	o := NewEmptySettings[ComponentConfigType]()
 	o.Apply(b...)
 	if len(o.name) == 0 {
-		return nil, fmt.Errorf("invalid option struct, no name specified")
+		return nil, fmt.Errorf("invalid settings struct, no name specified")
 	}
-	return &GenericParser[T]{name: o.name, portParser: o.portParser, rbacGen: o.rbacGen, option: o}, nil
+	return &GenericParser[ComponentConfigType]{name: o.name, portParser: o.portParser, rbacGen: o.rbacGen, settings: o}, nil
 }
 
-func (b Builder[T]) MustBuild() *GenericParser[T] {
+func (b Builder[ComponentConfigType]) MustBuild() *GenericParser[ComponentConfigType] {
 	if p, err := b.Build(); err != nil {
 		panic(err)
 	} else {
