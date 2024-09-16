@@ -22,9 +22,8 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 var (
@@ -34,66 +33,17 @@ var (
 	PortNotFoundErr       = errors.New("port should not be empty")
 )
 
-// PortParser is a function that returns a list of servicePorts given a config of type T.
-type PortParser[T any] func(logger logr.Logger, name string, o *Option, config T) ([]corev1.ServicePort, error)
-
 type PortRetriever interface {
 	GetPortNum() (int32, error)
 	GetPortNumOrDefault(logr.Logger, int32) int32
 }
 
-type Option struct {
-	protocol    corev1.Protocol
-	appProtocol *string
-	targetPort  intstr.IntOrString
-	nodePort    int32
-	name        string
-	port        int32
-}
+// PortParser is a function that returns a list of servicePorts given a config of type Config.
+type PortParser[ComponentConfigType any] func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config ComponentConfigType) ([]corev1.ServicePort, error)
 
-func NewOption(name string, port int32) *Option {
-	return &Option{
-		name: name,
-		port: port,
-	}
-}
-
-func (o *Option) Apply(opts ...PortBuilderOption) {
-	for _, opt := range opts {
-		opt(o)
-	}
-}
-
-func (o *Option) GetServicePort() *corev1.ServicePort {
-	return &corev1.ServicePort{
-		Name:        naming.PortName(o.name, o.port),
-		Port:        o.port,
-		Protocol:    o.protocol,
-		AppProtocol: o.appProtocol,
-		TargetPort:  o.targetPort,
-		NodePort:    o.nodePort,
-	}
-}
-
-type PortBuilderOption func(*Option)
-
-func WithTargetPort(targetPort int32) PortBuilderOption {
-	return func(opt *Option) {
-		opt.targetPort = intstr.FromInt32(targetPort)
-	}
-}
-
-func WithAppProtocol(proto *string) PortBuilderOption {
-	return func(opt *Option) {
-		opt.appProtocol = proto
-	}
-}
-
-func WithProtocol(proto corev1.Protocol) PortBuilderOption {
-	return func(opt *Option) {
-		opt.protocol = proto
-	}
-}
+// RBACRuleGenerator is a function that generates a list of RBAC Rules given a configuration of type Config
+// It's expected that type Config is the configuration used by a parser.
+type RBACRuleGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) ([]rbacv1.PolicyRule, error)
 
 // ComponentType returns the type for a given component name.
 // components have a name like:
@@ -136,6 +86,9 @@ type Parser interface {
 	// Ports returns the service ports parsed based on the component's configuration where name is the component's name
 	// of the form "name" or "type/name"
 	Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error)
+
+	// GetRBACRules returns the rbac rules for this component
+	GetRBACRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error)
 
 	// ParserType returns the type of this parser
 	ParserType() string
