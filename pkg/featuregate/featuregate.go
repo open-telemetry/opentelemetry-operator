@@ -40,6 +40,14 @@ var (
 		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
 		featuregate.WithRegisterFromVersion("v0.100.0"),
 	)
+	// SetNativeHistogram is the feature gate that enables native histogram for the
+	// collector.
+	SetNativeHistogram = featuregate.GlobalRegistry().MustRegister(
+		"operator.observability.EnableNativeHistograms",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables feature to enable native histogram support"),
+		featuregate.WithRegisterFromVersion("v0.97.0"),
+	)
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.
