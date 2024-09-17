@@ -20,6 +20,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 var (
@@ -30,8 +31,20 @@ var (
 // functionality to idempotent functions.
 type GenericParser[T any] struct {
 	name       string
+	settings   *Settings[T]
 	portParser PortParser[T]
-	option     *Option
+	rbacGen    RBACRuleGenerator[T]
+}
+
+func (g *GenericParser[T]) GetRBACRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error) {
+	if g.rbacGen == nil {
+		return nil, nil
+	}
+	var parsed T
+	if err := mapstructure.Decode(config, &parsed); err != nil {
+		return nil, err
+	}
+	return g.rbacGen(logger, parsed)
 }
 
 func (g *GenericParser[T]) Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error) {
@@ -42,7 +55,7 @@ func (g *GenericParser[T]) Ports(logger logr.Logger, name string, config interfa
 	if err := mapstructure.Decode(config, &parsed); err != nil {
 		return nil, err
 	}
-	return g.portParser(logger, name, g.option, parsed)
+	return g.portParser(logger, name, g.settings.GetServicePort(), parsed)
 }
 
 func (g *GenericParser[T]) ParserType() string {
@@ -51,10 +64,4 @@ func (g *GenericParser[T]) ParserType() string {
 
 func (g *GenericParser[T]) ParserName() string {
 	return fmt.Sprintf("__%s", g.name)
-}
-
-func NewGenericParser[T any](name string, port int32, parser PortParser[T], opts ...PortBuilderOption) *GenericParser[T] {
-	o := NewOption(name, port)
-	o.Apply(opts...)
-	return &GenericParser[T]{name: name, portParser: parser, option: o}
 }
