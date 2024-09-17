@@ -30,12 +30,12 @@ data:
         prometheus:
             config:
                 global:
-                    scrape_interval: 30s
                     scrape_protocols:
                         - PrometheusProto
                         - OpenMetricsText1.0.0
                         - OpenMetricsText0.0.1
                         - PrometheusText0.0.4
+                    scrape_timeout: 1s
             target_allocator:
                 collector_id: ${POD_NAME}
                 endpoint: http://prometheus-cr-targetallocator:80
@@ -49,4 +49,4 @@ data:
                     - prometheus
 kind: ConfigMap
 metadata:
-  name: prometheus-cr-collector-837a5cfe
+  name: prometheus-cr-collector-21f47755
