@@ -137,7 +137,7 @@ spec:
       prometheus:
         config:
           global:
-            scrape_interval: 30s
+            scrape_timeout: 1s
             scrape_protocols: ['PrometheusProto','OpenMetricsText1.0.0','OpenMetricsText0.0.1','PrometheusText0.0.4']
           scrape_configs: []
 

@@ -304,7 +304,7 @@ e2e-prometheuscr: chainsaw
 # Target allocator end-to-tests
 .PHONY: e2e-targetallocator
 e2e-targetallocator: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator
+	$(CHAINSAW) test --apply-timeout 45s --assert-timeout 45s --cleanup-timeout 45s --delete-timeout 45s --error-timeout 45s --exec-timeout 45s --test-dir ./tests/e2e-targetallocator
 
 # end-to-end-test for Annotations/Labels Filters
 .PHONY: e2e-metadata-filters

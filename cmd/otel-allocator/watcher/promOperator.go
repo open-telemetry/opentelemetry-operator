@@ -71,23 +71,7 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 		return nil, err
 	}
 
-	// we want to use endpointslices by default
-	serviceDiscoveryRole := monitoringv1.ServiceDiscoveryRole("EndpointSlice")
-
-	// TODO: We should make these durations configurable
-	prom := &monitoringv1.Prometheus{
-		Spec: monitoringv1.PrometheusSpec{
-			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-				ScrapeInterval:                  monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
-				ServiceMonitorSelector:          cfg.PrometheusCR.ServiceMonitorSelector,
-				PodMonitorSelector:              cfg.PrometheusCR.PodMonitorSelector,
-				ServiceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
-				PodMonitorNamespaceSelector:     cfg.PrometheusCR.PodMonitorNamespaceSelector,
-				ServiceDiscoveryRole:            &serviceDiscoveryRole,
-			},
-		},
-	}
-
+	prom := cfg.GetPrometheus()
 	promOperatorLogger := level.NewFilter(log.NewLogfmtLogger(os.Stderr), level.AllowWarn())
 	promOperatorSlogLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom, true)

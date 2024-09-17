@@ -28,7 +28,14 @@ data:
             endpoint: 0.0.0.0:9090
     receivers:
         prometheus:
-            config: {}
+            config:
+                global:
+                    scrape_interval: 30s
+                    scrape_protocols:
+                        - PrometheusProto
+                        - OpenMetricsText1.0.0
+                        - OpenMetricsText0.0.1
+                        - PrometheusText0.0.4
             target_allocator:
                 collector_id: ${POD_NAME}
                 endpoint: http://prometheus-cr-targetallocator:80
@@ -42,4 +49,4 @@ data:
                     - prometheus
 kind: ConfigMap
 metadata:
-  name: prometheus-cr-collector-52e1d2ae
+  name: prometheus-cr-collector-837a5cfe

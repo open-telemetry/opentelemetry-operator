@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install"
@@ -56,6 +57,79 @@ type Config struct {
 	FilterStrategy     string                `yaml:"filter_strategy,omitempty"`
 	PrometheusCR       PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	HTTPS              HTTPSServerConfig     `yaml:"https,omitempty"`
+}
+
+func (cfg *Config) GetPrometheus() *monitoringv1.Prometheus {
+	// we want to use endpointslices by default
+	serviceDiscoveryRole := monitoringv1.ServiceDiscoveryRole("EndpointSlice")
+	prom := &monitoringv1.Prometheus{
+		Spec: monitoringv1.PrometheusSpec{
+			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+				ScrapeInterval:                  monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
+				ServiceMonitorSelector:          cfg.PrometheusCR.ServiceMonitorSelector,
+				PodMonitorSelector:              cfg.PrometheusCR.PodMonitorSelector,
+				ServiceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
+				PodMonitorNamespaceSelector:     cfg.PrometheusCR.PodMonitorNamespaceSelector,
+				ServiceDiscoveryRole:            &serviceDiscoveryRole,
+			},
+		},
+	}
+
+	// if there's no prom config set, just use the above defaults.
+	if cfg.PromConfig == nil {
+		return prom
+	}
+
+	// the prometheus-operator provides no automatic conversion for global fields
+	if len(cfg.PromConfig.GlobalConfig.ScrapeProtocols) > 0 {
+		var scrapeProtocols []monitoringv1.ScrapeProtocol
+		for _, protocol := range cfg.PromConfig.GlobalConfig.ScrapeProtocols {
+			scrapeProtocols = append(scrapeProtocols, monitoringv1.ScrapeProtocol(protocol))
+		}
+		prom.Spec.CommonPrometheusFields.ScrapeProtocols = scrapeProtocols
+	}
+	scrapeInterval := monitoringv1.Duration(cfg.PromConfig.GlobalConfig.ScrapeInterval.String())
+	if len(scrapeInterval) > 0 {
+		prom.Spec.CommonPrometheusFields.ScrapeInterval = scrapeInterval
+	}
+	prom.Spec.CommonPrometheusFields.ScrapeTimeout = monitoringv1.Duration(cfg.PromConfig.GlobalConfig.ScrapeTimeout.String())
+	if len(cfg.PromConfig.GlobalConfig.ExternalLabels) > 0 {
+		labels := map[string]string{}
+		for _, label := range cfg.PromConfig.GlobalConfig.ExternalLabels {
+			labels[label.Name] = label.Value
+		}
+		prom.Spec.CommonPrometheusFields.ExternalLabels = labels
+	}
+	if cfg.PromConfig.GlobalConfig.BodySizeLimit > 0 {
+		bodySizeLimit := monitoringv1.ByteSize(cfg.PromConfig.GlobalConfig.BodySizeLimit.String())
+		prom.Spec.CommonPrometheusFields.BodySizeLimit = &bodySizeLimit
+	}
+	if cfg.PromConfig.GlobalConfig.SampleLimit > 0 {
+		sampleLimit := uint64(cfg.PromConfig.GlobalConfig.SampleLimit)
+		prom.Spec.CommonPrometheusFields.SampleLimit = &sampleLimit
+	}
+	if cfg.PromConfig.GlobalConfig.TargetLimit > 0 {
+		targetLimit := uint64(cfg.PromConfig.GlobalConfig.TargetLimit)
+		prom.Spec.CommonPrometheusFields.TargetLimit = &targetLimit
+	}
+	if cfg.PromConfig.GlobalConfig.LabelLimit > 0 {
+		labelLimit := uint64(cfg.PromConfig.GlobalConfig.LabelLimit)
+		prom.Spec.CommonPrometheusFields.LabelLimit = &labelLimit
+	}
+	if cfg.PromConfig.GlobalConfig.LabelNameLengthLimit > 0 {
+		labelNameLengthLimit := uint64(cfg.PromConfig.GlobalConfig.LabelNameLengthLimit)
+		prom.Spec.CommonPrometheusFields.LabelNameLengthLimit = &labelNameLengthLimit
+	}
+	if cfg.PromConfig.GlobalConfig.LabelValueLengthLimit > 0 {
+		labelValueLengthLimit := uint64(cfg.PromConfig.GlobalConfig.LabelValueLengthLimit)
+		prom.Spec.CommonPrometheusFields.LabelValueLengthLimit = &labelValueLengthLimit
+	}
+	if cfg.PromConfig.GlobalConfig.KeepDroppedTargets > 0 {
+		keepDroppedTargets := uint64(cfg.PromConfig.GlobalConfig.KeepDroppedTargets)
+		prom.Spec.CommonPrometheusFields.KeepDroppedTargets = &keepDroppedTargets
+	}
+
+	return prom
 }
 
 type PrometheusCRConfig struct {

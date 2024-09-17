@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alecthomas/units"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -35,6 +36,7 @@ import (
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	kubeDiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -99,6 +101,7 @@ func TestLoadConfig(t *testing.T) {
 			},
 			cfg: allocatorconfig.Config{
 				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ScrapeInterval:         model.Duration(30 * time.Second),
 					ServiceMonitorSelector: &metav1.LabelSelector{},
 					PodMonitorSelector:     &metav1.LabelSelector{},
 				},
@@ -191,6 +194,7 @@ func TestLoadConfig(t *testing.T) {
 			},
 			cfg: allocatorconfig.Config{
 				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ScrapeInterval:         model.Duration(30 * time.Second),
 					ServiceMonitorSelector: &metav1.LabelSelector{},
 					PodMonitorSelector:     &metav1.LabelSelector{},
 				},
@@ -259,6 +263,7 @@ func TestLoadConfig(t *testing.T) {
 			},
 			cfg: allocatorconfig.Config{
 				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ScrapeInterval:         model.Duration(30 * time.Second),
 					ServiceMonitorSelector: &metav1.LabelSelector{},
 					PodMonitorSelector:     &metav1.LabelSelector{},
 				},
@@ -356,6 +361,7 @@ func TestLoadConfig(t *testing.T) {
 			},
 			cfg: allocatorconfig.Config{
 				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ScrapeInterval:         model.Duration(30 * time.Second),
 					ServiceMonitorSelector: &metav1.LabelSelector{},
 					PodMonitorSelector:     &metav1.LabelSelector{},
 				},
@@ -467,6 +473,7 @@ func TestLoadConfig(t *testing.T) {
 			},
 			cfg: allocatorconfig.Config{
 				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ScrapeInterval:         model.Duration(30 * time.Second),
 					ServiceMonitorSelector: &metav1.LabelSelector{},
 					PodMonitorSelector:     &metav1.LabelSelector{},
 				},
@@ -557,6 +564,7 @@ func TestLoadConfig(t *testing.T) {
 			},
 			cfg: allocatorconfig.Config{
 				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ScrapeInterval: model.Duration(30 * time.Second),
 					ServiceMonitorSelector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"testsvc": "testsvc",
@@ -628,6 +636,7 @@ func TestLoadConfig(t *testing.T) {
 			},
 			cfg: allocatorconfig.Config{
 				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ScrapeInterval: model.Duration(30 * time.Second),
 					PodMonitorSelector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"testpod": "testpod",
@@ -696,6 +705,7 @@ func TestLoadConfig(t *testing.T) {
 			},
 			cfg: allocatorconfig.Config{
 				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ScrapeInterval:         model.Duration(30 * time.Second),
 					ServiceMonitorSelector: &metav1.LabelSelector{},
 					PodMonitorSelector:     &metav1.LabelSelector{},
 					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{
@@ -766,6 +776,7 @@ func TestLoadConfig(t *testing.T) {
 			},
 			cfg: allocatorconfig.Config{
 				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ScrapeInterval:         model.Duration(30 * time.Second),
 					ServiceMonitorSelector: &metav1.LabelSelector{},
 					PodMonitorSelector:     &metav1.LabelSelector{},
 					PodMonitorNamespaceSelector: &metav1.LabelSelector{
@@ -791,6 +802,145 @@ func TestLoadConfig(t *testing.T) {
 								Role: "pod",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
 									Names:               []string{"labellednamespace"},
+									IncludeOwnNamespace: false,
+								},
+								HTTPClientConfig: config.DefaultHTTPClientConfig,
+							},
+						},
+						HTTPClientConfig:  config.DefaultHTTPClientConfig,
+						EnableCompression: true,
+					},
+				},
+			},
+		},
+		{
+			name: "simple test (global config)",
+			serviceMonitors: []*monitoringv1.ServiceMonitor{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "test",
+					},
+					Spec: monitoringv1.ServiceMonitorSpec{
+						JobLabel: "test",
+						Endpoints: []monitoringv1.Endpoint{
+							{
+								Port: "web",
+							},
+						},
+					},
+				},
+			},
+			podMonitors: []*monitoringv1.PodMonitor{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "test",
+					},
+					Spec: monitoringv1.PodMonitorSpec{
+						JobLabel: "test",
+						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
+							{
+								Port: "web",
+							},
+						},
+					},
+				},
+			},
+			cfg: allocatorconfig.Config{
+				PromConfig: &promconfig.Config{
+					GlobalConfig: promconfig.GlobalConfig{
+						ScrapeInterval: model.Duration(60 * time.Second),
+						ScrapeTimeout:  model.Duration(20 * time.Second),
+						ScrapeProtocols: []promconfig.ScrapeProtocol{
+							promconfig.OpenMetricsText1_0_0,
+							promconfig.OpenMetricsText0_0_1,
+							promconfig.PrometheusText0_0_4,
+							promconfig.PrometheusProto,
+						},
+						ExternalLabels: []labels.Label{
+							{
+								Name:  "example",
+								Value: "value",
+							},
+						},
+						BodySizeLimit:         units.Kibibyte,
+						SampleLimit:           100,
+						TargetLimit:           100,
+						LabelLimit:            100,
+						LabelNameLengthLimit:  100,
+						LabelValueLengthLimit: 100,
+						KeepDroppedTargets:    100,
+					},
+				},
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ScrapeInterval:         model.Duration(30 * time.Second),
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+					PodMonitorSelector:     &metav1.LabelSelector{},
+				},
+			},
+			want: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:        "serviceMonitor/test/simple/0",
+						ScrapeInterval: model.Duration(60 * time.Second),
+						ScrapeProtocols: []promconfig.ScrapeProtocol{
+							promconfig.OpenMetricsText1_0_0,
+							promconfig.OpenMetricsText0_0_1,
+							promconfig.PrometheusText0_0_4,
+							promconfig.PrometheusProto,
+						},
+						BodySizeLimit:         1024,
+						SampleLimit:           100,
+						TargetLimit:           100,
+						LabelLimit:            100,
+						LabelNameLengthLimit:  100,
+						LabelValueLengthLimit: 100,
+						KeepDroppedTargets:    100,
+						ScrapeTimeout:         model.Duration(20 * time.Second),
+						HonorTimestamps:       true,
+						HonorLabels:           false,
+						Scheme:                "http",
+						MetricsPath:           "/metrics",
+						ServiceDiscoveryConfigs: []discovery.Config{
+							&kubeDiscovery.SDConfig{
+								Role: "endpointslice",
+								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
+									Names:               []string{"test"},
+									IncludeOwnNamespace: false,
+								},
+								HTTPClientConfig: config.DefaultHTTPClientConfig,
+							},
+						},
+						HTTPClientConfig:  config.DefaultHTTPClientConfig,
+						EnableCompression: true,
+					},
+					{
+						JobName:        "podMonitor/test/simple/0",
+						ScrapeInterval: model.Duration(60 * time.Second),
+						ScrapeProtocols: []promconfig.ScrapeProtocol{
+							promconfig.OpenMetricsText1_0_0,
+							promconfig.OpenMetricsText0_0_1,
+							promconfig.PrometheusText0_0_4,
+							promconfig.PrometheusProto,
+						},
+						BodySizeLimit:         1024,
+						SampleLimit:           100,
+						TargetLimit:           100,
+						LabelLimit:            100,
+						LabelNameLengthLimit:  100,
+						LabelValueLengthLimit: 100,
+						KeepDroppedTargets:    100,
+						ScrapeTimeout:         model.Duration(20 * time.Second),
+						HonorTimestamps:       true,
+						HonorLabels:           false,
+						Scheme:                "http",
+						MetricsPath:           "/metrics",
+						ServiceDiscoveryConfigs: []discovery.Config{
+							&kubeDiscovery.SDConfig{
+								Role: "pod",
+								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
+									Names:               []string{"test"},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
@@ -869,6 +1019,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 
 	cfg := allocatorconfig.Config{
 		PrometheusCR: allocatorconfig.PrometheusCRConfig{
+			ScrapeInterval:         model.Duration(30 * time.Second),
 			ServiceMonitorSelector: &metav1.LabelSelector{},
 			PodMonitorSelector:     &metav1.LabelSelector{},
 			PodMonitorNamespaceSelector: &metav1.LabelSelector{
@@ -1081,26 +1232,11 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 	}
 
 	factory := informers.NewMonitoringInformerFactories(map[string]struct{}{v1.NamespaceAll: {}}, map[string]struct{}{}, mClient, 0, nil)
-	informers, err := getInformers(factory)
+	informerMap, err := getInformers(factory)
 	if err != nil {
 		t.Fatal(t, err)
 	}
-
-	serviceDiscoveryRole := monitoringv1.ServiceDiscoveryRole("EndpointSlice")
-
-	prom := &monitoringv1.Prometheus{
-		Spec: monitoringv1.PrometheusSpec{
-			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-				ScrapeInterval:                  monitoringv1.Duration("30s"),
-				ServiceMonitorSelector:          cfg.PrometheusCR.ServiceMonitorSelector,
-				PodMonitorSelector:              cfg.PrometheusCR.PodMonitorSelector,
-				ServiceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
-				PodMonitorNamespaceSelector:     cfg.PrometheusCR.PodMonitorNamespaceSelector,
-				ServiceDiscoveryRole:            &serviceDiscoveryRole,
-			},
-		},
-	}
-
+	prom := cfg.GetPrometheus()
 	promOperatorLogger := level.NewFilter(log.NewLogfmtLogger(os.Stderr), level.AllowWarn())
 	promOperatorSlogLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
 
@@ -1132,7 +1268,7 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 	return &PrometheusCRWatcher{
 		kubeMonitoringClient:            mClient,
 		k8sClient:                       k8sClient,
-		informers:                       informers,
+		informers:                       informerMap,
 		nsInformer:                      nsMonInf,
 		stopChannel:                     make(chan struct{}),
 		configGenerator:                 generator,

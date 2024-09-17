@@ -1,2 +1,21 @@
 resources:
 - manager.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: controller
+  newName: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+  newTag: 0.107.0-47-g8719954d
+patches:
+- patch: '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--target-allocator-image=ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:ve2e-targetallocator"}]'
+  target:
+    kind: Deployment
+- patch: '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--operator-opamp-bridge-image=ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:ve2e-targetallocator"}]'
+  target:
+    kind: Deployment
+- patch: '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--target-allocator-image=ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:v0.107.0-47-g8719954d"}]'
+  target:
+    kind: Deployment
+- patch: '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--operator-opamp-bridge-image=ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:v0.107.0-47-g8719954d"}]'
+  target:
+    kind: Deployment
