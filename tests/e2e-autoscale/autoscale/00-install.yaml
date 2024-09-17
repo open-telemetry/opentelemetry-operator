@@ -54,6 +54,7 @@ spec:
   maxReplicas: 2
   autoscaler:
     targetCPUUtilization: 99
+    targetMemoryUtilization: 99
     behavior:
       scaleUp:
         stabilizationWindowSeconds: 300
