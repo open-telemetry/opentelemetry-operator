@@ -35,6 +35,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -43,13 +44,16 @@ import (
 )
 
 type Cluster struct {
-	config *config.Config
+	config               *config.Config
+	apiAvailabilityCache map[schema.GroupVersionResource]bool
 }
 
 func NewCluster(cfg *config.Config) Cluster {
-	return Cluster{config: cfg}
+	return Cluster{
+		config:               cfg,
+		apiAvailabilityCache: make(map[schema.GroupVersionResource]bool),
+	}
 }
-
 func (c *Cluster) getOperatorNamespace() (string, error) {
 	if c.config.OperatorNamespace != "" {
 		return c.config.OperatorNamespace, nil
@@ -295,207 +299,42 @@ func (c *Cluster) processOTELCollector(otelCol *otelv1beta1.OpenTelemetryCollect
 	return nil
 }
 
-func (c *Cluster) processOwnedResources(otelCol *otelv1beta1.OpenTelemetryCollector, folder string) error {
-	errorDetected := false
-
-	////////////////////////////////////////////////////////////////// apps/v1
-	// DaemonSets
-	daemonsets, err := c.getOwnerResources(&appsv1.DaemonSetList{}, otelCol)
-	if err != nil {
-		errorDetected = true
-		log.Fatalln(err)
-	}
-	for _, d := range daemonsets {
-		writeToFile(folder, d)
-	}
-
-	// Deployments
-	deployments, err := c.getOwnerResources(&appsv1.DeploymentList{}, otelCol)
-	if err != nil {
-		errorDetected = true
-		log.Fatalln(err)
-	}
-	for _, d := range deployments {
-		writeToFile(folder, d)
-	}
-
-	// StatefulSets
-	statefulsets, err := c.getOwnerResources(&appsv1.StatefulSetList{}, otelCol)
-	if err != nil {
-		errorDetected = true
-		log.Fatalln(err)
-	}
-	for _, s := range statefulsets {
-		writeToFile(folder, s)
+func (c *Cluster) processOwnedResources(owner interface{}, folder string) error {
+	resourceTypes := []struct {
+		list     client.ObjectList
+		apiCheck func() bool
+	}{
+		{&appsv1.DaemonSetList{}, func() bool { return true }},
+		{&appsv1.DeploymentList{}, func() bool { return true }},
+		{&appsv1.StatefulSetList{}, func() bool { return true }},
+		{&rbacv1.ClusterRoleList{}, func() bool { return true }},
+		{&rbacv1.ClusterRoleBindingList{}, func() bool { return true }},
+		{&corev1.ConfigMapList{}, func() bool { return true }},
+		{&corev1.PersistentVolumeList{}, func() bool { return true }},
+		{&corev1.PersistentVolumeClaimList{}, func() bool { return true }},
+		{&corev1.PodList{}, func() bool { return true }},
+		{&corev1.ServiceList{}, func() bool { return true }},
+		{&corev1.ServiceAccountList{}, func() bool { return true }},
+		{&autoscalingv2.HorizontalPodAutoscalerList{}, func() bool { return true }},
+		{&networkingv1.IngressList{}, func() bool { return true }},
+		{&policy1.PodDisruptionBudgetList{}, func() bool { return true }},
+		{&monitoringv1.PodMonitorList{}, c.isMonitoringAPIAvailable},
+		{&monitoringv1.ServiceMonitorList{}, c.isMonitoringAPIAvailable},
+		{&routev1.RouteList{}, c.isRouteAPIAvailable},
 	}
 
-	////////////////////////////////////////////////////////////////// rbac/v1
-	// ClusterRole
-	crs, err := c.getOwnerResources(&rbacv1.ClusterRoleList{}, otelCol)
-	if err != nil {
-		errorDetected = true
-		log.Fatalln(err)
-	}
-	for _, cr := range crs {
-		writeToFile(folder, cr)
-	}
-
-	// ClusterRoleBindings
-	crbs, err := c.getOwnerResources(&rbacv1.ClusterRoleBindingList{}, otelCol)
-	if err != nil {
-		errorDetected = true
-		log.Fatalln(err)
-	}
-	for _, crb := range crbs {
-		writeToFile(folder, crb)
-	}
-
-	////////////////////////////////////////////////////////////////// core/v1
-	// ConfigMaps
-	cms, err := c.getOwnerResources(&corev1.ConfigMapList{}, otelCol)
-	if err != nil {
-		errorDetected = true
-		log.Fatalln(err)
-	}
-	for _, c := range cms {
-		writeToFile(folder, c)
-	}
-
-	// PersistentVolumes
-	pvs, err := c.getOwnerResources(&corev1.PersistentVolumeList{}, otelCol)
-	if err != nil {
-		errorDetected = true
-		log.Fatalln(err)
-	}
-	for _, p := range pvs {
-		writeToFile(folder, p)
-	}
-
-	// PersistentVolumeClaims
-	pvcs, err := c.getOwnerResources(&corev1.PersistentVolumeClaimList{}, otelCol)
-	if err != nil {
-		errorDetected = true
-		log.Fatalln(err)
-	}
-	for _, p := range pvcs {
-		writeToFile(folder, p)
-	}
-
-	// Pods
-	pods, err := c.getOwnerResources(&corev1.PodList{}, otelCol)
-	if err != nil {
-		errorDetected = true
-		log.Fatalln(err)
-	}
-	for _, p := range pods {
-		writeToFile(folder, p)
-	}
-
-	// Services
-	services, err := c.getOwnerResources(&corev1.ServiceList{}, otelCol)
-	if err != nil {
-		errorDetected = true
-		log.Fatalln(err)
-	}
-	for _, s := range services {
-		writeToFile(folder, s)
-	}
-
-	// ServiceAccounts
-	sas, err := c.getOwnerResources(&corev1.ServiceAccountList{}, otelCol)
-	if err != nil {
-		errorDetected = true
-		log.Fatalln(err)
-	}
-	for _, s := range sas {
-		writeToFile(folder, s)
-	}
-
-	////////////////////////////////////////////////////////////////// autoscaling/v2
-	// HPAs
-	hpas, err := c.getOwnerResources(&autoscalingv2.HorizontalPodAutoscalerList{}, otelCol)
-	if err != nil {
-		errorDetected = true
-		log.Fatalln(err)
-	}
-	for _, h := range hpas {
-		writeToFile(folder, h)
-	}
-
-	////////////////////////////////////////////////////////////////// networking/v1
-	// Ingresses
-	ingresses, err := c.getOwnerResources(&networkingv1.IngressList{}, otelCol)
-	if err != nil {
-		errorDetected = true
-		log.Fatalln(err)
-	}
-	for _, i := range ingresses {
-		writeToFile(folder, i)
-	}
-
-	////////////////////////////////////////////////////////////////// policy/v1
-	// PodDisruptionBudge
-	pdbs, err := c.getOwnerResources(&policy1.PodDisruptionBudgetList{}, otelCol)
-	if err != nil {
-		errorDetected = true
-		log.Fatalln(err)
-	}
-	for _, pdb := range pdbs {
-		writeToFile(folder, pdb)
-	}
-
-	////////////////////////////////////////////////////////////////// monitoring/v1
-	if c.isAPIAvailable(schema.GroupVersionResource{
-		Group:    monitoringv1.SchemeGroupVersion.Group,
-		Version:  monitoringv1.SchemeGroupVersion.Version,
-		Resource: "ServiceMonitor",
-	}) {
-		// PodMonitors
-		pms, err := c.getOwnerResources(&monitoringv1.PodMonitorList{}, otelCol)
-		if err != nil {
-			errorDetected = true
-			log.Fatalln(err)
+	for _, rt := range resourceTypes {
+		if rt.apiCheck() {
+			if err := c.processResourceType(rt.list, owner, folder); err != nil {
+				return err
+			}
 		}
-		for _, pm := range pms {
-			writeToFile(folder, pm)
-		}
-
-		// ServiceMonitors
-		sms, err := c.getOwnerResources(&monitoringv1.ServiceMonitorList{}, otelCol)
-		if err != nil {
-			errorDetected = true
-			log.Fatalln(err)
-		}
-		for _, s := range sms {
-			writeToFile(folder, s)
-		}
-	}
-
-	////////////////////////////////////////////////////////////////// route/v1
-	// Routes
-	if c.isAPIAvailable(schema.GroupVersionResource{
-		Group:    routev1.GroupName,
-		Version:  routev1.GroupVersion.Version,
-		Resource: "Route",
-	}) {
-		rs, err := c.getOwnerResources(&routev1.RouteList{}, otelCol)
-		if err != nil {
-			errorDetected = true
-			log.Fatalln(err)
-		}
-		for _, r := range rs {
-			writeToFile(folder, r)
-		}
-	}
-
-	if errorDetected {
-		return fmt.Errorf("something failed while getting the associated resources")
 	}
 
 	return nil
 }
 
-func (c *Cluster) getOwnerResources(objList client.ObjectList, otelCol *otelv1beta1.OpenTelemetryCollector) ([]client.Object, error) {
+func (c *Cluster) getOwnerResources(objList client.ObjectList, owner interface{}) ([]client.Object, error) {
 	err := c.config.KubernetesClient.List(context.TODO(), objList, &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set{
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
@@ -510,7 +349,7 @@ func (c *Cluster) getOwnerResources(objList client.ObjectList, otelCol *otelv1be
 	items := reflect.ValueOf(objList).Elem().FieldByName("Items")
 	for i := 0; i < items.Len(); i++ {
 		item := items.Index(i).Addr().Interface().(client.Object)
-		if hasOwnerReference(item, otelCol) {
+		if hasOwnerReference(item, owner) {
 			resources = append(resources, item)
 		}
 	}
@@ -518,20 +357,61 @@ func (c *Cluster) getOwnerResources(objList client.ObjectList, otelCol *otelv1be
 
 }
 
+func (c *Cluster) processResourceType(list client.ObjectList, owner interface{}, folder string) error {
+	resources, err := c.getOwnerResources(list, owner)
+	if err != nil {
+		return fmt.Errorf("failed to get resources: %w", err)
+	}
+	for _, resource := range resources {
+		writeToFile(folder, resource)
+	}
+	return nil
+}
+
+func (c *Cluster) isMonitoringAPIAvailable() bool {
+	return c.isAPIAvailable(schema.GroupVersionResource{
+		Group:    monitoringv1.SchemeGroupVersion.Group,
+		Version:  monitoringv1.SchemeGroupVersion.Version,
+		Resource: "ServiceMonitor",
+	})
+}
+
+func (c *Cluster) isRouteAPIAvailable() bool {
+	return c.isAPIAvailable(schema.GroupVersionResource{
+		Group:    routev1.GroupName,
+		Version:  routev1.GroupVersion.Version,
+		Resource: "Route",
+	})
+}
+
 func (c *Cluster) isAPIAvailable(gvr schema.GroupVersionResource) bool {
+	if result, ok := c.apiAvailabilityCache[gvr]; ok {
+		return result
+	}
+
 	rm := c.config.KubernetesClient.RESTMapper()
 
 	gvk, err := rm.KindFor(gvr)
-	if err != nil {
+	result := err == nil && !gvk.Empty()
+	c.apiAvailabilityCache[gvr] = result
+
+	return result
+}
+
+func hasOwnerReference(obj client.Object, owner interface{}) bool {
+	var ownerKind string
+	var ownerUID types.UID
+
+	switch o := owner.(type) {
+	case *otelv1beta1.OpenTelemetryCollector:
+		ownerKind = o.Kind
+		ownerUID = o.UID
+	default:
 		return false
 	}
 
-	return !gvk.Empty()
-}
-
-func hasOwnerReference(obj client.Object, otelCol *otelv1beta1.OpenTelemetryCollector) bool {
 	for _, ownerRef := range obj.GetOwnerReferences() {
-		if ownerRef.Kind == otelCol.Kind && ownerRef.UID == otelCol.UID {
+		if ownerRef.Kind == ownerKind && ownerRef.UID == ownerUID {
 			return true
 		}
 	}

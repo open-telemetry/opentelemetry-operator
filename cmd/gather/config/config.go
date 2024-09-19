@@ -36,20 +36,22 @@ type Config struct {
 }
 
 func NewConfig(scheme *runtime.Scheme) (Config, error) {
-	var operatorName, operatorNamespace, collectionDir string
+	var operatorName, operatorNamespace, collectionDir, kubeconfigPath string
 
 	pflag.StringVar(&operatorName, "operator-name", "opentelemetry-operator", "Operator name")
 	pflag.StringVar(&operatorNamespace, "operator-namespace", "", "Namespace where the operator was deployed")
 	pflag.StringVar(&collectionDir, "collection-dir", filepath.Join(homedir.HomeDir(), "/must-gather"), "Absolute path to the KubeconfigPath file")
+	pflag.StringVar(&kubeconfigPath, "kubeconfig", "", "Path to the kubeconfig file")
 	pflag.Parse()
 
-	var config *rest.Config
-	config, err1 := rest.InClusterConfig()
-	if err1 != nil {
-		var err2 error
-		config, err2 = clientcmd.BuildConfigFromFlags("", "")
-		if err2 != nil {
-			return Config{}, fmt.Errorf("it was not possible to connect to connecto Kubernetes: [%w, %w]", err1, err2)
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		if kubeconfigPath == "" {
+			kubeconfigPath = filepath.Join(homedir.HomeDir(), ".kube", "config")
+		}
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+		if err != nil {
+			return Config{}, fmt.Errorf("failed to create Kubernetes client config: %w", err)
 		}
 	}
 
