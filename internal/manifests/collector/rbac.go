@@ -19,25 +19,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
-	confStr, err := params.OtelCol.Spec.Config.Yaml()
+	rules, err := params.OtelCol.Spec.Config.GetAllRbacRules(params.Log)
 	if err != nil {
 		return nil, err
-	}
-
-	configFromString, err := adapters.ConfigFromString(confStr)
-	if err != nil {
-		params.Log.Error(err, "couldn't extract the configuration from the context")
-		return nil, nil
-	}
-	rules := adapters.ConfigToRBAC(params.Log, configFromString)
-
-	if len(rules) == 0 {
+	} else if len(rules) == 0 {
 		return nil, nil
 	}
 
@@ -60,18 +50,10 @@ func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
 }
 
 func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, error) {
-	confStr, err := params.OtelCol.Spec.Config.Yaml()
+	rules, err := params.OtelCol.Spec.Config.GetAllRbacRules(params.Log)
 	if err != nil {
 		return nil, err
-	}
-	configFromString, err := adapters.ConfigFromString(confStr)
-	if err != nil {
-		params.Log.Error(err, "couldn't extract the configuration from the context")
-		return nil, nil
-	}
-	rules := adapters.ConfigToRBAC(params.Log, configFromString)
-
-	if len(rules) == 0 {
+	} else if len(rules) == 0 {
 		return nil, nil
 	}
 

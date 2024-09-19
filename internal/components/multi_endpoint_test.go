@@ -42,8 +42,7 @@ var (
 
 func TestMultiPortReceiver_ParserName(t *testing.T) {
 	type fields struct {
-		name string
-		opts []components.MultiPortOption
+		b components.MultiPortBuilder[*components.MultiProtocolEndpointConfig]
 	}
 	tests := []struct {
 		name   string
@@ -53,34 +52,32 @@ func TestMultiPortReceiver_ParserName(t *testing.T) {
 		{
 			name: "no options",
 			fields: fields{
-				name: "receiver1",
-				opts: nil,
+				b: components.NewMultiPortReceiverBuilder("receiver1"),
 			},
 			want: "__receiver1",
 		},
 		{
 			name: "with port mapping without builder options",
 			fields: fields{
-				name: "receiver2",
-				opts: []components.MultiPortOption{
-					components.WithPortMapping("http", 80),
-				},
+				b: components.NewMultiPortReceiverBuilder("receiver2").AddPortMapping(
+					components.NewProtocolBuilder("http", 80),
+				),
 			},
 			want: "__receiver2",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := components.NewMultiPortReceiver(tt.fields.name, tt.fields.opts...)
-			assert.Equalf(t, tt.want, m.ParserName(), "ParserName()")
+			s, err := tt.fields.b.Build()
+			assert.NoError(t, err)
+			assert.Equalf(t, tt.want, s.ParserName(), "ParserName()")
 		})
 	}
 }
 
 func TestMultiPortReceiver_ParserType(t *testing.T) {
 	type fields struct {
-		name string
-		opts []components.MultiPortOption
+		b components.MultiPortBuilder[*components.MultiProtocolEndpointConfig]
 	}
 	tests := []struct {
 		name   string
@@ -90,26 +87,25 @@ func TestMultiPortReceiver_ParserType(t *testing.T) {
 		{
 			name: "no options",
 			fields: fields{
-				name: "receiver1",
-				opts: nil,
+				b: components.NewMultiPortReceiverBuilder("receiver1"),
 			},
 			want: "receiver1",
 		},
 		{
 			name: "with port mapping without builder options",
 			fields: fields{
-				name: "receiver2/test",
-				opts: []components.MultiPortOption{
-					components.WithPortMapping("http", 80),
-				},
+				b: components.NewMultiPortReceiverBuilder("receiver2").AddPortMapping(
+					components.NewProtocolBuilder("http", 80),
+				),
 			},
 			want: "receiver2",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := components.NewMultiPortReceiver(tt.fields.name, tt.fields.opts...)
-			assert.Equalf(t, tt.want, m.ParserType(), "ParserType()")
+			s, err := tt.fields.b.Build()
+			assert.NoError(t, err)
+			assert.Equalf(t, tt.want, s.ParserType(), "ParserType()")
 		})
 	}
 }
@@ -117,37 +113,37 @@ func TestMultiPortReceiver_ParserType(t *testing.T) {
 func TestMultiPortReceiver_Ports(t *testing.T) {
 	type fields struct {
 		name string
-		opts []components.MultiPortOption
+		b    components.MultiPortBuilder[*components.MultiProtocolEndpointConfig]
 	}
 	type args struct {
 		config interface{}
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []corev1.ServicePort
-		wantErr assert.ErrorAssertionFunc
+		name         string
+		fields       fields
+		args         args
+		want         []corev1.ServicePort
+		wantErr      assert.ErrorAssertionFunc
+		wantBuildErr assert.ErrorAssertionFunc
 	}{
 		{
 			name: "no options",
 			fields: fields{
 				name: "receiver1",
-				opts: nil,
+				b:    components.NewMultiPortReceiverBuilder("receiver1"),
 			},
 			args: args{
 				config: nil,
 			},
-			want:    nil,
-			wantErr: assert.NoError,
+			want:         nil,
+			wantBuildErr: assert.NoError,
+			wantErr:      assert.NoError,
 		},
 		{
 			name: "single port mapping without builder options",
 			fields: fields{
 				name: "receiver2",
-				opts: []components.MultiPortOption{
-					components.WithPortMapping("http", 80),
-				},
+				b:    components.NewMultiPortReceiverBuilder("receiver2").AddPortMapping(components.NewProtocolBuilder("http", 80)),
 			},
 			args: args{
 				config: httpConfig,
@@ -158,15 +154,16 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 					Port: 80,
 				},
 			},
-			wantErr: assert.NoError,
+			wantBuildErr: assert.NoError,
+			wantErr:      assert.NoError,
 		},
 		{
 			name: "port mapping with target port",
 			fields: fields{
 				name: "receiver3",
-				opts: []components.MultiPortOption{
-					components.WithPortMapping("http", 80, components.WithTargetPort(8080)),
-				},
+				b: components.NewMultiPortReceiverBuilder("receiver3").
+					AddPortMapping(components.NewProtocolBuilder("http", 80).
+						WithTargetPort(8080)),
 			},
 			args: args{
 				config: httpConfig,
@@ -178,15 +175,16 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 					TargetPort: intstr.FromInt(80),
 				},
 			},
-			wantErr: assert.NoError,
+			wantBuildErr: assert.NoError,
+			wantErr:      assert.NoError,
 		},
 		{
 			name: "port mapping with app protocol",
 			fields: fields{
 				name: "receiver4",
-				opts: []components.MultiPortOption{
-					components.WithPortMapping("http", 80, components.WithAppProtocol(&components.HttpProtocol)),
-				},
+				b: components.NewMultiPortReceiverBuilder("receiver4").
+					AddPortMapping(components.NewProtocolBuilder("http", 80).
+						WithAppProtocol(&components.HttpProtocol)),
 			},
 			args: args{
 				config: httpConfig,
@@ -198,15 +196,16 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 					AppProtocol: &components.HttpProtocol,
 				},
 			},
-			wantErr: assert.NoError,
+			wantBuildErr: assert.NoError,
+			wantErr:      assert.NoError,
 		},
 		{
 			name: "port mapping with protocol",
 			fields: fields{
 				name: "receiver5",
-				opts: []components.MultiPortOption{
-					components.WithPortMapping("http", 80, components.WithProtocol(corev1.ProtocolTCP)),
-				},
+				b: components.NewMultiPortReceiverBuilder("receiver2").
+					AddPortMapping(components.NewProtocolBuilder("http", 80).
+						WithProtocol(corev1.ProtocolTCP)),
 			},
 			args: args{
 				config: httpConfig,
@@ -218,19 +217,20 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 					Protocol: corev1.ProtocolTCP,
 				},
 			},
-			wantErr: assert.NoError,
+			wantBuildErr: assert.NoError,
+			wantErr:      assert.NoError,
 		},
 		{
 			name: "multiple port mappings",
 			fields: fields{
 				name: "receiver6",
-				opts: []components.MultiPortOption{
-					components.WithPortMapping("http", 80),
-					components.WithPortMapping("grpc", 4317,
-						components.WithTargetPort(4317),
-						components.WithProtocol(corev1.ProtocolTCP),
-						components.WithAppProtocol(&components.GrpcProtocol)),
-				},
+				b: components.NewMultiPortReceiverBuilder("receiver6").
+					AddPortMapping(components.NewProtocolBuilder("http", 80)).
+					AddPortMapping(components.NewProtocolBuilder("grpc", 4317).
+						WithTargetPort(4317).
+						WithProtocol(corev1.ProtocolTCP).
+						WithAppProtocol(&components.GrpcProtocol),
+					),
 			},
 			args: args{
 				config: httpAndGrpcConfig,
@@ -248,19 +248,20 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 					Port: 80,
 				},
 			},
-			wantErr: assert.NoError,
+			wantBuildErr: assert.NoError,
+			wantErr:      assert.NoError,
 		},
 		{
 			name: "multiple port mappings only one enabled",
 			fields: fields{
 				name: "receiver6",
-				opts: []components.MultiPortOption{
-					components.WithPortMapping("http", 80),
-					components.WithPortMapping("grpc", 4317,
-						components.WithTargetPort(4317),
-						components.WithProtocol(corev1.ProtocolTCP),
-						components.WithAppProtocol(&components.GrpcProtocol)),
-				},
+				b: components.NewMultiPortReceiverBuilder("receiver6").
+					AddPortMapping(components.NewProtocolBuilder("http", 80)).
+					AddPortMapping(components.NewProtocolBuilder("grpc", 4317).
+						WithTargetPort(4317).
+						WithProtocol(corev1.ProtocolTCP).
+						WithAppProtocol(&components.GrpcProtocol),
+					),
 			},
 			args: args{
 				config: httpConfig,
@@ -271,39 +272,40 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 					Port: 80,
 				},
 			},
-			wantErr: assert.NoError,
+			wantBuildErr: assert.NoError,
+			wantErr:      assert.NoError,
 		},
 		{
 			name: "error unmarshalling configuration",
 			fields: fields{
 				name: "receiver1",
-				opts: nil,
+				b:    components.NewMultiPortReceiverBuilder("receiver1"),
 			},
 			args: args{
 				config: "invalid config", // Simulate an invalid config that causes LoadMap to fail
 			},
-			want:    nil,
-			wantErr: assert.Error,
+			want:         nil,
+			wantBuildErr: assert.NoError,
+			wantErr:      assert.Error,
 		},
 		{
 			name: "error marshaling configuration",
 			fields: fields{
 				name: "receiver1",
-				opts: nil,
+				b:    components.NewMultiPortReceiverBuilder("receiver1"),
 			},
 			args: args{
 				config: func() {}, // Simulate an invalid config that causes LoadMap to fail
 			},
-			want:    nil,
-			wantErr: assert.Error,
+			want:         nil,
+			wantBuildErr: assert.NoError,
+			wantErr:      assert.Error,
 		},
 		{
 			name: "unknown protocol",
 			fields: fields{
 				name: "receiver2",
-				opts: []components.MultiPortOption{
-					components.WithPortMapping("http", 80),
-				},
+				b:    components.NewMultiPortReceiverBuilder("receiver2").AddPortMapping(components.NewProtocolBuilder("http", 80)),
 			},
 			args: args{
 				config: map[string]interface{}{
@@ -312,18 +314,57 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 					},
 				},
 			},
-			want:    nil,
-			wantErr: assert.Error,
+			want:         nil,
+			wantBuildErr: assert.NoError,
+			wantErr:      assert.Error,
+		},
+		{
+			name: "no name set",
+			fields: fields{
+				name: "receiver2",
+				b:    components.MultiPortBuilder[*components.MultiProtocolEndpointConfig]{},
+			},
+			args: args{
+				config: map[string]interface{}{},
+			},
+			want:         nil,
+			wantBuildErr: assert.Error,
+		},
+		{
+			name: "bad builder",
+			fields: fields{
+				name: "receiver2",
+				b:    components.NewMultiPortReceiverBuilder("receiver2").AddPortMapping(components.NewBuilder[*components.MultiProtocolEndpointConfig]()),
+			},
+			args: args{
+				config: map[string]interface{}{},
+			},
+			want:         nil,
+			wantErr:      assert.NoError,
+			wantBuildErr: assert.Error,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := components.NewMultiPortReceiver(tt.fields.name, tt.fields.opts...)
-			got, err := m.Ports(logr.Discard(), tt.fields.name, tt.args.config)
+			s, err := tt.fields.b.Build()
+			if tt.wantBuildErr(t, err, fmt.Sprintf("Ports(%v)", tt.args.config)) && err != nil {
+				return
+			}
+			got, err := s.Ports(logr.Discard(), tt.fields.name, tt.args.config)
 			if !tt.wantErr(t, err, fmt.Sprintf("Ports(%v)", tt.args.config)) {
 				return
 			}
 			assert.ElementsMatchf(t, tt.want, got, "Ports(%v)", tt.args.config)
+			rbacGen, err := s.GetRBACRules(logr.Discard(), tt.args.config)
+			assert.NoError(t, err)
+			assert.Nil(t, rbacGen)
 		})
 	}
+}
+
+func TestMultiMustBuildPanics(t *testing.T) {
+	b := components.MultiPortBuilder[*components.MultiProtocolEndpointConfig]{}
+	assert.Panics(t, func() {
+		b.MustBuild()
+	})
 }
