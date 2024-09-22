@@ -62,7 +62,7 @@ type Params struct {
 	Recorder        record.EventRecorder
 	Scheme          *runtime.Scheme
 	Log             logr.Logger
-	Collector       v1beta1.OpenTelemetryCollector
+	Collector       *v1beta1.OpenTelemetryCollector
 	TargetAllocator v1alpha1.TargetAllocator
 	Config          config.Config
 }
