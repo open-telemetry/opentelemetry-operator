@@ -361,7 +361,7 @@ In some cases (for example in the case of the injection of an Istio sidecar) it 
 
 For this, it is possible to fine-tune the pod(s) on which the injection will be carried out.
 
-For this, we will use the `instrumentation.opentelemetry.io/container-names` annotation for which we will indicate one or more pod names (`.spec.containers.name`) on which the injection must be made:
+For this, we will use the `instrumentation.opentelemetry.io/container-names` annotation for which we will indicate one or more container names (`.spec.containers.name`) on which the injection must be made:
 
 ```yaml
 apiVersion: apps/v1
