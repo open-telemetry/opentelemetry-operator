@@ -31,7 +31,7 @@ var (
 // functionality to idempotent functions.
 type GenericParser[T any] struct {
 	name         string
-	settings       *Settings[T]
+	settings     *Settings[T]
 	portParser   PortParser[T]
 	rbacGen      RBACRuleGenerator[T]
 	livenessGen  ProbeGenerator[T]
