@@ -21,10 +21,11 @@ import (
 )
 
 func init() {
-	v1beta1.SchemeBuilder.Register(&TargetAllocator{}, &TargetAllocatorList{})
+	SchemeBuilder.Register(&TargetAllocator{}, &TargetAllocatorList{})
 }
 
 //+kubebuilder:object:root=true
+//+kubebuilder:storageversion
 //+kubebuilder:subresource:status
 
 // TargetAllocator is the Schema for the targetallocators API.
