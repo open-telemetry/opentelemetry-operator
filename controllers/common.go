@@ -67,7 +67,7 @@ func BuildCollector(params manifests.Params) ([]client.Object, error) {
 			Recorder:        params.Recorder,
 			Log:             params.Log,
 			Config:          params.Config,
-			Collector:       params.OtelCol,
+			Collector:       &params.OtelCol,
 			TargetAllocator: *params.TargetAllocator,
 		}
 		taResources, err := BuildTargetAllocator(taParams)

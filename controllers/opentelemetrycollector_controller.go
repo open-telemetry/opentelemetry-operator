@@ -168,7 +168,7 @@ func (r *OpenTelemetryCollectorReconciler) getConfigMapsToRemove(configVersionsT
 	return ownedConfigMaps
 }
 
-func (r *OpenTelemetryCollectorReconciler) getParams(instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
+func (r *OpenTelemetryCollectorReconciler) GetParams(instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
 	p := manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
@@ -199,7 +199,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	return r
 }
 
-// +kubebuilder:rbac:groups="",resources=pods;configmaps;services;serviceaccounts;persistentvolumeclaims;persistentvolumes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=pods;configmaps;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=apps,resources=daemonsets;deployments;statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
@@ -229,7 +229,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	params, err := r.getParams(instance)
+	params, err := r.GetParams(instance)
 	if err != nil {
 		log.Error(err, "Failed to create manifest.Params")
 		return ctrl.Result{}, err
@@ -297,8 +297,6 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&appsv1.StatefulSet{}).
-		Owns(&corev1.PersistentVolume{}).
-		Owns(&corev1.PersistentVolumeClaim{}).
 		Owns(&networkingv1.Ingress{}).
 		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
 		Owns(&policyV1.PodDisruptionBudget{})

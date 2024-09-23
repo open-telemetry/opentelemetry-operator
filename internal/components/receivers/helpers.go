@@ -91,6 +91,7 @@ var (
 			MustBuild(),
 		components.NewSinglePortParserBuilder("awsxray", 2000).
 			WithTargetPort(2000).
+			WithProtocol(corev1.ProtocolUDP).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("carbon", 2003).
 			WithTargetPort(2003).

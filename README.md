@@ -12,6 +12,7 @@ The operator manages:
 ## Documentation
 
 - [API docs](./docs/api.md)
+- [Offical Telemetry Operator page](https://opentelemetry.io/docs/kubernetes/operator/)
 
 ## Helm Charts
 
@@ -360,7 +361,7 @@ In some cases (for example in the case of the injection of an Istio sidecar) it 
 
 For this, it is possible to fine-tune the pod(s) on which the injection will be carried out.
 
-For this, we will use the `instrumentation.opentelemetry.io/container-names` annotation for which we will indicate one or more pod names (`.spec.containers.name`) on which the injection must be made:
+For this, we will use the `instrumentation.opentelemetry.io/container-names` annotation for which we will indicate one or more container names (`.spec.containers.name`) on which the injection must be made:
 
 ```yaml
 apiVersion: apps/v1
@@ -758,6 +759,8 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes     | Cert-Manager | Prometheus-Operator |
 |------------------------|----------------| ------------ |---------------------|
+| v0.109.0               | v1.23 to v1.31 | v1           | v0.76.0             |
+| v0.108.0               | v1.23 to v1.31 | v1           | v0.76.0             |
 | v0.107.0               | v1.23 to v1.30 | v1           | v0.75.0             |
 | v0.106.0               | v1.23 to v1.30 | v1           | v0.75.0             |
 | v0.105.0               | v1.23 to v1.30 | v1           | v0.74.0             |
@@ -780,7 +783,6 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 | v0.88.0                | v1.23 to v1.28 | v1           | v0.68.0             |
 | v0.87.0                | v1.23 to v1.28 | v1           | v0.68.0             |
 | v0.86.0                | v1.23 to v1.28 | v1           | v0.68.0             |
-| v0.85.0                | v1.19 to v1.28 | v1           | v0.67.1             |
 
 ## Contributing and Developing
 
@@ -815,7 +817,7 @@ Emeritus Target Allocator Maintainers
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
 - [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
-- [Mikołaj Świątek](https://github.com/swiatekm), Sumo Logic
+- [Mikołaj Świątek](https://github.com/swiatekm), Elastic
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 
 Emeritus Maintainers

@@ -84,7 +84,7 @@ receivers:
     config: {}
     target_allocator:
       collector_id: ${POD_NAME}
-      endpoint: http://test-targetallocator.default.svc.cluster.local:80
+      endpoint: http://test-targetallocator:80
       interval: 30s
 service:
   pipelines:

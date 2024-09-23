@@ -178,7 +178,11 @@ func TestMain(m *testing.M) {
 	}
 	reviewer := rbac.NewReviewer(clientset)
 
-	if err = v1beta1.SetupCollectorWebhook(mgr, config.New(), reviewer, nil); err != nil {
+	if err = v1beta1.SetupCollectorWebhook(mgr, config.New(), reviewer, nil, nil); err != nil {
+		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
+		os.Exit(1)
+	}
+	if err = v1alpha1.SetupTargetAllocatorWebhook(mgr, config.New(), reviewer); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
@@ -463,7 +467,7 @@ func opampBridgeParams() manifests.Params {
 					v1alpha1.OpAMPBridgeCapabilityReportsHealth:                  true,
 					v1alpha1.OpAMPBridgeCapabilityReportsRemoteConfig:            true,
 				},
-				ComponentsAllowed: map[string][]string{"receivers": {"otlp"}, "processors": {"memory_limiter"}, "exporters": {"logging"}},
+				ComponentsAllowed: map[string][]string{"receivers": {"otlp"}, "processors": {"memory_limiter"}, "exporters": {"debug"}},
 			},
 		},
 		Scheme:   testScheme,

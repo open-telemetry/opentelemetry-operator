@@ -76,7 +76,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
-			name: "valid config with listen_address with option",
+			name: "valid config with listen_address with settings",
 			g:    components.NewSinglePortParserBuilder("test", 0).WithProtocol(corev1.ProtocolUDP).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
