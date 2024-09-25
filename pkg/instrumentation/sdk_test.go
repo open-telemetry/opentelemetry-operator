@@ -133,7 +133,7 @@ func TestSDKInjection(t *testing.T) {
 						AddK8sUIDAttributes: true,
 					},
 					Propagators: []v1alpha1.Propagator{"b3", "jaeger"},
-					Sampler: v1alpha1.Sampler{
+					SamplerConfig: v1alpha1.SamplerConfig{
 						Type:     "parentbased_traceidratio",
 						Argument: "0.25",
 					},
@@ -241,7 +241,7 @@ func TestSDKInjection(t *testing.T) {
 						},
 					},
 					Propagators: []v1alpha1.Propagator{"jaeger"},
-					Sampler: v1alpha1.Sampler{
+					SamplerConfig: v1alpha1.SamplerConfig{
 						Type:     "parentbased_traceidratio",
 						Argument: "0.25",
 					},
@@ -521,7 +521,7 @@ func TestSDKInjection(t *testing.T) {
 						},
 					},
 					Propagators: []v1alpha1.Propagator{"jaeger"},
-					Sampler: v1alpha1.Sampler{
+					SamplerConfig: v1alpha1.SamplerConfig{
 						Type:     "parentbased_traceidratio",
 						Argument: "0.25",
 					},

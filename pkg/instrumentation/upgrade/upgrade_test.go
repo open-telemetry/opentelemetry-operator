@@ -48,7 +48,7 @@ func TestUpgrade(t *testing.T) {
 			Namespace: nsName,
 		},
 		Spec: v1alpha1.InstrumentationSpec{
-			Sampler: v1alpha1.Sampler{
+			SamplerConfig: v1alpha1.SamplerConfig{
 				Type: v1alpha1.ParentBasedAlwaysOff,
 			},
 		},
