@@ -39,7 +39,7 @@ func TestParserForReturns(t *testing.T) {
 
 func TestCanRegister(t *testing.T) {
 	const testComponentName = "test"
-	exporters.Register(testComponentName, components.NewSinglePortParser(testComponentName, 9000))
+	exporters.Register(testComponentName, components.NewSinglePortParserBuilder(testComponentName, 9000).MustBuild())
 	assert.True(t, exporters.IsRegistered(testComponentName))
 	parser := exporters.ParserFor(testComponentName)
 	assert.Equal(t, "test", parser.ParserType())

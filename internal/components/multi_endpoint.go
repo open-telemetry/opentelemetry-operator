@@ -20,6 +20,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -71,21 +72,46 @@ func (m *MultiPortReceiver) ParserName() string {
 	return fmt.Sprintf("__%s", m.name)
 }
 
-func NewMultiPortReceiver(name string, opts ...MultiPortOption) *MultiPortReceiver {
-	multiReceiver := &MultiPortReceiver{
-		name:         name,
-		portMappings: map[string]*corev1.ServicePort{},
-	}
-	for _, opt := range opts {
-		opt(multiReceiver)
-	}
-	return multiReceiver
+func (m *MultiPortReceiver) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.PolicyRule, error) {
+	return nil, nil
 }
 
-func WithPortMapping(name string, port int32, opts ...PortBuilderOption) MultiPortOption {
-	return func(parser *MultiPortReceiver) {
-		o := NewOption(name, port)
-		o.Apply(opts...)
-		parser.portMappings[name] = o.GetServicePort()
+type MultiPortBuilder[ComponentConfigType any] []Builder[ComponentConfigType]
+
+func NewMultiPortReceiverBuilder(name string) MultiPortBuilder[*MultiProtocolEndpointConfig] {
+	return append(MultiPortBuilder[*MultiProtocolEndpointConfig]{}, NewBuilder[*MultiProtocolEndpointConfig]().WithName(name))
+}
+
+func NewProtocolBuilder(name string, port int32) Builder[*MultiProtocolEndpointConfig] {
+	return NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithPort(port)
+}
+
+func (mp MultiPortBuilder[ComponentConfigType]) AddPortMapping(builder Builder[ComponentConfigType]) MultiPortBuilder[ComponentConfigType] {
+	return append(mp, builder)
+}
+
+func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, error) {
+	if len(mp) < 1 {
+		return nil, fmt.Errorf("must provide at least one port mapping")
+	}
+	multiReceiver := &MultiPortReceiver{
+		name:         mp[0].MustBuild().name,
+		portMappings: map[string]*corev1.ServicePort{},
+	}
+	for _, bu := range mp[1:] {
+		built, err := bu.Build()
+		if err != nil {
+			return nil, err
+		}
+		multiReceiver.portMappings[built.name] = built.settings.GetServicePort()
+	}
+	return multiReceiver, nil
+}
+
+func (mp MultiPortBuilder[ComponentConfigType]) MustBuild() *MultiPortReceiver {
+	if p, err := mp.Build(); err != nil {
+		panic(err)
+	} else {
+		return p
 	}
 }

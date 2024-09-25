@@ -109,9 +109,7 @@ func TestSingleEndpointConfig_GetPortNumOrDefault(t *testing.T) {
 
 func TestSingleEndpointParser_ParserName(t *testing.T) {
 	type fields struct {
-		name string
-		port int32
-		opts []components.PortBuilderOption
+		b components.Builder[*components.SingleEndpointConfig]
 	}
 	tests := []struct {
 		name   string
@@ -121,25 +119,22 @@ func TestSingleEndpointParser_ParserName(t *testing.T) {
 		{
 			name: "no options",
 			fields: fields{
-				name: "receiver1",
-				opts: nil,
+				b: components.NewSinglePortParserBuilder("receiver1", components.UnsetPort),
 			},
 			want: "__receiver1",
 		},
 		{
 			name: "with port mapping without builder options",
 			fields: fields{
-				name: "receiver2",
-				opts: []components.PortBuilderOption{
-					components.WithTargetPort(8080),
-				},
+				b: components.NewSinglePortParserBuilder("receiver2", components.UnsetPort).WithTargetPort(8080),
 			},
 			want: "__receiver2",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := components.NewSinglePortParser(tt.fields.name, tt.fields.port, tt.fields.opts...)
+			s, err := tt.fields.b.Build()
+			assert.NoError(t, err)
 			assert.Equalf(t, tt.want, s.ParserName(), "ParserName()")
 		})
 	}
@@ -147,9 +142,7 @@ func TestSingleEndpointParser_ParserName(t *testing.T) {
 
 func TestSingleEndpointParser_ParserType(t *testing.T) {
 	type fields struct {
-		name string
-		port int32
-		opts []components.PortBuilderOption
+		b components.Builder[*components.SingleEndpointConfig]
 	}
 	tests := []struct {
 		name   string
@@ -159,25 +152,22 @@ func TestSingleEndpointParser_ParserType(t *testing.T) {
 		{
 			name: "no options",
 			fields: fields{
-				name: "receiver1",
-				opts: nil,
+				b: components.NewSinglePortParserBuilder("receiver1", components.UnsetPort),
 			},
 			want: "receiver1",
 		},
 		{
 			name: "with port mapping without builder options",
 			fields: fields{
-				name: "receiver2/test",
-				opts: []components.PortBuilderOption{
-					components.WithTargetPort(80),
-				},
+				b: components.NewSinglePortParserBuilder("receiver2", components.UnsetPort).WithTargetPort(8080),
 			},
 			want: "receiver2",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := components.NewSinglePortParser(tt.fields.name, tt.fields.port, tt.fields.opts...)
+			s, err := tt.fields.b.Build()
+			assert.NoError(t, err)
 			assert.Equalf(t, tt.want, s.ParserType(), "ParserType()")
 		})
 	}
@@ -185,9 +175,7 @@ func TestSingleEndpointParser_ParserType(t *testing.T) {
 
 func TestSingleEndpointParser_Ports(t *testing.T) {
 	type fields struct {
-		name string
-		port int32
-		opts []components.PortBuilderOption
+		b components.Builder[*components.SingleEndpointConfig]
 	}
 	type args struct {
 		config interface{}
@@ -202,8 +190,7 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 		{
 			name: "ValidConfigWithPort",
 			fields: fields{
-				name: "testparser",
-				port: 8080,
+				b: components.NewSinglePortParserBuilder("testparser", 8080),
 			},
 			args: args{
 				config: map[string]interface{}{
@@ -216,10 +203,20 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
+			name: "ValidConfigWithPort nil config",
+			fields: fields{
+				b: components.NewSinglePortParserBuilder("testparser", 8080),
+			},
+			args: args{
+				config: nil,
+			},
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		{
 			name: "ValidConfigWithDefaultPort",
 			fields: fields{
-				name: "testparser",
-				port: 8080,
+				b: components.NewSinglePortParserBuilder("testparser", 8080),
 			},
 			args: args{
 				config: map[string]interface{}{},
@@ -232,13 +229,10 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 		{
 			name: "ConfigWithFixins",
 			fields: fields{
-				name: "testparser",
-				port: 8080,
-				opts: []components.PortBuilderOption{
-					components.WithTargetPort(4317),
-					components.WithProtocol(corev1.ProtocolTCP),
-					components.WithAppProtocol(&components.GrpcProtocol),
-				},
+				b: components.NewSinglePortParserBuilder("testparser", 8080).
+					WithTargetPort(4317).
+					WithProtocol(corev1.ProtocolTCP).
+					WithAppProtocol(&components.GrpcProtocol),
 			},
 			args: args{
 				config: map[string]interface{}{},
@@ -257,8 +251,7 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 		{
 			name: "InvalidConfigMissingPort",
 			fields: fields{
-				name: "testparser",
-				port: 0,
+				b: components.NewSinglePortParserBuilder("testparser", components.UnsetPort),
 			},
 			args: args{
 				config: map[string]interface{}{
@@ -271,8 +264,7 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 		{
 			name: "ErrorParsingConfig",
 			fields: fields{
-				name: "testparser",
-				port: 8080,
+				b: components.NewSinglePortParserBuilder("testparser", components.UnsetPort),
 			},
 			args: args{
 				config: "invalid config",
@@ -283,8 +275,9 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := components.NewSinglePortParser(tt.fields.name, tt.fields.port, tt.fields.opts...)
-			got, err := s.Ports(logr.Discard(), tt.fields.name, tt.args.config)
+			s, err := tt.fields.b.Build()
+			assert.NoError(t, err)
+			got, err := s.Ports(logr.Discard(), s.ParserType(), tt.args.config)
 			if !tt.wantErr(t, err, fmt.Sprintf("Ports(%v)", tt.args.config)) {
 				return
 			}
@@ -294,10 +287,9 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 }
 
 func TestNewSilentSinglePortParser_Ports(t *testing.T) {
+
 	type fields struct {
-		name string
-		port int32
-		opts []components.PortBuilderOption
+		b components.Builder[*components.SingleEndpointConfig]
 	}
 	type args struct {
 		config interface{}
@@ -312,8 +304,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 		{
 			name: "ValidConfigWithPort",
 			fields: fields{
-				name: "testparser",
-				port: 8080,
+				b: components.NewSilentSinglePortParserBuilder("testparser", 8080),
 			},
 			args: args{
 				config: map[string]interface{}{
@@ -328,8 +319,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 		{
 			name: "ValidConfigWithDefaultPort",
 			fields: fields{
-				name: "testparser",
-				port: 8080,
+				b: components.NewSilentSinglePortParserBuilder("testparser", 8080),
 			},
 			args: args{
 				config: map[string]interface{}{},
@@ -342,13 +332,10 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 		{
 			name: "ConfigWithFixins",
 			fields: fields{
-				name: "testparser",
-				port: 8080,
-				opts: []components.PortBuilderOption{
-					components.WithTargetPort(4317),
-					components.WithProtocol(corev1.ProtocolTCP),
-					components.WithAppProtocol(&components.GrpcProtocol),
-				},
+				b: components.NewSilentSinglePortParserBuilder("testparser", 8080).
+					WithTargetPort(4317).
+					WithProtocol(corev1.ProtocolTCP).
+					WithAppProtocol(&components.GrpcProtocol),
 			},
 			args: args{
 				config: map[string]interface{}{},
@@ -367,8 +354,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 		{
 			name: "InvalidConfigMissingPort",
 			fields: fields{
-				name: "testparser",
-				port: 0,
+				b: components.NewSilentSinglePortParserBuilder("testparser", components.UnsetPort),
 			},
 			args: args{
 				config: map[string]interface{}{
@@ -381,8 +367,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 		{
 			name: "ErrorParsingConfig",
 			fields: fields{
-				name: "testparser",
-				port: 8080,
+				b: components.NewSilentSinglePortParserBuilder("testparser", 8080),
 			},
 			args: args{
 				config: "invalid config",
@@ -393,8 +378,9 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := components.NewSilentSinglePortParser(tt.fields.name, tt.fields.port, tt.fields.opts...)
-			got, err := s.Ports(logr.Discard(), tt.fields.name, tt.args.config)
+			s, err := tt.fields.b.Build()
+			assert.NoError(t, err)
+			got, err := s.Ports(logr.Discard(), s.ParserType(), tt.args.config)
 			if !tt.wantErr(t, err, fmt.Sprintf("Ports(%v)", tt.args.config)) {
 				return
 			}
