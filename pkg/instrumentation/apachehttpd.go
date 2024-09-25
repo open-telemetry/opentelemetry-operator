@@ -59,7 +59,7 @@ const (
 	6) Inject mounting of volumes / files into appropriate directories in application container
 */
 
-func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod corev1.Pod, index int, otlpEndpoint string, resourceMap map[string]string) corev1.Pod {
+func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod corev1.Pod, useLabelsForResourceAttributes bool, index int, otlpEndpoint string, resourceMap map[string]string) corev1.Pod {
 
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[index]
@@ -162,7 +162,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 			Env: []corev1.EnvVar{
 				{
 					Name:  apacheAttributesEnvVar,
-					Value: getApacheOtelConfig(pod, apacheSpec, index, otlpEndpoint, resourceMap),
+					Value: getApacheOtelConfig(pod, useLabelsForResourceAttributes, apacheSpec, index, otlpEndpoint, resourceMap),
 				},
 				{Name: apacheServiceInstanceIdEnvVar,
 					ValueFrom: &corev1.EnvVarSource{
@@ -201,7 +201,7 @@ func isApacheInitContainerMissing(pod corev1.Pod, containerName string) bool {
 
 // Calculate Apache HTTPD agent configuration file based on attributes provided by the injection rules
 // and by the pod values.
-func getApacheOtelConfig(pod corev1.Pod, apacheSpec v1alpha1.ApacheHttpd, index int, otelEndpoint string, resourceMap map[string]string) string {
+func getApacheOtelConfig(pod corev1.Pod, useLabelsForResourceAttributes bool, apacheSpec v1alpha1.ApacheHttpd, index int, otelEndpoint string, resourceMap map[string]string) string {
 	template := `
 #Load the Otel Webserver SDK
 LoadFile %[1]s/sdk_lib/lib/libopentelemetry_common.so
@@ -222,7 +222,7 @@ LoadModule otel_apache_module %[1]s/WebServerModule/Apache/libmod_apache_otel%[2
 	if otelEndpoint == "" {
 		otelEndpoint = "http://localhost:4317/"
 	}
-	serviceName := chooseServiceName(pod, resourceMap, index)
+	serviceName := chooseServiceName(pod, useLabelsForResourceAttributes, resourceMap, index)
 	serviceNamespace := pod.GetNamespace()
 	if len(serviceNamespace) == 0 {
 		serviceNamespace = resourceMap[string(semconv.K8SNamespaceNameKey)]
