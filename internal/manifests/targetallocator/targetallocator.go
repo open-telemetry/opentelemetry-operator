@@ -48,11 +48,13 @@ func Build(params Params) ([]client.Object, error) {
 	}
 
 	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
-		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(SelfSignedIssuer))
-		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(CACertificate))
-		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(CAIssuer))
-		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServingCertificate))
-		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ClientCertificate))
+		resourceFactories = append(resourceFactories,
+			manifests.FactoryWithoutError(SelfSignedIssuer),
+			manifests.FactoryWithoutError(CACertificate),
+			manifests.FactoryWithoutError(CAIssuer),
+			manifests.FactoryWithoutError(ServingCertificate),
+			manifests.FactoryWithoutError(ClientCertificate),
+		)
 	}
 
 	for _, factory := range resourceFactories {
