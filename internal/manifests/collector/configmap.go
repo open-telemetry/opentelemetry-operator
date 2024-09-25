@@ -25,6 +25,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -46,9 +47,9 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 
 	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		replaceCfgOpts = append(replaceCfgOpts, ta.WithTLSConfig(
-			filepath.Join(manifestutils.TLSDirPath, manifestutils.CAFileName),
-			filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSCertFileName),
-			filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSKeyFileName),
+			filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorCAFileName),
+			filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSCertFileName),
+			filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSKeyFileName),
 			naming.TAService(params.OtelCol.Name)),
 		)
 	}

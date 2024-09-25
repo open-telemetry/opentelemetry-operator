@@ -28,6 +28,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -110,9 +111,9 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["https"] = map[string]interface{}{
 			"enabled":            true,
 			"listen_addr":        ":8443",
-			"ca_file_path":       filepath.Join(manifestutils.TLSDirPath, manifestutils.CAFileName),
-			"tls_cert_file_path": filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSCertFileName),
-			"tls_key_file_path":  filepath.Join(manifestutils.TLSDirPath, manifestutils.TLSKeyFileName),
+			"ca_file_path":       filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorCAFileName),
+			"tls_cert_file_path": filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSCertFileName),
+			"tls_key_file_path":  filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSKeyFileName),
 		}
 	}
 

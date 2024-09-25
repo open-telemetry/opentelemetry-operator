@@ -30,8 +30,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
-	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -881,6 +881,6 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 	// verify
 	assert.Contains(t, c.VolumeMounts, corev1.VolumeMount{
 		Name:      naming.TAClientCertificate(""),
-		MountPath: manifestutils.TLSDirPath,
+		MountPath: constants.TACollectorTLSDirPath,
 	})
 }
