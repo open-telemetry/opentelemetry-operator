@@ -2249,7 +2249,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-operator-config/sha256": "39cae697770f9d7e183e8fa9ba56043315b62e19c7231537870acfaaabc30a43",
+									"opentelemetry-operator-config/sha256": "42773025f65feaf30df59a306a9e38f1aaabe94c8310983beaddb7f648d699b0",
 									"prometheus.io/path":                   "/metrics",
 									"prometheus.io/port":                   "8888",
 									"prometheus.io/scrape":                 "true",
@@ -2379,7 +2379,7 @@ prometheus_cr:
 						Annotations: map[string]string{},
 					},
 					Data: map[string]string{
-						"collector.yaml": "exporters:\n    logging: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: https://test-targetallocator:443\n            interval: 30s\n            tls:\n                ca_file: /tls/ca.crt\n                cert_file: /tls/tls.crt\n                key_file: /tls/tls.key\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - logging\n            receivers:\n                - prometheus\n",
+						"collector.yaml": "exporters:\n    debug: null\nreceivers:\n    prometheus:\n        config: {}\n        target_allocator:\n            collector_id: ${POD_NAME}\n            endpoint: https://test-targetallocator:443\n            interval: 30s\n            tls:\n                ca_file: /tls/ca.crt\n                cert_file: /tls/tls.crt\n                key_file: /tls/tls.key\nservice:\n    pipelines:\n        metrics:\n            exporters:\n                - debug\n            receivers:\n                - prometheus\n",
 					},
 				},
 				&corev1.ServiceAccount{
