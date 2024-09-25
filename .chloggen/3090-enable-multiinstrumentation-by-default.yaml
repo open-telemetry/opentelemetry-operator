@@ -13,4 +13,18 @@ issues: [3090]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: |
+  Starting with this release, the OpenTelemetry Operator now enables multi-instrumentation by default.
+  This enhancement allows instrumentation of multiple containers in a pod with language-specific configurations.|
+  Key Changes:
+    - Single Instrumentation (Default Behavior): If no container names are specified using the
+      `instrumentation.opentelemetry.io/container-names` annotation, instrumentation will be applied to the first container in
+      the pod spec by default. This only applies when single instrumentation injection is configured.
+    - Multi-Container Pods: In scenarios where different containers in a pod use distinct technologies, users must specify the
+      container(s) for instrumentation using language-specific annotations. Without this specification, the default behavior may
+      not work as expected for multi-container environments.
+  Compatibility:
+    - Users already utilizing the `instrumentation.opentelemetry.io/container-names` annotation do not need to take any action.
+      Their existing setup will continue to function as before.
+    - Important: Users who attempt to configure both `instrumentation.opentelemetry.io/container-names` and language-specific annotations
+      (for multi-instrumentation) simultaneously will encounter an error, as this configuration is not supported.
