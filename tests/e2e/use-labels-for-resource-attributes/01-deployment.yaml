@@ -11,9 +11,11 @@ spec:
     metadata:
       labels:
         app: my-deploy
+        app.kubernetes.io/name: my-app
       annotations:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-sdk: "true"
+        resource.opentelemetry.io/foo: "bar"
     spec:
       containers:
       - name: myapp
