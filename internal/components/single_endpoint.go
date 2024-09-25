@@ -21,6 +21,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
+var (
+	_ Parser = &GenericParser[*SingleEndpointConfig]{}
+)
+
 // SingleEndpointConfig represents the minimal struct for a given YAML configuration input containing either
 // endpoint or listen_address.
 type SingleEndpointConfig struct {
@@ -48,38 +52,37 @@ func (g *SingleEndpointConfig) GetPortNum() (int32, error) {
 	return UnsetPort, PortNotFoundErr
 }
 
-func ParseSingleEndpointSilent(logger logr.Logger, name string, o *Option, singleEndpointConfig *SingleEndpointConfig) ([]corev1.ServicePort, error) {
-	return internalParseSingleEndpoint(logger, name, true, o, singleEndpointConfig)
+func ParseSingleEndpointSilent(logger logr.Logger, name string, defaultPort *corev1.ServicePort, singleEndpointConfig *SingleEndpointConfig) ([]corev1.ServicePort, error) {
+	return internalParseSingleEndpoint(logger, name, true, defaultPort, singleEndpointConfig)
 }
 
-func ParseSingleEndpoint(logger logr.Logger, name string, o *Option, singleEndpointConfig *SingleEndpointConfig) ([]corev1.ServicePort, error) {
-	return internalParseSingleEndpoint(logger, name, false, o, singleEndpointConfig)
+func ParseSingleEndpoint(logger logr.Logger, name string, defaultPort *corev1.ServicePort, singleEndpointConfig *SingleEndpointConfig) ([]corev1.ServicePort, error) {
+	return internalParseSingleEndpoint(logger, name, false, defaultPort, singleEndpointConfig)
 }
 
-func internalParseSingleEndpoint(logger logr.Logger, name string, failSilently bool, o *Option, singleEndpointConfig *SingleEndpointConfig) ([]corev1.ServicePort, error) {
+func internalParseSingleEndpoint(logger logr.Logger, name string, failSilently bool, defaultPort *corev1.ServicePort, singleEndpointConfig *SingleEndpointConfig) ([]corev1.ServicePort, error) {
 	if singleEndpointConfig == nil {
 		return nil, nil
 	}
-	if _, err := singleEndpointConfig.GetPortNum(); err != nil && o.port == UnsetPort {
+	if _, err := singleEndpointConfig.GetPortNum(); err != nil && defaultPort.Port == UnsetPort {
 		if failSilently {
-			logger.WithValues("receiver", o.name).V(4).Info("couldn't parse the endpoint's port and no default port set", "error", err)
+			logger.WithValues("receiver", defaultPort.Name).V(4).Info("couldn't parse the endpoint's port and no default port set", "error", err)
 			err = nil
 		} else {
-			logger.WithValues("receiver", o.name).Error(err, "couldn't parse the endpoint's port and no default port set")
+			logger.WithValues("receiver", defaultPort.Name).Error(err, "couldn't parse the endpoint's port and no default port set")
 		}
 		return []corev1.ServicePort{}, err
 	}
-	port := singleEndpointConfig.GetPortNumOrDefault(logger, o.port)
-	svcPort := o.GetServicePort()
+	port := singleEndpointConfig.GetPortNumOrDefault(logger, defaultPort.Port)
+	svcPort := defaultPort
 	svcPort.Name = naming.PortName(name, port)
 	return []corev1.ServicePort{ConstructServicePort(svcPort, port)}, nil
 }
 
-func NewSinglePortParser(name string, port int32, opts ...PortBuilderOption) *GenericParser[*SingleEndpointConfig] {
-	return NewGenericParser(name, port, ParseSingleEndpoint, opts...)
+func NewSinglePortParserBuilder(name string, port int32) Builder[*SingleEndpointConfig] {
+	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpoint)
 }
 
-// NewSilentSinglePortParser returns a ParseSingleEndpoint that errors silently on failure to find a port.
-func NewSilentSinglePortParser(name string, port int32, opts ...PortBuilderOption) *GenericParser[*SingleEndpointConfig] {
-	return NewGenericParser(name, port, ParseSingleEndpointSilent, opts...)
+func NewSilentSinglePortParserBuilder(name string, port int32) Builder[*SingleEndpointConfig] {
+	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpointSilent)
 }

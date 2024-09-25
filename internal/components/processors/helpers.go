@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package exporters
+package processors
 
-import (
-	"github.com/open-telemetry/opentelemetry-operator/internal/components"
-)
+import "github.com/open-telemetry/opentelemetry-operator/internal/components"
 
 // registry holds a record of all known receiver parsers.
 var registry = make(map[string]components.Parser)
@@ -28,24 +26,22 @@ func Register(name string, p components.Parser) {
 
 // IsRegistered checks whether a parser is registered with the given name.
 func IsRegistered(name string) bool {
-	_, ok := registry[name]
+	_, ok := registry[components.ComponentType(name)]
 	return ok
 }
 
-// ParserFor returns a parser builder for the given exporter name.
-func ParserFor(name string) components.Parser {
+// ProcessorFor returns a parser builder for the given exporter name.
+func ProcessorFor(name string) components.Parser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}
-	// We want the default for exporters to fail silently.
 	return components.NewBuilder[any]().WithName(name).MustBuild()
 }
 
-var (
-	componentParsers = []components.Parser{
-		components.NewSinglePortParserBuilder("prometheus", 8888).MustBuild(),
-	}
-)
+var componentParsers = []components.Parser{
+	components.NewBuilder[K8sAttributeConfig]().WithName("k8sattributes").WithRbacGen(GenerateK8SAttrRbacRules).MustBuild(),
+	components.NewBuilder[ResourceDetectionConfig]().WithName("resourcedetection").WithRbacGen(GenerateResourceDetectionRbacRules).MustBuild(),
+}
 
 func init() {
 	for _, parser := range componentParsers {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package processor
+package processors
 
 import (
 	"fmt"
@@ -21,46 +21,15 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-var _ ProcessorParser = &ResourceDetectionParser{}
-
-const (
-	parserNameResourceDetection = "__resourcedetection"
-)
-
-// PrometheusExporterParser parses the configuration for OTLP receivers.
-type ResourceDetectionParser struct {
-	config map[interface{}]interface{}
-	logger logr.Logger
-	name   string
+// ResourceDetectionConfig is a minimal struct needed for parsing a valid resourcedetection processor configuration
+// This only contains the fields necessary for parsing, other fields can be added in the future.
+type ResourceDetectionConfig struct {
+	Detectors []string `mapstructure:"detectors"`
 }
 
-// NewPrometheusExporterParser builds a new parser for OTLP receivers.
-func NewResourceDetectionParser(logger logr.Logger, name string, config map[interface{}]interface{}) ProcessorParser {
-	return &ResourceDetectionParser{
-		logger: logger,
-		name:   name,
-		config: config,
-	}
-}
-
-// ParserName returns the name of this parser.
-func (o *ResourceDetectionParser) ParserName() string {
-	return parserNameResourceDetection
-}
-
-func (o *ResourceDetectionParser) GetRBACRules() []rbacv1.PolicyRule {
+func GenerateResourceDetectionRbacRules(_ logr.Logger, config ResourceDetectionConfig) ([]rbacv1.PolicyRule, error) {
 	var prs []rbacv1.PolicyRule
-
-	detectorsCfg, ok := o.config["detectors"]
-	if !ok {
-		return prs
-	}
-
-	detectors, ok := detectorsCfg.([]interface{})
-	if !ok {
-		return prs
-	}
-	for _, d := range detectors {
+	for _, d := range config.Detectors {
 		detectorName := fmt.Sprint(d)
 		switch detectorName {
 		case "k8snode":
@@ -79,9 +48,5 @@ func (o *ResourceDetectionParser) GetRBACRules() []rbacv1.PolicyRule {
 			prs = append(prs, policy)
 		}
 	}
-	return prs
-}
-
-func init() {
-	Register("resourcedetection", NewResourceDetectionParser)
+	return prs, nil
 }
