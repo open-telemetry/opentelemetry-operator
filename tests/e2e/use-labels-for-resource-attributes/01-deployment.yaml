@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deploy
+spec:
+  selector:
+    matchLabels:
+      app: my-deploy
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-deploy
+        app.kubernetes.io/name: my-app
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+        instrumentation.opentelemetry.io/inject-sdk: "true"
+        resource.opentelemetry.io/foo: "bar"
+    spec:
+      containers:
+      - name: myapp
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
