@@ -12,6 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package receiver
+package targetallocator
 
-// all tests for the SAPM parser are currently part of the test TestDownstreamParsers
+import (
+	"context"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+)
+
+func UpdateTargetAllocatorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.TargetAllocator) error {
+	if changed.Status.Version == "" {
+		changed.Status.Version = version.TargetAllocator()
+	}
+	return nil
+}
