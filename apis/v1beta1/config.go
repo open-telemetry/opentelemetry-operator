@@ -93,16 +93,9 @@ func (c AnyConfig) MarshalJSON() ([]byte, error) {
 		return []byte("{}"), nil
 	}
 
-	nonNilMap := make(map[string]interface{})
-
+	nonNilMap := make(map[string]interface{}, len(c.Object))
 	for k, v := range c.Object {
-		if v == nil {
-			nonNilMap[k] = nil
-		} else if emptyMap, ok := v.(map[string]interface{}); ok && len(emptyMap) == 0 {
-			nonNilMap[k] = emptyMap
-		} else {
-			nonNilMap[k] = v
-		}
+		nonNilMap[k] = v
 	}
 
 	return json.Marshal(nonNilMap)
@@ -251,8 +244,14 @@ func (c *Config) Yaml() (string, error) {
 	return buf.String(), nil
 }
 
+// MarshalJSON marshalls the Config field.
 func (c Config) MarshalJSON() ([]byte, error) {
+	// When you marshal a struct that embeds itself or a type that directly or indirectly refers back to itself,
+	// Go's JSON marshaling can lead to infinite recursion. To avoid this, we create an alias of the struct
+	// (Config), so Go no longer considers it the same type.
+	// This allows you to embed the struct safely within itself without triggering that infinite loop.
 	type Alias Config
+	// Ensure we call the custom marshaller for AnyConfig for the Receivers
 	receiversJSON, err := json.Marshal(c.Receivers)
 	if err != nil {
 		return nil, err

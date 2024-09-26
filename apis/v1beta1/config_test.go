@@ -85,6 +85,11 @@ func TestCreateConfigInKubernetesEmptyValues(t *testing.T) {
 						},
 					},
 				},
+				Processors: &AnyConfig{
+					Object: map[string]interface{}{
+						"resourcedetection": map[string]interface{}{},
+					},
+				},
 				Service: Service{
 					Pipelines: map[string]*Pipeline{
 						"traces": {
@@ -119,6 +124,7 @@ func TestCreateConfigInKubernetesEmptyValues(t *testing.T) {
 	}
 
 	require.Contains(t, string(jsonData), "{\"grpc\":{},\"http\":{}}")
+	require.Contains(t, string(jsonData), "\"resourcedetection\":{}")
 
 	unmarshalledCollector := &OpenTelemetryCollector{}
 	err = json.Unmarshal(jsonData, &unmarshalledCollector.Spec)
@@ -138,6 +144,11 @@ func TestCreateConfigInKubernetesEmptyValues(t *testing.T) {
 	http, ok := protocols["http"]
 	require.True(t, ok, "http protocol should exist")
 	require.NotNil(t, http, "http protocol should be nil")
+
+	require.NotNil(t, unmarshalledCollector.Spec.Config.Receivers.Object["otlp"])
+
+	_, ok = unmarshalledCollector.Spec.Config.Processors.Object["resourcedetection"].(map[string]interface{})
+	require.True(t, ok, "resourcedetector processor should be a map")
 }
 
 func TestCreateConfigInKubernetesNullValues(t *testing.T) {

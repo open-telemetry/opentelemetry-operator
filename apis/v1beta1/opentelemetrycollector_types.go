@@ -54,8 +54,14 @@ type OpenTelemetryCollector struct {
 // Hub exists to allow for conversion.
 func (*OpenTelemetryCollector) Hub() {}
 
+// MarshalJSON marshalls the OpenTelemetry Collector to JSON.
 func (o *OpenTelemetryCollector) MarshalJSON() ([]byte, error) {
+	// When you marshal a struct that embeds itself or a type that directly or indirectly refers back to itself,
+	// Go's JSON marshaling can lead to infinite recursion. To avoid this, we create an alias of the struct
+	// (Config), so Go no longer considers it the same type.
+	// This allows you to embed the struct safely within itself without triggering that infinite loop.
 	type Alias OpenTelemetryCollector
+	// Ensure we call the custom marshaller for Spec
 	specJSON, err := json.Marshal(&o.Spec)
 	if err != nil {
 		return nil, err
@@ -160,8 +166,14 @@ type OpenTelemetryCollectorSpec struct {
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
 }
 
+// MarshalJSON marshalls the OpenTelemetryCollectorSpec field.
 func (s *OpenTelemetryCollectorSpec) MarshalJSON() ([]byte, error) {
+	// When you marshal a struct that embeds itself or a type that directly or indirectly refers back to itself,
+	// Go's JSON marshaling can lead to infinite recursion. To avoid this, we create an alias of the struct
+	// (Config), so Go no longer considers it the same type.
+	// This allows you to embed the struct safely within itself without triggering that infinite loop.
 	type Alias OpenTelemetryCollectorSpec
+	// Ensure we call the custom marshaller for Config
 	configJSON, err := json.Marshal(s.Config)
 	if err != nil {
 		return nil, err
