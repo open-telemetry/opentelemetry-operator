@@ -20,3 +20,19 @@ subtext: |
   structure and data types. For example, a config with nested maps and arrays will now
   be correctly preserved when stored and retrieved, instead of being flattened or
   losing structure.
+
+  As an example, configuration like this:
+
+  receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+
+  Would be retrieved from the Kubernetes cluster as:
+
+  receivers:
+      otlp:
+        protocols:
+
+  The specified protocols were not there anymore before this fix.
