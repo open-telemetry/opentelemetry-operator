@@ -6,7 +6,6 @@ metadata:
     additional-containers: without
 spec:
   mode: deployment
-  additionalContainers: []
   config:
     receivers:
       otlp:
@@ -32,7 +31,6 @@ metadata:
     additional-containers: without
 spec:
   mode: daemonset
-  additionalContainers: []
   config:
     receivers:
       otlp:
@@ -58,7 +56,6 @@ metadata:
     additional-containers: without
 spec:
   mode: statefulset
-  additionalContainers: []
   config:
     receivers:
       otlp:

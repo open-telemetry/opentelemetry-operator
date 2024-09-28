@@ -23,7 +23,7 @@ spec:
     - name: step-01
       description: collectors with additionalContainers
       try:
-        - apply:
+        - update:
             file: 01-install-collectors-with-additional-containers.yaml
         # deployment
         - assert:
@@ -38,7 +38,7 @@ spec:
     - name: step-02
       description: modify additionalContainers
       try:
-        - apply:
+        - update:
             file: 02-modify-collectors-additional-containers.yaml
         # deployment
         - assert:
@@ -53,7 +53,7 @@ spec:
     - name: step-03
       description: delete additionalContainers
       try:
-        - apply:
+        - update:
             file: 00-install-collectors-without-additional-containers.yaml
         # deployment
         - assert:
