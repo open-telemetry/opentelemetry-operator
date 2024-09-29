@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: daemonset-collector
+    app.kubernetes.io/part-of: opentelemetry
+    args: with
+spec:
+  template:
+    spec:
+      ~.(containers):
+        name: otc-container
+        (contains(args, '--extra-arg=yes')): true
