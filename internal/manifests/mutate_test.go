@@ -481,3 +481,591 @@ func TestMutateStatefulSetAdditionalContainers(t *testing.T) {
 		})
 	}
 }
+
+func TestMutateDaemonsetAffinity(t *testing.T) {
+	tests := []struct {
+		name     string
+		existing appsv1.DaemonSet
+		desired  appsv1.DaemonSet
+	}{
+		{
+			name: "add affinity to daemonset",
+			existing: appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "daemonset",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "daemonset",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+							Affinity: &corev1.Affinity{
+								NodeAffinity: &corev1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+										NodeSelectorTerms: []corev1.NodeSelectorTerm{
+											{
+												MatchFields: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "kubernetes.io/os",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"linux"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "remove affinity from daemonset",
+			existing: appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "daemonset",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+							Affinity: &corev1.Affinity{
+								NodeAffinity: &corev1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+										NodeSelectorTerms: []corev1.NodeSelectorTerm{
+											{
+												MatchFields: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "kubernetes.io/os",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"linux"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "daemonset",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "modify affinity in daemonset",
+			existing: appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "daemonset",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+							Affinity: &corev1.Affinity{
+								NodeAffinity: &corev1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+										NodeSelectorTerms: []corev1.NodeSelectorTerm{
+											{
+												MatchFields: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "kubernetes.io/os",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"linux"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "daemonset",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+							Affinity: &corev1.Affinity{
+								NodeAffinity: &corev1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+										NodeSelectorTerms: []corev1.NodeSelectorTerm{
+											{
+												MatchFields: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "kubernetes.io/os",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"windows"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
+			err := mutateFn()
+			require.NoError(t, err)
+			assert.Equal(t, tt.existing, tt.desired)
+		})
+	}
+}
+
+func TestMutateDeploymentAffinity(t *testing.T) {
+	tests := []struct {
+		name     string
+		existing appsv1.Deployment
+		desired  appsv1.Deployment
+	}{
+		{
+			name: "add affinity to deployment",
+			existing: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "deployment",
+				},
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "deployment",
+				},
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+							Affinity: &corev1.Affinity{
+								NodeAffinity: &corev1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+										NodeSelectorTerms: []corev1.NodeSelectorTerm{
+											{
+												MatchFields: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "kubernetes.io/os",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"linux"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "remove affinity from deployment",
+			existing: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "deployment",
+				},
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+							Affinity: &corev1.Affinity{
+								NodeAffinity: &corev1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+										NodeSelectorTerms: []corev1.NodeSelectorTerm{
+											{
+												MatchFields: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "kubernetes.io/os",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"linux"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "deployment",
+				},
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "modify affinity in deployment",
+			existing: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "deployment",
+				},
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+							Affinity: &corev1.Affinity{
+								NodeAffinity: &corev1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+										NodeSelectorTerms: []corev1.NodeSelectorTerm{
+											{
+												MatchFields: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "kubernetes.io/os",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"linux"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "deployment",
+				},
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+							Affinity: &corev1.Affinity{
+								NodeAffinity: &corev1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+										NodeSelectorTerms: []corev1.NodeSelectorTerm{
+											{
+												MatchFields: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "kubernetes.io/os",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"windows"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
+			err := mutateFn()
+			require.NoError(t, err)
+			assert.Equal(t, tt.existing, tt.desired)
+		})
+	}
+}
+
+func TestMutateStatefulSetAffinity(t *testing.T) {
+	tests := []struct {
+		name     string
+		existing appsv1.StatefulSet
+		desired  appsv1.StatefulSet
+	}{
+		{
+			name: "add affinity to statefulset",
+			existing: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "statefulset",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "statefulset",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+							Affinity: &corev1.Affinity{
+								NodeAffinity: &corev1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+										NodeSelectorTerms: []corev1.NodeSelectorTerm{
+											{
+												MatchFields: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "kubernetes.io/os",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"linux"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "remove affinity from statefulset",
+			existing: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "statefulset",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+							Affinity: &corev1.Affinity{
+								NodeAffinity: &corev1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+										NodeSelectorTerms: []corev1.NodeSelectorTerm{
+											{
+												MatchFields: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "kubernetes.io/os",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"linux"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "statefulset",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "modify affinity in statefulset",
+			existing: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "statefulset",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+							Affinity: &corev1.Affinity{
+								NodeAffinity: &corev1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+										NodeSelectorTerms: []corev1.NodeSelectorTerm{
+											{
+												MatchFields: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "kubernetes.io/os",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"linux"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "statefulset",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+							Affinity: &corev1.Affinity{
+								NodeAffinity: &corev1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+										NodeSelectorTerms: []corev1.NodeSelectorTerm{
+											{
+												MatchFields: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "kubernetes.io/os",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"windows"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
+			err := mutateFn()
+			require.NoError(t, err)
+			assert.Equal(t, tt.existing, tt.desired)
+		})
+	}
+}
