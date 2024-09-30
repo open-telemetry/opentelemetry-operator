@@ -41,6 +41,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
@@ -105,7 +106,7 @@ func TestMain(m *testing.M) {
 	}
 	reviewer := rbac.NewReviewer(clientset)
 
-	if err = v1beta1.SetupCollectorWebhook(mgr, config.New(), reviewer, nil, nil); err != nil {
+	if err = v1beta1.SetupCollectorWebhook(mgr, config.New(), reviewer, nil, nil, fips.NewFipsCheck(nil, nil, nil, nil)); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}

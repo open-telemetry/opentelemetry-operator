@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	"net"
 	"os"
 	"path/filepath"
@@ -105,7 +106,7 @@ func TestMain(m *testing.M) {
 	}
 	reviewer := rbac.NewReviewer(clientset)
 
-	if err = v1beta1.SetupCollectorWebhook(mgr, config.New(), reviewer, nil, nil); err != nil {
+	if err = v1beta1.SetupCollectorWebhook(mgr, config.New(), reviewer, nil, nil, fips.NewFipsCheck(nil, nil, nil, nil)); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
