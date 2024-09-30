@@ -45,6 +45,10 @@ type PortParser[ComponentConfigType any] func(logger logr.Logger, name string, d
 // It's expected that type Config is the configuration used by a parser.
 type RBACRuleGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) ([]rbacv1.PolicyRule, error)
 
+// ProbeGenerator is a function that generates a valid probe for a container given Config
+// It's expected that type Config is the configuration used by a parser.
+type ProbeGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) (*corev1.Probe, error)
+
 // ComponentType returns the type for a given component name.
 // components have a name like:
 // - mycomponent/custom
@@ -89,6 +93,12 @@ type Parser interface {
 
 	// GetRBACRules returns the rbac rules for this component
 	GetRBACRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error)
+
+	// GetLivenessProbe returns a liveness probe set for the collector
+	GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)
+
+	// GetReadinessProbe returns a readiness probe set for the collector
+	GetReadinessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)
 
 	// ParserType returns the type of this parser
 	ParserType() string

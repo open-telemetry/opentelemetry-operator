@@ -26,14 +26,16 @@ import (
 type ParserOption[ComponentConfigType any] func(*Settings[ComponentConfigType])
 
 type Settings[ComponentConfigType any] struct {
-	protocol    corev1.Protocol
-	appProtocol *string
-	targetPort  intstr.IntOrString
-	nodePort    int32
-	name        string
-	port        int32
-	portParser  PortParser[ComponentConfigType]
-	rbacGen     RBACRuleGenerator[ComponentConfigType]
+	protocol     corev1.Protocol
+	appProtocol  *string
+	targetPort   intstr.IntOrString
+	nodePort     int32
+	name         string
+	port         int32
+	portParser   PortParser[ComponentConfigType]
+	rbacGen      RBACRuleGenerator[ComponentConfigType]
+	livenessGen  ProbeGenerator[ComponentConfigType]
+	readinessGen ProbeGenerator[ComponentConfigType]
 }
 
 func NewEmptySettings[ComponentConfigType any]() *Settings[ComponentConfigType] {
@@ -104,13 +106,32 @@ func (b Builder[ComponentConfigType]) WithRbacGen(rbacGen RBACRuleGenerator[Comp
 	})
 }
 
+func (b Builder[ComponentConfigType]) WithLivenessGen(livenessGen ProbeGenerator[ComponentConfigType]) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
+		o.livenessGen = livenessGen
+	})
+}
+
+func (b Builder[ComponentConfigType]) WithReadinessGen(readinessGen ProbeGenerator[ComponentConfigType]) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
+		o.readinessGen = readinessGen
+	})
+}
+
 func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigType], error) {
 	o := NewEmptySettings[ComponentConfigType]()
 	o.Apply(b...)
 	if len(o.name) == 0 {
 		return nil, fmt.Errorf("invalid settings struct, no name specified")
 	}
-	return &GenericParser[ComponentConfigType]{name: o.name, portParser: o.portParser, rbacGen: o.rbacGen, settings: o}, nil
+	return &GenericParser[ComponentConfigType]{
+		name:         o.name,
+		portParser:   o.portParser,
+		rbacGen:      o.rbacGen,
+		livenessGen:  o.livenessGen,
+		readinessGen: o.readinessGen,
+		settings:     o,
+	}, nil
 }
 
 func (b Builder[ComponentConfigType]) MustBuild() *GenericParser[ComponentConfigType] {
