@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 )
@@ -33,9 +34,11 @@ func TestBuilder_Build(t *testing.T) {
 		m       map[string]interface{}
 	}
 	type want struct {
-		name  string
-		ports []corev1.ServicePort
-		rules []rbacv1.PolicyRule
+		name           string
+		ports          []corev1.ServicePort
+		rules          []rbacv1.PolicyRule
+		livenessProbe  *corev1.Probe
+		readinessProbe *corev1.Probe
 	}
 	type fields[T any] struct {
 		b components.Builder[T]
@@ -44,18 +47,29 @@ func TestBuilder_Build(t *testing.T) {
 		conf interface{}
 	}
 	type testCase[T any] struct {
-		name        string
-		fields      fields[T]
-		params      params
-		want        want
-		wantErr     assert.ErrorAssertionFunc
-		wantRbacErr assert.ErrorAssertionFunc
+		name            string
+		fields          fields[T]
+		params          params
+		want            want
+		wantErr         assert.ErrorAssertionFunc
+		wantRbacErr     assert.ErrorAssertionFunc
+		wantLivenessErr assert.ErrorAssertionFunc
 	}
 	examplePortParser := func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config sampleConfig) ([]corev1.ServicePort, error) {
 		if defaultPort != nil {
 			return []corev1.ServicePort{*defaultPort}, nil
 		}
 		return nil, nil
+	}
+	exampleProbeGen := func(logger logr.Logger, config sampleConfig) (*corev1.Probe, error) {
+		return &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/hello",
+					Port: intstr.FromInt32(8080),
+				},
+			},
+		}, nil
 	}
 	tests := []testCase[sampleConfig]{
 		{
@@ -83,8 +97,9 @@ func TestBuilder_Build(t *testing.T) {
 				},
 				rules: nil,
 			},
-			wantErr:     assert.NoError,
-			wantRbacErr: assert.NoError,
+			wantErr:         assert.NoError,
+			wantRbacErr:     assert.NoError,
+			wantLivenessErr: assert.NoError,
 		},
 		{
 			name: "missing name",
@@ -96,9 +111,10 @@ func TestBuilder_Build(t *testing.T) {
 			params: params{
 				conf: sampleConfig{},
 			},
-			want:        want{},
-			wantErr:     assert.Error,
-			wantRbacErr: assert.NoError,
+			want:            want{},
+			wantErr:         assert.Error,
+			wantRbacErr:     assert.NoError,
+			wantLivenessErr: assert.NoError,
 		},
 		{
 			name: "complete configuration with RBAC rules",
@@ -147,8 +163,9 @@ func TestBuilder_Build(t *testing.T) {
 					},
 				},
 			},
-			wantErr:     assert.NoError,
-			wantRbacErr: assert.NoError,
+			wantErr:         assert.NoError,
+			wantRbacErr:     assert.NoError,
+			wantLivenessErr: assert.NoError,
 		},
 		{
 			name: "complete configuration with RBAC rules errors",
@@ -186,8 +203,81 @@ func TestBuilder_Build(t *testing.T) {
 				ports: nil,
 				rules: nil,
 			},
-			wantErr:     assert.NoError,
-			wantRbacErr: assert.Error,
+			wantErr:         assert.NoError,
+			wantRbacErr:     assert.Error,
+			wantLivenessErr: assert.NoError,
+		},
+		{
+			name: "complete configuration with probe gen",
+			fields: fields[sampleConfig]{
+				b: components.NewBuilder[sampleConfig]().
+					WithName("secure-service").
+					WithPort(443).
+					WithProtocol(corev1.ProtocolTCP).
+					WithLivenessGen(exampleProbeGen).
+					WithReadinessGen(exampleProbeGen),
+			},
+			params: params{
+				conf: sampleConfig{
+					example: "test",
+					number:  100,
+					m: map[string]interface{}{
+						"key": "value",
+					},
+				},
+			},
+			want: want{
+				name:  "__secure-service",
+				ports: nil,
+				livenessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path: "/hello",
+							Port: intstr.FromInt32(8080),
+						},
+					},
+				},
+				readinessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path: "/hello",
+							Port: intstr.FromInt32(8080),
+						},
+					},
+				},
+			},
+			wantErr:         assert.NoError,
+			wantRbacErr:     assert.NoError,
+			wantLivenessErr: assert.NoError,
+		},
+		{
+			name: "complete configuration with probe gen errors",
+			fields: fields[sampleConfig]{
+				b: components.NewBuilder[sampleConfig]().
+					WithName("secure-service").
+					WithPort(443).
+					WithProtocol(corev1.ProtocolTCP).
+					WithLivenessGen(func(logger logr.Logger, config sampleConfig) (*corev1.Probe, error) {
+						return nil, fmt.Errorf("no probe")
+					}),
+			},
+			params: params{
+				conf: sampleConfig{
+					example: "test",
+					number:  100,
+					m: map[string]interface{}{
+						"key": "value",
+					},
+				},
+			},
+			want: want{
+				name:  "__secure-service",
+				ports: nil,
+				rules: nil,
+			},
+			wantErr:         assert.NoError,
+			wantRbacErr:     assert.NoError,
+			wantLivenessErr: assert.Error,
 		},
 	}
 	for _, tt := range tests {
@@ -205,6 +295,14 @@ func TestBuilder_Build(t *testing.T) {
 				return
 			}
 			assert.Equalf(t, tt.want.rules, rules, "GetRBACRules()")
+			livenessProbe, livenessErr := got.GetLivenessProbe(logr.Discard(), tt.params.conf)
+			if tt.wantLivenessErr(t, livenessErr, "wantLivenessErr()") && livenessErr != nil {
+				return
+			}
+			assert.Equalf(t, tt.want.livenessProbe, livenessProbe, "GetLivenessProbe()")
+			readinessProbe, readinessErr := got.GetReadinessProbe(logr.Discard(), tt.params.conf)
+			assert.NoError(t, readinessErr)
+			assert.Equalf(t, tt.want.readinessProbe, readinessProbe, "GetReadinessProbe()")
 		})
 	}
 }
