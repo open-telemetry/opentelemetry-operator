@@ -635,12 +635,8 @@ func (in *Service) DeepCopyInto(out *Service) {
 	*out = *in
 	if in.Extensions != nil {
 		in, out := &in.Extensions, &out.Extensions
-		*out = new([]string)
-		if **in != nil {
-			in, out := *in, *out
-			*out = make([]string, len(*in))
-			copy(*out, *in)
-		}
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 	if in.Telemetry != nil {
 		in, out := &in.Telemetry, &out.Telemetry
