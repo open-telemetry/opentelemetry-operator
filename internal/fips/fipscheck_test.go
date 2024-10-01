@@ -21,15 +21,8 @@ import (
 )
 
 func TestFipsCheck(t *testing.T) {
-	fipsCheck := NewFipsCheck([]string{"rec1", "rec2"}, []string{"exp1"}, []string{"processor"}, []string{"ext1"})
-	assert.Equal(t, map[string]bool{"rec1": true, "rec2": true}, fipsCheck.receivers)
-	assert.Equal(t, map[string]bool{"exp1": true}, fipsCheck.exporters)
-	assert.Equal(t, map[string]bool{"processor": true}, fipsCheck.processors)
-	assert.Equal(t, map[string]bool{"ext1": true}, fipsCheck.extensions)
-
-	// test machine probably does not have this enabled
-	fipsCheck.isFIPSEnabled = true
-	blocked := fipsCheck.Check(
+	fipsCheck := NewFipsCheck(true, []string{"rec1", "rec2"}, []string{"exp1"}, []string{"processor"}, []string{"ext1"})
+	blocked := fipsCheck.DisabledComponents(
 		map[string]interface{}{"otlp": true, "rec1/my": true},
 		map[string]interface{}{"exp1": true},
 		map[string]interface{}{"processor": true},

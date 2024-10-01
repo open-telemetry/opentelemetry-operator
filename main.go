@@ -442,8 +442,8 @@ func main() {
 		}
 
 		receivers, exporters, processors, extensions := parseFipsFlag(fipsDisabledComponents)
-		fipsCheck := fips.NewFipsCheck(receivers, exporters, processors, extensions)
 		logger.Info("Fips disabled components", "receivers", receivers, "exporters", exporters, "processors", processors, "extensions", extensions)
+		fipsCheck := fips.NewFipsCheck(ad.FIPSEnabled(ctx), receivers, exporters, processors, extensions)
 		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)

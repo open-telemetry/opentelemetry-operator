@@ -15,16 +15,15 @@
 package fips
 
 import (
-	"errors"
-	"fmt"
-	"os"
 	"strings"
 )
 
-const fipsFile = "/proc/sys/crypto/fips_enabled"
+type FIPSCheck interface {
+	DisabledComponents(receivers map[string]interface{}, exporters map[string]interface{}, processors map[string]interface{}, extensions map[string]interface{}) []string
+}
 
 // FipsCheck holds configuration for FIPS black list.
-type FipsCheck struct {
+type fipsCheck struct {
 	isFIPSEnabled bool
 
 	receivers  map[string]bool
@@ -33,15 +32,24 @@ type FipsCheck struct {
 	extensions map[string]bool
 }
 
+type noopFIPSCheck struct{}
+
+func (noopFIPSCheck) DisabledComponents(receivers map[string]interface{}, exporters map[string]interface{}, processors map[string]interface{}, extensions map[string]interface{}) []string {
+	return nil
+}
+
 // NewFipsCheck creates new FipsCheck.
 // It checks if FIPS is enabled on the platform in /proc/sys/crypto/fips_enabled.
-func NewFipsCheck(receivers, exporters, processors, extensions []string) FipsCheck {
-	return FipsCheck{
-		isFIPSEnabled: isFipsEnabled(),
-		receivers:     listToMap(receivers),
-		exporters:     listToMap(exporters),
-		processors:    listToMap(processors),
-		extensions:    listToMap(extensions),
+func NewFipsCheck(FIPSEnabled bool, receivers, exporters, processors, extensions []string) FIPSCheck {
+	if !FIPSEnabled {
+		return &noopFIPSCheck{}
+	}
+
+	return &fipsCheck{
+		receivers:  listToMap(receivers),
+		exporters:  listToMap(exporters),
+		processors: listToMap(processors),
+		extensions: listToMap(extensions),
 	}
 }
 
@@ -54,27 +62,24 @@ func listToMap(list []string) map[string]bool {
 }
 
 // Check checks if a submitted components are back lister or not.
-func (fips FipsCheck) Check(receivers map[string]interface{}, exporters map[string]interface{}, processors map[string]interface{}, extensions map[string]interface{}) []string {
-	if !fips.isFIPSEnabled {
-		return nil
-	}
+func (fips fipsCheck) DisabledComponents(receivers map[string]interface{}, exporters map[string]interface{}, processors map[string]interface{}, extensions map[string]interface{}) []string {
 	var disabled []string
-	if comp := isBlackListed(fips.receivers, receivers); comp != "" {
+	if comp := isDisabled(fips.receivers, receivers); comp != "" {
 		disabled = append(disabled, comp)
 	}
-	if comp := isBlackListed(fips.exporters, exporters); comp != "" {
+	if comp := isDisabled(fips.exporters, exporters); comp != "" {
 		disabled = append(disabled, comp)
 	}
-	if comp := isBlackListed(fips.processors, processors); comp != "" {
+	if comp := isDisabled(fips.processors, processors); comp != "" {
 		disabled = append(disabled, comp)
 	}
-	if comp := isBlackListed(fips.extensions, extensions); comp != "" {
+	if comp := isDisabled(fips.extensions, extensions); comp != "" {
 		disabled = append(disabled, comp)
 	}
 	return disabled
 }
 
-func isBlackListed(blackListed map[string]bool, cfg map[string]interface{}) string {
+func isDisabled(blackListed map[string]bool, cfg map[string]interface{}) string {
 	for id := range cfg {
 		component := strings.Split(id, "/")[0]
 		if blackListed[component] {
@@ -82,21 +87,4 @@ func isBlackListed(blackListed map[string]bool, cfg map[string]interface{}) stri
 		}
 	}
 	return ""
-}
-
-func isFipsEnabled() bool {
-	// check if file exists
-	if _, err := os.Stat(fipsFile); errors.Is(err, os.ErrNotExist) {
-		fmt.Println("fips file doesn't exist")
-		return false
-	}
-	content, err := os.ReadFile(fipsFile)
-	if err != nil {
-		// file cannot be read, enable FIPS to avoid any violations
-		fmt.Println("cannot read fips file")
-		return true
-	}
-	contentStr := string(content)
-	contentStr = strings.TrimSpace(contentStr)
-	return contentStr == "1"
 }

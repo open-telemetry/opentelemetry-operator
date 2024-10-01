@@ -49,7 +49,7 @@ type CollectorWebhook struct {
 	reviewer *rbac.Reviewer
 	metrics  *Metrics
 	bv       BuildValidator
-	fips     fips.FipsCheck
+	fips     fips.FIPSCheck
 }
 
 func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
@@ -293,7 +293,7 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	}
 
 	components := r.Spec.Config.GetEnabledComponents()
-	if notAllowedComponents := c.fips.Check(components[KindReceiver], components[KindExporter], components[KindProcessor], components[KindExtension]); notAllowedComponents != nil {
+	if notAllowedComponents := c.fips.DisabledComponents(components[KindReceiver], components[KindExporter], components[KindProcessor], components[KindExtension]); notAllowedComponents != nil {
 		return nil, fmt.Errorf("the collector configuration contains not FIPS compliant components: %s. Please remove it from the config", notAllowedComponents)
 	}
 
@@ -430,7 +430,7 @@ func NewCollectorWebhook(
 	reviewer *rbac.Reviewer,
 	metrics *Metrics,
 	bv BuildValidator,
-	fips fips.FipsCheck,
+	fips fips.FIPSCheck,
 ) *CollectorWebhook {
 	return &CollectorWebhook{
 		logger:   logger,
@@ -443,7 +443,7 @@ func NewCollectorWebhook(
 	}
 }
 
-func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator, fipsCheck fips.FipsCheck) error {
+func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
 	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, metrics, bv, fipsCheck)
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&OpenTelemetryCollector{}).
