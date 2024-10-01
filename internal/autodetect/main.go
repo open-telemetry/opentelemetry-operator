@@ -18,11 +18,11 @@ package autodetect
 import (
 	"context"
 	"fmt"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/fips"
 
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/fips"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"

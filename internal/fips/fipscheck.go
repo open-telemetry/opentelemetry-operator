@@ -24,8 +24,6 @@ type FIPSCheck interface {
 
 // FipsCheck holds configuration for FIPS black list.
 type fipsCheck struct {
-	isFIPSEnabled bool
-
 	receivers  map[string]bool
 	exporters  map[string]bool
 	processors map[string]bool
