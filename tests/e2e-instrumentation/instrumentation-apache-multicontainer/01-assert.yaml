@@ -40,16 +40,6 @@ spec:
       value: parentbased_traceidratio
     - name: OTEL_TRACES_SAMPLER_ARG
       value: "0.25"
-    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: metadata.name
-    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: spec.nodeName
     - name: OTEL_RESOURCE_ATTRIBUTES
     name: myapp
   - env:
