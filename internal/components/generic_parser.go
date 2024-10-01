@@ -30,10 +30,34 @@ var (
 // GenericParser serves as scaffolding for custom parsing logic by isolating
 // functionality to idempotent functions.
 type GenericParser[T any] struct {
-	name       string
-	settings   *Settings[T]
-	portParser PortParser[T]
-	rbacGen    RBACRuleGenerator[T]
+	name         string
+	settings     *Settings[T]
+	portParser   PortParser[T]
+	rbacGen      RBACRuleGenerator[T]
+	livenessGen  ProbeGenerator[T]
+	readinessGen ProbeGenerator[T]
+}
+
+func (g *GenericParser[T]) GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+	if g.livenessGen == nil {
+		return nil, nil
+	}
+	var parsed T
+	if err := mapstructure.Decode(config, &parsed); err != nil {
+		return nil, err
+	}
+	return g.livenessGen(logger, parsed)
+}
+
+func (g *GenericParser[T]) GetReadinessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+	if g.readinessGen == nil {
+		return nil, nil
+	}
+	var parsed T
+	if err := mapstructure.Decode(config, &parsed); err != nil {
+		return nil, err
+	}
+	return g.readinessGen(logger, parsed)
 }
 
 func (g *GenericParser[T]) GetRBACRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error) {

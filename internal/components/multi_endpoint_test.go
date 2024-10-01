@@ -358,6 +358,12 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 			rbacGen, err := s.GetRBACRules(logr.Discard(), tt.args.config)
 			assert.NoError(t, err)
 			assert.Nil(t, rbacGen)
+			livenessProbe, livenessErr := s.GetLivenessProbe(logr.Discard(), tt.args.config)
+			assert.NoError(t, livenessErr)
+			assert.Nil(t, livenessProbe)
+			readinessProbe, readinessErr := s.GetReadinessProbe(logr.Discard(), tt.args.config)
+			assert.NoError(t, readinessErr)
+			assert.Nil(t, readinessProbe)
 		})
 	}
 }
