@@ -45,7 +45,6 @@ spec:
             mountPath: /etc/nginx/nginx.conf
             subPath: nginx.conf
             readOnly: true
-        imagePullPolicy: Always
         resources:
           limits:
             cpu: 500m
