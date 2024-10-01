@@ -18,7 +18,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	"net"
 	"os"
 	"path/filepath"
@@ -42,6 +41,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
