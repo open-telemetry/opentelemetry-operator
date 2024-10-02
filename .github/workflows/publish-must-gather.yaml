@@ -1,4 +1,4 @@
-name: "Publish Python Auto-Instrumentation"
+name: "Publish must-gather image"
 
 on:
   push:
@@ -24,11 +24,6 @@ jobs:
       - name: Unshallow
         run: git fetch --prune --unshallow
 
-      - name: Set env vars for the job
-        run: |
-          echo "VERSION_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
-          echo "VERSION=$(git describe --tags | sed 's/^v//')" >> $GITHUB_ENV
-
       - name: Build the binary for each supported architecture
         run: |
           for platform in $(echo $PLATFORMS | tr "," "\n"); do
@@ -42,7 +37,6 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            otel/opentelemetry-operator-must-gather
             ghcr.io/open-telemetry/opentelemetry-operator/must-gather
           tags: |
             type=semver,pattern={{version}}

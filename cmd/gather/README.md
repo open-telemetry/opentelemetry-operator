@@ -19,10 +19,12 @@ To run the must-gather tool for the OpenTelemetry Operator, use one of the follo
 
 ### Using the image from the Operator deployment
 
+This is the recommended way to do it if you are not using OpenShift.
+
 If you want to use the image in a running cluster, you need to run the following command:
 
 ```sh
-oc adm must-gather --image=<must-gather-image> -- /usr/bin/must-gather --operator-namespace opentelemetry-operator-system
+oc adm must-gather --image=ghcr.io/open-telemetry/opentelemetry-operator/must-gather -- /usr/bin/must-gather --operator-namespace opentelemetry-operator-system
 ```
 
 ### Using it as a CLI
@@ -30,7 +32,5 @@ oc adm must-gather --image=<must-gather-image> -- /usr/bin/must-gather --operato
 You only need to build and run:
 ```sh
 make must-gather
-./bin/must-gather --help
+./bin/must-gather_$(go env GOARCH) --help
 ```
-
-This is the recommended way to do it if you are not using OpenShift.
