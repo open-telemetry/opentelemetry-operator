@@ -38,7 +38,7 @@ jobs:
          - group: e2e-instrumentation
            setup: "add-instrumentation-params prepare-e2e"
          - group: e2e-multi-instrumentation
-           setup: "add-multi-instrumentation-params prepare-e2e"
+           setup: "add-instrumentation-params prepare-e2e"
          - group: e2e-metadata-filters
            setup: "add-operator-arg OPERATOR_ARG='--annotations-filter=.*filter.out --annotations-filter=config.*.gke.io.* --labels-filter=.*filter.out' prepare-e2e"
          - group: e2e-automatic-rbac
