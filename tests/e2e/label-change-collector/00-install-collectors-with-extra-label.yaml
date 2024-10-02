@@ -1,0 +1,73 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: deployment
+  labels:
+    user-label: "existing"
+spec:
+  mode: deployment
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+    processors: {}
+
+    exporters:
+      debug: {}
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
+
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: daemonset
+  labels:
+    user-label: "existing"
+spec:
+  mode: daemonset
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+    processors: {}
+
+    exporters:
+      debug: {}
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
+
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: statefulset
+  labels:
+    user-label: "existing"
+spec:
+  mode: statefulset
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+    processors: {}
+
+    exporters:
+      debug: {}
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
