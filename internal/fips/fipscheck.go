@@ -32,11 +32,7 @@ type fipsCheck struct {
 }
 
 // NewFipsCheck creates new FipsCheck.
-func NewFipsCheck(FIPSEnabled bool, receivers, exporters, processors, extensions []string) FIPSCheck {
-	if !FIPSEnabled {
-		return nil
-	}
-
+func NewFipsCheck(receivers, exporters, processors, extensions []string) FIPSCheck {
 	return &fipsCheck{
 		receivers:  listToMap(receivers),
 		exporters:  listToMap(exporters),

@@ -21,7 +21,7 @@ import (
 )
 
 func TestFipsCheck(t *testing.T) {
-	fipsCheck := NewFipsCheck(true, []string{"rec1", "rec2"}, []string{"exp1"}, []string{"processor"}, []string{"ext1"})
+	fipsCheck := NewFipsCheck([]string{"rec1", "rec2"}, []string{"exp1"}, []string{"processor"}, []string{"ext1"})
 	blocked := fipsCheck.DisabledComponents(
 		map[string]interface{}{"otlp": true, "rec1/my": true},
 		map[string]interface{}{"exp1": true},
