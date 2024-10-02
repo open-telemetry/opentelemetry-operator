@@ -292,9 +292,11 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'deploymentUpdateStrategy'", r.Spec.Mode)
 	}
 
-	components := r.Spec.Config.GetEnabledComponents()
-	if notAllowedComponents := c.fips.DisabledComponents(components[KindReceiver], components[KindExporter], components[KindProcessor], components[KindExtension]); notAllowedComponents != nil {
-		return nil, fmt.Errorf("the collector configuration contains not FIPS compliant components: %s. Please remove it from the config", notAllowedComponents)
+	if c.fips != nil {
+		components := r.Spec.Config.GetEnabledComponents()
+		if notAllowedComponents := c.fips.DisabledComponents(components[KindReceiver], components[KindExporter], components[KindProcessor], components[KindExtension]); notAllowedComponents != nil {
+			return nil, fmt.Errorf("the collector configuration contains not FIPS compliant components: %s. Please remove it from the config", notAllowedComponents)
+		}
 	}
 
 	return warnings, nil

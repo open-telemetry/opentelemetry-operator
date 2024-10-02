@@ -39,7 +39,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
@@ -114,7 +113,7 @@ func TestValidate(t *testing.T) {
 			getReviewer(test.shouldFailSar),
 			nil,
 			bv,
-			fips.NewFipsCheck(false, nil, nil, nil, nil),
+			nil,
 		)
 		t.Run(tt.name, func(t *testing.T) {
 			tt := tt
@@ -496,7 +495,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				getReviewer(test.shouldFailSar),
 				nil,
 				bv,
-				fips.NewFipsCheck(false, nil, nil, nil, nil),
+				nil,
 			)
 			ctx := context.Background()
 			err := cvw.Default(ctx, &test.otelcol)
@@ -1288,7 +1287,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				getReviewer(test.shouldFailSar),
 				nil,
 				bv,
-				fips.NewFipsCheck(false, nil, nil, nil, nil),
+				nil,
 			)
 			ctx := context.Background()
 			warnings, err := cvw.ValidateCreate(ctx, &test.otelcol)
@@ -1356,7 +1355,7 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 				getReviewer(test.shouldFailSar),
 				nil,
 				bv,
-				fips.NewFipsCheck(false, nil, nil, nil, nil),
+				nil,
 			)
 			ctx := context.Background()
 			warnings, err := cvw.ValidateUpdate(ctx, &test.otelcolOld, &test.otelcolNew)

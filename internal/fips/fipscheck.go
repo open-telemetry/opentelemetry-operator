@@ -19,10 +19,11 @@ import (
 )
 
 type FIPSCheck interface {
+	// DisabledComponents checks if a submitted components are denied or not.
 	DisabledComponents(receivers map[string]interface{}, exporters map[string]interface{}, processors map[string]interface{}, extensions map[string]interface{}) []string
 }
 
-// FipsCheck holds configuration for FIPS black list.
+// FipsCheck holds configuration for FIPS deny list.
 type fipsCheck struct {
 	receivers  map[string]bool
 	exporters  map[string]bool
@@ -30,17 +31,10 @@ type fipsCheck struct {
 	extensions map[string]bool
 }
 
-type noopFIPSCheck struct{}
-
-func (noopFIPSCheck) DisabledComponents(receivers map[string]interface{}, exporters map[string]interface{}, processors map[string]interface{}, extensions map[string]interface{}) []string {
-	return nil
-}
-
 // NewFipsCheck creates new FipsCheck.
-// It checks if FIPS is enabled on the platform in /proc/sys/crypto/fips_enabled.
 func NewFipsCheck(FIPSEnabled bool, receivers, exporters, processors, extensions []string) FIPSCheck {
 	if !FIPSEnabled {
-		return &noopFIPSCheck{}
+		return nil
 	}
 
 	return &fipsCheck{
@@ -59,7 +53,6 @@ func listToMap(list []string) map[string]bool {
 	return m
 }
 
-// Check checks if a submitted components are back lister or not.
 func (fips fipsCheck) DisabledComponents(receivers map[string]interface{}, exporters map[string]interface{}, processors map[string]interface{}, extensions map[string]interface{}) []string {
 	var disabled []string
 	if comp := isDisabled(fips.receivers, receivers); comp != "" {
@@ -77,10 +70,10 @@ func (fips fipsCheck) DisabledComponents(receivers map[string]interface{}, expor
 	return disabled
 }
 
-func isDisabled(blackListed map[string]bool, cfg map[string]interface{}) string {
+func isDisabled(denyList map[string]bool, cfg map[string]interface{}) string {
 	for id := range cfg {
 		component := strings.Split(id, "/")[0]
-		if blackListed[component] {
+		if denyList[component] {
 			return component
 		}
 	}
