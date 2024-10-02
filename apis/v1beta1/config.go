@@ -95,12 +95,7 @@ func (c AnyConfig) MarshalJSON() ([]byte, error) {
 		return []byte("{}"), nil
 	}
 
-	nonNilMap := make(map[string]interface{}, len(c.Object))
-	for k, v := range c.Object {
-		nonNilMap[k] = v
-	}
-
-	return json.Marshal(nonNilMap)
+	return json.Marshal(c.Object)
 }
 
 // Pipeline is a struct of component type to a list of component IDs.
