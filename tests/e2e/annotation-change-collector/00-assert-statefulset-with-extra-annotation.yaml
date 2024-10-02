@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  name: statefulset-collector
   annotations:
     user-annotation: "existing"
 spec:

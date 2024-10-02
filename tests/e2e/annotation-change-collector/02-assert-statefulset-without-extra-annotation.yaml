@@ -1,12 +1,9 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations:
-    (user-annotation == nil): true
-    (new-annotation == nil): true
+  name: statefulset-collector
 spec:
   template:
     metadata:
-      annotations:
-        (user-annotation == nil): true
-        (new-annotation == nil): true
+      (contains(keys(annotations), 'user-annotation')): false
+      (contains(keys(annotations), 'new-annotation')): false
