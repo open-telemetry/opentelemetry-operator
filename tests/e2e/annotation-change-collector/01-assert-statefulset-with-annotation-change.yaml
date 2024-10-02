@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    user-annotation: "modified"
+    new-annotation: "yes"
+spec:
+  template:
+    metadata:
+      annotations:
+        user-annotation: "modified"
+        new-annotation: "yes"

@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    (user-annotation == nil): true
+    (new-annotation == nil): true
+spec:
+  template:
+    metadata:
+      annotations:
+        (user-annotation == nil): true
+        (new-annotation == nil): true
