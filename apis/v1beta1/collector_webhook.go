@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
@@ -48,6 +49,7 @@ type CollectorWebhook struct {
 	reviewer *rbac.Reviewer
 	metrics  *Metrics
 	bv       BuildValidator
+	fips     fips.FIPSCheck
 }
 
 func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
@@ -290,6 +292,13 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'deploymentUpdateStrategy'", r.Spec.Mode)
 	}
 
+	if c.fips != nil {
+		components := r.Spec.Config.GetEnabledComponents()
+		if notAllowedComponents := c.fips.DisabledComponents(components[KindReceiver], components[KindExporter], components[KindProcessor], components[KindExtension]); notAllowedComponents != nil {
+			return nil, fmt.Errorf("the collector configuration contains not FIPS compliant components: %s. Please remove it from the config", notAllowedComponents)
+		}
+	}
+
 	return warnings, nil
 }
 
@@ -423,6 +432,7 @@ func NewCollectorWebhook(
 	reviewer *rbac.Reviewer,
 	metrics *Metrics,
 	bv BuildValidator,
+	fips fips.FIPSCheck,
 ) *CollectorWebhook {
 	return &CollectorWebhook{
 		logger:   logger,
@@ -431,11 +441,12 @@ func NewCollectorWebhook(
 		reviewer: reviewer,
 		metrics:  metrics,
 		bv:       bv,
+		fips:     fips,
 	}
 }
 
-func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator) error {
-	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, metrics, bv)
+func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
+	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, metrics, bv, fipsCheck)
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&OpenTelemetryCollector{}).
 		WithValidator(cvw).

@@ -22,6 +22,7 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/fips"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -35,6 +36,7 @@ type AutoDetect interface {
 	OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailability() (prometheus.Availability, error)
 	RBACPermissions(ctx context.Context) (autoRBAC.Availability, error)
+	FIPSEnabled(ctx context.Context) bool
 }
 
 type autoDetect struct {
@@ -121,4 +123,8 @@ func (a *autoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availability
 	}
 
 	return autoRBAC.Available, nil
+}
+
+func (a *autoDetect) FIPSEnabled(_ context.Context) bool {
+	return fips.IsFipsEnabled()
 }

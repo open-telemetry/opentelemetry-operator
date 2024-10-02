@@ -113,6 +113,7 @@ func TestValidate(t *testing.T) {
 			getReviewer(test.shouldFailSar),
 			nil,
 			bv,
+			nil,
 		)
 		t.Run(tt.name, func(t *testing.T) {
 			tt := tt
@@ -494,6 +495,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				getReviewer(test.shouldFailSar),
 				nil,
 				bv,
+				nil,
 			)
 			ctx := context.Background()
 			err := cvw.Default(ctx, &test.otelcol)
@@ -1285,6 +1287,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				getReviewer(test.shouldFailSar),
 				nil,
 				bv,
+				nil,
 			)
 			ctx := context.Background()
 			warnings, err := cvw.ValidateCreate(ctx, &test.otelcol)
@@ -1352,6 +1355,7 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 				getReviewer(test.shouldFailSar),
 				nil,
 				bv,
+				nil,
 			)
 			ctx := context.Background()
 			warnings, err := cvw.ValidateUpdate(ctx, &test.otelcolOld, &test.otelcolNew)
