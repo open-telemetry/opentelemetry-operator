@@ -90,10 +90,10 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	TargetAllocator TargetAllocatorEmbedded `json:"targetAllocator,omitempty"`
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
-	// +optional
+	// +kubebuilder:validation:Enum=ModeDeployment;ModeDaemonSet;ModeStatefulSet;ModeSidecar
 	Mode Mode `json:"mode,omitempty"`
 	// UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed
-	// +optional
+	// +kubebuilder:validation:Enum=UpgradeStrategyAutomatic
 	UpgradeStrategy UpgradeStrategy `json:"upgradeStrategy"`
 	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
 	// The empty objects e.g. batch: should be written as batch: {} otherwise they won't work with kustomize or kubectl edit.
@@ -110,14 +110,17 @@ type OpenTelemetryCollectorSpec struct {
 	// functionality is only available if one of the valid modes is set.
 	// Valid modes are: deployment, daemonset and statefulset.
 	// +optional
+	// +kubebuilder:validation:Enum=ModeDeployment;ModeDaemonSet;ModeStatefulSet;
 	Ingress Ingress `json:"ingress,omitempty"`
 	// Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
+	// +kubebuilder:validation:Required
 	LivenessProbe *Probe `json:"livenessProbe,omitempty"`
 	// Readiness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
+	// +kubebuilder:validation:Required
 	ReadinessProbe *Probe `json:"readinessProbe,omitempty"`
 
 	// ObservabilitySpec defines how telemetry data gets handled.
@@ -135,11 +138,13 @@ type OpenTelemetryCollectorSpec struct {
 	// https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec
 	// This is only applicable to Daemonset mode.
 	// +optional
+	// +kubebuilder:validation:Enum=ModeDaemonset
 	DaemonSetUpdateStrategy appsv1.DaemonSetUpdateStrategy `json:"daemonSetUpdateStrategy,omitempty"`
 	// UpdateStrategy represents the strategy the operator will take replacing existing Deployment pods with new pods
 	// https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/#DeploymentSpec
 	// This is only applicable to Deployment mode.
 	// +optional
+	// +kubebuilder:validation:Enum=ModeDeployment
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
 }
 
