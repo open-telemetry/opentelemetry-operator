@@ -1,0 +1,196 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/go-container-names: goapp
+    instrumentation.opentelemetry.io/inject-go: "true"
+    instrumentation.opentelemetry.io/inject-python: "true"
+    instrumentation.opentelemetry.io/otel-go-auto-target-exe: /usr/src/app/productcatalogservice
+    instrumentation.opentelemetry.io/python-container-names: pythonapp
+  labels:
+    app: my-golang-multiinst
+spec:
+  containers:
+  - name: goapp
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+  - command:
+    - flask
+    - run
+    - -p
+    - "8087"
+    env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: OTEL_SERVICE_NAME
+      value: pythonapp
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4318
+    - name: PYTHONPATH
+      value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp
+    - name: OTEL_METRICS_EXPORTER
+      value: otlp
+    - name: OTEL_EXPORTER_OTLP_TIMEOUT
+      value: "20"
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.85"
+    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
+      value: "true"
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: OTEL_PROPAGATORS
+      value: jaeger,b3
+    - name: OTEL_RESOURCE_ATTRIBUTES
+    name: pythonapp
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+    - mountPath: /otel-auto-instrumentation-python
+      name: opentelemetry-auto-instrumentation-python
+  - args:
+    - --feature-gates=-component.UseLocalHostAsDefaultHost
+    - --config=env:OTEL_CONFIG
+    env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: OTEL_CONFIG
+      value: |
+        receivers:
+          otlp:
+            protocols:
+              grpc: null
+              http: null
+        exporters:
+          debug: null
+        service:
+          pipelines:
+            traces:
+              exporters:
+                - debug
+              receivers:
+                - otlp
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_UID
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.uid
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: OTEL_RESOURCE_ATTRIBUTES
+    name: otc-container
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+  - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: OTEL_GO_AUTO_TARGET_EXE
+      value: /usr/src/app/productcatalogservice
+    - name: OTEL_SERVICE_NAME
+      value: goapp
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4317
+    - name: OTEL_EXPORTER_OTLP_TIMEOUT
+      value: "20"
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.85"
+    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
+      value: "true"
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: OTEL_PROPAGATORS
+      value: jaeger,b3
+    - name: OTEL_RESOURCE_ATTRIBUTES
+    name: opentelemetry-auto-instrumentation
+    volumeMounts:
+    - mountPath: /sys/kernel/debug
+      name: kernel-debug
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+  initContainers:
+  - command:
+    - cp
+    - -r
+    - /autoinstrumentation/.
+    - /otel-auto-instrumentation-python
+    name: opentelemetry-auto-instrumentation-python
+    volumeMounts:
+    - mountPath: /otel-auto-instrumentation-python
+      name: opentelemetry-auto-instrumentation-python
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+status:
+  containerStatuses:
+  - name: goapp
+    ready: true
+    started: true
+  - name: opentelemetry-auto-instrumentation
+    ready: true
+    started: true
+  - name: otc-container
+    ready: true
+    started: true
+  - name: pythonapp
+    ready: true
+    started: true
+  initContainerStatuses:
+  - name: opentelemetry-auto-instrumentation-python
+    ready: true
+    state:
+      terminated:
+        reason: Completed
+  phase: Running
