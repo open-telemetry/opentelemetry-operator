@@ -15,7 +15,6 @@
 package manifests
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 
@@ -33,8 +32,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+type ImmutableFieldChangeErr struct {
+	Field string
+}
+
+func (e *ImmutableFieldChangeErr) Error() string {
+	return fmt.Sprintf("Immutable field change attempted: %s", e.Field)
+}
+
 var (
-	ImmutableChangeErr = errors.New("immutable field change attempted")
+	ImmutableChangeErr *ImmutableFieldChangeErr
 )
 
 // MutateFuncFor returns a mutate function based on the
@@ -71,7 +78,7 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 		// Get the existing labels and override any conflicts with the desired labels
 		// This will preserve any labels on the existing set.
 		existingLabels := existing.GetLabels()
-		if err := mergeWithOverride(&existingLabels, desired.GetLabels()); err != nil {
+		if err := mergeWithOverwriteWithEmptyValue(&existingLabels, desired.GetLabels()); err != nil {
 			return err
 		}
 		existing.SetLabels(existingLabels)
@@ -265,84 +272,53 @@ func mutateService(existing, desired *corev1.Service) {
 }
 
 func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
-	if !existing.CreationTimestamp.IsZero() && !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
-		return ImmutableChangeErr
+	if !existing.CreationTimestamp.IsZero() {
+		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
+			return &ImmutableFieldChangeErr{Field: "Spec.Selector"}
+		}
+		if err := hasImmutableLabelChange(existing.Spec.Selector.MatchLabels, desired.Spec.Template.Labels); err != nil {
+			return err
+		}
 	}
-	// Daemonset selector is immutable so we set this value only if
-	// a new object is going to be created
-	if existing.CreationTimestamp.IsZero() {
-		existing.Spec.Selector = desired.Spec.Selector
-	}
-	if err := mergeWithOverride(&existing.Spec, desired.Spec); err != nil {
-		return err
-	}
-	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Template.Spec.NodeSelector, desired.Spec.Template.Spec.NodeSelector); err != nil {
-		return err
-	}
-	return nil
+
+	return mergeWithOverwriteWithEmptyValue(&existing.Spec, desired.Spec)
 }
 
 func mutateDeployment(existing, desired *appsv1.Deployment) error {
-	if !existing.CreationTimestamp.IsZero() && !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
-		return ImmutableChangeErr
+	if !existing.CreationTimestamp.IsZero() {
+		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
+			return &ImmutableFieldChangeErr{Field: "Spec.Selector"}
+		}
+		if err := hasImmutableLabelChange(existing.Spec.Selector.MatchLabels, desired.Spec.Template.Labels); err != nil {
+			return err
+		}
 	}
-	// Deployment selector is immutable so we set this value only if
-	// a new object is going to be created
-	if existing.CreationTimestamp.IsZero() {
-		existing.Spec.Selector = desired.Spec.Selector
-	}
-	existing.Spec.Replicas = desired.Spec.Replicas
-	if err := mergeWithOverride(&existing.Spec.Template, desired.Spec.Template); err != nil {
-		return err
-	}
-	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Template.Spec.NodeSelector, desired.Spec.Template.Spec.NodeSelector); err != nil {
-		return err
-	}
-	if err := mergeWithOverride(&existing.Spec.Strategy, desired.Spec.Strategy); err != nil {
-		return err
-	}
-	return nil
+	return mergeWithOverwriteWithEmptyValue(&existing.Spec, desired.Spec)
 }
 
 func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
-	if hasChange, field := hasImmutableFieldChange(existing, desired); hasChange {
-		return fmt.Errorf("%s is being changed, %w", field, ImmutableChangeErr)
+	if !existing.CreationTimestamp.IsZero() {
+		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
+			return &ImmutableFieldChangeErr{Field: "Spec.Selector"}
+		}
+		if err := hasImmutableLabelChange(existing.Spec.Selector.MatchLabels, desired.Spec.Template.Labels); err != nil {
+			return err
+		}
+		if hasVolumeClaimsTemplatesChanged(existing, desired) {
+			return &ImmutableFieldChangeErr{Field: "Spec.VolumeClaimTemplates"}
+		}
 	}
-	// StatefulSet selector is immutable so we set this value only if
-	// a new object is going to be created
-	if existing.CreationTimestamp.IsZero() {
-		existing.Spec.Selector = desired.Spec.Selector
-	}
-	existing.Spec.PodManagementPolicy = desired.Spec.PodManagementPolicy
-	existing.Spec.Replicas = desired.Spec.Replicas
 
-	for i := range existing.Spec.VolumeClaimTemplates {
-		existing.Spec.VolumeClaimTemplates[i].TypeMeta = desired.Spec.VolumeClaimTemplates[i].TypeMeta
-		existing.Spec.VolumeClaimTemplates[i].ObjectMeta = desired.Spec.VolumeClaimTemplates[i].ObjectMeta
-		existing.Spec.VolumeClaimTemplates[i].Spec = desired.Spec.VolumeClaimTemplates[i].Spec
-	}
-	if err := mergeWithOverride(&existing.Spec.Template, desired.Spec.Template); err != nil {
-		return err
-	}
-	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Template.Spec.NodeSelector, desired.Spec.Template.Spec.NodeSelector); err != nil {
-		return err
-	}
-	return nil
+	return mergeWithOverwriteWithEmptyValue(&existing.Spec, desired.Spec)
 }
 
-func hasImmutableFieldChange(existing, desired *appsv1.StatefulSet) (bool, string) {
-	if existing.CreationTimestamp.IsZero() {
-		return false, ""
+func hasImmutableLabelChange(existingSelectorLabels, desiredLabels map[string]string) error {
+	for k, v := range existingSelectorLabels {
+		if vv, ok := desiredLabels[k]; !ok || vv != v {
+			return &ImmutableFieldChangeErr{Field: "Spec.Template.Metadata.Labels"}
+		}
 	}
-	if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
-		return true, fmt.Sprintf("Spec.Selector: desired: %s existing: %s", desired.Spec.Selector, existing.Spec.Selector)
-	}
-
-	if hasVolumeClaimsTemplatesChanged(existing, desired) {
-		return true, "Spec.VolumeClaimTemplates"
-	}
-
-	return false, ""
+	return nil
 }
 
 // hasVolumeClaimsTemplatesChanged if volume claims template change has been detected.
