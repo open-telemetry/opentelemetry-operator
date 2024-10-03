@@ -31,6 +31,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/exporters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components/extensions"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/processors"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
 )
@@ -41,10 +42,11 @@ const (
 	KindReceiver ComponentKind = iota
 	KindExporter
 	KindProcessor
+	KindExtension
 )
 
 func (c ComponentKind) String() string {
-	return [...]string{"receiver", "exporter", "processor"}[c]
+	return [...]string{"receiver", "exporter", "processor", "extension"}[c]
 }
 
 // AnyConfig represent parts of the config.
@@ -108,7 +110,12 @@ func (c *Config) GetEnabledComponents() map[ComponentKind]map[string]interface{}
 		KindReceiver:  {},
 		KindProcessor: {},
 		KindExporter:  {},
+		KindExtension: {},
 	}
+	for _, extension := range c.Service.Extensions {
+		toReturn[KindExtension][extension] = struct{}{}
+	}
+
 	for _, pipeline := range c.Service.Pipelines {
 		if pipeline == nil {
 			continue
@@ -122,6 +129,9 @@ func (c *Config) GetEnabledComponents() map[ComponentKind]map[string]interface{}
 		for _, componentId := range pipeline.Processors {
 			toReturn[KindProcessor][componentId] = struct{}{}
 		}
+	}
+	for _, componentId := range c.Service.Extensions {
+		toReturn[KindExtension][componentId] = struct{}{}
 	}
 	return toReturn
 }
@@ -162,6 +172,8 @@ func (c *Config) getRbacRulesForComponentKinds(logger logr.Logger, componentKind
 			} else {
 				cfg = *c.Processors
 			}
+		case KindExtension:
+			continue
 		}
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.
@@ -191,7 +203,9 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 			retriever = exporters.ParserFor
 			cfg = c.Exporters
 		case KindProcessor:
-			break
+			continue
+		case KindExtension:
+			continue
 		}
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.
@@ -225,6 +239,38 @@ func (c *Config) GetAllPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
 
 func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error) {
 	return c.getRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor)
+}
+
+// GetLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled
+// that provides the hinting for the liveness probe.
+func (c *Config) GetLivenessProbe(logger logr.Logger) (*corev1.Probe, error) {
+	enabledComponents := c.GetEnabledComponents()
+	for componentName := range enabledComponents[KindExtension] {
+		// TODO: Clean up the naming here and make it simpler to use a retriever.
+		parser := extensions.ParserFor(componentName)
+		if probe, err := parser.GetLivenessProbe(logger, c.Extensions.Object[componentName]); err != nil {
+			return nil, err
+		} else if probe != nil {
+			return probe, nil
+		}
+	}
+	return nil, nil
+}
+
+// GetReadinessProbe gets the first enabled readiness probe. There should only ever be one extension enabled
+// that provides the hinting for the readiness probe.
+func (c *Config) GetReadinessProbe(logger logr.Logger) (*corev1.Probe, error) {
+	enabledComponents := c.GetEnabledComponents()
+	for componentName := range enabledComponents[KindExtension] {
+		// TODO: Clean up the naming here and make it simpler to use a retriever.
+		parser := extensions.ParserFor(componentName)
+		if probe, err := parser.GetReadinessProbe(logger, c.Extensions.Object[componentName]); err != nil {
+			return nil, err
+		} else if probe != nil {
+			return probe, nil
+		}
+	}
+	return nil, nil
 }
 
 // Yaml encodes the current object and returns it as a string.
@@ -268,7 +314,7 @@ func (c *Config) nullObjects() []string {
 }
 
 type Service struct {
-	Extensions *[]string `json:"extensions,omitempty" yaml:"extensions,omitempty"`
+	Extensions []string `json:"extensions,omitempty" yaml:"extensions,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Telemetry *AnyConfig `json:"telemetry,omitempty" yaml:"telemetry,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields

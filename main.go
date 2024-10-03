@@ -53,6 +53,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	openshiftDashboards "github.com/open-telemetry/opentelemetry-operator/internal/openshift/dashboards"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
@@ -141,6 +142,7 @@ func main() {
 		encodeLevelKey                   string
 		encodeTimeKey                    string
 		encodeLevelFormat                string
+		fipsDisabledComponents           string
 	)
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
@@ -151,7 +153,7 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	pflag.BoolVar(&createRBACPermissions, "create-rbac-permissions", false, "Automatically create RBAC permissions needed by the processors (deprecated)")
 	pflag.BoolVar(&createOpenShiftDashboard, "openshift-create-dashboard", false, "Create an OpenShift dashboard for monitoring the OpenTelemetryCollector instances")
-	pflag.BoolVar(&enableMultiInstrumentation, "enable-multi-instrumentation", false, "Controls whether the operator supports multi instrumentation")
+	pflag.BoolVar(&enableMultiInstrumentation, "enable-multi-instrumentation", true, "Controls whether the operator supports multi instrumentation")
 	pflag.BoolVar(&enableApacheHttpdInstrumentation, constants.FlagApacheHttpd, true, "Controls whether the operator supports Apache HTTPD auto-instrumentation")
 	pflag.BoolVar(&enableDotNetInstrumentation, constants.FlagDotNet, true, "Controls whether the operator supports dotnet auto-instrumentation")
 	pflag.BoolVar(&enableGoInstrumentation, constants.FlagGo, false, "Controls whether the operator supports Go auto-instrumentation")
@@ -180,6 +182,7 @@ func main() {
 	pflag.StringVar(&encodeLevelKey, "zap-level-key", "level", "The level key to be used in the customized Log Encoder")
 	pflag.StringVar(&encodeTimeKey, "zap-time-key", "timestamp", "The time key to be used in the customized Log Encoder")
 	pflag.StringVar(&encodeLevelFormat, "zap-level-format", "uppercase", "The level format to be used in the customized Log Encoder")
+	pflag.StringVar(&fipsDisabledComponents, "fips-disabled-components", "uppercase", "Disabled collector components when operator runs on FIPS enabled platform. Example flag value =receiver.foo,receiver.bar,exporter.baz")
 	pflag.IntVar(&webhookPort, "webhook-port", 9443, "The port the webhook endpoint binds to.")
 	pflag.Parse()
 
@@ -438,7 +441,13 @@ func main() {
 			return warnings
 		}
 
-		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv); err != nil {
+		var fipsCheck fips.FIPSCheck
+		if ad.FIPSEnabled(ctx) {
+			receivers, exporters, processors, extensions := parseFipsFlag(fipsDisabledComponents)
+			logger.Info("Fips disabled components", "receivers", receivers, "exporters", exporters, "processors", processors, "extensions", extensions)
+			fipsCheck = fips.NewFipsCheck(receivers, exporters, processors, extensions)
+		}
+		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
@@ -534,4 +543,32 @@ func tlsConfigSetting(cfg *tls.Config, tlsOpt tlsConfig) {
 		setupLog.Error(err, "Failed to convert TLS cipher suite name to ID")
 	}
 	cfg.CipherSuites = cipherSuiteIDs
+}
+
+func parseFipsFlag(fipsFlag string) ([]string, []string, []string, []string) {
+	split := strings.Split(fipsFlag, ",")
+	var receivers []string
+	var exporters []string
+	var processors []string
+	var extensions []string
+	for _, val := range split {
+		val = strings.TrimSpace(val)
+		typeAndName := strings.Split(val, ".")
+		if len(typeAndName) == 2 {
+			componentType := typeAndName[0]
+			name := typeAndName[1]
+
+			switch componentType {
+			case "receiver":
+				receivers = append(receivers, name)
+			case "exporter":
+				exporters = append(exporters, name)
+			case "processor":
+				processors = append(processors, name)
+			case "extension":
+				extensions = append(extensions, name)
+			}
+		}
+	}
+	return receivers, exporters, processors, extensions
 }
