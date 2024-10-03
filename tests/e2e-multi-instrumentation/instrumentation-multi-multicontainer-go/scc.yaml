@@ -1,0 +1,17 @@
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: otel-go-instrumentation
+allowHostDirVolumePlugin: true
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true
+fsGroup:
+  type: RunAsAny
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+- '*'
+supplementalGroups:
+  type: RunAsAny
