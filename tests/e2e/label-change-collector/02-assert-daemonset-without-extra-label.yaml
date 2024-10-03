@@ -1,16 +1,15 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
+  (contains(keys(labels),'user-label')): false
+  (contains(keys(labels),'new-label')): false
   labels:
     app.kubernetes.io/component: opentelemetry-collector
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: daemonset-collector
     app.kubernetes.io/part-of: opentelemetry
-    (user-label == nil): true
-    (new-label == nil): true 
 spec:
   template:
     metadata:
-      labels:
-        (user-label == nil): true
-        (new-label == nil): true 
+      (contains(keys(labels),'user-label')): false
+      (contains(keys(labels),'new-label')): false
