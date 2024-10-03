@@ -1,3 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf
+data:
+  nginx.conf: |
+    # user nginx;
+    worker_processes  1;
+    pid /tmp/nginx.pid;
+    events {
+      worker_connections  10240;
+    }
+    http {
+      include /etc/nginx/conf.d/*.conf;
+      client_body_temp_path /tmp/client_temp;
+      proxy_temp_path       /tmp/proxy_temp_path;
+      fastcgi_temp_path     /tmp/fastcgi_temp;
+      uwsgi_temp_path       /tmp/uwsgi_temp;
+      scgi_temp_path        /tmp/scgi_temp;
+      server {
+        listen       8765 default_server;
+        server_name  localhost;
+        location / {
+          root   /usr/share/nginx/html;
+          index  index.html index.htm;
+        }
+
+        location /api/customer/ {
+          proxy_pass http://localhost:8282/api/customer/;
+        }
+        location /api/vendor/ {
+          proxy_pass http://localhost:8383/api/vendor/;
+        }
+
+        location /seznam {
+          proxy_pass http://www.seznam.cz/;
+        }
+      }
+
+    }
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,20 +54,31 @@ spec:
       labels:
         app: pod-with-multi-instrumentation
       annotations:
-        instrumentation.opentelemetry.io/dotnet-container-names: "dotnetapp"
         instrumentation.opentelemetry.io/inject-dotnet: "true"
         instrumentation.opentelemetry.io/inject-java: "true"
         instrumentation.opentelemetry.io/inject-nodejs: "true"
         instrumentation.opentelemetry.io/inject-python: "true"
+        instrumentation.opentelemetry.io/inject-sdk: "true"
+        instrumentation.opentelemetry.io/inject-apache-httpd: "true"
         instrumentation.opentelemetry.io/java-container-names: "javaapp"
         instrumentation.opentelemetry.io/nodejs-container-names: "nodejsapp"
         instrumentation.opentelemetry.io/python-container-names: "pythonapp"
+        instrumentation.opentelemetry.io/sdk-container-names: "sdkapp"
+        instrumentation.opentelemetry.io/apache-httpd-container-names: "apache-httpd-app"
+        instrumentation.opentelemetry.io/dotnet-container-names: "dotnetapp"
         sidecar.opentelemetry.io/inject: "true"
     spec:
       securityContext:
         runAsUser: 1000
         runAsGroup: 3000
         fsGroup: 3000
+      volumes:
+      - name: nginx-conf
+        configMap:
+          name: nginx-conf
+          items:
+          - key: nginx.conf
+            path: nginx.conf
       containers:
         - name: dotnetapp
           image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-dotnet:main
@@ -33,21 +86,32 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           env:
           - name: ASPNETCORE_URLS
             value: "http://+:8083"
         - name: javaapp
           image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main
+          env:
+          - name: SERVER_PORT
+            value: "8086"
+          ports:
+          - containerPort: 8086
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
         - name: nodejsapp
           image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-nodejs:main
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
           env:
           - name: NODE_PATH
             value: /usr/local/lib/node_modules
@@ -58,4 +122,49 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
-
+            seccompProfile:
+              type: RuntimeDefault
+        - name: sdkapp
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
+          command: ["flask", "run", "-p", "8088"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+        - name: apache-httpd-app
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-apache-httpd:main
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+          - containerPort: 8080
+        - name: nginxapp
+          image: nginxinc/nginx-unprivileged:1.26.2
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          # following to test lifecycle removal in cloned init container
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "echo Hello from the postStart handler"]
+          ports:
+          - containerPort: 8765
+          env:
+          - name: LD_LIBRARY_PATH
+            value: /opt
+          - name: NGINX_PORT
+            value: "8765"
+          volumeMounts:
+          - name: nginx-conf
+            mountPath: /etc/nginx/conf.d
+            subPath: default.conf
+            readOnly: true
