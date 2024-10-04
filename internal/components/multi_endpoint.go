@@ -40,6 +40,7 @@ type MultiPortOption func(parser *MultiPortReceiver)
 type MultiPortReceiver struct {
 	name string
 
+	addrMappings map[string]string
 	portMappings map[string]*corev1.ServicePort
 }
 
@@ -72,6 +73,37 @@ func (m *MultiPortReceiver) ParserName() string {
 	return fmt.Sprintf("__%s", m.name)
 }
 
+func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error) {
+	multiProtoEndpointCfg := &MultiProtocolEndpointConfig{}
+	if err := mapstructure.Decode(config, multiProtoEndpointCfg); err != nil {
+		return nil, err
+	}
+	tmp := make(map[string]*SingleEndpointConfig, len(multiProtoEndpointCfg.Protocols))
+	for protocol, ec := range multiProtoEndpointCfg.Protocols {
+		var port int32
+		if defaultSvc, ok := m.portMappings[protocol]; ok {
+			port = defaultSvc.Port
+			if ec != nil {
+				port = ec.GetPortNumOrDefault(logger, port)
+			}
+		}
+		var addr string
+		if defaultAddr, ok := m.addrMappings[protocol]; ok {
+			addr = defaultAddr
+		}
+		res, err := AddressDefaulter(logger, addr, port, ec)
+		if err != nil {
+			return nil, err
+		}
+		tmp[protocol] = res
+	}
+
+	for protocol, ec := range tmp {
+		multiProtoEndpointCfg.Protocols[protocol] = ec
+	}
+	return config, mapstructure.Decode(multiProtoEndpointCfg, &config)
+
+}
 func (m *MultiPortReceiver) GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
 	return nil, nil
 }
@@ -91,7 +123,7 @@ func NewMultiPortReceiverBuilder(name string) MultiPortBuilder[*MultiProtocolEnd
 }
 
 func NewProtocolBuilder(name string, port int32) Builder[*MultiProtocolEndpointConfig] {
-	return NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithPort(port)
+	return NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithPort(port).WithDefaultsApplier(MultiAddressDefaulter)
 }
 
 func (mp MultiPortBuilder[ComponentConfigType]) AddPortMapping(builder Builder[ComponentConfigType]) MultiPortBuilder[ComponentConfigType] {
@@ -104,6 +136,7 @@ func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, err
 	}
 	multiReceiver := &MultiPortReceiver{
 		name:         mp[0].MustBuild().name,
+		addrMappings: map[string]string{},
 		portMappings: map[string]*corev1.ServicePort{},
 	}
 	for _, bu := range mp[1:] {
@@ -112,6 +145,9 @@ func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, err
 			return nil, err
 		}
 		multiReceiver.portMappings[built.name] = built.settings.GetServicePort()
+		if built.settings != nil {
+			multiReceiver.addrMappings[built.name] = built.settings.defaultRecAddr
+		}
 	}
 	return multiReceiver, nil
 }
@@ -122,4 +158,15 @@ func (mp MultiPortBuilder[ComponentConfigType]) MustBuild() *MultiPortReceiver {
 	} else {
 		return p
 	}
+}
+
+func MultiAddressDefaulter(logger logr.Logger, defaultRecAddr string, port int32, config *MultiProtocolEndpointConfig) (*MultiProtocolEndpointConfig, error) {
+	for protocol, ec := range config.Protocols {
+		res, err := AddressDefaulter(logger, defaultRecAddr, port, ec)
+		if err != nil {
+			return nil, err
+		}
+		config.Protocols[protocol].Endpoint = res.Endpoint
+	}
+	return config, nil
 }

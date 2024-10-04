@@ -84,8 +84,10 @@ spec:
         receivers:
           otlp:
             protocols:
-              grpc: null
-              http: null
+              grpc:
+                endpoint: 0.0.0.0:4317
+              http:
+                endpoint: 0.0.0.0:4318
         exporters:
           debug: null
         service:

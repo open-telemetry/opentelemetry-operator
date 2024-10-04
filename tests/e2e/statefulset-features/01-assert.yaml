@@ -21,7 +21,7 @@ spec:
            items:
            - key: collector.yaml
              path: collector.yaml
-           name: stateful-collector-81dcbcb5
+           name: stateful-collector-1e082e0e
          name: otc-internal
        - emptyDir: {}
          name: testvolume

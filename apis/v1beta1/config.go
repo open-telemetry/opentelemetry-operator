@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -225,6 +226,72 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 	return ports, nil
 }
 
+// getPortsForComponentKinds gets the ports for the given ComponentKind(s).
+func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) error {
+	enabledComponents := c.GetEnabledComponents()
+	for _, componentKind := range componentKinds {
+		var retriever components.ParserRetriever
+		var cfg AnyConfig
+		switch componentKind {
+		case KindReceiver:
+			retriever = receivers.ReceiverFor
+			cfg = c.Receivers
+		case KindExporter:
+			continue
+		case KindProcessor:
+			continue
+		case KindExtension:
+			continue
+		}
+		for componentName := range enabledComponents[componentKind] {
+			parser := retriever(componentName)
+			if newCfg, err := parser.GetDefaultConfig(logger, cfg.Object[componentName]); err != nil {
+				return err
+			} else {
+				// NOTE: The internally used parser returns components.SingleEndpointConfig
+				// as a map value. The following lines normalize this value..
+				got, err := yaml.Marshal(newCfg)
+				if err != nil {
+					return err
+				}
+				out := make(map[string]interface{}, 0)
+				if err := yaml.Unmarshal(got, out); err != nil {
+					return err
+				}
+				// NOTE: The underlying struct compoents.SingleEndpointConfig adds this listenaddress
+				// field. It is marshaled due to internal use. To avoid adding invalid fields to the
+				// collector config, this temporary workaround removes this field.
+				// TODO: Try to get rid of it or move it into the parser.GetDefaultConfig method.
+				removeKeysRecursively(out, "listenaddress")
+				cfg.Object[componentName] = out
+			}
+		}
+	}
+
+	return nil
+}
+
+func removeKeysRecursively(m map[string]interface{}, keysToRemove ...string) {
+	for k, v := range m {
+		if slices.Contains(keysToRemove, k) {
+			delete(m, k)
+			continue
+		}
+
+		if nm, ok := v.(map[string]interface{}); ok {
+			removeKeysRecursively(nm, keysToRemove...)
+		}
+
+		if ns, ok := v.([]interface{}); ok {
+			for _, item := range ns {
+				if nestedMap, ok := item.(map[string]interface{}); ok {
+					removeKeysRecursively(nestedMap, keysToRemove...)
+				}
+			}
+		}
+	}
+}
+
 func (c *Config) GetReceiverPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
 	return c.getPortsForComponentKinds(logger, KindReceiver)
 }
@@ -239,6 +306,10 @@ func (c *Config) GetAllPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
 
 func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error) {
 	return c.getRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor)
+}
+
+func (c *Config) ApplyDefaults(logger logr.Logger) error {
+	return c.applyDefaultForComponentKinds(logger, KindReceiver)
 }
 
 // GetLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled

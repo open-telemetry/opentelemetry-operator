@@ -108,7 +108,7 @@ func TestEnvVarUpdates(t *testing.T) {
 			Config: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
 					Object: map[string]interface{}{
-						"prometheus": []interface{}{},
+						"prometheus": nil,
 					},
 				},
 				Exporters: v1beta1.AnyConfig{

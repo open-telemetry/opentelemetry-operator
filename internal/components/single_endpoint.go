@@ -15,6 +15,9 @@
 package components
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
@@ -80,9 +83,29 @@ func internalParseSingleEndpoint(logger logr.Logger, name string, failSilently b
 }
 
 func NewSinglePortParserBuilder(name string, port int32) Builder[*SingleEndpointConfig] {
-	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpoint)
+	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpoint).WithDefaultsApplier(AddressDefaulter)
 }
 
 func NewSilentSinglePortParserBuilder(name string, port int32) Builder[*SingleEndpointConfig] {
-	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpointSilent)
+	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpointSilent).WithDefaultsApplier(AddressDefaulter)
+}
+
+func AddressDefaulter(logger logr.Logger, defaultRecAddr string, port int32, config *SingleEndpointConfig) (*SingleEndpointConfig, error) {
+	if config == nil {
+		config = &SingleEndpointConfig{}
+	}
+	if config.Endpoint == "" {
+		config.Endpoint = fmt.Sprintf("%s:%d", defaultRecAddr, port)
+		return config, nil
+	}
+
+	v := strings.Split(config.Endpoint, ":")
+	if len(v) < 2 {
+		return config, nil
+	}
+
+	if v[0] == "" {
+		config.Endpoint = fmt.Sprintf("%s:%s", defaultRecAddr, v[1])
+	}
+	return config, nil
 }
