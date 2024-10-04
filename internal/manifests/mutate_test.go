@@ -1089,7 +1089,7 @@ func TestMutateDaemonsetCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true"},
+									Args:  []string{"--default-arg=true"},
 								},
 							},
 						},
@@ -1107,7 +1107,7 @@ func TestMutateDaemonsetCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true", "extra-arg=yes"},
+									Args:  []string{"--default-arg=true", "extra-arg=yes"},
 								},
 							},
 						},
@@ -1128,7 +1128,7 @@ func TestMutateDaemonsetCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true", "extra-arg=yes"},
+									Args:  []string{"--default-arg=true", "extra-arg=yes"},
 								},
 							},
 						},
@@ -1146,7 +1146,7 @@ func TestMutateDaemonsetCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true"},
+									Args:  []string{"--default-arg=true"},
 								},
 							},
 						},
@@ -1167,7 +1167,7 @@ func TestMutateDaemonsetCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true", "extra-arg=yes"},
+									Args:  []string{"--default-arg=true", "extra-arg=yes"},
 								},
 							},
 						},
@@ -1185,7 +1185,7 @@ func TestMutateDaemonsetCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true", "extra-arg=no"},
+									Args:  []string{"--default-arg=true", "extra-arg=no"},
 								},
 							},
 						},
@@ -1223,7 +1223,7 @@ func TestMutateDeploymentCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true"},
+									Args:  []string{"--default-arg=true"},
 								},
 							},
 						},
@@ -1241,7 +1241,7 @@ func TestMutateDeploymentCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true", "extra-arg=yes"},
+									Args:  []string{"--default-arg=true", "extra-arg=yes"},
 								},
 							},
 						},
@@ -1262,7 +1262,7 @@ func TestMutateDeploymentCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true", "extra-arg=yes"},
+									Args:  []string{"--default-arg=true", "extra-arg=yes"},
 								},
 							},
 						},
@@ -1280,7 +1280,7 @@ func TestMutateDeploymentCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true"},
+									Args:  []string{"--default-arg=true"},
 								},
 							},
 						},
@@ -1301,7 +1301,7 @@ func TestMutateDeploymentCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true", "extra-arg=yes"},
+									Args:  []string{"--default-arg=true", "extra-arg=yes"},
 								},
 							},
 						},
@@ -1319,7 +1319,7 @@ func TestMutateDeploymentCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true", "extra-arg=no"},
+									Args:  []string{"--default-arg=true", "extra-arg=no"},
 								},
 							},
 						},
@@ -1357,7 +1357,7 @@ func TestMutateStatefulSetCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true"},
+									Args:  []string{"--default-arg=true"},
 								},
 							},
 						},
@@ -1375,7 +1375,7 @@ func TestMutateStatefulSetCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true", "extra-arg=yes"},
+									Args:  []string{"--default-arg=true", "extra-arg=yes"},
 								},
 							},
 						},
@@ -1396,7 +1396,7 @@ func TestMutateStatefulSetCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true", "extra-arg=yes"},
+									Args:  []string{"--default-arg=true", "extra-arg=yes"},
 								},
 							},
 						},
@@ -1414,7 +1414,7 @@ func TestMutateStatefulSetCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true"},
+									Args:  []string{"--default-arg=true"},
 								},
 							},
 						},
@@ -1435,7 +1435,7 @@ func TestMutateStatefulSetCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true", "extra-arg=yes"},
+									Args:  []string{"--default-arg=true", "extra-arg=yes"},
 								},
 							},
 						},
@@ -1453,7 +1453,7 @@ func TestMutateStatefulSetCollectorArgs(t *testing.T) {
 								{
 									Name:  "collector",
 									Image: "collector:latest",
-									Args:  []string{"--deafult-arg=true", "extra-arg=no"},
+									Args:  []string{"--default-arg=true", "extra-arg=no"},
 								},
 							},
 						},
