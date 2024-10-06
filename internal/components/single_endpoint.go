@@ -31,8 +31,8 @@ var (
 // SingleEndpointConfig represents the minimal struct for a given YAML configuration input containing either
 // endpoint or listen_address.
 type SingleEndpointConfig struct {
-	Endpoint      string `mapstructure:"endpoint,omitempty"`
-	ListenAddress string `mapstructure:"listen_address,omitempty"`
+	Endpoint      string `mapstructure:"endpoint,omitempty" yaml:"endpoint,omitempty"`
+	ListenAddress string `mapstructure:"listen_address,omitempty" yaml:"listen_address,omitempty"`
 }
 
 func (g *SingleEndpointConfig) GetPortNumOrDefault(logger logr.Logger, p int32) int32 {

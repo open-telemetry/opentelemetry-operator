@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net"
 	"reflect"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -262,34 +261,12 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 				// field. It is marshaled due to internal use. To avoid adding invalid fields to the
 				// collector config, this temporary workaround removes this field.
 				// TODO: Try to get rid of it or move it into the parser.GetDefaultConfig method.
-				removeKeysRecursively(out, "listenaddress")
 				cfg.Object[componentName] = out
 			}
 		}
 	}
 
 	return nil
-}
-
-func removeKeysRecursively(m map[string]interface{}, keysToRemove ...string) {
-	for k, v := range m {
-		if slices.Contains(keysToRemove, k) {
-			delete(m, k)
-			continue
-		}
-
-		if nm, ok := v.(map[string]interface{}); ok {
-			removeKeysRecursively(nm, keysToRemove...)
-		}
-
-		if ns, ok := v.([]interface{}); ok {
-			for _, item := range ns {
-				if nestedMap, ok := item.(map[string]interface{}); ok {
-					removeKeysRecursively(nestedMap, keysToRemove...)
-				}
-			}
-		}
-	}
 }
 
 func (c *Config) GetReceiverPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
