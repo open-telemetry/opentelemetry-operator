@@ -225,7 +225,7 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 	return ports, nil
 }
 
-// getPortsForComponentKinds gets the ports for the given ComponentKind(s).
+// applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
 func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) error {
 	enabledComponents := c.GetEnabledComponents()
 	for _, componentKind := range componentKinds {
@@ -244,25 +244,11 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 		}
 		for componentName := range enabledComponents[componentKind] {
 			parser := retriever(componentName)
-			if newCfg, err := parser.GetDefaultConfig(logger, cfg.Object[componentName]); err != nil {
+			newCfg, err := parser.GetDefaultConfig(logger, cfg.Object[componentName])
+			if err != nil {
 				return err
-			} else {
-				// NOTE: The internally used parser returns components.SingleEndpointConfig
-				// as a map value. The following lines normalize this value..
-				got, err := yaml.Marshal(newCfg)
-				if err != nil {
-					return err
-				}
-				out := make(map[string]interface{}, 0)
-				if err := yaml.Unmarshal(got, out); err != nil {
-					return err
-				}
-				// NOTE: The underlying struct compoents.SingleEndpointConfig adds this listenaddress
-				// field. It is marshaled due to internal use. To avoid adding invalid fields to the
-				// collector config, this temporary workaround removes this field.
-				// TODO: Try to get rid of it or move it into the parser.GetDefaultConfig method.
-				cfg.Object[componentName] = out
 			}
+			cfg.Object[componentName] = newCfg
 		}
 	}
 

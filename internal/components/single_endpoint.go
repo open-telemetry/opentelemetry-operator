@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -90,22 +91,21 @@ func NewSilentSinglePortParserBuilder(name string, port int32) Builder[*SingleEn
 	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpointSilent).WithDefaultsApplier(AddressDefaulter)
 }
 
-func AddressDefaulter(logger logr.Logger, defaultRecAddr string, port int32, config *SingleEndpointConfig) (*SingleEndpointConfig, error) {
+func AddressDefaulter(logger logr.Logger, addrProv AddressProvider, config *SingleEndpointConfig) (map[string]interface{}, error) {
 	if config == nil {
 		config = &SingleEndpointConfig{}
 	}
+	defaultRecAddr, port := addrProv("")
+
 	if config.Endpoint == "" {
 		config.Endpoint = fmt.Sprintf("%s:%d", defaultRecAddr, port)
-		return config, nil
+	} else {
+		v := strings.Split(config.Endpoint, ":")
+		if len(v) < 2 || v[0] == "" {
+			config.Endpoint = fmt.Sprintf("%s:%s", defaultRecAddr, v[len(v)-1])
+		}
 	}
 
-	v := strings.Split(config.Endpoint, ":")
-	if len(v) < 2 {
-		return config, nil
-	}
-
-	if v[0] == "" {
-		config.Endpoint = fmt.Sprintf("%s:%s", defaultRecAddr, v[1])
-	}
-	return config, nil
+	res := make(map[string]interface{})
+	return res, mapstructure.Decode(config, &res)
 }
