@@ -5930,6 +5930,8 @@ spec:
                   type: object
                 type: array
               daemonSetUpdateStrategy:
+                enum:
+                - daemonset
                 properties:
                   rollingUpdate:
                     properties:
@@ -5948,6 +5950,8 @@ spec:
                     type: string
                 type: object
               deploymentUpdateStrategy:
+                enum:
+                - deployment
                 properties:
                   rollingUpdate:
                     properties:
@@ -6063,6 +6067,10 @@ spec:
               imagePullPolicy:
                 type: string
               ingress:
+                enum:
+                - deployment
+                - daemonSet
+                - statefulSet
                 properties:
                   annotations:
                     additionalProperties:
@@ -6918,22 +6926,32 @@ spec:
               livenessProbe:
                 properties:
                   failureThreshold:
+                    default: 3
                     format: int32
+                    minimum: 1
                     type: integer
                   initialDelaySeconds:
+                    default: 0
                     format: int32
+                    minimum: 0
                     type: integer
                   periodSeconds:
+                    default: 10
                     format: int32
+                    minimum: 1
                     type: integer
                   successThreshold:
+                    default: 1
                     format: int32
+                    minimum: 1
                     type: integer
                   terminationGracePeriodSeconds:
                     format: int64
+                    minimum: 1
                     type: integer
                   timeoutSeconds:
                     format: int32
+                    minimum: 1
                     type: integer
                 type: object
               managementState:
@@ -6943,11 +6961,18 @@ spec:
                 - unmanaged
                 type: string
               mode:
-                enum:
-                - daemonset
-                - deployment
-                - sidecar
-                - statefulset
+                allOf:
+                - enum:
+                  - daemonset
+                  - deployment
+                  - sidecar
+                  - statefulset
+                - enum:
+                  - deployment
+                  - daemonset
+                  - statefulset
+                  - sidecar
+                default: deployment
                 type: string
               nodeSelector:
                 additionalProperties:
@@ -7114,22 +7139,32 @@ spec:
               readinessProbe:
                 properties:
                   failureThreshold:
+                    default: 3
                     format: int32
+                    minimum: 1
                     type: integer
                   initialDelaySeconds:
+                    default: 0
                     format: int32
+                    minimum: 0
                     type: integer
                   periodSeconds:
+                    default: 10
                     format: int32
+                    minimum: 1
                     type: integer
                   successThreshold:
+                    default: 1
                     format: int32
+                    minimum: 1
                     type: integer
                   terminationGracePeriodSeconds:
                     format: int64
+                    minimum: 1
                     type: integer
                   timeoutSeconds:
                     format: int32
+                    minimum: 1
                     type: integer
                 type: object
               replicas:
@@ -7686,11 +7721,16 @@ spec:
                         type: object
                     type: object
                   allocationStrategy:
+                    allOf:
+                    - enum:
+                      - least-weighted
+                      - consistent-hashing
+                      - per-node
+                    - enum:
+                      - consistent-hashing
+                      - least-weighted
+                      - per-node
                     default: consistent-hashing
-                    enum:
-                    - least-weighted
-                    - consistent-hashing
-                    - per-node
                     type: string
                   enabled:
                     type: boolean
@@ -7761,10 +7801,13 @@ spec:
                       type: object
                     type: array
                   filterStrategy:
+                    allOf:
+                    - enum:
+                      - ""
+                      - relabel-config
+                    - enum:
+                      - relabel-config
                     default: relabel-config
-                    enum:
-                    - ""
-                    - relabel-config
                     type: string
                   image:
                     type: string
@@ -7935,6 +7978,7 @@ spec:
                     type: object
                   replicas:
                     format: int32
+                    minimum: 1
                     type: integer
                   resources:
                     properties:
@@ -8188,9 +8232,14 @@ spec:
                   type: object
                 type: array
               upgradeStrategy:
-                enum:
-                - automatic
-                - none
+                allOf:
+                - enum:
+                  - automatic
+                  - none
+                - enum:
+                  - automatic
+                  - manual
+                default: automatic
                 type: string
               volumeClaimTemplates:
                 items:
@@ -9201,6 +9250,7 @@ spec:
             required:
             - config
             - managementState
+            - upgradeStrategy
             type: object
           status:
             properties:
