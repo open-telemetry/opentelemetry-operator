@@ -38,6 +38,8 @@ OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addpr
 BRIDGETESTSERVER_IMG_REPO ?= e2e-test-app-bridge-server
 BRIDGETESTSERVER_IMG ?= ${IMG_PREFIX}/${BRIDGETESTSERVER_IMG_REPO}:ve2e
 
+MUSTGATHER_IMG ?= ${IMG_PREFIX}/must-gather
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -142,6 +144,10 @@ ci: generate fmt vet test ensure-generate-is-noop
 .PHONY: manager
 manager: generate
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o bin/manager_${ARCH} -ldflags "${COMMON_LDFLAGS} ${OPERATOR_LDFLAGS}" main.go
+
+.PHONY: must-gather
+must-gather:
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o bin/must-gather_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/gather/main.go
 
 # Build target allocator binary
 .PHONY: targetallocator
@@ -362,6 +368,15 @@ container-bridge-test-server: GOOS = linux
 container-bridge-test-server:
 	docker build --load -t ${BRIDGETESTSERVER_IMG} tests/test-e2e-apps/bridge-server
 
+.PHONY: container-must-gather
+container-must-gather: GOOS = linux
+container-must-gather: must-gather
+	docker build -f cmd/gather/Dockerfile --load -t ${MUSTGATHER_IMG} .
+
+.PHONY: container-must-gather-push
+container-must-gather-push:
+	docker push ${MUSTGATHER_IMG}
+
 .PHONY: start-kind
 start-kind: kind
 ifeq (true,$(START_KIND_CLUSTER))
@@ -387,7 +402,6 @@ ifeq (true,$(START_KIND_CLUSTER))
 else
 	$(MAKE) container-push
 endif
-
 
 .PHONY: load-image-target-allocator
 load-image-target-allocator: container-target-allocator kind
