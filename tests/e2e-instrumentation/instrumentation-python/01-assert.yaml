@@ -21,6 +21,8 @@ spec:
       value: debug
     - name: OTEL_TRACES_EXPORTER
       value: otlp
+    - name: OTEL_LOGS_EXPORTER
+      value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4318
     - name: PYTHONPATH
