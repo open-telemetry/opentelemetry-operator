@@ -28,10 +28,10 @@ func TestInjectPythonSDK(t *testing.T) {
 	tests := []struct {
 		name string
 		v1alpha1.Python
-		pod      corev1.Pod
+		pod       corev1.Pod
 		wheelKind string
-		expected corev1.Pod
-		err      error
+		expected  corev1.Pod
+		err       error
 	}{
 		{
 			name:   "PYTHONPATH not defined",
