@@ -169,10 +169,10 @@ spec:
       readOnly: true
   initContainers:
   - command:
-    - cp
-    - -r
-    - /autoinstrumentation/.
-    - /otel-auto-instrumentation-python
+      - cp
+      - -r
+      - /autoinstrumentation/.
+      - /otel-auto-instrumentation-python
     name: opentelemetry-auto-instrumentation-python
     volumeMounts:
     - mountPath: /otel-auto-instrumentation-python
