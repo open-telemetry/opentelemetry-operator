@@ -33,6 +33,8 @@ const (
 	annotationInjectDotNet                    = "instrumentation.opentelemetry.io/inject-dotnet"
 	annotationDotNetRuntime                   = "instrumentation.opentelemetry.io/otel-dotnet-auto-runtime"
 	annotationInjectDotnetContainersName      = "instrumentation.opentelemetry.io/dotnet-container-names"
+	annotationInjectPhp                       = "instrumentation.opentelemetry.io/inject-php"
+	annotationInjectPhpContainersName         = "instrumentation.opentelemetry.io/php-container-names"
 	annotationInjectGo                        = "instrumentation.opentelemetry.io/inject-go"
 	annotationInjectGoContainersName          = "instrumentation.opentelemetry.io/go-container-names"
 	annotationGoExecPath                      = "instrumentation.opentelemetry.io/otel-go-auto-target-exe"
