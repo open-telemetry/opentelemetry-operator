@@ -372,3 +372,96 @@ func TestGenericParser_GetProbe(t *testing.T) {
 		})
 	}
 }
+
+func TestGenericParser_GetDefaultConfig(t *testing.T) {
+	type args struct {
+		logger logr.Logger
+		config interface{}
+	}
+	type testCase[T any] struct {
+		name    string
+		g       *components.GenericParser[T]
+		args    args
+		want    interface{}
+		wantErr assert.ErrorAssertionFunc
+	}
+
+	tests := []testCase[*components.SingleEndpointConfig]{
+		{
+			name: "no settings or defaultsApplier returns config",
+			g:    &components.GenericParser[*components.SingleEndpointConfig]{},
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"endpoint": "http://localhost:8080",
+				},
+			},
+			want: map[string]interface{}{
+				"endpoint": "http://localhost:8080",
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "empty defaultRecAddr returns config",
+			g:    components.NewSinglePortParserBuilder("test", 0).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"endpoint": "http://localhost:8080",
+				},
+			},
+			want: map[string]interface{}{
+				"endpoint": "http://localhost:8080",
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "valid settings with defaultsApplier",
+			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"endpoint": nil,
+				},
+			},
+			want: map[string]interface{}{
+				"endpoint": "127.0.0.1:8080",
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "valid settings with defaultsApplier doesnt override",
+			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"endpoint": "127.0.0.1:9090",
+				},
+			},
+			want: map[string]interface{}{
+				"endpoint": "127.0.0.1:9090",
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "invalid config fails to decode",
+			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: "invalid_config",
+			},
+			want:    nil,
+			wantErr: assert.Error,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.g.GetDefaultConfig(tt.args.logger, tt.args.config)
+			if !tt.wantErr(t, err, fmt.Sprintf("GetDefaultConfig(%v, %v)", tt.args.logger, tt.args.config)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "GetDefaultConfig(%v, %v)", tt.args.logger, tt.args.config)
+		})
+	}
+}

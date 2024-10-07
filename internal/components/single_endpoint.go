@@ -91,11 +91,10 @@ func NewSilentSinglePortParserBuilder(name string, port int32) Builder[*SingleEn
 	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpointSilent).WithDefaultsApplier(AddressDefaulter)
 }
 
-func AddressDefaulter(logger logr.Logger, addrProv AddressProvider, config *SingleEndpointConfig) (map[string]interface{}, error) {
+func AddressDefaulter(logger logr.Logger, defaultRecAddr string, port int32, config *SingleEndpointConfig) (map[string]interface{}, error) {
 	if config == nil {
 		config = &SingleEndpointConfig{}
 	}
-	defaultRecAddr, port := addrProv("")
 
 	if config.Endpoint == "" {
 		config.Endpoint = fmt.Sprintf("%s:%d", defaultRecAddr, port)
@@ -107,5 +106,6 @@ func AddressDefaulter(logger logr.Logger, addrProv AddressProvider, config *Sing
 	}
 
 	res := make(map[string]interface{})
-	return res, mapstructure.Decode(config, &res)
+	err := mapstructure.Decode(config, &res)
+	return res, err
 }

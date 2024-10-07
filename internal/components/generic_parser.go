@@ -52,7 +52,7 @@ func (g *GenericParser[T]) GetDefaultConfig(logger logr.Logger, config interface
 	if err := mapstructure.Decode(config, &parsed); err != nil {
 		return nil, err
 	}
-	return g.defaultsApplier(logger, func(string) (string, int32) { return g.settings.defaultRecAddr, g.settings.GetServicePort().Port }, parsed)
+	return g.defaultsApplier(logger, g.settings.defaultRecAddr, g.settings.GetServicePort().Port, parsed)
 }
 
 func (g *GenericParser[T]) GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {

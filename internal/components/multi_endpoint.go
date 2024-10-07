@@ -40,9 +40,8 @@ type MultiPortOption func(parser *MultiPortReceiver)
 type MultiPortReceiver struct {
 	name string
 
-	addrMappings    map[string]string
-	portMappings    map[string]*corev1.ServicePort
-	defaultsApplier Defaulter[any]
+	addrMappings map[string]string
+	portMappings map[string]*corev1.ServicePort
 }
 
 func (m *MultiPortReceiver) Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error) {
@@ -79,24 +78,29 @@ func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config interfac
 	if err := mapstructure.Decode(config, multiProtoEndpointCfg); err != nil {
 		return nil, err
 	}
-
-	defaulter := func(protocol string) (string, int32) {
-		var port int32
+	defaultedConfig := map[string]interface{}{}
+	for protocol, ec := range multiProtoEndpointCfg.Protocols {
 		if defaultSvc, ok := m.portMappings[protocol]; ok {
-			port = defaultSvc.Port
-			ec := multiProtoEndpointCfg.Protocols[protocol]
+			port := defaultSvc.Port
 			if ec != nil {
 				port = ec.GetPortNumOrDefault(logger, port)
 			}
+			var addr string
+			if defaultAddr, ok := m.addrMappings[protocol]; ok {
+				addr = defaultAddr
+			}
+			conf, err := AddressDefaulter(logger, addr, port, ec)
+			if err != nil {
+				return nil, err
+			}
+			defaultedConfig[protocol] = conf
+		} else {
+			return nil, fmt.Errorf("unknown protocol set: %s", protocol)
 		}
-		var addr string
-		if defaultAddr, ok := m.addrMappings[protocol]; ok {
-			addr = defaultAddr
-		}
-		return addr, port
 	}
-
-	return m.defaultsApplier(logger, defaulter, multiProtoEndpointCfg)
+	return map[string]interface{}{
+		"protocols": defaultedConfig,
+	}, nil
 }
 
 func (m *MultiPortReceiver) GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
@@ -118,7 +122,7 @@ func NewMultiPortReceiverBuilder(name string) MultiPortBuilder[*MultiProtocolEnd
 }
 
 func NewProtocolBuilder(name string, port int32) Builder[*MultiProtocolEndpointConfig] {
-	return NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithPort(port).WithDefaultsApplier(MultiAddressDefaulter)
+	return NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithPort(port)
 }
 
 func (mp MultiPortBuilder[ComponentConfigType]) AddPortMapping(builder Builder[ComponentConfigType]) MultiPortBuilder[ComponentConfigType] {
@@ -130,21 +134,18 @@ func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, err
 		return nil, fmt.Errorf("must provide at least one port mapping")
 	}
 
-	mp0Defaulter := mp[0].MustBuild().defaultsApplier
 	multiReceiver := &MultiPortReceiver{
-		name:            mp[0].MustBuild().name,
-		defaultsApplier: createMultiAddressDefaulter(mp0Defaulter),
-		addrMappings:    map[string]string{},
-		portMappings:    map[string]*corev1.ServicePort{},
+		name:         mp[0].MustBuild().name,
+		addrMappings: map[string]string{},
+		portMappings: map[string]*corev1.ServicePort{},
 	}
 	for _, bu := range mp[1:] {
 		built, err := bu.Build()
 		if err != nil {
 			return nil, err
 		}
-		multiReceiver.defaultsApplier = createMultiAddressDefaulter(built.defaultsApplier)
-		multiReceiver.portMappings[built.name] = built.settings.GetServicePort()
 		if built.settings != nil {
+			multiReceiver.portMappings[built.name] = built.settings.GetServicePort()
 			multiReceiver.addrMappings[built.name] = built.settings.defaultRecAddr
 		}
 	}
@@ -157,43 +158,4 @@ func (mp MultiPortBuilder[ComponentConfigType]) MustBuild() *MultiPortReceiver {
 	} else {
 		return p
 	}
-}
-
-func createMultiAddressDefaulter[ComponentConfigType any](defaultsApplier Defaulter[ComponentConfigType]) Defaulter[any] {
-	return func(logger logr.Logger, addrProv AddressProvider, config any) (map[string]interface{}, error) {
-		tc, ok := config.(ComponentConfigType)
-		if !ok {
-			return nil, fmt.Errorf("invalid config type, expected ComponentConfigType")
-		}
-
-		result, err := defaultsApplier(logger, addrProv, tc)
-		if err != nil {
-			return nil, err
-		}
-
-		return result, nil
-	}
-}
-
-func MultiAddressDefaulter(logger logr.Logger, addrProv AddressProvider, config *MultiProtocolEndpointConfig) (map[string]interface{}, error) {
-	root := make(map[string]interface{})
-	if err := mapstructure.Decode(config, &root); err != nil {
-		return nil, err
-	}
-
-	proto, ok := root["protocols"].(map[string]interface{})
-	if !ok {
-		proto = make(map[string]interface{})
-		root["protocols"] = proto
-	}
-
-	for protocol, ec := range config.Protocols {
-		res, err := AddressDefaulter(logger, func(string) (string, int32) { return addrProv(protocol) }, ec)
-		if err != nil {
-			return nil, err
-		}
-		proto[protocol] = res
-	}
-
-	return root, nil
 }

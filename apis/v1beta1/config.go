@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 
+	"dario.cat/mergo"
 	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -244,11 +245,18 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 		}
 		for componentName := range enabledComponents[componentKind] {
 			parser := retriever(componentName)
-			newCfg, err := parser.GetDefaultConfig(logger, cfg.Object[componentName])
+			componentConf := cfg.Object[componentName]
+			newCfg, err := parser.GetDefaultConfig(logger, componentConf)
 			if err != nil {
 				return err
 			}
-			cfg.Object[componentName] = newCfg
+			// We need to ensure we don't remove any fields in defaulting.
+			mappedCfg := newCfg.(map[string]interface{})
+			err = mergo.Merge(&mappedCfg, componentConf)
+			if err != nil {
+				return err
+			}
+			cfg.Object[componentName] = mappedCfg
 		}
 	}
 
