@@ -155,6 +155,7 @@ func (a *autoDetect) CertManagerAvailability(ctx context.Context) (certmanager.A
 	}
 
 	return certmanager.Available, nil
+}
 
 func (a *autoDetect) FIPSEnabled(_ context.Context) bool {
 	return fips.IsFipsEnabled()
