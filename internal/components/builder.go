@@ -26,16 +26,18 @@ import (
 type ParserOption[ComponentConfigType any] func(*Settings[ComponentConfigType])
 
 type Settings[ComponentConfigType any] struct {
-	protocol     corev1.Protocol
-	appProtocol  *string
-	targetPort   intstr.IntOrString
-	nodePort     int32
-	name         string
-	port         int32
-	portParser   PortParser[ComponentConfigType]
-	rbacGen      RBACRuleGenerator[ComponentConfigType]
-	livenessGen  ProbeGenerator[ComponentConfigType]
-	readinessGen ProbeGenerator[ComponentConfigType]
+	protocol        corev1.Protocol
+	appProtocol     *string
+	targetPort      intstr.IntOrString
+	nodePort        int32
+	name            string
+	port            int32
+	defaultRecAddr  string
+	portParser      PortParser[ComponentConfigType]
+	rbacGen         RBACRuleGenerator[ComponentConfigType]
+	livenessGen     ProbeGenerator[ComponentConfigType]
+	readinessGen    ProbeGenerator[ComponentConfigType]
+	defaultsApplier Defaulter[ComponentConfigType]
 }
 
 func NewEmptySettings[ComponentConfigType any]() *Settings[ComponentConfigType] {
@@ -73,6 +75,11 @@ func (b Builder[ComponentConfigType]) WithProtocol(protocol corev1.Protocol) Bui
 func (b Builder[ComponentConfigType]) WithAppProtocol(appProtocol *string) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.appProtocol = appProtocol
+	})
+}
+func (b Builder[ComponentConfigType]) WithDefaultRecAddress(defaultRecAddr string) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
+		o.defaultRecAddr = defaultRecAddr
 	})
 }
 func (b Builder[ComponentConfigType]) WithTargetPort(targetPort int32) Builder[ComponentConfigType] {
@@ -118,6 +125,12 @@ func (b Builder[ComponentConfigType]) WithReadinessGen(readinessGen ProbeGenerat
 	})
 }
 
+func (b Builder[ComponentConfigType]) WithDefaultsApplier(defaultsApplier Defaulter[ComponentConfigType]) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
+		o.defaultsApplier = defaultsApplier
+	})
+}
+
 func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigType], error) {
 	o := NewEmptySettings[ComponentConfigType]()
 	o.Apply(b...)
@@ -125,12 +138,13 @@ func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigTyp
 		return nil, fmt.Errorf("invalid settings struct, no name specified")
 	}
 	return &GenericParser[ComponentConfigType]{
-		name:         o.name,
-		portParser:   o.portParser,
-		rbacGen:      o.rbacGen,
-		livenessGen:  o.livenessGen,
-		readinessGen: o.readinessGen,
-		settings:     o,
+		name:            o.name,
+		portParser:      o.portParser,
+		rbacGen:         o.rbacGen,
+		livenessGen:     o.livenessGen,
+		readinessGen:    o.readinessGen,
+		defaultsApplier: o.defaultsApplier,
+		settings:        o,
 	}, nil
 }
 

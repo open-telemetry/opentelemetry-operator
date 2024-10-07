@@ -52,9 +52,11 @@ var (
 		components.NewMultiPortReceiverBuilder("otlp").
 			AddPortMapping(components.NewProtocolBuilder("grpc", 4317).
 				WithAppProtocol(&components.GrpcProtocol).
+				WithDefaultRecAddress("0.0.0.0").
 				WithTargetPort(4317)).
 			AddPortMapping(components.NewProtocolBuilder("http", 4318).
 				WithAppProtocol(&components.HttpProtocol).
+				WithDefaultRecAddress("0.0.0.0").
 				WithTargetPort(4318)).
 			MustBuild(),
 		components.NewMultiPortReceiverBuilder("skywalking").

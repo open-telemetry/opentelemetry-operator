@@ -40,6 +40,7 @@ type MultiPortOption func(parser *MultiPortReceiver)
 type MultiPortReceiver struct {
 	name string
 
+	addrMappings map[string]string
 	portMappings map[string]*corev1.ServicePort
 }
 
@@ -72,6 +73,36 @@ func (m *MultiPortReceiver) ParserName() string {
 	return fmt.Sprintf("__%s", m.name)
 }
 
+func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error) {
+	multiProtoEndpointCfg := &MultiProtocolEndpointConfig{}
+	if err := mapstructure.Decode(config, multiProtoEndpointCfg); err != nil {
+		return nil, err
+	}
+	defaultedConfig := map[string]interface{}{}
+	for protocol, ec := range multiProtoEndpointCfg.Protocols {
+		if defaultSvc, ok := m.portMappings[protocol]; ok {
+			port := defaultSvc.Port
+			if ec != nil {
+				port = ec.GetPortNumOrDefault(logger, port)
+			}
+			var addr string
+			if defaultAddr, ok := m.addrMappings[protocol]; ok {
+				addr = defaultAddr
+			}
+			conf, err := AddressDefaulter(logger, addr, port, ec)
+			if err != nil {
+				return nil, err
+			}
+			defaultedConfig[protocol] = conf
+		} else {
+			return nil, fmt.Errorf("unknown protocol set: %s", protocol)
+		}
+	}
+	return map[string]interface{}{
+		"protocols": defaultedConfig,
+	}, nil
+}
+
 func (m *MultiPortReceiver) GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
 	return nil, nil
 }
@@ -102,8 +133,10 @@ func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, err
 	if len(mp) < 1 {
 		return nil, fmt.Errorf("must provide at least one port mapping")
 	}
+
 	multiReceiver := &MultiPortReceiver{
 		name:         mp[0].MustBuild().name,
+		addrMappings: map[string]string{},
 		portMappings: map[string]*corev1.ServicePort{},
 	}
 	for _, bu := range mp[1:] {
@@ -111,7 +144,10 @@ func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, err
 		if err != nil {
 			return nil, err
 		}
-		multiReceiver.portMappings[built.name] = built.settings.GetServicePort()
+		if built.settings != nil {
+			multiReceiver.portMappings[built.name] = built.settings.GetServicePort()
+			multiReceiver.addrMappings[built.name] = built.settings.defaultRecAddr
+		}
 	}
 	return multiReceiver, nil
 }

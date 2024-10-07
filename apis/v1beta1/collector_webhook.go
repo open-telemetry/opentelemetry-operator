@@ -102,7 +102,7 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 	if len(otelcol.Spec.ManagementState) == 0 {
 		otelcol.Spec.ManagementState = ManagementStateManaged
 	}
-	return nil
+	return otelcol.Spec.Config.ApplyDefaults(c.logger)
 }
 
 func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
