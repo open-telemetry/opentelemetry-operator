@@ -61,81 +61,103 @@ var (
 			MustBuild(),
 		components.NewMultiPortReceiverBuilder("skywalking").
 			AddPortMapping(components.NewProtocolBuilder(components.GrpcProtocol, 11800).
+				WithDefaultRecAddress("0.0.0.0").
 				WithTargetPort(11800).
 				WithAppProtocol(&components.GrpcProtocol)).
 			AddPortMapping(components.NewProtocolBuilder(components.HttpProtocol, 12800).
+				WithDefaultRecAddress("0.0.0.0").
 				WithTargetPort(12800).
 				WithAppProtocol(&components.HttpProtocol)).
 			MustBuild(),
 		components.NewMultiPortReceiverBuilder("jaeger").
 			AddPortMapping(components.NewProtocolBuilder(components.GrpcProtocol, 14250).
+				WithDefaultRecAddress("0.0.0.0").
 				WithTargetPort(14250).
 				WithProtocol(corev1.ProtocolTCP).
 				WithAppProtocol(&components.GrpcProtocol)).
 			AddPortMapping(components.NewProtocolBuilder("thrift_http", 14268).
+				WithDefaultRecAddress("0.0.0.0").
 				WithTargetPort(14268).
 				WithProtocol(corev1.ProtocolTCP).
 				WithAppProtocol(&components.HttpProtocol)).
 			AddPortMapping(components.NewProtocolBuilder("thrift_compact", 6831).
+				WithDefaultRecAddress("0.0.0.0").
 				WithTargetPort(6831).
 				WithProtocol(corev1.ProtocolUDP)).
 			AddPortMapping(components.NewProtocolBuilder("thrift_binary", 6832).
+				WithDefaultRecAddress("0.0.0.0").
 				WithTargetPort(6832).
 				WithProtocol(corev1.ProtocolUDP)).
 			MustBuild(),
 		components.NewMultiPortReceiverBuilder("loki").
 			AddPortMapping(components.NewProtocolBuilder(components.GrpcProtocol, 9095).
+				WithDefaultRecAddress("0.0.0.0").
 				WithTargetPort(9095).
 				WithAppProtocol(&components.GrpcProtocol)).
 			AddPortMapping(components.NewProtocolBuilder(components.HttpProtocol, 3100).
+				WithDefaultRecAddress("0.0.0.0").
 				WithTargetPort(3100).
 				WithAppProtocol(&components.HttpProtocol)).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("awsxray", 2000).
+			WithDefaultRecAddress("0.0.0.0").
 			WithTargetPort(2000).
 			WithProtocol(corev1.ProtocolUDP).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("carbon", 2003).
+			WithDefaultRecAddress("0.0.0.0").
 			WithTargetPort(2003).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("collectd", 8081).
+			WithDefaultRecAddress("0.0.0.0").
 			WithTargetPort(8081).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("fluentforward", 8006).
+			WithDefaultRecAddress("0.0.0.0").
 			WithTargetPort(8006).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("influxdb", 8086).
+			WithDefaultRecAddress("0.0.0.0").
 			WithTargetPort(8086).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("opencensus", 55678).
 			WithAppProtocol(nil).
+			WithDefaultRecAddress("0.0.0.0").
 			WithTargetPort(55678).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("sapm", 7276).
+			WithDefaultRecAddress("0.0.0.0").
 			WithTargetPort(7276).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("signalfx", 9943).
+			WithDefaultRecAddress("0.0.0.0").
 			WithTargetPort(9943).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("splunk_hec", 8088).
+			WithDefaultRecAddress("0.0.0.0").
 			WithTargetPort(8088).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("statsd", 8125).
+			WithDefaultRecAddress("0.0.0.0").
 			WithProtocol(corev1.ProtocolUDP).
 			WithTargetPort(8125).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("tcplog", components.UnsetPort).
+			WithDefaultRecAddress("0.0.0.0").
 			WithProtocol(corev1.ProtocolTCP).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("udplog", components.UnsetPort).
+			WithDefaultRecAddress("0.0.0.0").
 			WithProtocol(corev1.ProtocolUDP).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("wavefront", 2003).
+			WithDefaultRecAddress("0.0.0.0").
 			WithTargetPort(2003).
 			MustBuild(),
 		components.NewSinglePortParserBuilder("zipkin", 9411).
 			WithAppProtocol(&components.HttpProtocol).
 			WithProtocol(corev1.ProtocolTCP).
+			WithDefaultRecAddress("0.0.0.0").
 			WithTargetPort(3100).
 			MustBuild(),
 		NewScraperParser("prometheus"),
