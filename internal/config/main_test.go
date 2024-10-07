@@ -87,6 +87,10 @@ type mockAutoDetect struct {
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 }
 
+func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
+	return false
+}
+
 func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error) {
 	if m.OpenShiftRoutesAvailabilityFunc != nil {
 		return m.OpenShiftRoutesAvailabilityFunc()
