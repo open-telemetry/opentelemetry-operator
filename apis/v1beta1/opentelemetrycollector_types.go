@@ -113,7 +113,7 @@ type OpenTelemetryCollectorSpec struct {
 	// functionality is only available if one of the valid modes is set.
 	// Valid modes are: deployment, daemonset and statefulset.
 	// +optional
-	// +kubebuilder:validation:Enum=deployment;daemonSet;statefulSet;
+	// +kubebuilder:validation:Enum=deployment;daemonSet;statefulSet
 	Ingress Ingress `json:"ingress,omitempty"`
 	// Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.

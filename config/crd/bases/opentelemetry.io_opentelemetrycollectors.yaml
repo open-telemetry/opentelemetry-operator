@@ -5909,6 +5909,7 @@ spec:
                     mountpath:
                       type: string
                     name:
+                      minLength: 3
                       type: string
                   required:
                   - mountpath
@@ -9246,8 +9247,12 @@ spec:
                 properties:
                   replicas:
                     format: int32
+                    minimum: 0
                     type: integer
                   selector:
+                    enum:
+                    - deployment
+                    - statefulset
                     type: string
                   statusReplicas:
                     type: string

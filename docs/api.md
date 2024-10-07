@@ -50578,14 +50578,17 @@ Scale is the OpenTelemetryCollector's scale subresource status.
 OpenTelemetryCollector's deployment or statefulSet.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>selector</b></td>
-        <td>string</td>
+        <td>enum</td>
         <td>
           The selector used to match the OpenTelemetryCollector's
 deployment or statefulSet pods.<br/>
+          <br/>
+            <i>Enum</i>: deployment, statefulset<br/>
         </td>
         <td>false</td>
       </tr><tr>
