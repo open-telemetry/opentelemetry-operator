@@ -82,7 +82,6 @@ service:
 	assert.Equal(t, map[string]string{
 		"--test-upgrade43": "true",
 		"--test-arg1":      "otel",
-		"feature-gates":    "-component.UseLocalHostAsDefaultHost",
 	}, res.Spec.Args)
 
 	// verify
@@ -143,7 +142,6 @@ service:
 	assert.Equal(t, map[string]string{
 		"--test-upgrade43": "true",
 		"--test-arg1":      "otel",
-		"feature-gates":    "-component.UseLocalHostAsDefaultHost",
 	}, res.Spec.Args)
 
 }
