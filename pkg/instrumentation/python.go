@@ -23,24 +23,38 @@ import (
 )
 
 const (
-	envPythonPath               = "PYTHONPATH"
-	envOtelTracesExporter       = "OTEL_TRACES_EXPORTER"
-	envOtelMetricsExporter      = "OTEL_METRICS_EXPORTER"
-	envOtelExporterOTLPProtocol = "OTEL_EXPORTER_OTLP_PROTOCOL"
-	pythonPathPrefix            = "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation"
-	pythonPathSuffix            = "/otel-auto-instrumentation-python"
-	pythonInstrMountPath        = "/otel-auto-instrumentation-python"
-	pythonVolumeName            = volumeName + "-python"
-	pythonInitContainerName     = initContainerName + "-python"
+	envPythonPath                   = "PYTHONPATH"
+	envOtelTracesExporter           = "OTEL_TRACES_EXPORTER"
+	envOtelMetricsExporter          = "OTEL_METRICS_EXPORTER"
+	envOtelExporterOTLPProtocol     = "OTEL_EXPORTER_OTLP_PROTOCOL"
+	manyLinuxAutoInstrumentationSrc = "/autoinstrumentation/."
+	muslLinuxAutoInstrumentationSrc = "/autoinstrumentation-musl/."
+	pythonPathPrefix                = "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation"
+	pythonPathSuffix                = "/otel-auto-instrumentation-python"
+	pythonInstrMountPath            = "/otel-auto-instrumentation-python"
+	pythonVolumeName                = volumeName + "-python"
+	pythonInitContainerName         = initContainerName + "-python"
+	wheelKindManyLinux              = "manylinux"
+	wheelKindMuslLinux              = "musllinux"
 )
 
-func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, error) {
+func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, wheelKind string) (corev1.Pod, error) {
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
 	err := validateContainerEnv(container.Env, envPythonPath)
 	if err != nil {
 		return pod, err
+	}
+
+	autoInstrumentationSrc := ""
+	switch wheelKind {
+	case "", wheelKindManyLinux:
+		autoInstrumentationSrc = manyLinuxAutoInstrumentationSrc
+	case wheelKindMuslLinux:
+		autoInstrumentationSrc = muslLinuxAutoInstrumentationSrc
+	default:
+		return pod, fmt.Errorf("provided instrumentation.opentelemetry.io/python-wheel-kind annotation value '%s' is not supported", wheelKind)
 	}
 
 	// inject Python instrumentation spec env vars.
@@ -106,7 +120,7 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      pythonInitContainerName,
 			Image:     pythonSpec.Image,
-			Command:   []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
+			Command:   []string{"cp", "-r", autoInstrumentationSrc, pythonInstrMountPath},
 			Resources: pythonSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      pythonVolumeName,
