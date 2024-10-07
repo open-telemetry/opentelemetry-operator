@@ -29,7 +29,7 @@ data:
         jaeger:
             protocols:
                 grpc:
-                    endpoint: :14250
+                    endpoint: 0.0.0.0:14250
         prometheus:
             config:
                 global:
@@ -52,4 +52,4 @@ data:
                     - jaeger
 kind: ConfigMap
 metadata:
-  name: stateful-collector-a65c7bf4
+  name: stateful-collector-57180221

@@ -38,7 +38,8 @@ type MultiPortOption func(parser *MultiPortReceiver)
 
 // MultiPortReceiver is a special parser for components with endpoints for each protocol.
 type MultiPortReceiver struct {
-	name string
+	name           string
+	defaultRecAddr string
 
 	addrMappings map[string]string
 	portMappings map[string]*corev1.ServicePort
@@ -85,7 +86,7 @@ func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config interfac
 			if ec != nil {
 				port = ec.GetPortNumOrDefault(logger, port)
 			}
-			var addr string
+			addr := m.defaultRecAddr
 			if defaultAddr, ok := m.addrMappings[protocol]; ok {
 				addr = defaultAddr
 			}
@@ -118,11 +119,11 @@ func (m *MultiPortReceiver) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.Pol
 type MultiPortBuilder[ComponentConfigType any] []Builder[ComponentConfigType]
 
 func NewMultiPortReceiverBuilder(name string) MultiPortBuilder[*MultiProtocolEndpointConfig] {
-	return append(MultiPortBuilder[*MultiProtocolEndpointConfig]{}, NewBuilder[*MultiProtocolEndpointConfig]().WithName(name))
+	return append(MultiPortBuilder[*MultiProtocolEndpointConfig]{}, NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithDefaultRecAddress("0.0.0.0"))
 }
 
 func NewProtocolBuilder(name string, port int32) Builder[*MultiProtocolEndpointConfig] {
-	return NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithPort(port)
+	return NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithPort(port).WithDefaultRecAddress("0.0.0.0")
 }
 
 func (mp MultiPortBuilder[ComponentConfigType]) AddPortMapping(builder Builder[ComponentConfigType]) MultiPortBuilder[ComponentConfigType] {
@@ -134,10 +135,12 @@ func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, err
 		return nil, fmt.Errorf("must provide at least one port mapping")
 	}
 
+	mb := mp[0].MustBuild()
 	multiReceiver := &MultiPortReceiver{
-		name:         mp[0].MustBuild().name,
-		addrMappings: map[string]string{},
-		portMappings: map[string]*corev1.ServicePort{},
+		name:           mb.name,
+		defaultRecAddr: mb.settings.defaultRecAddr,
+		addrMappings:   map[string]string{},
+		portMappings:   map[string]*corev1.ServicePort{},
 	}
 	for _, bu := range mp[1:] {
 		built, err := bu.Build()
