@@ -250,10 +250,18 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 			if err != nil {
 				return err
 			}
+
 			// We need to ensure we don't remove any fields in defaulting.
-			mappedCfg := newCfg.(map[string]interface{})
-			err = mergo.Merge(&mappedCfg, componentConf)
-			if err != nil {
+			mappedCfg, ok := newCfg.(map[string]interface{})
+			if !ok || mappedCfg == nil {
+				logger.V(1).Info("returned default configuration invalid",
+					"warn", "could not apply component defaults",
+					"component", componentName,
+				)
+				continue
+			}
+
+			if err := mergo.Merge(&mappedCfg, componentConf); err != nil {
 				return err
 			}
 			cfg.Object[componentName] = mappedCfg
