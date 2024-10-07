@@ -20,17 +20,18 @@ require (
 	github.com/oklog/run v1.1.0
 	github.com/open-telemetry/opamp-go v0.15.0
 	github.com/openshift/api v0.0.0-20240124164020-e2ce40831f2e
+	github.com/operator-framework/api v0.27.0
 	github.com/operator-framework/operator-lib v0.15.0
 	github.com/prometheus-operator/prometheus-operator v0.76.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.76.2
 	github.com/prometheus/client_golang v1.20.4
-	github.com/prometheus/common v0.59.1
+	github.com/prometheus/common v0.60.0
 	github.com/prometheus/prometheus v0.54.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
-	go.opentelemetry.io/collector/featuregate v1.16.0
+	go.opentelemetry.io/collector/featuregate v1.17.0
 	go.opentelemetry.io/otel v1.30.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.30.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.52.0
@@ -184,7 +185,9 @@ require (
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.29 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
@@ -203,7 +206,7 @@ require (
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
 	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
-	golang.org/x/oauth2 v0.22.0 // indirect
+	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/term v0.24.0 // indirect
