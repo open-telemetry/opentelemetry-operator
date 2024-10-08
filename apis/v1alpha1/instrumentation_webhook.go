@@ -236,6 +236,14 @@ func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings
 	default:
 		return warnings, fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Sampler.Type)
 	}
+
+	if r.Spec.Exporter.TLS != nil {
+		tls := r.Spec.Exporter.TLS
+		if tls.Key != "" && tls.Cert == "" || tls.Cert != "" && tls.Key == "" {
+			warnings = append(warnings, "both exporter.tls.key and exporter.tls.cert mut be set")
+		}
+	}
+
 	return warnings, nil
 }
 

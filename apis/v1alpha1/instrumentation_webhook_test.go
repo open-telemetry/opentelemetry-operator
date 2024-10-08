@@ -113,6 +113,57 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "tls cert set but missing key",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
+						Argument: "0.99",
+					},
+					Exporter: Exporter{
+						TLS: &TLS{
+							Cert: "cert",
+						},
+					},
+				},
+			},
+			warnings: []string{"both exporter.tls.key and exporter.tls.cert mut be set"},
+		},
+		{
+			name: "tls key set but missing cert",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
+						Argument: "0.99",
+					},
+					Exporter: Exporter{
+						TLS: &TLS{
+							Key: "key",
+						},
+					},
+				},
+			},
+			warnings: []string{"both exporter.tls.key and exporter.tls.cert mut be set"},
+		},
+		{
+			name: "no warning set",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
+						Argument: "0.99",
+					},
+					Exporter: Exporter{
+						TLS: &TLS{
+							Key:  "key",
+							Cert: "cert",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {

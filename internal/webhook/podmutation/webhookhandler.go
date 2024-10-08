@@ -30,7 +30,7 @@ import (
 )
 
 // +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=ignore,groups="",resources=pods,verbs=create,versions=v1,name=mpod.kb.io,sideEffects=none,admissionReviewVersions=v1
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch
+// +kubebuilder:rbac:groups="",resources=namespaces;secrets,verbs=get;list;watch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch
 // +kubebuilder:rbac:groups="apps",resources=replicasets,verbs=get;list;watch
