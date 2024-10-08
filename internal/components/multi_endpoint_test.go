@@ -368,6 +368,162 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 	}
 }
 
+func TestMultiPortReceiver_GetDefaultConfig(t *testing.T) {
+	type args struct {
+		logger logr.Logger
+		config interface{}
+	}
+	type testCase struct {
+		name    string
+		m       components.Parser
+		args    args
+		want    interface{}
+		wantErr assert.ErrorAssertionFunc
+	}
+
+	tests := []testCase{
+		{
+			name: "default config with single protocol settings",
+			m: components.NewMultiPortReceiverBuilder("receiver1").
+				AddPortMapping(components.NewProtocolBuilder("http", 80).
+					WithDefaultRecAddress("0.0.0.0").
+					WithTargetPort(8080)).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"protocols": map[string]interface{}{
+						"http": nil,
+					},
+				},
+			},
+			want: map[string]interface{}{
+				"protocols": map[string]interface{}{
+					"http": map[string]interface{}{
+						"endpoint": "0.0.0.0:80",
+					},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "default config with multiple protocol settings",
+			m: components.NewMultiPortReceiverBuilder("receiver1").
+				AddPortMapping(components.NewProtocolBuilder("http", 80).
+					WithDefaultRecAddress("0.0.0.0").
+					WithTargetPort(8080)).
+				AddPortMapping(components.NewProtocolBuilder("grpc", 90).
+					WithDefaultRecAddress("0.0.0.0").
+					WithTargetPort(8080)).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"protocols": map[string]interface{}{
+						"http": nil,
+						"grpc": nil,
+					},
+				},
+			},
+			want: map[string]interface{}{
+				"protocols": map[string]interface{}{
+					"http": map[string]interface{}{
+						"endpoint": "0.0.0.0:80",
+					},
+					"grpc": map[string]interface{}{
+						"endpoint": "0.0.0.0:90",
+					},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "default config with multiple protocol settings does not override",
+			m: components.NewMultiPortReceiverBuilder("receiver1").
+				AddPortMapping(components.NewProtocolBuilder("http", 80).
+					WithDefaultRecAddress("0.0.0.0").
+					WithTargetPort(8080)).
+				AddPortMapping(components.NewProtocolBuilder("grpc", 90).
+					WithDefaultRecAddress("0.0.0.0").
+					WithTargetPort(8080)).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"protocols": map[string]interface{}{
+						"http": map[string]interface{}{
+							"endpoint": "0.0.0.0:8080",
+						},
+						"grpc": map[string]interface{}{
+							"endpoint": "0.0.0.0:9090",
+						},
+					},
+				},
+			},
+			want: map[string]interface{}{
+				"protocols": map[string]interface{}{
+					"http": map[string]interface{}{
+						"endpoint": "0.0.0.0:8080",
+					},
+					"grpc": map[string]interface{}{
+						"endpoint": "0.0.0.0:9090",
+					},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "config with unknown protocol",
+			m:    components.NewMultiPortReceiverBuilder("receiver1").MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"protocols": map[string]interface{}{
+						"unknown": map[string]interface{}{
+							"endpoint": "http://localhost",
+						},
+					},
+				},
+			},
+			want:    nil,
+			wantErr: assert.Error,
+		},
+		{
+			name: "config with missing default service port",
+			m:    components.NewMultiPortReceiverBuilder("receiver1").MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"protocols": map[string]interface{}{
+						"http": map[string]interface{}{
+							"listen_address": "0.0.0.0:8080",
+						},
+					},
+				},
+			},
+			want:    nil,
+			wantErr: assert.Error,
+		},
+		{
+			name: "invalid config fails to decode",
+			m:    components.NewMultiPortReceiverBuilder("receiver1").MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: "invalid_config",
+			},
+			want:    nil,
+			wantErr: assert.Error,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.m.GetDefaultConfig(tt.args.logger, tt.args.config)
+			if !tt.wantErr(t, err, fmt.Sprintf("GetDefaultConfig(%v, %v)", tt.args.logger, tt.args.config)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "GetDefaultConfig(%v, %v)", tt.args.logger, tt.args.config)
+		})
+	}
+}
+
 func TestMultiMustBuildPanics(t *testing.T) {
 	b := components.MultiPortBuilder[*components.MultiProtocolEndpointConfig]{}
 	assert.Panics(t, func() {

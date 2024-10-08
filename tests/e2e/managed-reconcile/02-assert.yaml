@@ -52,14 +52,16 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: simplest-collector-51fcef22
+  name: simplest-collector-01c314f8
 data:
   collector.yaml: |
     receivers:
       otlp:
         protocols:
-          grpc: null
-          http: null
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
     exporters:
       debug: null
     service:
