@@ -15,10 +15,13 @@
 package instrumentation
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -519,7 +522,10 @@ func TestInjectPythonSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectPythonSDK(test.Python, test.pod, 0)
+			pod := test.pod
+			container, err := NewContainer(k8sClient, context.Background(), logr.Discard(), "", &pod, 0)
+			require.NoError(t, err)
+			pod, err = injectPythonSDK(test.Python, pod, container)
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})

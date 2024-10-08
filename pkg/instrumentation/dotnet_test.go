@@ -15,10 +15,13 @@
 package instrumentation
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -550,7 +553,10 @@ func TestInjectDotNetSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectDotNetSDK(test.DotNet, test.pod, 0, test.runtime)
+			pod := test.pod
+			container, err := NewContainer(k8sClient, context.Background(), logr.Discard(), "", &pod, 0)
+			require.NoError(t, err)
+			pod, err = injectDotNetSDK(test.DotNet, pod, container, test.runtime)
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})

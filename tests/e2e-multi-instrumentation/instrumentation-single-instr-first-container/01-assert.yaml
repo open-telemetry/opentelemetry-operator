@@ -22,7 +22,7 @@ spec:
     - name: OTEL_SERVICE_NAME
       value: nodejsapp
     - name: NODE_OPTIONS
-      value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
+      value: '--require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
     - name: OTEL_TRACES_SAMPLER
       value: parentbased_traceidratio
     - name: OTEL_TRACES_SAMPLER_ARG

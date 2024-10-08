@@ -15,10 +15,12 @@
 package instrumentation
 
 import (
+	"context"
 	"testing"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -417,7 +419,10 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, false, 0, "http://otlp-endpoint:4317", resourceMap)
+			pod := test.pod
+			container, err := NewContainer(k8sClient, context.Background(), logr.Discard(), "req-namespace", &pod, 0)
+			require.NoError(t, err)
+			pod = injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, pod, false, container, "http://otlp-endpoint:4317", resourceMap)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -527,7 +532,10 @@ func TestInjectApacheHttpdagentUnknownNamespace(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, false, 0, "http://otlp-endpoint:4317", resourceMap)
+			pod := test.pod
+			container, err := NewContainer(k8sClient, context.Background(), logr.Discard(), "", &pod, 0)
+			require.NoError(t, err)
+			pod = injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, pod, false, container, "http://otlp-endpoint:4317", resourceMap)
 			assert.Equal(t, test.expected, pod)
 		})
 	}

@@ -50,27 +50,24 @@ const (
 	dotNetRuntimeLinuxMusl  = "linux-musl-x64"
 )
 
-func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runtime string) (corev1.Pod, error) {
+func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, container Container, runtime string) (corev1.Pod, error) {
 
 	volume := instrVolume(dotNetSpec.VolumeClaimTemplate, dotnetVolumeName, dotNetSpec.VolumeSizeLimit)
 
-	// caller checks if there is at least one container.
-	container := &pod.Spec.Containers[index]
-
-	err := validateContainerEnv(container.Env, envDotNetStartupHook, envDotNetAdditionalDeps, envDotNetSharedStore)
+	err := container.validate(&pod, envDotNetStartupHook, envDotNetAdditionalDeps, envDotNetSharedStore)
 	if err != nil {
 		return pod, err
 	}
 
 	// check if OTEL_DOTNET_AUTO_HOME env var is already set in the container
 	// if it is already set, then we assume that .NET Auto-instrumentation is already configured for this container
-	if getIndexOfEnv(container.Env, envDotNetOTelAutoHome) > -1 {
+	if container.exists(&pod, envDotNetOTelAutoHome) {
 		return pod, errors.New("OTEL_DOTNET_AUTO_HOME environment variable is already set in the container")
 	}
 
 	// check if OTEL_DOTNET_AUTO_HOME env var is already set in the .NET instrumentation spec
 	// if it is already set, then we assume that .NET Auto-instrumentation is already configured for this container
-	if getIndexOfEnv(dotNetSpec.Env, envDotNetOTelAutoHome) > -1 {
+	if existsEnvVarInEnv(dotNetSpec.Env, envDotNetOTelAutoHome) {
 		return pod, errors.New("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec")
 	}
 
@@ -86,10 +83,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 
 	// inject .NET instrumentation spec env vars.
 	for _, env := range dotNetSpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
+		container.appendEnvVarIfNotExists(&pod, env)
 	}
 
 	const (
@@ -97,21 +91,35 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 		concatEnvValues      = true
 	)
 
-	setDotNetEnvVar(container, envDotNetCoreClrEnableProfiling, dotNetCoreClrEnableProfilingEnabled, doNotConcatEnvValues)
+	if err := setDotNetEnvVar(pod, container, envDotNetCoreClrEnableProfiling, dotNetCoreClrEnableProfilingEnabled, doNotConcatEnvValues); err != nil {
+		return pod, err
+	}
 
-	setDotNetEnvVar(container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerID, doNotConcatEnvValues)
+	if err := setDotNetEnvVar(pod, container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerID, doNotConcatEnvValues); err != nil {
+		return pod, err
+	}
 
-	setDotNetEnvVar(container, envDotNetCoreClrProfilerPath, coreClrProfilerPath, doNotConcatEnvValues)
+	if err := setDotNetEnvVar(pod, container, envDotNetCoreClrProfilerPath, coreClrProfilerPath, doNotConcatEnvValues); err != nil {
+		return pod, err
+	}
 
-	setDotNetEnvVar(container, envDotNetStartupHook, dotNetStartupHookPath, concatEnvValues)
+	if err := setDotNetEnvVar(pod, container, envDotNetStartupHook, dotNetStartupHookPath, concatEnvValues); err != nil {
+		return pod, err
+	}
 
-	setDotNetEnvVar(container, envDotNetAdditionalDeps, dotNetAdditionalDepsPath, concatEnvValues)
+	if err := setDotNetEnvVar(pod, container, envDotNetAdditionalDeps, dotNetAdditionalDepsPath, concatEnvValues); err != nil {
+		return pod, err
+	}
 
-	setDotNetEnvVar(container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, doNotConcatEnvValues)
+	if err := setDotNetEnvVar(pod, container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, doNotConcatEnvValues); err != nil {
+		return pod, err
+	}
 
-	setDotNetEnvVar(container, envDotNetSharedStore, dotNetSharedStorePath, concatEnvValues)
+	if err := setDotNetEnvVar(pod, container, envDotNetSharedStore, dotNetSharedStorePath, concatEnvValues); err != nil {
+		return pod, err
+	}
 
-	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+	pod.Spec.Containers[container.index].VolumeMounts = append(pod.Spec.Containers[container.index].VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
 		MountPath: dotnetInstrMountPath,
 	})
@@ -136,16 +144,11 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 // setDotNetEnvVar function sets env var to the container if not exist already.
 // value of concatValues should be set to true if the env var supports multiple values separated by :.
 // If it is set to false, the original container's env var value has priority.
-func setDotNetEnvVar(container *corev1.Container, envVarName string, envVarValue string, concatValues bool) {
-	idx := getIndexOfEnv(container.Env, envVarName)
-	if idx < 0 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envVarName,
-			Value: envVarValue,
-		})
-		return
-	}
+func setDotNetEnvVar(pod corev1.Pod, container Container, envVarName string, envVarValue string, concatValues bool) error {
 	if concatValues {
-		container.Env[idx].Value = fmt.Sprintf("%s:%s", container.Env[idx].Value, envVarValue)
+		return container.appendOrConcat(&pod, envVarName, envVarValue, ConcatFunc(concatWithColon))
+	} else {
+		container.appendIfNotExists(&pod, envVarName, envVarValue)
+		return nil
 	}
 }

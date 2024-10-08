@@ -22,42 +22,29 @@ import (
 
 const (
 	envNodeOptions          = "NODE_OPTIONS"
-	nodeRequireArgument     = " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js"
+	nodeRequireArgument     = "--require /otel-auto-instrumentation-nodejs/autoinstrumentation.js"
 	nodejsInitContainerName = initContainerName + "-nodejs"
 	nodejsVolumeName        = volumeName + "-nodejs"
 	nodejsInstrMountPath    = "/otel-auto-instrumentation-nodejs"
 )
 
-func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (corev1.Pod, error) {
+func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, container Container) (corev1.Pod, error) {
 	volume := instrVolume(nodeJSSpec.VolumeClaimTemplate, nodejsVolumeName, nodeJSSpec.VolumeSizeLimit)
 
-	// caller checks if there is at least one container.
-	container := &pod.Spec.Containers[index]
-
-	err := validateContainerEnv(container.Env, envNodeOptions)
-	if err != nil {
+	if err := container.validate(&pod, envNodeOptions); err != nil {
 		return pod, err
 	}
 
 	// inject NodeJS instrumentation spec env vars.
 	for _, env := range nodeJSSpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
+		container.appendEnvVarIfNotExists(&pod, env)
 	}
 
-	idx := getIndexOfEnv(container.Env, envNodeOptions)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envNodeOptions,
-			Value: nodeRequireArgument,
-		})
-	} else if idx > -1 {
-		container.Env[idx].Value = container.Env[idx].Value + nodeRequireArgument
+	if err := container.appendOrConcat(&pod, envNodeOptions, nodeRequireArgument, ConcatFunc(concatWithSpace)); err != nil {
+		return pod, err
 	}
 
-	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+	pod.Spec.Containers[container.index].VolumeMounts = append(pod.Spec.Containers[container.index].VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
 		MountPath: nodejsInstrMountPath,
 	})

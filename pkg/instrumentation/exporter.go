@@ -25,14 +25,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
-func configureExporter(exporter v1alpha1.Exporter, pod *corev1.Pod, container *corev1.Container) {
+func configureExporter(exporter v1alpha1.Exporter, pod *corev1.Pod, container Container) {
 	if exporter.Endpoint != "" {
-		if getIndexOfEnv(container.Env, constants.EnvOTELExporterOTLPEndpoint) == -1 {
-			container.Env = append(container.Env, corev1.EnvVar{
-				Name:  constants.EnvOTELExporterOTLPEndpoint,
-				Value: exporter.Endpoint,
-			})
-		}
+		container.appendIfNotExists(pod, constants.EnvOTELExporterOTLPEndpoint, exporter.Endpoint)
 	}
 	if exporter.TLS == nil {
 		return
@@ -52,36 +47,21 @@ func configureExporter(exporter v1alpha1.Exporter, pod *corev1.Pod, container *c
 		if filepath.IsAbs(exporter.TLS.CA) {
 			envVarVal = exporter.TLS.CA
 		}
-		if getIndexOfEnv(container.Env, constants.EnvOTELExporterCertificate) == -1 {
-			container.Env = append(container.Env, corev1.EnvVar{
-				Name:  constants.EnvOTELExporterCertificate,
-				Value: envVarVal,
-			})
-		}
+		container.appendIfNotExists(pod, constants.EnvOTELExporterCertificate, envVarVal)
 	}
 	if exporter.TLS.Cert != "" {
 		envVarVal := fmt.Sprintf("%s/%s", secretMountPath, exporter.TLS.Cert)
 		if filepath.IsAbs(exporter.TLS.Cert) {
 			envVarVal = exporter.TLS.Cert
 		}
-		if getIndexOfEnv(container.Env, constants.EnvOTELExporterClientCertificate) == -1 {
-			container.Env = append(container.Env, corev1.EnvVar{
-				Name:  constants.EnvOTELExporterClientCertificate,
-				Value: envVarVal,
-			})
-		}
+		container.appendIfNotExists(pod, constants.EnvOTELExporterClientCertificate, envVarVal)
 	}
 	if exporter.TLS.Key != "" {
 		envVarVar := fmt.Sprintf("%s/%s", secretMountPath, exporter.TLS.Key)
 		if filepath.IsAbs(exporter.TLS.Key) {
 			envVarVar = exporter.TLS.Key
 		}
-		if getIndexOfEnv(container.Env, constants.EnvOTELExporterClientKey) == -1 {
-			container.Env = append(container.Env, corev1.EnvVar{
-				Name:  constants.EnvOTELExporterClientKey,
-				Value: envVarVar,
-			})
-		}
+		container.appendIfNotExists(pod, constants.EnvOTELExporterClientKey, envVarVar)
 	}
 
 	if exporter.TLS.SecretName != "" {
@@ -101,13 +81,13 @@ func configureExporter(exporter v1alpha1.Exporter, pod *corev1.Pod, container *c
 				}})
 		}
 		addVolumeMount := true
-		for _, vol := range container.VolumeMounts {
+		for _, vol := range pod.Spec.Containers[container.index].VolumeMounts {
 			if vol.Name == secretVolumeName {
 				addVolumeMount = false
 			}
 		}
 		if addVolumeMount {
-			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+			pod.Spec.Containers[container.index].VolumeMounts = append(pod.Spec.Containers[container.index].VolumeMounts, corev1.VolumeMount{
 				Name:      secretVolumeName,
 				MountPath: secretMountPath,
 				ReadOnly:  true,
@@ -134,13 +114,13 @@ func configureExporter(exporter v1alpha1.Exporter, pod *corev1.Pod, container *c
 				}})
 		}
 		addVolumeMount := true
-		for _, vol := range container.VolumeMounts {
+		for _, vol := range pod.Spec.Containers[container.index].VolumeMounts {
 			if vol.Name == configMapVolumeName {
 				addVolumeMount = false
 			}
 		}
 		if addVolumeMount {
-			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+			pod.Spec.Containers[container.index].VolumeMounts = append(pod.Spec.Containers[container.index].VolumeMounts, corev1.VolumeMount{
 				Name:      configMapVolumeName,
 				MountPath: configMapMountPath,
 				ReadOnly:  true,

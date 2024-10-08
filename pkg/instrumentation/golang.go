@@ -82,8 +82,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config) (corev1.
 	// Inject Go instrumentation spec env vars.
 	// For Go, env vars must be added to the agent contain
 	for _, env := range goSpec.Env {
-		idx := getIndexOfEnv(goAgent.Env, env.Name)
-		if idx == -1 {
+		if !existsEnvVarInEnv(goAgent.Env, env.Name) {
 			goAgent.Env = append(goAgent.Env, env)
 		}
 	}
