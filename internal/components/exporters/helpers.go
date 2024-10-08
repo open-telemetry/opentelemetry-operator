@@ -38,12 +38,12 @@ func ParserFor(name string) components.Parser {
 		return parser
 	}
 	// We want the default for exporters to fail silently.
-	return components.NewGenericParser[any](components.ComponentType(name), components.UnsetPort, nil)
+	return components.NewBuilder[any]().WithName(name).MustBuild()
 }
 
 var (
 	componentParsers = []components.Parser{
-		components.NewSinglePortParser("prometheus", 8888),
+		components.NewSinglePortParserBuilder("prometheus", 8888).MustBuild(),
 	}
 )
 

@@ -20,6 +20,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
@@ -37,8 +38,10 @@ type MultiPortOption func(parser *MultiPortReceiver)
 
 // MultiPortReceiver is a special parser for components with endpoints for each protocol.
 type MultiPortReceiver struct {
-	name string
+	name           string
+	defaultRecAddr string
 
+	addrMappings map[string]string
 	portMappings map[string]*corev1.ServicePort
 }
 
@@ -71,21 +74,91 @@ func (m *MultiPortReceiver) ParserName() string {
 	return fmt.Sprintf("__%s", m.name)
 }
 
-func NewMultiPortReceiver(name string, opts ...MultiPortOption) *MultiPortReceiver {
-	multiReceiver := &MultiPortReceiver{
-		name:         name,
-		portMappings: map[string]*corev1.ServicePort{},
+func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error) {
+	multiProtoEndpointCfg := &MultiProtocolEndpointConfig{}
+	if err := mapstructure.Decode(config, multiProtoEndpointCfg); err != nil {
+		return nil, err
 	}
-	for _, opt := range opts {
-		opt(multiReceiver)
+	defaultedConfig := map[string]interface{}{}
+	for protocol, ec := range multiProtoEndpointCfg.Protocols {
+		if defaultSvc, ok := m.portMappings[protocol]; ok {
+			port := defaultSvc.Port
+			if ec != nil {
+				port = ec.GetPortNumOrDefault(logger, port)
+			}
+			addr := m.defaultRecAddr
+			if defaultAddr, ok := m.addrMappings[protocol]; ok {
+				addr = defaultAddr
+			}
+			conf, err := AddressDefaulter(logger, addr, port, ec)
+			if err != nil {
+				return nil, err
+			}
+			defaultedConfig[protocol] = conf
+		} else {
+			return nil, fmt.Errorf("unknown protocol set: %s", protocol)
+		}
 	}
-	return multiReceiver
+	return map[string]interface{}{
+		"protocols": defaultedConfig,
+	}, nil
 }
 
-func WithPortMapping(name string, port int32, opts ...PortBuilderOption) MultiPortOption {
-	return func(parser *MultiPortReceiver) {
-		o := NewOption(name, port)
-		o.Apply(opts...)
-		parser.portMappings[name] = o.GetServicePort()
+func (m *MultiPortReceiver) GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+	return nil, nil
+}
+
+func (m *MultiPortReceiver) GetReadinessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+	return nil, nil
+}
+
+func (m *MultiPortReceiver) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.PolicyRule, error) {
+	return nil, nil
+}
+
+type MultiPortBuilder[ComponentConfigType any] []Builder[ComponentConfigType]
+
+func NewMultiPortReceiverBuilder(name string) MultiPortBuilder[*MultiProtocolEndpointConfig] {
+	return append(MultiPortBuilder[*MultiProtocolEndpointConfig]{}, NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithDefaultRecAddress("0.0.0.0"))
+}
+
+func NewProtocolBuilder(name string, port int32) Builder[*MultiProtocolEndpointConfig] {
+	return NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithPort(port).WithDefaultRecAddress("0.0.0.0")
+}
+
+func (mp MultiPortBuilder[ComponentConfigType]) AddPortMapping(builder Builder[ComponentConfigType]) MultiPortBuilder[ComponentConfigType] {
+	return append(mp, builder)
+}
+
+func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, error) {
+	if len(mp) < 1 {
+		return nil, fmt.Errorf("must provide at least one port mapping")
+	}
+
+	mb := mp[0].MustBuild()
+	multiReceiver := &MultiPortReceiver{
+		name:           mb.name,
+		defaultRecAddr: mb.settings.defaultRecAddr,
+		addrMappings:   map[string]string{},
+		portMappings:   map[string]*corev1.ServicePort{},
+	}
+	for _, bu := range mp[1:] {
+		built, err := bu.Build()
+		if err != nil {
+			return nil, err
+		}
+		if built.settings != nil {
+			multiReceiver.portMappings[built.name] = built.settings.GetServicePort()
+			multiReceiver.addrMappings[built.name] = built.settings.defaultRecAddr
+		}
+	}
+	return multiReceiver, nil
+}
+
+func (mp MultiPortBuilder[ComponentConfigType]) MustBuild() *MultiPortReceiver {
+	if p, err := mp.Build(); err != nil {
+		panic(err)
+	} else {
+		return p
 	}
 }

@@ -22,9 +22,8 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 var (
@@ -34,66 +33,27 @@ var (
 	PortNotFoundErr       = errors.New("port should not be empty")
 )
 
-// PortParser is a function that returns a list of servicePorts given a config of type T.
-type PortParser[T any] func(logger logr.Logger, name string, o *Option, config T) ([]corev1.ServicePort, error)
-
 type PortRetriever interface {
 	GetPortNum() (int32, error)
 	GetPortNumOrDefault(logr.Logger, int32) int32
 }
 
-type Option struct {
-	protocol    corev1.Protocol
-	appProtocol *string
-	targetPort  intstr.IntOrString
-	nodePort    int32
-	name        string
-	port        int32
-}
+type AddressProvider = func(name string) (address string, port int32)
 
-func NewOption(name string, port int32) *Option {
-	return &Option{
-		name: name,
-		port: port,
-	}
-}
+// PortParser is a function that returns a list of servicePorts given a config of type Config.
+type PortParser[ComponentConfigType any] func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config ComponentConfigType) ([]corev1.ServicePort, error)
 
-func (o *Option) Apply(opts ...PortBuilderOption) {
-	for _, opt := range opts {
-		opt(o)
-	}
-}
+// RBACRuleGenerator is a function that generates a list of RBAC Rules given a configuration of type Config
+// It's expected that type Config is the configuration used by a parser.
+type RBACRuleGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) ([]rbacv1.PolicyRule, error)
 
-func (o *Option) GetServicePort() *corev1.ServicePort {
-	return &corev1.ServicePort{
-		Name:        naming.PortName(o.name, o.port),
-		Port:        o.port,
-		Protocol:    o.protocol,
-		AppProtocol: o.appProtocol,
-		TargetPort:  o.targetPort,
-		NodePort:    o.nodePort,
-	}
-}
+// ProbeGenerator is a function that generates a valid probe for a container given Config
+// It's expected that type Config is the configuration used by a parser.
+type ProbeGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) (*corev1.Probe, error)
 
-type PortBuilderOption func(*Option)
-
-func WithTargetPort(targetPort int32) PortBuilderOption {
-	return func(opt *Option) {
-		opt.targetPort = intstr.FromInt32(targetPort)
-	}
-}
-
-func WithAppProtocol(proto *string) PortBuilderOption {
-	return func(opt *Option) {
-		opt.appProtocol = proto
-	}
-}
-
-func WithProtocol(proto corev1.Protocol) PortBuilderOption {
-	return func(opt *Option) {
-		opt.protocol = proto
-	}
-}
+// Defaulter is a function that applies given defaults to the passed Config.
+// It's expected that type Config is the configuration used by a parser.
+type Defaulter[ComponentConfigType any] func(logger logr.Logger, defaultAddr string, defaultPort int32, config ComponentConfigType) (map[string]interface{}, error)
 
 // ComponentType returns the type for a given component name.
 // components have a name like:
@@ -133,9 +93,22 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 type ParserRetriever func(string) Parser
 
 type Parser interface {
+	// GetDefaultConfig returns a config with set default values.
+	// NOTE: Config merging must be done by the caller if desired.
+	GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error)
+
 	// Ports returns the service ports parsed based on the component's configuration where name is the component's name
 	// of the form "name" or "type/name"
 	Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error)
+
+	// GetRBACRules returns the rbac rules for this component
+	GetRBACRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error)
+
+	// GetLivenessProbe returns a liveness probe set for the collector
+	GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)
+
+	// GetReadinessProbe returns a readiness probe set for the collector
+	GetReadinessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)
 
 	// ParserType returns the type of this parser
 	ParserType() string

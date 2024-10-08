@@ -181,7 +181,8 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			index := getContainerIndex(container, pod)
 			// Apache agent is configured via config files rather than env vars.
 			// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
-			pod = injectApacheHttpdagent(i.logger, otelinst.Spec.ApacheHttpd, pod, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
+			useLabelsForResourceAttributes := otelinst.Spec.Defaults.UseLabelsForResourceAttributes
+			pod = injectApacheHttpdagent(i.logger, otelinst.Spec.ApacheHttpd, pod, useLabelsForResourceAttributes, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 			pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, apacheAgentInitContainerName)
@@ -201,7 +202,8 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			index := getContainerIndex(container, pod)
 			// Nginx agent is configured via config files rather than env vars.
 			// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
-			pod = injectNginxSDK(i.logger, otelinst.Spec.Nginx, pod, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
+			useLabelsForResourceAttributes := otelinst.Spec.Defaults.UseLabelsForResourceAttributes
+			pod = injectNginxSDK(i.logger, otelinst.Spec.Nginx, pod, useLabelsForResourceAttributes, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 		}
@@ -293,12 +295,13 @@ func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod 
 // and appIndex should represent the application being instrumented.
 func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, agentIndex int, appIndex int) corev1.Pod {
 	container := &pod.Spec.Containers[agentIndex]
+	useLabelsForResourceAttributes := otelinst.Spec.Defaults.UseLabelsForResourceAttributes
 	resourceMap := i.createResourceMap(ctx, otelinst, ns, pod, appIndex)
 	idx := getIndexOfEnv(container.Env, constants.EnvOTELServiceName)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name:  constants.EnvOTELServiceName,
-			Value: chooseServiceName(pod, resourceMap, appIndex),
+			Value: chooseServiceName(pod, useLabelsForResourceAttributes, resourceMap, appIndex),
 		})
 	}
 	if otelinst.Spec.Exporter.Endpoint != "" {
@@ -339,7 +342,7 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 
 	idx = getIndexOfEnv(container.Env, constants.EnvOTELResourceAttrs)
 	if idx == -1 || !strings.Contains(container.Env[idx].Value, string(semconv.ServiceVersionKey)) {
-		vsn := chooseServiceVersion(pod, appIndex)
+		vsn := chooseServiceVersion(pod, useLabelsForResourceAttributes, appIndex)
 		if vsn != "" {
 			resourceMap[string(semconv.ServiceVersionKey)] = vsn
 		}
@@ -410,7 +413,15 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 	return pod
 }
 
-func chooseServiceName(pod corev1.Pod, resources map[string]string, index int) string {
+// chooseServiceName returns the service name to be used in the instrumentation.
+// The precedence is as follows:
+// 1. label or annotation with key "service.name" or "app.kubernetes.io/name".
+// 2. k8s resource name (deployment, replicaset, statefulset, daemonset, cronjob, job, pod).
+// 3. container name.
+func chooseServiceName(pod corev1.Pod, useLabelsForResourceAttributes bool, resources map[string]string, index int) string {
+	if name := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceNameKey, constants.LabelAppName); name != "" {
+		return name
+	}
 	if name := resources[string(semconv.K8SDeploymentNameKey)]; name != "" {
 		return name
 	}
@@ -435,8 +446,31 @@ func chooseServiceName(pod corev1.Pod, resources map[string]string, index int) s
 	return pod.Spec.Containers[index].Name
 }
 
-// obtains version by splitting image string on ":" and extracting final element from resulting array.
-func chooseServiceVersion(pod corev1.Pod, index int) string {
+// chooseLabelOrAnnotation returns the value of the label or annotation with the given key.
+// The precedence is as follows:
+// 1. annotation with key resource.opentelemetry.io/<resource>.
+// 2. label with key labelKey.
+func chooseLabelOrAnnotation(pod corev1.Pod, useLabelsForResourceAttributes bool, resource attribute.Key, labelKey string) string {
+	if v := pod.GetAnnotations()[(constants.ResourceAttributeAnnotationPrefix + string(resource))]; v != "" {
+		return v
+	}
+	if useLabelsForResourceAttributes {
+		if v := pod.GetLabels()[labelKey]; v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+// chooseServiceVersion returns the service version to be used in the instrumentation.
+// The precedence is as follows:
+// 1. label or annotation with key "service.version" or "app.kubernetes.io/version".
+// 2. image tag (by splitting image string on ":" and extracting final element from resulting array).
+func chooseServiceVersion(pod corev1.Pod, useLabelsForResourceAttributes bool, index int) string {
+	v := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceVersionKey, constants.LabelAppVersion)
+	if v != "" {
+		return v
+	}
 	parts := strings.Split(pod.Spec.Containers[index].Image, ":")
 	tag := parts[len(parts)-1]
 	//guard statement to handle case where image name has a port number
@@ -446,10 +480,17 @@ func chooseServiceVersion(pod corev1.Pod, index int) string {
 	return tag
 }
 
-// creates the service.instance.id following the semantic defined by
-// https://github.com/open-telemetry/semantic-conventions/pull/312.
-func createServiceInstanceId(namespaceName, podName, containerName string) string {
-	var serviceInstanceId string
+// chooseServiceInstanceId returns the service.instance.id to be used in the instrumentation.
+// The precedence is as follows:
+//  1. annotation with key "service.instance.id" or "app.kubernetes.io/instance"
+//  2. namespace name + pod name + container name
+//     (as defined by https://opentelemetry.io/docs/specs/semconv/resource/#service-experimental)
+func createServiceInstanceId(pod corev1.Pod, useLabelsForResourceAttributes bool, namespaceName, podName, containerName string) string {
+	serviceInstanceId := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceInstanceIDKey, constants.LabelAppInstance)
+	if serviceInstanceId != "" {
+		return serviceInstanceId
+	}
+
 	if namespaceName != "" && podName != "" && containerName != "" {
 		resNames := []string{namespaceName, podName, containerName}
 		serviceInstanceId = strings.Join(resNames, ".")
@@ -475,11 +516,17 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	}
 
 	res := map[string]string{}
+
+	// entries from the CRD have the lowest precedence - they are overridden by later values
 	for k, v := range otelinst.Spec.Resource.Attributes {
 		if !existingRes[k] {
 			res[k] = v
 		}
 	}
+
+	useLabelsForResourceAttributes := otelinst.Spec.Defaults.UseLabelsForResourceAttributes
+
+	// k8s resources have a higher precedence than CRD entries
 	k8sResources := map[attribute.Key]string{}
 	k8sResources[semconv.K8SNamespaceNameKey] = ns.Name
 	k8sResources[semconv.K8SContainerNameKey] = pod.Spec.Containers[index].Name
@@ -488,22 +535,29 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	k8sResources[semconv.K8SPodNameKey] = pod.Name
 	k8sResources[semconv.K8SPodUIDKey] = string(pod.UID)
 	k8sResources[semconv.K8SNodeNameKey] = pod.Spec.NodeName
-	k8sResources[semconv.ServiceInstanceIDKey] = createServiceInstanceId(ns.Name, fmt.Sprintf("$(%s)", constants.EnvPodName), pod.Spec.Containers[index].Name)
+	k8sResources[semconv.ServiceInstanceIDKey] = createServiceInstanceId(pod, useLabelsForResourceAttributes, ns.Name, fmt.Sprintf("$(%s)", constants.EnvPodName), pod.Spec.Containers[index].Name)
 	i.addParentResourceLabels(ctx, otelinst.Spec.Resource.AddK8sUIDAttributes, ns, pod.ObjectMeta, k8sResources)
+
 	for k, v := range k8sResources {
 		if !existingRes[string(k)] && v != "" {
 			res[string(k)] = v
 		}
 	}
 
+	// attributes and labels from the pod have the highest precedence (except for values set in environment variables)
 	for k, v := range pod.GetAnnotations() {
-		if strings.HasPrefix(k, constants.OtelAnnotationNamespace) {
-			key := strings.TrimSpace(strings.TrimPrefix(k, constants.OtelAnnotationNamespace))
-			if _, ok := res[key]; !ok {
+		if strings.HasPrefix(k, constants.ResourceAttributeAnnotationPrefix) {
+			key := strings.TrimPrefix(k, constants.ResourceAttributeAnnotationPrefix)
+			if !existingRes[key] && key != string(semconv.ServiceNameKey) {
 				res[key] = v
 			}
 		}
 	}
+	partOf := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceNamespaceKey, constants.LabelAppPartOf)
+	if partOf != "" && !existingRes[string(semconv.ServiceNamespaceKey)] {
+		res[string(semconv.ServiceNamespaceKey)] = partOf
+	}
+
 	return res
 }
 

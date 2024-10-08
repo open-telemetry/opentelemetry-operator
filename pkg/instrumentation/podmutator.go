@@ -232,15 +232,15 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns meta
 		},
 		{
 			iwc:        &langInsts.ApacheHttpd,
-			annotation: annotationInjectApacheHttpd,
+			annotation: annotationInjectApacheHttpdContainersName,
 		},
 		{
 			iwc:        &langInsts.Nginx,
-			annotation: annotationInjectNginx,
+			annotation: annotationInjectNginxContainersName,
 		},
 		{
 			iwc:        &langInsts.Sdk,
-			annotation: annotationInjectSdk,
+			annotation: annotationInjectSdkContainersName,
 		},
 	}
 

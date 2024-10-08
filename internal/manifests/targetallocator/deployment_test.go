@@ -182,7 +182,7 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	assert.Subset(t, ds.Spec.Template.Annotations, testPodAnnotationValues)
 }
 
-func collectorInstance() v1beta1.OpenTelemetryCollector {
+func collectorInstance() *v1beta1.OpenTelemetryCollector {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
 	if err != nil {
 		fmt.Printf("Error getting yaml file: %v", err)
@@ -192,7 +192,7 @@ func collectorInstance() v1beta1.OpenTelemetryCollector {
 	if err != nil {
 		fmt.Printf("Error unmarshalling YAML: %v", err)
 	}
-	return v1beta1.OpenTelemetryCollector{
+	return &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "default",
@@ -213,7 +213,7 @@ func collectorInstance() v1beta1.OpenTelemetryCollector {
 func targetAllocatorInstance() v1alpha1.TargetAllocator {
 	collectorInstance := collectorInstance()
 	collectorInstance.Spec.TargetAllocator.Enabled = true
-	params := manifests.Params{OtelCol: collectorInstance}
+	params := manifests.Params{OtelCol: *collectorInstance}
 	targetAllocator, _ := collector.TargetAllocator(params)
 	targetAllocator.Spec.Image = "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-targetallocator:0.47.0"
 	return *targetAllocator

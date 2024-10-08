@@ -31,6 +31,8 @@ import (
 
 func TestDesiredConfigMap(t *testing.T) {
 	expectedLabels := map[string]string{
+		"app.kubernetes.io/name":       "my-instance-targetallocator",
+		"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/instance":   "default.my-instance",
 		"app.kubernetes.io/part-of":    "opentelemetry",
@@ -47,9 +49,6 @@ func TestDesiredConfigMap(t *testing.T) {
 	}
 
 	t.Run("should return expected target allocator config map", func(t *testing.T) {
-		expectedLabels["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
-		expectedLabels["app.kubernetes.io/name"] = "my-instance-targetallocator"
-
 		expectedData := map[string]string{
 			targetAllocatorFilename: `allocation_strategy: consistent-hashing
 collector_selector:
@@ -79,10 +78,30 @@ filter_strategy: relabel-config
 		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
 
 	})
-	t.Run("should return target allocator config map without scrape configs", func(t *testing.T) {
-		expectedLabels["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
-		expectedLabels["app.kubernetes.io/name"] = "my-instance-targetallocator"
+	t.Run("should return target allocator config map without collector", func(t *testing.T) {
+		expectedData := map[string]string{
+			targetAllocatorFilename: `allocation_strategy: consistent-hashing
+collector_selector: null
+filter_strategy: relabel-config
+`,
+		}
+		targetAllocator = targetAllocatorInstance()
+		targetAllocator.Spec.ScrapeConfigs = []v1beta1.AnyConfig{}
+		params.TargetAllocator = targetAllocator
+		testParams := Params{
+			Collector:       nil,
+			TargetAllocator: targetAllocator,
+		}
+		actual, err := ConfigMap(testParams)
+		require.NoError(t, err)
+		params.Collector = collector
 
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, expectedLabels, actual.Labels)
+		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
+
+	})
+	t.Run("should return target allocator config map without scrape configs", func(t *testing.T) {
 		expectedData := map[string]string{
 			targetAllocatorFilename: `allocation_strategy: consistent-hashing
 collector_selector:
@@ -118,9 +137,6 @@ filter_strategy: relabel-config
 
 	})
 	t.Run("should return expected target allocator config map with label selectors", func(t *testing.T) {
-		expectedLabels["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
-		expectedLabels["app.kubernetes.io/name"] = "my-instance-targetallocator"
-
 		expectedData := map[string]string{
 			targetAllocatorFilename: `allocation_strategy: consistent-hashing
 collector_selector:
@@ -184,9 +200,6 @@ prometheus_cr:
 
 	})
 	t.Run("should return expected target allocator config map with scrape interval set", func(t *testing.T) {
-		expectedLabels["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
-		expectedLabels["app.kubernetes.io/name"] = "my-instance-targetallocator"
-
 		expectedData := map[string]string{
 			targetAllocatorFilename: `allocation_strategy: consistent-hashing
 collector_selector:

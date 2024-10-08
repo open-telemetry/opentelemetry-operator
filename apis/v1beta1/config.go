@@ -24,12 +24,16 @@ import (
 	"strconv"
 	"strings"
 
+	"dario.cat/mergo"
 	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/exporters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components/extensions"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components/processors"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/receivers"
 )
 
@@ -39,10 +43,11 @@ const (
 	KindReceiver ComponentKind = iota
 	KindExporter
 	KindProcessor
+	KindExtension
 )
 
 func (c ComponentKind) String() string {
-	return [...]string{"receiver", "exporter", "processor"}[c]
+	return [...]string{"receiver", "exporter", "processor", "extension"}[c]
 }
 
 // AnyConfig represent parts of the config.
@@ -106,7 +111,12 @@ func (c *Config) GetEnabledComponents() map[ComponentKind]map[string]interface{}
 		KindReceiver:  {},
 		KindProcessor: {},
 		KindExporter:  {},
+		KindExtension: {},
 	}
+	for _, extension := range c.Service.Extensions {
+		toReturn[KindExtension][extension] = struct{}{}
+	}
+
 	for _, pipeline := range c.Service.Pipelines {
 		if pipeline == nil {
 			continue
@@ -120,6 +130,9 @@ func (c *Config) GetEnabledComponents() map[ComponentKind]map[string]interface{}
 		for _, componentId := range pipeline.Processors {
 			toReturn[KindProcessor][componentId] = struct{}{}
 		}
+	}
+	for _, componentId := range c.Service.Extensions {
+		toReturn[KindExtension][componentId] = struct{}{}
 	}
 	return toReturn
 }
@@ -139,9 +152,45 @@ type Config struct {
 	Service    Service    `json:"service" yaml:"service"`
 }
 
+// getRbacRulesForComponentKinds gets the RBAC Rules for the given ComponentKind(s).
+func (c *Config) getRbacRulesForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]rbacv1.PolicyRule, error) {
+	var rules []rbacv1.PolicyRule
+	enabledComponents := c.GetEnabledComponents()
+	for _, componentKind := range componentKinds {
+		var retriever components.ParserRetriever
+		var cfg AnyConfig
+		switch componentKind {
+		case KindReceiver:
+			retriever = receivers.ReceiverFor
+			cfg = c.Receivers
+		case KindExporter:
+			retriever = exporters.ParserFor
+			cfg = c.Exporters
+		case KindProcessor:
+			retriever = processors.ProcessorFor
+			if c.Processors == nil {
+				cfg = AnyConfig{}
+			} else {
+				cfg = *c.Processors
+			}
+		case KindExtension:
+			continue
+		}
+		for componentName := range enabledComponents[componentKind] {
+			// TODO: Clean up the naming here and make it simpler to use a retriever.
+			parser := retriever(componentName)
+			if parsedRules, err := parser.GetRBACRules(logger, cfg.Object[componentName]); err != nil {
+				return nil, err
+			} else {
+				rules = append(rules, parsedRules...)
+			}
+		}
+	}
+	return rules, nil
+}
+
 // getPortsForComponentKinds gets the ports for the given ComponentKind(s).
 func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]corev1.ServicePort, error) {
-
 	var ports []corev1.ServicePort
 	enabledComponents := c.GetEnabledComponents()
 	for _, componentKind := range componentKinds {
@@ -155,7 +204,9 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 			retriever = exporters.ParserFor
 			cfg = c.Exporters
 		case KindProcessor:
-			break
+			continue
+		case KindExtension:
+			continue
 		}
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.
@@ -175,6 +226,51 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 	return ports, nil
 }
 
+// applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
+func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) error {
+	enabledComponents := c.GetEnabledComponents()
+	for _, componentKind := range componentKinds {
+		var retriever components.ParserRetriever
+		var cfg AnyConfig
+		switch componentKind {
+		case KindReceiver:
+			retriever = receivers.ReceiverFor
+			cfg = c.Receivers
+		case KindExporter:
+			continue
+		case KindProcessor:
+			continue
+		case KindExtension:
+			continue
+		}
+		for componentName := range enabledComponents[componentKind] {
+			parser := retriever(componentName)
+			componentConf := cfg.Object[componentName]
+			newCfg, err := parser.GetDefaultConfig(logger, componentConf)
+			if err != nil {
+				return err
+			}
+
+			// We need to ensure we don't remove any fields in defaulting.
+			mappedCfg, ok := newCfg.(map[string]interface{})
+			if !ok || mappedCfg == nil {
+				logger.V(1).Info("returned default configuration invalid",
+					"warn", "could not apply component defaults",
+					"component", componentName,
+				)
+				continue
+			}
+
+			if err := mergo.Merge(&mappedCfg, componentConf); err != nil {
+				return err
+			}
+			cfg.Object[componentName] = mappedCfg
+		}
+	}
+
+	return nil
+}
+
 func (c *Config) GetReceiverPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
 	return c.getPortsForComponentKinds(logger, KindReceiver)
 }
@@ -185,6 +281,46 @@ func (c *Config) GetExporterPorts(logger logr.Logger) ([]corev1.ServicePort, err
 
 func (c *Config) GetAllPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
 	return c.getPortsForComponentKinds(logger, KindReceiver, KindExporter)
+}
+
+func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error) {
+	return c.getRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor)
+}
+
+func (c *Config) ApplyDefaults(logger logr.Logger) error {
+	return c.applyDefaultForComponentKinds(logger, KindReceiver)
+}
+
+// GetLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled
+// that provides the hinting for the liveness probe.
+func (c *Config) GetLivenessProbe(logger logr.Logger) (*corev1.Probe, error) {
+	enabledComponents := c.GetEnabledComponents()
+	for componentName := range enabledComponents[KindExtension] {
+		// TODO: Clean up the naming here and make it simpler to use a retriever.
+		parser := extensions.ParserFor(componentName)
+		if probe, err := parser.GetLivenessProbe(logger, c.Extensions.Object[componentName]); err != nil {
+			return nil, err
+		} else if probe != nil {
+			return probe, nil
+		}
+	}
+	return nil, nil
+}
+
+// GetReadinessProbe gets the first enabled readiness probe. There should only ever be one extension enabled
+// that provides the hinting for the readiness probe.
+func (c *Config) GetReadinessProbe(logger logr.Logger) (*corev1.Probe, error) {
+	enabledComponents := c.GetEnabledComponents()
+	for componentName := range enabledComponents[KindExtension] {
+		// TODO: Clean up the naming here and make it simpler to use a retriever.
+		parser := extensions.ParserFor(componentName)
+		if probe, err := parser.GetReadinessProbe(logger, c.Extensions.Object[componentName]); err != nil {
+			return nil, err
+		} else if probe != nil {
+			return probe, nil
+		}
+	}
+	return nil, nil
 }
 
 // Yaml encodes the current object and returns it as a string.
@@ -228,7 +364,7 @@ func (c *Config) nullObjects() []string {
 }
 
 type Service struct {
-	Extensions *[]string `json:"extensions,omitempty" yaml:"extensions,omitempty"`
+	Extensions []string `json:"extensions,omitempty" yaml:"extensions,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Telemetry *AnyConfig `json:"telemetry,omitempty" yaml:"telemetry,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields

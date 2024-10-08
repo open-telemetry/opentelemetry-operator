@@ -143,7 +143,7 @@ func TestConfigYaml(t *testing.T) {
 			},
 		},
 		Service: Service{
-			Extensions: &[]string{"addon"},
+			Extensions: []string{"addon"},
 			Telemetry: &AnyConfig{
 				Object: map[string]interface{}{
 					"insights": "yeah!",
@@ -304,6 +304,7 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 					"bar":   struct{}{},
 					"count": struct{}{},
 				},
+				KindExtension: {},
 			},
 		},
 		{
@@ -321,6 +322,7 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 				KindExporter: {
 					"prometheus": struct{}{},
 				},
+				KindExtension: {},
 			},
 		},
 		{
@@ -339,6 +341,11 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 					"otlp":       struct{}{},
 					"prometheus": struct{}{},
 				},
+				KindExtension: {
+					"health_check": struct{}{},
+					"pprof":        struct{}{},
+					"zpages":       struct{}{},
+				},
 			},
 		},
 		{
@@ -351,6 +358,9 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 				KindProcessor: {},
 				KindExporter: {
 					"otlp/auth": struct{}{},
+				},
+				KindExtension: {
+					"oauth2client": struct{}{},
 				},
 			},
 		},
@@ -365,6 +375,7 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 				KindExporter: {
 					"debug": struct{}{},
 				},
+				KindExtension: {},
 			},
 		},
 		{
@@ -374,6 +385,7 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 				KindReceiver:  {},
 				KindProcessor: {},
 				KindExporter:  {},
+				KindExtension: {},
 			},
 		},
 	}

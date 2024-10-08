@@ -361,7 +361,7 @@ In some cases (for example in the case of the injection of an Istio sidecar) it 
 
 For this, it is possible to fine-tune the pod(s) on which the injection will be carried out.
 
-For this, we will use the `instrumentation.opentelemetry.io/container-names` annotation for which we will indicate one or more pod names (`.spec.containers.name`) on which the injection must be made:
+For this, we will use the `instrumentation.opentelemetry.io/container-names` annotation for which we will indicate one or more container names (`.spec.containers.name`) on which the injection must be made:
 
 ```yaml
 apiVersion: apps/v1
@@ -717,7 +717,9 @@ spec:
 EOF
 ```
 
-### Setting instrumentation resource attributes via namespace annotations
+## Configure resource attributes
+
+### Configure resource attributes with annotations
 
 This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. These annotations can be used to add resource attributes to data produced by OpenTelemetry instrumentation.
 
@@ -734,7 +736,59 @@ spec:
   containers:
   - name: main-container
     image: your-image:tag
- ```
+```
+
+### Configure resource attributes with labels
+
+You can also use common labels to set resource attributes. 
+
+The following labels are supported:
+- `app.kubernetes.io/name` becomes `service.name`
+- `app.kubernetes.io/version` becomes `service.version`
+- `app.kubernetes.io/part-of` becomes `service.namespace`
+- `app.kubernetes.io/instance` becomes `service.instance.id`
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: example-pod
+  labels:
+    app.kubernetes.io/name: "my-service"
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/part-of: "shop"
+    app.kubernetes.io/instance: "my-service-123"
+spec:
+  containers:
+  - name: main-container
+    image: your-image:tag
+```
+
+This requires an explicit opt-in as follows:
+
+```yaml
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-instrumentation
+spec:
+  defaults:
+    useLabelsForResourceAttributes: true
+```
+
+### Priority for setting resource attributes
+
+The priority for setting resource attributes is as follows (first found wins):
+
+1. Resource attributes set via `OTEL_RESOURCE_ATTRIBUTES` and `OTEL_SERVICE_NAME` environment variables
+2. Resource attributes set via annotations (with the `resource.opentelemetry.io/` prefix)
+3. Resource attributes set via labels (e.g. `app.kubernetes.io/name`) 
+   if the `Instrumentation` CR has defaults.useLabelsForResourceAttributes=true (see above)
+4. Resource attributes calculated from the pod's metadata (e.g. `k8s.pod.name`)
+5. Resource attributes set via the `Instrumentation` CR (in the `spec.resource.resourceAttributes` section)
+
+This priority is applied for each resource attribute separately, so it is possible to set some attributes via 
+annotations and others via labels.
 
 ## Compatibility matrix
 
@@ -759,6 +813,7 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes     | Cert-Manager | Prometheus-Operator |
 |------------------------|----------------| ------------ |---------------------|
+| v0.109.0               | v1.23 to v1.31 | v1           | v0.76.0             |
 | v0.108.0               | v1.23 to v1.31 | v1           | v0.76.0             |
 | v0.107.0               | v1.23 to v1.30 | v1           | v0.75.0             |
 | v0.106.0               | v1.23 to v1.30 | v1           | v0.75.0             |

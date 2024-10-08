@@ -477,7 +477,7 @@ func TestInjectNginxSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectNginxSDK(logr.Discard(), test.Nginx, test.pod, 0, "http://otlp-endpoint:4317", resourceMap)
+			pod := injectNginxSDK(logr.Discard(), test.Nginx, test.pod, false, 0, "http://otlp-endpoint:4317", resourceMap)
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -600,7 +600,7 @@ func TestInjectNginxUnknownNamespace(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectNginxSDK(logr.Discard(), test.Nginx, test.pod, 0, "http://otlp-endpoint:4317", resourceMap)
+			pod := injectNginxSDK(logr.Discard(), test.Nginx, test.pod, false, 0, "http://otlp-endpoint:4317", resourceMap)
 			assert.Equal(t, test.expected, pod)
 		})
 	}

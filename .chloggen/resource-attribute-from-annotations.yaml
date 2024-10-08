@@ -1,0 +1,24 @@
+change_type: enhancement
+
+component: auto-instrumentation
+
+note: Add support for k8s labels such as app.kubernetes.io/name for resource attributes
+
+issues: [3112]
+
+subtext: |
+  You can opt-in as follows:
+  ```yaml
+  apiVersion: opentelemetry.io/v1alpha1
+  kind: Instrumentation
+  metadata:
+    name: my-instrumentation
+  spec:
+    defaults:
+      useLabelsForResourceAttributes: true
+  ```
+  The following labels are supported:
+    - `app.kubernetes.io/name` becomes `service.name`
+    - `app.kubernetes.io/version` becomes `service.version`
+    - `app.kubernetes.io/part-of` becomes `service.namespace`
+    - `app.kubernetes.io/instance` becomes `service.instance.id`

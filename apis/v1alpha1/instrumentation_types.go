@@ -40,6 +40,9 @@ type InstrumentationSpec struct {
 	// +optional
 	Sampler `json:"sampler,omitempty"`
 
+	// Defaults defines default values for the instrumentation.
+	Defaults Defaults `json:"defaults,omitempty"`
+
 	// Env defines common env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
@@ -112,6 +115,16 @@ type Sampler struct {
 	// The value will be set in the OTEL_TRACES_SAMPLER_ARG env var.
 	// +optional
 	Argument string `json:"argument,omitempty"`
+}
+
+// Defaults defines default values for the instrumentation.
+type Defaults struct {
+	// UseLabelsForResourceAttributes defines whether to use common labels for resource attributes:
+	//   - `app.kubernetes.io/name` becomes `service.name`
+	//   - `app.kubernetes.io/version` becomes `service.version`
+	//   - `app.kubernetes.io/part-of` becomes `service.namespace`
+	//   - `app.kubernetes.io/instance` becomes `service.instance.id`
+	UseLabelsForResourceAttributes bool `json:"useLabelsForResourceAttributes,omitempty"`
 }
 
 // Java defines Java SDK and instrumentation configuration.

@@ -38,3 +38,18 @@ spec:
     env:
       - name: OTEL_SERVICE_NAME
         value: "goapp"
+  nginx:
+    configFile: /etc/nginx/conf.d/default.conf
+    env:
+      - name: OTEL_SERVICE_NAME
+        value: "nginxapp"
+    attrs:
+    - name: NginxModuleOtelMaxQueueSize
+      value: "4096"
+  apacheHttpd:
+    env:
+      - name: OTEL_SERVICE_NAME
+        value: "apache-httpd-app"
+    attrs:
+    - name: ApacheModuleOtelMaxQueueSize
+      value: "4096"

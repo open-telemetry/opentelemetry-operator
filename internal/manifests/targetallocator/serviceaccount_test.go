@@ -65,16 +65,20 @@ func TestServiceAccountDefault(t *testing.T) {
 	params := Params{
 		TargetAllocator: v1alpha1.TargetAllocator{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "my-instance",
+				Name:      "my-instance",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"prometheus.io/scrape": "false",
+				},
 			},
 		},
 	}
 	expected := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "my-instance-targetallocator",
-			Namespace:   params.Collector.Namespace,
+			Namespace:   params.TargetAllocator.Namespace,
 			Labels:      manifestutils.Labels(params.TargetAllocator.ObjectMeta, "my-instance-targetallocator", params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil),
-			Annotations: params.Collector.Annotations,
+			Annotations: params.TargetAllocator.Annotations,
 		},
 	}
 
