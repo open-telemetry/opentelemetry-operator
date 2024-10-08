@@ -196,8 +196,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							// confirm the strategy has been changed
 							assert.Equal(t, d.Spec.Strategy.RollingUpdate.MaxUnavailable.IntVal, int32(1))
 							assert.Equal(t, d.Spec.Strategy.RollingUpdate.MaxSurge.IntVal, int32(1))
-							// confirm that we don't remove annotations from metadata even if we don't set them
+							// confirm that we don't remove annotations and labels even if we don't set them
 							assert.Contains(t, d.Annotations, annotationName)
+							assert.Contains(t, d.Labels, labelName)
 							actual := v1.Service{}
 							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.Service(params.Name), params.Namespace))
 							assert.NoError(t, err)
@@ -756,6 +757,9 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 							exists, err := populateObjectIfExists(t, &d, namespacedObjectName(naming.OpAMPBridge(params.Name), params.Namespace))
 							assert.NoError(t, err)
 							assert.True(t, exists)
+							// confirm that we don't remove annotations and labels even if we don't set them
+							assert.Contains(t, d.Spec.Template.Annotations, annotationName)
+							assert.Contains(t, d.Labels, labelName)
 							actual := v1.Service{}
 							exists, err = populateObjectIfExists(t, &actual, namespacedObjectName(naming.OpAMPBridgeService(params.Name), params.Namespace))
 							assert.NoError(t, err)
