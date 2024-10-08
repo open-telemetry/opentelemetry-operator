@@ -57,7 +57,7 @@ spec:
         - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           readOnly: true
         - mountPath: /otel-auto-instrumentation-nodejs
-          name: ephemeral-volume
+          name: opentelemetry-auto-instrumentation-nodejs
     - args:
         - --feature-gates=-component.UseLocalHostAsDefaultHost
         - --config=env:OTEL_CONFIG
@@ -65,15 +65,14 @@ spec:
   initContainers:
     - name: opentelemetry-auto-instrumentation-nodejs
   volumes:
-    - ephemeral:
+    - name: opentelemetry-auto-instrumentation-nodejs
+      ephemeral:
         volumeClaimTemplate:
           spec:
-            accessModes:
-              - ReadWriteOnce
+            accessModes: ["ReadWriteOnce"]
             resources:
               requests:
                 storage: 1Gi
-            volumeMode: Filesystem
 status:
   containerStatuses:
     - name: myapp

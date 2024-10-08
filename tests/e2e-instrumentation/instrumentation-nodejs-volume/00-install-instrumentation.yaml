@@ -31,9 +31,6 @@ spec:
       - name: OTEL_NODEJS_DEBUG
         value: "true"
     volumeClaimTemplate:
-      metadata:
-        labels:
-          type: my-test-volume
       spec:
         accessModes: ["ReadWriteOnce"]
         resources:
