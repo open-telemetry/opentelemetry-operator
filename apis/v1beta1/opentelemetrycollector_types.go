@@ -90,14 +90,17 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	TargetAllocator TargetAllocatorEmbedded `json:"targetAllocator,omitempty"`
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
-	// +optional
+	// +kubebuilder:default=deployment
+	// +kubebuilder:validation:Enum=deployment;daemonset;statefulset;sidecar
 	Mode Mode `json:"mode,omitempty"`
 	// UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed
-	// +optional
+	// +kubebuilder:default=automatic
+	// +kubebuilder:validation:Enum=automatic;manual
 	UpgradeStrategy UpgradeStrategy `json:"upgradeStrategy"`
 	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
 	// The empty objects e.g. batch: should be written as batch: {} otherwise they won't work with kustomize or kubectl edit.
 	// +required
+	// +kubebuilder:validation:required
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Config Config `json:"config"`
 	// ConfigVersions defines the number versions to keep for the collector config. Each config version is stored in a separate ConfigMap.
@@ -110,6 +113,7 @@ type OpenTelemetryCollectorSpec struct {
 	// functionality is only available if one of the valid modes is set.
 	// Valid modes are: deployment, daemonset and statefulset.
 	// +optional
+	// +kubebuilder:validation:Enum=deployment;daemonSet;statefulSet
 	Ingress Ingress `json:"ingress,omitempty"`
 	// Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
@@ -135,11 +139,13 @@ type OpenTelemetryCollectorSpec struct {
 	// https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec
 	// This is only applicable to Daemonset mode.
 	// +optional
+	// +kubebuilder:validation:Enum=daemonset
 	DaemonSetUpdateStrategy appsv1.DaemonSetUpdateStrategy `json:"daemonSetUpdateStrategy,omitempty"`
 	// UpdateStrategy represents the strategy the operator will take replacing existing Deployment pods with new pods
 	// https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/#DeploymentSpec
 	// This is only applicable to Deployment mode.
 	// +optional
+	// +kubebuilder:validation:Enum=deployment
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
 }
 
@@ -150,6 +156,7 @@ type TargetAllocatorEmbedded struct {
 	// other than 1 if a strategy that allows for high availability is chosen. Currently, the only allocation strategy
 	// that can be run in a high availability mode is consistent-hashing.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	Replicas *int32 `json:"replicas,omitempty"`
 	// NodeSelector to schedule OpenTelemetry TargetAllocator pods.
 	// +optional
@@ -163,12 +170,14 @@ type TargetAllocatorEmbedded struct {
 	// WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.
 	// +optional
 	// +kubebuilder:default:=consistent-hashing
+	// +kubebuilder:validation:Enum=consistent-hashing;least-weighted;per-node
 	AllocationStrategy TargetAllocatorAllocationStrategy `json:"allocationStrategy,omitempty"`
 	// FilterStrategy determines how to filter targets before allocating them among the collectors.
 	// The only current option is relabel-config (drops targets based on prom relabel_config).
 	// The default is relabel-config.
 	// +optional
 	// +kubebuilder:default:=relabel-config
+	// +kubebuilder:validation:Enum=relabel-config
 	FilterStrategy TargetAllocatorFilterStrategy `json:"filterStrategy,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
 	// the operator will not automatically create a ServiceAccount for the TargetAllocator.
@@ -229,23 +238,33 @@ type Probe struct {
 	// Defaults to 0 seconds. Minimum value is 0.
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
+	// +kubebuilder:default=0
+	// +kubebuilder:validation:Minimum=0
 	InitialDelaySeconds *int32 `json:"initialDelaySeconds,omitempty"`
 	// Number of seconds after which the probe times out.
 	// Defaults to 1 second. Minimum value is 1.
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
+	// // +kubebuilder:default=1
+	// +kubebuilder:validation:Minimum=1
 	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
 	// How often (in seconds) to perform the probe.
 	// Default to 10 seconds. Minimum value is 1.
 	// +optional
+	// +kubebuilder:default=10
+	// +kubebuilder:validation:Minimum=1
 	PeriodSeconds *int32 `json:"periodSeconds,omitempty"`
 	// Minimum consecutive successes for the probe to be considered successful after having failed.
 	// Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.
 	// +optional
+	// +kubebuilder:default=1
+	// +kubebuilder:validation:Minimum=1
 	SuccessThreshold *int32 `json:"successThreshold,omitempty"`
 	// Minimum consecutive failures for the probe to be considered failed after having succeeded.
 	// Defaults to 3. Minimum value is 1.
 	// +optional
+	// +kubebuilder:default=3
+	// +kubebuilder:validation:Minimum=1
 	FailureThreshold *int32 `json:"failureThreshold,omitempty"`
 	// Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
 	// The grace period is the duration in seconds after the processes running in the pod are sent
@@ -258,6 +277,7 @@ type Probe struct {
 	// This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
 	// Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 }
 
@@ -294,11 +314,13 @@ type ScaleSubresourceStatus struct {
 	// The selector used to match the OpenTelemetryCollector's
 	// deployment or statefulSet pods.
 	// +optional
+	// +kubebuilder:validation:Enum=deployment;statefulset
 	Selector string `json:"selector,omitempty"`
 
 	// The total number non-terminated pods targeted by this
 	// OpenTelemetryCollector's deployment or statefulSet.
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// StatusReplicas is the number of pods targeted by this OpenTelemetryCollector's with a Ready Condition /
@@ -310,6 +332,8 @@ type ScaleSubresourceStatus struct {
 
 type ConfigMapsSpec struct {
 	// Configmap defines name and path where the configMaps should be mounted.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=3
 	Name      string `json:"name"`
 	MountPath string `json:"mountpath"`
 }

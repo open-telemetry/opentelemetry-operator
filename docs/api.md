@@ -30917,6 +30917,15 @@ Default is managed.<br/>
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b>upgradeStrategy</b></td>
+        <td>string</td>
+        <td>
+          UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed<br/>
+          <br/>
+            <i>Default</i>: automatic<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindex-1">additionalContainers</a></b></td>
         <td>[]object</td>
         <td>
@@ -30981,6 +30990,8 @@ Each ConfigMap will be added to the Collector's Deployments as a volume named `c
           UpdateStrategy represents the strategy the operator will take replacing existing DaemonSet pods with new pods
 https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/daemon-set-v1/#DaemonSetSpec
 This is only applicable to Daemonset mode.<br/>
+          <br/>
+            <i>Enum</i>: daemonset<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30990,6 +31001,8 @@ This is only applicable to Daemonset mode.<br/>
           UpdateStrategy represents the strategy the operator will take replacing existing Deployment pods with new pods
 https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/#DeploymentSpec
 This is only applicable to Deployment mode.<br/>
+          <br/>
+            <i>Enum</i>: deployment<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -31034,6 +31047,8 @@ This is only applicable to Deployment mode.<br/>
           Ingress is used to specify how OpenTelemetry Collector is exposed. This
 functionality is only available if one of the valid modes is set.
 Valid modes are: deployment, daemonset and statefulset.<br/>
+          <br/>
+            <i>Enum</i>: deployment, daemonSet, statefulSet<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -31081,11 +31096,11 @@ It is only effective when healthcheckextension is configured in the OpenTelemetr
         <td>false</td>
       </tr><tr>
         <td><b>mode</b></td>
-        <td>enum</td>
+        <td>string</td>
         <td>
           Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)<br/>
           <br/>
-            <i>Enum</i>: daemonset, deployment, sidecar, statefulset<br/>
+            <i>Default</i>: deployment<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -31242,15 +31257,6 @@ controls how pods are spread across your cluster among failure-domains
 such as regions, zones, nodes, and other user-defined topology domains
 https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 This only works with the following OpenTelemetryCollector mode's: statefulset, and deployment.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>upgradeStrategy</b></td>
-        <td>enum</td>
-        <td>
-          UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed<br/>
-          <br/>
-            <i>Enum</i>: automatic, none<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -40734,6 +40740,8 @@ It is only effective when healthcheckextension is configured in the OpenTelemetr
 Defaults to 3. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Default</i>: 3<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -40745,6 +40753,8 @@ Defaults to 0 seconds. Minimum value is 0.
 More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Default</i>: 0<br/>
+            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -40755,6 +40765,8 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
 Default to 10 seconds. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Default</i>: 10<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -40765,6 +40777,8 @@ Default to 10 seconds. Minimum value is 1.<br/>
 Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Default</i>: 1<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -40783,6 +40797,7 @@ This is a beta field and requires enabling ProbeTerminationGracePeriod feature g
 Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
           <br/>
             <i>Format</i>: int64<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -40791,9 +40806,11 @@ Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
         <td>
           Number of seconds after which the probe times out.
 Defaults to 1 second. Minimum value is 1.
-More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+// +kubebuilder:default=1<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -41521,6 +41538,8 @@ It is only effective when healthcheckextension is configured in the OpenTelemetr
 Defaults to 3. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Default</i>: 3<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -41532,6 +41551,8 @@ Defaults to 0 seconds. Minimum value is 0.
 More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Default</i>: 0<br/>
+            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -41542,6 +41563,8 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
 Default to 10 seconds. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Default</i>: 10<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -41552,6 +41575,8 @@ Default to 10 seconds. Minimum value is 1.<br/>
 Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Default</i>: 1<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -41570,6 +41595,7 @@ This is a beta field and requires enabling ProbeTerminationGracePeriod feature g
 Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
           <br/>
             <i>Format</i>: int64<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -41578,9 +41604,11 @@ Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
         <td>
           Number of seconds after which the probe times out.
 Defaults to 1 second. Minimum value is 1.
-More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+// +kubebuilder:default=1<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -42094,14 +42122,13 @@ TargetAllocator indicates a value which determines whether to spawn a target all
         <td>false</td>
       </tr><tr>
         <td><b>allocationStrategy</b></td>
-        <td>enum</td>
+        <td>string</td>
         <td>
           AllocationStrategy determines which strategy the target allocator should use for allocation.
 The current options are least-weighted, consistent-hashing and per-node. The default is
 consistent-hashing.
 WARNING: The per-node strategy currently ignores targets without a Node, like control plane components.<br/>
           <br/>
-            <i>Enum</i>: least-weighted, consistent-hashing, per-node<br/>
             <i>Default</i>: consistent-hashing<br/>
         </td>
         <td>false</td>
@@ -42122,13 +42149,12 @@ consumed in the config file for the TargetAllocator.<br/>
         <td>false</td>
       </tr><tr>
         <td><b>filterStrategy</b></td>
-        <td>enum</td>
+        <td>string</td>
         <td>
           FilterStrategy determines how to filter targets before allocating them among the collectors.
 The only current option is relabel-config (drops targets based on prom relabel_config).
 The default is relabel-config.<br/>
           <br/>
-            <i>Enum</i>: , relabel-config<br/>
             <i>Default</i>: relabel-config<br/>
         </td>
         <td>false</td>
@@ -42187,6 +42213,7 @@ other than 1 if a strategy that allows for high availability is chosen. Currentl
 that can be run in a high availability mode is consistent-hashing.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -50551,14 +50578,17 @@ Scale is the OpenTelemetryCollector's scale subresource status.
 OpenTelemetryCollector's deployment or statefulSet.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>selector</b></td>
-        <td>string</td>
+        <td>enum</td>
         <td>
           The selector used to match the OpenTelemetryCollector's
 deployment or statefulSet pods.<br/>
+          <br/>
+            <i>Enum</i>: deployment, statefulset<br/>
         </td>
         <td>false</td>
       </tr><tr>
