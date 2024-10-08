@@ -102,6 +102,10 @@ type mockAutoDetect struct {
 	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
 }
 
+func (m *mockAutoDetect) FIPSEnabled(ctx context.Context) bool {
+	return false
+}
+
 func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, error) {
 	if m.PrometheusCRsAvailabilityFunc != nil {
 		return m.PrometheusCRsAvailabilityFunc()
@@ -178,7 +182,7 @@ func TestMain(m *testing.M) {
 	}
 	reviewer := rbac.NewReviewer(clientset)
 
-	if err = v1beta1.SetupCollectorWebhook(mgr, config.New(), reviewer, nil, nil); err != nil {
+	if err = v1beta1.SetupCollectorWebhook(mgr, config.New(), reviewer, nil, nil, nil); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}

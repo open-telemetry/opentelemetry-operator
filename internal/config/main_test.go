@@ -82,6 +82,10 @@ type mockAutoDetect struct {
 	RBACPermissionsFunc             func(ctx context.Context) (rbac.Availability, error)
 }
 
+func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
+	return false
+}
+
 func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error) {
 	if m.OpenShiftRoutesAvailabilityFunc != nil {
 		return m.OpenShiftRoutesAvailabilityFunc()

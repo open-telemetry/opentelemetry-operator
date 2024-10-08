@@ -113,6 +113,10 @@ func (c *Config) GetEnabledComponents() map[ComponentKind]map[string]interface{}
 		KindExporter:  {},
 		KindExtension: {},
 	}
+	for _, extension := range c.Service.Extensions {
+		toReturn[KindExtension][extension] = struct{}{}
+	}
+
 	for _, pipeline := range c.Service.Pipelines {
 		if pipeline == nil {
 			continue
