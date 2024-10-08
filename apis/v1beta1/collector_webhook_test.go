@@ -103,10 +103,18 @@ func TestValidate(t *testing.T) {
 
 	for _, tt := range tests {
 		test := tt
-		webhook := v1beta1.NewCollectorWebhook(logr.Discard(), testScheme, config.New(
-			config.WithCollectorImage("collector:v0.0.0"),
-			config.WithTargetAllocatorImage("ta:v0.0.0"),
-		), getReviewer(test.shouldFailSar), nil, bv, nil, false)
+		webhook := v1beta1.NewCollectorWebhook(
+			logr.Discard(),
+			testScheme,
+			config.New(
+				config.WithCollectorImage("collector:v0.0.0"),
+				config.WithTargetAllocatorImage("ta:v0.0.0"),
+			),
+			getReviewer(test.shouldFailSar),
+			nil,
+			bv,
+			nil,
+		)
 		t.Run(tt.name, func(t *testing.T) {
 			tt := tt
 			warnings, err := webhook.Validate(context.Background(), &tt.collector)
@@ -531,10 +539,18 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			cvw := v1beta1.NewCollectorWebhook(logr.Discard(), testScheme, config.New(
-				config.WithCollectorImage("collector:v0.0.0"),
-				config.WithTargetAllocatorImage("ta:v0.0.0"),
-			), getReviewer(test.shouldFailSar), nil, bv, nil, false)
+			cvw := v1beta1.NewCollectorWebhook(
+				logr.Discard(),
+				testScheme,
+				config.New(
+					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
+				),
+				getReviewer(test.shouldFailSar),
+				nil,
+				bv,
+				nil,
+			)
 			ctx := context.Background()
 			err := cvw.Default(ctx, &test.otelcol)
 			assert.NoError(t, err)
@@ -1315,10 +1331,18 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			cvw := v1beta1.NewCollectorWebhook(logr.Discard(), testScheme, config.New(
-				config.WithCollectorImage("collector:v0.0.0"),
-				config.WithTargetAllocatorImage("ta:v0.0.0"),
-			), getReviewer(test.shouldFailSar), nil, bv, nil, false)
+			cvw := v1beta1.NewCollectorWebhook(
+				logr.Discard(),
+				testScheme,
+				config.New(
+					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
+				),
+				getReviewer(test.shouldFailSar),
+				nil,
+				bv,
+				nil,
+			)
 			ctx := context.Background()
 			warnings, err := cvw.ValidateCreate(ctx, &test.otelcol)
 			if test.expectedErr == "" {
@@ -1375,10 +1399,18 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			cvw := v1beta1.NewCollectorWebhook(logr.Discard(), testScheme, config.New(
-				config.WithCollectorImage("collector:v0.0.0"),
-				config.WithTargetAllocatorImage("ta:v0.0.0"),
-			), getReviewer(test.shouldFailSar), nil, bv, nil, false)
+			cvw := v1beta1.NewCollectorWebhook(
+				logr.Discard(),
+				testScheme,
+				config.New(
+					config.WithCollectorImage("collector:v0.0.0"),
+					config.WithTargetAllocatorImage("ta:v0.0.0"),
+				),
+				getReviewer(test.shouldFailSar),
+				nil,
+				bv,
+				nil,
+			)
 			ctx := context.Background()
 			warnings, err := cvw.ValidateUpdate(ctx, &test.otelcolOld, &test.otelcolNew)
 			if test.expectedErr == "" {

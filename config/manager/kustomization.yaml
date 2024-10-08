@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: jaronoff/opentelemetry-operator
-  newTag: op-v177
+  newTag: op-v178

@@ -30,6 +30,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
@@ -43,14 +44,13 @@ var (
 // +kubebuilder:object:generate=false
 
 type CollectorWebhook struct {
-	logger            logr.Logger
-	cfg               config.Config
-	scheme            *runtime.Scheme
-	reviewer          *rbac.Reviewer
-	metrics           *Metrics
-	bv                BuildValidator
-	fips              fips.FIPSCheck
-	disableDefaulting bool
+	logger   logr.Logger
+	cfg      config.Config
+	scheme   *runtime.Scheme
+	reviewer *rbac.Reviewer
+	metrics  *Metrics
+	bv       BuildValidator
+	fips     fips.FIPSCheck
 }
 
 func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
@@ -101,7 +101,7 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 	if len(otelcol.Spec.ManagementState) == 0 {
 		otelcol.Spec.ManagementState = ManagementStateManaged
 	}
-	if c.disableDefaulting {
+	if !featuregate.EnableConfigDefaulting.IsEnabled() {
 		return nil
 	}
 	return otelcol.Spec.Config.ApplyDefaults(c.logger)
@@ -435,30 +435,20 @@ func NewCollectorWebhook(
 	metrics *Metrics,
 	bv BuildValidator,
 	fips fips.FIPSCheck,
-	disableDefaulting bool) *CollectorWebhook {
+) *CollectorWebhook {
 	return &CollectorWebhook{
-		logger:            logger,
-		scheme:            scheme,
-		cfg:               cfg,
-		reviewer:          reviewer,
-		metrics:           metrics,
-		bv:                bv,
-		fips:              fips,
-		disableDefaulting: disableDefaulting,
+		logger:   logger,
+		scheme:   scheme,
+		cfg:      cfg,
+		reviewer: reviewer,
+		metrics:  metrics,
+		bv:       bv,
+		fips:     fips,
 	}
 }
 
-func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck, disableDefaulting bool) error {
-	cvw := NewCollectorWebhook(
-		mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"),
-		mgr.GetScheme(),
-		cfg,
-		reviewer,
-		metrics,
-		bv,
-		fipsCheck,
-		disableDefaulting,
-	)
+func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
+	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, metrics, bv, fipsCheck)
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&OpenTelemetryCollector{}).
 		WithValidator(cvw).

@@ -40,6 +40,13 @@ var (
 		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
 		featuregate.WithRegisterFromVersion("v0.100.0"),
 	)
+	// EnableConfigDefaulting is the feature gate that enables the operator to default the endpoint for known components.
+	EnableConfigDefaulting = featuregate.GlobalRegistry().MustRegister(
+		"operator.collector.default.config",
+		featuregate.StageBeta,
+		featuregate.WithRegisterDescription("enables the operator to default the endpoint for known components"),
+		featuregate.WithRegisterFromVersion("v0.110.0"),
+	)
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.
