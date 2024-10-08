@@ -310,7 +310,6 @@ spec:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
   - args:
-    - --feature-gates=-component.UseLocalHostAsDefaultHost
     - --config=env:OTEL_CONFIG
     env:
     - name: POD_NAME

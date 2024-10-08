@@ -27,7 +27,7 @@ func upgrade0_104_0_TA(_ VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector
 }
 
 func upgrade0_104_0(u VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (*v1beta1.OpenTelemetryCollector, error) {
-	v1beta1.ComponentUseLocalHostAsDefaultHost(otelcol)
+	ComponentUseLocalHostAsDefaultHost(otelcol)
 
 	const issueID = "https://github.com/open-telemetry/opentelemetry-collector/issues/8510"
 	warnStr := fmt.Sprintf(
@@ -58,6 +58,26 @@ func TAUnifyEnvVarExpansion(otelcol *v1beta1.OpenTelemetryCollector) {
 	const (
 		baseFlag = "feature-gates"
 		fgFlag   = "confmap.unifyEnvVarExpansion"
+	)
+	if otelcol.Spec.Args == nil {
+		otelcol.Spec.Args = make(map[string]string)
+	}
+	args, ok := otelcol.Spec.Args[baseFlag]
+	if !ok || len(args) == 0 {
+		otelcol.Spec.Args[baseFlag] = "-" + fgFlag
+	} else if !strings.Contains(otelcol.Spec.Args[baseFlag], fgFlag) {
+		otelcol.Spec.Args[baseFlag] += ",-" + fgFlag
+	}
+}
+
+// ComponentUseLocalHostAsDefaultHost enables component.UseLocalHostAsDefaultHost
+// featuregate on the given collector instance.
+// NOTE: For more details, visit:
+// https://github.com/open-telemetry/opentelemetry-collector/issues/8510
+func ComponentUseLocalHostAsDefaultHost(otelcol *v1beta1.OpenTelemetryCollector) {
+	const (
+		baseFlag = "feature-gates"
+		fgFlag   = "component.UseLocalHostAsDefaultHost"
 	)
 	if otelcol.Spec.Args == nil {
 		otelcol.Spec.Args = make(map[string]string)

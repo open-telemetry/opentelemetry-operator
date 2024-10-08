@@ -162,7 +162,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						ManagementState: v1beta1.ManagementStateManaged,
 						Replicas:        &one,
 					},
@@ -195,7 +194,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						ManagementState: v1beta1.ManagementStateManaged,
 						Replicas:        &one,
 					},
@@ -219,7 +217,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						ManagementState: v1beta1.ManagementStateManaged,
 						Replicas:        &one,
 					},
@@ -247,7 +244,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            v1beta1.ModeSidecar,
 					UpgradeStrategy: "adhoc",
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &five,
 						ManagementState: v1beta1.ManagementStateManaged,
 					},
@@ -274,7 +270,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            v1beta1.ModeSidecar,
 					UpgradeStrategy: "adhoc",
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &five,
 						ManagementState: v1beta1.ManagementStateUnmanaged,
 					},
@@ -299,7 +294,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            v1beta1.ModeDeployment,
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
 					},
@@ -328,7 +322,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						ManagementState: v1beta1.ManagementStateManaged,
 						Replicas:        &one,
 					},
@@ -364,7 +357,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
 						PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{
@@ -402,7 +394,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
 					},
@@ -445,7 +436,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
 					},
@@ -483,7 +473,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
 					},
@@ -514,7 +503,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeDeployment,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Args:            map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
 						Replicas:        &one,
 						ManagementState: v1beta1.ManagementStateManaged,
 					},

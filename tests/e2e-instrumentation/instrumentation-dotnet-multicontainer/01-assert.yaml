@@ -128,7 +128,6 @@ spec:
     - mountPath: /otel-auto-instrumentation-dotnet
       name: opentelemetry-auto-instrumentation-dotnet
   - args:
-    - --feature-gates=-component.UseLocalHostAsDefaultHost
     - --config=env:OTEL_CONFIG
     name: otc-container
   initContainers:
