@@ -167,6 +167,10 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		)
 	}
 
+	if featuregate.SetNativeHistogram.IsEnabled() {
+		args = append(args, "--feature-gates=receiver.prometheusreceiver.EnableNativeHistograms")
+	}
+
 	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
 	return corev1.Container{
 		Name:            naming.Container(),
