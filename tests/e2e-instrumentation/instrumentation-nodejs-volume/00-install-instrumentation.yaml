@@ -30,15 +30,12 @@ spec:
     env:
       - name: OTEL_NODEJS_DEBUG
         value: "true"
-    volume:
-      name: ephemeral-volume
-      ephemeral:
-        volumeClaimTemplate:
-          metadata:
-            labels:
-              type: my-test-volume
-          spec:
-            accessModes: [ "ReadWriteOnce" ]
-            resources:
-              requests:
-                storage: 1Gi
+    volumeClaimTemplate:
+      metadata:
+        labels:
+          type: my-test-volume
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

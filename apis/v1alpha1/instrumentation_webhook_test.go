@@ -119,12 +119,14 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		},
 		{
 			name: "with volume and volumeSizeLimit",
-			err:  "spec.nodejs.volume and spec.nodejs.volumeSizeLimit cannot both be defined",
+			err:  "spec.nodejs.volumeClaimTemplate and spec.nodejs.volumeSizeLimit cannot both be defined",
 			inst: Instrumentation{
 				Spec: InstrumentationSpec{
 					NodeJS: NodeJS{
-						Volume: corev1.Volume{
-							Name: "vol1",
+						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
 						},
 						VolumeSizeLimit: &defaultVolumeSize,
 					},
