@@ -120,9 +120,9 @@ type Java struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Volume defines the volume used for auto-instrumentation.
-	// The default volume is an emptyDir with size limit VolumeSizeLimit
-	Volume corev1.Volume `json:"volume,omitempty"`
+	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
@@ -158,9 +158,9 @@ type NodeJS struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Volume defines the volume used for auto-instrumentation.
-	// The default volume is an emptyDir with size limit VolumeSizeLimit
-	Volume corev1.Volume `json:"volume,omitempty"`
+	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
@@ -183,9 +183,9 @@ type Python struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Volume defines the volume used for auto-instrumentation.
-	// The default volume is an emptyDir with size limit VolumeSizeLimit
-	Volume corev1.Volume `json:"volume,omitempty"`
+	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
@@ -208,9 +208,9 @@ type DotNet struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Volume defines the volume used for auto-instrumentation.
-	// The default volume is an emptyDir with size limit VolumeSizeLimit
-	Volume corev1.Volume `json:"volume,omitempty"`
+	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
@@ -231,9 +231,9 @@ type Go struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Volume defines the volume used for auto-instrumentation.
-	// The default volume is an emptyDir with size limit VolumeSizeLimit
-	Volume corev1.Volume `json:"volume,omitempty"`
+	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
@@ -256,9 +256,9 @@ type ApacheHttpd struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Volume defines the volume used for auto-instrumentation.
-	// The default volume is an emptyDir with size limit VolumeSizeLimit
-	Volume corev1.Volume `json:"volume,omitempty"`
+	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
@@ -296,9 +296,9 @@ type Nginx struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Volume defines the volume used for auto-instrumentation.
-	// The default volume is an emptyDir with size limit VolumeSizeLimit
-	Volume corev1.Volume `json:"volume,omitempty"`
+	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.

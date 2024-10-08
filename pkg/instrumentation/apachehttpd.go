@@ -61,7 +61,7 @@ const (
 
 func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod corev1.Pod, index int, otlpEndpoint string, resourceMap map[string]string) corev1.Pod {
 
-	volume := instrVolume(apacheSpec.Volume, apacheAgentVolume, apacheSpec.VolumeSizeLimit)
+	volume := instrVolume(apacheSpec.VolumeClaimTemplate, apacheAgentVolume, apacheSpec.VolumeSizeLimit)
 
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[index]

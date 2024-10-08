@@ -125,9 +125,16 @@ func isInstrWithoutContainers(inst instrumentationWithContainers) int {
 }
 
 // Return volume if defined, otherwise return emptyDir with given name and size limit.
-func instrVolume(volume corev1.Volume, name string, quantity *resource.Quantity) corev1.Volume {
-	if !reflect.ValueOf(volume).IsZero() {
-		return volume
+func instrVolume(volumeClaimTemplate corev1.PersistentVolumeClaimTemplate, name string, quantity *resource.Quantity) corev1.Volume {
+	if !reflect.ValueOf(volumeClaimTemplate).IsZero() {
+		return corev1.Volume{
+			Name: name,
+			VolumeSource: corev1.VolumeSource{
+				Ephemeral: &corev1.EphemeralVolumeSource{
+					VolumeClaimTemplate: &volumeClaimTemplate,
+				},
+			},
+		}
 	}
 
 	return corev1.Volume{

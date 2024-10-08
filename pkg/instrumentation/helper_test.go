@@ -192,33 +192,35 @@ func TestDuplicatedContainers(t *testing.T) {
 func TestInstrVolume(t *testing.T) {
 	tests := []struct {
 		name       string
-		volume     corev1.Volume
+		volume     corev1.PersistentVolumeClaimTemplate
 		volumeName string
 		quantity   *resource.Quantity
 		expected   corev1.Volume
 	}{
 		{
 			name: "With volume",
-			volume: corev1.Volume{
-				Name: "vol1",
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{
-						SizeLimit: &resource.Quantity{},
-					},
-				}},
+			volume: corev1.PersistentVolumeClaimTemplate{
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+				},
+			},
 			volumeName: "default-vol",
 			quantity:   nil,
 			expected: corev1.Volume{
-				Name: "vol1",
+				Name: "default-vol",
 				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{
-						SizeLimit: &resource.Quantity{},
+					Ephemeral: &corev1.EphemeralVolumeSource{
+						VolumeClaimTemplate: &corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
 					},
 				}},
 		},
 		{
 			name:       "With volume size limit",
-			volume:     corev1.Volume{},
+			volume:     corev1.PersistentVolumeClaimTemplate{},
 			volumeName: "default-vol",
 			quantity:   &defaultVolumeLimitSize,
 			expected: corev1.Volume{
@@ -231,7 +233,7 @@ func TestInstrVolume(t *testing.T) {
 		},
 		{
 			name:       "No volume or size limit",
-			volume:     corev1.Volume{},
+			volume:     corev1.PersistentVolumeClaimTemplate{},
 			volumeName: "default-vol",
 			quantity:   nil,
 			expected: corev1.Volume{
@@ -244,20 +246,22 @@ func TestInstrVolume(t *testing.T) {
 		},
 		{
 			name: "With volume and size limit",
-			volume: corev1.Volume{
-				Name: "vol1",
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{
-						SizeLimit: &resource.Quantity{},
-					},
-				}},
+			volume: corev1.PersistentVolumeClaimTemplate{
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+				},
+			},
 			volumeName: "default-vol",
 			quantity:   &defaultVolumeLimitSize,
 			expected: corev1.Volume{
-				Name: "vol1",
+				Name: "default-vol",
 				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{
-						SizeLimit: &resource.Quantity{},
+					Ephemeral: &corev1.EphemeralVolumeSource{
+						VolumeClaimTemplate: &corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
 					},
 				}},
 		},

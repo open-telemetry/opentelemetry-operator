@@ -31,7 +31,7 @@ const (
 )
 
 func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, error) {
-	volume := instrVolume(javaSpec.Volume, javaVolumeName, javaSpec.VolumeSizeLimit)
+	volume := instrVolume(javaSpec.VolumeClaimTemplate, javaVolumeName, javaSpec.VolumeSizeLimit)
 
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]

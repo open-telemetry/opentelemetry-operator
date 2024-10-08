@@ -52,7 +52,7 @@ const (
 
 func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runtime string) (corev1.Pod, error) {
 
-	volume := instrVolume(dotNetSpec.Volume, dotnetVolumeName, dotNetSpec.VolumeSizeLimit)
+	volume := instrVolume(dotNetSpec.VolumeClaimTemplate, dotnetVolumeName, dotNetSpec.VolumeSizeLimit)
 
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
