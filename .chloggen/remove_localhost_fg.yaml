@@ -17,10 +17,10 @@ subtext: |
   This change may break setups where receiver endpoints are not explicitly configured to listen on e.g. 0.0.0.0.
   Change \#3333 attempts to address this issue for a known set of components.
   The operator performs the adjustment for the following receivers:
-  - otlp/gRPC, otlp/HTTP
-  - skywalking/gRPC, skywalking/HTTP
-  - jaeger/gRPC, jaeger/thrift_http, jaeger/thrift_compact, jaeger/thrift_binary
-  - lok/gRPC, loki/HTTP
+  - otlp
+  - skywalking
+  - jaeger
+  - loki
   - opencensus
   - zipkin
   - tcplog
