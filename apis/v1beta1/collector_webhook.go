@@ -30,6 +30,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
@@ -99,6 +100,9 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 	// This results in a default state of unmanaged preventing reconciliation from continuing.
 	if len(otelcol.Spec.ManagementState) == 0 {
 		otelcol.Spec.ManagementState = ManagementStateManaged
+	}
+	if !featuregate.EnableConfigDefaulting.IsEnabled() {
+		return nil
 	}
 	return otelcol.Spec.Config.ApplyDefaults(c.logger)
 }
