@@ -38,6 +38,8 @@ spec:
     - name: step-02
       description: delete extra label from collector
       try:
+        - apply:
+            file: 02-manual-labeling-resources.yaml
         - update:
             file: 02-install-collectors-without-extra-label.yaml
         # deployment

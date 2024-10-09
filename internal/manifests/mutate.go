@@ -78,7 +78,7 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 		// Get the existing labels and override any conflicts with the desired labels
 		// This will preserve any labels on the existing set.
 		existingLabels := existing.GetLabels()
-		if err := mergeWithOverwriteWithEmptyValue(&existingLabels, desired.GetLabels()); err != nil {
+		if err := mergeWithOverride(&existingLabels, desired.GetLabels()); err != nil {
 			return err
 		}
 		existing.SetLabels(existingLabels)
@@ -281,7 +281,18 @@ func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
 		}
 	}
 
-	return mergeWithOverwriteWithEmptyValue(&existing.Spec, desired.Spec)
+	existing.Spec.MinReadySeconds = desired.Spec.MinReadySeconds
+	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
+
+	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.UpdateStrategy, desired.Spec.UpdateStrategy); err != nil {
+		return err
+	}
+
+	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func mutateDeployment(existing, desired *appsv1.Deployment) error {
@@ -293,7 +304,22 @@ func mutateDeployment(existing, desired *appsv1.Deployment) error {
 			return err
 		}
 	}
-	return mergeWithOverwriteWithEmptyValue(&existing.Spec, desired.Spec)
+
+	existing.Spec.MinReadySeconds = desired.Spec.MinReadySeconds
+	existing.Spec.Paused = desired.Spec.Paused
+	existing.Spec.ProgressDeadlineSeconds = desired.Spec.ProgressDeadlineSeconds
+	existing.Spec.Replicas = desired.Spec.Replicas
+	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
+
+	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Strategy, desired.Spec.Strategy); err != nil {
+		return err
+	}
+
+	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
@@ -309,7 +335,44 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 		}
 	}
 
-	return mergeWithOverwriteWithEmptyValue(&existing.Spec, desired.Spec)
+	existing.Spec.MinReadySeconds = desired.Spec.MinReadySeconds
+	existing.Spec.Ordinals = desired.Spec.Ordinals
+	existing.Spec.PersistentVolumeClaimRetentionPolicy = desired.Spec.PersistentVolumeClaimRetentionPolicy
+	existing.Spec.PodManagementPolicy = desired.Spec.PodManagementPolicy
+	existing.Spec.Replicas = desired.Spec.Replicas
+	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
+	existing.Spec.ServiceName = desired.Spec.ServiceName
+
+	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.UpdateStrategy, desired.Spec.UpdateStrategy); err != nil {
+		return err
+	}
+
+	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.VolumeClaimTemplates, desired.Spec.VolumeClaimTemplates); err != nil {
+		return err
+	}
+
+	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func mutatePodTemplate(existing, desired *corev1.PodTemplateSpec) error {
+	if err := mergeWithOverride(&existing.Labels, desired.Labels); err != nil {
+		return err
+	}
+
+	if err := mergeWithOverride(&existing.Annotations, desired.Annotations); err != nil {
+		return err
+	}
+
+	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec, desired.Spec); err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func hasImmutableLabelChange(existingSelectorLabels, desiredLabels map[string]string) error {

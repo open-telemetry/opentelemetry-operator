@@ -36,8 +36,10 @@ spec:
             file: 01-assert-statefulset-with-annotation-change.yaml
 
     - name: step-02
-      description: delete extra annotation from collector
+      description: manually annotate resources and delete extra annotation from collector
       try:
+        - apply:
+            file: 02-manual-annotation-resources.yaml
         - update:
             file: 02-install-collectors-without-extra-annotation.yaml
         # deployment
