@@ -30,12 +30,29 @@ var (
 // GenericParser serves as scaffolding for custom parsing logic by isolating
 // functionality to idempotent functions.
 type GenericParser[T any] struct {
-	name         string
-	settings     *Settings[T]
-	portParser   PortParser[T]
-	rbacGen      RBACRuleGenerator[T]
-	livenessGen  ProbeGenerator[T]
-	readinessGen ProbeGenerator[T]
+	name            string
+	settings        *Settings[T]
+	portParser      PortParser[T]
+	rbacGen         RBACRuleGenerator[T]
+	livenessGen     ProbeGenerator[T]
+	readinessGen    ProbeGenerator[T]
+	defaultsApplier Defaulter[T]
+}
+
+func (g *GenericParser[T]) GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error) {
+	if g.settings == nil || g.defaultsApplier == nil {
+		return config, nil
+	}
+
+	if g.settings.defaultRecAddr == "" || g.settings.port == 0 {
+		return config, nil
+	}
+
+	var parsed T
+	if err := mapstructure.Decode(config, &parsed); err != nil {
+		return nil, err
+	}
+	return g.defaultsApplier(logger, g.settings.defaultRecAddr, g.settings.port, parsed)
 }
 
 func (g *GenericParser[T]) GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {

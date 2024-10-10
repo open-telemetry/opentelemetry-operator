@@ -71,7 +71,6 @@ spec:
     - mountPath: /otel-auto-instrumentation-python
       name: opentelemetry-auto-instrumentation-python
   - args:
-    - --feature-gates=-component.UseLocalHostAsDefaultHost
     - --config=env:OTEL_CONFIG
     env:
     - name: POD_NAME
@@ -84,8 +83,10 @@ spec:
         receivers:
           otlp:
             protocols:
-              grpc: null
-              http: null
+              grpc:
+                endpoint: 0.0.0.0:4317
+              http:
+                endpoint: 0.0.0.0:4318
         exporters:
           debug: null
         service:
