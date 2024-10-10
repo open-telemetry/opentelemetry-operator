@@ -17,6 +17,7 @@ package collector
 import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -36,6 +37,11 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter())
 	if err != nil {
 		return nil, err
+	}
+
+	imagePullSecrets := params.OtelCol.Spec.ImagePullSecrets
+	if params.OtelCol.Spec.ImagePullSecrets == nil {
+		imagePullSecrets = []v1.LocalObjectReference{}
 	}
 
 	return &appsv1.Deployment{
@@ -58,6 +64,7 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            ServiceAccountName(params.OtelCol),
+					ImagePullSecrets:              imagePullSecrets,
 					InitContainers:                params.OtelCol.Spec.InitContainers,
 					Containers:                    append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
 					Volumes:                       Volumes(params.Config, params.OtelCol),

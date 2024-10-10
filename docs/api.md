@@ -240,6 +240,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecapachehttpdimagepullsecretsindex">imagePullSecrets</a></b></td>
+        <td>[]object</td>
+        <td>
+          ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#instrumentationspecapachehttpdresourcerequirements">resourceRequirements</a></b></td>
         <td>object</td>
         <td>
@@ -805,6 +812,42 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 </table>
 
 
+### Instrumentation.spec.apacheHttpd.imagePullSecrets[index]
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpd)</sup></sup>
+
+
+
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.apacheHttpd.resourceRequirements
 <sup><sup>[↩ Parent](#instrumentationspecapachehttpd)</sup></sup>
 
@@ -955,6 +998,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td>string</td>
         <td>
           Image is a container image with DotNet SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecdotnetimagepullsecretsindex">imagePullSecrets</a></b></td>
+        <td>[]object</td>
+        <td>
+          ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1240,6 +1290,42 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.imagePullSecrets[index]
+<sup><sup>[↩ Parent](#instrumentationspecdotnet)</sup></sup>
+
+
+
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1668,6 +1754,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecgoimagepullsecretsindex">imagePullSecrets</a></b></td>
+        <td>[]object</td>
+        <td>
+          ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#instrumentationspecgoresourcerequirements">resourceRequirements</a></b></td>
         <td>object</td>
         <td>
@@ -1956,6 +2049,42 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 </table>
 
 
+### Instrumentation.spec.go.imagePullSecrets[index]
+<sup><sup>[↩ Parent](#instrumentationspecgo)</sup></sup>
+
+
+
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.go.resourceRequirements
 <sup><sup>[↩ Parent](#instrumentationspecgo)</sup></sup>
 
@@ -2083,6 +2212,13 @@ All extensions are copied to a single directory; if a JAR with the same name exi
         <td>string</td>
         <td>
           Image is a container image with javaagent auto-instrumentation JAR.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecjavaimagepullsecretsindex">imagePullSecrets</a></b></td>
+        <td>[]object</td>
+        <td>
+          ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2408,6 +2544,42 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 </table>
 
 
+### Instrumentation.spec.java.imagePullSecrets[index]
+<sup><sup>[↩ Parent](#instrumentationspecjava)</sup></sup>
+
+
+
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.java.resources
 <sup><sup>[↩ Parent](#instrumentationspecjava)</sup></sup>
 
@@ -2544,6 +2716,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td>string</td>
         <td>
           Image is a container image with Nginx SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginximagepullsecretsindex">imagePullSecrets</a></b></td>
+        <td>[]object</td>
+        <td>
+          ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3105,6 +3284,42 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 </table>
 
 
+### Instrumentation.spec.nginx.imagePullSecrets[index]
+<sup><sup>[↩ Parent](#instrumentationspecnginx)</sup></sup>
+
+
+
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.nginx.resourceRequirements
 <sup><sup>[↩ Parent](#instrumentationspecnginx)</sup></sup>
 
@@ -3224,6 +3439,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td>string</td>
         <td>
           Image is a container image with NodeJS SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnodejsimagepullsecretsindex">imagePullSecrets</a></b></td>
+        <td>[]object</td>
+        <td>
+          ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3515,6 +3737,42 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 </table>
 
 
+### Instrumentation.spec.nodejs.imagePullSecrets[index]
+<sup><sup>[↩ Parent](#instrumentationspecnodejs)</sup></sup>
+
+
+
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.nodejs.resourceRequirements
 <sup><sup>[↩ Parent](#instrumentationspecnodejs)</sup></sup>
 
@@ -3634,6 +3892,13 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td>string</td>
         <td>
           Image is a container image with Python SDK and auto-instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecpythonimagepullsecretsindex">imagePullSecrets</a></b></td>
+        <td>[]object</td>
+        <td>
+          ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3919,6 +4184,42 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.imagePullSecrets[index]
+<sup><sup>[↩ Parent](#instrumentationspecpython)</sup></sup>
+
+
+
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11751,6 +12052,15 @@ These can then in certain cases be consumed in the config file for the Collector
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecimagepullsecretsindex">imagePullSecrets</a></b></td>
+        <td>[]object</td>
+        <td>
+          ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+If specified, these secrets will be passed to individual puller implementations for them to use.
+More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecingress">ingress</a></b></td>
         <td>object</td>
         <td>
@@ -17602,6 +17912,42 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 </table>
 
 
+### OpenTelemetryCollector.spec.imagePullSecrets[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
+
+
+
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpenTelemetryCollector.spec.ingress
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
 
@@ -22444,6 +22790,15 @@ The default is relabel-config.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorimagepullsecretsindex">imagePullSecrets</a></b></td>
+        <td>[]object</td>
+        <td>
+          ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+If specified, these secrets will be passed to individual puller implementations for them to use.
+More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
         <td>
@@ -24430,6 +24785,42 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.imagePullSecrets[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator)</sup></sup>
+
+
+
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -31028,6 +31419,15 @@ This is only applicable to Deployment mode.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecimagepullsecretsindex-1">imagePullSecrets</a></b></td>
+        <td>[]object</td>
+        <td>
+          ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+If specified, these secrets will be passed to individual puller implementations for them to use.
+More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecingress-1">ingress</a></b></td>
         <td>object</td>
         <td>
@@ -37124,6 +37524,42 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 </table>
 
 
+### OpenTelemetryCollector.spec.imagePullSecrets[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpenTelemetryCollector.spec.ingress
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
 
@@ -42140,6 +42576,13 @@ The default is relabel-config.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorimagepullsecretsindex-1">imagePullSecrets</a></b></td>
+        <td>[]object</td>
+        <td>
+          ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
         <td>
@@ -44127,6 +44570,42 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>boolean</td>
         <td>
           Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.imagePullSecrets[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator-1)</sup></sup>
+
+
+
+LocalObjectReference contains enough information to let you locate the
+referenced object inside the same namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr></tbody>

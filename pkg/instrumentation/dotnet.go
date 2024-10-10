@@ -124,6 +124,8 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 				},
 			}})
 
+		pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, dotNetSpec.ImagePullSecrets...)
+
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      dotnetInitContainerName,
 			Image:     dotNetSpec.Image,

@@ -1446,6 +1446,18 @@ spec:
                 type: string
               imagePullPolicy:
                 type: string
+              imagePullSecrets:
+                items:
+                  properties:
+                    name:
+                      default: ""
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
               ingress:
                 properties:
                   annotations:
@@ -3104,6 +3116,18 @@ spec:
                     type: string
                   image:
                     type: string
+                  imagePullSecrets:
+                    items:
+                      properties:
+                        name:
+                          default: ""
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
                   nodeSelector:
                     additionalProperties:
                       type: string
@@ -6048,6 +6072,18 @@ spec:
                 type: string
               imagePullPolicy:
                 type: string
+              imagePullSecrets:
+                items:
+                  properties:
+                    name:
+                      default: ""
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
               ingress:
                 properties:
                   annotations:
@@ -7754,6 +7790,18 @@ spec:
                     type: string
                   image:
                     type: string
+                  imagePullSecrets:
+                    items:
+                      properties:
+                        name:
+                          default: ""
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
                   nodeSelector:
                     additionalProperties:
                       type: string

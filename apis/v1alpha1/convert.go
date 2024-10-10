@@ -94,6 +94,7 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 				PodAnnotations:                copy.Spec.PodAnnotations,
 				ServiceAccount:                copy.Spec.ServiceAccount,
 				Image:                         copy.Spec.Image,
+				ImagePullSecrets:              copy.Spec.ImagePullSecrets,
 				ImagePullPolicy:               copy.Spec.ImagePullPolicy,
 				VolumeMounts:                  copy.Spec.VolumeMounts,
 				Ports:                         tov1beta1Ports(copy.Spec.Ports),
@@ -176,6 +177,7 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 		FilterStrategy:     tov1beta1TAFilterStrategy(in.FilterStrategy),
 		ServiceAccount:     in.ServiceAccount,
 		Image:              in.Image,
+		ImagePullSecrets:   in.ImagePullSecrets,
 		Enabled:            in.Enabled,
 		Affinity:           in.Affinity,
 		PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
@@ -326,6 +328,7 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			Mode:                 Mode(copy.Spec.Mode),
 			ServiceAccount:       copy.Spec.ServiceAccount,
 			Image:                copy.Spec.Image,
+			ImagePullSecrets:     copy.Spec.ImagePullSecrets,
 			UpgradeStrategy:      UpgradeStrategy(copy.Spec.UpgradeStrategy),
 			ImagePullPolicy:      copy.Spec.ImagePullPolicy,
 			Config:               configYaml,

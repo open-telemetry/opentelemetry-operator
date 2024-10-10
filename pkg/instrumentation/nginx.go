@@ -209,6 +209,8 @@ mv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR
 				nginxServiceInstanceId,
 			)
 
+		pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, nginxSpec.ImagePullSecrets...)
+
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:    nginxAgentInitContainerName,
 			Image:   nginxSpec.Image,

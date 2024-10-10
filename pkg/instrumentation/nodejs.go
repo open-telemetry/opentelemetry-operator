@@ -70,6 +70,8 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (cor
 				},
 			}})
 
+		pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, nodeJSSpec.ImagePullSecrets...)
+
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      nodejsInitContainerName,
 			Image:     nodeJSSpec.Image,

@@ -88,6 +88,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config) (corev1.
 		}
 	}
 
+	pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, goSpec.ImagePullSecrets...)
 	pod.Spec.Containers = append(pod.Spec.Containers, goAgent)
 	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 		Name: kernelDebugVolumeName,

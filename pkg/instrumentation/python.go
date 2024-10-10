@@ -103,6 +103,8 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 				},
 			}})
 
+		pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, pythonSpec.ImagePullSecrets...)
+
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      pythonInitContainerName,
 			Image:     pythonSpec.Image,

@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -133,6 +134,12 @@ type Java struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
@@ -167,6 +174,12 @@ type NodeJS struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
@@ -187,6 +200,12 @@ type Python struct {
 	// Image is a container image with Python SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
@@ -209,6 +228,12 @@ type DotNet struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
@@ -227,6 +252,12 @@ type Go struct {
 	// Image is a container image with Go SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
@@ -248,6 +279,12 @@ type ApacheHttpd struct {
 	// Image is a container image with Apache SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
@@ -284,6 +321,12 @@ type Nginx struct {
 	// Image is a container image with Nginx SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images.
+	// +optional
+	// +listType=map
+	// +listMapKey=name
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
