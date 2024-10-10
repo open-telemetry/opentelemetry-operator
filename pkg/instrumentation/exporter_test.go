@@ -32,7 +32,7 @@ func TestExporter(t *testing.T) {
 		{
 			name: "ca, crt and key from secret",
 			exporter: v1alpha1.Exporter{
-				Endpoint: "http://collector:4318",
+				Endpoint: "https://collector:4318",
 				TLS: &v1alpha1.TLS{
 					SecretName: "my-certs",
 					CA:         "ca.crt",
@@ -64,7 +64,7 @@ func TestExporter(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://collector:4318",
+									Value: "https://collector:4318",
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_CERTIFICATE",
@@ -87,7 +87,7 @@ func TestExporter(t *testing.T) {
 		{
 			name: "crt and key from secret and ca from configmap",
 			exporter: v1alpha1.Exporter{
-				Endpoint: "http://collector:4318",
+				Endpoint: "https://collector:4318",
 				TLS: &v1alpha1.TLS{
 					SecretName:    "my-certs",
 					ConfigMapName: "ca-bundle",
@@ -135,7 +135,7 @@ func TestExporter(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://collector:4318",
+									Value: "https://collector:4318",
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_CERTIFICATE",
@@ -158,7 +158,7 @@ func TestExporter(t *testing.T) {
 		{
 			name: "ca, crt key absolute paths",
 			exporter: v1alpha1.Exporter{
-				Endpoint: "http://collector:4318",
+				Endpoint: "https://collector:4318",
 				TLS: &v1alpha1.TLS{
 					CA:   "/ca.crt",
 					Cert: "/cert.crt",
@@ -172,7 +172,7 @@ func TestExporter(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
-									Value: "http://collector:4318",
+									Value: "https://collector:4318",
 								},
 								{
 									Name:  "OTEL_EXPORTER_OTLP_CERTIFICATE",
