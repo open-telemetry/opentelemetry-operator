@@ -38,8 +38,6 @@ type PortRetriever interface {
 	GetPortNumOrDefault(logr.Logger, int32) int32
 }
 
-type AddressProvider = func(name string) (address string, port int32)
-
 // PortParser is a function that returns a list of servicePorts given a config of type Config.
 type PortParser[ComponentConfigType any] func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config ComponentConfigType) ([]corev1.ServicePort, error)
 
