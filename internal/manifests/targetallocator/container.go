@@ -24,8 +24,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -126,6 +128,18 @@ func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAl
 				Port: intstr.FromInt(8080),
 			},
 		},
+	}
+
+	if cfg.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+		ports = append(ports, corev1.ContainerPort{
+			Name:          "https",
+			ContainerPort: 8443,
+			Protocol:      corev1.ProtocolTCP,
+		})
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      naming.TAServerCertificate(instance.Name),
+			MountPath: constants.TACollectorTLSDirPath,
+		})
 	}
 
 	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)

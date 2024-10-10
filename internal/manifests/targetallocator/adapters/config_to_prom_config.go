@@ -23,6 +23,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 )
 
+type TAOption func(targetAllocatorCfg map[interface{}]interface{}) error
+
 func errorNoComponent(component string) error {
 	return fmt.Errorf("no %s available as part of the configuration", component)
 }
@@ -257,10 +259,31 @@ func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServi
 	return prometheus, nil
 }
 
+func WithTLSConfig(caFile, certFile, keyFile, taServiceName string) TAOption {
+	return func(targetAllocatorCfg map[interface{}]interface{}) error {
+		if _, exists := targetAllocatorCfg["tls"]; !exists {
+			targetAllocatorCfg["tls"] = make(map[interface{}]interface{})
+		}
+
+		tlsCfg, ok := targetAllocatorCfg["tls"].(map[interface{}]interface{})
+		if !ok {
+			return errorNotAMap("tls")
+		}
+
+		tlsCfg["ca_file"] = caFile
+		tlsCfg["cert_file"] = certFile
+		tlsCfg["key_file"] = keyFile
+
+		targetAllocatorCfg["endpoint"] = fmt.Sprintf("https://%s:443", taServiceName)
+
+		return nil
+	}
+}
+
 // AddTAConfigToPromConfig adds or updates the target_allocator configuration in the Prometheus configuration.
 // If the `EnableTargetAllocatorRewrite` feature flag for the target allocator is enabled, this function
 // removes the existing scrape_configs from the collector's Prometheus configuration as it's not required.
-func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceName string) (map[interface{}]interface{}, error) {
+func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceName string, taOpts ...TAOption) (map[interface{}]interface{}, error) {
 	prometheusConfigProperty, ok := prometheus["config"]
 	if !ok {
 		return nil, errorNoComponent("prometheusConfig")
@@ -284,6 +307,13 @@ func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceNa
 	targetAllocatorCfg["endpoint"] = fmt.Sprintf("http://%s:80", taServiceName)
 	targetAllocatorCfg["interval"] = "30s"
 	targetAllocatorCfg["collector_id"] = "${POD_NAME}"
+
+	for _, opt := range taOpts {
+		err := opt(targetAllocatorCfg)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	// Remove the scrape_configs key from the map
 	delete(prometheusCfg, "scrape_configs")

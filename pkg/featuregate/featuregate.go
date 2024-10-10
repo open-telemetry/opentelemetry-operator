@@ -40,6 +40,13 @@ var (
 		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
 		featuregate.WithRegisterFromVersion("v0.100.0"),
 	)
+	// EnableTargetAllocatorMTLS is the feature gate that enables mTLS between the target allocator and the collector.
+	EnableTargetAllocatorMTLS = featuregate.GlobalRegistry().MustRegister(
+		"operator.targetallocator.mtls",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables mTLS between the target allocator and the collector"),
+		featuregate.WithRegisterFromVersion("v0.111.0"),
+	)
 	// EnableConfigDefaulting is the feature gate that enables the operator to default the endpoint for known components.
 	EnableConfigDefaulting = featuregate.GlobalRegistry().MustRegister(
 		"operator.collector.default.config",

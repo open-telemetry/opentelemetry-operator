@@ -20,14 +20,19 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	colfg "go.opentelemetry.io/collector/featuregate"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -859,4 +864,23 @@ func mustUnmarshalToConfig(t *testing.T, config string) v1beta1.Config {
 		t.Fatal(err)
 	}
 	return cfg
+}
+
+func TestContainerWithCertManagerAvailable(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{}
+
+	cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+
+	flgs := featuregate.Flags(colfg.GlobalRegistry())
+	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
+	require.NoError(t, err)
+
+	// test
+	c := Container(cfg, logger, otelcol, true)
+
+	// verify
+	assert.Contains(t, c.VolumeMounts, corev1.VolumeMount{
+		Name:      naming.TAClientCertificate(""),
+		MountPath: constants.TACollectorTLSDirPath,
+	})
 }

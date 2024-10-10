@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/spf13/pflag"
@@ -50,6 +51,7 @@ import (
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -349,7 +351,16 @@ func main() {
 	} else {
 		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
 	}
+	if cfg.CertManagerAvailability() == certmanager.Available {
+		setupLog.Info("Cert-Manager is available to the operator, adding to scheme.")
+		utilruntime.Must(cmv1.AddToScheme(scheme))
 
+		if featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+			setupLog.Info("Securing the connection between the target allocator and the collector")
+		}
+	} else {
+		setupLog.Info("Cert-Manager is not available to the operator, skipping adding to scheme.")
+	}
 	if cfg.AnnotationsFilter() != nil {
 		for _, basePattern := range cfg.AnnotationsFilter() {
 			_, compileErr := regexp.Compile(basePattern)

@@ -34,6 +34,7 @@ jobs:
          - e2e-upgrade
          - e2e-multi-instrumentation
          - e2e-metadata-filters
+         - e2e-ta-collector-mtls
        include:
          - group: e2e-instrumentation
            setup: "add-instrumentation-params prepare-e2e"
@@ -41,6 +42,8 @@ jobs:
            setup: "add-instrumentation-params prepare-e2e"
          - group: e2e-metadata-filters
            setup: "add-operator-arg OPERATOR_ARG='--annotations-filter=.*filter.out --annotations-filter=config.*.gke.io.* --labels-filter=.*filter.out' prepare-e2e"
+         - group: e2e-ta-collector-mtls
+           setup: "add-operator-arg OPERATOR_ARG='--feature-gates=operator.targetallocator.mtls' add-certmanager-permissions prepare-e2e"
          - group: e2e-automatic-rbac
            setup: "add-rbac-permissions-to-operator prepare-e2e"
     steps:
