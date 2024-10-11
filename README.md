@@ -813,6 +813,7 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes     | Cert-Manager | Prometheus-Operator |
 |------------------------|----------------| ------------ |---------------------|
+| v0.110.0               | v1.23 to v1.31 | v1           | v0.76.0             |
 | v0.109.0               | v1.23 to v1.31 | v1           | v0.76.0             |
 | v0.108.0               | v1.23 to v1.31 | v1           | v0.76.0             |
 | v0.107.0               | v1.23 to v1.30 | v1           | v0.75.0             |
@@ -836,7 +837,6 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 | v0.89.0                | v1.23 to v1.28 | v1           | v0.69.1             |
 | v0.88.0                | v1.23 to v1.28 | v1           | v0.68.0             |
 | v0.87.0                | v1.23 to v1.28 | v1           | v0.68.0             |
-| v0.86.0                | v1.23 to v1.28 | v1           | v0.68.0             |
 
 ## Contributing and Developing
 
@@ -861,12 +861,12 @@ Emeritus Approvers:
 
 Target Allocator Maintainers ([@open-telemetry/operator-ta-maintainers](https://github.com/orgs/open-telemetry/teams/operator-ta-maintainers)):
 
-- [Kristina Pathak](https://github.com/kristinapathak), Lightstep
 - [Sebastian Poxhofer](https://github.com/secustor)
 
 Emeritus Target Allocator Maintainers
 
 - [Anthony Mirabella](https://github.com/Aneurysm9), AWS
+- [Kristina Pathak](https://github.com/kristinapathak), Lightstep
 
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 

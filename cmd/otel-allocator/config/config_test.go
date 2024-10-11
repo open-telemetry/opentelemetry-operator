@@ -64,6 +64,7 @@ func TestLoad(t *testing.T) {
 				},
 				HTTPS: HTTPSServerConfig{
 					Enabled:         true,
+					ListenAddr:      ":8443",
 					CAFilePath:      "/path/to/ca.pem",
 					TLSCertFilePath: "/path/to/cert.pem",
 					TLSKeyFilePath:  "/path/to/key.pem",

@@ -2,6 +2,115 @@
 
 <!-- next version -->
 
+## 0.110.0
+
+### 🛑 Breaking changes 🛑
+
+- `auto-instrumentation`: Enable multi instrumentation by default. (#3090)
+
+  Starting with this release, the OpenTelemetry Operator now enables multi-instrumentation by default.
+  This enhancement allows instrumentation of multiple containers in a pod with language-specific configurations.
+
+  Key Changes:
+    - Single Instrumentation (Default Behavior): If no container names are specified using the
+      `instrumentation.opentelemetry.io/container-names` annotation, instrumentation will be applied to the first container in
+      the pod spec by default. This only applies when single instrumentation injection is configured.
+    - Multi-Container Pods: In scenarios where different containers in a pod use distinct technologies, users must specify the
+      container(s) for instrumentation using language-specific annotations. Without this specification, the default behavior may
+      not work as expected for multi-container environments.
+  
+  Compatibility:
+    - Users already utilizing the `instrumentation.opentelemetry.io/container-names` annotation do not need to take any action.
+      Their existing setup will continue to function as before.
+    - Important: Users who attempt to configure both `instrumentation.opentelemetry.io/container-names` and language-specific annotations
+      (for multi-instrumentation) simultaneously will encounter an error, as this configuration is not supported.
+  
+- `collector`: Remove ComponentUseLocalHostAsDefaultHost collector feature gate. (#3306)
+
+  This change may break setups where receiver endpoints are not explicitly configured to listen on e.g. 0.0.0.0.
+  Change \#3333 attempts to address this issue for a known set of components.
+  The operator performs the adjustment for the following receivers:
+  - otlp
+  - skywalking
+  - jaeger
+  - loki
+  - opencensus
+  - zipkin
+  - tcplog
+  - udplog
+  - fluentforward
+  - statsd
+  - awsxray/UDP
+  - carbon
+  - collectd
+  - sapm
+  - signalfx
+  - splunk_hec
+  - wavefront
+  
+
+### 💡 Enhancements 💡
+
+- `auto-instrumentation, collector`: Add a must gather utility to help troubleshoot (#3149)
+  
+  The new utility is available as part of a new container image.
+  
+  To use the image in a running OpenShift cluster, you need to run the following command:
+  
+  ```sh
+  oc adm must-gather --image=ghcr.io/open-telemetry/opentelemetry-operator/must-gather -- /usr/bin/must-gather --operator-namespace opentelemetry-operator-system
+  ```
+  
+  See the [README](https://github.com/open-telemetry/opentelemetry-operator/blob/main/cmd/gather/README.md) for more details.
+  
+- `collector`: set default address for all parsed receivers (#3126)
+
+  This feature is enabled by default. It can be disabled by specifying
+  `--feature-gates=-operator.collector.default.config`.
+- `operator`: Use 0.0.0.0 as otlp receiver default address (#3126)
+- `collector`: Add flag to disable components when operator runs on FIPS enabled cluster. (#3315)
+  Flag `--fips-disabled-components=receiver.otlp,exporter.otlp,processor.batch,extension.oidc` can be used to disable
+  components when operator runs on FIPS enabled cluster. The operator uses `/proc/sys/crypto/fips_enabled` to check
+  if FIPS is enabled.
+  
+- `collector`: Improves healthcheck parsing capabilities, allowing for future extensions to configure a healthcheck other than the v1 healthcheck extension. (#3184)
+- `auto-instrumentation`: Add support for k8s labels such as app.kubernetes.io/name for resource attributes (#3112)
+  
+  You can opt-in as follows:
+  ```yaml
+  apiVersion: opentelemetry.io/v1alpha1
+  kind: Instrumentation
+  metadata:
+    name: my-instrumentation
+  spec:
+    defaults:
+      useLabelsForResourceAttributes: true
+  ```
+  The following labels are supported:
+    - `app.kubernetes.io/name` becomes `service.name`
+    - `app.kubernetes.io/version` becomes `service.version`
+    - `app.kubernetes.io/part-of` becomes `service.namespace`
+    - `app.kubernetes.io/instance` becomes `service.instance.id`
+  
+
+### 🧰 Bug fixes 🧰
+
+- `auto-instrumentation`: Fix ApacheHttpd, Nginx and SDK injectors to honour their container-names annotations. (#3313)
+  
+  This is a breaking change if anyone is accidentally using the enablement flag with container names for these 3 injectors.
+
+### Components
+
+* [OpenTelemetry Collector - v0.110.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.110.0)
+* [OpenTelemetry Contrib - v0.110.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.110.0)
+* [Java auto-instrumentation - v1.33.5](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.5)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.52.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.52.1)
+* [Python - v0.48b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.48b0)
+* [Go - v0.14.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.14.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.109.0
 
 ### 🚩 Deprecations 🚩

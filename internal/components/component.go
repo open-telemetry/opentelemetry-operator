@@ -49,6 +49,10 @@ type RBACRuleGenerator[ComponentConfigType any] func(logger logr.Logger, config 
 // It's expected that type Config is the configuration used by a parser.
 type ProbeGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) (*corev1.Probe, error)
 
+// Defaulter is a function that applies given defaults to the passed Config.
+// It's expected that type Config is the configuration used by a parser.
+type Defaulter[ComponentConfigType any] func(logger logr.Logger, defaultAddr string, defaultPort int32, config ComponentConfigType) (map[string]interface{}, error)
+
 // ComponentType returns the type for a given component name.
 // components have a name like:
 // - mycomponent/custom
@@ -87,6 +91,10 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 type ParserRetriever func(string) Parser
 
 type Parser interface {
+	// GetDefaultConfig returns a config with set default values.
+	// NOTE: Config merging must be done by the caller if desired.
+	GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error)
+
 	// Ports returns the service ports parsed based on the component's configuration where name is the component's name
 	// of the form "name" or "type/name"
 	Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error)

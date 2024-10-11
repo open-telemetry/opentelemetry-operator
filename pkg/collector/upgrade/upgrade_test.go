@@ -108,7 +108,7 @@ func TestEnvVarUpdates(t *testing.T) {
 			Config: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
 					Object: map[string]interface{}{
-						"prometheus": []interface{}{},
+						"prometheus": nil,
 					},
 				},
 				Exporters: v1beta1.AnyConfig{
@@ -141,7 +141,7 @@ func TestEnvVarUpdates(t *testing.T) {
 	require.Equal(t, collectorInstance.Status.Version, persisted.Status.Version)
 
 	currentV := version.Get()
-	currentV.OpenTelemetryCollector = "0.105.0"
+	currentV.OpenTelemetryCollector = "0.110.0"
 	up := &upgrade.VersionUpgrade{
 		Log:      logger,
 		Version:  currentV,

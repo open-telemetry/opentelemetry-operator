@@ -52,4 +52,9 @@ const (
 	FlagNginx       = "enable-nginx-instrumentation"
 	FlagNodeJS      = "enable-nodejs-instrumentation"
 	FlagJava        = "enable-java-instrumentation"
+
+	TACollectorTLSDirPath      = "/tls"
+	TACollectorCAFileName      = "ca.crt"
+	TACollectorTLSKeyFileName  = "tls.key"
+	TACollectorTLSCertFileName = "tls.crt"
 )

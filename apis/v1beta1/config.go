@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 
+	"dario.cat/mergo"
 	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -225,6 +226,51 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 	return ports, nil
 }
 
+// applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
+func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) error {
+	enabledComponents := c.GetEnabledComponents()
+	for _, componentKind := range componentKinds {
+		var retriever components.ParserRetriever
+		var cfg AnyConfig
+		switch componentKind {
+		case KindReceiver:
+			retriever = receivers.ReceiverFor
+			cfg = c.Receivers
+		case KindExporter:
+			continue
+		case KindProcessor:
+			continue
+		case KindExtension:
+			continue
+		}
+		for componentName := range enabledComponents[componentKind] {
+			parser := retriever(componentName)
+			componentConf := cfg.Object[componentName]
+			newCfg, err := parser.GetDefaultConfig(logger, componentConf)
+			if err != nil {
+				return err
+			}
+
+			// We need to ensure we don't remove any fields in defaulting.
+			mappedCfg, ok := newCfg.(map[string]interface{})
+			if !ok || mappedCfg == nil {
+				logger.V(1).Info("returned default configuration invalid",
+					"warn", "could not apply component defaults",
+					"component", componentName,
+				)
+				continue
+			}
+
+			if err := mergo.Merge(&mappedCfg, componentConf); err != nil {
+				return err
+			}
+			cfg.Object[componentName] = mappedCfg
+		}
+	}
+
+	return nil
+}
+
 func (c *Config) GetReceiverPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
 	return c.getPortsForComponentKinds(logger, KindReceiver)
 }
@@ -239,6 +285,10 @@ func (c *Config) GetAllPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
 
 func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error) {
 	return c.getRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor)
+}
+
+func (c *Config) ApplyDefaults(logger logr.Logger) error {
+	return c.applyDefaultForComponentKinds(logger, KindReceiver)
 }
 
 // GetLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled

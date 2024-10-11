@@ -56,7 +56,7 @@ func Test0_104_0Upgrade(t *testing.T) {
 		t.Errorf("expect err: nil but got: %v", err)
 	}
 	assert.EqualValues(t,
-		map[string]string{"feature-gates": "-component.UseLocalHostAsDefaultHost"},
+		map[string]string{},
 		col.Spec.Args, "missing featuregate")
 }
 
