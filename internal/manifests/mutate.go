@@ -185,10 +185,6 @@ func mergeWithOverride(dst, src interface{}) error {
 	return mergo.Merge(dst, src, mergo.WithOverride)
 }
 
-func mergeWithOverwriteWithEmptyValue(dst, src interface{}) error {
-	return mergo.Merge(dst, src, mergo.WithOverwriteWithEmptyValue)
-}
-
 func mutateSecret(existing, desired *corev1.Secret) {
 	existing.Labels = desired.Labels
 	existing.Annotations = desired.Annotations
@@ -283,10 +279,7 @@ func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
 
 	existing.Spec.MinReadySeconds = desired.Spec.MinReadySeconds
 	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
-
-	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.UpdateStrategy, desired.Spec.UpdateStrategy); err != nil {
-		return err
-	}
+	existing.Spec.UpdateStrategy = desired.Spec.UpdateStrategy
 
 	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
 		return err
@@ -310,10 +303,7 @@ func mutateDeployment(existing, desired *appsv1.Deployment) error {
 	existing.Spec.ProgressDeadlineSeconds = desired.Spec.ProgressDeadlineSeconds
 	existing.Spec.Replicas = desired.Spec.Replicas
 	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
-
-	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Strategy, desired.Spec.Strategy); err != nil {
-		return err
-	}
+	existing.Spec.Strategy = desired.Spec.Strategy
 
 	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
 		return err
@@ -342,14 +332,8 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 	existing.Spec.Replicas = desired.Spec.Replicas
 	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
 	existing.Spec.ServiceName = desired.Spec.ServiceName
-
-	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.UpdateStrategy, desired.Spec.UpdateStrategy); err != nil {
-		return err
-	}
-
-	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.VolumeClaimTemplates, desired.Spec.VolumeClaimTemplates); err != nil {
-		return err
-	}
+	existing.Spec.UpdateStrategy = desired.Spec.UpdateStrategy
+	existing.Spec.VolumeClaimTemplates = desired.Spec.VolumeClaimTemplates
 
 	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
 		return err
@@ -367,9 +351,7 @@ func mutatePodTemplate(existing, desired *corev1.PodTemplateSpec) error {
 		return err
 	}
 
-	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec, desired.Spec); err != nil {
-		return err
-	}
+	existing.Spec = desired.Spec
 
 	return nil
 
