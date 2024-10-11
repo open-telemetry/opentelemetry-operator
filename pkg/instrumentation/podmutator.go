@@ -396,7 +396,8 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 
-	if err = pm.validateInstrumentations(ctx, insts, pod.Namespace); err != nil {
+	if err = pm.validateInstrumentations(ctx, insts, ns.Name); err != nil {
+		logger.Error(err, "failed to validate instrumentations")
 		return pod, err
 	}
 

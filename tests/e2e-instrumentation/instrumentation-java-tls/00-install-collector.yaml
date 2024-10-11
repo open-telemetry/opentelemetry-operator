@@ -34,7 +34,7 @@ spec:
     processors:
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
