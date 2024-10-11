@@ -180,3 +180,38 @@ func TargetAllocatorServiceMonitor(otelcol string) string {
 func OpAMPBridgeServiceAccount(opampBridge string) string {
 	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge))
 }
+
+// SelfSignedIssuer returns the SelfSigned Issuer name based on the instance.
+func SelfSignedIssuer(otelcol string) string {
+	return DNSName(Truncate("%s-self-signed-issuer", 63, otelcol))
+}
+
+// CAIssuer returns the CA Issuer name based on the instance.
+func CAIssuer(otelcol string) string {
+	return DNSName(Truncate("%s-ca-issuer", 63, otelcol))
+}
+
+// CACertificateSecret returns the Secret name based on the instance.
+func CACertificate(otelcol string) string {
+	return DNSName(Truncate("%s-ca-cert", 63, otelcol))
+}
+
+// TAServerCertificate returns the Certificate name based on the instance.
+func TAServerCertificate(otelcol string) string {
+	return DNSName(Truncate("%s-ta-server-cert", 63, otelcol))
+}
+
+// TAServerCertificateSecretName returns the Secret name based on the instance.
+func TAServerCertificateSecretName(otelcol string) string {
+	return DNSName(Truncate("%s-ta-server-cert", 63, otelcol))
+}
+
+// TAClientCertificate returns the Certificate name based on the instance.
+func TAClientCertificate(otelcol string) string {
+	return DNSName(Truncate("%s-ta-client-cert", 63, otelcol))
+}
+
+// TAClientCertificateSecretName returns the Secret name based on the instance.
+func TAClientCertificateSecretName(otelcol string) string {
+	return DNSName(Truncate("%s-ta-client-cert", 63, otelcol))
+}

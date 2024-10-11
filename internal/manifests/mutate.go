@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	"dario.cat/mergo"
+	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -165,6 +166,16 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 			pr := existing.(*corev1.Secret)
 			wantPr := desired.(*corev1.Secret)
 			mutateSecret(pr, wantPr)
+
+		case *cmv1.Certificate:
+			cert := existing.(*cmv1.Certificate)
+			wantCert := desired.(*cmv1.Certificate)
+			mutateCertificate(cert, wantCert)
+
+		case *cmv1.Issuer:
+			issuer := existing.(*cmv1.Issuer)
+			wantIssuer := desired.(*cmv1.Issuer)
+			mutateIssuer(issuer, wantIssuer)
 
 		default:
 			t := reflect.TypeOf(existing).String()
@@ -328,6 +339,18 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 		return err
 	}
 	return nil
+}
+
+func mutateCertificate(existing, desired *cmv1.Certificate) {
+	existing.Annotations = desired.Annotations
+	existing.Labels = desired.Labels
+	existing.Spec = desired.Spec
+}
+
+func mutateIssuer(existing, desired *cmv1.Issuer) {
+	existing.Annotations = desired.Annotations
+	existing.Labels = desired.Labels
+	existing.Spec = desired.Spec
 }
 
 func hasImmutableFieldChange(existing, desired *appsv1.StatefulSet) (bool, string) {
