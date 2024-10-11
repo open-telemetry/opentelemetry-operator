@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -395,6 +396,11 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, err
 	}
 
+	if err = pm.validateInstrumentations(ctx, insts, ns.Name); err != nil {
+		logger.Error(err, "failed to validate instrumentations")
+		return pod, err
+	}
+
 	// We retrieve the annotation for podname
 	if pm.config.EnableMultiInstrumentation() {
 		err = insts.setLanguageSpecificContainers(ns.ObjectMeta, pod.ObjectMeta)
@@ -459,4 +465,56 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 	default:
 		return &otelInsts.Items[0], nil
 	}
+}
+
+func (pm *instPodMutator) validateInstrumentations(ctx context.Context, inst languageInstrumentations, podNamespace string) error {
+	instrumentations := []struct {
+		instrumentation *v1alpha1.Instrumentation
+	}{
+		{inst.Java.Instrumentation},
+		{inst.Python.Instrumentation},
+		{inst.NodeJS.Instrumentation},
+		{inst.DotNet.Instrumentation},
+		{inst.Go.Instrumentation},
+		{inst.ApacheHttpd.Instrumentation},
+		{inst.Nginx.Instrumentation},
+		{inst.Sdk.Instrumentation},
+	}
+	var errs []error
+	for _, i := range instrumentations {
+		if i.instrumentation != nil {
+			if err := pm.validateInstrumentation(ctx, i.instrumentation, podNamespace); err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
+}
+
+func (pm *instPodMutator) validateInstrumentation(ctx context.Context, inst *v1alpha1.Instrumentation, podNamespace string) error {
+	// Check if secret and configmap exists
+	// If they don't exist pod cannot start
+	var errs []error
+	if inst.Spec.Exporter.TLS != nil {
+		if inst.Spec.Exporter.TLS.SecretName != "" {
+			nsn := types.NamespacedName{Name: inst.Spec.Exporter.TLS.SecretName, Namespace: podNamespace}
+			if err := pm.Client.Get(ctx, nsn, &corev1.Secret{}); apierrors.IsNotFound(err) {
+				errs = append(errs, fmt.Errorf("secret %s with certificates does not exists: %w", nsn.String(), err))
+			}
+		}
+		if inst.Spec.Exporter.TLS.ConfigMapName != "" {
+			nsn := types.NamespacedName{Name: inst.Spec.Exporter.TLS.ConfigMapName, Namespace: podNamespace}
+			if err := pm.Client.Get(ctx, nsn, &corev1.ConfigMap{}); apierrors.IsNotFound(err) {
+				errs = append(errs, fmt.Errorf("configmap %s with CA certificate does not exists: %w", nsn.String(), err))
+			}
+		}
+	}
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
 }
