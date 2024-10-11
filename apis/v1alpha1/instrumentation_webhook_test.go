@@ -114,7 +114,7 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 			},
 		},
 		{
-			name: "tls cert set but missing key",
+			name: "exporter: tls cert set but missing key",
 			inst: Instrumentation{
 				Spec: InstrumentationSpec{
 					Sampler: Sampler{
@@ -122,6 +122,7 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 						Argument: "0.99",
 					},
 					Exporter: Exporter{
+						Endpoint: "https://collector:4317",
 						TLS: &TLS{
 							Cert: "cert",
 						},
@@ -131,7 +132,7 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 			warnings: []string{"both exporter.tls.key and exporter.tls.cert mut be set"},
 		},
 		{
-			name: "tls key set but missing cert",
+			name: "exporter: tls key set but missing cert",
 			inst: Instrumentation{
 				Spec: InstrumentationSpec{
 					Sampler: Sampler{
@@ -139,6 +140,7 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 						Argument: "0.99",
 					},
 					Exporter: Exporter{
+						Endpoint: "https://collector:4317",
 						TLS: &TLS{
 							Key: "key",
 						},
@@ -148,7 +150,7 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 			warnings: []string{"both exporter.tls.key and exporter.tls.cert mut be set"},
 		},
 		{
-			name: "no warning set",
+			name: "exporter: tls set but using http://",
 			inst: Instrumentation{
 				Spec: InstrumentationSpec{
 					Sampler: Sampler{
@@ -156,6 +158,41 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 						Argument: "0.99",
 					},
 					Exporter: Exporter{
+						Endpoint: "http://collector:4317",
+						TLS: &TLS{
+							Key:  "key",
+							Cert: "cert",
+						},
+					},
+				},
+			},
+			warnings: []string{"exporter.tls is configured but exporter.endpoint is not enabling TLS with https://"},
+		},
+		{
+			name: "exporter: exporter using http://, but the tls is nil",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
+						Argument: "0.99",
+					},
+					Exporter: Exporter{
+						Endpoint: "https://collector:4317",
+					},
+				},
+			},
+			warnings: []string{"exporter is using https:// but exporter.tls is unset"},
+		},
+		{
+			name: "exporter no warning set",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
+						Argument: "0.99",
+					},
+					Exporter: Exporter{
+						Endpoint: "https://collector:4317",
 						TLS: &TLS{
 							Key:  "key",
 							Cert: "cert",
