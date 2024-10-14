@@ -1,0 +1,23 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: stateful
+spec:
+  mode: statefulset
+  replicas: 3
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: "Retain"
+    whenScaled: "Delete"
+  config: 
+    receivers:
+      jaeger:
+        protocols:
+          grpc: {}
+    processors:
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          exporters: [debug]
