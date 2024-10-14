@@ -18,9 +18,6 @@ spec:
       resources:
         requests:
           storage: 1Gi
-  persistentVolumeClaimRetentionPolicy:
-    whenDeleted: "Retain"
-    whenScaled: "Delete"
   config: |
     receivers:
       jaeger:

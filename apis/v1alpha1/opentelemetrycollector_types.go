@@ -199,11 +199,6 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	// +listType=atomic
 	VolumeClaimTemplates []v1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
-	// PersistentVolumeClaimRetentionPolicy describes the lifecycle of persistent volume claims
-	// created from volumeClaimTemplates.
-	// This only works with the following OpenTelemetryCollector mode's: statefulset.
-	// +optional
-	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
 	// Toleration to schedule OpenTelemetry Collector pods.
 	// This is only relevant to daemonset, statefulset, and deployment mode
 	// +optional
