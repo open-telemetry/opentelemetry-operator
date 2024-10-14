@@ -215,6 +215,10 @@ func Test_tov1beta1AndBack(t *testing.T) {
 					},
 				},
 			},
+			PersistentVolumeClaimRetentionPolicy: &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
+				WhenDeleted: appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
+				WhenScaled:  appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+			},
 			Tolerations: []v1.Toleration{
 				{
 					Key:      "11",

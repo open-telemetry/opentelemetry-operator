@@ -20,6 +20,7 @@ package v1alpha1
 
 import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2"
 	"k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -908,6 +909,11 @@ func (in *OpenTelemetryCollectorSpec) DeepCopyInto(out *OpenTelemetryCollectorSp
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
+	}
+	if in.PersistentVolumeClaimRetentionPolicy != nil {
+		in, out := &in.PersistentVolumeClaimRetentionPolicy, &out.PersistentVolumeClaimRetentionPolicy
+		*out = new(appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy)
+		**out = **in
 	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations

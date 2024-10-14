@@ -4,6 +4,9 @@ metadata:
   name: stateful-collector
 spec:
   podManagementPolicy: Parallel
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: "Retain"
+    whenScaled: "Delete"
   template:
     spec:
        containers:
