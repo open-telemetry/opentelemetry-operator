@@ -17,6 +17,7 @@ package sidecar
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -75,37 +76,28 @@ func remove(pod corev1.Pod) corev1.Pod {
 		return pod
 	}
 
-	var containers []corev1.Container
-	for _, container := range pod.Spec.Containers {
-		if container.Name != naming.Container() {
-			containers = append(containers, container)
-		}
-	}
-	pod.Spec.Containers = containers
+	fn := func(c corev1.Container) bool { return c.Name == naming.Container() }
+	pod.Spec.Containers = slices.DeleteFunc(pod.Spec.Containers, fn)
 
-	// NOTE: we also remove init containers (native sidecars) since k8s 1.28.
-	// This should have no side effects.
-	var initContainers []corev1.Container
-	for _, initContainer := range pod.Spec.InitContainers {
-		if initContainer.Name != naming.Container() {
-			initContainers = append(initContainers, initContainer)
-		}
+	if featuregate.EnableNativeSidecarContainers.IsEnabled() {
+		// NOTE: we also remove init containers (native sidecars) since k8s 1.28.
+		// This should have no side effects.
+		pod.Spec.InitContainers = slices.DeleteFunc(pod.Spec.InitContainers, fn)
 	}
-	pod.Spec.InitContainers = initContainers
 	return pod
 }
 
 // existsIn checks whether a sidecar container exists in the given pod.
 func existsIn(pod corev1.Pod) bool {
-	for _, container := range pod.Spec.Containers {
-		if container.Name == naming.Container() {
-			return true
-		}
+	fn := func(c corev1.Container) bool { return c.Name == naming.Container() }
+	if slices.ContainsFunc(pod.Spec.Containers, fn) {
+		return true
 	}
-	// NOTE: we also check init containers (native sidecars) since k8s 1.28.
-	// This should have no side effects.
-	for _, container := range pod.Spec.InitContainers {
-		if container.Name == naming.Container() {
+
+	if featuregate.EnableNativeSidecarContainers.IsEnabled() {
+		// NOTE: we also check init containers (native sidecars) since k8s 1.28.
+		// This should have no side effects.
+		if slices.ContainsFunc(pod.Spec.InitContainers, fn) {
 			return true
 		}
 	}

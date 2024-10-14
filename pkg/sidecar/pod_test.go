@@ -269,6 +269,8 @@ func TestRemoveNonExistingSidecar(t *testing.T) {
 }
 
 func TestExistsIn(t *testing.T) {
+	sidecarFeatureGate(t)
+
 	for _, tt := range []struct {
 		desc     string
 		pod      corev1.Pod
