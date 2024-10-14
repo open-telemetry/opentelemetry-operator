@@ -55,7 +55,7 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, whee
 	case wheelKindMuslLinux:
 		autoInstrumentationSrc = muslLinuxAutoInstrumentationSrc
 	default:
-		return pod, fmt.Errorf("provided instrumentation.opentelemetry.io/python-wheel-kind annotation value '%s' is not supported", wheelKind)
+		return pod, fmt.Errorf("provided instrumentation.opentelemetry.io/otel-python-wheel-kind annotation value '%s' is not supported", wheelKind)
 	}
 
 	// inject Python instrumentation spec env vars.

@@ -672,7 +672,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("provided instrumentation.opentelemetry.io/python-wheel-kind annotation value 'not supported' is not supported"),
+			err: fmt.Errorf("provided instrumentation.opentelemetry.io/otel-python-wheel-kind annotation value 'not supported' is not supported"),
 		},
 	}
 
