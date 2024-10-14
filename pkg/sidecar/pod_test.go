@@ -32,7 +32,7 @@ import (
 
 var logger = logf.Log.WithName("unit-tests")
 
-func sidecarFeatureGate(t *testing.T) {
+func enableSidecarFeatureGate(t *testing.T) {
 	originalVal := featuregate.EnableNativeSidecarContainers.IsEnabled()
 	t.Logf("original is: %+v", originalVal)
 	require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNativeSidecarContainers.ID(), true))
@@ -42,7 +42,7 @@ func sidecarFeatureGate(t *testing.T) {
 }
 
 func TestAddNativeSidecar(t *testing.T) {
-	sidecarFeatureGate(t)
+	enableSidecarFeatureGate(t)
 	// prepare
 	pod := corev1.Pod{
 		Spec: corev1.PodSpec{
@@ -269,7 +269,7 @@ func TestRemoveNonExistingSidecar(t *testing.T) {
 }
 
 func TestExistsIn(t *testing.T) {
-	sidecarFeatureGate(t)
+	enableSidecarFeatureGate(t)
 
 	for _, tt := range []struct {
 		desc     string

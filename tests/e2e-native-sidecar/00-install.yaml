@@ -35,7 +35,7 @@ metadata:
 spec:
   containers:
   - name: myapp
-    image: jaegertracing/vertx-create-span:operator-e2e-tests
+    image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
     ports:
       - containerPort: 8080
         protocol: TCP
