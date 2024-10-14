@@ -1,9 +1,0 @@
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: stateful-collector
-spec:
-  podManagementPolicy: Parallel
-  persistentVolumeClaimRetentionPolicy:
-    whenDeleted: "Retain"
-    whenScaled: "Delete"
