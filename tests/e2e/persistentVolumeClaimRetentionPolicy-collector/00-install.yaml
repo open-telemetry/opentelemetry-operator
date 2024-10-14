@@ -13,7 +13,7 @@ spec:
       jaeger:
         protocols:
           grpc: {}
-    processors:
+    processors: {}
     exporters:
       debug: {}
     service:
