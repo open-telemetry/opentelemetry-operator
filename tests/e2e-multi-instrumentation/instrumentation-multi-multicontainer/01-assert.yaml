@@ -185,6 +185,8 @@ spec:
       value: otlp
     - name: OTEL_METRICS_EXPORTER
       value: otlp
+    - name: OTEL_LOGS_EXPORTER
+      value: otlp
     - name: OTEL_TRACES_SAMPLER
       value: parentbased_traceidratio
     - name: OTEL_TRACES_SAMPLER_ARG
