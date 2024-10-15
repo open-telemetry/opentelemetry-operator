@@ -28,18 +28,18 @@ const (
 	envOtelMetricsExporter          = "OTEL_METRICS_EXPORTER"
 	envOtelLogsExporter             = "OTEL_LOGS_EXPORTER"
 	envOtelExporterOTLPProtocol     = "OTEL_EXPORTER_OTLP_PROTOCOL"
-	manyLinuxAutoInstrumentationSrc = "/autoinstrumentation/."
+	glibcLinuxAutoInstrumentationSrc = "/autoinstrumentation/."
 	muslLinuxAutoInstrumentationSrc = "/autoinstrumentation-musl/."
 	pythonPathPrefix                = "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation"
 	pythonPathSuffix                = "/otel-auto-instrumentation-python"
 	pythonInstrMountPath            = "/otel-auto-instrumentation-python"
 	pythonVolumeName                = volumeName + "-python"
 	pythonInitContainerName         = initContainerName + "-python"
-	wheelKindManyLinux              = "manylinux"
-	wheelKindMuslLinux              = "musllinux"
+	glibcLinux                      = "glibc"
+	muslLinux	                = "musl"
 )
 
-func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, wheelKind string) (corev1.Pod, error) {
+func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, platform string) (corev1.Pod, error) {
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
@@ -49,13 +49,13 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, whee
 	}
 
 	autoInstrumentationSrc := ""
-	switch wheelKind {
-	case "", wheelKindManyLinux:
-		autoInstrumentationSrc = manyLinuxAutoInstrumentationSrc
-	case wheelKindMuslLinux:
+	switch platform {
+	case "", glibcLinux:
+		autoInstrumentationSrc = glibcLinuxAutoInstrumentationSrc
+	case muslLinux:
 		autoInstrumentationSrc = muslLinuxAutoInstrumentationSrc
 	default:
-		return pod, fmt.Errorf("provided instrumentation.opentelemetry.io/otel-python-wheel-kind annotation value '%s' is not supported", wheelKind)
+		return pod, fmt.Errorf("provided instrumentation.opentelemetry.io/otel-python-platform annotation value '%s' is not supported", platform)
 	}
 
 	// inject Python instrumentation spec env vars.

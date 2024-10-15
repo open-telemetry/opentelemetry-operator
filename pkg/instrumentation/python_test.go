@@ -29,7 +29,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		name string
 		v1alpha1.Python
 		pod       corev1.Pod
-		wheelKind string
+		platform string
 		expected  corev1.Pod
 		err       error
 	}{
@@ -43,7 +43,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			wheelKind: "manylinux",
+			platform: "glibc",
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
@@ -120,7 +120,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			wheelKind: "manylinux",
+			platform: "glibc",
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
@@ -198,7 +198,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			wheelKind: "manylinux",
+			platform: "glibc",
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
@@ -275,7 +275,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			wheelKind: "manylinux",
+			platform: "glibc",
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
@@ -428,7 +428,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			wheelKind: "manylinux",
+			platform: "glibc",
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
@@ -505,7 +505,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			wheelKind: "manylinux",
+			platform: "glibc",
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -523,7 +523,7 @@ func TestInjectPythonSDK(t *testing.T) {
 			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envPythonPath),
 		},
 		{
-			name:   "musllinux wheelKind defined",
+			name:   "musl platform defined",
 			Python: v1alpha1.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
@@ -532,7 +532,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			wheelKind: "musllinux",
+			platform: "musl",
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
@@ -589,7 +589,7 @@ func TestInjectPythonSDK(t *testing.T) {
 			err: nil,
 		},
 		{
-			name:   "wheelKind not defined",
+			name: "platform not defined",
 			Python: v1alpha1.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
@@ -598,7 +598,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			wheelKind: "",
+			platform: "",
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
@@ -655,7 +655,7 @@ func TestInjectPythonSDK(t *testing.T) {
 			err: nil,
 		},
 		{
-			name:   "wheelKind not supported",
+			name: "platform not supported",
 			Python: v1alpha1.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
@@ -664,7 +664,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			wheelKind: "not supported",
+			platform: "not-supported",
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -672,13 +672,13 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("provided instrumentation.opentelemetry.io/otel-python-wheel-kind annotation value 'not supported' is not supported"),
+			err: fmt.Errorf("provided instrumentation.opentelemetry.io/otel-python-platform annotation value 'not-supported' is not supported"),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectPythonSDK(test.Python, test.pod, 0, test.wheelKind)
+			pod, err := injectPythonSDK(test.Python, test.pod, 0, test.platform)
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})
