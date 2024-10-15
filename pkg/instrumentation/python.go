@@ -23,19 +23,19 @@ import (
 )
 
 const (
-	envPythonPath                   = "PYTHONPATH"
-	envOtelTracesExporter           = "OTEL_TRACES_EXPORTER"
-	envOtelMetricsExporter          = "OTEL_METRICS_EXPORTER"
-	envOtelExporterOTLPProtocol     = "OTEL_EXPORTER_OTLP_PROTOCOL"
+	envPythonPath                    = "PYTHONPATH"
+	envOtelTracesExporter            = "OTEL_TRACES_EXPORTER"
+	envOtelMetricsExporter           = "OTEL_METRICS_EXPORTER"
+	envOtelExporterOTLPProtocol      = "OTEL_EXPORTER_OTLP_PROTOCOL"
 	glibcLinuxAutoInstrumentationSrc = "/autoinstrumentation/."
-	muslLinuxAutoInstrumentationSrc = "/autoinstrumentation-musl/."
-	pythonPathPrefix                = "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation"
-	pythonPathSuffix                = "/otel-auto-instrumentation-python"
-	pythonInstrMountPath            = "/otel-auto-instrumentation-python"
-	pythonVolumeName                = volumeName + "-python"
-	pythonInitContainerName         = initContainerName + "-python"
-	glibcLinux                      = "glibc"
-	muslLinux	                = "musl"
+	muslLinuxAutoInstrumentationSrc  = "/autoinstrumentation-musl/."
+	pythonPathPrefix                 = "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation"
+	pythonPathSuffix                 = "/otel-auto-instrumentation-python"
+	pythonInstrMountPath             = "/otel-auto-instrumentation-python"
+	pythonVolumeName                 = volumeName + "-python"
+	pythonInitContainerName          = initContainerName + "-python"
+	glibcLinux                       = "glibc"
+	muslLinux                        = "musl"
 )
 
 func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, platform string) (corev1.Pod, error) {
