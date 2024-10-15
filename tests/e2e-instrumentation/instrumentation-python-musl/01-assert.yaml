@@ -4,7 +4,7 @@ metadata:
   annotations:
     instrumentation.opentelemetry.io/inject-python: "true"
     sidecar.opentelemetry.io/inject: "true"
-    instrumentation.opentelemetry.io/otel-python-wheel-kind: "musllinux"
+    instrumentation.opentelemetry.io/otel-python-platform: "musl"
   labels:
     app: my-python-musl
 spec:
@@ -60,7 +60,6 @@ spec:
     - mountPath: /otel-auto-instrumentation-python
       name: opentelemetry-auto-instrumentation-python
   - args:
-    - --feature-gates=-component.UseLocalHostAsDefaultHost
     - --config=env:OTEL_CONFIG
     name: otc-container
   initContainers:

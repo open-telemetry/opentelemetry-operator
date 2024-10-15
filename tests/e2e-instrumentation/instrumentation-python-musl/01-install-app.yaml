@@ -14,7 +14,7 @@ spec:
       annotations:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-python: "true"
-        instrumentation.opentelemetry.io/otel-python-wheel-kind: "musllinux"
+        instrumentation.opentelemetry.io/otel-python-platform: "musl"
     spec:
       securityContext:
         runAsUser: 1000
