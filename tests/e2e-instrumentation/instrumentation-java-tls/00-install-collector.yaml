@@ -1,0 +1,43 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+spec:
+  volumeMounts:
+    - name: certs
+      mountPath: /certs
+    - name: certs-ca
+      mountPath: /certs-ca
+  volumes:
+    - name: certs
+      secret:
+        secretName: server-certs
+    - name: certs-ca
+      configMap:
+        name: ca
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+            tls:
+              cert_file: /certs/tls.crt
+              key_file: /certs/tls.key
+              client_ca_file: /certs-ca/ca.crt
+          http:
+            endpoint: 0.0.0.0:4318
+            tls:
+              cert_file: /certs/tls.crt
+              key_file: /certs/tls.key
+              client_ca_file: /certs-ca/ca.crt
+    processors:
+
+    exporters:
+      debug: {}
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]

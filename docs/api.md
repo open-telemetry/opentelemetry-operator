@@ -1625,7 +1625,80 @@ Exporter defines exporter configuration.
         <td><b>endpoint</b></td>
         <td>string</td>
         <td>
-          Endpoint is address of the collector with OTLP endpoint.<br/>
+          Endpoint is address of the collector with OTLP endpoint.
+If the endpoint defines https:// scheme TLS has to be specified.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecexportertls">tls</a></b></td>
+        <td>object</td>
+        <td>
+          TLS defines certificates for TLS.
+TLS needs to be enabled by specifying https:// scheme in the Endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.exporter.tls
+<sup><sup>[↩ Parent](#instrumentationspecexporter)</sup></sup>
+
+
+
+TLS defines certificates for TLS.
+TLS needs to be enabled by specifying https:// scheme in the Endpoint.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>ca</b></td>
+        <td>string</td>
+        <td>
+          CA defines the key of certificate (e.g. ca.crt) in the configmap map, secret or absolute path to a certificate.
+The absolute path can be used when certificate is already present on the workload filesystem e.g.
+/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>cert</b></td>
+        <td>string</td>
+        <td>
+          Cert defines the key (e.g. tls.crt) of the client certificate in the secret or absolute path to a certificate.
+The absolute path can be used when certificate is already present on the workload filesystem.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>configMapName</b></td>
+        <td>string</td>
+        <td>
+          ConfigMapName defines configmap name with CA certificate. If it is not defined CA certificate will be
+used from the secret defined in SecretName.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key defines a key (e.g. tls.key) of the private key in the secret or absolute path to a certificate.
+The absolute path can be used when certificate is already present on the workload filesystem.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName defines secret name that will be used to configure TLS on the exporter.
+It is user responsibility to create the secret in the namespace of the workload.
+The secret must contain client certificate (Cert) and private key (Key).
+The CA certificate might be defined in the secret or in the config map.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

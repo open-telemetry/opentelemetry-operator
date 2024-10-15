@@ -407,6 +407,19 @@ spec:
                 properties:
                   endpoint:
                     type: string
+                  tls:
+                    properties:
+                      ca:
+                        type: string
+                      cert:
+                        type: string
+                      configMapName:
+                        type: string
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    type: object
                 type: object
               go:
                 properties:

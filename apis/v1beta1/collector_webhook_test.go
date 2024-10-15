@@ -17,6 +17,7 @@ package v1beta1_test
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"testing"
 
@@ -582,6 +583,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	one := int32(1)
 	three := int32(3)
 	five := int32(5)
+	maxInt := int32(math.MaxInt32)
 
 	cfg := v1beta1.Config{}
 	err := yaml.Unmarshal([]byte(cfgYaml), &cfg)
@@ -913,36 +915,68 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "minReplicas should be one or more",
 		},
 		{
-			name: "invalid autoscaler scale down",
+			name: "invalid autoscaler scale down stablization window - <0",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Autoscaler: &v1beta1.AutoscalerSpec{
 						MaxReplicas: &three,
 						Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
 							ScaleDown: &autoscalingv2.HPAScalingRules{
-								StabilizationWindowSeconds: &zero,
+								StabilizationWindowSeconds: &minusOne,
 							},
 						},
 					},
 				},
 			},
-			expectedErr: "scaleDown should be one or more",
+			expectedErr: "scaleDown.stabilizationWindowSeconds should be >=0 and <=3600",
 		},
 		{
-			name: "invalid autoscaler scale up",
+			name: "invalid autoscaler scale down stablization window - >3600",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Autoscaler: &v1beta1.AutoscalerSpec{
+						MaxReplicas: &three,
+						Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+							ScaleDown: &autoscalingv2.HPAScalingRules{
+								StabilizationWindowSeconds: &maxInt,
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "scaleDown.stabilizationWindowSeconds should be >=0 and <=3600",
+		},
+		{
+			name: "invalid autoscaler scale up stablization window - <0",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Autoscaler: &v1beta1.AutoscalerSpec{
 						MaxReplicas: &three,
 						Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
 							ScaleUp: &autoscalingv2.HPAScalingRules{
-								StabilizationWindowSeconds: &zero,
+								StabilizationWindowSeconds: &minusOne,
 							},
 						},
 					},
 				},
 			},
-			expectedErr: "scaleUp should be one or more",
+			expectedErr: "scaleUp.stabilizationWindowSeconds should be >=0 and <=3600",
+		},
+		{
+			name: "invalid autoscaler scale up stablization window - >3600",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Autoscaler: &v1beta1.AutoscalerSpec{
+						MaxReplicas: &three,
+						Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+							ScaleUp: &autoscalingv2.HPAScalingRules{
+								StabilizationWindowSeconds: &maxInt,
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "scaleUp.stabilizationWindowSeconds should be >=0 and <=3600",
 		},
 		{
 			name: "invalid autoscaler target cpu utilization",

@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/inject-java: "true"
+  labels:
+    app: my-java
+spec:
+  containers:
+  - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
+    - name: JAVA_TOOL_OPTIONS
+      value: ' -javaagent:/otel-auto-instrumentation-java/javaagent.jar'
+    - name: OTEL_SERVICE_NAME
+      value: my-java
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: https://simplest-collector:4317
+    - name: OTEL_EXPORTER_OTLP_CERTIFICATE
+      value: /otel-auto-instrumentation-configmap-ca/ca.crt
+    - name: OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE
+      value: /otel-auto-instrumentation-secret-client-certs/tls.crt
+    - name: OTEL_EXPORTER_OTLP_CLIENT_KEY
+      value: /otel-auto-instrumentation-secret-client-certs/tls.key
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: OTEL_PROPAGATORS
+      value: tracecontext,baggage
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "1"
+    - name: OTEL_RESOURCE_ATTRIBUTES
+    name: myapp
+    volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        readOnly: true
+      - mountPath: /otel-auto-instrumentation-java
+        name: opentelemetry-auto-instrumentation-java
+      - mountPath: /otel-auto-instrumentation-secret-client-certs
+        name: otel-auto-secret-client-certs
+        readOnly: true
+      - mountPath: /otel-auto-instrumentation-configmap-ca
+        name: otel-auto-configmap-ca
+        readOnly: true
+  initContainers:
+  - name: opentelemetry-auto-instrumentation-java
+status:
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
+  initContainerStatuses:
+  - name: opentelemetry-auto-instrumentation-java
+    ready: true
+  phase: Running

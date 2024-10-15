@@ -97,8 +97,37 @@ type Resource struct {
 // Exporter defines OTLP exporter configuration.
 type Exporter struct {
 	// Endpoint is address of the collector with OTLP endpoint.
+	// If the endpoint defines https:// scheme TLS has to be specified.
 	// +optional
 	Endpoint string `json:"endpoint,omitempty"`
+
+	// TLS defines certificates for TLS.
+	// TLS needs to be enabled by specifying https:// scheme in the Endpoint.
+	TLS *TLS `json:"tls,omitempty"`
+}
+
+// TLS defines TLS configuration for exporter.
+type TLS struct {
+	// SecretName defines secret name that will be used to configure TLS on the exporter.
+	// It is user responsibility to create the secret in the namespace of the workload.
+	// The secret must contain client certificate (Cert) and private key (Key).
+	// The CA certificate might be defined in the secret or in the config map.
+	SecretName string `json:"secretName,omitempty"`
+
+	// ConfigMapName defines configmap name with CA certificate. If it is not defined CA certificate will be
+	// used from the secret defined in SecretName.
+	ConfigMapName string `json:"configMapName,omitempty"`
+
+	// CA defines the key of certificate (e.g. ca.crt) in the configmap map, secret or absolute path to a certificate.
+	// The absolute path can be used when certificate is already present on the workload filesystem e.g.
+	// /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+	CA string `json:"ca,omitempty"`
+	// Cert defines the key (e.g. tls.crt) of the client certificate in the secret or absolute path to a certificate.
+	// The absolute path can be used when certificate is already present on the workload filesystem.
+	Cert string `json:"cert,omitempty"`
+	// Key defines a key (e.g. tls.key) of the private key in the secret or absolute path to a certificate.
+	// The absolute path can be used when certificate is already present on the workload filesystem.
+	Key string `json:"key,omitempty"`
 }
 
 // Sampler defines sampling configuration.

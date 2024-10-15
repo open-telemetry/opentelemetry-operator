@@ -1,0 +1,19 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: java
+spec:
+  exporter:
+    endpoint: https://simplest-collector:4317
+    tls:
+      secretName: client-certs
+      configMapName: ca
+      ca: ca.crt
+      cert: tls.crt
+      key: tls.key
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: parentbased_traceidratio
+    argument: "1"
