@@ -28,10 +28,10 @@ func TestInjectPythonSDK(t *testing.T) {
 	tests := []struct {
 		name string
 		v1alpha1.Python
-		pod       corev1.Pod
+		pod      corev1.Pod
 		platform string
-		expected  corev1.Pod
-		err       error
+		expected corev1.Pod
+		err      error
 	}{
 		{
 			name:   "PYTHONPATH not defined",
@@ -589,7 +589,7 @@ func TestInjectPythonSDK(t *testing.T) {
 			err: nil,
 		},
 		{
-			name: "platform not defined",
+			name:   "platform not defined",
 			Python: v1alpha1.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
@@ -655,7 +655,7 @@ func TestInjectPythonSDK(t *testing.T) {
 			err: nil,
 		},
 		{
-			name: "platform not supported",
+			name:   "platform not supported",
 			Python: v1alpha1.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
