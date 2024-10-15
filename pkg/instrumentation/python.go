@@ -71,7 +71,7 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 		})
 	}
 
-	// Set OTEL_TRACES_EXPORTER to oltp exporter if not set by user because it is what our autoinstrumentation supports.
+	// Set OTEL_TRACES_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
 	idx = getIndexOfEnv(container.Env, envOtelTracesExporter)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
@@ -80,7 +80,7 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 		})
 	}
 
-	// Set OTEL_METRICS_EXPORTER to oltp exporter if not set by user because it is what our autoinstrumentation supports.
+	// Set OTEL_METRICS_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
 	idx = getIndexOfEnv(container.Env, envOtelMetricsExporter)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
@@ -89,7 +89,7 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 		})
 	}
 
-	// Set OTEL_LOGS_EXPORTER to oltp exporter if not set by user because it is what our autoinstrumentation supports.
+	// Set OTEL_LOGS_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
 	idx = getIndexOfEnv(container.Env, envOtelLogsExporter)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
