@@ -5,7 +5,7 @@ change_type: enhancement
 component: auto-instrumentation
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: set OTEL_LOGS_EXPORTER env var to oltp in python instrumentation
+note: set OTEL_LOGS_EXPORTER env var to otlp in python instrumentation
 
 # One or more tracking issues related to the change
 issues: [3330]
