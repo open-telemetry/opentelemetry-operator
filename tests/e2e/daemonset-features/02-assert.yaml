@@ -9,5 +9,4 @@ spec:
        containers:
        - args:
          - --config=/conf/collector.yaml
-         - --feature-gates=-component.UseLocalHostAsDefaultHost
          name: otc-container

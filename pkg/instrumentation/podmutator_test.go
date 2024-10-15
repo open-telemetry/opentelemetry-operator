@@ -42,6 +42,8 @@ func TestMutatePod(t *testing.T) {
 		expected        corev1.Pod
 		inst            v1alpha1.Instrumentation
 		ns              corev1.Namespace
+		secret          *corev1.Secret
+		configMap       *corev1.ConfigMap
 		setFeatureGates func(t *testing.T)
 		config          config.Config
 	}{
@@ -50,6 +52,18 @@ func TestMutatePod(t *testing.T) {
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "javaagent",
+				},
+			},
+			secret: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-certs",
+					Namespace: "javaagent",
+				},
+			},
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "my-ca-bundle",
+					Namespace: "javaagent",
 				},
 			},
 			inst: v1alpha1.Instrumentation{
@@ -103,6 +117,13 @@ func TestMutatePod(t *testing.T) {
 					},
 					Exporter: v1alpha1.Exporter{
 						Endpoint: "http://collector:12345",
+						TLS: &v1alpha1.TLS{
+							SecretName:    "my-certs",
+							ConfigMapName: "my-ca-bundle",
+							CA:            "ca.crt",
+							Cert:          "cert.crt",
+							Key:           "key.key",
+						},
 					},
 				},
 			},
@@ -133,6 +154,24 @@ func TestMutatePod(t *testing.T) {
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{
 									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+						{
+							Name: "otel-auto-secret-my-certs",
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName: "my-certs",
+								},
+							},
+						},
+						{
+							Name: "otel-auto-configmap-my-ca-bundle",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "my-ca-bundle",
+									},
 								},
 							},
 						},
@@ -213,6 +252,18 @@ func TestMutatePod(t *testing.T) {
 									Value: "app",
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_CERTIFICATE",
+									Value: "/otel-auto-instrumentation-configmap-my-ca-bundle/ca.crt",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE",
+									Value: "/otel-auto-instrumentation-secret-my-certs/cert.crt",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_CLIENT_KEY",
+									Value: "/otel-auto-instrumentation-secret-my-certs/key.key",
+								},
+								{
 									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
 									ValueFrom: &corev1.EnvVarSource{
 										FieldRef: &corev1.ObjectFieldSelector{
@@ -237,6 +288,16 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:      javaVolumeName,
 									MountPath: javaInstrMountPath,
+								},
+								{
+									Name:      "otel-auto-secret-my-certs",
+									ReadOnly:  true,
+									MountPath: "/otel-auto-instrumentation-secret-my-certs",
+								},
+								{
+									Name:      "otel-auto-configmap-my-ca-bundle",
+									ReadOnly:  true,
+									MountPath: "/otel-auto-instrumentation-configmap-my-ca-bundle",
 								},
 							},
 						},
@@ -4785,6 +4846,49 @@ func TestMutatePod(t *testing.T) {
 				config.WithEnableNodeJSInstrumentation(false),
 			),
 		},
+		{
+			name: "secret and configmap does not exists",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "error-missing-secrets",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "error-missing-secrets",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+						TLS: &v1alpha1.TLS{
+							SecretName:    "my-certs",
+							ConfigMapName: "my-ca-bundle",
+							CA:            "ca.crt",
+							Cert:          "cert.crt",
+							Key:           "key.key",
+						},
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectJava: "true",
+					},
+					Namespace: "error-missing-secrets",
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			config: config.New(),
+			err:    "secret error-missing-secrets/my-certs with certificates does not exists: secrets \"my-certs\" not found\nconfigmap error-missing-secrets/my-ca-bundle with CA certificate does not exists: configmaps \"my-ca-bundle\" not found",
+		},
 	}
 
 	for _, test := range tests {
@@ -4801,6 +4905,21 @@ func TestMutatePod(t *testing.T) {
 			defer func() {
 				_ = k8sClient.Delete(context.Background(), &test.ns)
 			}()
+			if test.secret != nil {
+				err = k8sClient.Create(context.Background(), test.secret)
+				require.NoError(t, err)
+				defer func() {
+					_ = k8sClient.Delete(context.Background(), test.secret)
+				}()
+			}
+			if test.configMap != nil {
+				err = k8sClient.Create(context.Background(), test.configMap)
+				require.NoError(t, err)
+				defer func() {
+					_ = k8sClient.Delete(context.Background(), test.configMap)
+				}()
+			}
+
 			err = k8sClient.Create(context.Background(), &test.inst)
 			require.NoError(t, err)
 

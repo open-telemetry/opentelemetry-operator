@@ -20,6 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	colfg "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -27,8 +28,11 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -382,6 +386,31 @@ func TestArgs(t *testing.T) {
 	// verify
 	expected := []string{"--akey=avalue", "--key=value"}
 	assert.Equal(t, expected, c.Args)
+}
+
+func TestContainerWithCertManagerAvailable(t *testing.T) {
+	// prepare
+	targetAllocator := v1alpha1.TargetAllocator{}
+
+	flgs := featuregate.Flags(colfg.GlobalRegistry())
+	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
+	require.NoError(t, err)
+
+	cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+
+	// test
+	c := Container(cfg, logger, targetAllocator)
+
+	// verify
+	assert.Equal(t, "http", c.Ports[0].Name)
+	assert.Equal(t, int32(8080), c.Ports[0].ContainerPort)
+	assert.Equal(t, "https", c.Ports[1].Name)
+	assert.Equal(t, int32(8443), c.Ports[1].ContainerPort)
+
+	assert.Contains(t, c.VolumeMounts, corev1.VolumeMount{
+		Name:      naming.TAServerCertificate(""),
+		MountPath: constants.TACollectorTLSDirPath,
+	})
 }
 
 func TestContainerCustomVolumes(t *testing.T) {

@@ -11,7 +11,6 @@ spec:
   containers:
   - name: productcatalogservice
   - args:
-    - --feature-gates=-component.UseLocalHostAsDefaultHost
     - --config=env:OTEL_CONFIG
     name: otc-container
   - env:

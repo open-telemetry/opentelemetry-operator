@@ -46,7 +46,6 @@ spec:
     - name: otel-apache-conf-dir
       mountPath: /usr/local/apache2/conf
   - args:
-    - --feature-gates=-component.UseLocalHostAsDefaultHost
     - --config=env:OTEL_CONFIG
     name: otc-container
   initContainers:

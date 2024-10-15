@@ -30,6 +30,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
@@ -78,8 +79,6 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 		otelcol.Spec.TargetAllocator.Replicas = &one
 	}
 
-	ComponentUseLocalHostAsDefaultHost(otelcol)
-
 	if otelcol.Spec.Autoscaler != nil && otelcol.Spec.Autoscaler.MaxReplicas != nil {
 		if otelcol.Spec.Autoscaler.MinReplicas == nil {
 			otelcol.Spec.Autoscaler.MinReplicas = otelcol.Spec.Replicas
@@ -101,6 +100,9 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 	// This results in a default state of unmanaged preventing reconciliation from continuing.
 	if len(otelcol.Spec.ManagementState) == 0 {
 		otelcol.Spec.ManagementState = ManagementStateManaged
+	}
+	if !featuregate.EnableConfigDefaulting.IsEnabled() {
+		return nil
 	}
 	return otelcol.Spec.Config.ApplyDefaults(c.logger)
 }
@@ -383,13 +385,13 @@ func ValidatePorts(ports []PortsSpec) error {
 func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	if autoscaler.Behavior != nil {
 		if autoscaler.Behavior.ScaleDown != nil && autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds != nil &&
-			*autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds < int32(1) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleDown should be one or more")
+			(*autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds < int32(0) || *autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds > 3600) {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleDown.stabilizationWindowSeconds should be >=0 and <=3600")
 		}
 
 		if autoscaler.Behavior.ScaleUp != nil && autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds != nil &&
-			*autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(1) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp should be one or more")
+			(*autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(0) || *autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds > 3600) {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp.stabilizationWindowSeconds should be >=0 and <=3600")
 		}
 	}
 	if autoscaler.TargetCPUUtilization != nil && *autoscaler.TargetCPUUtilization < int32(1) {
@@ -452,24 +454,4 @@ func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.R
 		WithValidator(cvw).
 		WithDefaulter(cvw).
 		Complete()
-}
-
-// ComponentUseLocalHostAsDefaultHost enables component.UseLocalHostAsDefaultHost
-// featuregate on the given collector instance.
-// NOTE: For more details, visit:
-// https://github.com/open-telemetry/opentelemetry-collector/issues/8510
-func ComponentUseLocalHostAsDefaultHost(otelcol *OpenTelemetryCollector) {
-	const (
-		baseFlag = "feature-gates"
-		fgFlag   = "component.UseLocalHostAsDefaultHost"
-	)
-	if otelcol.Spec.Args == nil {
-		otelcol.Spec.Args = make(map[string]string)
-	}
-	args, ok := otelcol.Spec.Args[baseFlag]
-	if !ok || len(args) == 0 {
-		otelcol.Spec.Args[baseFlag] = "-" + fgFlag
-	} else if !strings.Contains(otelcol.Spec.Args[baseFlag], fgFlag) {
-		otelcol.Spec.Args[baseFlag] += ",-" + fgFlag
-	}
 }

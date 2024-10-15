@@ -268,7 +268,28 @@ func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings
 		return warnings, fmt.Errorf("spec.python.volumeClaimTemplate and spec.python.volumeSizeLimit cannot both be defined: %w", err)
 	}
 
+	warnings = append(warnings, validateExporter(r.Spec.Exporter)...)
+
 	return warnings, nil
+}
+
+func validateExporter(exporter Exporter) []string {
+	var warnings []string
+	if exporter.TLS != nil {
+		tls := exporter.TLS
+		if tls.Key != "" && tls.Cert == "" || tls.Cert != "" && tls.Key == "" {
+			warnings = append(warnings, "both exporter.tls.key and exporter.tls.cert mut be set")
+		}
+
+		if !strings.HasPrefix(exporter.Endpoint, "https://") {
+			warnings = append(warnings, "exporter.tls is configured but exporter.endpoint is not enabling TLS with https://")
+		}
+	}
+	if strings.HasPrefix(exporter.Endpoint, "https://") && exporter.TLS == nil {
+		warnings = append(warnings, "exporter is using https:// but exporter.tls is unset")
+	}
+
+	return warnings
 }
 
 func validateJaegerRemoteSamplerArgument(argument string) error {
