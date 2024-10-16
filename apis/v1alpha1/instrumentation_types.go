@@ -121,13 +121,13 @@ type TLS struct {
 	// CA defines the key of certificate (e.g. ca.crt) in the configmap map, secret or absolute path to a certificate.
 	// The absolute path can be used when certificate is already present on the workload filesystem e.g.
 	// /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
-	CA string `json:"ca,omitempty"`
+	CA string `json:"ca_file,omitempty"`
 	// Cert defines the key (e.g. tls.crt) of the client certificate in the secret or absolute path to a certificate.
 	// The absolute path can be used when certificate is already present on the workload filesystem.
-	Cert string `json:"cert,omitempty"`
+	Cert string `json:"cert_file,omitempty"`
 	// Key defines a key (e.g. tls.key) of the private key in the secret or absolute path to a certificate.
 	// The absolute path can be used when certificate is already present on the workload filesystem.
-	Key string `json:"key,omitempty"`
+	Key string `json:"key_file,omitempty"`
 }
 
 // Sampler defines sampling configuration.

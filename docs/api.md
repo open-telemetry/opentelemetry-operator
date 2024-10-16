@@ -1659,7 +1659,7 @@ TLS needs to be enabled by specifying https:// scheme in the Endpoint.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>ca</b></td>
+        <td><b>ca_file</b></td>
         <td>string</td>
         <td>
           CA defines the key of certificate (e.g. ca.crt) in the configmap map, secret or absolute path to a certificate.
@@ -1668,7 +1668,7 @@ The absolute path can be used when certificate is already present on the workloa
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>cert</b></td>
+        <td><b>cert_file</b></td>
         <td>string</td>
         <td>
           Cert defines the key (e.g. tls.crt) of the client certificate in the secret or absolute path to a certificate.
@@ -1684,7 +1684,7 @@ used from the secret defined in SecretName.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>key</b></td>
+        <td><b>key_file</b></td>
         <td>string</td>
         <td>
           Key defines a key (e.g. tls.key) of the private key in the secret or absolute path to a certificate.

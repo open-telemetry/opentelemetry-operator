@@ -23,11 +23,11 @@ subtext: |
         secretName: otel-tls-certs
         configMapName: otel-ca-bundle
         # otel-ca-bundle
-        ca: ca.crt
+        ca_file: ca.crt
         # present in otel-tls-certs
-        cert: tls.crt 
+        cert_file: tls.crt 
         # present in otel-tls-certs
-        key: tls.key
+        key_file: tls.key
   ```
   
   * Propagating secrets across namespaces can be done with https://github.com/EmberStack/kubernetes-reflector or https://github.com/zakkg3/ClusterSecret
