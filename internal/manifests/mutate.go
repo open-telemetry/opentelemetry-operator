@@ -344,7 +344,12 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
 	existing.Spec.ServiceName = desired.Spec.ServiceName
 	existing.Spec.UpdateStrategy = desired.Spec.UpdateStrategy
-	existing.Spec.VolumeClaimTemplates = desired.Spec.VolumeClaimTemplates
+
+	for i := range existing.Spec.VolumeClaimTemplates {
+		existing.Spec.VolumeClaimTemplates[i].TypeMeta = desired.Spec.VolumeClaimTemplates[i].TypeMeta
+		existing.Spec.VolumeClaimTemplates[i].ObjectMeta = desired.Spec.VolumeClaimTemplates[i].ObjectMeta
+		existing.Spec.VolumeClaimTemplates[i].Spec = desired.Spec.VolumeClaimTemplates[i].Spec
+	}
 
 	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
 		return err
@@ -407,6 +412,9 @@ func hasVolumeClaimsTemplatesChanged(existing, desired *appsv1.StatefulSet) bool
 			return true
 		}
 		if !apiequality.Semantic.DeepEqual(desired.Spec.VolumeClaimTemplates[i].Annotations, existing.Spec.VolumeClaimTemplates[i].Annotations) {
+			return true
+		}
+		if !apiequality.Semantic.DeepEqual(desired.Spec.VolumeClaimTemplates[i].Labels, existing.Spec.VolumeClaimTemplates[i].Labels) {
 			return true
 		}
 		if !apiequality.Semantic.DeepEqual(desired.Spec.VolumeClaimTemplates[i].Spec, existing.Spec.VolumeClaimTemplates[i].Spec) {
