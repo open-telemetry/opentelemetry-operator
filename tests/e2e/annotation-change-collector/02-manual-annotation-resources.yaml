@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: daemonset-collector
+  annotations:
+    manual-annotation: "true"
+spec:
+  template:
+    metadata:
+      annotations:
+        manual-annotation: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-collector
+  annotations:
+    manual-annotation: "true"
+spec:
+  template:
+    metadata:
+      annotations:
+        manual-annotation: "true"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: statefulset-collector
+  annotations:
+    manual-annotation: "true"
+spec:
+  template:
+    metadata:
+      annotations:
+        manual-annotation: "true"

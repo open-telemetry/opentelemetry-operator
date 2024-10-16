@@ -1,0 +1,11 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: daemonset-collector
+  annotations:
+    user-annotation: "existing"
+spec:
+  template:
+    metadata:
+      annotations:
+        user-annotation: "existing"
