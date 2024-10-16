@@ -8,9 +8,9 @@ spec:
     tls:
       secretName: client-certs
       configMapName: ca
-      ca: ca.crt
-      cert: tls.crt
-      key: tls.key
+      ca_file: ca.crt
+      cert_file: tls.crt
+      key_file: tls.key
   propagators:
     - tracecontext
     - baggage

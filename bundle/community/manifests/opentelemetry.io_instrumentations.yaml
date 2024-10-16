@@ -411,13 +411,13 @@ spec:
                     type: string
                   tls:
                     properties:
-                      ca:
+                      ca_file:
                         type: string
-                      cert:
+                      cert_file:
                         type: string
                       configMapName:
                         type: string
-                      key:
+                      key_file:
                         type: string
                       secretName:
                         type: string
