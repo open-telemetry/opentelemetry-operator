@@ -17,6 +17,7 @@ package sidecar
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -25,6 +26,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
@@ -47,7 +49,17 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCol
 		container.Env = append(container.Env, attributes...)
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, otelcol.Spec.InitContainers...)
-	pod.Spec.Containers = append(pod.Spec.Containers, container)
+
+	if featuregate.EnableNativeSidecarContainers.IsEnabled() {
+		policy := corev1.ContainerRestartPolicyAlways
+		container.RestartPolicy = &policy
+		// NOTE: Use ReadinessProbe as startup probe.
+		// See https://github.com/open-telemetry/opentelemetry-operator/pull/2801#discussion_r1547571121
+		container.StartupProbe = container.ReadinessProbe
+		pod.Spec.InitContainers = append(pod.Spec.InitContainers, container)
+	} else {
+		pod.Spec.Containers = append(pod.Spec.Containers, container)
+	}
 	pod.Spec.Volumes = append(pod.Spec.Volumes, otelcol.Spec.Volumes...)
 
 	if pod.Labels == nil {
@@ -58,26 +70,34 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCol
 	return pod, nil
 }
 
+func isOtelColContainer(c corev1.Container) bool { return c.Name == naming.Container() }
+
 // remove the sidecar container from the given pod.
 func remove(pod corev1.Pod) corev1.Pod {
 	if !existsIn(pod) {
 		return pod
 	}
 
-	var containers []corev1.Container
-	for _, container := range pod.Spec.Containers {
-		if container.Name != naming.Container() {
-			containers = append(containers, container)
-		}
+	pod.Spec.Containers = slices.DeleteFunc(pod.Spec.Containers, isOtelColContainer)
+
+	if featuregate.EnableNativeSidecarContainers.IsEnabled() {
+		// NOTE: we also remove init containers (native sidecars) since k8s 1.28.
+		// This should have no side effects.
+		pod.Spec.InitContainers = slices.DeleteFunc(pod.Spec.InitContainers, isOtelColContainer)
 	}
-	pod.Spec.Containers = containers
 	return pod
 }
 
 // existsIn checks whether a sidecar container exists in the given pod.
 func existsIn(pod corev1.Pod) bool {
-	for _, container := range pod.Spec.Containers {
-		if container.Name == naming.Container() {
+	if slices.ContainsFunc(pod.Spec.Containers, isOtelColContainer) {
+		return true
+	}
+
+	if featuregate.EnableNativeSidecarContainers.IsEnabled() {
+		// NOTE: we also check init containers (native sidecars) since k8s 1.28.
+		// This should have no side effects.
+		if slices.ContainsFunc(pod.Spec.InitContainers, isOtelColContainer) {
 			return true
 		}
 	}
