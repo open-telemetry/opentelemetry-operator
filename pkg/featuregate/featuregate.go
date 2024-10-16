@@ -25,6 +25,18 @@ const (
 )
 
 var (
+	// EnableNativeSidecarContainers is the feature gate that controls whether a
+	// sidecar should be injected as a native sidecar or the classic way.
+	// Native sidecar containers have been available since kubernetes v1.28 in
+	// alpha and v1.29 in beta.
+	// It needs to be enabled with +featureGate=SidecarContainers.
+	// See:
+	// https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/#feature-gates-for-alpha-or-beta-features
+	EnableNativeSidecarContainers = featuregate.GlobalRegistry().MustRegister(
+		"operator.sidecarcontainers.native",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("controls whether the operator supports sidecar containers as init containers. Should only be enabled on k8s v1.29+"),
+	)
 	// PrometheusOperatorIsAvailable is the feature gate that enables features associated to the Prometheus Operator.
 	PrometheusOperatorIsAvailable = featuregate.GlobalRegistry().MustRegister(
 		"operator.observability.prometheus",

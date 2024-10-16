@@ -385,13 +385,13 @@ func ValidatePorts(ports []PortsSpec) error {
 func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	if autoscaler.Behavior != nil {
 		if autoscaler.Behavior.ScaleDown != nil && autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds != nil &&
-			*autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds < int32(1) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleDown should be one or more")
+			(*autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds < int32(0) || *autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds > 3600) {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleDown.stabilizationWindowSeconds should be >=0 and <=3600")
 		}
 
 		if autoscaler.Behavior.ScaleUp != nil && autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds != nil &&
-			*autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(1) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp should be one or more")
+			(*autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(0) || *autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds > 3600) {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp.stabilizationWindowSeconds should be >=0 and <=3600")
 		}
 	}
 	if autoscaler.TargetCPUUtilization != nil && *autoscaler.TargetCPUUtilization < int32(1) {
