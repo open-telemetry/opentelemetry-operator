@@ -61,11 +61,13 @@ func TestUpgrade(t *testing.T) {
 			config.WithAutoInstrumentationNodeJSImage("nodejs:1"),
 			config.WithAutoInstrumentationPythonImage("python:1"),
 			config.WithAutoInstrumentationDotNetImage("dotnet:1"),
+			config.WithAutoInstrumentationPHPImage("php:1"),
 			config.WithAutoInstrumentationGoImage("go:1"),
 			config.WithAutoInstrumentationApacheHttpdImage("apache-httpd:1"),
 			config.WithAutoInstrumentationNginxImage("nginx:1"),
 			config.WithEnableApacheHttpdInstrumentation(true),
 			config.WithEnableDotNetInstrumentation(true),
+			config.WithEnablePHPInstrumentation(true),
 			config.WithEnableGoInstrumentation(true),
 			config.WithEnableNginxInstrumentation(true),
 			config.WithEnablePythonInstrumentation(true),
@@ -78,6 +80,7 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "nodejs:1", inst.Spec.NodeJS.Image)
 	assert.Equal(t, "python:1", inst.Spec.Python.Image)
 	assert.Equal(t, "dotnet:1", inst.Spec.DotNet.Image)
+	assert.Equal(t, "php:1", inst.Spec.PHP.Image)
 	assert.Equal(t, "go:1", inst.Spec.Go.Image)
 	assert.Equal(t, "apache-httpd:1", inst.Spec.ApacheHttpd.Image)
 	assert.Equal(t, "nginx:1", inst.Spec.Nginx.Image)
@@ -89,11 +92,13 @@ func TestUpgrade(t *testing.T) {
 		config.WithAutoInstrumentationNodeJSImage("nodejs:2"),
 		config.WithAutoInstrumentationPythonImage("python:2"),
 		config.WithAutoInstrumentationDotNetImage("dotnet:2"),
+		config.WithAutoInstrumentationPHPImage("php:2"),
 		config.WithAutoInstrumentationGoImage("go:2"),
 		config.WithAutoInstrumentationApacheHttpdImage("apache-httpd:2"),
 		config.WithAutoInstrumentationNginxImage("nginx:2"),
 		config.WithEnableApacheHttpdInstrumentation(true),
 		config.WithEnableDotNetInstrumentation(true),
+		config.WithEnablePHPInstrumentation(true),
 		config.WithEnableGoInstrumentation(true),
 		config.WithEnableNginxInstrumentation(true),
 		config.WithEnablePythonInstrumentation(true),
@@ -119,6 +124,8 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "python:2", updated.Spec.Python.Image)
 	assert.Equal(t, "dotnet:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationDotNet])
 	assert.Equal(t, "dotnet:2", updated.Spec.DotNet.Image)
+	assert.Equal(t, "php:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationPHP])
+	assert.Equal(t, "php:2", updated.Spec.PHP.Image)
 	assert.Equal(t, "go:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationGo])
 	assert.Equal(t, "go:2", updated.Spec.Go.Image)
 	assert.Equal(t, "apache-httpd:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationApacheHttpd])

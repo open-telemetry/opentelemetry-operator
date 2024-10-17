@@ -57,6 +57,7 @@ type languageInstrumentations struct {
 	NodeJS      instrumentationWithContainers
 	Python      instrumentationWithContainers
 	DotNet      instrumentationWithContainers
+	PHP         instrumentationWithContainers
 	ApacheHttpd instrumentationWithContainers
 	Nginx       instrumentationWithContainers
 	Go          instrumentationWithContainers
@@ -100,6 +101,14 @@ func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bo
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.DotNet)
 		allContainers = append(allContainers, langInsts.DotNet.Containers...)
 		if len(langInsts.DotNet.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
+	}
+	if langInsts.PHP.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.PHP)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.PHP)
+		allContainers = append(allContainers, langInsts.PHP.Containers...)
+		if len(langInsts.PHP.Containers) == 0 {
 			instrumentationWithNoContainers = true
 		}
 	}
@@ -191,6 +200,9 @@ func (langInsts *languageInstrumentations) setCommonInstrumentedContainers(ns co
 	if langInsts.DotNet.Instrumentation != nil {
 		langInsts.DotNet.Containers = containers
 	}
+	if langInsts.PHP.Instrumentation != nil {
+		langInsts.PHP.Containers = containers
+	}
 	if langInsts.ApacheHttpd.Instrumentation != nil {
 		langInsts.ApacheHttpd.Containers = containers
 	}
@@ -226,6 +238,10 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns meta
 		{
 			iwc:        &langInsts.DotNet,
 			annotation: annotationInjectDotnetContainersName,
+		},
+		{
+			iwc:        &langInsts.PHP,
+			annotation: annotationInjectPhpContainersName,
 		},
 		{
 			iwc:        &langInsts.Go,
@@ -339,6 +355,19 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for .NET auto instrumentation is not enabled")
 	}
 
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectPHP); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	if pm.config.EnablePHPAutoInstrumentation() || inst == nil {
+		insts.PHP.Instrumentation = inst
+		insts.PHP.AdditionalAnnotations = map[string]string{annotationPHPRuntime: annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationPHPRuntime)}
+	} else {
+		logger.Error(nil, "support for PHP auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for PHP auto instrumentation is not enabled")
+	}
+
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectGo); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
@@ -383,7 +412,8 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	insts.Sdk.Instrumentation = inst
 
 	if insts.Java.Instrumentation == nil && insts.NodeJS.Instrumentation == nil && insts.Python.Instrumentation == nil &&
-		insts.DotNet.Instrumentation == nil && insts.Go.Instrumentation == nil && insts.ApacheHttpd.Instrumentation == nil &&
+		insts.DotNet.Instrumentation == nil && insts.PHP.Instrumentation == nil && insts.Go.Instrumentation == nil && 
+		insts.ApacheHttpd.Instrumentation == nil &&
 		insts.Nginx.Instrumentation == nil &&
 		insts.Sdk.Instrumentation == nil {
 
