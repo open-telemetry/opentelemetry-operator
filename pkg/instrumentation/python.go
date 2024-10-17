@@ -128,10 +128,12 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, plat
 			}})
 
 		// copy the default glibc based dir if the autoInstrumentationSrc does not exist to not break compat with old images
+		shellCmd := fmt.Sprintf("test -d %[1]s && cp -r %[1]s %[2]s || cp -r %[3]s %[2]s", autoInstrumentationSrc, pythonInstrMountPath, glibcLinuxAutoInstrumentationSrc)
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      pythonInitContainerName,
 			Image:     pythonSpec.Image,
-			Command:   []string{"test", "-d", autoInstrumentationSrc, "&&", "cp", "-r", autoInstrumentationSrc, pythonInstrMountPath, "||", "cp", "-r", glibcLinuxAutoInstrumentationSrc, pythonInstrMountPath},
+			Command:   []string{"/bin/sh"},
+			Args:      []string{"-c", shellCmd},
 			Resources: pythonSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      pythonVolumeName,
