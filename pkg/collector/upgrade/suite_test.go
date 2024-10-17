@@ -42,6 +42,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
 var (
@@ -159,4 +160,10 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Exit(code)
+}
+
+func makeVersion(v string) version.Version {
+	return version.Version{
+		OpenTelemetryCollector: v,
+	}
 }

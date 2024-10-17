@@ -39,6 +39,17 @@ type VersionUpgrade struct {
 
 const RecordBufferSize int = 100
 
+func (u VersionUpgrade) semVer() *semver.Version {
+	if len(u.Version.OpenTelemetryCollector) == 0 {
+		return &Latest.Version
+	}
+	if v, err := semver.NewVersion(u.Version.OpenTelemetryCollector); err != nil {
+		return &Latest.Version
+	} else {
+		return v
+	}
+}
+
 // ManagedInstances finds all the otelcol instances for the current operator and upgrades them, if necessary.
 func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
 	u.Log.Info("looking for managed instances to upgrade")
@@ -107,9 +118,9 @@ func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenT
 	}
 
 	updated := *(otelcol.DeepCopy())
-	if instanceV.GreaterThan(&Latest.Version) {
+	if instanceV.GreaterThan(u.semVer()) {
 		// Update with the latest known version, which is what we have from versions.txt
-		u.Log.V(4).Info("no upgrade routines are needed for the OpenTelemetry instance", "name", updated.Name, "namespace", updated.Namespace, "version", updated.Status.Version, "latest", Latest.Version.String())
+		u.Log.V(4).Info("no upgrade routines are needed for the OpenTelemetry instance", "name", updated.Name, "namespace", updated.Namespace, "version", updated.Status.Version, "latest", u.semVer().String())
 
 		otelColV, err := semver.NewVersion(u.Version.OpenTelemetryCollector)
 		if err != nil {
@@ -126,6 +137,11 @@ func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenT
 	}
 
 	for _, available := range versions {
+		// Don't run upgrades for versions after the webhook's set version.
+		// This is important only for testing.
+		if available.GreaterThan(u.semVer()) {
+			continue
+		}
 		if available.GreaterThan(instanceV) {
 			if available.upgrade != nil {
 				otelcolV1alpha1 := &v1alpha1.OpenTelemetryCollector{}
