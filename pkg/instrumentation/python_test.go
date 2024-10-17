@@ -60,7 +60,8 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-python",
 							Image:   "foo/bar:1",
-							Command: []string{"test", "-d", "/autoinstrumentation/.", "&&", "cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python", "||", "cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							Command: []string{"/bin/sh"},
+							Args: []string{"-c", "test -d /autoinstrumentation/. && cp -r /autoinstrumentation/. /otel-auto-instrumentation-python || cp -r /autoinstrumentation/. /otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-python",
 								MountPath: "/otel-auto-instrumentation-python",
@@ -133,7 +134,8 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-python",
 							Image:   "foo/bar:1",
-							Command: []string{"test", "-d", "/autoinstrumentation/.", "&&", "cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python", "||", "cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							Command: []string{"/bin/sh"},
+							Args: []string{"-c", "test -d /autoinstrumentation/. && cp -r /autoinstrumentation/. /otel-auto-instrumentation-python || cp -r /autoinstrumentation/. /otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-python",
 								MountPath: "/otel-auto-instrumentation-python",
@@ -207,7 +209,8 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-python",
 							Image:   "foo/bar:1",
-							Command: []string{"test", "-d", "/autoinstrumentation/.", "&&", "cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python", "||", "cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							Command: []string{"/bin/sh"},
+							Args: []string{"-c", "test -d /autoinstrumentation/. && cp -r /autoinstrumentation/. /otel-auto-instrumentation-python || cp -r /autoinstrumentation/. /otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-python",
 								MountPath: "/otel-auto-instrumentation-python",
@@ -280,7 +283,8 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-python",
 							Image:   "foo/bar:1",
-							Command: []string{"test", "-d", "/autoinstrumentation/.", "&&", "cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python", "||", "cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							Command: []string{"/bin/sh"},
+							Args: []string{"-c", "test -d /autoinstrumentation/. && cp -r /autoinstrumentation/. /otel-auto-instrumentation-python || cp -r /autoinstrumentation/. /otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-python",
 								MountPath: "/otel-auto-instrumentation-python",
@@ -353,7 +357,8 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-python",
 							Image:   "foo/bar:1",
-							Command: []string{"test", "-d", "/autoinstrumentation/.", "&&", "cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python", "||", "cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							Command: []string{"/bin/sh"},
+							Args: []string{"-c", "test -d /autoinstrumentation/. && cp -r /autoinstrumentation/. /otel-auto-instrumentation-python || cp -r /autoinstrumentation/. /otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-python",
 								MountPath: "/otel-auto-instrumentation-python",
@@ -453,7 +458,8 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-python",
 							Image:   "foo/bar:1",
-							Command: []string{"test", "-d", "/autoinstrumentation-musl/.", "&&", "cp", "-r", "/autoinstrumentation-musl/.", "/otel-auto-instrumentation-python", "||", "cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							Command: []string{"/bin/sh"},
+							Args: []string{"-c", "test -d /autoinstrumentation-musl/. && cp -r /autoinstrumentation-musl/. /otel-auto-instrumentation-python || cp -r /autoinstrumentation/. /otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-python",
 								MountPath: "/otel-auto-instrumentation-python",
@@ -519,7 +525,8 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-python",
 							Image:   "foo/bar:1",
-							Command: []string{"test", "-d", "/autoinstrumentation/.", "&&", "cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python", "||", "cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							Command: []string{"/bin/sh"},
+							Args: []string{"-c", "test -d /autoinstrumentation/. && cp -r /autoinstrumentation/. /otel-auto-instrumentation-python || cp -r /autoinstrumentation/. /otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-python",
 								MountPath: "/otel-auto-instrumentation-python",

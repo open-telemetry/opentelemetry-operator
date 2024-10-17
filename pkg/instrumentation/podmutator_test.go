@@ -1322,7 +1322,8 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    pythonInitContainerName,
 							Image:   "otel/python:1",
-							Command: []string{"test", "-d", "/autoinstrumentation/.", "&&", "cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath, "||", "cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
+                                                        Command: []string{"/bin/sh"},
+                                                        Args: []string{"-c", "test -d /autoinstrumentation/. && cp -r /autoinstrumentation/. /otel-auto-instrumentation-python || cp -r /autoinstrumentation/. /otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      pythonVolumeName,
 								MountPath: pythonInstrMountPath,
@@ -1523,7 +1524,8 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    pythonInitContainerName,
 							Image:   "otel/python:1",
-							Command: []string{"test", "-d", "/autoinstrumentation/.", "&&", "cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath, "||", "cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
+                                                        Command: []string{"/bin/sh"},
+                                                        Args: []string{"-c", "test -d /autoinstrumentation/. && cp -r /autoinstrumentation/. /otel-auto-instrumentation-python || cp -r /autoinstrumentation/. /otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      pythonVolumeName,
 								MountPath: pythonInstrMountPath,
@@ -3643,7 +3645,8 @@ func TestMutatePod(t *testing.T) {
 						{
 							Name:    pythonInitContainerName,
 							Image:   "otel/python:1",
-							Command: []string{"test", "-d", "/autoinstrumentation/.", "&&", "cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath, "||", "cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
+                                                        Command: []string{"/bin/sh"},
+                                                        Args: []string{"-c", "test -d /autoinstrumentation/. && cp -r /autoinstrumentation/. /otel-auto-instrumentation-python || cp -r /autoinstrumentation/. /otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      pythonVolumeName,
 								MountPath: pythonInstrMountPath,
