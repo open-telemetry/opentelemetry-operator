@@ -67,6 +67,8 @@ OPERATOR_SDK_VERSION ?= 1.29.0
 
 CERTMANAGER_VERSION ?= 1.10.0
 
+ENVTEST_VERSION ?= release-0.18
+
 ifndef ignore-not-found
   ignore-not-found = false
 endif
@@ -498,7 +500,7 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	@test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	@test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@$(ENVTEST_VERSION)
 
 CRDOC = $(shell pwd)/bin/crdoc
 .PHONY: crdoc
