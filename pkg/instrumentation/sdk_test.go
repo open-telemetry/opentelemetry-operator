@@ -1211,7 +1211,8 @@ func TestInjectPython(t *testing.T) {
 				{
 					Name:    pythonInitContainerName,
 					Image:   "img:1",
-					Command: []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
+					Command: []string{"/bin/sh"},
+					Args:    []string{"-c", "test -d /autoinstrumentation/. && cp -r /autoinstrumentation/. /otel-auto-instrumentation-python || cp -r /autoinstrumentation/. /otel-auto-instrumentation-python"},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      pythonVolumeName,
 						MountPath: pythonInstrMountPath,
