@@ -40,6 +40,9 @@ data:
                     - prometheus
                 receivers:
                     - prometheus
+        telemetry:
+            metrics:
+                address: 0.0.0.0:8888
 kind: ConfigMap
 metadata:
-  name: prometheus-cr-collector-52e1d2ae
+  name: prometheus-cr-collector-19c94a81

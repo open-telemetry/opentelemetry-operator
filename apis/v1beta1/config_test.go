@@ -277,7 +277,7 @@ func TestConfigToMetricsPort(t *testing.T) {
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			// these are acceptable failures, we return to the collector's default metric port
-			port, err := tt.config.MetricsPort()
+			_, port, err := tt.config.MetricsEndpoint()
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedPort, port)
 		})
