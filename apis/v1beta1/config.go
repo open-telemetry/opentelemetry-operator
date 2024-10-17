@@ -26,6 +26,7 @@ import (
 
 	"dario.cat/mergo"
 	"github.com/go-logr/logr"
+	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -228,6 +229,9 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 
 // applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
 func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) error {
+	if err := c.Service.ApplyDefaults(); err != nil {
+		return err
+	}
 	enabledComponents := c.GetEnabledComponents()
 	for _, componentKind := range componentKinds {
 		var retriever components.ParserRetriever
@@ -371,24 +375,46 @@ type Service struct {
 	Pipelines map[string]*Pipeline `json:"pipelines" yaml:"pipelines"`
 }
 
-// MetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
-func (s *Service) MetricsPort() (int32, error) {
+// MetricsEndpoint gets the port number and host address for the metrics endpoint from the collector config if it has been set.
+func (s *Service) MetricsEndpoint() (string, int32, error) {
 	if s.GetTelemetry() == nil {
 		// telemetry isn't set, use the default
-		return 8888, nil
+		return "0.0.0.0", 8888, nil
 	}
-	_, port, netErr := net.SplitHostPort(s.GetTelemetry().Metrics.Address)
+	host, port, netErr := net.SplitHostPort(s.GetTelemetry().Metrics.Address)
 	if netErr != nil && strings.Contains(netErr.Error(), "missing port in address") {
-		return 8888, nil
+		return host, 8888, nil
 	} else if netErr != nil {
-		return 0, netErr
+		return "", 0, netErr
 	}
 	i64, err := strconv.ParseInt(port, 10, 32)
 	if err != nil {
-		return 0, err
+		return "", 0, err
 	}
 
-	return int32(i64), nil
+	return "", int32(i64), nil
+}
+
+// ApplyDefaults inserts configuration defaults if it has not been set.
+func (s *Service) ApplyDefaults() error {
+	telemetryAddr, telemetryPort, err := s.MetricsEndpoint()
+	if err != nil {
+		return err
+	}
+	tele := Telemetry{Metrics: MetricsConfig{Address: fmt.Sprintf("%s:%d", telemetryAddr, telemetryPort)}}
+	tm := &AnyConfig{}
+	if err := mapstructure.Decode(tele, &tm.Object); err != nil {
+		return fmt.Errorf("telemetry config decoding failed: %w", err)
+	}
+
+	if s.Telemetry == nil {
+		s.Telemetry = tm
+		return nil
+	}
+	if err := mergo.Merge(s.Telemetry, tm); err != nil {
+		return fmt.Errorf("telemetry config merge failed: %w", err)
+	}
+	return nil
 }
 
 // MetricsConfig comes from the collector.
@@ -398,21 +424,21 @@ type MetricsConfig struct {
 	//  - "basic" is the recommended and covers the basics of the service telemetry.
 	//  - "normal" adds some other indicators on top of basic.
 	//  - "detailed" adds dimensions and views to the previous levels.
-	Level string `json:"level,omitempty" yaml:"level,omitempty"`
+	Level string `json:"level,omitempty" yaml:"level,omitempty" mapstructure:"level,omitempty"`
 
 	// Address is the [address]:port that metrics exposition should be bound to.
-	Address string `json:"address,omitempty" yaml:"address,omitempty"`
+	Address string `json:"address,omitempty" yaml:"address,omitempty" mapstructure:"address,omitempty"`
 }
 
 // Telemetry is an intermediary type that allows for easy access to the collector's telemetry settings.
 type Telemetry struct {
-	Metrics MetricsConfig `json:"metrics,omitempty" yaml:"metrics,omitempty"`
+	Metrics MetricsConfig `json:"metrics,omitempty" yaml:"metrics,omitempty" mapstructure:"metrics,omitempty"`
 
 	// Resource specifies user-defined attributes to include with all emitted telemetry.
 	// Note that some attributes are added automatically (e.g. service.version) even
 	// if they are not specified here. In order to suppress such attributes the
 	// attribute must be specified in this map with null YAML value (nil string pointer).
-	Resource map[string]*string `json:"resource,omitempty" yaml:"resource,omitempty"`
+	Resource map[string]*string `json:"resource,omitempty" yaml:"resource,omitempty" mapstructure:"resource,omitempty"`
 }
 
 // GetTelemetry serves as a helper function to access the fields we care about in the underlying telemetry struct.

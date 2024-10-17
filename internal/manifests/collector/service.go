@@ -83,7 +83,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 		return nil, err
 	}
 
-	metricsPort, err := params.OtelCol.Spec.Config.Service.MetricsPort()
+	_, metricsPort, err := params.OtelCol.Spec.Config.Service.MetricsEndpoint()
 	if err != nil {
 		return nil, err
 	}
