@@ -220,11 +220,13 @@ func TestConfigToMetricsPort(t *testing.T) {
 
 	for _, tt := range []struct {
 		desc         string
+		expectedAddr string
 		expectedPort int32
 		config       Service
 	}{
 		{
 			"custom port",
+			"0.0.0.0",
 			9090,
 			Service{
 				Telemetry: &AnyConfig{
@@ -238,6 +240,7 @@ func TestConfigToMetricsPort(t *testing.T) {
 		},
 		{
 			"bad address",
+			"0.0.0.0",
 			8888,
 			Service{
 				Telemetry: &AnyConfig{
@@ -251,6 +254,7 @@ func TestConfigToMetricsPort(t *testing.T) {
 		},
 		{
 			"missing address",
+			"0.0.0.0",
 			8888,
 			Service{
 				Telemetry: &AnyConfig{
@@ -264,6 +268,7 @@ func TestConfigToMetricsPort(t *testing.T) {
 		},
 		{
 			"missing metrics",
+			"0.0.0.0",
 			8888,
 			Service{
 				Telemetry: &AnyConfig{},
@@ -271,14 +276,30 @@ func TestConfigToMetricsPort(t *testing.T) {
 		},
 		{
 			"missing telemetry",
+			"0.0.0.0",
 			8888,
 			Service{},
+		},
+		{
+			"configured telemetry",
+			"1.2.3.4",
+			4567,
+			Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "1.2.3.4:4567",
+						},
+					},
+				},
+			},
 		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
 			// these are acceptable failures, we return to the collector's default metric port
-			port, err := tt.config.MetricsPort()
+			addr, port, err := tt.config.MetricsEndpoint()
 			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedAddr, addr)
 			assert.Equal(t, tt.expectedPort, port)
 		})
 	}

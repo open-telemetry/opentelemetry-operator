@@ -92,6 +92,9 @@ spec:
         exporters:
           debug: null
         service:
+          telemetry:
+            metrics:
+              address: 0.0.0.0:8888
           pipelines:
             traces:
               exporters:
