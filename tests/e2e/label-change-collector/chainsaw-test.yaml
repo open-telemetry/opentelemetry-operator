@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: label-change-collector
+spec:
+  steps:
+    - name: step-00
+      description: collectors with an extra label
+      try:
+        - apply:
+            file: 00-install-collectors-with-extra-label.yaml
+        # deployment
+        - assert:
+            file: 00-assert-deployment-with-extra-label.yaml
+        # daemonset
+        - assert:
+            file: 00-assert-daemonset-with-extra-label.yaml
+        # statefulset
+        - assert:
+            file: 00-assert-statefulset-with-extra-label.yaml
+
+    - name: step-01
+      description: collectors with changed extra labels
+      try:
+        - update:
+            file: 01-install-collectors-with-label-change.yaml
+        # deployment
+        - assert:
+            file: 01-assert-deployment-with-label-change.yaml
+        # daemonset
+        - assert:
+            file: 01-assert-daemonset-with-label-change.yaml
+        # statefulset
+        - assert:
+            file: 01-assert-statefulset-with-label-change.yaml
+
+    - name: step-02
+      description: delete extra label from collector
+      try:
+        - apply:
+            file: 02-manual-labeling-resources.yaml
+        - update:
+            file: 02-install-collectors-without-extra-label.yaml
+        # deployment
+        - assert:
+            file: 02-assert-deployment-without-extra-label.yaml
+        # daemonset
+        - assert:
+            file: 02-assert-daemonset-without-extra-label.yaml
+        # statefulset
+        - assert:
+            file: 02-assert-statefulset-without-extra-label.yaml

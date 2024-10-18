@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: statefulset-collector
+  (contains(keys(annotations), 'user-annotation')): true
+  (contains(keys(annotations), 'new-annotation')): true
+  annotations:
+    manual-annotation: "true"
+spec:
+  template:
+    metadata:
+      (contains(keys(annotations), 'user-annotation')): true
+      (contains(keys(annotations), 'new-annotation')): true
+      annotations:
+        manual-annotation: "true"

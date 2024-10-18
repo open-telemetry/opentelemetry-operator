@@ -1,4 +1,4 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: deployment
@@ -8,16 +8,16 @@ spec:
   mode: deployment
   nodeSelector:
     kubernetes.io/os: linux
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
-    processors:
+          grpc: {}
+          http: {}
+    processors: {}
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
@@ -26,7 +26,7 @@ spec:
           exporters: [debug]
 
 ---
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: daemonset
@@ -36,16 +36,16 @@ spec:
   mode: daemonset
   nodeSelector:
     kubernetes.io/os: linux
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
-    processors:
+          grpc: {}
+          http: {}
+    processors: {}
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
@@ -54,7 +54,7 @@ spec:
           exporters: [debug]
 
 ---
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: statefulset
@@ -64,16 +64,16 @@ spec:
   mode: statefulset
   nodeSelector:
     kubernetes.io/os: linux
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
-    processors:
+          grpc: {}
+          http: {}
+    processors: {}
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:

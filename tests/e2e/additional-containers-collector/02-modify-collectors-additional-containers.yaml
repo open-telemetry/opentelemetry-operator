@@ -3,16 +3,17 @@ kind: OpenTelemetryCollector
 metadata:
   name: deployment
   labels:
-    node-selector-mode: without
+    additional-containers: with
 spec:
   mode: deployment
-  nodeSelector:
+  additionalContainers:
+  - image: alpine
+    name: alpine3
   config:
     receivers:
       otlp:
         protocols:
           grpc: {}
-          http: {}
     processors: {}
 
     exporters:
@@ -30,16 +31,17 @@ kind: OpenTelemetryCollector
 metadata:
   name: daemonset
   labels:
-    node-selector-mode: without
+    additional-containers: with
 spec:
   mode: daemonset
-  nodeSelector:
+  additionalContainers:
+  - image: alpine
+    name: alpine3
   config:
     receivers:
       otlp:
         protocols:
           grpc: {}
-          http: {}
     processors: {}
 
     exporters:
@@ -57,16 +59,17 @@ kind: OpenTelemetryCollector
 metadata:
   name: statefulset
   labels:
-    node-selector-mode: without
+    additional-containers: with
 spec:
   mode: statefulset
-  nodeSelector:
+  additionalContainers:
+  - image: alpine
+    name: alpine3
   config:
     receivers:
       otlp:
         protocols:
           grpc: {}
-          http: {}
     processors: {}
 
     exporters:
