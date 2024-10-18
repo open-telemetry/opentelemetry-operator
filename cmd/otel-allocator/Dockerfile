@@ -14,6 +14,6 @@ WORKDIR /root/
 COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Copy binary built on the host
-COPY bin/targetallocator_${TARGETARCH} ./main
+COPY bin/targetallocator_${TARGETOS}_${TARGETARCH} ./main
 
 ENTRYPOINT ["./main"]
