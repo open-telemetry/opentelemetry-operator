@@ -372,7 +372,8 @@ func TestInjectPythonSDK(t *testing.T) {
 						{
 							Name:    "opentelemetry-auto-instrumentation-python",
 							Image:   "foo/bar:1",
-							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							Command: []string{"/bin/sh"},
+							Args:    []string{"-c", "test -d /autoinstrumentation/. && cp -r /autoinstrumentation/. /otel-auto-instrumentation-python || cp -r /autoinstrumentation/. /otel-auto-instrumentation-python"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      "opentelemetry-auto-instrumentation-python",
 								MountPath: "/otel-auto-instrumentation-python",
@@ -587,6 +588,10 @@ func TestInjectPythonSDK(t *testing.T) {
 									Name:  "OTEL_METRICS_EXPORTER",
 									Value: "otlp",
 								},
+								{
+									Name:  "OTEL_LOGS_EXPORTER",
+									Value: "otlp",
+								},
 							},
 						},
 					},
@@ -652,6 +657,10 @@ func TestInjectPythonSDK(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_LOGS_EXPORTER",
 									Value: "otlp",
 								},
 							},
