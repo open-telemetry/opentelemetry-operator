@@ -3,7 +3,7 @@ apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
   creationTimestamp: null
-  name: instrumentation-python
+  name: instrumentation-python-musl
 spec:
   steps:
   - name: step-00
@@ -37,4 +37,4 @@ spec:
         file: 01-assert.yaml
     catch:
       - podLogs:
-          selector: app=my-python
+          selector: app=my-python-musl
