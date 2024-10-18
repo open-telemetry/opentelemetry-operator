@@ -228,6 +228,9 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 
 // applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
 func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) error {
+	if err := c.Service.ApplyDefaults(); err != nil {
+		return err
+	}
 	enabledComponents := c.GetEnabledComponents()
 	for _, componentKind := range componentKinds {
 		var retriever components.ParserRetriever
@@ -371,24 +374,55 @@ type Service struct {
 	Pipelines map[string]*Pipeline `json:"pipelines" yaml:"pipelines"`
 }
 
-// MetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
-func (s *Service) MetricsPort() (int32, error) {
+// MetricsEndpoint gets the port number and host address for the metrics endpoint from the collector config if it has been set.
+func (s *Service) MetricsEndpoint() (string, int32, error) {
+	defaultAddr := "0.0.0.0"
 	if s.GetTelemetry() == nil {
 		// telemetry isn't set, use the default
-		return 8888, nil
+		return defaultAddr, 8888, nil
 	}
-	_, port, netErr := net.SplitHostPort(s.GetTelemetry().Metrics.Address)
+	host, port, netErr := net.SplitHostPort(s.GetTelemetry().Metrics.Address)
 	if netErr != nil && strings.Contains(netErr.Error(), "missing port in address") {
-		return 8888, nil
+		return defaultAddr, 8888, nil
 	} else if netErr != nil {
-		return 0, netErr
+		return "", 0, netErr
 	}
 	i64, err := strconv.ParseInt(port, 10, 32)
 	if err != nil {
-		return 0, err
+		return "", 0, err
 	}
 
-	return int32(i64), nil
+	if host == "" {
+		host = defaultAddr
+	}
+
+	return host, int32(i64), nil
+}
+
+// ApplyDefaults inserts configuration defaults if it has not been set.
+func (s *Service) ApplyDefaults() error {
+	telemetryAddr, telemetryPort, err := s.MetricsEndpoint()
+	if err != nil {
+		return err
+	}
+	tm := &AnyConfig{
+		Object: map[string]interface{}{
+			"metrics": map[string]interface{}{
+				"address": fmt.Sprintf("%s:%d", telemetryAddr, telemetryPort),
+			},
+		},
+	}
+
+	if s.Telemetry == nil {
+		s.Telemetry = tm
+		return nil
+	}
+	// NOTE: Merge without overwrite. If a telemetry endpoint is specified, the defaulting
+	// respects the configuration and returns an equal value.
+	if err := mergo.Merge(s.Telemetry, tm); err != nil {
+		return fmt.Errorf("telemetry config merge failed: %w", err)
+	}
+	return nil
 }
 
 // MetricsConfig comes from the collector.
