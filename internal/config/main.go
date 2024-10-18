@@ -50,12 +50,14 @@ type Config struct {
 	enableMultiInstrumentation          bool
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
+	enablePHPInstrumentation            bool
 	enableGoInstrumentation             bool
 	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
 	enableNodeJSInstrumentation         bool
 	enableJavaInstrumentation           bool
 	autoInstrumentationDotNetImage      string
+	autoInstrumentationPHPImage         string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
 	autoInstrumentationNginxImage       string
@@ -99,6 +101,7 @@ func New(opts ...Option) Config {
 		enableMultiInstrumentation:          o.enableMultiInstrumentation,
 		enableApacheHttpdInstrumentation:    o.enableApacheHttpdInstrumentation,
 		enableDotNetInstrumentation:         o.enableDotNetInstrumentation,
+		enablePHPInstrumentation:            o.enablePHPInstrumentation,
 		enableGoInstrumentation:             o.enableGoInstrumentation,
 		enableNginxInstrumentation:          o.enableNginxInstrumentation,
 		enablePythonInstrumentation:         o.enablePythonInstrumentation,
@@ -116,6 +119,7 @@ func New(opts ...Option) Config {
 		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
 		autoInstrumentationDotNetImage:      o.autoInstrumentationDotNetImage,
+		autoInstrumentationPHPImage:         o.autoInstrumentationPHPImage,
 		autoInstrumentationGoImage:          o.autoInstrumentationGoImage,
 		autoInstrumentationApacheHttpdImage: o.autoInstrumentationApacheHttpdImage,
 		autoInstrumentationNginxImage:       o.autoInstrumentationNginxImage,
@@ -180,6 +184,11 @@ func (c *Config) EnableDotNetAutoInstrumentation() bool {
 	return c.enableDotNetInstrumentation
 }
 
+// EnablePHPAutoInstrumentation is true when the operator supports php auto instrumentation.
+func (c *Config) EnablePHPAutoInstrumentation() bool {
+	return c.enablePHPInstrumentation
+}
+
 // EnableGoAutoInstrumentation is true when the operator supports Go auto instrumentation.
 func (c *Config) EnableGoAutoInstrumentation() bool {
 	return c.enableGoInstrumentation
@@ -190,17 +199,17 @@ func (c *Config) EnableNginxAutoInstrumentation() bool {
 	return c.enableNginxInstrumentation
 }
 
-// EnableJavaAutoInstrumentation is true when the operator supports nginx auto instrumentation.
+// EnableJavaAutoInstrumentation is true when the operator supports Java auto instrumentation.
 func (c *Config) EnableJavaAutoInstrumentation() bool {
 	return c.enableJavaInstrumentation
 }
 
-// EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+// EnablePythonAutoInstrumentation is true when the operator supports Python auto instrumentation.
 func (c *Config) EnablePythonAutoInstrumentation() bool {
 	return c.enablePythonInstrumentation
 }
 
-// EnableNodeJSAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+// EnableNodeJSAutoInstrumentation is true when the operator supports NodeJS auto instrumentation.
 func (c *Config) EnableNodeJSAutoInstrumentation() bool {
 	return c.enableNodeJSInstrumentation
 }
@@ -268,6 +277,11 @@ func (c *Config) AutoInstrumentationPythonImage() string {
 // AutoInstrumentationDotNetImage returns OpenTelemetry DotNet auto-instrumentation container image.
 func (c *Config) AutoInstrumentationDotNetImage() string {
 	return c.autoInstrumentationDotNetImage
+}
+
+// AutoInstrumentationPHPImage returns OpenTelemetry PHP auto-instrumentation container image.
+func (c *Config) AutoInstrumentationPHPImage() string {
+	return c.autoInstrumentationPHPImage
 }
 
 // AutoInstrumentationGoImage returns OpenTelemetry Go auto-instrumentation container image.

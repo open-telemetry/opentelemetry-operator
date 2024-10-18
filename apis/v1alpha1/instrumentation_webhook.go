@@ -151,6 +151,21 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		}
 	}
+	if r.Spec.PHP.Image == "" {
+		r.Spec.PHP.Image = w.cfg.AutoInstrumentationPHPImage()
+	}
+	if r.Spec.PHP.Resources.Limits == nil {
+		r.Spec.PHP.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
+	if r.Spec.PHP.Resources.Requests == nil {
+		r.Spec.PHP.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		}
+	}
 	if r.Spec.Go.Image == "" {
 		r.Spec.Go.Image = w.cfg.AutoInstrumentationGoImage()
 	}
@@ -201,6 +216,7 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS] = w.cfg.AutoInstrumentationNodeJSImage()
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationPython] = w.cfg.AutoInstrumentationPythonImage()
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationDotNet] = w.cfg.AutoInstrumentationDotNetImage()
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationPHP] = w.cfg.AutoInstrumentationPHPImage()
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationGo] = w.cfg.AutoInstrumentationGoImage()
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationApacheHttpd] = w.cfg.AutoInstrumentationApacheHttpdImage()
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationNginx] = w.cfg.AutoInstrumentationNginxImage()
