@@ -33,6 +33,7 @@ type Container struct {
 	index        int
 	inheritedEnv map[string]string
 	configMaps   map[string]*corev1.ConfigMap
+	secrets      map[string]*corev1.Secret
 }
 
 func NewContainer(client client.Reader, ctx context.Context, logger logr.Logger, namespace string, pod *corev1.Pod, index int) (Container, error) {
@@ -42,22 +43,17 @@ func NewContainer(client client.Reader, ctx context.Context, logger logr.Logger,
 	container := &pod.Spec.Containers[index]
 
 	configMaps := make(map[string]*corev1.ConfigMap)
+	secrets := make(map[string]*corev1.Secret)
 	inheritedEnv := make(map[string]string)
 	for _, envsFrom := range container.EnvFrom {
 		if envsFrom.ConfigMapRef != nil {
-			prefix := envsFrom.Prefix
-			name := envsFrom.ConfigMapRef.Name
-			if cm, err := getOrLoadResource(client, ctx, namespace, configMaps, name); err == nil {
-				for k, v := range cm.Data {
-					// Safely overwrite the value, last one from EnvFrom wins in Kubernetes, with the direct value
-					// from the container itself taking precedence
-					inheritedEnv[prefix+k] = v
-				}
-			} else if envsFrom.ConfigMapRef.Optional == nil || !*envsFrom.ConfigMapRef.Optional {
-				return Container{}, fmt.Errorf("failed to load environment variables: %w", err)
+			if err := loadAllEnvVars(client, ctx, namespace, configMaps, envsFrom.ConfigMapRef.Name, envsFrom.Prefix, envsFrom.ConfigMapRef.Optional, inheritedEnv); err != nil {
+				return Container{}, err
 			}
 		} else if envsFrom.SecretRef != nil {
-			logger.V(2).Info("ignoring SecretRef in EnvFrom", "container", container.Name, "secret", envsFrom.SecretRef.Name)
+			if err := loadAllEnvVars(client, ctx, namespace, secrets, envsFrom.SecretRef.Name, envsFrom.Prefix, envsFrom.SecretRef.Optional, inheritedEnv); err != nil {
+				return Container{}, err
+			}
 		}
 	}
 
@@ -73,37 +69,8 @@ func NewContainer(client client.Reader, ctx context.Context, logger logr.Logger,
 		index:        index,
 		inheritedEnv: inheritedEnv,
 		configMaps:   configMaps,
+		secrets:      secrets,
 	}, nil
-}
-
-func getOrLoadResource[T any, PT interface {
-	client.Object
-	*T
-}](client client.Reader, ctx context.Context, namespace string, cache map[string]*T, name string) (*T, error) {
-	var obj T
-	if cached, ok := cache[name]; ok {
-		if cached != nil {
-			return cached, nil
-		} else {
-			return nil, fmt.Errorf("failed to get %s %s/%s", reflect.TypeOf(obj).Name(), namespace, name)
-		}
-	}
-
-	if client == nil || ctx == nil {
-		// Cache error value
-		cache[name] = nil
-		return nil, fmt.Errorf("client or context is nil, cannot load %s %s/%s", reflect.TypeOf(obj).Name(), namespace, name)
-	}
-
-	err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, PT(&obj))
-	if err != nil {
-		// Cache error value
-		cache[name] = nil
-		return nil, fmt.Errorf("failed to get %s %s/%s: %w", reflect.TypeOf(obj).Name(), namespace, name, err)
-	}
-
-	cache[name] = &obj
-	return &obj, nil
 }
 
 func (c *Container) validate(pod *corev1.Pod, envsToBeValidated ...string) error {
@@ -169,21 +136,9 @@ func (c *Container) getOrMakeEnvVar(pod *corev1.Pod, name string) (corev1.EnvVar
 func (c *Container) resolveEnvVar(envVar corev1.EnvVar) (corev1.EnvVar, error) {
 	if envVar.Value == "" && envVar.ValueFrom != nil {
 		if envVar.ValueFrom.ConfigMapKeyRef != nil {
-			configMapName := envVar.ValueFrom.ConfigMapKeyRef.Name
-			configMapKey := envVar.ValueFrom.ConfigMapKeyRef.Key
-			if cm, err := getOrLoadResource(c.client, c.ctx, c.namespace, c.configMaps, configMapName); err == nil {
-				if value, ok := cm.Data[configMapKey]; ok {
-					return corev1.EnvVar{Name: envVar.Name, Value: value}, nil
-				} else if envVar.ValueFrom.ConfigMapKeyRef.Optional == nil || !*envVar.ValueFrom.ConfigMapKeyRef.Optional {
-					return corev1.EnvVar{}, fmt.Errorf("failed to resolve environment variable %s, key %s not found in ConfigMap %s/%s", envVar.Name, configMapKey, c.namespace, configMapName)
-				} else {
-					return corev1.EnvVar{Name: envVar.Name, Value: ""}, nil
-				}
-			} else if envVar.ValueFrom.ConfigMapKeyRef.Optional == nil || !*envVar.ValueFrom.ConfigMapKeyRef.Optional {
-				return corev1.EnvVar{}, fmt.Errorf("failed to resolve environment variable %s: %w", envVar.Name, err)
-			} else {
-				return corev1.EnvVar{Name: envVar.Name, Value: ""}, nil
-			}
+			return loadEnvVar(c.client, c.ctx, c.namespace, c.configMaps, envVar.Name, envVar.ValueFrom.ConfigMapKeyRef.Name, envVar.ValueFrom.ConfigMapKeyRef.Key, envVar.ValueFrom.ConfigMapKeyRef.Optional)
+		} else if envVar.ValueFrom.SecretKeyRef != nil {
+			return loadEnvVar(c.client, c.ctx, c.namespace, c.secrets, envVar.Name, envVar.ValueFrom.SecretKeyRef.Name, envVar.ValueFrom.SecretKeyRef.Key, envVar.ValueFrom.SecretKeyRef.Optional)
 		} else {
 			v := reflect.ValueOf(*envVar.ValueFrom)
 			for i := 0; i < v.NumField(); i++ {
@@ -195,6 +150,98 @@ func (c *Container) resolveEnvVar(envVar corev1.EnvVar) (corev1.EnvVar, error) {
 		}
 	}
 	return envVar, nil
+}
+
+func getOrLoadResource[T any, PT interface {
+	client.Object
+	*T
+}](client client.Reader, ctx context.Context, namespace string, cache map[string]*T, name string) (*T, error) {
+	var obj T
+	if cached, ok := cache[name]; ok {
+		if cached != nil {
+			return cached, nil
+		} else {
+			return nil, fmt.Errorf("failed to get %s %s/%s", reflect.TypeOf(obj).Name(), namespace, name)
+		}
+	}
+
+	if client == nil || ctx == nil {
+		// Cache error value
+		cache[name] = nil
+		return nil, fmt.Errorf("client or context is nil, cannot load %s %s/%s", reflect.TypeOf(obj).Name(), namespace, name)
+	}
+
+	err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, PT(&obj))
+	if err != nil {
+		// Cache error value
+		cache[name] = nil
+		return nil, fmt.Errorf("failed to get %s %s/%s: %w", reflect.TypeOf(obj).Name(), namespace, name, err)
+	}
+
+	cache[name] = &obj
+	return &obj, nil
+}
+
+func loadAllEnvVars[T any, PT interface {
+	client.Object
+	*T
+}](client client.Reader, ctx context.Context, namespace string, cache map[string]*T, name string, prefix string, optional *bool, inheritedEnv map[string]string) error {
+	if obj, err := getOrLoadResource[T, PT](client, ctx, namespace, cache, name); err == nil {
+		return fillEnvVars(obj, prefix, inheritedEnv)
+	} else if optional == nil || !*optional {
+		return fmt.Errorf("failed to load environment variables: %w", err)
+	} else {
+		return nil
+	}
+}
+
+func loadEnvVar[T any, PT interface {
+	client.Object
+	*T
+}](client client.Reader, ctx context.Context, namespace string, cache map[string]*T, variable string, name string, key string, optional *bool) (corev1.EnvVar, error) {
+	if resource, err := getOrLoadResource[T, PT](client, ctx, namespace, cache, name); err == nil {
+		if value, ok := getResourceValue(resource, key); ok {
+			return corev1.EnvVar{Name: variable, Value: value}, nil
+		} else if optional == nil || !*optional {
+			return corev1.EnvVar{}, fmt.Errorf("failed to resolve environment variable %s, key %s not found in %s %s/%s", variable, key, reflect.TypeOf(*resource).Name(), namespace, name)
+		} else {
+			return corev1.EnvVar{Name: variable, Value: ""}, nil
+		}
+	} else if optional == nil || !*optional {
+		return corev1.EnvVar{}, fmt.Errorf("failed to resolve environment variable %s: %w", variable, err)
+	} else {
+		return corev1.EnvVar{Name: variable, Value: ""}, nil
+	}
+}
+
+func fillEnvVars(obj any, prefix string, inheritedEnv map[string]string) error {
+	switch o := obj.(type) {
+	case *corev1.ConfigMap:
+		for k, v := range o.Data {
+			inheritedEnv[prefix+k] = v
+		}
+		return nil
+	case *corev1.Secret:
+		for k, v := range o.Data {
+			inheritedEnv[prefix+k] = string(v)
+		}
+		return nil
+	default:
+		return fmt.Errorf("unsupported type %T", obj)
+	}
+}
+
+func getResourceValue(obj interface{}, key string) (string, bool) {
+	switch o := obj.(type) {
+	case *corev1.ConfigMap:
+		val, ok := o.Data[key]
+		return val, ok
+	case *corev1.Secret:
+		val, ok := o.Data[key]
+		return string(val), ok
+	default:
+		return "", false
+	}
 }
 
 func existsEnvVarInEnv(env []corev1.EnvVar, name string) bool {

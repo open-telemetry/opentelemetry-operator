@@ -377,7 +377,7 @@ func TestInheritedEnv(t *testing.T) {
 			err: "failed to get ConfigMap inheritedenv-notfoundexplicit/my-config",
 		},
 		{
-			name: "SecretRef not supported",
+			name: "Simple SecretRef usage",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "inheritedenv-secretref",
@@ -410,7 +410,9 @@ func TestInheritedEnv(t *testing.T) {
 					},
 				},
 			},
-			log: "ignoring SecretRef in EnvFrom",
+			expected: map[string]string{
+				"OTEL_ENVFROM_SECRET_VALUE1": "my-secret-value1",
+			},
 		},
 	}
 
@@ -1011,7 +1013,7 @@ func TestResolving(t *testing.T) {
 				Namespace: "validations",
 			},
 			Data: map[string][]byte{
-				"secret-ref-value1": []byte("my-valuefrom-value1"),
+				"secret-ref-value1": []byte("my-secret-valuefrom-value1"),
 			},
 		},
 	}
@@ -1151,10 +1153,10 @@ func TestResolving(t *testing.T) {
 			expectedResolve: "",
 		},
 		{
-			name:           "Test unsupported existing Secret variable",
-			variable:       "OTEL_ENV_VALUEFROM_SECRET1",
-			expectedExists: true,
-			err:            "the container defines env var value via ValueFrom.SecretKeyRef, envVar: OTEL_ENV_VALUEFROM_SECRET1",
+			name:            "Test unsupported existing Secret variable",
+			variable:        "OTEL_ENV_VALUEFROM_SECRET1",
+			expectedExists:  true,
+			expectedResolve: "my-secret-valuefrom-value1",
 		},
 		{
 			name:           "Test unsupported existing FieldRef variable",
