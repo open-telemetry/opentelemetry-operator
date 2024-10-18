@@ -1,5 +1,5 @@
 # To build one auto-instrumentation image for Python, please:
-# - Ensure the packages are installed in the `/autoinstrumentation,{musl}` directory. This is required as when instrumenting the pod,
+# - Ensure the packages are installed in the `/autoinstrumentation,{-musl}` directory. This is required as when instrumenting the pod,
 #   one init container will be created to copy all the content in `/autoinstrumentation{,-musl}` directory to your app's container. Then
 #   update the `PYTHONPATH` environment variable accordingly. To achieve this, you can mimic the one in `autoinstrumentation/python/Dockerfile`
 #   by using multi-stage builds. In the first stage, install all the required packages in one custom directory with `pip install --target`.
