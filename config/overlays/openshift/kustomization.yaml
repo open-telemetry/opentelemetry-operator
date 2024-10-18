@@ -1,6 +1,13 @@
 resources:
 - ../../default
 
+labels:
+- pairs:
+    app.kubernetes.io/name: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry-operator
+    app.kubernetes.io/managed-by: operator-lifecycle-manager
+  includeSelectors: true
+
 patches:
  - target:
       group: apps
@@ -8,3 +15,7 @@ patches:
       kind: Deployment
       name: controller-manager
    path: manager-patch.yaml
+
+patchesStrategicMerge:
+- metrics_service_tls_patch.yaml
+- manager_auth_proxy_tls_patch.yaml
