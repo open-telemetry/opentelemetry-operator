@@ -37,6 +37,8 @@ spec:
       value: otlp
     - name: OTEL_METRICS_EXPORTER
       value: otlp
+    - name: OTEL_LOGS_EXPORTER
+      value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
     - name: OTEL_EXPORTER_OTLP_TIMEOUT

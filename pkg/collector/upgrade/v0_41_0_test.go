@@ -24,7 +24,6 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 )
 
@@ -64,7 +63,7 @@ service:
 	// TESTCASE 1: restructure cors for both allowed_origin & allowed_headers
 	up := &upgrade.VersionUpgrade{
 		Log:      logger,
-		Version:  version.Get(),
+		Version:  makeVersion("0.41.0"),
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}

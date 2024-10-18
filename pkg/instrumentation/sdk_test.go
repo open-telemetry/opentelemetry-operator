@@ -1262,6 +1262,10 @@ func TestInjectPython(t *testing.T) {
 							Value: "otlp",
 						},
 						{
+							Name:  "OTEL_LOGS_EXPORTER",
+							Value: "otlp",
+						},
+						{
 							Name:  "OTEL_SERVICE_NAME",
 							Value: "app",
 						},

@@ -29,6 +29,8 @@ spec:
       value: http/protobuf
     - name: OTEL_METRICS_EXPORTER
       value: otlp
+    - name: OTEL_LOGS_EXPORTER
+      value: otlp
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
       value: "20"
     - name: OTEL_TRACES_SAMPLER

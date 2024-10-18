@@ -50,3 +50,4 @@ The operator should be released within a week after the [OpenTelemetry collector
 | v0.114.0 | @TylerHelmuth   |
 | v0.115.0 | @jaronoff97     |
 | v0.116.0 | @swiatekm       |
+| v0.117.0 | @iblancasa      |
