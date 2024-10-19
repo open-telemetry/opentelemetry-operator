@@ -9,12 +9,14 @@
 - `auto-instrumentation`: set OTEL_LOGS_EXPORTER env var to otlp in python instrumentation (#3330)
 
 - `collector`: Expose the Collector telemetry endpoint by default. (#3361)
+
   The collector v0.111.0 changes the default binding of the telemetry metrics endpoint from `0.0.0.0` to `localhost`.
-  To avoid any disruption we fallback to "0.0.0.0:{PORT}" as default address.
+  To avoid any disruption we fallback to `0.0.0.0:{PORT}` as default address.
   Details can be found here: [opentelemetry-collector#11251](https://github.com/open-telemetry/opentelemetry-collector/pull/11251)
 
 
 - `auto-instrumentation`: Add support for specifying exporter TLS certificates in auto-instrumentation. (#3338)
+  
   Now Instrumentation CR supports specifying TLS certificates for exporter:
   ```yaml
   spec:
@@ -35,6 +37,7 @@
   * Restarting workloads on certificate renewal can be done with https://github.com/stakater/Reloader or https://github.com/wave-k8s/wave
 
 - `collector`: Add native sidecar injection behind a feature gate which is disabled by default. (#2376)
+  
   Native sidecars are supported since Kubernetes version `1.28` and are availabe by default since `1.29`.
   To use native sidecars on Kubernetes v1.28 make sure the "SidecarContainers" feature gate on kubernetes is enabled.
   If native sidecars are available, the operator can be advised to use them by adding
@@ -42,37 +45,17 @@
   In the future this may will become availabe as deployment mode on the Collector CR. See [#3356](https://github.com/open-telemetry/opentelemetry-operator/issues/3356)
 
 - `target allocator, collector`: Enable mTLS between the TA and collector for passing secrets in the scrape_config securely (#1669)
+
   This change enables mTLS between the collector and the target allocator (requires cert-manager).
-  This is necessary for passing secrets securely from the TA to the collector for scraping endpoints that have authentication.
-  
-- `auto-instrumentation`: Add support for specifying exporter TLS certificates in auto-instrumentation. (#3338)
-  Now Instrumentation CR supports specifying TLS certificates for exporter:
-  ```yaml
-  spec:
-    exporter:
-      endpoint: https://otel-collector:4317
-      tls:
-        secretName: otel-tls-certs
-        configMapName: otel-ca-bundle
-        # otel-ca-bundle
-        ca: ca.crt
-        # present in otel-tls-certs
-        cert: tls.crt 
-        # present in otel-tls-certs
-        key: tls.key
-  ```
-  
-  * Propagating secrets across namespaces can be done with https://github.com/EmberStack/kubernetes-reflector or https://github.com/zakkg3/ClusterSecret
-  * Restarting workloads on certificate renewal can be done with https://github.com/stakater/Reloader or https://github.com/wave-k8s/wave
-  
+  This is necessary for passing secrets securely from the TA to the collector for scraping endpoints that have authentication. Use the `operator.targetallocator.mtls` to enable this feature. See the target allocator [documentation](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#service--pod-monitor-endpoint-credentials) for more details.
 
 ### 🧰 Bug fixes 🧰
 
 - `collector-webhook`: Fixed validation of `stabilizationWindowSeconds` in autoscaler behaviour (#3345)
+
   The validation of `stabilizationWindowSeconds` in the `autoscaler.behaviour.scale[Up|Down]` incorrectly rejected 0 as an invalid value.
   This has been fixed to ensure that the value is validated correctly (should be >=0 and <=3600) and the error messsage has been updated to reflect this.
   
-
 ### Components
 
 * [OpenTelemetry Collector - v0.111.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.111.0)
