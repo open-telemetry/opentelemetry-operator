@@ -246,7 +246,7 @@ type StatefulSetCommonFields struct {
 	VolumeClaimTemplates []v1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 	// PersistentVolumeClaimRetentionPolicy describes the lifecycle of persistent volume claims
 	// created from volumeClaimTemplates.
-	// This only works with the following OpenTelemetryCollector mode's: statefulset.
+	// This only works with the following OpenTelemetryCollector modes: statefulset.
 	// +optional
 	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
 }
