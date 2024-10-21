@@ -73,9 +73,10 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 					TopologySpreadConstraints: params.OtelCol.Spec.TopologySpreadConstraints,
 				},
 			},
-			Replicas:             params.OtelCol.Spec.Replicas,
-			PodManagementPolicy:  "Parallel",
-			VolumeClaimTemplates: VolumeClaimTemplates(params.OtelCol),
+			Replicas:                             params.OtelCol.Spec.Replicas,
+			PodManagementPolicy:                  "Parallel",
+			VolumeClaimTemplates:                 VolumeClaimTemplates(params.OtelCol),
+			PersistentVolumeClaimRetentionPolicy: params.OtelCol.Spec.PersistentVolumeClaimRetentionPolicy,
 		},
 	}, nil
 }
