@@ -15,6 +15,7 @@
 package v1beta1
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -243,4 +244,9 @@ type StatefulSetCommonFields struct {
 	// +optional
 	// +listType=atomic
 	VolumeClaimTemplates []v1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
+	// PersistentVolumeClaimRetentionPolicy describes the lifecycle of persistent volume claims
+	// created from volumeClaimTemplates.
+	// This only works with the following OpenTelemetryCollector modes: statefulset.
+	// +optional
+	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
 }

@@ -31177,6 +31177,15 @@ This only works with the following OpenTelemetryCollector mode's: daemonset, sta
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecpersistentvolumeclaimretentionpolicy">persistentVolumeClaimRetentionPolicy</a></b></td>
+        <td>object</td>
+        <td>
+          PersistentVolumeClaimRetentionPolicy describes the lifecycle of persistent volume claims
+created from volumeClaimTemplates.
+This only works with the following OpenTelemetryCollector modes: statefulset.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>podAnnotations</b></td>
         <td>map[string]string</td>
         <td>
@@ -40930,6 +40939,49 @@ Metrics defines the metrics configuration for operands.
         <td>
           EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
 The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.persistentVolumeClaimRetentionPolicy
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+PersistentVolumeClaimRetentionPolicy describes the lifecycle of persistent volume claims
+created from volumeClaimTemplates.
+This only works with the following OpenTelemetryCollector modes: statefulset.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>whenDeleted</b></td>
+        <td>string</td>
+        <td>
+          WhenDeleted specifies what happens to PVCs created from StatefulSet
+VolumeClaimTemplates when the StatefulSet is deleted. The default policy
+of `Retain` causes PVCs to not be affected by StatefulSet deletion. The
+`Delete` policy causes those PVCs to be deleted.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>whenScaled</b></td>
+        <td>string</td>
+        <td>
+          WhenScaled specifies what happens to PVCs created from StatefulSet
+VolumeClaimTemplates when the StatefulSet is scaled down. The default
+policy of `Retain` causes PVCs to not be affected by a scaledown. The
+`Delete` policy causes the associated PVCs for any excess pods above
+the replica count to be deleted.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

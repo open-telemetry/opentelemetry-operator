@@ -764,6 +764,21 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "does not support the attribute 'volumeClaimTemplates'",
 		},
 		{
+			name: "invalid mode with persistentVolumeClaimRetentionPolicy",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeSidecar,
+					StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
+						PersistentVolumeClaimRetentionPolicy: &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
+							WhenDeleted: appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
+							WhenScaled:  appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+						},
+					},
+				},
+			},
+			expectedErr: "does not support the attribute 'persistentVolumeClaimRetentionPolicy'",
+		},
+		{
 			name: "invalid mode with tolerations",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{

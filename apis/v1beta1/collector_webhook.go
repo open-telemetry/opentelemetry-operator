@@ -188,6 +188,11 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)
 	}
 
+	// validate persistentVolumeClaimRetentionPolicy
+	if r.Spec.Mode != ModeStatefulSet && r.Spec.PersistentVolumeClaimRetentionPolicy != nil {
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'persistentVolumeClaimRetentionPolicy'", r.Spec.Mode)
+	}
+
 	// validate tolerations
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
