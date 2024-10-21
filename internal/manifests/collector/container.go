@@ -156,16 +156,28 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 	}
 
 	if featuregate.SetGolangFlags.IsEnabled() {
-		envVars = append(envVars, corev1.EnvVar{
-			Name: "GOMEMLIMIT",
-			ValueFrom: &corev1.EnvVarSource{
-				ResourceFieldRef: &corev1.ResourceFieldSelector{
-					Resource:      "limits.memory",
-					ContainerName: naming.Container(),
+		skipGoMemLimit, skipGoMaxprocs := false, false
+		for _, v := range envVars {
+			if v.Name == "GOMEMLIMIT" {
+				skipGoMemLimit = true
+			} else if v.Name == "GOMAXPROCS" {
+				skipGoMaxprocs = true
+			}
+		}
+		if !skipGoMemLimit {
+			envVars = append(envVars, corev1.EnvVar{
+				Name: "GOMEMLIMIT",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.memory",
+						ContainerName: naming.Container(),
+					},
 				},
 			},
-		},
-			corev1.EnvVar{
+			)
+		}
+		if !skipGoMaxprocs {
+			envVars = append(envVars, corev1.EnvVar{
 				Name: "GOMAXPROCS",
 				ValueFrom: &corev1.EnvVarSource{
 					ResourceFieldRef: &corev1.ResourceFieldSelector{
@@ -174,7 +186,8 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 					},
 				},
 			},
-		)
+			)
+		}
 	}
 
 	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)

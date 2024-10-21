@@ -64,16 +64,28 @@ func Container(cfg config.Config, logger logr.Logger, opampBridge v1alpha1.OpAMP
 	}
 
 	if featuregate.SetGolangFlags.IsEnabled() {
-		envVars = append(envVars, corev1.EnvVar{
-			Name: "GOMEMLIMIT",
-			ValueFrom: &corev1.EnvVarSource{
-				ResourceFieldRef: &corev1.ResourceFieldSelector{
-					Resource:      "limits.memory",
-					ContainerName: naming.OpAMPBridgeContainer(),
+		skipGoMemLimit, skipGoMaxprocs := false, false
+		for _, v := range envVars {
+			if v.Name == "GOMEMLIMIT" {
+				skipGoMemLimit = true
+			} else if v.Name == "GOMAXPROCS" {
+				skipGoMaxprocs = true
+			}
+		}
+		if !skipGoMemLimit {
+			envVars = append(envVars, corev1.EnvVar{
+				Name: "GOMEMLIMIT",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.memory",
+						ContainerName: naming.OpAMPBridgeContainer(),
+					},
 				},
 			},
-		},
-			corev1.EnvVar{
+			)
+		}
+		if !skipGoMaxprocs {
+			envVars = append(envVars, corev1.EnvVar{
 				Name: "GOMAXPROCS",
 				ValueFrom: &corev1.EnvVarSource{
 					ResourceFieldRef: &corev1.ResourceFieldSelector{
@@ -82,7 +94,8 @@ func Container(cfg config.Config, logger logr.Logger, opampBridge v1alpha1.OpAMP
 					},
 				},
 			},
-		)
+			)
+		}
 	}
 
 	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
