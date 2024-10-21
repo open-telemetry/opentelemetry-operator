@@ -8,3 +8,7 @@ patches:
       kind: Deployment
       name: controller-manager
    path: manager-patch.yaml
+
+patchesStrategicMerge:
+- metrics_service_tls_patch.yaml
+- manager_auth_proxy_tls_patch.yaml

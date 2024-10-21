@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: operator-lifecycle-manager
+    app.kubernetes.io/name: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry-operator
+  name: opentelemetry-operator-prometheus-rules
+spec:
+  groups:
+  - name: opentelemetry-operator-monitoring.rules
+    rules:
+    - expr: sum by (type) (opentelemetry_collector_receivers)
+      record: type:opentelemetry_collector_receivers:sum
+    - expr: sum by (type) (opentelemetry_collector_exporters)
+      record: type:opentelemetry_collector_exporters:sum
+    - expr: sum by (type) (opentelemetry_collector_processors)
+      record: type:opentelemetry_collector_processors:sum
+    - expr: sum by (type) (opentelemetry_collector_extensions)
+      record: type:opentelemetry_collector_extensions:sum
+    - expr: sum by (type) (opentelemetry_collector_connectors)
+      record: type:opentelemetry_collector_connectors:sum
+    - expr: sum by (type) (opentelemetry_collector_info)
+      record: type:opentelemetry_collector_info:sum
