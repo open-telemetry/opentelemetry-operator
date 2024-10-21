@@ -31182,7 +31182,7 @@ This only works with the following OpenTelemetryCollector mode's: daemonset, sta
         <td>
           PersistentVolumeClaimRetentionPolicy describes the lifecycle of persistent volume claims
 created from volumeClaimTemplates.
-This only works with the following OpenTelemetryCollector mode's: statefulset.<br/>
+This only works with the following OpenTelemetryCollector modes: statefulset.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -40952,7 +40952,7 @@ The operator.observability.prometheus feature gate must be enabled to use this f
 
 PersistentVolumeClaimRetentionPolicy describes the lifecycle of persistent volume claims
 created from volumeClaimTemplates.
-This only works with the following OpenTelemetryCollector mode's: statefulset.
+This only works with the following OpenTelemetryCollector modes: statefulset.
 
 <table>
     <thead>
