@@ -1,0 +1,21 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: enhancement
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: collector
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Add native sidecar injection behind a feature gate which is disabled by default.
+
+# One or more tracking issues related to the change
+issues: [2376]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  Native sidecars are supported since Kubernetes version `1.28` and are availabe by default since `1.29`.
+  To use native sidecars on Kubernetes v1.28 make sure the "SidecarContainers" feature gate on kubernetes is enabled.
+  If native sidecars are available, the operator can be advised to use them by adding adding
+  the `--feature-gates=operator.sidecarcontainers.native` to the Operator args.
+  In the future this may will become availabe as deployment mode on the Collector CR. See [#3356](https://github.com/open-telemetry/opentelemetry-operator/issues/3356)

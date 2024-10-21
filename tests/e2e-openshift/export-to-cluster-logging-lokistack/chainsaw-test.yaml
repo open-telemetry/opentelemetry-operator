@@ -20,6 +20,16 @@ spec:
         file: install-minio-assert.yaml
   - name: Create the LokiStack instance
     try:
+    - command:
+        entrypoint: oc
+        args:
+        - get
+        - storageclass
+        - -o
+        - jsonpath={.items[0].metadata.name}
+        outputs:
+        - name: STORAGE_CLASS_NAME
+          value: ($stdout)
     - apply:
         file: install-loki.yaml
     - assert:

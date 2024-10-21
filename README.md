@@ -608,7 +608,7 @@ spec:
   mode: statefulset
   targetAllocator:
     enabled: true
-  config: 
+  config:
     receivers:
       prometheus:
         config:
@@ -740,7 +740,7 @@ spec:
 
 ### Configure resource attributes with labels
 
-You can also use common labels to set resource attributes. 
+You can also use common labels to set resource attributes.
 
 The following labels are supported:
 - `app.kubernetes.io/name` becomes `service.name`
@@ -782,12 +782,12 @@ The priority for setting resource attributes is as follows (first found wins):
 
 1. Resource attributes set via `OTEL_RESOURCE_ATTRIBUTES` and `OTEL_SERVICE_NAME` environment variables
 2. Resource attributes set via annotations (with the `resource.opentelemetry.io/` prefix)
-3. Resource attributes set via labels (e.g. `app.kubernetes.io/name`) 
+3. Resource attributes set via labels (e.g. `app.kubernetes.io/name`)
    if the `Instrumentation` CR has defaults.useLabelsForResourceAttributes=true (see above)
 4. Resource attributes calculated from the pod's metadata (e.g. `k8s.pod.name`)
 5. Resource attributes set via the `Instrumentation` CR (in the `spec.resource.resourceAttributes` section)
 
-This priority is applied for each resource attribute separately, so it is possible to set some attributes via 
+This priority is applied for each resource attribute separately, so it is possible to set some attributes via
 annotations and others via labels.
 
 ## Compatibility matrix
@@ -807,7 +807,7 @@ We strive to be compatible with the widest range of Kubernetes versions as possi
 We use `cert-manager` for some features of this operator and the third column shows the versions of the `cert-manager` that are known to work with this operator's versions.
 
 The Target Allocator supports prometheus-operator CRDs like ServiceMonitor, and it does so by using packages imported from prometheus-operator itself. The table shows which version is shipped with a given operator version.
-Generally speaking, these are backwards compatible, but specific features require the appropriate package versions. 
+Generally speaking, these are backwards compatible, but specific features require the appropriate package versions.
 
 The OpenTelemetry Operator _might_ work on versions outside of the given range, but when opening new issues, please make sure to test your scenario on a supported version.
 
@@ -849,6 +849,7 @@ Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-tel
 - [Benedikt Bongartz](https://github.com/frzifus), Red Hat
 - [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), Red Hat
+- [Israel Blancas](https://github.com/iblancasa), Red Hat
 
 Emeritus Approvers:
 

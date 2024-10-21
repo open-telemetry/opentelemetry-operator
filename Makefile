@@ -267,6 +267,13 @@ generate: controller-gen
 e2e: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e
 
+# e2e-native-sidecar
+# NOTE: make sure the k8s featuregate "SidecarContainers" is set to true.
+# NOTE: make sure the operator featuregate "operator.sidecarcontainers.native" is enabled.
+.PHONY: e2e-native-sidecar
+e2e-native-sidecar: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-native-sidecar
+
 # end-to-end-test for testing automatic RBAC creation
 .PHONY: e2e-automatic-rbac
 e2e-automatic-rbac: chainsaw
@@ -466,7 +473,7 @@ KUSTOMIZE_VERSION ?= v5.0.3
 CONTROLLER_TOOLS_VERSION ?= v0.16.1
 GOLANGCI_LINT_VERSION ?= v1.57.2
 KIND_VERSION ?= v0.20.0
-CHAINSAW_VERSION ?= v0.2.5
+CHAINSAW_VERSION ?= v0.2.8
 
 .PHONY: install-tools
 install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kind operator-sdk chainsaw

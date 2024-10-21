@@ -1259,6 +1259,10 @@ func TestMutatePod(t *testing.T) {
 								Value: "otlp",
 							},
 							{
+								Name:  "OTEL_LOGS_EXPORTER",
+								Value: "otlp",
+							},
+							{
 								Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
 								Value: "http://localhost:4318",
 							},
@@ -1359,6 +1363,10 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_LOGS_EXPORTER",
 									Value: "otlp",
 								},
 								{
@@ -1455,6 +1463,10 @@ func TestMutatePod(t *testing.T) {
 								Value: "otlp",
 							},
 							{
+								Name:  "OTEL_LOGS_EXPORTER",
+								Value: "otlp",
+							},
+							{
 								Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
 								Value: "http://localhost:4318",
 							},
@@ -1563,6 +1575,10 @@ func TestMutatePod(t *testing.T) {
 									Value: "otlp",
 								},
 								{
+									Name:  "OTEL_LOGS_EXPORTER",
+									Value: "otlp",
+								},
+								{
 									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
 									Value: "http://localhost:4318",
 								},
@@ -1651,6 +1667,10 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_LOGS_EXPORTER",
 									Value: "otlp",
 								},
 								{
@@ -1744,6 +1764,10 @@ func TestMutatePod(t *testing.T) {
 							},
 							{
 								Name:  "OTEL_METRICS_EXPORTER",
+								Value: "otlp",
+							},
+							{
+								Name:  "OTEL_LOGS_EXPORTER",
 								Value: "otlp",
 							},
 							{
@@ -4126,6 +4150,10 @@ func TestMutatePod(t *testing.T) {
 									Value: "otlp",
 								},
 								{
+									Name:  "OTEL_LOGS_EXPORTER",
+									Value: "otlp",
+								},
+								{
 									Name:  "OTEL_SERVICE_NAME",
 									Value: "python1",
 								},
@@ -4198,6 +4226,10 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_LOGS_EXPORTER",
 									Value: "otlp",
 								},
 								{

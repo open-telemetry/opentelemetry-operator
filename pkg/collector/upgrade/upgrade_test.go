@@ -141,7 +141,7 @@ func TestEnvVarUpdates(t *testing.T) {
 	require.Equal(t, collectorInstance.Status.Version, persisted.Status.Version)
 
 	currentV := version.Get()
-	currentV.OpenTelemetryCollector = "0.110.0"
+	currentV.OpenTelemetryCollector = "0.111.0"
 	up := &upgrade.VersionUpgrade{
 		Log:      logger,
 		Version:  currentV,

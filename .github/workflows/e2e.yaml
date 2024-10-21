@@ -46,6 +46,9 @@ jobs:
            setup: "add-operator-arg OPERATOR_ARG='--feature-gates=operator.targetallocator.mtls' add-certmanager-permissions prepare-e2e"
          - group: e2e-automatic-rbac
            setup: "add-rbac-permissions-to-operator prepare-e2e"
+         - group: e2e-native-sidecar
+           setup: "add-operator-arg OPERATOR_ARG='--feature-gates=operator.sidecarcontainers.native' prepare-e2e"
+           kube-version: "1.29"
     steps:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v4
@@ -59,8 +62,6 @@ jobs:
       with:
         path: bin
         key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
-    - name: Install chainsaw
-      uses: kyverno/action-install-chainsaw@v0.2.11
     - name: Install tools
       run: make install-tools
     - name: Prepare e2e tests

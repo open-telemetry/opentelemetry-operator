@@ -24,7 +24,6 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 )
 
@@ -46,7 +45,7 @@ func Test0_104_0Upgrade(t *testing.T) {
 
 	versionUpgrade := &upgrade.VersionUpgrade{
 		Log:      logger,
-		Version:  version.Get(),
+		Version:  makeVersion("0.104.0"),
 		Client:   k8sClient,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
@@ -56,7 +55,9 @@ func Test0_104_0Upgrade(t *testing.T) {
 		t.Errorf("expect err: nil but got: %v", err)
 	}
 	assert.EqualValues(t,
-		map[string]string{},
+		map[string]string{
+			"feature-gates": "-component.UseLocalHostAsDefaultHost",
+		},
 		col.Spec.Args, "missing featuregate")
 }
 
