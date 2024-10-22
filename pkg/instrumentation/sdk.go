@@ -141,6 +141,27 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			}
 		}
 	}
+	if insts.PHP.Instrumentation != nil {
+		otelinst := *insts.PHP.Instrumentation
+		var err error
+		i.logger.V(1).Info("injecting PHP instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+
+		if len(insts.PHP.Containers) == 0 {
+			insts.PHP.Containers = []string{pod.Spec.Containers[0].Name}
+		}
+
+		for _, container := range insts.PHP.Containers {
+			index := getContainerIndex(container, pod)
+			pod, err = injectPHPSDK(otelinst.Spec.PHP, pod, index, insts.PHP.AdditionalAnnotations[annotationPHPRuntime])
+			if err != nil {
+				i.logger.Info("Skipping PHP SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
+			} else {
+				pod = i.injectCommonEnvVar(otelinst, pod, index)
+				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, phpInitContainerName)
+			}
+		}
+	}
 	if insts.Go.Instrumentation != nil {
 		origPod := pod
 		otelinst := *insts.Go.Instrumentation
@@ -290,7 +311,7 @@ func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod 
 // agentIndex represents the index of the pod the needs the env vars to instrument the application.
 // appIndex represents the index of the pod the will produce the telemetry.
 // When the pod handling the instrumentation is the same as the pod producing the telemetry agentIndex
-// and appIndex should be the same value.  This is true for dotnet, java, nodejs, and python instrumentations.
+// and appIndex should be the same value.  This is true for dotnet, java, nodejs, php, and python instrumentations.
 // Go requires the agent to be a different container in the pod, so the agentIndex should represent this new sidecar
 // and appIndex should represent the application being instrumented.
 func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, agentIndex int, appIndex int) corev1.Pod {

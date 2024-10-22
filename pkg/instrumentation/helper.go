@@ -46,6 +46,7 @@ func isAutoInstrumentationInjected(pod corev1.Pod) bool {
 	for _, cont := range pod.Spec.InitContainers {
 		if slices.Contains([]string{
 			dotnetInitContainerName,
+			phpInitContainerName,
 			javaInitContainerName,
 			nodejsInitContainerName,
 			pythonInitContainerName,

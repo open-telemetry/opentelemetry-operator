@@ -41,6 +41,7 @@ type InstrumentationUpgrade struct {
 	DefaultAutoInstNodeJS      string
 	DefaultAutoInstPython      string
 	DefaultAutoInstDotNet      string
+	DefaultAutoInstPHP         string
 	DefaultAutoInstApacheHttpd string
 	DefaultAutoInstNginx       string
 	DefaultAutoInstGo          string
@@ -51,6 +52,7 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 	defaultAnnotationToConfig := map[string]autoInstConfig{
 		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationPHP:         {constants.FlagPHP, cfg.EnablePHPAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationGo:          {constants.FlagGo, cfg.EnableGoAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationNginx:       {constants.FlagNginx, cfg.EnableNginxAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationPython:      {constants.FlagPython, cfg.EnablePythonAutoInstrumentation()},
@@ -65,6 +67,7 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 		DefaultAutoInstNodeJS:      cfg.AutoInstrumentationNodeJSImage(),
 		DefaultAutoInstPython:      cfg.AutoInstrumentationPythonImage(),
 		DefaultAutoInstDotNet:      cfg.AutoInstrumentationDotNetImage(),
+		DefaultAutoInstPHP:         cfg.AutoInstrumentationPHPImage(),
 		DefaultAutoInstGo:          cfg.AutoInstrumentationGoImage(),
 		DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage(),
 		DefaultAutoInstNginx:       cfg.AutoInstrumentationNginxImage(),
@@ -118,6 +121,11 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 					if inst.Spec.DotNet.Image == autoInst {
 						upgraded.Spec.DotNet.Image = u.DefaultAutoInstDotNet
 						upgraded.Annotations[annotation] = u.DefaultAutoInstDotNet
+					}
+				case constants.AnnotationDefaultAutoInstrumentationPHP:
+					if inst.Spec.PHP.Image == autoInst {
+						upgraded.Spec.PHP.Image = u.DefaultAutoInstPHP
+						upgraded.Annotations[annotation] = u.DefaultAutoInstPHP
 					}
 				case constants.AnnotationDefaultAutoInstrumentationGo:
 					if inst.Spec.Go.Image == autoInst {

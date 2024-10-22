@@ -219,7 +219,7 @@ kubectl patch serviceaccount <service-account-name> -p '{"imagePullSecrets": [{"
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS, Python and PHP are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -257,6 +257,13 @@ spec:
     env:
       # Required if endpoint is set to 4317.
       # Go autoinstrumentation uses http/proto by default
+      # so data must be sent to 4318 instead of 4317.
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://otel-collector:4318
+  php:
+    env:
+      # Required if endpoint is set to 4317.
+      # PHP autoinstrumentation uses http/proto by default
       # so data must be sent to 4318 instead of 4317.
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://otel-collector:4318
@@ -305,6 +312,12 @@ By default `linux-x64` is used.
 instrumentation.opentelemetry.io/inject-dotnet: "true"
 instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-x64" # for Linux glibc based images, this is default value and can be omitted
 instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-musl-x64"  # for Linux musl based images
+```
+
+PHP:
+
+```bash
+instrumentation.opentelemetry.io/inject-php: "true"
 ```
 
 Go:
@@ -424,6 +437,12 @@ DotNet:
 instrumentation.opentelemetry.io/dotnet-container-names: "dotnet1,dotnet2"
 ```
 
+PHP:
+
+```bash
+instrumentation.opentelemetry.io/php-container-names: "php1,php2"
+```
+
 Go:
 
 ```bash
@@ -510,6 +529,8 @@ spec:
     image: your-customized-auto-instrumentation-image:python
   dotnet:
     image: your-customized-auto-instrumentation-image:dotnet
+  php:
+    image: your-customized-auto-instrumentation-image:php
   go:
     image: your-customized-auto-instrumentation-image:go
   apacheHttpd:
@@ -584,6 +605,7 @@ Language support can be disabled by passing the flag with a value of `false`.
 | NodeJS      | `enable-nodejs-instrumentation`       | `true`        |
 | Python      | `enable-python-instrumentation`       | `true`        |
 | DotNet      | `enable-dotnet-instrumentation`       | `true`        |
+| PHP         | `enable-php-instrumentation`          | `true`        |
 | ApacheHttpD | `enable-apache-httpd-instrumentation` | `true`        |
 | Go          | `enable-go-instrumentation`           | `false`       |
 | Nginx       | `enable-nginx-instrumentation`        | `false`       |

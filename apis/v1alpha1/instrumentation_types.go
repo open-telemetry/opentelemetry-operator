@@ -72,6 +72,10 @@ type InstrumentationSpec struct {
 	// +optional
 	Go Go `json:"go,omitempty"`
 
+	// PHP defines configuration for PHP auto-instrumentation.
+	// +optional
+	PHP PHP `json:"php,omitempty"`
+
 	// ApacheHttpd defines configuration for Apache HTTPD auto-instrumentation.
 	// +optional
 	ApacheHttpd ApacheHttpd `json:"apacheHttpd,omitempty"`
@@ -267,6 +271,26 @@ type Go struct {
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+}
+
+// PHP defines PHP SDK and instrumentation configuration.
+type PHP struct {
+	// Image is a container image with PHP SDK and auto-instrumentation.
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
+	// The default size is 200Mi.
+	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
+
+	// Env defines PHP specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`

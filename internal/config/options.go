@@ -34,6 +34,7 @@ type options struct {
 	version                             version.Version
 	logger                              logr.Logger
 	autoInstrumentationDotNetImage      string
+	autoInstrumentationPHPImage         string
 	autoInstrumentationGoImage          string
 	autoInstrumentationJavaImage        string
 	autoInstrumentationNodeJSImage      string
@@ -46,6 +47,7 @@ type options struct {
 	enableMultiInstrumentation          bool
 	enableApacheHttpdInstrumentation    bool
 	enableDotNetInstrumentation         bool
+	enablePHPInstrumentation            bool
 	enableGoInstrumentation             bool
 	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
@@ -100,6 +102,11 @@ func WithEnableApacheHttpdInstrumentation(s bool) Option {
 func WithEnableDotNetInstrumentation(s bool) Option {
 	return func(o *options) {
 		o.enableDotNetInstrumentation = s
+	}
+}
+func WithEnablePHPInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enablePHPInstrumentation = s
 	}
 }
 func WithEnableGoInstrumentation(s bool) Option {
@@ -169,6 +176,12 @@ func WithAutoInstrumentationPythonImage(s string) Option {
 func WithAutoInstrumentationDotNetImage(s string) Option {
 	return func(o *options) {
 		o.autoInstrumentationDotNetImage = s
+	}
+}
+
+func WithAutoInstrumentationPHPImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationPHPImage = s
 	}
 }
 

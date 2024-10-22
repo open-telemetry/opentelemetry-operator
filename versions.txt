@@ -39,3 +39,7 @@ autoinstrumentation-apache-httpd=1.0.4
 # Represents the current release of Apache Nginx instrumentation.
 # Should match autoinstrumentation/apache-httpd/version.txt
 autoinstrumentation-nginx=1.0.4
+
+# Represents the current release of PHP instrumentation.
+# Should match autoinstrumentation/php/version.txt
+autoinstrumentation-php=1.1.0

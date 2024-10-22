@@ -37,6 +37,7 @@ jobs:
           grep -v '\#' versions.txt | grep autoinstrumentation-python | awk -F= '{print "AUTO_INSTRUMENTATION_PYTHON_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-dotnet | awk -F= '{print "AUTO_INSTRUMENTATION_DOTNET_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-go | awk -F= '{print "AUTO_INSTRUMENTATION_GO_VERSION="$2}' >> $GITHUB_ENV
+          grep -v '\#' versions.txt | grep autoinstrumentation-php | awk -F= '{print "AUTO_INSTRUMENTATION_PHP_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-apache-httpd | awk -F= '{print "AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-nginx | awk -F= '{print "AUTO_INSTRUMENTATION_NGINX_VERSION="$2}' >> $GITHUB_ENV
           echo "VERSION_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
