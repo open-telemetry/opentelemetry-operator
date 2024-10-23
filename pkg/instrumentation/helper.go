@@ -16,6 +16,7 @@ package instrumentation
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -121,6 +122,28 @@ func isInstrWithoutContainers(inst instrumentationWithContainers) int {
 	}
 
 	return 0
+}
+
+// Return volume if defined, otherwise return emptyDir with given name and size limit.
+func instrVolume(volumeClaimTemplate corev1.PersistentVolumeClaimTemplate, name string, quantity *resource.Quantity) corev1.Volume {
+	if !reflect.ValueOf(volumeClaimTemplate).IsZero() {
+		return corev1.Volume{
+			Name: name,
+			VolumeSource: corev1.VolumeSource{
+				Ephemeral: &corev1.EphemeralVolumeSource{
+					VolumeClaimTemplate: &volumeClaimTemplate,
+				},
+			},
+		}
+	}
+
+	return corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{
+				SizeLimit: volumeSize(quantity),
+			},
+		}}
 }
 
 func volumeSize(quantity *resource.Quantity) *resource.Quantity {
