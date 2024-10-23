@@ -2603,7 +2603,7 @@ TLS needs to be enabled by specifying https:// scheme in the Endpoint.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>ca</b></td>
+        <td><b>ca_file</b></td>
         <td>string</td>
         <td>
           CA defines the key of certificate (e.g. ca.crt) in the configmap map, secret or absolute path to a certificate.
@@ -2612,7 +2612,7 @@ The absolute path can be used when certificate is already present on the workloa
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>cert</b></td>
+        <td><b>cert_file</b></td>
         <td>string</td>
         <td>
           Cert defines the key (e.g. tls.crt) of the client certificate in the secret or absolute path to a certificate.
@@ -2628,7 +2628,7 @@ used from the secret defined in SecretName.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>key</b></td>
+        <td><b>key_file</b></td>
         <td>string</td>
         <td>
           Key defines a key (e.g. tls.key) of the private key in the secret or absolute path to a certificate.
@@ -34481,6 +34481,15 @@ This only works with the following OpenTelemetryCollector mode's: daemonset, sta
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecpersistentvolumeclaimretentionpolicy">persistentVolumeClaimRetentionPolicy</a></b></td>
+        <td>object</td>
+        <td>
+          PersistentVolumeClaimRetentionPolicy describes the lifecycle of persistent volume claims
+created from volumeClaimTemplates.
+This only works with the following OpenTelemetryCollector modes: statefulset.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>podAnnotations</b></td>
         <td>map[string]string</td>
         <td>
@@ -44234,6 +44243,49 @@ Metrics defines the metrics configuration for operands.
         <td>
           EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
 The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.persistentVolumeClaimRetentionPolicy
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+PersistentVolumeClaimRetentionPolicy describes the lifecycle of persistent volume claims
+created from volumeClaimTemplates.
+This only works with the following OpenTelemetryCollector modes: statefulset.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>whenDeleted</b></td>
+        <td>string</td>
+        <td>
+          WhenDeleted specifies what happens to PVCs created from StatefulSet
+VolumeClaimTemplates when the StatefulSet is deleted. The default policy
+of `Retain` causes PVCs to not be affected by StatefulSet deletion. The
+`Delete` policy causes those PVCs to be deleted.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>whenScaled</b></td>
+        <td>string</td>
+        <td>
+          WhenScaled specifies what happens to PVCs created from StatefulSet
+VolumeClaimTemplates when the StatefulSet is scaled down. The default
+policy of `Retain` causes PVCs to not be affected by a scaledown. The
+`Delete` policy causes the associated PVCs for any excess pods above
+the replica count to be deleted.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

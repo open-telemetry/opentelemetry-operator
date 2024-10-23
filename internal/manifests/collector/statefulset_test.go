@@ -178,6 +178,45 @@ func TestStatefulSetVolumeClaimTemplates(t *testing.T) {
 	assert.Equal(t, resource.MustParse("1Gi"), ss.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests["storage"])
 }
 
+func TestStatefulSetPeristentVolumeRetentionPolicy(t *testing.T) {
+	// prepare
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: "statefulset",
+			StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
+				PersistentVolumeClaimRetentionPolicy: &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
+					WhenDeleted: appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
+					WhenScaled:  appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	params := manifests.Params{
+		OtelCol: otelcol,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	// test
+	ss, err := StatefulSet(params)
+	require.NoError(t, err)
+
+	// assert PersistentVolumeClaimRetentionPolicy added
+	assert.NotNil(t, ss.Spec.PersistentVolumeClaimRetentionPolicy)
+
+	// assert correct WhenDeleted value
+	assert.Equal(t, ss.Spec.PersistentVolumeClaimRetentionPolicy.WhenDeleted, appsv1.RetainPersistentVolumeClaimRetentionPolicyType)
+
+	// assert correct WhenScaled value
+	assert.Equal(t, ss.Spec.PersistentVolumeClaimRetentionPolicy.WhenScaled, appsv1.DeletePersistentVolumeClaimRetentionPolicyType)
+
+}
+
 func TestStatefulSetPodAnnotations(t *testing.T) {
 	// prepare
 	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}

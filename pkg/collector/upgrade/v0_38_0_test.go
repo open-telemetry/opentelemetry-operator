@@ -24,7 +24,6 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 )
 
@@ -72,7 +71,7 @@ service:
 	// EXPECTED: drop logging args and configure logging parameters into config from args
 	up := &upgrade.VersionUpgrade{
 		Log:      logger,
-		Version:  version.Get(),
+		Version:  makeVersion("0.38.0"),
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}

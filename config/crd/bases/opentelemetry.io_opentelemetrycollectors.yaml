@@ -6949,6 +6949,13 @@ spec:
                         type: boolean
                     type: object
                 type: object
+              persistentVolumeClaimRetentionPolicy:
+                properties:
+                  whenDeleted:
+                    type: string
+                  whenScaled:
+                    type: string
+                type: object
               podAnnotations:
                 additionalProperties:
                   type: string

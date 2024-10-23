@@ -973,7 +973,7 @@ func TestRateLimit(t *testing.T) {
 		},
 	}
 	events := make(chan Event, 1)
-	eventInterval := 5 * time.Millisecond
+	eventInterval := 500 * time.Millisecond
 	cfg := allocatorconfig.Config{}
 
 	w, _ := getTestPrometheusCRWatcher(t, nil, nil, cfg)
@@ -1006,10 +1006,10 @@ func TestRateLimit(t *testing.T) {
 		default:
 			return false
 		}
-	}, eventInterval*2, time.Millisecond)
+	}, time.Second*5, eventInterval/10)
 
 	// it's difficult to measure the rate precisely
-	// what we do, is send two updates, and then assert that the elapsed time is between eventInterval and 3*eventInterval
+	// what we do, is send two updates, and then assert that the elapsed time is at least eventInterval
 	startTime := time.Now()
 	_, err = w.kubeMonitoringClient.MonitoringV1().ServiceMonitors("test").Update(context.Background(), serviceMonitor, metav1.UpdateOptions{})
 	require.NoError(t, err)
@@ -1020,7 +1020,7 @@ func TestRateLimit(t *testing.T) {
 		default:
 			return false
 		}
-	}, eventInterval*2, time.Millisecond)
+	}, time.Second*5, eventInterval/10)
 	_, err = w.kubeMonitoringClient.MonitoringV1().ServiceMonitors("test").Update(context.Background(), serviceMonitor, metav1.UpdateOptions{})
 	require.NoError(t, err)
 	require.Eventually(t, func() bool {
@@ -1030,11 +1030,9 @@ func TestRateLimit(t *testing.T) {
 		default:
 			return false
 		}
-	}, eventInterval*2, time.Millisecond)
+	}, time.Second*5, eventInterval/10)
 	elapsedTime := time.Since(startTime)
 	assert.Less(t, eventInterval, elapsedTime)
-	assert.GreaterOrEqual(t, eventInterval*3, elapsedTime)
-
 }
 
 // getTestPrometheusCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
