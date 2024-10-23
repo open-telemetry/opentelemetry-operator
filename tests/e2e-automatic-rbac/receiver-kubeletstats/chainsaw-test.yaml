@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: receiver-kubeletstats
+spec:
+  steps:
+  - name: create-namespace
+    try:
+    - apply:
+        file: 00-install.yaml
+  - name: default-config
+    try:
+    - apply:
+        file: 01-install.yaml
+    - assert:
+        file: 01-assert.yaml
+  - name: use-extra_metadata_labels
+    try:
+    - apply:
+        file: 02-install.yaml
+    - assert:
+        file: 02-assert.yaml
+  - name: k8snode-detector
+    try:
+    - apply:
+        file: 03-install.yaml
+    - assert:
+        file: 03-assert.yaml
