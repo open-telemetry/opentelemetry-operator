@@ -36,6 +36,8 @@ const (
 )
 
 func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, error) {
+	volume := instrVolume(pythonSpec.VolumeClaimTemplate, pythonVolumeName, pythonSpec.VolumeSizeLimit)
+
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
 
@@ -99,27 +101,20 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-		Name:      pythonVolumeName,
+		Name:      volume.Name,
 		MountPath: pythonInstrMountPath,
 	})
 
 	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod, pythonInitContainerName) {
-		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: pythonVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{
-					SizeLimit: volumeSize(pythonSpec.VolumeSizeLimit),
-				},
-			}})
-
+		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      pythonInitContainerName,
 			Image:     pythonSpec.Image,
 			Command:   []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
 			Resources: pythonSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
-				Name:      pythonVolumeName,
+				Name:      volume.Name,
 				MountPath: pythonInstrMountPath,
 			}},
 		})

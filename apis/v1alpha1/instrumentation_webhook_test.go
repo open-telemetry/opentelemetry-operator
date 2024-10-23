@@ -19,10 +19,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
+
+var defaultVolumeSize = resource.MustParse("200Mi")
 
 func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	inst := &Instrumentation{}
@@ -112,6 +116,23 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
+		},
+		{
+			name: "with volume and volumeSizeLimit",
+			err:  "spec.nodejs.volumeClaimTemplate and spec.nodejs.volumeSizeLimit cannot both be defined",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					NodeJS: NodeJS{
+						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
+						VolumeSizeLimit: &defaultVolumeSize,
+					},
+				},
+			},
+			warnings: []string{"sampler type not set"},
 		},
 		{
 			name: "exporter: tls cert set but missing key",

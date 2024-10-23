@@ -17,6 +17,7 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -237,6 +238,36 @@ func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings
 		return warnings, fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Sampler.Type)
 	}
 
+	var err error
+	err = validateInstrVolume(r.Spec.ApacheHttpd.VolumeClaimTemplate, r.Spec.ApacheHttpd.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.apachehttpd.volumeClaimTemplate and spec.apachehttpd.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.DotNet.VolumeClaimTemplate, r.Spec.DotNet.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.dotnet.volumeClaimTemplate and spec.dotnet.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.Go.VolumeClaimTemplate, r.Spec.Go.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.go.volumeClaimTemplate and spec.go.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.Java.VolumeClaimTemplate, r.Spec.Java.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.java.volumeClaimTemplate and spec.java.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.Nginx.VolumeClaimTemplate, r.Spec.Nginx.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.nginx.volumeClaimTemplate and spec.nginx.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.NodeJS.VolumeClaimTemplate, r.Spec.NodeJS.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.nodejs.volumeClaimTemplate and spec.nodejs.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.Python.VolumeClaimTemplate, r.Spec.Python.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.python.volumeClaimTemplate and spec.python.volumeSizeLimit cannot both be defined: %w", err)
+	}
+
 	warnings = append(warnings, validateExporter(r.Spec.Exporter)...)
 
 	return warnings, nil
@@ -288,6 +319,13 @@ func validateJaegerRemoteSamplerArgument(argument string) error {
 				return fmt.Errorf("initialSamplingRate should be in rage [0..1]: %s", kv[1])
 			}
 		}
+	}
+	return nil
+}
+
+func validateInstrVolume(volumeClaimTemplate corev1.PersistentVolumeClaimTemplate, volumeSizeLimit *resource.Quantity) error {
+	if !reflect.ValueOf(volumeClaimTemplate).IsZero() && volumeSizeLimit != nil {
+		return fmt.Errorf("unable to resolve volume size")
 	}
 	return nil
 }
