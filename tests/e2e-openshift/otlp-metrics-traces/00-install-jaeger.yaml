@@ -1,11 +1,4 @@
 #For this test case you'll need to install the Jaeger operator (OpenShift Distributed Tracing Platform in OpenShift)
-
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: chainsaw-otlp-metrics
-
----
 apiVersion: jaegertracing.io/v1
 kind: Jaeger
 metadata:
