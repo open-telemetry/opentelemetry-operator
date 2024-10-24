@@ -177,6 +177,12 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		)
 	}
 
+	if envVars, err := otelcol.Spec.Config.GetEnvironmentVariables(logger); err != nil {
+		logger.Error(err, "could not get the environment variables from the config")
+	} else {
+		envVars = append(envVars, envVars...)
+	}
+
 	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
 	return corev1.Container{
 		Name:            naming.Container(),
