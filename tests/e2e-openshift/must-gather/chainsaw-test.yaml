@@ -1,0 +1,105 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: must-gather
+spec:
+  namespace: chainsaw-must-gather
+  steps:
+  - name: Install Target Allocator
+    try:
+    - apply:
+        template: true
+        file: install-target-allocator.yaml
+    - assert:
+        file: install-target-allocator-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-targetallocator
+  - name: assert-data-propagates
+    try:
+      - assert:
+          resource:
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: stateful-targetallocator
+              namespace: ($namespace)
+            data:
+              targetallocator.yaml:
+                (parse_yaml(@)):
+                  allocation_strategy: consistent-hashing
+                  collector_selector:
+                    matchlabels:
+                      app.kubernetes.io/component: opentelemetry-collector
+                      app.kubernetes.io/instance: (join('.', [$namespace, 'stateful']))
+                      app.kubernetes.io/managed-by: opentelemetry-operator
+                      app.kubernetes.io/part-of: opentelemetry
+                    matchexpressions: [ ]
+                  config:
+                    global:
+                      scrape_interval: 30s
+                      scrape_protocols:
+                        - PrometheusProto
+                        - OpenMetricsText1.0.0
+                        - OpenMetricsText0.0.1
+                        - PrometheusText0.0.4
+                    scrape_configs:
+                      - job_name: otel-collector
+                        scrape_interval: 10s
+                        static_configs:
+                          - targets:
+                              - 0.0.0.0:8888
+                  filter_strategy: relabel-config
+  - name: Create instrumentation CR and sidecar collector instance
+    try:
+    # In OpenShift, when a namespace is created, all necessary SCC annotations are automatically added. However, if a namespace is created using a resource file with only selected SCCs, the other auto-added SCCs are not included. Therefore, the UID-range and supplemental groups SCC annotations must be set after the namespace is created.
+    - command:
+        entrypoint: kubectl
+        args:
+        - annotate
+        - namespace
+        - ${NAMESPACE}
+        - openshift.io/sa.scc.uid-range=1000/1000
+        - --overwrite
+    - command:
+        entrypoint: kubectl
+        args:
+        - annotate
+        - namespace
+        - ${NAMESPACE}
+        - openshift.io/sa.scc.supplemental-groups=3000/3000
+        - --overwrite
+    - apply:
+        file: install-collector-sidecar.yaml
+    - apply:
+        file: install-instrumentation.yaml
+  - name: Install app
+    try:
+    - apply:
+        file: install-app.yaml
+    - assert:
+        file: install-app-assert.yaml
+    catch:
+      - podLogs:
+          selector: app=my-nodejs
+  - name: Run the must-gather and verify the contents
+    try:
+    - command:
+        entrypoint: oc
+        args:
+        - get
+        - pods
+        - -A
+        - -l control-plane=controller-manager
+        - -l app.kubernetes.io/name=opentelemetry-operator
+        - -o 
+        - jsonpath={.items[0].metadata.namespace}
+        outputs:
+        - name: OTEL_NAMESPACE
+          value: ($stdout)
+    - script:
+        env:
+        - name: otelnamespace
+          value: ($OTEL_NAMESPACE)
+        timeout: 5m
+        content: ./check_must_gather.sh
