@@ -1,0 +1,19 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: chainsaw-kubeletstats
+spec:
+  config: |
+    receivers:
+      kubeletstats:
+        auth_type: ""
+    processors:
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: [kubeletstats]
+          processors: []
+          exporters: [debug]

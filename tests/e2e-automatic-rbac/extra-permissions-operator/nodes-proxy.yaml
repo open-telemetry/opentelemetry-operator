@@ -1,0 +1,10 @@
+---
+- op: add
+  path: /rules/-
+  value:
+    apiGroups:
+    - ""
+    resources:
+    - nodes/proxy
+    verbs:
+    - get

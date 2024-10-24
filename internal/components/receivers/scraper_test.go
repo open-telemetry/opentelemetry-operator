@@ -29,7 +29,6 @@ func TestScraperParsers(t *testing.T) {
 		defaultPort  int
 	}{
 		{"prometheus", "__prometheus", 0},
-		{"kubeletstats", "__kubeletstats", 0},
 		{"sshcheck", "__sshcheck", 0},
 		{"cloudfoundry", "__cloudfoundry", 0},
 		{"vcenter", "__vcenter", 0},
