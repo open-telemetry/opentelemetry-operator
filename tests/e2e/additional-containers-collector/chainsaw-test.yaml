@@ -1,0 +1,66 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: additional-containers-collector
+spec:
+  steps:
+    - name: step-00
+      description: collectors without additionalContainers
+      try:
+        - apply:
+            file: 00-install-collectors-without-additional-containers.yaml
+        # deployment
+        - assert:
+            file: 00-assert-deployment-without-additional-containers.yaml
+        # daemonset
+        - assert:
+            file: 00-assert-daemonset-without-additional-containers.yaml
+        # statefulset
+        - assert:
+            file: 00-assert-statefulset-without-additional-containers.yaml
+
+    - name: step-01
+      description: collectors with additionalContainers
+      try:
+        - update:
+            file: 01-install-collectors-with-additional-containers.yaml
+        # deployment
+        - assert:
+            file: 01-assert-deployment-with-additional-containers.yaml
+        # daemonset
+        - assert:
+            file: 01-assert-daemonset-with-additional-containers.yaml
+        # statefulset
+        - assert:
+            file: 01-assert-statefulset-with-additional-containers.yaml
+
+    - name: step-02
+      description: modify additionalContainers
+      try:
+        - update:
+            file: 02-modify-collectors-additional-containers.yaml
+        # deployment
+        - assert:
+            file: 02-assert-deployment-with-modified-additional-containers.yaml
+        # daemonset
+        - assert:
+            file: 02-assert-daemonset-with-modified-additional-containers.yaml
+        # statefulset
+        - assert:
+            file: 02-assert-statefulset-with-modified-additional-containers.yaml
+
+    - name: step-03
+      description: delete additionalContainers
+      try:
+        - update:
+            file: 00-install-collectors-without-additional-containers.yaml
+        # deployment
+        - assert:
+            file: 00-assert-deployment-without-additional-containers.yaml
+        # daemonset
+        - assert:
+            file: 00-assert-daemonset-without-additional-containers.yaml
+        # statefulset
+        - assert:
+            file: 00-assert-statefulset-without-additional-containers.yaml
