@@ -32,7 +32,7 @@ spec:
     - name: NODE_PATH
       value: /usr/local/lib/node_modules
     - name: NODE_OPTIONS
-      value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
+      value: '--require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT

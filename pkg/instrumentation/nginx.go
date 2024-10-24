@@ -62,17 +62,11 @@ const (
 	6) Inject mounting of volumes / files into appropriate directories in the application container
 */
 
-func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, useLabelsForResourceAttributes bool, index int, otlpEndpoint string, resourceMap map[string]string) corev1.Pod {
-
-	// caller checks if there is at least one container
-	container := &pod.Spec.Containers[index]
+func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, useLabelsForResourceAttributes bool, container Container, otlpEndpoint string, resourceMap map[string]string) (corev1.Pod, error) {
 
 	// inject env vars
 	for _, env := range nginxSpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
+		container.appendEnvVarIfNotExists(&pod, env)
 	}
 
 	// First make a clone of the instrumented container to take the existing Nginx configuration from
@@ -105,7 +99,7 @@ export %[4]s=$( { nginx -v ; } 2>&1 ) && echo ${%[4]s##*/} > %[3]s/version.txt
 			nginxVersionEnvVar,
 		)
 
-		cloneContainer := container.DeepCopy()
+		cloneContainer := pod.Spec.Containers[container.index].DeepCopy()
 		cloneContainer.Name = nginxAgentCloneContainerName
 		cloneContainer.Command = []string{"/bin/sh", "-c"}
 		cloneContainer.Args = []string{nginxAgentCommands}
@@ -128,24 +122,24 @@ export %[4]s=$( { nginx -v ; } 2>&1 ) && echo ${%[4]s##*/} > %[3]s/version.txt
 		// drop volume mount with volume-provided Nginx config from original container
 		// since it could over-write configuration provided by the injection
 		idxFound := -1
-		for idx, volume := range container.VolumeMounts {
+		for idx, volume := range pod.Spec.Containers[container.index].VolumeMounts {
 			if strings.Contains(volume.MountPath, nginxConfDir) { // potentially passes config, which we want to pass to init copy only
 				idxFound = idx
 				break
 			}
 		}
 		if idxFound >= 0 {
-			volumeMounts := container.VolumeMounts
+			volumeMounts := pod.Spec.Containers[container.index].VolumeMounts
 			volumeMounts = append(volumeMounts[:idxFound], volumeMounts[idxFound+1:]...)
-			container.VolumeMounts = volumeMounts
+			pod.Spec.Containers[container.index].VolumeMounts = volumeMounts
 		}
 
 		// Inject volumes info instrumented container - Nginx config dir + Nginx agent
-		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+		pod.Spec.Containers[container.index].VolumeMounts = append(pod.Spec.Containers[container.index].VolumeMounts, corev1.VolumeMount{
 			Name:      nginxAgentVolume,
 			MountPath: nginxAgentDirFull,
 		})
-		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+		pod.Spec.Containers[container.index].VolumeMounts = append(pod.Spec.Containers[container.index].VolumeMounts, corev1.VolumeMount{
 			Name:      nginxAgentConfigVolume,
 			MountPath: nginxConfDir,
 		})
@@ -217,7 +211,7 @@ mv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR
 			Env: []corev1.EnvVar{
 				{
 					Name:  nginxAttributesEnvVar,
-					Value: getNginxOtelConfig(pod, useLabelsForResourceAttributes, nginxSpec, index, otlpEndpoint, resourceMap),
+					Value: getNginxOtelConfig(pod, useLabelsForResourceAttributes, nginxSpec, container.index, otlpEndpoint, resourceMap),
 				},
 				{
 					Name:  "OTEL_NGINX_I13N_SCRIPT",
@@ -243,26 +237,15 @@ mv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR
 					MountPath: nginxAgentConfDirFull,
 				},
 			},
-			SecurityContext: pod.Spec.Containers[index].SecurityContext,
+			SecurityContext: pod.Spec.Containers[container.index].SecurityContext,
 		})
 
-		found := false
-		for i, e := range container.Env {
-			if e.Name == nginxLibraryPathEnv {
-				container.Env[i].Value = e.Value + ":" + nginxAgentDirFull + "/sdk_lib/lib"
-				found = true
-				break
-			}
-		}
-		if !found {
-			container.Env = append(container.Env, corev1.EnvVar{
-				Name:  nginxLibraryPathEnv,
-				Value: nginxAgentDirFull + "/sdk_lib/lib",
-			})
+		if err := container.appendOrConcat(&pod, nginxLibraryPathEnv, nginxAgentDirFull+"/sdk_lib/lib", ConcatFunc(concatWithColon)); err != nil {
+			return pod, err
 		}
 	}
 
-	return pod
+	return pod, nil
 }
 
 // Calculate if we already inject InitContainers.

@@ -15,8 +15,6 @@
 package instrumentation
 
 import (
-	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -35,72 +33,39 @@ const (
 	pythonInitContainerName     = initContainerName + "-python"
 )
 
-func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, error) {
+func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, container Container) (corev1.Pod, error) {
 	volume := instrVolume(pythonSpec.VolumeClaimTemplate, pythonVolumeName, pythonSpec.VolumeSizeLimit)
 
-	// caller checks if there is at least one container.
-	container := &pod.Spec.Containers[index]
-
-	err := validateContainerEnv(container.Env, envPythonPath)
+	err := container.validate(&pod, envPythonPath)
 	if err != nil {
 		return pod, err
 	}
 
 	// inject Python instrumentation spec env vars.
 	for _, env := range pythonSpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
+		container.appendEnvVarIfNotExists(&pod, env)
 	}
 
-	idx := getIndexOfEnv(container.Env, envPythonPath)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envPythonPath,
-			Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
-		})
-	} else if idx > -1 {
-		container.Env[idx].Value = fmt.Sprintf("%s:%s:%s", pythonPathPrefix, container.Env[idx].Value, pythonPathSuffix)
+	envPythonPathVar, err := container.getOrMakeEnvVar(&pod, envPythonPath)
+	if err != nil {
+		return pod, err
 	}
+	envPythonPathVar.Value = concatWithColon(pythonPathPrefix, envPythonPathVar.Value, pythonPathSuffix)
+	container.setOrAppendEnvVar(&pod, envPythonPathVar)
 
 	// Set OTEL_EXPORTER_OTLP_PROTOCOL to http/protobuf if not set by user because it is what our autoinstrumentation supports.
-	idx = getIndexOfEnv(container.Env, envOtelExporterOTLPProtocol)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envOtelExporterOTLPProtocol,
-			Value: "http/protobuf",
-		})
-	}
+	container.appendIfNotExists(&pod, envOtelExporterOTLPProtocol, "http/protobuf")
 
 	// Set OTEL_TRACES_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
-	idx = getIndexOfEnv(container.Env, envOtelTracesExporter)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envOtelTracesExporter,
-			Value: "otlp",
-		})
-	}
+	container.appendIfNotExists(&pod, envOtelTracesExporter, "otlp")
 
 	// Set OTEL_METRICS_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
-	idx = getIndexOfEnv(container.Env, envOtelMetricsExporter)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envOtelMetricsExporter,
-			Value: "otlp",
-		})
-	}
+	container.appendIfNotExists(&pod, envOtelMetricsExporter, "otlp")
 
 	// Set OTEL_LOGS_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
-	idx = getIndexOfEnv(container.Env, envOtelLogsExporter)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envOtelLogsExporter,
-			Value: "otlp",
-		})
-	}
+	container.appendIfNotExists(&pod, envOtelLogsExporter, "otlp")
 
-	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+	pod.Spec.Containers[container.index].VolumeMounts = append(pod.Spec.Containers[container.index].VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
 		MountPath: pythonInstrMountPath,
 	})

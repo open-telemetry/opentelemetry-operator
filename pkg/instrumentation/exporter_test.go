@@ -15,8 +15,10 @@
 package instrumentation
 
 import (
+	"context"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
@@ -202,7 +204,9 @@ func TestExporter(t *testing.T) {
 					},
 				},
 			}
-			configureExporter(test.exporter, &pod, &pod.Spec.Containers[0])
+			container, err := NewContainer(k8sClient, context.Background(), logr.Discard(), "", &pod, 0)
+			assert.NoError(t, err)
+			configureExporter(test.exporter, &pod, container)
 			assert.Equal(t, test.expected, pod)
 		})
 	}

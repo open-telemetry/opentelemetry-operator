@@ -905,7 +905,11 @@ func TestSDKInjection(t *testing.T) {
 			inj := sdkInjector{
 				client: k8sClient,
 			}
-			pod := inj.injectCommonSDKConfig(context.Background(), test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: test.pod.Namespace}}, test.pod, 0, 0)
+			pod := test.pod
+			container, err := NewContainer(k8sClient, context.Background(), logr.Discard(), "", &pod, 0)
+			require.NoError(t, err)
+			pod, err = inj.injectCommonSDKConfig(context.Background(), test.inst, corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: pod.Namespace}}, pod, container, container)
+			assert.NoError(t, err)
 			_, err = json.MarshalIndent(pod, "", "  ")
 			assert.NoError(t, err)
 			assert.Equal(t, test.expected, pod)
@@ -2548,7 +2552,7 @@ func TestChooseServiceName(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			serviceName := chooseServiceName(corev1.Pod{
+			pod := corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
 						"app.kubernetes.io/name": test.labelValue,
@@ -2563,7 +2567,8 @@ func TestChooseServiceName(t *testing.T) {
 						{Name: "2nd"},
 					},
 				},
-			}, test.useLabelsForResourceAttributes, test.resources, test.index)
+			}
+			serviceName := chooseServiceName(pod, test.useLabelsForResourceAttributes, test.resources, test.index)
 
 			assert.Equal(t, test.expectedServiceName, serviceName)
 		})
