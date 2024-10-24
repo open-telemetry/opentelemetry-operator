@@ -321,6 +321,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 	if pm.config.EnablePythonAutoInstrumentation() || inst == nil {
 		insts.Python.Instrumentation = inst
+		insts.Python.AdditionalAnnotations = map[string]string{annotationPythonPlatform: annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationPythonPlatform)}
 	} else {
 		logger.Error(nil, "support for Python auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Python auto instrumentation is not enabled")
