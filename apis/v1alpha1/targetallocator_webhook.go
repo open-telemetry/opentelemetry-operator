@@ -119,7 +119,7 @@ func (w TargetAllocatorWebhook) validate(ctx context.Context, ta *TargetAllocato
 
 	// if the prometheusCR is enabled, it needs a suite of permissions to function
 	if ta.Spec.PrometheusCR.Enabled {
-		warnings, err := v1beta1.CheckTargetAllocatorPrometheusCRPolicyRules(ctx, w.reviewer, ta.Spec.ServiceAccount, ta.GetNamespace())
+		warnings, err := v1beta1.CheckTargetAllocatorPrometheusCRPolicyRules(ctx, w.reviewer, ta.GetNamespace(), ta.Spec.ServiceAccount)
 		if err != nil || len(warnings) > 0 {
 			return warnings, err
 		}
