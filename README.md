@@ -860,15 +860,6 @@ Emeritus Approvers:
 - [Owais Lone](https://github.com/owais), Splunk
 - [Pablo Baeyens](https://github.com/mx-psi), DataDog
 
-Target Allocator Maintainers ([@open-telemetry/operator-ta-maintainers](https://github.com/orgs/open-telemetry/teams/operator-ta-maintainers)):
-
-- [Sebastian Poxhofer](https://github.com/secustor)
-
-Emeritus Target Allocator Maintainers
-
-- [Anthony Mirabella](https://github.com/Aneurysm9), AWS
-- [Kristina Pathak](https://github.com/kristinapathak), Lightstep
-
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
 - [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
