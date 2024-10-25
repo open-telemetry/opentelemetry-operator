@@ -15,7 +15,7 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: prometheus-kubernetessd-collector-699cdaa1
+  name: prometheus-kubernetessd-collector-9c184e3a
 data:
   collector.yaml: |
     exporters:
@@ -35,6 +35,9 @@ data:
                     - prometheus
                 receivers:
                     - prometheus
+        telemetry:
+            metrics:
+                address: 0.0.0.0:8888
 ---
 apiVersion: apps/v1
 kind: DaemonSet

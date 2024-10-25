@@ -254,6 +254,14 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecapachehttpdvolumeclaimtemplate">volumeClaimTemplate</a></b></td>
+        <td>object</td>
+        <td>
+          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
@@ -894,6 +902,470 @@ only the result of this request.<br/>
 </table>
 
 
+### Instrumentation.spec.apacheHttpd.volumeClaimTemplate
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpd)</sup></sup>
+
+
+
+VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with size limit VolumeSizeLimit
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecapachehttpdvolumeclaimtemplatespec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          The specification for the PersistentVolumeClaim. The entire content is
+copied unchanged into the PVC that gets created from this
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecapachehttpdvolumeclaimtemplatemetadata">metadata</a></b></td>
+        <td>object</td>
+        <td>
+          May contain labels and annotations that will be copied into the PVC
+when creating it. No other fields are allowed and will be rejected during
+validation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.apacheHttpd.volumeClaimTemplate.spec
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpdvolumeclaimtemplate)</sup></sup>
+
+
+
+The specification for the PersistentVolumeClaim. The entire content is
+copied unchanged into the PVC that gets created from this
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>accessModes</b></td>
+        <td>[]string</td>
+        <td>
+          accessModes contains the desired access modes the volume should have.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecapachehttpdvolumeclaimtemplatespecdatasource">dataSource</a></b></td>
+        <td>object</td>
+        <td>
+          dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecapachehttpdvolumeclaimtemplatespecdatasourceref">dataSourceRef</a></b></td>
+        <td>object</td>
+        <td>
+          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecapachehttpdvolumeclaimtemplatespecresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecapachehttpdvolumeclaimtemplatespecselector">selector</a></b></td>
+        <td>object</td>
+        <td>
+          selector is a label query over volumes to consider for binding.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>storageClassName</b></td>
+        <td>string</td>
+        <td>
+          storageClassName is the name of the StorageClass required by the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeAttributesClassName</b></td>
+        <td>string</td>
+        <td>
+          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
+If specified, the CSI driver will create or update the volume with the attributes defined
+in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
+it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
+will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
+If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
+will be set by the persistentvolume controller if it exists.
+If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
+set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
+exists.
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
+(Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeMode</b></td>
+        <td>string</td>
+        <td>
+          volumeMode defines what type of volume is required by the claim.
+Value of Filesystem is implied when not included in claim spec.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          volumeName is the binding reference to the PersistentVolume backing this claim.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.apacheHttpd.volumeClaimTemplate.spec.dataSource
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpdvolumeclaimtemplatespec)</sup></sup>
+
+
+
+dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is the type of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiGroup</b></td>
+        <td>string</td>
+        <td>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.apacheHttpd.volumeClaimTemplate.spec.dataSourceRef
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpdvolumeclaimtemplatespec)</sup></sup>
+
+
+
+dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is the type of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiGroup</b></td>
+        <td>string</td>
+        <td>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace is the namespace of resource being referenced
+Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
+(Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.apacheHttpd.volumeClaimTemplate.spec.resources
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpdvolumeclaimtemplatespec)</sup></sup>
+
+
+
+resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.apacheHttpd.volumeClaimTemplate.spec.selector
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpdvolumeclaimtemplatespec)</sup></sup>
+
+
+
+selector is a label query over volumes to consider for binding.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecapachehttpdvolumeclaimtemplatespecselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.apacheHttpd.volumeClaimTemplate.spec.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpdvolumeclaimtemplatespecselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.apacheHttpd.volumeClaimTemplate.metadata
+<sup><sup>[↩ Parent](#instrumentationspecapachehttpdvolumeclaimtemplate)</sup></sup>
+
+
+
+May contain labels and annotations that will be copied into the PVC
+when creating it. No other fields are allowed and will be rejected during
+validation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>annotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>finalizers</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>labels</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.defaults
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -962,6 +1434,14 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td>object</td>
         <td>
           Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecdotnetvolumeclaimtemplate">volumeClaimTemplate</a></b></td>
+        <td>object</td>
+        <td>
+          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1329,6 +1809,470 @@ inside a container.<br/>
           Request is the name chosen for a request in the referenced claim.
 If empty, everything from the claim is made available, otherwise
 only the result of this request.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.volumeClaimTemplate
+<sup><sup>[↩ Parent](#instrumentationspecdotnet)</sup></sup>
+
+
+
+VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with size limit VolumeSizeLimit
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecdotnetvolumeclaimtemplatespec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          The specification for the PersistentVolumeClaim. The entire content is
+copied unchanged into the PVC that gets created from this
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecdotnetvolumeclaimtemplatemetadata">metadata</a></b></td>
+        <td>object</td>
+        <td>
+          May contain labels and annotations that will be copied into the PVC
+when creating it. No other fields are allowed and will be rejected during
+validation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.volumeClaimTemplate.spec
+<sup><sup>[↩ Parent](#instrumentationspecdotnetvolumeclaimtemplate)</sup></sup>
+
+
+
+The specification for the PersistentVolumeClaim. The entire content is
+copied unchanged into the PVC that gets created from this
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>accessModes</b></td>
+        <td>[]string</td>
+        <td>
+          accessModes contains the desired access modes the volume should have.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecdotnetvolumeclaimtemplatespecdatasource">dataSource</a></b></td>
+        <td>object</td>
+        <td>
+          dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecdotnetvolumeclaimtemplatespecdatasourceref">dataSourceRef</a></b></td>
+        <td>object</td>
+        <td>
+          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecdotnetvolumeclaimtemplatespecresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecdotnetvolumeclaimtemplatespecselector">selector</a></b></td>
+        <td>object</td>
+        <td>
+          selector is a label query over volumes to consider for binding.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>storageClassName</b></td>
+        <td>string</td>
+        <td>
+          storageClassName is the name of the StorageClass required by the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeAttributesClassName</b></td>
+        <td>string</td>
+        <td>
+          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
+If specified, the CSI driver will create or update the volume with the attributes defined
+in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
+it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
+will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
+If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
+will be set by the persistentvolume controller if it exists.
+If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
+set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
+exists.
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
+(Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeMode</b></td>
+        <td>string</td>
+        <td>
+          volumeMode defines what type of volume is required by the claim.
+Value of Filesystem is implied when not included in claim spec.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          volumeName is the binding reference to the PersistentVolume backing this claim.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.volumeClaimTemplate.spec.dataSource
+<sup><sup>[↩ Parent](#instrumentationspecdotnetvolumeclaimtemplatespec)</sup></sup>
+
+
+
+dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is the type of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiGroup</b></td>
+        <td>string</td>
+        <td>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.volumeClaimTemplate.spec.dataSourceRef
+<sup><sup>[↩ Parent](#instrumentationspecdotnetvolumeclaimtemplatespec)</sup></sup>
+
+
+
+dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is the type of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiGroup</b></td>
+        <td>string</td>
+        <td>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace is the namespace of resource being referenced
+Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
+(Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.volumeClaimTemplate.spec.resources
+<sup><sup>[↩ Parent](#instrumentationspecdotnetvolumeclaimtemplatespec)</sup></sup>
+
+
+
+resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.volumeClaimTemplate.spec.selector
+<sup><sup>[↩ Parent](#instrumentationspecdotnetvolumeclaimtemplatespec)</sup></sup>
+
+
+
+selector is a label query over volumes to consider for binding.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecdotnetvolumeclaimtemplatespecselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.volumeClaimTemplate.spec.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#instrumentationspecdotnetvolumeclaimtemplatespecselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.dotnet.volumeClaimTemplate.metadata
+<sup><sup>[↩ Parent](#instrumentationspecdotnetvolumeclaimtemplate)</sup></sup>
+
+
+
+May contain labels and annotations that will be copied into the PVC
+when creating it. No other fields are allowed and will be rejected during
+validation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>annotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>finalizers</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>labels</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1748,6 +2692,14 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#instrumentationspecgovolumeclaimtemplate">volumeClaimTemplate</a></b></td>
+        <td>object</td>
+        <td>
+          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
@@ -2118,6 +3070,470 @@ only the result of this request.<br/>
 </table>
 
 
+### Instrumentation.spec.go.volumeClaimTemplate
+<sup><sup>[↩ Parent](#instrumentationspecgo)</sup></sup>
+
+
+
+VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with size limit VolumeSizeLimit
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecgovolumeclaimtemplatespec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          The specification for the PersistentVolumeClaim. The entire content is
+copied unchanged into the PVC that gets created from this
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgovolumeclaimtemplatemetadata">metadata</a></b></td>
+        <td>object</td>
+        <td>
+          May contain labels and annotations that will be copied into the PVC
+when creating it. No other fields are allowed and will be rejected during
+validation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.volumeClaimTemplate.spec
+<sup><sup>[↩ Parent](#instrumentationspecgovolumeclaimtemplate)</sup></sup>
+
+
+
+The specification for the PersistentVolumeClaim. The entire content is
+copied unchanged into the PVC that gets created from this
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>accessModes</b></td>
+        <td>[]string</td>
+        <td>
+          accessModes contains the desired access modes the volume should have.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgovolumeclaimtemplatespecdatasource">dataSource</a></b></td>
+        <td>object</td>
+        <td>
+          dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgovolumeclaimtemplatespecdatasourceref">dataSourceRef</a></b></td>
+        <td>object</td>
+        <td>
+          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgovolumeclaimtemplatespecresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecgovolumeclaimtemplatespecselector">selector</a></b></td>
+        <td>object</td>
+        <td>
+          selector is a label query over volumes to consider for binding.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>storageClassName</b></td>
+        <td>string</td>
+        <td>
+          storageClassName is the name of the StorageClass required by the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeAttributesClassName</b></td>
+        <td>string</td>
+        <td>
+          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
+If specified, the CSI driver will create or update the volume with the attributes defined
+in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
+it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
+will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
+If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
+will be set by the persistentvolume controller if it exists.
+If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
+set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
+exists.
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
+(Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeMode</b></td>
+        <td>string</td>
+        <td>
+          volumeMode defines what type of volume is required by the claim.
+Value of Filesystem is implied when not included in claim spec.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          volumeName is the binding reference to the PersistentVolume backing this claim.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.volumeClaimTemplate.spec.dataSource
+<sup><sup>[↩ Parent](#instrumentationspecgovolumeclaimtemplatespec)</sup></sup>
+
+
+
+dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is the type of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiGroup</b></td>
+        <td>string</td>
+        <td>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.volumeClaimTemplate.spec.dataSourceRef
+<sup><sup>[↩ Parent](#instrumentationspecgovolumeclaimtemplatespec)</sup></sup>
+
+
+
+dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is the type of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiGroup</b></td>
+        <td>string</td>
+        <td>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace is the namespace of resource being referenced
+Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
+(Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.volumeClaimTemplate.spec.resources
+<sup><sup>[↩ Parent](#instrumentationspecgovolumeclaimtemplatespec)</sup></sup>
+
+
+
+resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.volumeClaimTemplate.spec.selector
+<sup><sup>[↩ Parent](#instrumentationspecgovolumeclaimtemplatespec)</sup></sup>
+
+
+
+selector is a label query over volumes to consider for binding.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecgovolumeclaimtemplatespecselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.volumeClaimTemplate.spec.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#instrumentationspecgovolumeclaimtemplatespecselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.go.volumeClaimTemplate.metadata
+<sup><sup>[↩ Parent](#instrumentationspecgovolumeclaimtemplate)</sup></sup>
+
+
+
+May contain labels and annotations that will be copied into the PVC
+when creating it. No other fields are allowed and will be rejected during
+validation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>annotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>finalizers</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>labels</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.java
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -2163,6 +3579,14 @@ All extensions are copied to a single directory; if a JAR with the same name exi
         <td>object</td>
         <td>
           Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecjavavolumeclaimtemplate">volumeClaimTemplate</a></b></td>
+        <td>object</td>
+        <td>
+          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2570,6 +3994,470 @@ only the result of this request.<br/>
 </table>
 
 
+### Instrumentation.spec.java.volumeClaimTemplate
+<sup><sup>[↩ Parent](#instrumentationspecjava)</sup></sup>
+
+
+
+VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with size limit VolumeSizeLimit
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecjavavolumeclaimtemplatespec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          The specification for the PersistentVolumeClaim. The entire content is
+copied unchanged into the PVC that gets created from this
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecjavavolumeclaimtemplatemetadata">metadata</a></b></td>
+        <td>object</td>
+        <td>
+          May contain labels and annotations that will be copied into the PVC
+when creating it. No other fields are allowed and will be rejected during
+validation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.java.volumeClaimTemplate.spec
+<sup><sup>[↩ Parent](#instrumentationspecjavavolumeclaimtemplate)</sup></sup>
+
+
+
+The specification for the PersistentVolumeClaim. The entire content is
+copied unchanged into the PVC that gets created from this
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>accessModes</b></td>
+        <td>[]string</td>
+        <td>
+          accessModes contains the desired access modes the volume should have.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecjavavolumeclaimtemplatespecdatasource">dataSource</a></b></td>
+        <td>object</td>
+        <td>
+          dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecjavavolumeclaimtemplatespecdatasourceref">dataSourceRef</a></b></td>
+        <td>object</td>
+        <td>
+          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecjavavolumeclaimtemplatespecresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecjavavolumeclaimtemplatespecselector">selector</a></b></td>
+        <td>object</td>
+        <td>
+          selector is a label query over volumes to consider for binding.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>storageClassName</b></td>
+        <td>string</td>
+        <td>
+          storageClassName is the name of the StorageClass required by the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeAttributesClassName</b></td>
+        <td>string</td>
+        <td>
+          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
+If specified, the CSI driver will create or update the volume with the attributes defined
+in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
+it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
+will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
+If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
+will be set by the persistentvolume controller if it exists.
+If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
+set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
+exists.
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
+(Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeMode</b></td>
+        <td>string</td>
+        <td>
+          volumeMode defines what type of volume is required by the claim.
+Value of Filesystem is implied when not included in claim spec.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          volumeName is the binding reference to the PersistentVolume backing this claim.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.java.volumeClaimTemplate.spec.dataSource
+<sup><sup>[↩ Parent](#instrumentationspecjavavolumeclaimtemplatespec)</sup></sup>
+
+
+
+dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is the type of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiGroup</b></td>
+        <td>string</td>
+        <td>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.java.volumeClaimTemplate.spec.dataSourceRef
+<sup><sup>[↩ Parent](#instrumentationspecjavavolumeclaimtemplatespec)</sup></sup>
+
+
+
+dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is the type of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiGroup</b></td>
+        <td>string</td>
+        <td>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace is the namespace of resource being referenced
+Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
+(Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.java.volumeClaimTemplate.spec.resources
+<sup><sup>[↩ Parent](#instrumentationspecjavavolumeclaimtemplatespec)</sup></sup>
+
+
+
+resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.java.volumeClaimTemplate.spec.selector
+<sup><sup>[↩ Parent](#instrumentationspecjavavolumeclaimtemplatespec)</sup></sup>
+
+
+
+selector is a label query over volumes to consider for binding.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecjavavolumeclaimtemplatespecselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.java.volumeClaimTemplate.spec.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#instrumentationspecjavavolumeclaimtemplatespecselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.java.volumeClaimTemplate.metadata
+<sup><sup>[↩ Parent](#instrumentationspecjavavolumeclaimtemplate)</sup></sup>
+
+
+
+May contain labels and annotations that will be copied into the PVC
+when creating it. No other fields are allowed and will be rejected during
+validation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>annotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>finalizers</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>labels</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.nginx
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -2624,6 +4512,14 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td>object</td>
         <td>
           Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxvolumeclaimtemplate">volumeClaimTemplate</a></b></td>
+        <td>object</td>
+        <td>
+          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3267,6 +5163,470 @@ only the result of this request.<br/>
 </table>
 
 
+### Instrumentation.spec.nginx.volumeClaimTemplate
+<sup><sup>[↩ Parent](#instrumentationspecnginx)</sup></sup>
+
+
+
+VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with size limit VolumeSizeLimit
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecnginxvolumeclaimtemplatespec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          The specification for the PersistentVolumeClaim. The entire content is
+copied unchanged into the PVC that gets created from this
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxvolumeclaimtemplatemetadata">metadata</a></b></td>
+        <td>object</td>
+        <td>
+          May contain labels and annotations that will be copied into the PVC
+when creating it. No other fields are allowed and will be rejected during
+validation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.volumeClaimTemplate.spec
+<sup><sup>[↩ Parent](#instrumentationspecnginxvolumeclaimtemplate)</sup></sup>
+
+
+
+The specification for the PersistentVolumeClaim. The entire content is
+copied unchanged into the PVC that gets created from this
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>accessModes</b></td>
+        <td>[]string</td>
+        <td>
+          accessModes contains the desired access modes the volume should have.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxvolumeclaimtemplatespecdatasource">dataSource</a></b></td>
+        <td>object</td>
+        <td>
+          dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxvolumeclaimtemplatespecdatasourceref">dataSourceRef</a></b></td>
+        <td>object</td>
+        <td>
+          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxvolumeclaimtemplatespecresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnginxvolumeclaimtemplatespecselector">selector</a></b></td>
+        <td>object</td>
+        <td>
+          selector is a label query over volumes to consider for binding.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>storageClassName</b></td>
+        <td>string</td>
+        <td>
+          storageClassName is the name of the StorageClass required by the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeAttributesClassName</b></td>
+        <td>string</td>
+        <td>
+          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
+If specified, the CSI driver will create or update the volume with the attributes defined
+in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
+it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
+will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
+If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
+will be set by the persistentvolume controller if it exists.
+If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
+set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
+exists.
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
+(Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeMode</b></td>
+        <td>string</td>
+        <td>
+          volumeMode defines what type of volume is required by the claim.
+Value of Filesystem is implied when not included in claim spec.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          volumeName is the binding reference to the PersistentVolume backing this claim.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.volumeClaimTemplate.spec.dataSource
+<sup><sup>[↩ Parent](#instrumentationspecnginxvolumeclaimtemplatespec)</sup></sup>
+
+
+
+dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is the type of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiGroup</b></td>
+        <td>string</td>
+        <td>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.volumeClaimTemplate.spec.dataSourceRef
+<sup><sup>[↩ Parent](#instrumentationspecnginxvolumeclaimtemplatespec)</sup></sup>
+
+
+
+dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is the type of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiGroup</b></td>
+        <td>string</td>
+        <td>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace is the namespace of resource being referenced
+Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
+(Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.volumeClaimTemplate.spec.resources
+<sup><sup>[↩ Parent](#instrumentationspecnginxvolumeclaimtemplatespec)</sup></sup>
+
+
+
+resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.volumeClaimTemplate.spec.selector
+<sup><sup>[↩ Parent](#instrumentationspecnginxvolumeclaimtemplatespec)</sup></sup>
+
+
+
+selector is a label query over volumes to consider for binding.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecnginxvolumeclaimtemplatespecselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.volumeClaimTemplate.spec.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#instrumentationspecnginxvolumeclaimtemplatespecselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nginx.volumeClaimTemplate.metadata
+<sup><sup>[↩ Parent](#instrumentationspecnginxvolumeclaimtemplate)</sup></sup>
+
+
+
+May contain labels and annotations that will be copied into the PVC
+when creating it. No other fields are allowed and will be rejected during
+validation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>annotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>finalizers</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>labels</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.nodejs
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -3304,6 +5664,14 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td>object</td>
         <td>
           Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnodejsvolumeclaimtemplate">volumeClaimTemplate</a></b></td>
+        <td>object</td>
+        <td>
+          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3677,6 +6045,470 @@ only the result of this request.<br/>
 </table>
 
 
+### Instrumentation.spec.nodejs.volumeClaimTemplate
+<sup><sup>[↩ Parent](#instrumentationspecnodejs)</sup></sup>
+
+
+
+VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with size limit VolumeSizeLimit
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecnodejsvolumeclaimtemplatespec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          The specification for the PersistentVolumeClaim. The entire content is
+copied unchanged into the PVC that gets created from this
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnodejsvolumeclaimtemplatemetadata">metadata</a></b></td>
+        <td>object</td>
+        <td>
+          May contain labels and annotations that will be copied into the PVC
+when creating it. No other fields are allowed and will be rejected during
+validation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nodejs.volumeClaimTemplate.spec
+<sup><sup>[↩ Parent](#instrumentationspecnodejsvolumeclaimtemplate)</sup></sup>
+
+
+
+The specification for the PersistentVolumeClaim. The entire content is
+copied unchanged into the PVC that gets created from this
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>accessModes</b></td>
+        <td>[]string</td>
+        <td>
+          accessModes contains the desired access modes the volume should have.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnodejsvolumeclaimtemplatespecdatasource">dataSource</a></b></td>
+        <td>object</td>
+        <td>
+          dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnodejsvolumeclaimtemplatespecdatasourceref">dataSourceRef</a></b></td>
+        <td>object</td>
+        <td>
+          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnodejsvolumeclaimtemplatespecresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecnodejsvolumeclaimtemplatespecselector">selector</a></b></td>
+        <td>object</td>
+        <td>
+          selector is a label query over volumes to consider for binding.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>storageClassName</b></td>
+        <td>string</td>
+        <td>
+          storageClassName is the name of the StorageClass required by the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeAttributesClassName</b></td>
+        <td>string</td>
+        <td>
+          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
+If specified, the CSI driver will create or update the volume with the attributes defined
+in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
+it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
+will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
+If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
+will be set by the persistentvolume controller if it exists.
+If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
+set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
+exists.
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
+(Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeMode</b></td>
+        <td>string</td>
+        <td>
+          volumeMode defines what type of volume is required by the claim.
+Value of Filesystem is implied when not included in claim spec.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          volumeName is the binding reference to the PersistentVolume backing this claim.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nodejs.volumeClaimTemplate.spec.dataSource
+<sup><sup>[↩ Parent](#instrumentationspecnodejsvolumeclaimtemplatespec)</sup></sup>
+
+
+
+dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is the type of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiGroup</b></td>
+        <td>string</td>
+        <td>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nodejs.volumeClaimTemplate.spec.dataSourceRef
+<sup><sup>[↩ Parent](#instrumentationspecnodejsvolumeclaimtemplatespec)</sup></sup>
+
+
+
+dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is the type of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiGroup</b></td>
+        <td>string</td>
+        <td>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace is the namespace of resource being referenced
+Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
+(Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nodejs.volumeClaimTemplate.spec.resources
+<sup><sup>[↩ Parent](#instrumentationspecnodejsvolumeclaimtemplatespec)</sup></sup>
+
+
+
+resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nodejs.volumeClaimTemplate.spec.selector
+<sup><sup>[↩ Parent](#instrumentationspecnodejsvolumeclaimtemplatespec)</sup></sup>
+
+
+
+selector is a label query over volumes to consider for binding.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecnodejsvolumeclaimtemplatespecselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nodejs.volumeClaimTemplate.spec.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#instrumentationspecnodejsvolumeclaimtemplatespecselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.nodejs.volumeClaimTemplate.metadata
+<sup><sup>[↩ Parent](#instrumentationspecnodejsvolumeclaimtemplate)</sup></sup>
+
+
+
+May contain labels and annotations that will be copied into the PVC
+when creating it. No other fields are allowed and will be rejected during
+validation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>annotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>finalizers</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>labels</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### Instrumentation.spec.python
 <sup><sup>[↩ Parent](#instrumentationspec)</sup></sup>
 
@@ -3714,6 +6546,14 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td>object</td>
         <td>
           Resources describes the compute resource requirements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecpythonvolumeclaimtemplate">volumeClaimTemplate</a></b></td>
+        <td>object</td>
+        <td>
+          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4081,6 +6921,470 @@ inside a container.<br/>
           Request is the name chosen for a request in the referenced claim.
 If empty, everything from the claim is made available, otherwise
 only the result of this request.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.volumeClaimTemplate
+<sup><sup>[↩ Parent](#instrumentationspecpython)</sup></sup>
+
+
+
+VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+If omitted, an emptyDir is used with size limit VolumeSizeLimit
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecpythonvolumeclaimtemplatespec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          The specification for the PersistentVolumeClaim. The entire content is
+copied unchanged into the PVC that gets created from this
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecpythonvolumeclaimtemplatemetadata">metadata</a></b></td>
+        <td>object</td>
+        <td>
+          May contain labels and annotations that will be copied into the PVC
+when creating it. No other fields are allowed and will be rejected during
+validation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.volumeClaimTemplate.spec
+<sup><sup>[↩ Parent](#instrumentationspecpythonvolumeclaimtemplate)</sup></sup>
+
+
+
+The specification for the PersistentVolumeClaim. The entire content is
+copied unchanged into the PVC that gets created from this
+template. The same fields as in a PersistentVolumeClaim
+are also valid here.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>accessModes</b></td>
+        <td>[]string</td>
+        <td>
+          accessModes contains the desired access modes the volume should have.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecpythonvolumeclaimtemplatespecdatasource">dataSource</a></b></td>
+        <td>object</td>
+        <td>
+          dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecpythonvolumeclaimtemplatespecdatasourceref">dataSourceRef</a></b></td>
+        <td>object</td>
+        <td>
+          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecpythonvolumeclaimtemplatespecresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecpythonvolumeclaimtemplatespecselector">selector</a></b></td>
+        <td>object</td>
+        <td>
+          selector is a label query over volumes to consider for binding.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>storageClassName</b></td>
+        <td>string</td>
+        <td>
+          storageClassName is the name of the StorageClass required by the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeAttributesClassName</b></td>
+        <td>string</td>
+        <td>
+          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
+If specified, the CSI driver will create or update the volume with the attributes defined
+in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
+it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
+will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
+If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
+will be set by the persistentvolume controller if it exists.
+If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
+set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
+exists.
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
+(Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeMode</b></td>
+        <td>string</td>
+        <td>
+          volumeMode defines what type of volume is required by the claim.
+Value of Filesystem is implied when not included in claim spec.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          volumeName is the binding reference to the PersistentVolume backing this claim.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.volumeClaimTemplate.spec.dataSource
+<sup><sup>[↩ Parent](#instrumentationspecpythonvolumeclaimtemplatespec)</sup></sup>
+
+
+
+dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is the type of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiGroup</b></td>
+        <td>string</td>
+        <td>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.volumeClaimTemplate.spec.dataSourceRef
+<sup><sup>[↩ Parent](#instrumentationspecpythonvolumeclaimtemplatespec)</sup></sup>
+
+
+
+dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind is the type of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of resource being referenced<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>apiGroup</b></td>
+        <td>string</td>
+        <td>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace is the namespace of resource being referenced
+Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
+(Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.volumeClaimTemplate.spec.resources
+<sup><sup>[↩ Parent](#instrumentationspecpythonvolumeclaimtemplatespec)</sup></sup>
+
+
+
+resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.volumeClaimTemplate.spec.selector
+<sup><sup>[↩ Parent](#instrumentationspecpythonvolumeclaimtemplatespec)</sup></sup>
+
+
+
+selector is a label query over volumes to consider for binding.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecpythonvolumeclaimtemplatespecselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.volumeClaimTemplate.spec.selector.matchExpressions[index]
+<sup><sup>[↩ Parent](#instrumentationspecpythonvolumeclaimtemplatespecselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.python.volumeClaimTemplate.metadata
+<sup><sup>[↩ Parent](#instrumentationspecpythonvolumeclaimtemplate)</sup></sup>
+
+
+
+May contain labels and annotations that will be copied into the PVC
+when creating it. No other fields are allowed and will be rejected during
+validation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>annotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>finalizers</b></td>
+        <td>[]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>labels</b></td>
+        <td>map[string]string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -31177,6 +34481,15 @@ This only works with the following OpenTelemetryCollector mode's: daemonset, sta
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecpersistentvolumeclaimretentionpolicy">persistentVolumeClaimRetentionPolicy</a></b></td>
+        <td>object</td>
+        <td>
+          PersistentVolumeClaimRetentionPolicy describes the lifecycle of persistent volume claims
+created from volumeClaimTemplates.
+This only works with the following OpenTelemetryCollector modes: statefulset.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>podAnnotations</b></td>
         <td>map[string]string</td>
         <td>
@@ -40930,6 +44243,49 @@ Metrics defines the metrics configuration for operands.
         <td>
           EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
 The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.persistentVolumeClaimRetentionPolicy
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+PersistentVolumeClaimRetentionPolicy describes the lifecycle of persistent volume claims
+created from volumeClaimTemplates.
+This only works with the following OpenTelemetryCollector modes: statefulset.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>whenDeleted</b></td>
+        <td>string</td>
+        <td>
+          WhenDeleted specifies what happens to PVCs created from StatefulSet
+VolumeClaimTemplates when the StatefulSet is deleted. The default policy
+of `Retain` causes PVCs to not be affected by StatefulSet deletion. The
+`Delete` policy causes those PVCs to be deleted.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>whenScaled</b></td>
+        <td>string</td>
+        <td>
+          WhenScaled specifies what happens to PVCs created from StatefulSet
+VolumeClaimTemplates when the StatefulSet is scaled down. The default
+policy of `Retain` causes PVCs to not be affected by a scaledown. The
+`Delete` policy causes the associated PVCs for any excess pods above
+the replica count to be deleted.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

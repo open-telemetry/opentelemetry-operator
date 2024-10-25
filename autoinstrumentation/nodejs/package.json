@@ -10,21 +10,21 @@
     },
     "devDependencies": {
         "copyfiles": "^2.4.1",
-        "rimraf": "^5.0.8",
-        "typescript": "^5.5.3"
+        "rimraf": "^6.0.1",
+        "typescript": "^5.6.3"
     },
     "dependencies": {
         "@opentelemetry/api": "1.9.0",
-        "@opentelemetry/auto-instrumentations-node": "0.48.0",
-        "@opentelemetry/exporter-metrics-otlp-grpc": "0.52.1",
-        "@opentelemetry/exporter-prometheus": "0.52.1",
-        "@opentelemetry/exporter-trace-otlp-grpc": "0.52.1",
-        "@opentelemetry/resource-detector-alibaba-cloud": "0.28.10",
-        "@opentelemetry/resource-detector-aws": "1.5.2",
-        "@opentelemetry/resource-detector-container": "0.3.11",
-        "@opentelemetry/resource-detector-gcp": "0.29.10",
-        "@opentelemetry/resources": "1.25.1",
-        "@opentelemetry/sdk-metrics": "1.25.1",
-        "@opentelemetry/sdk-node": "0.52.1"
+        "@opentelemetry/auto-instrumentations-node": "0.51.0",
+        "@opentelemetry/exporter-metrics-otlp-grpc": "0.53.0",
+        "@opentelemetry/exporter-prometheus": "0.53.0",
+        "@opentelemetry/exporter-trace-otlp-grpc": "0.53.0",
+        "@opentelemetry/resource-detector-alibaba-cloud": "0.29.3",
+        "@opentelemetry/resource-detector-aws": "1.6.2",
+        "@opentelemetry/resource-detector-container": "0.4.4",
+        "@opentelemetry/resource-detector-gcp": "0.29.12",
+        "@opentelemetry/resources": "1.26.0",
+        "@opentelemetry/sdk-metrics": "1.26.0",
+        "@opentelemetry/sdk-node": "0.53.0"
     }
 }
