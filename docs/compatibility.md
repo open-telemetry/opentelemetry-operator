@@ -2,6 +2,18 @@
 
 This document details compatibility guarantees the OpenTelemetry Operator offers for its dependencies and platforms.
 
+## Kubernetes
+
+As a rule, the operator tries to be compatible with as wide a range of Kubernetes versions as possible.
+
+We will *always* support all the versions maintained by the upstream Kubernetes project, as detailed on its [releases page][kubernetes_releases].
+
+We will make every effort to support all Kubernetes versions maintained by popular distributions and hosted platforms. For example, you can realistically expect us to always support all versions offered by [OpenShift][openshift_support] and [AWS EKS][aws_support].
+
+Whenever we do remove support for a Kubernetes version, we will give at least one month's notice beforehand.
+
+The [compatibility matrix](#compatibility-matrix) below precisely shows the supported Kubernetes versions for each operator release.
+
 ## OpenTelemetry Operator vs. OpenTelemetry Collector
 
 The OpenTelemetry Operator follows the same versioning as the operand (OpenTelemetry Collector) up to the minor part of the version. For example, the OpenTelemetry Operator v0.18.1 tracks OpenTelemetry Collector 0.18.0. The patch part of the version indicates the patch level of the operator itself, not that of OpenTelemetry Collector. Whenever a new patch version is released for OpenTelemetry Collector, we'll release a new patch version of the operator.
@@ -11,8 +23,6 @@ By default, the OpenTelemetry Operator ensures consistent versioning between its
 When a custom `Spec.Image` is used with an `OpenTelemetryCollector` resource, the OpenTelemetry Operator will not manage this versioning and upgrading. In this scenario, it is best practice that the OpenTelemetry Operator version should match the underlying core version. Given a `OpenTelemetryCollector` resource with a `Spec.Image` configured to a custom image based on underlying OpenTelemetry Collector at version `0.40.0`, it is recommended that the OpenTelemetry Operator is kept at version `0.40.0`.
 
 ## Compatibility matrix
-
-We strive to be compatible with the widest range of Kubernetes versions as possible, but some changes to Kubernetes itself require us to break compatibility with older Kubernetes versions, be it because of code incompatibilities, or in the name of maintainability. Every released operator will support a specific range of Kubernetes versions, to be determined at the latest during the release.
 
 We use `cert-manager` for some features of this operator and the third column shows the versions of the `cert-manager` that are known to work with this operator's versions.
 
@@ -47,3 +57,7 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 | v0.90.0                | v1.23 to v1.28 | v1           | v0.69.1             |
 | v0.89.0                | v1.23 to v1.28 | v1           | v0.69.1             |
 | v0.88.0                | v1.23 to v1.28 | v1           | v0.68.0             |
+
+[kubernetes_releases]: https://kubernetes.io/releases/
+[openshift_support]: https://access.redhat.com/support/policy/updates/openshift
+[aws_support]: https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
