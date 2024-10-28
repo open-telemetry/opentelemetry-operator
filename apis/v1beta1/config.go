@@ -206,7 +206,8 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 		case KindProcessor:
 			continue
 		case KindExtension:
-			continue
+			retriever = extensions.ParserFor
+			cfg = *c.Extensions
 		}
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.
@@ -316,6 +317,10 @@ func (c *Config) GetReceiverPorts(logger logr.Logger) ([]corev1.ServicePort, err
 
 func (c *Config) GetExporterPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
 	return c.getPortsForComponentKinds(logger, KindExporter)
+}
+
+func (c *Config) GetExtensionPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
+	return c.getPortsForComponentKinds(logger, KindExtension)
 }
 
 func (c *Config) GetAllPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
