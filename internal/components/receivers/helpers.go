@@ -136,8 +136,10 @@ var (
 			WithProtocol(corev1.ProtocolTCP).
 			WithTargetPort(3100).
 			MustBuild(),
+		components.NewBuilder[kubeletStatsConfig]().WithName("kubeletstats").
+			WithRbacGen(generateKubeletStatsRbacRules).
+			MustBuild(),
 		NewScraperParser("prometheus"),
-		NewScraperParser("kubeletstats"),
 		NewScraperParser("sshcheck"),
 		NewScraperParser("cloudfoundry"),
 		NewScraperParser("vcenter"),

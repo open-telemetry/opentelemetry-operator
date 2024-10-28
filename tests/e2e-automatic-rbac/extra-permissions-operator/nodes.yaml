@@ -10,3 +10,23 @@
     - get
     - list
     - watch
+---
+- op: add
+  path: /rules/-
+  value:
+    apiGroups:
+    - ""
+    resources:
+    - nodes/proxy
+    verbs:
+    - get
+---
+- op: add
+  path: /rules/-
+  value:
+    apiGroups:
+    - ""
+    resources:
+    - nodes/stats
+    verbs:
+    - get
