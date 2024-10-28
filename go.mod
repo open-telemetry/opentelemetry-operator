@@ -27,7 +27,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.76.2
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.60.1
-	github.com/prometheus/prometheus v0.54.1
+	github.com/prometheus/prometheus v0.55.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
@@ -70,7 +70,7 @@ require (
 	github.com/alecthomas/units v0.0.0-20240626203959-61d1e3462e30 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/aws/aws-sdk-go v1.54.19 // indirect
+	github.com/aws/aws-sdk-go v1.55.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
@@ -83,7 +83,7 @@ require (
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/digitalocean/godo v1.125.0 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/docker v27.1.1+incompatible // indirect
+	github.com/docker/docker v27.2.0+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
@@ -130,11 +130,11 @@ require (
 	github.com/google/s2a-go v0.1.8 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.13.0 // indirect
-	github.com/gophercloud/gophercloud v1.13.0 // indirect
+	github.com/gophercloud/gophercloud v1.14.0 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/grafana/regexp v0.0.0-20240518133315-a468a5bfb3bc // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0 // indirect
-	github.com/hashicorp/consul/api v1.29.2 // indirect
+	github.com/hashicorp/consul/api v1.29.4 // indirect
 	github.com/hashicorp/cronexpr v1.1.2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -147,10 +147,10 @@ require (
 	github.com/hashicorp/golang-lru v0.6.0 // indirect
 	github.com/hashicorp/nomad/api v0.0.0-20240717122358-3d93bd3778f3 // indirect
 	github.com/hashicorp/serf v0.10.1 // indirect
-	github.com/hetznercloud/hcloud-go/v2 v2.10.2 // indirect
+	github.com/hetznercloud/hcloud-go/v2 v2.13.1 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/ionos-cloud/sdk-go/v6 v6.1.11 // indirect
+	github.com/ionos-cloud/sdk-go/v6 v6.2.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.1-0.20220621161143-b0104c826a24 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
@@ -159,7 +159,7 @@ require (
 	github.com/kolo/xmlrpc v0.0.0-20220921171641-a4b6fa1dd06b // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
-	github.com/linode/linodego v1.37.0 // indirect
+	github.com/linode/linodego v1.40.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -186,7 +186,7 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.29 // indirect
+	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.30 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
