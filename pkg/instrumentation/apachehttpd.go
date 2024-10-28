@@ -152,7 +152,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 					"echo \"$" + apacheAttributesEnvVar + "\" > " + apacheAgentConfDirFull + "/" + apacheAgentConfigFile + " && " +
 					"sed -i 's/" + apacheServiceInstanceId + "/'${" + apacheServiceInstanceIdEnvVar + "}'/g' " + apacheAgentConfDirFull + "/" + apacheAgentConfigFile + " && " +
 					// Include a link to include Apache agent configuration file into httpd.conf
-					"echo 'Include " + getApacheConfDir(apacheSpec.ConfigPath) + "/" + apacheAgentConfigFile + "' >> " + apacheAgentConfDirFull + "/" + apacheConfigFile,
+					"echo -e '\nInclude " + getApacheConfDir(apacheSpec.ConfigPath) + "/" + apacheAgentConfigFile + "' >> " + apacheAgentConfDirFull + "/" + apacheConfigFile,
 			},
 			Env: []corev1.EnvVar{
 				{
