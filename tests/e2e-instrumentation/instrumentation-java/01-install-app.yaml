@@ -1,3 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-java
+data:
+  system-properties: "-Xmx256m -Xms64m"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,6 +29,12 @@ spec:
       containers:
       - name: myapp
         image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main
+        env:
+        - name: JAVA_TOOL_OPTIONS
+          valueFrom:
+            configMapKeyRef:
+              name: config-java
+              key: system-properties
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
