@@ -8,7 +8,7 @@ component: 'auto-instrumentation'
 note: 'An empty line should come before the addition of Include ...opentemetry_agent.conf, as a protection measure against cases of httpd.conf w/o a blank last line'
 
 # One or more tracking issues related to the change
-issues: []
+issues: [3401]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
