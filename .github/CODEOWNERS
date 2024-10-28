@@ -17,6 +17,3 @@
 
 # AutoInstrumentation owners
 # TBD
-
-# Target Allocator owners
-cmd/otel-allocator @open-telemetry/operator-ta-maintainers
