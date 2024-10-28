@@ -37,6 +37,7 @@ func TestWarningsGroupedByResource(t *testing.T) {
 			reviews: []*v1.SubjectAccessReview{
 				{
 					Spec: v1.SubjectAccessReviewSpec{
+						User: "system:serviceaccount:test-ns:test-targetallocator",
 						ResourceAttributes: &v1.ResourceAttributes{
 							Verb:     "get",
 							Group:    "",
@@ -45,13 +46,14 @@ func TestWarningsGroupedByResource(t *testing.T) {
 					},
 				},
 			},
-			expected: []string{"missing the following rules for namespaces: [get]"},
+			expected: []string{"missing the following rules for system:serviceaccount:test-ns:test-targetallocator - namespaces: [get]"},
 		},
 		{
 			desc: "One access review with non resource attributes",
 			reviews: []*v1.SubjectAccessReview{
 				{
 					Spec: v1.SubjectAccessReviewSpec{
+						User: "system:serviceaccount:test-ns:test-targetallocator",
 						ResourceAttributes: &v1.ResourceAttributes{
 							Verb:     "watch",
 							Group:    "apps",
@@ -60,7 +62,7 @@ func TestWarningsGroupedByResource(t *testing.T) {
 					},
 				},
 			},
-			expected: []string{"missing the following rules for apps/replicasets: [watch]"},
+			expected: []string{"missing the following rules for system:serviceaccount:test-ns:test-targetallocator - apps/replicasets: [watch]"},
 		},
 	}
 

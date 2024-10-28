@@ -26,6 +26,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
@@ -119,7 +120,11 @@ func (w TargetAllocatorWebhook) validate(ctx context.Context, ta *TargetAllocato
 
 	// if the prometheusCR is enabled, it needs a suite of permissions to function
 	if ta.Spec.PrometheusCR.Enabled {
-		warnings, err := v1beta1.CheckTargetAllocatorPrometheusCRPolicyRules(ctx, w.reviewer, ta.Spec.ServiceAccount, ta.GetNamespace())
+		saname := ta.Spec.ServiceAccount
+		if len(ta.Spec.ServiceAccount) == 0 {
+			saname = naming.TargetAllocatorServiceAccount(ta.Name)
+		}
+		warnings, err := v1beta1.CheckTargetAllocatorPrometheusCRPolicyRules(ctx, w.reviewer, ta.GetNamespace(), saname)
 		if err != nil || len(warnings) > 0 {
 			return warnings, err
 		}
