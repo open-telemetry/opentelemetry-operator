@@ -1,6 +1,6 @@
 #https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/prometheusexporter/README.md
 
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: cluster-collector
@@ -10,13 +10,13 @@ spec:
   observability:
     metrics:
       enableMetrics: true
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
-    processors:
+          grpc: {}
+          http:  {}
+    processors: {}
     exporters:
       otlp:
         endpoint: jaeger-allinone-collector-headless.chainsaw-otlp-metrics.svc:4317
