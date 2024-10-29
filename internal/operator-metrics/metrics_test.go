@@ -76,7 +76,7 @@ func TestOperatorMetrics_Start(t *testing.T) {
 	err = wait.PollUntilContextTimeout(
 		ctxTimeout,
 		time.Millisecond*100,
-		time.Second*100,
+		time.Second*10,
 		true,
 		func(ctx context.Context) (bool, error) {
 			errGet := client.Get(ctx, types.NamespacedName{Name: "opentelemetry-operator-metrics-monitor", Namespace: "test-namespace"}, serviceMonitor)
