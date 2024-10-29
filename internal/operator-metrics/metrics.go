@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var (
@@ -45,6 +46,8 @@ var (
 	// openshiftInClusterMonitoringNamespace declares the namespace for the OpenShift in-cluster monitoring.
 	openshiftInClusterMonitoringNamespace = "openshift-monitoring"
 )
+
+var _ manager.Runnable = &OperatorMetrics{}
 
 type OperatorMetrics struct {
 	kubeClient client.Client

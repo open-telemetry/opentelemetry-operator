@@ -24,8 +24,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -65,8 +68,29 @@ func TestOperatorMetrics_Start(t *testing.T) {
 		errChan <- metrics.Start(ctx)
 	}()
 
-	// Wait a bit to allow the Start method to run
-	time.Sleep(100 * time.Millisecond)
+	ctxTimeout, cancelTimeout := context.WithTimeout(ctx, time.Second*10)
+	defer cancelTimeout()
+
+	// Wait until one service monitor is being created
+	var serviceMonitor *monitoringv1.ServiceMonitor = &monitoringv1.ServiceMonitor{}
+	err = wait.PollUntilContextTimeout(
+		ctxTimeout,
+		time.Millisecond*100,
+		time.Second*100,
+		true,
+		func(ctx context.Context) (bool, error) {
+			errGet := client.Get(ctx, types.NamespacedName{Name: "opentelemetry-operator-metrics-monitor", Namespace: "test-namespace"}, serviceMonitor)
+
+			if errGet != nil {
+				if apierrors.IsNotFound(errGet) {
+					return false, nil
+				}
+				return false, err
+			}
+			return true, nil
+		},
+	)
+	require.NoError(t, err)
 
 	cancel()
 	err = <-errChan

@@ -422,6 +422,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	if cfg.PrometheusCRAvailability() == prometheus.Available {
+		operatorMetrics, opError := operatormetrics.NewOperatorMetrics(mgr.GetConfig(), scheme)
+		if opError != nil {
+			setupLog.Error(opError, "Failed to create the operator metrics SM")
+		}
+		err = mgr.Add(operatorMetrics)
+		if err != nil {
+			setupLog.Error(err, "Failed to add the operator metrics SM")
+		}
+	}
+
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		var crdMetrics *otelv1beta1.Metrics
 
@@ -434,17 +445,6 @@ func main() {
 			crdMetrics, err = otelv1beta1.NewMetrics(meterProvider, ctx, mgr.GetAPIReader())
 			if err != nil {
 				setupLog.Error(err, "Error init CRD metrics")
-			}
-
-			if cfg.PrometheusCRAvailability() == prometheus.Available {
-				operatorMetrics, opError := operatormetrics.NewOperatorMetrics(mgr.GetConfig(), scheme)
-				if opError != nil {
-					setupLog.Error(opError, "Failed to create the operator metrics SM")
-				}
-				err = mgr.Add(operatorMetrics)
-				if err != nil {
-					setupLog.Error(err, "Failed to add the operator metrics SM")
-				}
 			}
 		}
 
