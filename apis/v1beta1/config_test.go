@@ -423,6 +423,66 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 	}
 }
 
+func TestConfig_getEnvironmentVariablesForComponentKinds(t *testing.T) {
+	tests := []struct {
+		name           string
+		config         *Config
+		componentKinds []ComponentKind
+		envVarsLen     int
+	}{
+		{
+			name: "no env vars",
+			config: &Config{
+				Receivers: AnyConfig{
+					Object: map[string]interface{}{
+						"myreceiver": map[string]interface{}{
+							"env": "test",
+						},
+					},
+				},
+				Service: Service{
+					Pipelines: map[string]*Pipeline{
+						"test": {
+							Receivers: []string{"myreceiver"},
+						},
+					},
+				},
+			},
+			componentKinds: []ComponentKind{KindReceiver},
+			envVarsLen:     0,
+		},
+		{
+			name: "kubeletstats env vars",
+			config: &Config{
+				Receivers: AnyConfig{
+					Object: map[string]interface{}{
+						"kubeletstats": map[string]interface{}{},
+					},
+				},
+				Service: Service{
+					Pipelines: map[string]*Pipeline{
+						"test": {
+							Receivers: []string{"kubeletstats"},
+						},
+					},
+				},
+			},
+			componentKinds: []ComponentKind{KindReceiver},
+			envVarsLen:     1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logger := logr.Discard()
+			envVars, err := tt.config.GetEnvironmentVariables(logger)
+
+			assert.NoError(t, err)
+			assert.Len(t, envVars, tt.envVarsLen)
+		})
+	}
+}
+
 func TestConfig_GetReceiverPorts(t *testing.T) {
 	tests := []struct {
 		name    string

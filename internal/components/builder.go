@@ -146,6 +146,7 @@ func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigTyp
 		name:            o.name,
 		portParser:      o.portParser,
 		rbacGen:         o.rbacGen,
+		envVarGen:       o.envVarGen,
 		livenessGen:     o.livenessGen,
 		readinessGen:    o.readinessGen,
 		defaultsApplier: o.defaultsApplier,

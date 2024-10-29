@@ -15,6 +15,8 @@
 package receivers
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
@@ -176,5 +178,6 @@ var (
 func init() {
 	for _, parser := range componentParsers {
 		Register(parser.ParserType(), parser)
+		fmt.Println(parser.ParserType())
 	}
 }

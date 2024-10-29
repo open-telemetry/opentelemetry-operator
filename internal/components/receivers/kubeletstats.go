@@ -47,12 +47,9 @@ func generateKubeletStatsEnvVars(_ logr.Logger, config kubeletStatsConfig) ([]co
 	// The documentation mentions that the K8S_NODE_NAME environment variable is required when using the serviceAccount auth type.
 	// Also, it mentions that it is a good idea to use it for the Read Only Endpoint. Added always to make it easier for users.
 	// https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/README.md
-	if config.AuthType == "serviceAccount" {
-		return []corev1.EnvVar{
-			{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-		}, nil
-	}
-	return nil, nil
+	return []corev1.EnvVar{
+		{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
+	}, nil
 }
 
 func generateKubeletStatsRbacRules(_ logr.Logger, config kubeletStatsConfig) ([]rbacv1.PolicyRule, error) {
