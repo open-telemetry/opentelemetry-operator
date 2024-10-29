@@ -279,10 +279,8 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 			// these functions only write to the notification channel if it's empty to avoid blocking
 			// if scrape config updates are being rate-limited
 			AddFunc: func(obj interface{}) {
-				w.logger.Info("added", "obj", obj)
 				select {
 				case notifyEvents <- struct{}{}:
-					w.logger.Info("added")
 				default:
 				}
 			},
