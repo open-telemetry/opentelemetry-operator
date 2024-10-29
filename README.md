@@ -11,6 +11,7 @@ The operator manages:
 
 ## Documentation
 
+- [Compatibility & Support docs](./docs/compatibility.md)
 - [API docs](./docs/api.md)
 - [Offical Telemetry Operator page](https://opentelemetry.io/docs/kubernetes/operator/)
 
@@ -789,10 +790,6 @@ The priority for setting resource attributes is as follows (first found wins):
 
 This priority is applied for each resource attribute separately, so it is possible to set some attributes via
 annotations and others via labels.
-
-## Compatibility 
-
-See [here](docs/compatibility.md).
 
 ## Contributing and Developing
 
