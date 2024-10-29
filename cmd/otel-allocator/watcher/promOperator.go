@@ -18,12 +18,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
 	"time"
 
 	"github.com/blang/semver/v4"
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
@@ -53,6 +50,7 @@ const (
 )
 
 func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
+	slogger := slog.New(logr.ToSlogHandler(logger))
 	var resourceSelector *prometheus.ResourceSelector
 	mClient, err := monitoringclient.NewForConfig(cfg.ClusterConfig)
 	if err != nil {
@@ -92,9 +90,7 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 		},
 	}
 
-	promOperatorLogger := level.NewFilter(log.NewLogfmtLogger(os.Stderr), level.AllowWarn())
-	promOperatorSlogLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
-	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom, true)
+	generator, err := prometheus.NewConfigGenerator(slogger, prom, prometheus.WithEndpointSliceSupport())
 
 	if err != nil {
 		return nil, err
@@ -112,7 +108,7 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 			logger.Error(err, "Retrying namespace informer creation in promOperator CRD watcher")
 			return true
 		}, func() error {
-			nsMonInf, err = getNamespaceInformer(ctx, map[string]struct{}{v1.NamespaceAll: {}}, promOperatorLogger, clientset, operatorMetrics)
+			nsMonInf, err = getNamespaceInformer(ctx, map[string]struct{}{v1.NamespaceAll: {}}, slogger, clientset, operatorMetrics)
 			return err
 		})
 	if getNamespaceInformerErr != nil {
@@ -120,13 +116,13 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 		return nil, getNamespaceInformerErr
 	}
 
-	resourceSelector, err = prometheus.NewResourceSelector(promOperatorSlogLogger, prom, store, nsMonInf, operatorMetrics, eventRecorder)
+	resourceSelector, err = prometheus.NewResourceSelector(slogger, prom, store, nsMonInf, operatorMetrics, eventRecorder)
 	if err != nil {
 		logger.Error(err, "Failed to create resource selector in promOperator CRD watcher")
 	}
 
 	return &PrometheusCRWatcher{
-		logger:                          logger,
+		logger:                          slogger,
 		kubeMonitoringClient:            mClient,
 		k8sClient:                       clientset,
 		informers:                       monitoringInformers,
@@ -145,7 +141,7 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 }
 
 type PrometheusCRWatcher struct {
-	logger                          logr.Logger
+	logger                          *slog.Logger
 	kubeMonitoringClient            monitoringclient.Interface
 	k8sClient                       kubernetes.Interface
 	informers                       map[string]*informers.ForResource
@@ -162,7 +158,7 @@ type PrometheusCRWatcher struct {
 	store                           *assets.StoreBuilder
 }
 
-func getNamespaceInformer(ctx context.Context, allowList map[string]struct{}, promOperatorLogger log.Logger, clientset kubernetes.Interface, operatorMetrics *operator.Metrics) (cache.SharedIndexInformer, error) {
+func getNamespaceInformer(ctx context.Context, allowList map[string]struct{}, promOperatorLogger *slog.Logger, clientset kubernetes.Interface, operatorMetrics *operator.Metrics) (cache.SharedIndexInformer, error) {
 	kubernetesVersion, err := clientset.Discovery().ServerVersion()
 	if err != nil {
 		return nil, err
@@ -252,7 +248,7 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 				} {
 					sync, err := k8sutil.LabelSelectionHasChanged(old.Labels, cur.Labels, selector)
 					if err != nil {
-						w.logger.Error(err, "Failed to check label selection between namespaces while handling namespace updates", "selector", name)
+						w.logger.Error(err.Error(), "Failed to check label selection between namespaces while handling namespace updates", "selector", name)
 						return
 					}
 
@@ -273,8 +269,9 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 	for name, resource := range w.informers {
 		resource.Start(w.stopChannel)
 
-		if ok := cache.WaitForNamedCacheSync(name, w.stopChannel, resource.HasSynced); !ok {
-			success = false
+		if ok := w.WaitForNamedCacheSync(name, resource.HasSynced); !ok {
+			w.logger.Info("skipping informer", "informer", name)
+			continue
 		}
 
 		// only send an event notification if there isn't one already
@@ -282,8 +279,10 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 			// these functions only write to the notification channel if it's empty to avoid blocking
 			// if scrape config updates are being rate-limited
 			AddFunc: func(obj interface{}) {
+				w.logger.Info("added", "obj", obj)
 				select {
 				case notifyEvents <- struct{}{}:
+					w.logger.Info("added")
 				default:
 				}
 			},
@@ -378,7 +377,7 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 			"",
 			nil,
 			nil,
-			monitoringv1.TSDBSpec{},
+			&monitoringv1.TSDBSpec{},
 			nil,
 			nil,
 			serviceMonitorInstances,
@@ -414,4 +413,42 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 		w.logger.Info("Unable to load config since resource selector is nil, returning empty prometheus config")
 		return promCfg, nil
 	}
+}
+
+// WaitForNamedCacheSync adds a timeout to the informer's wait for the cache to be ready.
+// If the PrometheusCRWatcher is unable to load an informer within 15 seconds, the method is
+// cancelled and returns false. A successful informer load will return true. This method also
+// will be cancelled if the target allocator's stopChannel is called before it returns.
+//
+// This method is inspired by the upstream prometheus-operator implementation, with a shorter timeout
+// and support for the PrometheusCRWatcher's stopChannel.
+// https://github.com/prometheus-operator/prometheus-operator/blob/293c16c854ce69d1da9fdc8f0705de2d67bfdbfa/pkg/operator/operator.go#L433
+func (w *PrometheusCRWatcher) WaitForNamedCacheSync(controllerName string, inf cache.InformerSynced) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	t := time.NewTicker(time.Second * 5)
+	defer t.Stop()
+
+	go func() {
+		for {
+			select {
+			case <-t.C:
+				w.logger.Debug("cache sync not yet completed")
+			case <-ctx.Done():
+				return
+			case <-w.stopChannel:
+				w.logger.Warn("stop received, shutting down cache syncing")
+				cancel()
+				return
+			}
+		}
+	}()
+
+	ok := cache.WaitForNamedCacheSync(controllerName, ctx.Done(), inf)
+	if !ok {
+		w.logger.Error("failed to sync cache")
+	} else {
+		w.logger.Debug("successfully synced cache")
+	}
+
+	return ok
 }
