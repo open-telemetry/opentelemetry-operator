@@ -61,8 +61,8 @@ func CheckTargetAllocatorPrometheusCRPolicyRules(
 	serviceAccountName string) (warnings []string, err error) {
 	subjectAccessReviews, err := reviewer.CheckPolicyRules(
 		ctx,
-		namespace,
 		serviceAccountName,
+		namespace,
 		targetAllocatorCRPolicyRules...,
 	)
 	if err != nil {
