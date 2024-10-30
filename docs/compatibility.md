@@ -2,6 +2,19 @@
 
 This document details compatibility guarantees the OpenTelemetry Operator offers for its dependencies and platforms.
 
+## Go
+
+When productised as a go libary or custom distribution the OpenTelemetry Operator project attempts to follow the supported go versions as [defined by the Go team](https://go.dev/doc/devel/release#policy).
+
+Similar to the [opentelemetry collector](https://github.com/open-telemetry/opentelemetry-collector?tab=readme-ov-file#compatibility), removing support for an unsupported Go version is not considered a breaking change.
+
+Support for Go versions on the OpenTelemetry Operator is updated as follows:
+
+    The first release after the release of a new Go minor version N will add build and tests steps for the new Go minor version.
+    The first release after the release of a new Go minor version N will remove support for Go version N-2.
+
+Official OpenTelemetry Operator binaries may be built with any supported Go version.
+
 ## Kubernetes
 
 As a rule, the operator tries to be compatible with as wide a range of Kubernetes versions as possible.
