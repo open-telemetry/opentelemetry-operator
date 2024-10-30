@@ -7,7 +7,7 @@
 ### 💡 Enhancements 💡
 
 - `auto-instrumentation`: Support configuring Java auto-instrumentation when runtime configuration is provided from configmap or secret. (#1814)
-  This change allows users to configure JAVA_TOOL_OPTIONS in config map or secret.
+  This change allows users to configure JAVA_TOOL_OPTIONS in config map or secret when the name of the variable is defined in the pod spec.
   The operator in this case set another JAVA_TOOL_OPTIONS that references the original value 
   e.g. `JAVA_TOOL_OPTIONS=$(JAVA_TOOL_OPTIONS) -javaagent:/otel-auto-instrumentation-java/javaagent.jar`.
   
