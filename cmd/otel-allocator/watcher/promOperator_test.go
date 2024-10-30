@@ -1080,7 +1080,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 
 	select {
 	case <-events:
-	case <-time.After(time.Second):
+	case <-time.After(3 * time.Second):
 	}
 
 	got, err = w.LoadConfig(context.Background())
@@ -1283,6 +1283,7 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 	require.NoError(t, err)
 
 	return &PrometheusCRWatcher{
+		logger:                          slog.Default(),
 		kubeMonitoringClient:            mClient,
 		k8sClient:                       k8sClient,
 		informers:                       informers,

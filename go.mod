@@ -1,8 +1,8 @@
 module github.com/open-telemetry/opentelemetry-operator
 
-go 1.23
+go 1.22.0
 
-toolchain go1.23.2
+toolchain go1.22.5
 
 retract v1.51.0
 
@@ -24,9 +24,9 @@ require (
 	github.com/openshift/api v0.0.0-20240124164020-e2ce40831f2e
 	github.com/operator-framework/api v0.27.0
 	github.com/operator-framework/operator-lib v0.15.0
-	github.com/prometheus-operator/prometheus-operator v0.77.2
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.77.2
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.77.2
+	github.com/prometheus-operator/prometheus-operator v0.76.2
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.76.2
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.60.0
 	github.com/prometheus/prometheus v0.54.1
