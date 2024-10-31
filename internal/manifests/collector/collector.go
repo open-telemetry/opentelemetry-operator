@@ -53,6 +53,10 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.Factory(Ingress),
 	}...)
 
+	if featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() {
+		manifestFactories = append(manifestFactories, manifests.Factory(TargetAllocator))
+	}
+
 	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
 		if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
 			manifestFactories = append(manifestFactories, manifests.Factory(PodMonitor))

@@ -2,6 +2,39 @@
 
 <!-- next version -->
 
+## 0.112.0
+
+### 💡 Enhancements 💡
+
+- `auto-instrumentation`: Support configuring Java auto-instrumentation when runtime configuration is provided from configmap or secret. (#1814)
+  This change allows users to configure JAVA_TOOL_OPTIONS in config map or secret when the name of the variable is defined in the pod spec.
+  The operator in this case set another JAVA_TOOL_OPTIONS that references the original value 
+  e.g. `JAVA_TOOL_OPTIONS=$(JAVA_TOOL_OPTIONS) -javaagent:/otel-auto-instrumentation-java/javaagent.jar`.
+  
+- `auto-instrumentation`: Adds VolumeClaimTemplate field to Instrumentation spec to enable user-definable ephemeral volumes for auto-instrumentation. (#3267)
+- `collector`: Add support for persistentVolumeClaimRetentionPolicy field (#3305)
+- `auto-instrumentation`: build musl based auto-instrumentation in Python docker image (#2264)
+- `auto-instrumentation`: An empty line should come before the addition of Include ...opentemetry_agent.conf, as a protection measure against cases of httpd.conf w/o a blank last line (#3401)
+- `collector`: Add automatic RBAC creation for the `kubeletstats` receiver. (#3155)
+- `auto-instrumentation`: Add Nodejs auto-instrumentation image builds for linux/s390x,linux/ppc64le. (#3322)
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: Permission check fixed for the serviceaccount of the target allocator (#3380)
+- `target allocator`: Change docker image to run as non-root (#3378)
+
+### Components
+
+* [OpenTelemetry Collector - v0.112.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.112.0)
+* [OpenTelemetry Contrib - v0.112.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.112.0)
+* [Java auto-instrumentation - v1.33.5](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.5)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.53.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.53.0)
+* [Python - v0.48b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.48b0)
+* [Go - v0.15.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.15.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.111.0
 
 ### 💡 Enhancements 💡
