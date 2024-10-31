@@ -224,6 +224,10 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 			name:          "prom CR admissions warning",
 			shouldFailSar: true, // force failure
 			targetallocator: TargetAllocator{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-ta",
+					Namespace: "test-ns",
+				},
 				Spec: TargetAllocatorSpec{
 					PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 						Enabled: true,
@@ -231,18 +235,18 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedWarnings: []string{
-				"missing the following rules for monitoring.coreos.com/servicemonitors: [*]",
-				"missing the following rules for monitoring.coreos.com/podmonitors: [*]",
-				"missing the following rules for nodes/metrics: [get,list,watch]",
-				"missing the following rules for services: [get,list,watch]",
-				"missing the following rules for endpoints: [get,list,watch]",
-				"missing the following rules for namespaces: [get,list,watch]",
-				"missing the following rules for networking.k8s.io/ingresses: [get,list,watch]",
-				"missing the following rules for nodes: [get,list,watch]",
-				"missing the following rules for pods: [get,list,watch]",
-				"missing the following rules for configmaps: [get]",
-				"missing the following rules for discovery.k8s.io/endpointslices: [get,list,watch]",
-				"missing the following rules for nonResourceURL: /metrics: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/servicemonitors: [*]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - monitoring.coreos.com/podmonitors: [*]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nodes/metrics: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - services: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - endpoints: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - namespaces: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - networking.k8s.io/ingresses: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nodes: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - pods: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - configmaps: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - discovery.k8s.io/endpointslices: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /metrics: [get]",
 			},
 		},
 		{

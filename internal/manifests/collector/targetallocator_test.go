@@ -45,17 +45,6 @@ func TestTargetAllocator(t *testing.T) {
 	privileged := true
 	runAsUser := int64(1337)
 	runasGroup := int64(1338)
-	otelcolConfig := v1beta1.Config{
-		Receivers: v1beta1.AnyConfig{
-			Object: map[string]interface{}{
-				"prometheus": map[string]any{
-					"config": map[string]any{
-						"scrape_configs": []any{},
-					},
-				},
-			},
-		},
-	}
 
 	testCases := []struct {
 		name    string
@@ -79,7 +68,6 @@ func TestTargetAllocator(t *testing.T) {
 			input: v1beta1.OpenTelemetryCollector{
 				ObjectMeta: objectMetadata,
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					Config: otelcolConfig,
 					TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 						Enabled: true,
 					},
@@ -87,7 +75,9 @@ func TestTargetAllocator(t *testing.T) {
 			},
 			want: &v1alpha1.TargetAllocator{
 				ObjectMeta: objectMetadata,
-				Spec:       v1alpha1.TargetAllocatorSpec{},
+				Spec: v1alpha1.TargetAllocatorSpec{
+					GlobalConfig: v1beta1.AnyConfig{},
+				},
 			},
 		},
 		{
@@ -190,7 +180,6 @@ func TestTargetAllocator(t *testing.T) {
 							},
 						},
 					},
-					Config: otelcolConfig,
 				},
 			},
 			want: &v1alpha1.TargetAllocator{

@@ -651,6 +651,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			name:          "prom CR admissions warning",
 			shouldFailSar: true, // force failure
 			otelcol: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "adm-warning",
+					Namespace: "test-ns",
+				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeStatefulSet,
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
@@ -693,18 +697,18 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedWarnings: []string{
-				"missing the following rules for monitoring.coreos.com/servicemonitors: [*]",
-				"missing the following rules for monitoring.coreos.com/podmonitors: [*]",
-				"missing the following rules for nodes/metrics: [get,list,watch]",
-				"missing the following rules for services: [get,list,watch]",
-				"missing the following rules for endpoints: [get,list,watch]",
-				"missing the following rules for namespaces: [get,list,watch]",
-				"missing the following rules for networking.k8s.io/ingresses: [get,list,watch]",
-				"missing the following rules for nodes: [get,list,watch]",
-				"missing the following rules for pods: [get,list,watch]",
-				"missing the following rules for configmaps: [get]",
-				"missing the following rules for discovery.k8s.io/endpointslices: [get,list,watch]",
-				"missing the following rules for nonResourceURL: /metrics: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - monitoring.coreos.com/servicemonitors: [*]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - monitoring.coreos.com/podmonitors: [*]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nodes/metrics: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - services: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - endpoints: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - namespaces: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - networking.k8s.io/ingresses: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nodes: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - pods: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - configmaps: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - discovery.k8s.io/endpointslices: [get,list,watch]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /metrics: [get]",
 			},
 		},
 		{

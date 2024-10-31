@@ -25,6 +25,14 @@ const (
 )
 
 var (
+	// CollectorUsesTargetAllocatorCR is the feature gate that enables the OpenTelemetryCollector reconciler to generate
+	// TargetAllocator CRs instead of generating the manifests for its resources directly.
+	CollectorUsesTargetAllocatorCR = featuregate.GlobalRegistry().MustRegister(
+		"operator.collector.targetallocatorcr",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("causes collector reconciliation to create a target allocator CR instead of creating resources directly"),
+		featuregate.WithRegisterFromVersion("v0.112.0"),
+	)
 	// EnableNativeSidecarContainers is the feature gate that controls whether a
 	// sidecar should be injected as a native sidecar or the classic way.
 	// Native sidecar containers have been available since kubernetes v1.28 in
