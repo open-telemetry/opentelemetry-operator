@@ -3,16 +3,15 @@ kind: OpenTelemetryCollector
 metadata:
   name: deployment
   labels:
-    node-selector-mode: without
+    user-label: "modified"
+    new-label: "yes"
 spec:
   mode: deployment
-  nodeSelector:
   config:
     receivers:
       otlp:
         protocols:
           grpc: {}
-          http: {}
     processors: {}
 
     exporters:
@@ -30,16 +29,15 @@ kind: OpenTelemetryCollector
 metadata:
   name: daemonset
   labels:
-    node-selector-mode: without
+    user-label: "modified"
+    new-label: "yes"
 spec:
   mode: daemonset
-  nodeSelector:
   config:
     receivers:
       otlp:
         protocols:
           grpc: {}
-          http: {}
     processors: {}
 
     exporters:
@@ -57,16 +55,15 @@ kind: OpenTelemetryCollector
 metadata:
   name: statefulset
   labels:
-    node-selector-mode: without
+    user-label: "modified"
+    new-label: "yes"
 spec:
   mode: statefulset
-  nodeSelector:
   config:
     receivers:
       otlp:
         protocols:
           grpc: {}
-          http: {}
     processors: {}
 
     exporters:

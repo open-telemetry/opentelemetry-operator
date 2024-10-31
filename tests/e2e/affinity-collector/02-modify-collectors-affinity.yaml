@@ -3,16 +3,24 @@ kind: OpenTelemetryCollector
 metadata:
   name: deployment
   labels:
-    node-selector-mode: without
+    affinity: with
 spec:
   mode: deployment
-  nodeSelector:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values:
+            - linux
   config:
     receivers:
       otlp:
         protocols:
           grpc: {}
-          http: {}
     processors: {}
 
     exporters:
@@ -30,16 +38,24 @@ kind: OpenTelemetryCollector
 metadata:
   name: daemonset
   labels:
-    node-selector-mode: without
+    affinity: with
 spec:
   mode: daemonset
-  nodeSelector:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values:
+            - linux
   config:
     receivers:
       otlp:
         protocols:
           grpc: {}
-          http: {}
     processors: {}
 
     exporters:
@@ -57,16 +73,24 @@ kind: OpenTelemetryCollector
 metadata:
   name: statefulset
   labels:
-    node-selector-mode: without
+    affinity: with
 spec:
   mode: statefulset
-  nodeSelector:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values:
+            - linux
   config:
     receivers:
       otlp:
         protocols:
           grpc: {}
-          http: {}
     processors: {}
 
     exporters:

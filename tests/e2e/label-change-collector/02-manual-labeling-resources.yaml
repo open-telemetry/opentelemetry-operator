@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: daemonset-collector
+  labels:
+    manual-label: "true"
+spec:
+  template:
+    metadata:
+      labels:
+        manual-label: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-collector
+  labels:
+    manual-label: "true"
+spec:
+  template:
+    metadata:
+      labels:
+        manual-label: "true"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: statefulset-collector
+  labels:
+    manual-label: "true"
+spec:
+  template:
+    metadata:
+      labels:
+        manual-label: "true"
