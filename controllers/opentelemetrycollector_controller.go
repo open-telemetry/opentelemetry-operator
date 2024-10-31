@@ -48,10 +48,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
-
-const collectorTargetAllocatorLabelName = "opentelemetry.io/target-allocator"
 
 var (
 	ownedClusterObjectTypes = []client.Object{
@@ -191,10 +190,9 @@ func (r *OpenTelemetryCollectorReconciler) GetParams(ctx context.Context, instan
 }
 
 func (r *OpenTelemetryCollectorReconciler) getTargetAllocator(ctx context.Context, params manifests.Params) (*v1alpha1.TargetAllocator, error) {
-	otelcol := params.OtelCol
-	if taName, ok := otelcol.GetLabels()[collectorTargetAllocatorLabelName]; ok {
+	if taName, ok := params.OtelCol.GetLabels()[constants.LabelTargetAllocator]; ok {
 		targetAllocator := &v1alpha1.TargetAllocator{}
-		taKey := client.ObjectKey{Name: taName, Namespace: otelcol.GetNamespace()}
+		taKey := client.ObjectKey{Name: taName, Namespace: params.OtelCol.GetNamespace()}
 		err := r.Client.Get(ctx, taKey, targetAllocator)
 		if err != nil {
 			return nil, err

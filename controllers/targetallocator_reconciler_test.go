@@ -36,6 +36,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 var testLogger = logf.Log.WithName("opamp-bridge-controller-unit-tests")
@@ -57,7 +58,7 @@ func TestTargetAllocatorReconciler_GetCollector(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test",
 			Labels: map[string]string{
-				collectorTargetAllocatorLabelName: "label-ta",
+				constants.LabelTargetAllocator: "label-ta",
 			},
 		},
 	}
@@ -163,7 +164,7 @@ func TestGetTargetAllocatorRequestsFromLabel(t *testing.T) {
 			Name:      "test",
 			Namespace: "default",
 			Labels: map[string]string{
-				collectorTargetAllocatorLabelName: "label-ta",
+				constants.LabelTargetAllocator: "label-ta",
 			},
 		},
 	}

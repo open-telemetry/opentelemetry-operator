@@ -42,6 +42,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
 	taStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -102,7 +103,7 @@ func (r *TargetAllocatorReconciler) getCollector(ctx context.Context, instance v
 	listOpts := []client.ListOption{
 		client.InNamespace(instance.GetNamespace()),
 		client.MatchingLabels{
-			collectorTargetAllocatorLabelName: instance.GetName(),
+			constants.LabelTargetAllocator: instance.GetName(),
 		},
 	}
 	err := r.List(ctx, &collectors, listOpts...)
@@ -216,7 +217,7 @@ func (r *TargetAllocatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	collectorSelector := metav1.LabelSelector{
 		MatchExpressions: []metav1.LabelSelectorRequirement{
 			{
-				Key:      collectorTargetAllocatorLabelName,
+				Key:      constants.LabelTargetAllocator,
 				Operator: metav1.LabelSelectorOpExists,
 			},
 		},
@@ -246,7 +247,7 @@ func getTargetAllocatorForCollector(_ context.Context, collector client.Object) 
 }
 
 func getTargetAllocatorRequestsFromLabel(_ context.Context, collector client.Object) []reconcile.Request {
-	if taName, ok := collector.GetLabels()[collectorTargetAllocatorLabelName]; ok {
+	if taName, ok := collector.GetLabels()[constants.LabelTargetAllocator]; ok {
 		return []reconcile.Request{
 			{
 				NamespacedName: types.NamespacedName{
