@@ -2,6 +2,19 @@
 
 This document details compatibility guarantees the OpenTelemetry Operator offers for its dependencies and platforms.
 
+## Go
+
+When productised as a go libary or custom distribution the OpenTelemetry Operator project attempts to follow the supported go versions as [defined by the Go team](https://go.dev/doc/devel/release#policy).
+
+Similar to the [opentelemetry collector](https://github.com/open-telemetry/opentelemetry-collector?tab=readme-ov-file#compatibility), removing support for an unsupported Go version is not considered a breaking change.
+
+Support for Go versions on the OpenTelemetry Operator is updated as follows:
+
+    The first release after the release of a new Go minor version N will add build and tests steps for the new Go minor version.
+    The first release after the release of a new Go minor version N will remove support for Go version N-2.
+
+Official OpenTelemetry Operator binaries may be built with any supported Go version.
+
 ## Kubernetes
 
 As a rule, the operator tries to be compatible with as wide a range of Kubernetes versions as possible.
@@ -33,6 +46,7 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes     | Cert-Manager | Prometheus-Operator |
 |------------------------|----------------| ------------ |---------------------|
+| v0.112.0               | v1.23 to v1.31 | v1           | v0.76.0             |
 | v0.111.0               | v1.23 to v1.31 | v1           | v0.76.0             |
 | v0.110.0               | v1.23 to v1.31 | v1           | v0.76.0             |
 | v0.109.0               | v1.23 to v1.31 | v1           | v0.76.0             |
@@ -56,7 +70,6 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 | v0.91.0                | v1.23 to v1.29 | v1           | v0.70.0             |
 | v0.90.0                | v1.23 to v1.28 | v1           | v0.69.1             |
 | v0.89.0                | v1.23 to v1.28 | v1           | v0.69.1             |
-| v0.88.0                | v1.23 to v1.28 | v1           | v0.68.0             |
 
 [kubernetes_releases]: https://kubernetes.io/releases/
 [openshift_support]: https://access.redhat.com/support/policy/updates/openshift
