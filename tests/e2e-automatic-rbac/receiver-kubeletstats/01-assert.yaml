@@ -25,3 +25,24 @@ subjects:
 - kind: ServiceAccount
   name: simplest-collector
   namespace: chainsaw-kubeletstats
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: chainsaw-kubeletstats.simplest
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: simplest-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  namespace: chainsaw-kubeletstats
+spec:
+  containers:
+  - name: otc-container
+    env:
+    - name: POD_NAME
+    - name: K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
