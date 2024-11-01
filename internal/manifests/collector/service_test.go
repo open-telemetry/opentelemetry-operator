@@ -321,6 +321,161 @@ func TestMonitoringService(t *testing.T) {
 	})
 }
 
+func TestExtensionService(t *testing.T) {
+	t.Run("when the extension has http endpoint", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Service: v1beta1.Service{
+							Extensions: []string{"jaeger_query"},
+						},
+						Extensions: &v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"jaeger_query": map[string]interface{}{
+									"http": map[string]interface{}{
+										"endpoint": "0.0.0.0:16686",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		actual, err := ExtensionService(params)
+		assert.NotNil(t, actual)
+		assert.NoError(t, err)
+	})
+
+	t.Run("when the extension has grpc endpoint", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Service: v1beta1.Service{
+							Extensions: []string{"jaeger_query"},
+						},
+						Extensions: &v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"jaeger_query": map[string]interface{}{
+									"grpc": map[string]interface{}{
+										"endpoint": "0.0.0.0:16686",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		actual, err := ExtensionService(params)
+		assert.NotNil(t, actual)
+		assert.NoError(t, err)
+	})
+
+	t.Run("when the extension has both http and grpc endpoint", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Service: v1beta1.Service{
+							Extensions: []string{"jaeger_query"},
+						},
+						Extensions: &v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"jaeger_query": map[string]interface{}{
+									"http": map[string]interface{}{
+										"endpoint": "0.0.0.0:16686",
+									},
+									"grpc": map[string]interface{}{
+										"endpoint": "0.0.0.0:16686",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		actual, err := ExtensionService(params)
+		assert.NotNil(t, actual)
+		assert.NoError(t, err)
+	})
+
+	t.Run("when the extension has no extensions defined", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Service: v1beta1.Service{
+							Extensions: []string{"jaeger_query"},
+						},
+						Extensions: &v1beta1.AnyConfig{
+							Object: map[string]interface{}{},
+						},
+					},
+				},
+			},
+		}
+
+		actual, err := ExtensionService(params)
+		assert.Nil(t, actual)
+		assert.NoError(t, err)
+	})
+
+	t.Run("when the extension has no endpoint defined", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Service: v1beta1.Service{
+							Extensions: []string{"jaeger_query"},
+						},
+						Extensions: &v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"jaeger_query": map[string]interface{}{},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		actual, err := ExtensionService(params)
+		assert.NotNil(t, actual)
+		assert.NoError(t, err)
+	})
+}
+
 func service(name string, ports []v1beta1.PortsSpec) v1.Service {
 	return serviceWithInternalTrafficPolicy(name, ports, v1.ServiceInternalTrafficPolicyCluster)
 }

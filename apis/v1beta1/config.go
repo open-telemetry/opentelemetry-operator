@@ -207,7 +207,11 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 			continue
 		case KindExtension:
 			retriever = extensions.ParserFor
-			cfg = *c.Extensions
+			if c.Extensions == nil {
+				cfg = AnyConfig{}
+			} else {
+				cfg = *c.Extensions
+			}
 		}
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.

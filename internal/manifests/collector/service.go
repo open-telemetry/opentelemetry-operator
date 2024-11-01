@@ -32,6 +32,7 @@ import (
 const (
 	headlessLabel    = "operator.opentelemetry.io/collector-headless-service"
 	monitoringLabel  = "operator.opentelemetry.io/collector-monitoring-service"
+	extensionService = "operator.opentelemetry.io/collector-extension-service"
 	serviceTypeLabel = "operator.opentelemetry.io/collector-service-type"
 	valueExists      = "Exists"
 )
@@ -42,10 +43,11 @@ const (
 	BaseServiceType ServiceType = iota
 	HeadlessServiceType
 	MonitoringServiceType
+	ExtensionServiceType
 )
 
 func (s ServiceType) String() string {
-	return [...]string{"base", "headless", "monitoring"}[s]
+	return [...]string{"base", "headless", "monitoring", "extension"}[s]
 }
 
 func HeadlessService(params manifests.Params) (*corev1.Service, error) {
@@ -111,6 +113,8 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 func ExtensionService(params manifests.Params) (*corev1.Service, error) {
 	name := naming.Service(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels[extensionService] = valueExists
+	labels[serviceTypeLabel] = ExtensionServiceType.String()
 
 	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
 	if err != nil {
@@ -120,6 +124,10 @@ func ExtensionService(params manifests.Params) (*corev1.Service, error) {
 	ports, err := params.OtelCol.Spec.Config.GetExtensionPorts(params.Log)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(ports) == 0 {
+		return nil, nil
 	}
 
 	return &corev1.Service{
