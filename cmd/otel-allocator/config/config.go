@@ -155,7 +155,7 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	return nil
 }
 
-// Extract value from specific YAMLPath
+// readPath extracts value from specific YAMLPath.
 func readPath(p string, yamlFile []byte, f interface{}) error {
 	path, err := yaml.PathString(p)
 	if err != nil {
