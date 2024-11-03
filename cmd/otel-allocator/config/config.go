@@ -21,14 +21,16 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"strings"
 	"time"
 
+	"dario.cat/mergo"
 	"github.com/go-logr/logr"
+	yaml "github.com/goccy/go-yaml"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
-	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -73,6 +75,11 @@ type HTTPSServerConfig struct {
 	CAFilePath      string `yaml:"ca_file_path,omitempty"`
 	TLSCertFilePath string `yaml:"tls_cert_file_path,omitempty"`
 	TLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
+}
+
+type LabeLSelectorPaths struct {
+	MatchLabelsPath      string
+	MatchExpressionsPath string
 }
 
 func LoadFromFile(file string, target *Config) error {
@@ -148,14 +155,113 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	return nil
 }
 
+// Extract value from specific YAMLPath
+func readPath(p string, yamlFile []byte, f interface{}) error {
+	path, err := yaml.PathString(p)
+	if err != nil {
+		return err
+	}
+	if err := path.Read(strings.NewReader(string(yamlFile)), f); err != nil {
+		return err
+	}
+	return nil
+}
+
+func readLabelSelectorPaths(ps LabeLSelectorPaths, yamlFile []byte, f *metav1.LabelSelector) (bool, error) {
+	founderrs := 0
+
+	if err := readPath(ps.MatchLabelsPath, yamlFile, &f.MatchLabels); err != nil {
+		if !errors.Is(err, yaml.ErrNotFoundNode) {
+			return false, err
+		}
+		founderrs += 1
+	}
+	if err := readPath(ps.MatchExpressionsPath, yamlFile, &f.MatchExpressions); err != nil {
+		if !errors.Is(err, yaml.ErrNotFoundNode) {
+			return false, err
+		}
+		founderrs += 1
+	}
+
+	return founderrs < 2, nil
+}
+
+func flexibleLabelSelector(yamlFile []byte, fieldPathsMap map[*metav1.LabelSelector]LabeLSelectorPaths) error {
+	for f, ps := range fieldPathsMap {
+		tmpls := metav1.LabelSelector{}
+
+		found, err := readLabelSelectorPaths(ps, yamlFile, &tmpls)
+		if err != nil {
+			return err
+		}
+
+		if found {
+			if err := mergo.Merge(f, tmpls, mergo.WithOverride); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func flexibleCollectorSelector(yamlFile []byte, cfg *Config) error {
+	collectorSelectorFieldPathsMap := map[*metav1.LabelSelector]LabeLSelectorPaths{
+		cfg.CollectorSelector: {
+			MatchLabelsPath:      "$.collector_selector.matchlabels",
+			MatchExpressionsPath: "$.collector_selector.matchexpressions",
+		},
+	}
+
+	if err := flexibleLabelSelector(yamlFile, collectorSelectorFieldPathsMap); err != nil {
+		return err
+	}
+	return nil
+}
+
+func flexiblePrometheusCR(yamlFile []byte, cfg *Config) error {
+	prometheusCRFieldPathsMap := map[*metav1.LabelSelector]LabeLSelectorPaths{
+		cfg.PrometheusCR.PodMonitorSelector: {
+			MatchLabelsPath:      "$.prometheus_cr.pod_monitor_selector.matchlabels",
+			MatchExpressionsPath: "$.prometheus_cr.pod_monitor_selector.matchexpressions",
+		},
+		cfg.PrometheusCR.ServiceMonitorSelector: {
+			MatchLabelsPath:      "$.prometheus_cr.service_monitor_selector.matchlabels",
+			MatchExpressionsPath: "$.prometheus_cr.service_monitor_selector.matchexpressions",
+		},
+		cfg.PrometheusCR.ServiceMonitorNamespaceSelector: {
+			MatchLabelsPath:      "$.prometheus_cr.service_monitor_namespace_selector.matchlabels",
+			MatchExpressionsPath: "$.prometheus_cr.service_monitor_namespace_selector.matchexpressions",
+		},
+		cfg.PrometheusCR.PodMonitorNamespaceSelector: {
+			MatchLabelsPath:      "$.prometheus_cr.pod_monitor_namespace_selector.matchlabels",
+			MatchExpressionsPath: "$.prometheus_cr.pod_monitor_namespace_selector.matchexpressions",
+		},
+	}
+
+	if err := flexibleLabelSelector(yamlFile, prometheusCRFieldPathsMap); err != nil {
+		return err
+	}
+	return nil
+}
+
 func unmarshal(cfg *Config, configFile string) error {
 	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
 		return err
 	}
+
 	if err = yaml.Unmarshal(yamlFile, cfg); err != nil {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
 	}
+
+	if err := flexibleCollectorSelector(yamlFile, cfg); err != nil {
+		return err
+	}
+
+	if err := flexiblePrometheusCR(yamlFile, cfg); err != nil {
+		return err
+	}
+
 	return nil
 }
 
