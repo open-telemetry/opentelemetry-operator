@@ -71,7 +71,7 @@ jobs:
         with:
           context: autoinstrumentation/php
           push: ${{ github.event_name == 'push' }}
-          build-args: SUB_DIR_WITH_FILES_FOR_DOCKER_IMAGE=${PWD}/autoinstrumentation/php/files_for_docker_image
+          build-args: SUB_DIR_WITH_FILES_FOR_DOCKER_IMAGE=files_for_docker_image
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
