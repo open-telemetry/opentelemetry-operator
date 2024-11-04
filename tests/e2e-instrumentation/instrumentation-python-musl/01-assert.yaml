@@ -66,6 +66,11 @@ spec:
     name: otc-container
   initContainers:
   - name: opentelemetry-auto-instrumentation-python
+    command:
+      - cp
+      - -r
+      - /autoinstrumentation-musl/.
+      - /otel-auto-instrumentation-python
 status:
   containerStatuses:
   - name: myapp
