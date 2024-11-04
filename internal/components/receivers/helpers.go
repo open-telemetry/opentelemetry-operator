@@ -138,6 +138,7 @@ var (
 			MustBuild(),
 		components.NewBuilder[kubeletStatsConfig]().WithName("kubeletstats").
 			WithRbacGen(generateKubeletStatsRbacRules).
+			WithEnvVarGen(generateKubeletStatsEnvVars).
 			MustBuild(),
 		NewScraperParser("prometheus"),
 		NewScraperParser("sshcheck"),

@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  (contains(keys(labels),'user-label')): true
+  (contains(keys(labels),'new-label')): true
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: statefulset-collector
+    app.kubernetes.io/part-of: opentelemetry
+    manual-label: "true"
+spec:
+  template:
+    metadata:
+      (contains(keys(labels),'user-label')): true
+      (contains(keys(labels),'new-label')): true
+      labels:
+        manual-label: "true"
