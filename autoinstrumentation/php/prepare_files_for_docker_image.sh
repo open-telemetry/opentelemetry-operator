@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-PHP_versions=(8.0)
-#PHP_versions=(8.0 8.1 8.2 8.3)
-#libc_variants=(musl)
+PHP_versions=(8.0 8.1 8.2 8.3)
 libc_variants=(glibc musl)
 
 show_help() {
@@ -182,7 +180,7 @@ main() {
     echo "Preparing files for docker image into directory ${destination_directory} ..."
 
     ensure_dir_exists_and_empty "${destination_directory}"
-#    build_native_binaries
+    build_native_binaries
     download_PHP_packages
 
     echo "Prepared files for docker image into directory ${destination_directory}"
