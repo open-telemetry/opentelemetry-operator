@@ -15,9 +15,6 @@
 package target
 
 import (
-	"fmt"
-	"net/url"
-
 	"github.com/prometheus/common/model"
 )
 
@@ -34,17 +31,11 @@ var (
 	endpointSliceTargetNameLabel model.LabelName = "__meta_kubernetes_endpointslice_address_target_name"
 )
 
-// LinkJSON This package contains common structs and methods that relate to scrape targets.
-type LinkJSON struct {
-	Link string `json:"_link"`
-}
-
 type Item struct {
-	JobName       string         `json:"-"`
-	Link          LinkJSON       `json:"-"`
-	TargetURL     []string       `json:"targets"`
-	Labels        model.LabelSet `json:"labels"`
-	CollectorName string         `json:"-"`
+	JobName       string
+	TargetURL     []string
+	Labels        model.LabelSet
+	CollectorName string
 	hash          string
 }
 
@@ -73,7 +64,6 @@ func (t *Item) GetNodeName() string {
 func NewItem(jobName string, targetURL string, label model.LabelSet, collectorName string) *Item {
 	return &Item{
 		JobName:       jobName,
-		Link:          LinkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))},
 		hash:          jobName + targetURL + label.Fingerprint().String(),
 		TargetURL:     []string{targetURL},
 		Labels:        label,
