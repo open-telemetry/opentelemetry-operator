@@ -41,7 +41,7 @@ import (
 
 const (
 	DefaultResyncTime                        = 5 * time.Minute
-	DefaultConfigFilePath     string         = "../../conf/targetallocator.yaml"
+	DefaultConfigFilePath     string         = "/conf/targetallocator.yaml"
 	DefaultCRScrapeInterval   model.Duration = model.Duration(time.Second * 30)
 	DefaultAllocationStrategy                = "consistent-hashing"
 	DefaultFilterStrategy                    = "relabel-config"
