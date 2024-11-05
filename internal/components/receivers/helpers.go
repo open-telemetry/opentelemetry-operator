@@ -138,6 +138,7 @@ var (
 			MustBuild(),
 		components.NewBuilder[kubeletStatsConfig]().WithName("kubeletstats").
 			WithRbacGen(generateKubeletStatsRbacRules).
+			WithEnvVarGen(generateKubeletStatsEnvVars).
 			MustBuild(),
 		components.NewBuilder[k8seventsConfig]().WithName("k8s_events").
 			WithRbacGen(generatek8seventsRbacRules).

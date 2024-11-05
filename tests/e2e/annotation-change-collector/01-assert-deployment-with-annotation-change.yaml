@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-collector
+  annotations:
+    user-annotation: "modified"
+    new-annotation: "yes"
+spec:
+  template:
+    metadata:
+      annotations:
+        user-annotation: "modified"
+        new-annotation: "yes"
