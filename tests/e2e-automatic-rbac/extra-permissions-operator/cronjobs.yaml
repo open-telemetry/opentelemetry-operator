@@ -3,9 +3,9 @@
   path: /rules/-
   value:
     apiGroups:
-    - ""
+    - batch
     resources:
-    - nodes
+    - cronjobs
     verbs:
     - get
     - list
