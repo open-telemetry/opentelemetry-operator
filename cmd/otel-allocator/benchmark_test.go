@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 	"testing"
 
 	gokitlog "github.com/go-kit/log"
@@ -27,6 +29,7 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/relabel"
+	"github.com/stretchr/testify/require"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -66,10 +69,21 @@ func BenchmarkProcessTargetsWithRelabelConfig(b *testing.B) {
 	tsets := prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob)
 	prehookConfig := make(map[string][]*relabel.Config, len(tsets))
 	for jobName := range tsets {
+		// keep all targets in half the jobs, drop the rest
+		jobNrStr := strings.Split(jobName, "-")[1]
+		jobNr, err := strconv.Atoi(jobNrStr)
+		require.NoError(b, err)
+		var action relabel.Action
+		if jobNr%2 == 0 {
+			action = "keep"
+		} else {
+			action = "drop"
+		}
 		prehookConfig[jobName] = []*relabel.Config{
 			{
-				Action: "keep",
-				Regex:  relabel.MustNewRegexp(".*"),
+				Action:       action,
+				Regex:        relabel.MustNewRegexp(".*"),
+				SourceLabels: model.LabelNames{"__address__"},
 			},
 		}
 	}
