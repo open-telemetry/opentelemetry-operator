@@ -116,6 +116,10 @@ func (m *MultiPortReceiver) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.Pol
 	return nil, nil
 }
 
+func (m *MultiPortReceiver) GetEnvironmentVariables(logger logr.Logger, config interface{}) ([]corev1.EnvVar, error) {
+	return nil, nil
+}
+
 type MultiPortBuilder[ComponentConfigType any] []Builder[ComponentConfigType]
 
 func NewMultiPortReceiverBuilder(name string) MultiPortBuilder[*MultiProtocolEndpointConfig] {

@@ -74,7 +74,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 		allocator allocation.Allocator
 	}
 	type want struct {
-		items     []*target.Item
+		items     []*targetJSON
 		errString string
 	}
 	tests := []struct {
@@ -91,7 +91,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 				allocator: leastWeighted,
 			},
 			want: want{
-				items: []*target.Item{},
+				items: []*targetJSON{},
 			},
 		},
 		{
@@ -105,7 +105,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 				allocator: leastWeighted,
 			},
 			want: want{
-				items: []*target.Item{
+				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
 						Labels: map[model.LabelName]model.LabelValue{
@@ -127,7 +127,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 				allocator: leastWeighted,
 			},
 			want: want{
-				items: []*target.Item{
+				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
 						Labels: map[model.LabelName]model.LabelValue{
@@ -149,7 +149,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 				allocator: leastWeighted,
 			},
 			want: want{
-				items: []*target.Item{
+				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
 						Labels: map[model.LabelName]model.LabelValue{
@@ -186,7 +186,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 				assert.EqualError(t, err, tt.want.errString)
 				return
 			}
-			var itemResponse []*target.Item
+			var itemResponse []*targetJSON
 			err = json.Unmarshal(bodyBytes, &itemResponse)
 			assert.NoError(t, err)
 			assert.ElementsMatch(t, tt.want.items, itemResponse)
@@ -555,19 +555,19 @@ func TestServer_JobHandler(t *testing.T) {
 		description  string
 		targetItems  map[string]*target.Item
 		expectedCode int
-		expectedJobs map[string]target.LinkJSON
+		expectedJobs map[string]linkJSON
 	}{
 		{
 			description:  "nil jobs",
 			targetItems:  nil,
 			expectedCode: http.StatusOK,
-			expectedJobs: make(map[string]target.LinkJSON),
+			expectedJobs: make(map[string]linkJSON),
 		},
 		{
 			description:  "empty jobs",
 			targetItems:  map[string]*target.Item{},
 			expectedCode: http.StatusOK,
-			expectedJobs: make(map[string]target.LinkJSON),
+			expectedJobs: make(map[string]linkJSON),
 		},
 		{
 			description: "one job",
@@ -575,7 +575,7 @@ func TestServer_JobHandler(t *testing.T) {
 				"targetitem": target.NewItem("job1", "", model.LabelSet{}, ""),
 			},
 			expectedCode: http.StatusOK,
-			expectedJobs: map[string]target.LinkJSON{
+			expectedJobs: map[string]linkJSON{
 				"job1": newLink("job1"),
 			},
 		},
@@ -588,7 +588,7 @@ func TestServer_JobHandler(t *testing.T) {
 				"d": target.NewItem("job3", "", model.LabelSet{}, ""),
 				"e": target.NewItem("job3", "", model.LabelSet{}, "")},
 			expectedCode: http.StatusOK,
-			expectedJobs: map[string]target.LinkJSON{
+			expectedJobs: map[string]linkJSON{
 				"job1": newLink("job1"),
 				"job2": newLink("job2"),
 				"job3": newLink("job3"),
@@ -609,7 +609,7 @@ func TestServer_JobHandler(t *testing.T) {
 			assert.Equal(t, tc.expectedCode, result.StatusCode)
 			bodyBytes, err := io.ReadAll(result.Body)
 			require.NoError(t, err)
-			jobs := map[string]target.LinkJSON{}
+			jobs := map[string]linkJSON{}
 			err = json.Unmarshal(bodyBytes, &jobs)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedJobs, jobs)
@@ -737,6 +737,6 @@ func TestServer_ScrapeConfigRespose(t *testing.T) {
 	}
 }
 
-func newLink(jobName string) target.LinkJSON {
-	return target.LinkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))}
+func newLink(jobName string) linkJSON {
+	return linkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))}
 }
