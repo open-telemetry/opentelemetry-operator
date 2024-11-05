@@ -23,19 +23,23 @@ import (
 )
 
 const (
-	envPythonPath               = "PYTHONPATH"
-	envOtelTracesExporter       = "OTEL_TRACES_EXPORTER"
-	envOtelMetricsExporter      = "OTEL_METRICS_EXPORTER"
-	envOtelLogsExporter         = "OTEL_LOGS_EXPORTER"
-	envOtelExporterOTLPProtocol = "OTEL_EXPORTER_OTLP_PROTOCOL"
-	pythonPathPrefix            = "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation"
-	pythonPathSuffix            = "/otel-auto-instrumentation-python"
-	pythonInstrMountPath        = "/otel-auto-instrumentation-python"
-	pythonVolumeName            = volumeName + "-python"
-	pythonInitContainerName     = initContainerName + "-python"
+	envPythonPath                    = "PYTHONPATH"
+	envOtelTracesExporter            = "OTEL_TRACES_EXPORTER"
+	envOtelMetricsExporter           = "OTEL_METRICS_EXPORTER"
+	envOtelLogsExporter              = "OTEL_LOGS_EXPORTER"
+	envOtelExporterOTLPProtocol      = "OTEL_EXPORTER_OTLP_PROTOCOL"
+	glibcLinuxAutoInstrumentationSrc = "/autoinstrumentation/."
+	muslLinuxAutoInstrumentationSrc  = "/autoinstrumentation-musl/."
+	pythonPathPrefix                 = "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation"
+	pythonPathSuffix                 = "/otel-auto-instrumentation-python"
+	pythonInstrMountPath             = "/otel-auto-instrumentation-python"
+	pythonVolumeName                 = volumeName + "-python"
+	pythonInitContainerName          = initContainerName + "-python"
+	glibcLinux                       = "glibc"
+	muslLinux                        = "musl"
 )
 
-func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (corev1.Pod, error) {
+func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, platform string) (corev1.Pod, error) {
 	volume := instrVolume(pythonSpec.VolumeClaimTemplate, pythonVolumeName, pythonSpec.VolumeSizeLimit)
 
 	// caller checks if there is at least one container.
@@ -44,6 +48,16 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 	err := validateContainerEnv(container.Env, envPythonPath)
 	if err != nil {
 		return pod, err
+	}
+
+	autoInstrumentationSrc := ""
+	switch platform {
+	case "", glibcLinux:
+		autoInstrumentationSrc = glibcLinuxAutoInstrumentationSrc
+	case muslLinux:
+		autoInstrumentationSrc = muslLinuxAutoInstrumentationSrc
+	default:
+		return pod, fmt.Errorf("provided instrumentation.opentelemetry.io/otel-python-platform annotation value '%s' is not supported", platform)
 	}
 
 	// inject Python instrumentation spec env vars.
@@ -111,7 +125,7 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int) (cor
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
 			Name:      pythonInitContainerName,
 			Image:     pythonSpec.Image,
-			Command:   []string{"cp", "-r", "/autoinstrumentation/.", pythonInstrMountPath},
+			Command:   []string{"cp", "-r", autoInstrumentationSrc, pythonInstrMountPath},
 			Resources: pythonSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
 				Name:      volume.Name,
