@@ -86,8 +86,7 @@ build_native_binaries_for_PHP_version_libc_variant() {
             install_compiler_command="&& apk update && apk add autoconf build-base"
             ;;
         *)
-            echo "Unexpected PHP version: ${PHP_version}"
-            show_help
+            echo "Unexpected libc variant: ${libc_variant}"
             exit 1
             ;;
     esac
@@ -131,7 +130,6 @@ select_composer_json_for_PHP_version() {
             ;;
         *)
             echo "Unexpected PHP version: ${PHP_version}"
-            show_help
             exit 1
             ;;
     esac
