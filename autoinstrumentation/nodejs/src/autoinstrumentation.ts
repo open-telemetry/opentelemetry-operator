@@ -1,5 +1,7 @@
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
+import { OTLPTraceExporter as OTLPProtoTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
+import { OTLPTraceExporter as OTLPHttpTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { OTLPTraceExporter as OTLPGrpcTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
@@ -11,6 +13,22 @@ import { envDetector, hostDetector, osDetector, processDetector } from '@opentel
 import { diag } from '@opentelemetry/api';
 
 import { NodeSDK } from '@opentelemetry/sdk-node';
+
+function getTraceExporter() {
+    let protocol = process.env.OTEL_EXPORTER_OTLP_PROTOCOL;
+    switch (protocol) {
+        case undefined:
+        case '':
+        case 'grpc':
+            return new OTLPGrpcTraceExporter();
+        case 'http/json':
+            return new OTLPHttpTraceExporter();
+        case 'http/protobuf':
+            return new OTLPProtoTraceExporter();
+        default:
+            throw Error(`Creating traces exporter based on "${protocol}" protocol (configured via environment variable OTEL_EXPORTER_OTLP_PROTOCOL) is not implemented!`);
+    }
+}
 
 function getMetricReader() {
     switch (process.env.OTEL_METRICS_EXPORTER) {
@@ -35,7 +53,7 @@ function getMetricReader() {
 const sdk = new NodeSDK({
     autoDetectResources: true,
     instrumentations: [getNodeAutoInstrumentations()],
-    traceExporter: new OTLPTraceExporter(),
+    traceExporter: getTraceExporter(),
     metricReader: getMetricReader(),
     resourceDetectors:
         [

@@ -64,7 +64,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
-	// +kubebuilder:scaffold:imports
 )
 
 var (

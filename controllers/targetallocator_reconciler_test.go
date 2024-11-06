@@ -36,6 +36,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 var testLogger = logf.Log.WithName("opamp-bridge-controller-unit-tests")
@@ -55,7 +56,10 @@ func init() {
 func TestTargetAllocatorReconciler_GetCollector(t *testing.T) {
 	testCollector := &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-instance-collector",
+			Name: "test",
+			Labels: map[string]string{
+				constants.LabelTargetAllocator: "label-ta",
+			},
 		},
 	}
 	fakeClient := fake.NewFakeClient(testCollector)
@@ -105,6 +109,36 @@ func TestTargetAllocatorReconciler_GetCollector(t *testing.T) {
 		assert.Nil(t, collector)
 		assert.Errorf(t, err, "error getting owner for TargetAllocator default/test: opentelemetrycollectors.opentelemetry.io \"non_existent\" not found")
 	})
+	t.Run("collector attached by label", func(t *testing.T) {
+		ta := v1alpha1.TargetAllocator{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "label-ta",
+			},
+		}
+		collector, err := reconciler.getCollector(context.Background(), ta)
+		require.NoError(t, err)
+		assert.Equal(t, testCollector, collector)
+	})
+	t.Run("multiple collectors attached by label", func(t *testing.T) {
+		testCollector2 := testCollector.DeepCopy()
+		testCollector2.SetName("test2")
+		fakeClient := fake.NewFakeClient(testCollector, testCollector2)
+		reconciler := NewTargetAllocatorReconciler(
+			fakeClient,
+			testScheme,
+			record.NewFakeRecorder(10),
+			config.New(),
+			testLogger,
+		)
+		ta := v1alpha1.TargetAllocator{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "label-ta",
+			},
+		}
+		collector, err := reconciler.getCollector(context.Background(), ta)
+		assert.Nil(t, collector)
+		assert.Errorf(t, err, "found multiple OpenTelemetry collectors annotated with the same Target Allocator: %s/%s", ta.Namespace, ta.Name)
+	})
 }
 
 func TestGetTargetAllocatorForCollector(t *testing.T) {
@@ -118,6 +152,26 @@ func TestGetTargetAllocatorForCollector(t *testing.T) {
 	expected := []reconcile.Request{{
 		NamespacedName: types.NamespacedName{
 			Name:      "test",
+			Namespace: "default",
+		},
+	}}
+	assert.Equal(t, expected, requests)
+}
+
+func TestGetTargetAllocatorRequestsFromLabel(t *testing.T) {
+	testCollector := &v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+			Labels: map[string]string{
+				constants.LabelTargetAllocator: "label-ta",
+			},
+		},
+	}
+	requests := getTargetAllocatorRequestsFromLabel(context.Background(), testCollector)
+	expected := []reconcile.Request{{
+		NamespacedName: types.NamespacedName{
+			Name:      "label-ta",
 			Namespace: "default",
 		},
 	}}

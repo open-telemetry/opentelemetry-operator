@@ -335,6 +335,11 @@ e2e-prometheuscr: chainsaw
 e2e-targetallocator: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator
 
+# Target allocator CR end-to-tests
+.PHONY: e2e-targetallocator-cr
+e2e-targetallocator-cr: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator-cr
+
 .PHONY: add-certmanager-permissions
 add-certmanager-permissions: 
 	# Kustomize only allows patches in the folder where the kustomization is located
