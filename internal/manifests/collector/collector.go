@@ -80,6 +80,24 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			resourceManifests = append(resourceManifests, res)
 		}
 	}
+
+	if params.Config.CreateRBACPermissions() == rbac.NotAvailable && params.Reviewer != nil {
+		sa, err := manifests.Factory(ServiceAccount)(params)
+		if err != nil {
+			return nil, err
+		}
+		saName := sa.GetName()
+		warnings, err := CheckRbacRules(params, saName)
+		if err != nil {
+			params.Log.Error(err, "Error checking RBAC rules", "serviceAccount", saName)
+		}
+
+		for _, warning := range warnings {
+			params.Log.V(1).Info("RBAC rules are missing", "warning", warning, "serviceAccount", saName)
+		}
+
+	}
+
 	routes, err := Routes(params)
 	if err != nil {
 		return nil, err

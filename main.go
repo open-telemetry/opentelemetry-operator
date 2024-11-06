@@ -391,6 +391,7 @@ func main() {
 		Scheme:   mgr.GetScheme(),
 		Config:   cfg,
 		Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
+		Reviewer: reviewer,
 	})
 
 	if err = collectorReconciler.SetupWithManager(mgr); err != nil {
