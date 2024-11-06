@@ -449,9 +449,9 @@ func main() {
 			}
 		}
 
-		bv := func(collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
+		bv := func(ctx context.Context, collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
 			var warnings admission.Warnings
-			params, newErr := collectorReconciler.GetParams(collector)
+			params, newErr := collectorReconciler.GetParams(ctx, collector)
 			if err != nil {
 				warnings = append(warnings, newErr.Error())
 				return warnings

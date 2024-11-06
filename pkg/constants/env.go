@@ -40,6 +40,7 @@ const (
 	LabelAppVersion  = "app.kubernetes.io/version"
 	LabelAppPartOf   = "app.kubernetes.io/part-of"
 
+	LabelTargetAllocator              = "opentelemetry.io/target-allocator"
 	ResourceAttributeAnnotationPrefix = "resource.opentelemetry.io/"
 
 	EnvPodName  = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
