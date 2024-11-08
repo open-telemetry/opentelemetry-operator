@@ -46,6 +46,7 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes     | Cert-Manager | Prometheus-Operator |
 |------------------------|----------------| ------------ |---------------------|
+| v0.113.0               | v1.23 to v1.31 | v1           | v0.76.0             |
 | v0.112.0               | v1.23 to v1.31 | v1           | v0.76.0             |
 | v0.111.0               | v1.23 to v1.31 | v1           | v0.76.0             |
 | v0.110.0               | v1.23 to v1.31 | v1           | v0.76.0             |
@@ -69,7 +70,6 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 | v0.92.0                | v1.23 to v1.29 | v1           | v0.71.0             |
 | v0.91.0                | v1.23 to v1.29 | v1           | v0.70.0             |
 | v0.90.0                | v1.23 to v1.28 | v1           | v0.69.1             |
-| v0.89.0                | v1.23 to v1.28 | v1           | v0.69.1             |
 
 [kubernetes_releases]: https://kubernetes.io/releases/
 [openshift_support]: https://access.redhat.com/support/policy/updates/openshift
