@@ -1,11 +1,10 @@
----
 - op: add
   path: /rules/-
   value:
     apiGroups:
     - ""
     resources:
-    - nodes
+    - events
     verbs:
     - get
     - list

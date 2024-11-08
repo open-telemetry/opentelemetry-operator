@@ -5,6 +5,7 @@
     apiGroups:
     - ""
     resources:
+    - nodes/stats
     - nodes/proxy
     verbs:
     - get
