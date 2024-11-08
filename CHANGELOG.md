@@ -6,6 +6,11 @@
 
 ### 💡 Enhancements 💡
 
+- `operator`: Programmatically create the `ServiceMonitor` for the operator metrics endpoint, ensuring correct namespace handling and dynamic configuration. (#3370)
+  Previously, the `ServiceMonitor` was created statically from a manifest file, causing failures when the
+  operator was deployed in a non-default namespace. This enhancement ensures automatic adjustment of the
+  `serverName` and seamless metrics scraping.
+- `collector`: Create RBAC rules for the k8s_events receiver automatically. (#3420)
 - `collector`: Inject environment K8S_NODE_NAME environment variable for the Kubelet Stats Receiver. (#2779)
 - `auto-instrumentation`: add config for installing musl based auto-instrumentation for Python (#2264)
 - `auto-instrumentation`: Support `http/json` and `http/protobuf` via OTEL_EXPORTER_OTLP_PROTOCOL environment variable in addition to default `grpc` for exporting traces (#3412)
