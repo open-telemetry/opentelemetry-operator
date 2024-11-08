@@ -1,11 +1,11 @@
----
 - op: add
   path: /rules/-
   value:
     apiGroups:
     - ""
     resources:
-    - nodes
+    - replicationcontrollers
+    - replicationcontrollers/status
     verbs:
     - get
     - list

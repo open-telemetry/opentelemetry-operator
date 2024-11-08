@@ -3,9 +3,10 @@
   path: /rules/-
   value:
     apiGroups:
-    - ""
+    - extensions
     resources:
-    - nodes
+    - deployments
+    - replicasets
     verbs:
     - get
     - list

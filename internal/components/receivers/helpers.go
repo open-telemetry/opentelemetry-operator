@@ -140,6 +140,9 @@ var (
 			WithRbacGen(generateKubeletStatsRbacRules).
 			WithEnvVarGen(generateKubeletStatsEnvVars).
 			MustBuild(),
+		components.NewBuilder[k8seventsConfig]().WithName("k8s_events").
+			WithRbacGen(generatek8seventsRbacRules).
+			MustBuild(),
 		NewScraperParser("prometheus"),
 		NewScraperParser("sshcheck"),
 		NewScraperParser("cloudfoundry"),
