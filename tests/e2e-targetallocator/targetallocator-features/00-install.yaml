@@ -93,7 +93,6 @@ spec:
       runAsUser: 1000
     prometheusCR:
       enabled: true
-      filterStrategy: ""
     securityContext:
       capabilities:
         add:
