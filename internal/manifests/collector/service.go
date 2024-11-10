@@ -32,7 +32,6 @@ import (
 const (
 	headlessLabel    = "operator.opentelemetry.io/collector-headless-service"
 	monitoringLabel  = "operator.opentelemetry.io/collector-monitoring-service"
-	extensionService = "operator.opentelemetry.io/collector-extension-service"
 	serviceTypeLabel = "operator.opentelemetry.io/collector-service-type"
 	valueExists      = "Exists"
 )
@@ -111,9 +110,8 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 }
 
 func ExtensionService(params manifests.Params) (*corev1.Service, error) {
-	name := naming.Service(params.OtelCol.Name)
+	name := naming.ExtensionService(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
-	labels[extensionService] = valueExists
 	labels[serviceTypeLabel] = ExtensionServiceType.String()
 
 	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
@@ -154,7 +152,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 		return nil, err
 	}
 
-	ports, err := params.OtelCol.Spec.Config.GetAllPorts(params.Log)
+	ports, err := params.OtelCol.Spec.Config.GetReceiverAndExporterPorts(params.Log)
 	if err != nil {
 		return nil, err
 	}

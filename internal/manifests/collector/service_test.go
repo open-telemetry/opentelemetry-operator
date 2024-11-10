@@ -26,6 +26,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func TestExtractPortNumbersAndNames(t *testing.T) {
@@ -322,24 +323,31 @@ func TestMonitoringService(t *testing.T) {
 }
 
 func TestExtensionService(t *testing.T) {
-	t.Run("when the extension has http endpoint", func(t *testing.T) {
-		params := manifests.Params{
-			Config: config.Config{},
-			Log:    logger,
-			OtelCol: v1beta1.OpenTelemetryCollector{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test",
-				},
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					Config: v1beta1.Config{
-						Service: v1beta1.Service{
-							Extensions: []string{"jaeger_query"},
-						},
-						Extensions: &v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"jaeger_query": map[string]interface{}{
-									"http": map[string]interface{}{
-										"endpoint": "0.0.0.0:16686",
+	testCases := []struct {
+		name          string
+		params        manifests.Params
+		expectedPorts []v1.ServicePort
+	}{
+		{
+			name: "when the extension has http endpoint",
+			params: manifests.Params{
+				Config: config.Config{},
+				Log:    logger,
+				OtelCol: v1beta1.OpenTelemetryCollector{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test",
+					},
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						Config: v1beta1.Config{
+							Service: v1beta1.Service{
+								Extensions: []string{"jaeger_query"},
+							},
+							Extensions: &v1beta1.AnyConfig{
+								Object: map[string]interface{}{
+									"jaeger_query": map[string]interface{}{
+										"http": map[string]interface{}{
+											"endpoint": "0.0.0.0:16686",
+										},
 									},
 								},
 							},
@@ -347,31 +355,36 @@ func TestExtensionService(t *testing.T) {
 					},
 				},
 			},
-		}
-
-		actual, err := ExtensionService(params)
-		assert.NotNil(t, actual)
-		assert.NoError(t, err)
-	})
-
-	t.Run("when the extension has grpc endpoint", func(t *testing.T) {
-		params := manifests.Params{
-			Config: config.Config{},
-			Log:    logger,
-			OtelCol: v1beta1.OpenTelemetryCollector{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test",
+			expectedPorts: []v1.ServicePort{
+				{
+					Name: "jaeger-query",
+					Port: 16686,
+					TargetPort: intstr.IntOrString{
+						IntVal: 16686,
+					},
 				},
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					Config: v1beta1.Config{
-						Service: v1beta1.Service{
-							Extensions: []string{"jaeger_query"},
-						},
-						Extensions: &v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"jaeger_query": map[string]interface{}{
-									"grpc": map[string]interface{}{
-										"endpoint": "0.0.0.0:16686",
+			},
+		},
+		{
+			name: "when the extension has grpc endpoint",
+			params: manifests.Params{
+				Config: config.Config{},
+				Log:    logger,
+				OtelCol: v1beta1.OpenTelemetryCollector{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test",
+					},
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						Config: v1beta1.Config{
+							Service: v1beta1.Service{
+								Extensions: []string{"jaeger_query"},
+							},
+							Extensions: &v1beta1.AnyConfig{
+								Object: map[string]interface{}{
+									"jaeger_query": map[string]interface{}{
+										"http": map[string]interface{}{
+											"endpoint": "0.0.0.0:16686",
+										},
 									},
 								},
 							},
@@ -379,34 +392,39 @@ func TestExtensionService(t *testing.T) {
 					},
 				},
 			},
-		}
-
-		actual, err := ExtensionService(params)
-		assert.NotNil(t, actual)
-		assert.NoError(t, err)
-	})
-
-	t.Run("when the extension has both http and grpc endpoint", func(t *testing.T) {
-		params := manifests.Params{
-			Config: config.Config{},
-			Log:    logger,
-			OtelCol: v1beta1.OpenTelemetryCollector{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test",
+			expectedPorts: []v1.ServicePort{
+				{
+					Name: "jaeger-query",
+					Port: 16686,
+					TargetPort: intstr.IntOrString{
+						IntVal: 16686,
+					},
 				},
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					Config: v1beta1.Config{
-						Service: v1beta1.Service{
-							Extensions: []string{"jaeger_query"},
-						},
-						Extensions: &v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"jaeger_query": map[string]interface{}{
-									"http": map[string]interface{}{
-										"endpoint": "0.0.0.0:16686",
-									},
-									"grpc": map[string]interface{}{
-										"endpoint": "0.0.0.0:16686",
+			},
+		},
+		{
+			name: "when the extension has both http and grpc endpoint",
+			params: manifests.Params{
+				Config: config.Config{},
+				Log:    logger,
+				OtelCol: v1beta1.OpenTelemetryCollector{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test",
+					},
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						Config: v1beta1.Config{
+							Service: v1beta1.Service{
+								Extensions: []string{"jaeger_query"},
+							},
+							Extensions: &v1beta1.AnyConfig{
+								Object: map[string]interface{}{
+									"jaeger_query": map[string]interface{}{
+										"http": map[string]interface{}{
+											"endpoint": "0.0.0.0:16686",
+										},
+										"grpc": map[string]interface{}{
+											"endpoint": "0.0.0.0:16686",
+										},
 									},
 								},
 							},
@@ -414,66 +432,94 @@ func TestExtensionService(t *testing.T) {
 					},
 				},
 			},
-		}
-
-		actual, err := ExtensionService(params)
-		assert.NotNil(t, actual)
-		assert.NoError(t, err)
-	})
-
-	t.Run("when the extension has no extensions defined", func(t *testing.T) {
-		params := manifests.Params{
-			Config: config.Config{},
-			Log:    logger,
-			OtelCol: v1beta1.OpenTelemetryCollector{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test",
-				},
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					Config: v1beta1.Config{
-						Service: v1beta1.Service{
-							Extensions: []string{"jaeger_query"},
-						},
-						Extensions: &v1beta1.AnyConfig{
-							Object: map[string]interface{}{},
-						},
+			expectedPorts: []v1.ServicePort{
+				{
+					Name: "jaeger-query",
+					Port: 16686,
+					TargetPort: intstr.IntOrString{
+						IntVal: 16686,
 					},
 				},
 			},
-		}
-
-		actual, err := ExtensionService(params)
-		assert.Nil(t, actual)
-		assert.NoError(t, err)
-	})
-
-	t.Run("when the extension has no endpoint defined", func(t *testing.T) {
-		params := manifests.Params{
-			Config: config.Config{},
-			Log:    logger,
-			OtelCol: v1beta1.OpenTelemetryCollector{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test",
-				},
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					Config: v1beta1.Config{
-						Service: v1beta1.Service{
-							Extensions: []string{"jaeger_query"},
-						},
-						Extensions: &v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"jaeger_query": map[string]interface{}{},
+		},
+		{
+			name: "when the extension has no extensions defined",
+			params: manifests.Params{
+				Config: config.Config{},
+				Log:    logger,
+				OtelCol: v1beta1.OpenTelemetryCollector{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test",
+					},
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						Config: v1beta1.Config{
+							Service: v1beta1.Service{
+								Extensions: []string{"jaeger_query"},
+							},
+							Extensions: &v1beta1.AnyConfig{
+								Object: map[string]interface{}{},
 							},
 						},
 					},
 				},
 			},
-		}
+			expectedPorts: []v1.ServicePort{},
+		},
+		{
+			name: "when the extension has no endpoint defined",
+			params: manifests.Params{
+				Config: config.Config{},
+				Log:    logger,
+				OtelCol: v1beta1.OpenTelemetryCollector{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test",
+					},
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						Config: v1beta1.Config{
+							Service: v1beta1.Service{
+								Extensions: []string{"jaeger_query"},
+							},
+							Extensions: &v1beta1.AnyConfig{
+								Object: map[string]interface{}{
+									"jaeger_query": map[string]interface{}{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedPorts: []v1.ServicePort{
+				{
+					Name: "jaeger-query",
+					Port: 16686,
+					TargetPort: intstr.IntOrString{
+						IntVal: 16686,
+					},
+				},
+			},
+		},
+	}
 
-		actual, err := ExtensionService(params)
-		assert.NotNil(t, actual)
-		assert.NoError(t, err)
-	})
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			actual, err := ExtensionService(tc.params)
+			assert.NoError(t, err)
+
+			if len(tc.expectedPorts) > 0 {
+				assert.NotNil(t, actual)
+				assert.Equal(t, actual.Name, naming.ExtensionService(tc.params.OtelCol.Name))
+				// ports assertion
+				assert.Equal(t, len(tc.expectedPorts), len(actual.Spec.Ports))
+				assert.Equal(t, tc.expectedPorts[0].Name, actual.Spec.Ports[0].Name)
+				assert.Equal(t, tc.expectedPorts[0].Port, actual.Spec.Ports[0].Port)
+				assert.Equal(t, tc.expectedPorts[0].TargetPort.IntVal, actual.Spec.Ports[0].TargetPort.IntVal)
+			} else {
+				// no ports, no service
+				assert.Nil(t, actual)
+			}
+		})
+	}
 }
 
 func service(name string, ports []v1beta1.PortsSpec) v1.Service {

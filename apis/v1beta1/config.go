@@ -327,8 +327,12 @@ func (c *Config) GetExtensionPorts(logger logr.Logger) ([]corev1.ServicePort, er
 	return c.getPortsForComponentKinds(logger, KindExtension)
 }
 
-func (c *Config) GetAllPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
+func (c *Config) GetReceiverAndExporterPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
 	return c.getPortsForComponentKinds(logger, KindReceiver, KindExporter)
+}
+
+func (c *Config) GetAllPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
+	return c.getPortsForComponentKinds(logger, KindReceiver, KindExporter, KindExtension)
 }
 
 func (c *Config) GetEnvironmentVariables(logger logr.Logger) ([]corev1.EnvVar, error) {
