@@ -70,17 +70,67 @@ func NewOperatorMetrics(config *rest.Config, scheme *runtime.Scheme, log logr.Lo
 }
 
 func (om OperatorMetrics) Start(ctx context.Context) error {
+	err := om.createOperatorMetricsServiceMonitor(ctx)
+	if err != nil {
+		om.log.Error(err, "error creating Service Monitor for operator metrics")
+	}
+
+	return nil
+}
+
+func (om OperatorMetrics) NeedLeaderElection() bool {
+	return true
+}
+
+func (om OperatorMetrics) caConfigMapExists() bool {
+	return om.kubeClient.Get(context.Background(), client.ObjectKey{
+		Name:      caBundleConfigMap,
+		Namespace: openshiftInClusterMonitoringNamespace,
+	}, &corev1.ConfigMap{},
+	) == nil
+}
+
+func (om OperatorMetrics) getOwnerReferences(ctx context.Context, namespace string) (metav1.OwnerReference, error) {
+	var deploymentList appsv1.DeploymentList
+
+	listOptions := []client.ListOption{
+		client.InNamespace(namespace),
+		client.MatchingLabels(map[string]string{
+			"app.kubernetes.io/name": "opentelemetry-operator",
+			"control-plane":          "controller-manager",
+		}),
+	}
+
+	err := om.kubeClient.List(ctx, &deploymentList, listOptions...)
+	if err != nil {
+		return metav1.OwnerReference{}, err
+	}
+
+	if len(deploymentList.Items) == 0 {
+		return metav1.OwnerReference{}, fmt.Errorf("no deployments found with the specified label")
+	}
+	deployment := &deploymentList.Items[0]
+
+	ownerRef := metav1.OwnerReference{
+		APIVersion: "apps/v1",
+		Kind:       "Deployment",
+		Name:       deployment.Name,
+		UID:        deployment.UID,
+	}
+
+	return ownerRef, nil
+}
+
+func (om OperatorMetrics) createOperatorMetricsServiceMonitor(ctx context.Context) error {
 	rawNamespace, err := os.ReadFile(namespaceFile)
 	if err != nil {
-		om.log.Error(err, "error reading namespace file. No ServiceMonitor will be created")
-		return nil
+		return fmt.Errorf("error reading namespace file: %w", err)
 	}
 	namespace := string(rawNamespace)
 
 	ownerRef, err := om.getOwnerReferences(ctx, namespace)
 	if err != nil {
-		om.log.Error(err, "error getting owner references. No ServiceMonitor will be created")
-		return nil
+		return fmt.Errorf("error getting owner references: %w", err)
 	}
 
 	var tlsConfig *monitoringv1.TLSConfig
@@ -138,53 +188,10 @@ func (om OperatorMetrics) Start(ctx context.Context) error {
 	err = om.kubeClient.Create(ctx, &sm)
 	// The ServiceMonitor can be already there if this is a restart
 	if err != nil && !apierrors.IsAlreadyExists(err) {
-		return fmt.Errorf("error creating service monitor: %w", err)
+		return err
 	}
 
 	<-ctx.Done()
 
 	return om.kubeClient.Delete(ctx, &sm)
-}
-
-func (om OperatorMetrics) NeedLeaderElection() bool {
-	return true
-}
-
-func (om OperatorMetrics) caConfigMapExists() bool {
-	return om.kubeClient.Get(context.Background(), client.ObjectKey{
-		Name:      caBundleConfigMap,
-		Namespace: openshiftInClusterMonitoringNamespace,
-	}, &corev1.ConfigMap{},
-	) == nil
-}
-
-func (om OperatorMetrics) getOwnerReferences(ctx context.Context, namespace string) (metav1.OwnerReference, error) {
-	var deploymentList appsv1.DeploymentList
-
-	listOptions := []client.ListOption{
-		client.InNamespace(namespace),
-		client.MatchingLabels(map[string]string{
-			"app.kubernetes.io/name": "opentelemetry-operator",
-			"control-plane":          "controller-manager",
-		}),
-	}
-
-	err := om.kubeClient.List(ctx, &deploymentList, listOptions...)
-	if err != nil {
-		return metav1.OwnerReference{}, err
-	}
-
-	if len(deploymentList.Items) == 0 {
-		return metav1.OwnerReference{}, fmt.Errorf("no deployments found with the specified label")
-	}
-	deployment := &deploymentList.Items[0]
-
-	ownerRef := metav1.OwnerReference{
-		APIVersion: "apps/v1",
-		Kind:       "Deployment",
-		Name:       deployment.Name,
-		UID:        deployment.UID,
-	}
-
-	return ownerRef, nil
 }
