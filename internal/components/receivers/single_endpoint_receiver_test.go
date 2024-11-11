@@ -83,7 +83,6 @@ func TestDownstreamParsers(t *testing.T) {
 		{"awsxray", "awsxray", "__awsxray", 2000, false},
 		{"tcplog", "tcplog", "__tcplog", 0, true},
 		{"udplog", "udplog", "__udplog", 0, true},
-		{"k8s_cluster", "k8s_cluster", "__k8s_cluster", 0, false},
 	} {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
