@@ -30,7 +30,7 @@ type k8sObject struct {
 }
 
 func generatek8sobjectsRbacRules(_ logr.Logger, config k8sobjectsConfig) ([]rbacv1.PolicyRule, error) {
-	// The k8s Objects Receiver needs get permissions on the following resources always.
+	// https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sobjectsreceiver#rbac
 	prs := []rbacv1.PolicyRule{}
 	for _, obj := range config.Objects {
 		permissions := []string{"list"}
