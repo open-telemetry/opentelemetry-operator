@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 	"testing"
 
 	gokitlog "github.com/go-kit/log"
@@ -26,7 +28,9 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
+	"github.com/stretchr/testify/require"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -45,13 +49,14 @@ func BenchmarkProcessTargets(b *testing.B) {
 	targetsPerGroup := 5
 	groupsPerJob := 20
 	tsets := prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob)
+	labelsBuilder := labels.NewBuilder(labels.EmptyLabels())
 
 	b.ResetTimer()
 	for _, strategy := range allocation.GetRegisteredAllocatorNames() {
 		b.Run(strategy, func(b *testing.B) {
 			targetDiscoverer, allocator := createTestDiscoverer(strategy, map[string][]*relabel.Config{})
 			for i := 0; i < b.N; i++ {
-				targetDiscoverer.ProcessTargets(tsets, allocator.SetTargets)
+				targetDiscoverer.ProcessTargets(labelsBuilder, tsets, allocator.SetTargets)
 			}
 		})
 	}
@@ -64,12 +69,24 @@ func BenchmarkProcessTargetsWithRelabelConfig(b *testing.B) {
 	targetsPerGroup := 5
 	groupsPerJob := 20
 	tsets := prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob)
+	labelsBuilder := labels.NewBuilder(labels.EmptyLabels())
 	prehookConfig := make(map[string][]*relabel.Config, len(tsets))
 	for jobName := range tsets {
+		// keep all targets in half the jobs, drop the rest
+		jobNrStr := strings.Split(jobName, "-")[1]
+		jobNr, err := strconv.Atoi(jobNrStr)
+		require.NoError(b, err)
+		var action relabel.Action
+		if jobNr%2 == 0 {
+			action = "keep"
+		} else {
+			action = "drop"
+		}
 		prehookConfig[jobName] = []*relabel.Config{
 			{
-				Action: "keep",
-				Regex:  relabel.MustNewRegexp(".*"),
+				Action:       action,
+				Regex:        relabel.MustNewRegexp(".*"),
+				SourceLabels: model.LabelNames{"__address__"},
 			},
 		}
 	}
@@ -79,7 +96,7 @@ func BenchmarkProcessTargetsWithRelabelConfig(b *testing.B) {
 		b.Run(strategy, func(b *testing.B) {
 			targetDiscoverer, allocator := createTestDiscoverer(strategy, prehookConfig)
 			for i := 0; i < b.N; i++ {
-				targetDiscoverer.ProcessTargets(tsets, allocator.SetTargets)
+				targetDiscoverer.ProcessTargets(labelsBuilder, tsets, allocator.SetTargets)
 			}
 		})
 	}

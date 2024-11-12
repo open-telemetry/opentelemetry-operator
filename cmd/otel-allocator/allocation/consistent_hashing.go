@@ -16,7 +16,6 @@ package allocation
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/buraksezer/consistent"
 	"github.com/cespare/xxhash/v2"
@@ -59,7 +58,7 @@ func (s *consistentHashingStrategy) GetName() string {
 }
 
 func (s *consistentHashingStrategy) GetCollectorForTarget(collectors map[string]*Collector, item *target.Item) (*Collector, error) {
-	hashKey := strings.Join(item.TargetURL, "")
+	hashKey := item.TargetURL
 	member := s.consistentHasher.LocateKey([]byte(hashKey))
 	collectorName := member.String()
 	collector, ok := collectors[collectorName]

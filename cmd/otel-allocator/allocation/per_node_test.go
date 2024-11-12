@@ -17,7 +17,7 @@ package allocation
 import (
 	"testing"
 
-	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -33,23 +33,23 @@ func TestAllocationPerNode(t *testing.T) {
 
 	cols := MakeNCollectors(4, 0)
 	s.SetCollectors(cols)
-	firstLabels := model.LabelSet{
-		"test":                            "test1",
-		"__meta_kubernetes_pod_node_name": "node-0",
+	firstLabels := labels.Labels{
+		{Name: "test", Value: "test1"},
+		{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
 	}
-	secondLabels := model.LabelSet{
-		"test":                        "test2",
-		"__meta_kubernetes_node_name": "node-1",
+	secondLabels := labels.Labels{
+		{Name: "test", Value: "test2"},
+		{Name: "__meta_kubernetes_node_name", Value: "node-1"},
 	}
 	// no label, should be skipped
-	thirdLabels := model.LabelSet{
-		"test": "test3",
+	thirdLabels := labels.Labels{
+		{Name: "test", Value: "test3"},
 	}
 	// endpointslice target kind and name
-	fourthLabels := model.LabelSet{
-		"test": "test4",
-		"__meta_kubernetes_endpointslice_address_target_kind": "Node",
-		"__meta_kubernetes_endpointslice_address_target_name": "node-3",
+	fourthLabels := labels.Labels{
+		{Name: "test", Value: "test4"},
+		{Name: "__meta_kubernetes_endpointslice_address_target_kind", Value: "Node"},
+		{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-3"},
 	}
 
 	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
