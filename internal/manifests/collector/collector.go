@@ -82,11 +82,14 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	}
 
 	if params.Config.CreateRBACPermissions() == rbac.NotAvailable && params.Reviewer != nil {
-		sa, err := manifests.Factory(ServiceAccount)(params)
-		if err != nil {
-			return nil, err
+		saName := params.OtelCol.Spec.ServiceAccount
+		if saName == "" {
+			sa, err := manifests.Factory(ServiceAccount)(params)
+			if err != nil {
+				return nil, err
+			}
+			saName = sa.GetName()
 		}
-		saName := sa.GetName()
 		warnings, err := CheckRbacRules(params, saName)
 		if err != nil {
 			params.Log.Error(err, "Error checking RBAC rules", "serviceAccount", saName)
