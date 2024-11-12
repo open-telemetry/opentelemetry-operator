@@ -99,13 +99,13 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2024-10-30T17:23:26Z"
+    createdAt: "2024-11-08T09:36:43Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.112.0
+  name: opentelemetry-operator.v0.113.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -479,15 +479,15 @@ spec:
                 - --zap-time-encoding=rfc3339nano
                 - --enable-nginx-instrumentation=true
                 - --enable-go-instrumentation=true
-                - --enable-multi-instrumentation=true
                 - --openshift-create-dashboard=true
                 - --feature-gates=+operator.observability.prometheus
+                - --enable-cr-metrics=true
                 env:
                 - name: SERVICE_ACCOUNT_NAME
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.112.0
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.113.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -518,6 +518,10 @@ spec:
                 - --upstream=http://127.0.0.1:8080/
                 - --logtostderr=true
                 - --v=0
+                - --tls-cert-file=/var/run/tls/server/tls.crt
+                - --tls-private-key-file=/var/run/tls/server/tls.key
+                - --tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_CBC_SHA256
+                - --tls-min-version=VersionTLS12
                 image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
                 name: kube-rbac-proxy
                 ports:
@@ -531,9 +535,16 @@ spec:
                   requests:
                     cpu: 5m
                     memory: 64Mi
+                volumeMounts:
+                - mountPath: /var/run/tls/server
+                  name: opentelemetry-operator-metrics-cert
               serviceAccountName: opentelemetry-operator-controller-manager
               terminationGracePeriodSeconds: 10
               volumes:
+              - name: opentelemetry-operator-metrics-cert
+                secret:
+                  defaultMode: 420
+                  secretName: opentelemetry-operator-metrics
               - name: cert
                 secret:
                   defaultMode: 420
@@ -595,7 +606,7 @@ spec:
   minKubeVersion: 1.23.0
   provider:
     name: OpenTelemetry Community
-  version: 0.112.0
+  version: 0.113.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1alpha1
