@@ -28,7 +28,6 @@ spec:
         securityContext:
           runAsUser: 1000
           runAsGroup: 3000
-          fsGroup: 3000
           runAsNonRoot: true
           allowPrivilegeEscalation: false
           seccompProfile:
@@ -45,7 +44,6 @@ spec:
             mountPath: /etc/nginx/nginx.conf
             subPath: nginx.conf
             readOnly: true
-        imagePullPolicy: Always
         resources:
           limits:
             cpu: 500m
@@ -58,7 +56,6 @@ spec:
         securityContext:
           runAsUser: 1000
           runAsGroup: 3000
-          fsGroup: 3000
           runAsNonRoot: true
           seccompProfile:
             type: RuntimeDefault

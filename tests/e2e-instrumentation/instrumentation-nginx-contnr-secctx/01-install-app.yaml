@@ -22,7 +22,6 @@ spec:
         securityContext:
           runAsUser: 1000
           runAsGroup: 3000
-          fsGroup: 3000
         ports:
         - containerPort: 8765
         env:
@@ -33,7 +32,6 @@ spec:
             mountPath: /etc/nginx/nginx.conf
             subPath: nginx.conf
             readOnly: true
-        imagePullPolicy: Always
         resources:
           limits:
             cpu: "1"
