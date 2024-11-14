@@ -15,6 +15,9 @@
 package collector
 
 import (
+	"errors"
+	"fmt"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -81,7 +84,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		}
 	}
 
-	if params.Config.CreateRBACPermissions() == rbac.NotAvailable && params.Reviewer != nil {
+	if params.ErrorAsWarning && params.Config.CreateRBACPermissions() == rbac.NotAvailable && params.Reviewer != nil {
 		saName := params.OtelCol.Spec.ServiceAccount
 		if saName == "" {
 			sa, err := manifests.Factory(ServiceAccount)(params)
@@ -92,13 +95,14 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		}
 		warnings, err := CheckRbacRules(params, saName)
 		if err != nil {
-			params.Log.Error(err, "Error checking RBAC rules", "serviceAccount", saName)
+			return nil, fmt.Errorf("error checking RBAC rules for serviceAccount %s: %w", saName, err)
 		}
 
+		var w []error
 		for _, warning := range warnings {
-			params.Log.V(1).Info("RBAC rules are missing", "warning", warning, "serviceAccount", saName)
+			w = append(w, fmt.Errorf("RBAC rules are missing: %s", warning))
 		}
-
+		return nil, errors.Join(w...)
 	}
 
 	routes, err := Routes(params)

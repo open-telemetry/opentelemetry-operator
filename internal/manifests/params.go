@@ -37,4 +37,5 @@ type Params struct {
 	OpAMPBridge     v1alpha1.OpAMPBridge
 	Config          config.Config
 	Reviewer        *rbac.Reviewer
+	ErrorAsWarning  bool
 }
