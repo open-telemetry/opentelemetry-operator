@@ -31,7 +31,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 )
 
-var logger = logf.Log.WithName("collector-unit-tests")
+var logger = logf.Log.WithName("k8s-collector-unit-tests")
 var labelMap = map[string]string{
 	"app.kubernetes.io/instance":   "default.test",
 	"app.kubernetes.io/managed-by": "opentelemetry-operator",
@@ -40,12 +40,14 @@ var labelSelector = metav1.LabelSelector{
 	MatchLabels: labelMap,
 }
 
-func getTestPodWatcher() Watcher {
-	podWatcher := Watcher{
-		k8sClient:         fake.NewSimpleClientset(),
-		close:             make(chan struct{}),
-		log:               logger,
-		minUpdateInterval: time.Millisecond,
+func getTestPodWatcher() K8sWatcher {
+	podWatcher := K8sWatcher{
+		k8sClient: fake.NewSimpleClientset(),
+		watcher: watcher{
+			close:             make(chan struct{}),
+			log:               logger,
+			minUpdateInterval: time.Millisecond,
+		},
 	}
 	return podWatcher
 }
@@ -63,9 +65,9 @@ func pod(name string) *v1.Pod {
 	}
 }
 
-func Test_runWatch(t *testing.T) {
+func Test_k8sWatcher_runWatch(t *testing.T) {
 	type args struct {
-		kubeFn       func(t *testing.T, podWatcher Watcher)
+		kubeFn       func(t *testing.T, podWatcher K8sWatcher)
 		collectorMap map[string]*allocation.Collector
 	}
 	tests := []struct {
@@ -76,7 +78,7 @@ func Test_runWatch(t *testing.T) {
 		{
 			name: "pod add",
 			args: args{
-				kubeFn: func(t *testing.T, podWatcher Watcher) {
+				kubeFn: func(t *testing.T, podWatcher K8sWatcher) {
 					for _, k := range []string{"test-pod1", "test-pod2", "test-pod3"} {
 						p := pod(k)
 						_, err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
@@ -103,7 +105,7 @@ func Test_runWatch(t *testing.T) {
 		{
 			name: "pod delete",
 			args: args{
-				kubeFn: func(t *testing.T, podWatcher Watcher) {
+				kubeFn: func(t *testing.T, podWatcher K8sWatcher) {
 					for _, k := range []string{"test-pod2", "test-pod3"} {
 						err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Delete(context.Background(), k, metav1.DeleteOptions{})
 						assert.NoError(t, err)
@@ -136,7 +138,7 @@ func Test_runWatch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			podWatcher := getTestPodWatcher()
 			defer func() {
-				close(podWatcher.close)
+				close(podWatcher.watcher.close)
 			}()
 			var actual map[string]*allocation.Collector
 			mapMutex := sync.Mutex{}
@@ -145,12 +147,12 @@ func Test_runWatch(t *testing.T) {
 				_, err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
 				assert.NoError(t, err)
 			}
-			go func(podWatcher Watcher) {
-				err := podWatcher.Watch(&labelSelector, func(colMap map[string]*allocation.Collector) {
+			go func(podWatcher K8sWatcher) {
+				err := podWatcher.Watch(WithLabelSelector(&labelSelector), WithFn(func(colMap map[string]*allocation.Collector) {
 					mapMutex.Lock()
 					defer mapMutex.Unlock()
 					actual = colMap
-				})
+				}))
 				require.NoError(t, err)
 			}(podWatcher)
 
@@ -168,15 +170,15 @@ func Test_runWatch(t *testing.T) {
 }
 
 // this tests runWatch in the case of watcher channel closing.
-func Test_closeChannel(t *testing.T) {
+func Test_k8sWatcher_closeChannel(t *testing.T) {
 	podWatcher := getTestPodWatcher()
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	go func(podWatcher Watcher) {
+	go func(podWatcher K8sWatcher) {
 		defer wg.Done()
-		err := podWatcher.Watch(&labelSelector, func(colMap map[string]*allocation.Collector) {})
+		err := podWatcher.Watch(WithLabelSelector(&labelSelector), WithFn(func(colMap map[string]*allocation.Collector) {}))
 		require.NoError(t, err)
 	}(podWatcher)
 

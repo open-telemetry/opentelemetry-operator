@@ -38,24 +38,26 @@ import (
 )
 
 const (
-	DefaultResyncTime                        = 5 * time.Minute
-	DefaultConfigFilePath     string         = "/conf/targetallocator.yaml"
-	DefaultCRScrapeInterval   model.Duration = model.Duration(time.Second * 30)
-	DefaultAllocationStrategy                = "consistent-hashing"
-	DefaultFilterStrategy                    = "relabel-config"
+	DefaultResyncTime                          = 5 * time.Minute
+	DefaultConfigFilePath       string         = "/conf/targetallocator.yaml"
+	DefaultCRScrapeInterval     model.Duration = model.Duration(time.Second * 30)
+	DefaultAllocationStrategy                  = "consistent-hashing"
+	DefaultFilterStrategy                      = "relabel-config"
+	DefaultCollectorWatcherType                = "k8s"
 )
 
 type Config struct {
-	ListenAddr         string                `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath string                `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig      *rest.Config          `yaml:"-"`
-	RootLogger         logr.Logger           `yaml:"-"`
-	CollectorSelector  *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	PromConfig         *promconfig.Config    `yaml:"config"`
-	AllocationStrategy string                `yaml:"allocation_strategy,omitempty"`
-	FilterStrategy     string                `yaml:"filter_strategy,omitempty"`
-	PrometheusCR       PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
-	HTTPS              HTTPSServerConfig     `yaml:"https,omitempty"`
+	ListenAddr         string                 `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath string                 `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig      *rest.Config           `yaml:"-"`
+	RootLogger         logr.Logger            `yaml:"-"`
+	CollectorSelector  *metav1.LabelSelector  `yaml:"collector_selector,omitempty"`
+	PromConfig         *promconfig.Config     `yaml:"config"`
+	AllocationStrategy string                 `yaml:"allocation_strategy,omitempty"`
+	FilterStrategy     string                 `yaml:"filter_strategy,omitempty"`
+	PrometheusCR       PrometheusCRConfig     `yaml:"prometheus_cr,omitempty"`
+	HTTPS              HTTPSServerConfig      `yaml:"https,omitempty"`
+	CollectorWatcher   CollectorWatcherConfig `yaml:"collector_watcher,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -73,6 +75,16 @@ type HTTPSServerConfig struct {
 	CAFilePath      string `yaml:"ca_file_path,omitempty"`
 	TLSCertFilePath string `yaml:"tls_cert_file_path,omitempty"`
 	TLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
+}
+
+type CollectorWatcherConfig struct {
+	WatcherType string            `yaml:"type,omitempty"`
+	AwsCloudMap AwsCloudMapConfig `yaml:"aws_cloud_map,omitempty"`
+}
+
+type AwsCloudMapConfig struct {
+	Namespace   string `yaml:"namespace,omitempty"`
+	ServiceName string `yaml:"service_name,omitempty"`
 }
 
 func LoadFromFile(file string, target *Config) error {
@@ -143,6 +155,24 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		return err
 	} else if changed {
 		target.HTTPS.TLSKeyFilePath = tlsKeyFilePath
+	}
+
+	if cwType, changed, err := getCollectorWatcherType(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.CollectorWatcher.WatcherType = cwType
+	}
+
+	if collectorWatcherNamespace, changed, err := getAWSCloudMapNamespace(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.CollectorWatcher.AwsCloudMap.Namespace = collectorWatcherNamespace
+	}
+
+	if collectorWatcherServiceName, changed, err := getAWSCloudMapServiceName(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.CollectorWatcher.AwsCloudMap.ServiceName = collectorWatcherServiceName
 	}
 
 	return nil

@@ -25,16 +25,19 @@ import (
 
 // Flag names.
 const (
-	targetAllocatorName          = "target-allocator"
-	configFilePathFlagName       = "config-file"
-	listenAddrFlagName           = "listen-addr"
-	prometheusCREnabledFlagName  = "enable-prometheus-cr-watcher"
-	kubeConfigPathFlagName       = "kubeconfig-path"
-	httpsEnabledFlagName         = "enable-https-server"
-	listenAddrHttpsFlagName      = "listen-addr-https"
-	httpsCAFilePathFlagName      = "https-ca-file"
-	httpsTLSCertFilePathFlagName = "https-tls-cert-file"
-	httpsTLSKeyFilePathFlagName  = "https-tls-key-file"
+	targetAllocatorName            = "target-allocator"
+	configFilePathFlagName         = "config-file"
+	listenAddrFlagName             = "listen-addr"
+	prometheusCREnabledFlagName    = "enable-prometheus-cr-watcher"
+	kubeConfigPathFlagName         = "kubeconfig-path"
+	httpsEnabledFlagName           = "enable-https-server"
+	listenAddrHttpsFlagName        = "listen-addr-https"
+	httpsCAFilePathFlagName        = "https-ca-file"
+	httpsTLSCertFilePathFlagName   = "https-tls-cert-file"
+	httpsTLSKeyFilePathFlagName    = "https-tls-key-file"
+	collectorWatcherTypeFlagName   = "collector-watcher-type"
+	awsCloudMapNamespaceFlagName   = "aws-cloud-map-namespace"
+	awsCloudMapServiceNameFlagName = "aws-cloud-map-service-name"
 )
 
 // We can't bind this flag to our FlagSet, so we need to handle it separately.
@@ -51,6 +54,9 @@ func getFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet.String(httpsCAFilePathFlagName, "", "The path to the HTTPS server TLS CA file.")
 	flagSet.String(httpsTLSCertFilePathFlagName, "", "The path to the HTTPS server TLS certificate file.")
 	flagSet.String(httpsTLSKeyFilePathFlagName, "", "The path to the HTTPS server TLS key file.")
+	flagSet.String(collectorWatcherTypeFlagName, "k8s", "The type of collector watcher to use. (one of 'k8s', 'aws-cloud-map')")
+	flagSet.String(awsCloudMapNamespaceFlagName, "default", "The namespace of the AWS Cloud Map service.")
+	flagSet.String(awsCloudMapServiceNameFlagName, "otel-collector", "The name of the AWS Cloud Map service.")
 	zapFlagSet := flag.NewFlagSet("", flag.ErrorHandling(errorHandling))
 	zapCmdLineOpts.BindFlags(zapFlagSet)
 	flagSet.AddGoFlagSet(zapFlagSet)
@@ -120,5 +126,32 @@ func getHttpsTLSKeyFilePath(flagSet *pflag.FlagSet) (value string, changed bool,
 		return
 	}
 	value, err = flagSet.GetString(httpsTLSKeyFilePathFlagName)
+	return
+}
+
+func getCollectorWatcherType(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	if changed = flagSet.Changed(collectorWatcherTypeFlagName); !changed {
+		value, err = DefaultCollectorWatcherType, nil
+		return
+	}
+	value, err = flagSet.GetString(collectorWatcherTypeFlagName)
+	return
+}
+
+func getAWSCloudMapNamespace(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	if changed = flagSet.Changed(awsCloudMapNamespaceFlagName); !changed {
+		value, err = "", nil
+		return
+	}
+	value, err = flagSet.GetString(awsCloudMapNamespaceFlagName)
+	return
+}
+
+func getAWSCloudMapServiceName(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	if changed = flagSet.Changed(awsCloudMapServiceNameFlagName); !changed {
+		value, err = "", nil
+		return
+	}
+	value, err = flagSet.GetString(awsCloudMapServiceNameFlagName)
 	return
 }
