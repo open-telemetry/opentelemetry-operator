@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,11 +42,11 @@ import (
 
 var (
 	logger       = logf.Log.WithName("server-unit-tests")
-	baseLabelSet = model.LabelSet{
-		"test_label": "test-value",
+	baseLabelSet = labels.Labels{
+		{Name: "test_label", Value: "test-value"},
 	}
-	testJobLabelSetTwo = model.LabelSet{
-		"test_label": "test-value2",
+	testJobLabelSetTwo = labels.Labels{
+		{Name: "test_label", Value: "test-value2"},
 	}
 	baseTargetItem       = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
 	secondTargetItem     = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
@@ -108,8 +109,8 @@ func TestServer_TargetsHandler(t *testing.T) {
 				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
-						Labels: map[model.LabelName]model.LabelValue{
-							"test_label": "test-value",
+						Labels: labels.Labels{
+							{Name: "test_label", Value: "test-value"},
 						},
 					},
 				},
@@ -130,8 +131,8 @@ func TestServer_TargetsHandler(t *testing.T) {
 				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
-						Labels: map[model.LabelName]model.LabelValue{
-							"test_label": "test-value",
+						Labels: labels.Labels{
+							{Name: "test_label", Value: "test-value"},
 						},
 					},
 				},
@@ -152,14 +153,14 @@ func TestServer_TargetsHandler(t *testing.T) {
 				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
-						Labels: map[model.LabelName]model.LabelValue{
-							"test_label": "test-value",
+						Labels: labels.Labels{
+							{Name: "test_label", Value: "test-value"},
 						},
 					},
 					{
 						TargetURL: []string{"test-url2"},
-						Labels: map[model.LabelName]model.LabelValue{
-							"test_label": "test-value2",
+						Labels: labels.Labels{
+							{Name: "test_label", Value: "test-value2"},
 						},
 					},
 				},
@@ -572,7 +573,7 @@ func TestServer_JobHandler(t *testing.T) {
 		{
 			description: "one job",
 			targetItems: map[string]*target.Item{
-				"targetitem": target.NewItem("job1", "", model.LabelSet{}, ""),
+				"targetitem": target.NewItem("job1", "", labels.Labels{}, ""),
 			},
 			expectedCode: http.StatusOK,
 			expectedJobs: map[string]linkJSON{
@@ -582,11 +583,11 @@ func TestServer_JobHandler(t *testing.T) {
 		{
 			description: "multiple jobs",
 			targetItems: map[string]*target.Item{
-				"a": target.NewItem("job1", "", model.LabelSet{}, ""),
-				"b": target.NewItem("job2", "", model.LabelSet{}, ""),
-				"c": target.NewItem("job3", "", model.LabelSet{}, ""),
-				"d": target.NewItem("job3", "", model.LabelSet{}, ""),
-				"e": target.NewItem("job3", "", model.LabelSet{}, "")},
+				"a": target.NewItem("job1", "", labels.Labels{}, ""),
+				"b": target.NewItem("job2", "", labels.Labels{}, ""),
+				"c": target.NewItem("job3", "", labels.Labels{}, ""),
+				"d": target.NewItem("job3", "", labels.Labels{}, ""),
+				"e": target.NewItem("job3", "", labels.Labels{}, "")},
 			expectedCode: http.StatusOK,
 			expectedJobs: map[string]linkJSON{
 				"job1": newLink("job1"),
