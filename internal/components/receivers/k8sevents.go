@@ -21,7 +21,7 @@ import (
 
 type k8seventsConfig struct{}
 
-func generatek8seventsRbacRules(_ logr.Logger, _ k8seventsConfig) ([]rbacv1.PolicyRule, error) {
+func generatek8seventsClusterRoleRules(_ logr.Logger, _ k8seventsConfig) ([]rbacv1.PolicyRule, error) {
 	// The k8s Events Receiver needs get permissions on the following resources always.
 	return []rbacv1.PolicyRule{
 		{

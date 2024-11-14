@@ -355,7 +355,7 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 				return
 			}
 			assert.ElementsMatchf(t, tt.want, got, "Ports(%v)", tt.args.config)
-			rbacGen, err := s.GetRBACRules(logr.Discard(), tt.args.config)
+			rbacGen, err := s.GetClusterRoleRules(logr.Discard(), tt.args.config)
 			assert.NoError(t, err)
 			assert.Nil(t, rbacGen)
 			livenessProbe, livenessErr := s.GetLivenessProbe(logr.Discard(), tt.args.config)

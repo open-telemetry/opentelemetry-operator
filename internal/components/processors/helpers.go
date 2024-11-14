@@ -39,8 +39,14 @@ func ProcessorFor(name string) components.Parser {
 }
 
 var componentParsers = []components.Parser{
-	components.NewBuilder[K8sAttributeConfig]().WithName("k8sattributes").WithRbacGen(GenerateK8SAttrRbacRules).MustBuild(),
-	components.NewBuilder[ResourceDetectionConfig]().WithName("resourcedetection").WithRbacGen(GenerateResourceDetectionRbacRules).MustBuild(),
+	components.NewBuilder[K8sAttributeConfig]().
+		WithName("k8sattributes").
+		WithClusterRoleRulesGen(generateK8SAttrClusterRoleRules).
+		MustBuild(),
+	components.NewBuilder[ResourceDetectionConfig]().
+		WithName("resourcedetection").
+		WithClusterRoleRulesGen(generateResourceDetectionClusterRoleRules).
+		MustBuild(),
 }
 
 func init() {

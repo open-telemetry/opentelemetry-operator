@@ -145,7 +145,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 	tests := []testCase[*components.SingleEndpointConfig]{
 		{
 			name: "valid config with endpoint",
-			g:    components.NewSinglePortParserBuilder("test", 0).WithRbacGen(rbacGenFunc).MustBuild(),
+			g:    components.NewSinglePortParserBuilder("test", 0).WithClusterRoleRulesGen(rbacGenFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -163,7 +163,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 		},
 		{
 			name: "valid config with listen_address",
-			g:    components.NewSinglePortParserBuilder("test", 0).WithRbacGen(rbacGenFunc).MustBuild(),
+			g:    components.NewSinglePortParserBuilder("test", 0).WithClusterRoleRulesGen(rbacGenFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -181,7 +181,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 		},
 		{
 			name: "invalid config with no endpoint or listen_address",
-			g:    components.NewSinglePortParserBuilder("test", 0).WithRbacGen(rbacGenFunc).MustBuild(),
+			g:    components.NewSinglePortParserBuilder("test", 0).WithClusterRoleRulesGen(rbacGenFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{},
@@ -201,7 +201,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 		},
 		{
 			name: "failed to parse config",
-			g:    components.NewSinglePortParserBuilder("test", 0).WithRbacGen(rbacGenFunc).MustBuild(),
+			g:    components.NewSinglePortParserBuilder("test", 0).WithClusterRoleRulesGen(rbacGenFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
 				config: func() {},
@@ -213,8 +213,8 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.g.GetRBACRules(tt.args.logger, tt.args.config)
-			if !tt.wantErr(t, err, fmt.Sprintf("GetRBACRules(%v, %v)", tt.args.logger, tt.args.config)) {
+			got, err := tt.g.GetClusterRoleRules(tt.args.logger, tt.args.config)
+			if !tt.wantErr(t, err, fmt.Sprintf("GetClusterRoleRules(%v, %v)", tt.args.logger, tt.args.config)) {
 				return
 			}
 			assert.Equalf(t, tt.want, got, "GetRBACRules(%v, %v)", tt.args.logger, tt.args.config)

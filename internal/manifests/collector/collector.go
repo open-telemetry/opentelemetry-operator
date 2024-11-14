@@ -80,6 +80,25 @@ func Build(params manifests.Params) ([]client.Object, error) {
 			resourceManifests = append(resourceManifests, res)
 		}
 	}
+
+	roles, err := Role(params)
+	if err != nil {
+		return nil, err
+	}
+	// NOTE: we cannot just unpack the slice, the type checker doesn't coerce the type correctly.
+	for _, role := range roles {
+		resourceManifests = append(resourceManifests, role)
+	}
+
+	roleBindings, err := RoleBinding(params)
+	if err != nil {
+		return nil, err
+	}
+	// NOTE: we cannot just unpack the slice, the type checker doesn't coerce the type correctly.
+	for _, roleBinding := range roleBindings {
+		resourceManifests = append(resourceManifests, roleBinding)
+	}
+
 	routes, err := Routes(params)
 	if err != nil {
 		return nil, err
