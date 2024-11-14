@@ -1393,6 +1393,17 @@ spec:
                 type: object
               nodejs:
                 properties:
+                  histogramBuckets:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        instrumentName:
+                          type: string
+                        buckets:
+                          type: array
+                          items:
+                            type: number
                   env:
                     items:
                       properties:
