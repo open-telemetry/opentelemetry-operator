@@ -28344,7 +28344,7 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
           PodMonitors to be selected for target discovery.
 This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
 PodMonitor's meta labels. The requirements are ANDed.
-Empty or nil map matches all pod monitors.<br/>
+Empty map matches all pod monitors, nil selector matches no objects.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -28366,7 +28366,7 @@ Default: "30s"<br/>
           ServiceMonitors to be selected for target discovery.
 This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
 ServiceMonitor's meta labels. The requirements are ANDed.
-Empty or nil map matches all service monitors.<br/>
+Empty map matches all service monitors, nil selector matches no objects.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
