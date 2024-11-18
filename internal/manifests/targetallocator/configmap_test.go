@@ -171,6 +171,14 @@ prometheus_cr:
     matchlabels:
       release: my-instance
     matchexpressions: []
+  probe_selector:
+    matchlabels:
+      release: my-instance
+    matchexpressions: []
+  scrape_config_selector:
+    matchlabels:
+      release: my-instance
+    matchexpressions: []
   service_monitor_selector:
     matchlabels:
       release: my-instance
@@ -185,6 +193,14 @@ prometheus_cr:
 			},
 		}
 		targetAllocator.Spec.PrometheusCR.ServiceMonitorSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"release": "my-instance",
+			}}
+		targetAllocator.Spec.PrometheusCR.ScrapeConfigSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"release": "my-instance",
+			}}
+		targetAllocator.Spec.PrometheusCR.ProbeSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"release": "my-instance",
 			}}
@@ -224,6 +240,8 @@ filter_strategy: relabel-config
 prometheus_cr:
   enabled: true
   pod_monitor_selector: null
+  probe_selector: null
+  scrape_config_selector: null
   scrape_interval: 30s
   service_monitor_selector: null
 `,
@@ -285,6 +303,8 @@ https:
 prometheus_cr:
   enabled: true
   pod_monitor_selector: null
+  probe_selector: null
+  scrape_config_selector: null
   scrape_interval: 30s
   service_monitor_selector: null
 `,

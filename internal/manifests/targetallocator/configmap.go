@@ -104,6 +104,10 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 
 		prometheusCRConfig["pod_monitor_selector"] = taSpec.PrometheusCR.PodMonitorSelector
 
+		prometheusCRConfig["scrape_config_selector"] = taSpec.PrometheusCR.ScrapeConfigSelector
+
+		prometheusCRConfig["probe_selector"] = taSpec.PrometheusCR.ProbeSelector
+
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 
