@@ -6,7 +6,7 @@ metadata:
 rules:
 - apiGroups: ["monitoring.coreos.com"]
   resources: ["prometheuses/api"]
-  verbs: ["get", "list", "watch"]
+  verbs: ["get", "list", "watch", "create"]
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

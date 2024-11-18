@@ -146,6 +146,9 @@ var (
 		components.NewBuilder[k8sclusterConfig]().WithName("k8s_cluster").
 			WithRbacGen(generatek8sclusterRbacRules).
 			MustBuild(),
+		components.NewBuilder[k8sobjectsConfig]().WithName("k8sobjects").
+			WithRbacGen(generatek8sobjectsRbacRules).
+			MustBuild(),
 		NewScraperParser("prometheus"),
 		NewScraperParser("sshcheck"),
 		NewScraperParser("cloudfoundry"),

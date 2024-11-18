@@ -62,8 +62,6 @@ jobs:
       with:
         path: |
           /home/runner/.cache/golangci-lint
-          /home/runner/go/pkg/mod
-          ./bin
         key: golangcilint-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           golangcilint-

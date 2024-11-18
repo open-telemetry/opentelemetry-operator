@@ -1,0 +1,22 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: chainsaw-k8sobjects
+spec:
+  config:
+    receivers:
+      k8sobjects:
+        auth_type: serviceAccount
+        objects:
+          - name: pods
+            mode: pull
+    processors:
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: [k8sobjects]
+          processors: []
+          exporters: [debug]

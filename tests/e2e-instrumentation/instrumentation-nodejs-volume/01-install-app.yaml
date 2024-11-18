@@ -29,4 +29,4 @@ spec:
         env:
         - name: NODE_PATH
           value: /usr/local/lib/node_modules
-    automountServiceAccountToken: false
+      automountServiceAccountToken: false
