@@ -424,7 +424,7 @@ func main() {
 	}
 
 	if cfg.PrometheusCRAvailability() == prometheus.Available {
-		operatorMetrics, opError := operatormetrics.NewOperatorMetrics(mgr.GetConfig(), scheme)
+		operatorMetrics, opError := operatormetrics.NewOperatorMetrics(mgr.GetConfig(), scheme, ctrl.Log.WithName("operator-metrics-sm"))
 		if opError != nil {
 			setupLog.Error(opError, "Failed to create the operator metrics SM")
 		}
