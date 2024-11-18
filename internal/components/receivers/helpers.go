@@ -143,6 +143,9 @@ var (
 		components.NewBuilder[k8seventsConfig]().WithName("k8s_events").
 			WithClusterRoleRulesGen(generatek8seventsClusterRoleRules).
 			MustBuild(),
+		components.NewBuilder[k8sobjectsConfig]().WithName("k8sobjects").
+			WithClusterRoleRulesGen(generatek8sobjectsClusterRoleRules).
+			MustBuild(),
 		components.NewBuilder[prometheusReceiverConfig]().WithName("prometheus").
 			WithPort(components.UnsetPort).
 			WithRoleGen(generatePrometheusReceiverRoles).
