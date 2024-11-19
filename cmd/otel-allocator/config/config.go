@@ -58,6 +58,7 @@ type Config struct {
 	PrometheusCR       PrometheusCRConfig     `yaml:"prometheus_cr,omitempty"`
 	HTTPS              HTTPSServerConfig      `yaml:"https,omitempty"`
 	CollectorWatcher   CollectorWatcherConfig `yaml:"collector_watcher,omitempty"`
+	Runtime            RuntimeConfig          `yaml:"runtime,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -87,6 +88,14 @@ type AwsCloudMapConfig struct {
 	ServiceName string `yaml:"service_name,omitempty"`
 }
 
+type RuntimeConfig struct {
+	Kubernetes KubernetesRuntimeConfig `yaml:"kubernetes,omitempty"`
+}
+
+type KubernetesRuntimeConfig struct {
+	Enabled bool `yaml:"enabled,omitempty"`
+}
+
 func LoadFromFile(file string, target *Config) error {
 	return unmarshal(target, file)
 }
@@ -102,19 +111,28 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	if err != nil {
 		return err
 	}
-	clusterConfig, err := clientcmd.BuildConfigFromFlags("", target.KubeConfigFilePath)
-	if err != nil {
-		pathError := &fs.PathError{}
-		if ok := errors.As(err, &pathError); !ok {
-			return err
-		}
-		clusterConfig, err = rest.InClusterConfig()
-		if err != nil {
-			return err
-		}
-		target.KubeConfigFilePath = ""
+
+	if runtimeKubernetesEnabled, changed, flagErr := getRuntimeKubernetesEnabled(flagSet); flagErr != nil {
+		return flagErr
+	} else if changed {
+		target.Runtime.Kubernetes.Enabled = runtimeKubernetesEnabled
 	}
-	target.ClusterConfig = clusterConfig
+
+	if target.Runtime.Kubernetes.Enabled {
+		clusterConfig, err := clientcmd.BuildConfigFromFlags("", target.KubeConfigFilePath)
+		if err != nil {
+			pathError := &fs.PathError{}
+			if ok := errors.As(err, &pathError); !ok {
+				return err
+			}
+			clusterConfig, err = rest.InClusterConfig()
+			if err != nil {
+				return err
+			}
+			target.KubeConfigFilePath = ""
+		}
+		target.ClusterConfig = clusterConfig
+	}
 
 	target.ListenAddr, err = getListenAddr(flagSet)
 	if err != nil {

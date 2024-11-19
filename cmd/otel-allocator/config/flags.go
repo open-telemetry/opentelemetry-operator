@@ -25,19 +25,20 @@ import (
 
 // Flag names.
 const (
-	targetAllocatorName            = "target-allocator"
-	configFilePathFlagName         = "config-file"
-	listenAddrFlagName             = "listen-addr"
-	prometheusCREnabledFlagName    = "enable-prometheus-cr-watcher"
-	kubeConfigPathFlagName         = "kubeconfig-path"
-	httpsEnabledFlagName           = "enable-https-server"
-	listenAddrHttpsFlagName        = "listen-addr-https"
-	httpsCAFilePathFlagName        = "https-ca-file"
-	httpsTLSCertFilePathFlagName   = "https-tls-cert-file"
-	httpsTLSKeyFilePathFlagName    = "https-tls-key-file"
-	collectorWatcherTypeFlagName   = "collector-watcher-type"
-	awsCloudMapNamespaceFlagName   = "aws-cloud-map-namespace"
-	awsCloudMapServiceNameFlagName = "aws-cloud-map-service-name"
+	targetAllocatorName              = "target-allocator"
+	configFilePathFlagName           = "config-file"
+	listenAddrFlagName               = "listen-addr"
+	prometheusCREnabledFlagName      = "enable-prometheus-cr-watcher"
+	kubeConfigPathFlagName           = "kubeconfig-path"
+	httpsEnabledFlagName             = "enable-https-server"
+	listenAddrHttpsFlagName          = "listen-addr-https"
+	httpsCAFilePathFlagName          = "https-ca-file"
+	httpsTLSCertFilePathFlagName     = "https-tls-cert-file"
+	httpsTLSKeyFilePathFlagName      = "https-tls-key-file"
+	collectorWatcherTypeFlagName     = "collector-watcher-type"
+	awsCloudMapNamespaceFlagName     = "aws-cloud-map-namespace"
+	awsCloudMapServiceNameFlagName   = "aws-cloud-map-service-name"
+	runtimeKubernetesEnabledFlagName = "runtime-kubernetes-enabled"
 )
 
 // We can't bind this flag to our FlagSet, so we need to handle it separately.
@@ -153,5 +154,14 @@ func getAWSCloudMapServiceName(flagSet *pflag.FlagSet) (value string, changed bo
 		return
 	}
 	value, err = flagSet.GetString(awsCloudMapServiceNameFlagName)
+	return
+}
+
+func getRuntimeKubernetesEnabled(flagSet *pflag.FlagSet) (value bool, changed bool, err error) {
+	if changed = flagSet.Changed(runtimeKubernetesEnabledFlagName); !changed {
+		value, err = true, nil
+		return
+	}
+	value, err = flagSet.GetBool(runtimeKubernetesEnabledFlagName)
 	return
 }
