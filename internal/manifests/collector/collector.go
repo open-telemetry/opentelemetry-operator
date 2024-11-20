@@ -84,18 +84,10 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		}
 	}
 
-	if params.ErrorAsWarning && params.Config.CreateRBACPermissions() == rbac.NotAvailable && params.Reviewer != nil {
-		saName := params.OtelCol.Spec.ServiceAccount
-		if saName == "" {
-			sa, err := manifests.Factory(ServiceAccount)(params)
-			if err != nil {
-				return nil, err
-			}
-			saName = sa.GetName()
-		}
-		warnings, err := CheckRbacRules(params, saName)
+	if needsCheckSaPermissions(params) {
+		warnings, err := CheckRbacRules(params, params.OtelCol.Spec.ServiceAccount)
 		if err != nil {
-			return nil, fmt.Errorf("error checking RBAC rules for serviceAccount %s: %w", saName, err)
+			return nil, fmt.Errorf("error checking RBAC rules for serviceAccount %s: %w", params.OtelCol.Spec.ServiceAccount, err)
 		}
 
 		var w []error
@@ -114,4 +106,11 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		resourceManifests = append(resourceManifests, route)
 	}
 	return resourceManifests, nil
+}
+
+func needsCheckSaPermissions(params manifests.Params) bool {
+	return params.ErrorAsWarning &&
+		params.Config.CreateRBACPermissions() == rbac.NotAvailable &&
+		params.Reviewer != nil &&
+		params.OtelCol.Spec.ServiceAccount != ""
 }

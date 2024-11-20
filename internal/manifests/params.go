@@ -36,6 +36,6 @@ type Params struct {
 	TargetAllocator *v1alpha1.TargetAllocator
 	OpAMPBridge     v1alpha1.OpAMPBridge
 	Config          config.Config
-	Reviewer        *rbac.Reviewer
+	Reviewer        rbac.SAReviewer
 	ErrorAsWarning  bool
 }
