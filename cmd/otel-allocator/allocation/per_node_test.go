@@ -26,6 +26,15 @@ import (
 
 var loggerPerNode = logf.Log.WithName("unit-tests")
 
+func GetTargetsWithNodeName(targets []*target.Item) (targetsWithNodeName []*target.Item) {
+	for _, item := range targets {
+		if item.GetNodeName() != "" {
+			targetsWithNodeName = append(targetsWithNodeName, item)
+		}
+	}
+	return targetsWithNodeName
+}
+
 // Tests that two targets with the same target url and job name but different label set are both added.
 func TestAllocationPerNode(t *testing.T) {
 	// prepare allocator with initial targets and collectors
@@ -83,13 +92,18 @@ func TestAllocationPerNode(t *testing.T) {
 		// only the first two targets should be allocated
 		itemsForCollector := s.GetTargetsForCollectorAndJob(actualItem.CollectorName, actualItem.JobName)
 
-		// first two should be assigned one to each collector; if third target, should not be assigned
+		// first two should be assigned one to each collector; if third target, it should be assigned
+		// according to the fallback strategy which may assign it to the otherwise empty collector or
+		// one of the others, depending on the strategy and collector loop order
 		if targetHash == thirdTarget.Hash() {
-			assert.Len(t, itemsForCollector, 0)
+			assert.Empty(t, item.GetNodeName())
+			assert.LessOrEqual(t, len(itemsForCollector), 2)
 			continue
 		}
-		assert.Len(t, itemsForCollector, 1)
-		assert.Equal(t, actualItem, itemsForCollector[0])
+
+		// Only check targets that have been assigned using the per-node (not fallback) strategy here
+		assert.Len(t, GetTargetsWithNodeName(itemsForCollector), 1)
+		assert.Equal(t, actualItem, GetTargetsWithNodeName(itemsForCollector)[0])
 	}
 }
 

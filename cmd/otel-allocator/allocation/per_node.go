@@ -25,12 +25,14 @@ const perNodeStrategyName = "per-node"
 var _ Strategy = &perNodeStrategy{}
 
 type perNodeStrategy struct {
-	collectorByNode map[string]*Collector
+	collectorByNode  map[string]*Collector
+	fallbackStrategy Strategy
 }
 
-func newPerNodeStrategy() Strategy {
+func newPerNodeStrategy(fallbackStrategy Strategy) Strategy {
 	return &perNodeStrategy{
-		collectorByNode: make(map[string]*Collector),
+		collectorByNode:  make(map[string]*Collector),
+		fallbackStrategy: fallbackStrategy,
 	}
 }
 
@@ -40,6 +42,10 @@ func (s *perNodeStrategy) GetName() string {
 
 func (s *perNodeStrategy) GetCollectorForTarget(collectors map[string]*Collector, item *target.Item) (*Collector, error) {
 	targetNodeName := item.GetNodeName()
+	if targetNodeName == "" {
+		return s.fallbackStrategy.GetCollectorForTarget(collectors, item)
+	}
+
 	collector, ok := s.collectorByNode[targetNodeName]
 	if !ok {
 		return nil, fmt.Errorf("could not find collector for node %s", targetNodeName)
@@ -54,4 +60,5 @@ func (s *perNodeStrategy) SetCollectors(collectors map[string]*Collector) {
 			s.collectorByNode[collector.NodeName] = collector
 		}
 	}
+	s.fallbackStrategy.SetCollectors(collectors)
 }

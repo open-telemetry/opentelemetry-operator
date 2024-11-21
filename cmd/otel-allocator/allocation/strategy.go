@@ -149,7 +149,7 @@ func init() {
 		panic(err)
 	}
 	err = Register(perNodeStrategyName, func(log logr.Logger, opts ...AllocationOption) Allocator {
-		return newAllocator(log, newPerNodeStrategy(), opts...)
+		return newAllocator(log, newPerNodeStrategy(newleastWeightedStrategy()), opts...)
 	})
 	if err != nil {
 		panic(err)
