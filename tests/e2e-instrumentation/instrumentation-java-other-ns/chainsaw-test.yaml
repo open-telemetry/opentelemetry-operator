@@ -45,6 +45,40 @@ spec:
     catch:
       - podLogs:
           selector: app=my-java-other-ns
+  - name: "wait for app to be ready"
+    try:
+      - sleep:
+          duration: 5s
+  - name: Make a request to the app
+    try:
+      - script:
+          content: |
+            #!/bin/bash
+            # set -ex
+            pod=$(kubectl get pods -n $NAMESPACE | awk '{print $1}' | tail -n 1)
+            kubectl get --raw /api/v1/namespaces/$NAMESPACE/pods/${pod}:8080/proxy/
+          check:
+            ($error): ~
+            ($stdout): Hello World!
+  - name: "wait for the telemetry to be there"
+    try:
+      - sleep:
+          duration: 5s
+  - name: Check the sidecar has sent request data successfully
+    try:
+      - script:
+          content: |
+            #!/bin/bash
+            # set -ex
+            pod=$(kubectl get pods -n $NAMESPACE | awk '{print $1}' | tail -n 1)
+            kubectl get --raw /api/v1/namespaces/$NAMESPACE/pods/${pod}:8888/proxy/metrics
+          check:
+            ($error): ~
+            # TODO: Check that the number is non-zero and that failed is zero
+            (wildcard('*otelcol_exporter_sent_spans*', $stdout)): true
+    catch:
+      - podLogs:
+          selector: app=my-java-other-ns
   - name: step-04
     try:
     - delete:
