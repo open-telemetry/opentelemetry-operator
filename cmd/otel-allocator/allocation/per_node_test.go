@@ -36,7 +36,7 @@ func GetTargetsWithNodeName(targets []*target.Item) (targetsWithNodeName []*targ
 }
 
 // Tests that four targets, with one of them lacking node labels, are assigned except for the
-// target that lacks node labels
+// target that lacks node labels.
 func TestAllocationPerNode(t *testing.T) {
 	// prepare allocator with initial targets and collectors
 	s, _ := New("per-node", loggerPerNode)
@@ -103,7 +103,7 @@ func TestAllocationPerNode(t *testing.T) {
 	}
 }
 
-// Tests that four targets, with one of them missing node labels, are all assigned
+// Tests that four targets, with one of them missing node labels, are all assigned.
 func TestAllocationPerNodeUsingFallback(t *testing.T) {
 	// prepare allocator with initial targets and collectors
 	s, _ := New("per-node", loggerPerNode, WithFallbackStrategy(consistentHashingStrategyName))
