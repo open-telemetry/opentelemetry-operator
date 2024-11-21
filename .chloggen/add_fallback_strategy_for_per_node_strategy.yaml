@@ -5,7 +5,7 @@ change_type: 'enhancement'
 component: target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Added consistent-hashing as fallback strategy for per-node allocation strategy
+note: Added allocation_fallback_strategy option as fallback strategy for per-node allocation strategy
 
 # One or more tracking issues related to the change
 issues: [3477]
