@@ -97,7 +97,7 @@ func TestAllocationPerNode(t *testing.T) {
 		// one of the others, depending on the strategy and collector loop order
 		if targetHash == thirdTarget.Hash() {
 			assert.Empty(t, item.GetNodeName())
-			assert.LessOrEqual(t, len(itemsForCollector), 2)
+			assert.NotZero(t, len(itemsForCollector))
 			continue
 		}
 
