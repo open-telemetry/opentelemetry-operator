@@ -81,7 +81,7 @@ func main() {
 	log := ctrl.Log.WithName("allocator")
 
 	allocatorPrehook = prehook.New(cfg.FilterStrategy, log)
-	allocator, err = allocation.New(cfg.AllocationStrategy, log, allocation.WithFilter(allocatorPrehook))
+	allocator, err = allocation.New(cfg.AllocationStrategy, log, allocation.WithFilter(allocatorPrehook), allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
 	if err != nil {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)

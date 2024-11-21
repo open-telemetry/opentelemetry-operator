@@ -35,10 +35,78 @@ func GetTargetsWithNodeName(targets []*target.Item) (targetsWithNodeName []*targ
 	return targetsWithNodeName
 }
 
-// Tests that two targets with the same target url and job name but different label set are both added.
+// Tests that four targets, with one of them lacking node labels, are assigned except for the
+// target that lacks node labels
 func TestAllocationPerNode(t *testing.T) {
 	// prepare allocator with initial targets and collectors
 	s, _ := New("per-node", loggerPerNode)
+
+	cols := MakeNCollectors(4, 0)
+	s.SetCollectors(cols)
+	firstLabels := labels.Labels{
+		{Name: "test", Value: "test1"},
+		{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
+	}
+	secondLabels := labels.Labels{
+		{Name: "test", Value: "test2"},
+		{Name: "__meta_kubernetes_node_name", Value: "node-1"},
+	}
+	// no label, should be skipped
+	thirdLabels := labels.Labels{
+		{Name: "test", Value: "test3"},
+	}
+	// endpointslice target kind and name
+	fourthLabels := labels.Labels{
+		{Name: "test", Value: "test4"},
+		{Name: "__meta_kubernetes_endpointslice_address_target_kind", Value: "Node"},
+		{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-3"},
+	}
+
+	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
+	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
+	thirdTarget := target.NewItem("sample-name", "0.0.0.0:8000", thirdLabels, "")
+	fourthTarget := target.NewItem("sample-name", "0.0.0.0:8000", fourthLabels, "")
+
+	targetList := map[string]*target.Item{
+		firstTarget.Hash():  firstTarget,
+		secondTarget.Hash(): secondTarget,
+		thirdTarget.Hash():  thirdTarget,
+		fourthTarget.Hash(): fourthTarget,
+	}
+
+	// test that targets and collectors are added properly
+	s.SetTargets(targetList)
+
+	// verify length
+	actualItems := s.TargetItems()
+
+	// one target should be skipped
+	expectedTargetLen := len(targetList)
+	assert.Len(t, actualItems, expectedTargetLen)
+
+	// verify allocation to nodes
+	for targetHash, item := range targetList {
+		actualItem, found := actualItems[targetHash]
+		// if third target, should be skipped
+		assert.True(t, found, "target with hash %s not found", item.Hash())
+
+		// only the first two targets should be allocated
+		itemsForCollector := s.GetTargetsForCollectorAndJob(actualItem.CollectorName, actualItem.JobName)
+
+		// first two should be assigned one to each collector; if third target, should not be assigned
+		if targetHash == thirdTarget.Hash() {
+			assert.Len(t, itemsForCollector, 0)
+			continue
+		}
+		assert.Len(t, itemsForCollector, 1)
+		assert.Equal(t, actualItem, itemsForCollector[0])
+	}
+}
+
+// Tests that four targets, with one of them missing node labels, are all assigned
+func TestAllocationPerNodeUsingFallback(t *testing.T) {
+	// prepare allocator with initial targets and collectors
+	s, _ := New("per-node", loggerPerNode, WithFallbackStrategy(consistentHashingStrategyName))
 
 	cols := MakeNCollectors(4, 0)
 	s.SetCollectors(cols)

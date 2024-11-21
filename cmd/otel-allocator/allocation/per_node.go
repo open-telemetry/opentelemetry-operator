@@ -29,11 +29,15 @@ type perNodeStrategy struct {
 	fallbackStrategy Strategy
 }
 
-func newPerNodeStrategy(fallbackStrategy Strategy) Strategy {
+func newPerNodeStrategy() Strategy {
 	return &perNodeStrategy{
 		collectorByNode:  make(map[string]*Collector),
-		fallbackStrategy: fallbackStrategy,
+		fallbackStrategy: nil,
 	}
+}
+
+func (s *perNodeStrategy) SetFallbackStrategy(fallbackStrategy Strategy) {
+	s.fallbackStrategy = fallbackStrategy
 }
 
 func (s *perNodeStrategy) GetName() string {
@@ -42,7 +46,7 @@ func (s *perNodeStrategy) GetName() string {
 
 func (s *perNodeStrategy) GetCollectorForTarget(collectors map[string]*Collector, item *target.Item) (*Collector, error) {
 	targetNodeName := item.GetNodeName()
-	if targetNodeName == "" {
+	if targetNodeName == "" && s.fallbackStrategy != nil {
 		return s.fallbackStrategy.GetCollectorForTarget(collectors, item)
 	}
 
@@ -60,5 +64,8 @@ func (s *perNodeStrategy) SetCollectors(collectors map[string]*Collector) {
 			s.collectorByNode[collector.NodeName] = collector
 		}
 	}
-	s.fallbackStrategy.SetCollectors(collectors)
+
+	if s.fallbackStrategy != nil {
+		s.fallbackStrategy.SetCollectors(collectors)
+	}
 }
