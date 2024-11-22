@@ -147,7 +147,7 @@ func TestAllocationPerNodeUsingFallback(t *testing.T) {
 	// verify length
 	actualItems := s.TargetItems()
 
-	// one target should be skipped
+	// all targets should be allocated
 	expectedTargetLen := len(targetList)
 	assert.Len(t, actualItems, expectedTargetLen)
 
