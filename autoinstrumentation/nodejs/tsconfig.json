@@ -11,7 +11,7 @@
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
     "inlineSources": true,
-    "module": "commonjs",
+    "module": "node16",
     "newLine": "LF",
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
@@ -27,6 +27,7 @@
   },
   "include": [
     "src/**/*.ts",
+    "src/**/*.mts"
   ],
   "exclude": [
     "node_modules"
