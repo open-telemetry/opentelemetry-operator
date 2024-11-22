@@ -70,7 +70,7 @@ var (
 	// EnableTargetAllocatorFallbackStrategy is the feature gate that enables consistent-hashing as the fallback
 	// strategy for allocation strategies that might not assign all jobs (per-node).
 	EnableTargetAllocatorFallbackStrategy = featuregate.GlobalRegistry().MustRegister(
-		"operator.targetallocator.mtls",
+		"operator.targetallocator.fallbackstrategy",
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("enables fallback allocation strategy for the target allocator"),
 		featuregate.WithRegisterFromVersion("v0.114.0"),
