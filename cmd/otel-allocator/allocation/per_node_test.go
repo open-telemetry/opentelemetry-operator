@@ -118,7 +118,7 @@ func TestAllocationPerNodeUsingFallback(t *testing.T) {
 		{Name: "test", Value: "test2"},
 		{Name: "__meta_kubernetes_node_name", Value: "node-1"},
 	}
-	// no label, should be skipped
+	// no label, should be allocated by the fallback strategy
 	thirdLabels := labels.Labels{
 		{Name: "test", Value: "test3"},
 	}
