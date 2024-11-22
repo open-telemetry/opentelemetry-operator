@@ -5,7 +5,7 @@ change_type: 'enhancement'
 component: target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Added allocation_fallback_strategy option as fallback strategy for per-node allocation strategy
+note: Added allocation_fallback_strategy option as fallback strategy for per-node allocation strategy, can be enabled with feature flag operator.targetallocator.fallbackstrategy
 
 # One or more tracking issues related to the change
 issues: [3477]
@@ -16,4 +16,6 @@ issues: [3477]
 subtext: |
   If using per-node allocation strategy, targets that are not attached to a node will not
   be allocated. As the per-node strategy is required when running as a daemonset, it is 
-  not possible to assign some targets under a daemonset deployment
+  not possible to assign some targets under a daemonset deployment.
+  Feature flag operator.targetallocator.fallbackstrategy has been added and results in consistent-hashing
+  being used as the fallback allocation strategy for "per-node" only at this time.
