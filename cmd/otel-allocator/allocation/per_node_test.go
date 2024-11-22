@@ -154,7 +154,7 @@ func TestAllocationPerNodeUsingFallback(t *testing.T) {
 	// verify allocation to nodes
 	for targetHash, item := range targetList {
 		actualItem, found := actualItems[targetHash]
-		// if third target, should be skipped
+		// if third target, should be allocated by the fallback strategy
 		assert.True(t, found, "target with hash %s not found", item.Hash())
 
 		// only the first two targets should be allocated
