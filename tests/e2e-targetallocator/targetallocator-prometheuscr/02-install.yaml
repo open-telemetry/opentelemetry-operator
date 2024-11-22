@@ -28,6 +28,7 @@ spec:
       enabled: true
       scrapeInterval: 1s
       scrapeConfigSelector: {}
+      probeSelector: {}
     serviceAccount: ta
 ---
 apiVersion: monitoring.coreos.com/v1alpha1

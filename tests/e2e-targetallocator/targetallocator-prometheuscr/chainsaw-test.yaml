@@ -28,3 +28,6 @@ spec:
           file: 02-install.yaml
       - assert:
           file: 02-assert.yaml
+    catch:
+      - podLogs:
+          selector: app.kubernetes.io/managed-by=opentelemetry-operator
