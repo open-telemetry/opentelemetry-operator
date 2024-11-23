@@ -15,12 +15,16 @@
 package collector
 
 import (
+	"context"
+	"fmt"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
 func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
@@ -84,4 +88,27 @@ func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, er
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}, nil
+}
+
+func CheckRbacRules(params manifests.Params, saName string) ([]string, error) {
+	ctx := context.Background()
+
+	rules, err := params.OtelCol.Spec.Config.GetAllRbacRules(params.Log)
+	if err != nil {
+		return nil, err
+	}
+
+	r := []*rbacv1.PolicyRule{}
+
+	for _, rule := range rules {
+		rule := rule
+		r = append(r, &rule)
+	}
+
+	if subjectAccessReviews, err := params.Reviewer.CheckPolicyRules(ctx, saName, params.OtelCol.Namespace, r...); err != nil {
+		return nil, fmt.Errorf("%s: %w", "unable to check rbac rules", err)
+	} else if allowed, deniedReviews := rbac.AllSubjectAccessReviewsAllowed(subjectAccessReviews); !allowed {
+		return rbac.WarningsGroupedByResource(deniedReviews), nil
+	}
+	return nil, nil
 }
