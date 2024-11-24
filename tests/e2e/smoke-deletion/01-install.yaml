@@ -1,0 +1,22 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: stateful
+spec:
+  autoscaler: null
+  config:
+    receivers:
+      nop:
+    exporters:
+      nop:
+    service:
+      pipelines:
+        metrics:
+          receivers: [nop]
+          exporters: [nop]
+  ports: []
+  targetAllocator:
+    enabled: false
+  observability:
+    metrics:
+      enableMetrics: false
