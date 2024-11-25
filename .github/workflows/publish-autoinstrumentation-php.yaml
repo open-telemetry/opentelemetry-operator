@@ -64,7 +64,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Prepare files for docker image
-        run: ./autoinstrumentation/php/prepare_files_for_docker_image.sh --ext-ver ${{ env.VERSION }} --dest-dir ${PWD}/autoinstrumentation/php/files_for_docker_image
+        run: pushd ./autoinstrumentation/php ; ./prepare_files_for_docker_image.sh --ext-ver ${{ env.VERSION }} --dest-dir ${PWD}/files_for_docker_image ; popd
 
       - name: Build and push
         uses: docker/build-push-action@v6

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -xe -o pipefail
 
 PHP_versions=(8.1 8.2 8.3)
 libc_variants=(glibc musl)
