@@ -6,7 +6,7 @@
         "open-telemetry/exporter-otlp": "1.1.0",
         "open-telemetry/opentelemetry-auto-guzzle": "1.0.1",
         "open-telemetry/opentelemetry-auto-http-async": "1.0.1",
-        "open-telemetry/opentelemetry-auto-laravel": "1.0.0",
+        "open-telemetry/opentelemetry-auto-laravel": "1.0.1",
         "open-telemetry/opentelemetry-auto-psr15": "1.0.6",
         "open-telemetry/opentelemetry-auto-psr18": "1.0.4",
         "open-telemetry/opentelemetry-auto-slim": "1.0.7",
