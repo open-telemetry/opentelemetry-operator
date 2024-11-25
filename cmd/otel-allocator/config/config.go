@@ -46,16 +46,17 @@ const (
 )
 
 type Config struct {
-	ListenAddr         string                `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath string                `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig      *rest.Config          `yaml:"-"`
-	RootLogger         logr.Logger           `yaml:"-"`
-	CollectorSelector  *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	PromConfig         *promconfig.Config    `yaml:"config"`
-	AllocationStrategy string                `yaml:"allocation_strategy,omitempty"`
-	FilterStrategy     string                `yaml:"filter_strategy,omitempty"`
-	PrometheusCR       PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
-	HTTPS              HTTPSServerConfig     `yaml:"https,omitempty"`
+	ListenAddr                 string                `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath         string                `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig              *rest.Config          `yaml:"-"`
+	RootLogger                 logr.Logger           `yaml:"-"`
+	CollectorSelector          *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
+	PromConfig                 *promconfig.Config    `yaml:"config"`
+	AllocationStrategy         string                `yaml:"allocation_strategy,omitempty"`
+	AllocationFallbackStrategy string                `yaml:"allocation_fallback_strategy,omitempty"`
+	FilterStrategy             string                `yaml:"filter_strategy,omitempty"`
+	PrometheusCR               PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
+	HTTPS                      HTTPSServerConfig     `yaml:"https,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -165,8 +166,9 @@ func unmarshal(cfg *Config, configFile string) error {
 
 func CreateDefaultConfig() Config {
 	return Config{
-		AllocationStrategy: DefaultAllocationStrategy,
-		FilterStrategy:     DefaultFilterStrategy,
+		AllocationStrategy:         DefaultAllocationStrategy,
+		AllocationFallbackStrategy: "",
+		FilterStrategy:             DefaultFilterStrategy,
 		PrometheusCR: PrometheusCRConfig{
 			ScrapeInterval: DefaultCRScrapeInterval,
 		},

@@ -392,6 +392,7 @@ func main() {
 		Scheme:   mgr.GetScheme(),
 		Config:   cfg,
 		Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
+		Reviewer: reviewer,
 	})
 
 	if err = collectorReconciler.SetupWithManager(mgr); err != nil {
@@ -456,6 +457,8 @@ func main() {
 				warnings = append(warnings, newErr.Error())
 				return warnings
 			}
+
+			params.ErrorAsWarning = true
 			_, newErr = collectorManifests.Build(params)
 			if newErr != nil {
 				warnings = append(warnings, newErr.Error())
