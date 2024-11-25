@@ -20,7 +20,7 @@ data:
   targetallocator.yaml:
     ( contains(@, join(':', ['service_monitor_selector', ' null'])) ): true
     ( contains(@, join(':', ['pod_monitor_selector', ' null'])) ): true
-    ( contains(@, join(':', ['probe_selector', ' null'])) ): true
+    ( contains(@, join(':', ['probe_selector', ' null'])) ): false
     ( contains(@, join(':', ['scrape_config_selector', ' null'])) ): false
     ( contains(@, join(':', ['matchlabels', ' {}}'])) ): false
     ( contains(@, join(':', ['matchexpressions', ' {}}'])) ): false
