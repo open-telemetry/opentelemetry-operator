@@ -24,6 +24,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
@@ -249,12 +250,13 @@ func makeNCollectorJSON(random rand.Rand, numCollectors, numItems int) map[strin
 }
 
 func makeNTargetItems(random rand.Rand, numItems, numLabels int) []*target.Item {
+	builder := labels.NewBuilder(labels.EmptyLabels())
 	items := make([]*target.Item, 0, numItems)
 	for i := 0; i < numItems; i++ {
 		items = append(items, target.NewItem(
 			randSeq(random, 80),
 			randSeq(random, 150),
-			makeNNewLabels(random, numLabels),
+			makeNNewLabels(builder, random, numLabels),
 			randSeq(random, 30),
 		))
 	}
@@ -270,10 +272,10 @@ func makeNTargetJSON(random rand.Rand, numItems, numLabels int) []*targetJSON {
 	return targets
 }
 
-func makeNNewLabels(random rand.Rand, n int) model.LabelSet {
-	labels := make(map[model.LabelName]model.LabelValue, n)
+func makeNNewLabels(builder *labels.Builder, random rand.Rand, n int) labels.Labels {
+	builder.Reset(labels.EmptyLabels())
 	for i := 0; i < n; i++ {
-		labels[model.LabelName(randSeq(random, 20))] = model.LabelValue(randSeq(random, 20))
+		builder.Set(randSeq(random, 20), randSeq(random, 20))
 	}
-	return labels
+	return builder.Labels()
 }

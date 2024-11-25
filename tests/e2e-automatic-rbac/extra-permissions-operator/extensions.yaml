@@ -1,0 +1,13 @@
+---
+- op: add
+  path: /rules/-
+  value:
+    apiGroups:
+    - extensions
+    resources:
+    - deployments
+    - replicasets
+    verbs:
+    - get
+    - list
+    - watch

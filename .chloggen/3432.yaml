@@ -2,13 +2,13 @@
 change_type: enhancement
 
 # The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
-component: target allocator
+component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: enables support for pulling scrape config and probe CRDs in the target allocator
+note: Add a warning message when one created collector needs extra RBAC permissions and the service account doesn't have them.
 
 # One or more tracking issues related to the change
-issues: [1842]
+issues: [3432]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.

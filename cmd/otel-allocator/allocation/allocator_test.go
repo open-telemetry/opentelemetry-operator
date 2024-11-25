@@ -17,7 +17,7 @@ package allocation
 import (
 	"testing"
 
-	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
@@ -176,11 +176,11 @@ func TestAllocationCollision(t *testing.T) {
 
 		cols := MakeNCollectors(3, 0)
 		allocator.SetCollectors(cols)
-		firstLabels := model.LabelSet{
-			"test": "test1",
+		firstLabels := labels.Labels{
+			{Name: "test", Value: "test1"},
 		}
-		secondLabels := model.LabelSet{
-			"test": "test2",
+		secondLabels := labels.Labels{
+			{Name: "test", Value: "test2"},
 		}
 		firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
 		secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")

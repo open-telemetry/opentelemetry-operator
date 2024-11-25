@@ -58,6 +58,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	openshiftDashboards "github.com/open-telemetry/opentelemetry-operator/internal/openshift/dashboards"
+	operatormetrics "github.com/open-telemetry/opentelemetry-operator/internal/operator-metrics"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
@@ -391,6 +392,7 @@ func main() {
 		Scheme:   mgr.GetScheme(),
 		Config:   cfg,
 		Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
+		Reviewer: reviewer,
 	})
 
 	if err = collectorReconciler.SetupWithManager(mgr); err != nil {
@@ -422,6 +424,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	if cfg.PrometheusCRAvailability() == prometheus.Available {
+		operatorMetrics, opError := operatormetrics.NewOperatorMetrics(mgr.GetConfig(), scheme, ctrl.Log.WithName("operator-metrics-sm"))
+		if opError != nil {
+			setupLog.Error(opError, "Failed to create the operator metrics SM")
+		}
+		err = mgr.Add(operatorMetrics)
+		if err != nil {
+			setupLog.Error(err, "Failed to add the operator metrics SM")
+		}
+	}
+
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		var crdMetrics *otelv1beta1.Metrics
 
@@ -435,7 +448,6 @@ func main() {
 			if err != nil {
 				setupLog.Error(err, "Error init CRD metrics")
 			}
-
 		}
 
 		bv := func(ctx context.Context, collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
@@ -445,6 +457,8 @@ func main() {
 				warnings = append(warnings, newErr.Error())
 				return warnings
 			}
+
+			params.ErrorAsWarning = true
 			_, newErr = collectorManifests.Build(params)
 			if newErr != nil {
 				warnings = append(warnings, newErr.Error())

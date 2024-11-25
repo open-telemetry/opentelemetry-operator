@@ -54,8 +54,6 @@ spec:
         - name: OTEL_RESOURCE_ATTRIBUTES
       name: myapp
       volumeMounts:
-        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-          readOnly: true
         - mountPath: /otel-auto-instrumentation-nodejs
           name: opentelemetry-auto-instrumentation-nodejs
     - args:
@@ -64,8 +62,6 @@ spec:
   initContainers:
     - name: opentelemetry-auto-instrumentation-nodejs
   volumes:
-    - projected:
-        defaultMode: 420
     - name: opentelemetry-auto-instrumentation-nodejs
       ephemeral:
         volumeClaimTemplate:
