@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-PHP_versions=(8.0 8.1 8.2 8.3)
+PHP_versions=(8.1 8.2 8.3)
 libc_variants=(glibc musl)
 
 show_help() {
