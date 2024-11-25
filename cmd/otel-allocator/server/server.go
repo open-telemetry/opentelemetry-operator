@@ -102,6 +102,11 @@ func (s *Server) setRouter(router *gin.Engine) {
 	router.GET("/livez", s.LivenessProbeHandler)
 	router.GET("/readyz", s.ReadinessProbeHandler)
 	registerPprof(router.Group("/debug/pprof/"))
+	var routesPath []string
+	for _, route := range router.Routes() {
+		routesPath = append(routesPath, route.Path)
+	}
+	s.logger.Info("Register routes", "routes", routesPath)
 }
 
 func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr string, options ...Option) *Server {
@@ -125,17 +130,17 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr strin
 }
 
 func (s *Server) Start() error {
-	s.logger.Info("Starting server...")
+	s.logger.Info("Starting HTTP server...", "listenAddr", s.server.Addr)
 	return s.server.ListenAndServe()
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
-	s.logger.Info("Shutting down server...")
+	s.logger.Info("Shutting down HTTP server...")
 	return s.server.Shutdown(ctx)
 }
 
 func (s *Server) StartHTTPS() error {
-	s.logger.Info("Starting HTTPS server...")
+	s.logger.Info("Starting HTTPS server...", "listenAddr", s.server.Addr)
 	return s.httpsServer.ListenAndServeTLS("", "")
 }
 

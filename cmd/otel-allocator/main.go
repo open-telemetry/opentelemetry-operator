@@ -119,6 +119,7 @@ func main() {
 			&cfg.CollectorWatcher.AwsCloudMap.Namespace,
 			&cfg.CollectorWatcher.AwsCloudMap.ServiceName,
 		),
+		collector.WithMinUpdateInterval(cfg.MinUpdateInterval),
 		collector.WithKubeConfig(cfg.ClusterConfig),
 	)
 	if collectorWatcherErr != nil {

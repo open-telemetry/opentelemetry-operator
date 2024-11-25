@@ -44,6 +44,7 @@ const (
 	DefaultAllocationStrategy                  = "consistent-hashing"
 	DefaultFilterStrategy                      = "relabel-config"
 	DefaultCollectorWatcherType                = "k8s"
+	DefaultMinUpdateInterval                   = 5 * time.Second
 )
 
 type Config struct {
@@ -59,6 +60,7 @@ type Config struct {
 	HTTPS              HTTPSServerConfig      `yaml:"https,omitempty"`
 	CollectorWatcher   CollectorWatcherConfig `yaml:"collector_watcher,omitempty"`
 	Runtime            RuntimeConfig          `yaml:"runtime,omitempty"`
+	MinUpdateInterval  time.Duration          `yaml:"min_update_interval,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -193,6 +195,12 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		target.CollectorWatcher.AwsCloudMap.ServiceName = collectorWatcherServiceName
 	}
 
+	if minUpdateInterval, changed, err := getMinUpdateInterval(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.MinUpdateInterval = minUpdateInterval
+	}
+
 	return nil
 }
 
@@ -214,6 +222,7 @@ func CreateDefaultConfig() Config {
 		PrometheusCR: PrometheusCRConfig{
 			ScrapeInterval: DefaultCRScrapeInterval,
 		},
+		MinUpdateInterval: DefaultMinUpdateInterval,
 	}
 }
 

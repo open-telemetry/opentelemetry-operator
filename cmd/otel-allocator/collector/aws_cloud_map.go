@@ -69,7 +69,7 @@ var (
 func NewAwsCloudMapWatcher(opts ...WatcherOption) (*AwsCloudMapWatcher, error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithDefaultRegion(""))
 	if err != nil {
-		log.Fatalf("unable to load SDK config, %v", err)
+		log.Fatalf("Unable to load SDK config, %v", err)
 		return nil, err
 	}
 
@@ -114,39 +114,39 @@ func (w *AwsCloudMapWatcher) Watch(options ...WatchOption) error {
 		return fmt.Errorf("AWS Cloud Map service client not initialized")
 	}
 
-	startTime := time.Now()
+	// Create a separate done channel for blocking
+	done := make(chan struct{})
 
-	discoverOutput, err := w.svc.DiscoverInstances(context.TODO(), &servicediscovery.DiscoverInstancesInput{
-		NamespaceName: w.namespaceName,
-		ServiceName:   w.serviceName,
-		MaxResults:    aws.Int32(100), // Limit results for better performance
-	})
-	if err != nil {
-		return fmt.Errorf("failed to discover instances: %w", err)
+	// Initial discovery
+	w.watcher.log.Info("Performing initial discovery")
+	if err := w.discoverAndProcess(config.fn); err != nil {
+		return err
 	}
 
-	// Track discovery metrics
-	discoveryDuration.Observe(time.Since(startTime).Seconds())
-	if err != nil {
-		discoveryErrors.Inc()
-		return fmt.Errorf("failed to discover instances: %w", err)
-	}
+	w.watcher.log.Info("Starting periodic discovery", "interval", w.watcher.minUpdateInterval)
+	// Start the periodic discovery in a goroutine
+	go func() {
+		ticker := time.NewTicker(w.watcher.minUpdateInterval)
+		defer ticker.Stop()
 
-	discoveredInstances, healthStats := w.processBatch(discoverOutput.Instances)
+		for {
+			select {
+			case <-w.watcher.close:
+				w.watcher.log.Info("Stopping periodic discovery")
+				close(done) // Signal the main thread to unblock
+				return
+			case <-ticker.C:
+				if err := w.discoverAndProcess(config.fn); err != nil {
+					w.watcher.log.Error(err, "Error discovering instances")
+					continue
+				}
 
-	// Update metrics
-	w.updateMetrics(healthStats.healthy, healthStats.unhealthy)
+			}
+		}
+	}()
 
-	w.watcher.log.Info("discovered instances",
-		"total", len(discoverOutput.Instances),
-		"healthy", healthStats.healthy,
-		"unhealthy", healthStats.unhealthy,
-		"namespace", w.namespaceName,
-		"service", w.serviceName,
-	)
-
-	go w.rateLimitedCollectorHandler(discoveredInstances, config.fn)
-
+	// Block the main thread until done signal
+	<-done
 	return nil
 }
 
@@ -180,18 +180,44 @@ func (w *AwsCloudMapWatcher) updateMetrics(healthy, unhealthy int) {
 	totalInstances.Set(float64(healthy + unhealthy))
 }
 
-func (w *AwsCloudMapWatcher) rateLimitedCollectorHandler(store []types.HttpInstanceSummary, fn func(collectors map[string]*allocation.Collector)) {
-	ticker := time.NewTicker(w.watcher.minUpdateInterval)
-	defer ticker.Stop()
+func (w *AwsCloudMapWatcher) discoverAndProcess(handlerFn func(map[string]*allocation.Collector)) error {
+	startTime := time.Now()
 
-	for {
-		select {
-		case <-w.watcher.close:
-			return
-		case <-ticker.C:
-			w.runOnCollectors(store, fn)
-		}
+	discoverOutput, err := w.svc.DiscoverInstances(context.TODO(), &servicediscovery.DiscoverInstancesInput{
+		NamespaceName: w.namespaceName,
+		ServiceName:   w.serviceName,
+		MaxResults:    aws.Int32(100),
+	})
+	if err != nil {
+		discoveryErrors.Inc()
+		return fmt.Errorf("Failed to discover instances: %w", err)
 	}
+
+	discoveryDuration.Observe(time.Since(startTime).Seconds())
+
+	discoveredInstances, healthStats := w.processBatch(discoverOutput.Instances)
+
+	w.updateMetrics(healthStats.healthy, healthStats.unhealthy)
+
+	w.watcher.log.Info("Discovered instances",
+		"total", len(discoverOutput.Instances),
+		"healthy", healthStats.healthy,
+		"unhealthy", healthStats.unhealthy,
+		"namespace", w.namespaceName,
+		"service", w.serviceName,
+	)
+	instanceIds := make([]string, len(discoveredInstances))
+	for i, instance := range discoveredInstances {
+		instanceIds[i] = *instance.InstanceId
+	}
+
+	w.watcher.log.Info("Running on collectors", "instanceIds", instanceIds, "namespace", w.namespaceName, "service", w.serviceName)
+
+	if handlerFn != nil {
+		w.runOnCollectors(discoveredInstances, handlerFn)
+	}
+
+	return nil
 }
 
 // runOnCollectors runs the provided function on the set of collectors from the Store.

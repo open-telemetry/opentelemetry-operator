@@ -17,6 +17,7 @@ package config
 import (
 	"flag"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/pflag"
 	"k8s.io/client-go/util/homedir"
@@ -39,6 +40,7 @@ const (
 	awsCloudMapNamespaceFlagName     = "aws-cloud-map-namespace"
 	awsCloudMapServiceNameFlagName   = "aws-cloud-map-service-name"
 	runtimeKubernetesEnabledFlagName = "runtime-kubernetes-enabled"
+	minUpdateIntervalFlagName        = "min-update-interval"
 )
 
 // We can't bind this flag to our FlagSet, so we need to handle it separately.
@@ -58,6 +60,8 @@ func getFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet.String(collectorWatcherTypeFlagName, "k8s", "The type of collector watcher to use. (one of 'k8s', 'aws-cloud-map')")
 	flagSet.String(awsCloudMapNamespaceFlagName, "default", "The namespace of the AWS Cloud Map service.")
 	flagSet.String(awsCloudMapServiceNameFlagName, "otel-collector", "The name of the AWS Cloud Map service.")
+	flagSet.Bool(runtimeKubernetesEnabledFlagName, true, "Enable Kubernetes runtime.")
+	flagSet.Duration(minUpdateIntervalFlagName, DefaultMinUpdateInterval, "The minimum update interval.")
 	zapFlagSet := flag.NewFlagSet("", flag.ErrorHandling(errorHandling))
 	zapCmdLineOpts.BindFlags(zapFlagSet)
 	flagSet.AddGoFlagSet(zapFlagSet)
@@ -163,5 +167,14 @@ func getRuntimeKubernetesEnabled(flagSet *pflag.FlagSet) (value bool, changed bo
 		return
 	}
 	value, err = flagSet.GetBool(runtimeKubernetesEnabledFlagName)
+	return
+}
+
+func getMinUpdateInterval(flagSet *pflag.FlagSet) (value time.Duration, changed bool, err error) {
+	if changed = flagSet.Changed(minUpdateIntervalFlagName); !changed {
+		value, err = 5*time.Second, nil
+		return
+	}
+	value, err = flagSet.GetDuration(minUpdateIntervalFlagName)
 	return
 }
