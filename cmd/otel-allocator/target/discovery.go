@@ -37,6 +37,18 @@ var (
 		Name: "opentelemetry_allocator_targets",
 		Help: "Number of targets discovered.",
 	}, []string{"job_name"})
+
+	processTargetsDuration = promauto.NewHistogram(prometheus.HistogramOpts{
+		Name:    "opentelemetry_allocator_process_targets_duration_seconds",
+		Help:    "Duration of processing targets.",
+		Buckets: []float64{1, 5, 10, 30, 60, 120},
+	})
+
+	processTargetGroupsDuration = promauto.NewHistogram(prometheus.HistogramOpts{
+		Name:    "opentelemetry_allocator_process_target_groups_duration_seconds",
+		Help:    "Duration of processing target groups.",
+		Buckets: []float64{1, 5, 10, 30, 60, 120},
+	})
 )
 
 type Discoverer struct {
@@ -106,22 +118,24 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 }
 
 func (m *Discoverer) Watch(fn func(targets map[string]*Item)) error {
-	labelsBuilder := labels.NewBuilder(labels.EmptyLabels())
 	for {
 		select {
 		case <-m.close:
 			m.log.Info("Service Discovery watch event stopped: discovery manager closed")
 			return nil
 		case tsets := <-m.manager.SyncCh():
-			m.ProcessTargets(labelsBuilder, tsets, fn)
+			m.log.Info("Service Discovery watch event received", "targets groups", len(tsets))
+			go m.ProcessTargets(labels.NewBuilder(labels.EmptyLabels()), tsets, fn)
 		}
 	}
 }
 
 func (m *Discoverer) ProcessTargets(builder *labels.Builder, tsets map[string][]*targetgroup.Group, fn func(targets map[string]*Item)) {
 	targets := map[string]*Item{}
-
+	timer := prometheus.NewTimer(processTargetsDuration)
+	defer timer.ObserveDuration()
 	for jobName, tgs := range tsets {
+		timer := prometheus.NewTimer(processTargetGroupsDuration)
 		var count float64 = 0
 		for _, tg := range tgs {
 			builder.Reset(labels.EmptyLabels())
@@ -140,6 +154,7 @@ func (m *Discoverer) ProcessTargets(builder *labels.Builder, tsets map[string][]
 			}
 		}
 		targetsDiscovered.WithLabelValues(jobName).Set(count)
+		timer.ObserveDuration()
 	}
 	fn(targets)
 }
