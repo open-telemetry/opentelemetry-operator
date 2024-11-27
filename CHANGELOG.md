@@ -2,6 +2,11 @@
 
 <!-- next version -->
 
+### 🧰 Bug fixes 🧰
+
+- Remove the mapping of `app.kubernetes.io/instance` to `service.instance.id`, because multiple containers 
+  should never share the same `service.instance.id` (#3495)
+
 ## 0.113.0
 
 ### 💡 Enhancements 💡
@@ -220,8 +225,6 @@
     - `app.kubernetes.io/name` becomes `service.name`
     - `app.kubernetes.io/version` becomes `service.version`
     - `app.kubernetes.io/part-of` becomes `service.namespace`
-    - `app.kubernetes.io/instance` becomes `service.instance.id`
-  
 
 ### 🧰 Bug fixes 🧰
 

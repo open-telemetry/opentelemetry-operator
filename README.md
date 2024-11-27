@@ -725,7 +725,8 @@ EOF
 
 ### Configure resource attributes with annotations
 
-This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. These annotations can be used to add resource attributes to data produced by OpenTelemetry instrumentation.
+This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. 
+These annotations can be used to add resource attributes to data produced by OpenTelemetry instrumentation.
 
 ```yaml
 apiVersion: v1
@@ -733,6 +734,7 @@ kind: Pod
 metadata:
   name: example-pod
   annotations:
+    # this is just an example, you can create any resource attributes you need
     resource.opentelemetry.io/service.name: "my-service"
     resource.opentelemetry.io/service.version: "1.0.0"
     resource.opentelemetry.io/environment: "production"
@@ -750,7 +752,6 @@ The following labels are supported:
 - `app.kubernetes.io/name` becomes `service.name`
 - `app.kubernetes.io/version` becomes `service.version`
 - `app.kubernetes.io/part-of` becomes `service.namespace`
-- `app.kubernetes.io/instance` becomes `service.instance.id`
 
 ```yaml
 apiVersion: v1
@@ -761,7 +762,6 @@ metadata:
     app.kubernetes.io/name: "my-service"
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/part-of: "shop"
-    app.kubernetes.io/instance: "my-service-123"
 spec:
   containers:
   - name: main-container
