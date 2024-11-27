@@ -15,7 +15,6 @@
 package controllers
 
 import (
-	"strings"
 	"testing"
 
 	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
@@ -1245,7 +1244,7 @@ service:
 		name         string
 		args         args
 		want         []client.Object
-		featuregates []string
+		featuregates []*colfeaturegate.Gate
 		wantErr      bool
 		opts         []config.Option
 	}{
@@ -2192,8 +2191,7 @@ prometheus_cr:
 					},
 				},
 			},
-			wantErr:      false,
-			featuregates: []string{},
+			wantErr: false,
 		},
 		{
 			name: "target allocator mtls enabled",
@@ -2833,7 +2831,7 @@ prometheus_cr:
 			opts: []config.Option{
 				config.WithCertManagerAvailability(certmanager.Available),
 			},
-			featuregates: []string{"operator.targetallocator.mtls"},
+			featuregates: []*colfeaturegate.Gate{featuregate.EnableTargetAllocatorMTLS},
 		},
 	}
 	for _, tt := range tests {
@@ -2854,13 +2852,18 @@ prometheus_cr:
 			targetAllocator, err := collector.TargetAllocator(params)
 			require.NoError(t, err)
 			params.TargetAllocator = targetAllocator
-			if len(tt.featuregates) > 0 {
-				fg := strings.Join(tt.featuregates, ",")
-				flagset := featuregate.Flags(colfeaturegate.GlobalRegistry())
-				if err = flagset.Set(featuregate.FeatureGatesFlag, fg); err != nil {
-					t.Errorf("featuregate setting error = %v", err)
+			registry := colfeaturegate.GlobalRegistry()
+			for _, gate := range tt.featuregates {
+				current := gate.IsEnabled()
+				require.False(t, current, "only enable gates which are disabled by default")
+				if setErr := registry.Set(gate.ID(), true); setErr != nil {
+					require.NoError(t, setErr)
 					return
 				}
+				t.Cleanup(func() {
+					setErr := registry.Set(gate.ID(), current)
+					require.NoError(t, setErr)
+				})
 			}
 			got, err := BuildCollector(params)
 			if (err != nil) != tt.wantErr {
@@ -2915,7 +2918,7 @@ service:
 		name         string
 		args         args
 		want         []client.Object
-		featuregates []string
+		featuregates []*colfeaturegate.Gate
 		wantErr      bool
 		opts         []config.Option
 	}{
@@ -3402,7 +3405,7 @@ service:
 				},
 			},
 			wantErr:      false,
-			featuregates: []string{},
+			featuregates: []*colfeaturegate.Gate{},
 		},
 	}
 	for _, tt := range tests {
@@ -3423,13 +3426,20 @@ service:
 			targetAllocator, err := collector.TargetAllocator(params)
 			require.NoError(t, err)
 			params.TargetAllocator = targetAllocator
-			featuregates := []string{"operator.collector.targetallocatorcr"}
+			featuregates := []*colfeaturegate.Gate{featuregate.CollectorUsesTargetAllocatorCR}
 			featuregates = append(featuregates, tt.featuregates...)
-			fg := strings.Join(featuregates, ",")
-			flagset := featuregate.Flags(colfeaturegate.GlobalRegistry())
-			if err = flagset.Set(featuregate.FeatureGatesFlag, fg); err != nil {
-				t.Errorf("featuregate setting error = %v", err)
-				return
+			registry := colfeaturegate.GlobalRegistry()
+			for _, gate := range featuregates {
+				current := gate.IsEnabled()
+				require.False(t, current, "only enable gates which are disabled by default")
+				if setErr := registry.Set(gate.ID(), true); setErr != nil {
+					require.NoError(t, setErr)
+					return
+				}
+				t.Cleanup(func() {
+					setErr := registry.Set(gate.ID(), current)
+					require.NoError(t, setErr)
+				})
 			}
 			got, err := BuildCollector(params)
 			if (err != nil) != tt.wantErr {
@@ -3451,7 +3461,7 @@ func TestBuildTargetAllocator(t *testing.T) {
 		name         string
 		args         args
 		want         []client.Object
-		featuregates []string
+		featuregates []*colfeaturegate.Gate
 		wantErr      bool
 		opts         []config.Option
 	}{
@@ -4029,8 +4039,7 @@ prometheus_cr:
 					},
 				},
 			},
-			wantErr:      false,
-			featuregates: []string{},
+			wantErr: false,
 		},
 		{
 			name: "collector present",
@@ -4790,7 +4799,7 @@ prometheus_cr:
 			opts: []config.Option{
 				config.WithCertManagerAvailability(certmanager.Available),
 			},
-			featuregates: []string{"operator.targetallocator.mtls"},
+			featuregates: []*colfeaturegate.Gate{featuregate.EnableTargetAllocatorMTLS},
 		},
 	}
 	for _, tt := range tests {
@@ -4809,13 +4818,18 @@ prometheus_cr:
 				TargetAllocator: tt.args.instance,
 				Collector:       tt.args.collector,
 			}
-			if len(tt.featuregates) > 0 {
-				fg := strings.Join(tt.featuregates, ",")
-				flagset := featuregate.Flags(colfeaturegate.GlobalRegistry())
-				if err := flagset.Set(featuregate.FeatureGatesFlag, fg); err != nil {
-					t.Errorf("featuregate setting error = %v", err)
+			registry := colfeaturegate.GlobalRegistry()
+			for _, gate := range tt.featuregates {
+				current := gate.IsEnabled()
+				require.False(t, current, "only enable gates which are disabled by default")
+				if err := registry.Set(gate.ID(), true); err != nil {
+					require.NoError(t, err)
 					return
 				}
+				t.Cleanup(func() {
+					err := registry.Set(gate.ID(), current)
+					require.NoError(t, err)
+				})
 			}
 			got, err := BuildTargetAllocator(params)
 			if (err != nil) != tt.wantErr {

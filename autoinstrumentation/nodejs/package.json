@@ -14,8 +14,8 @@
         "typescript": "^5.6.3"
     },
     "dependencies": {
-        "@opentelemetry/auto-instrumentations-node": "0.52.1",
-        "@opentelemetry/exporter-metrics-otlp-grpc": "0.54.0",
-        "@opentelemetry/exporter-prometheus": "0.54.0"
+        "@opentelemetry/exporter-metrics-otlp-grpc": "0.55.0",
+        "@opentelemetry/auto-instrumentations-node": "0.53.0",
+        "@opentelemetry/exporter-prometheus": "0.55.0"
     }
 }
