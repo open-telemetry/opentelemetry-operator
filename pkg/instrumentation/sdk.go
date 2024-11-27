@@ -472,7 +472,7 @@ func chooseServiceVersion(pod corev1.Pod, useLabelsForResourceAttributes bool, i
 //  1. annotation with key "service.instance.id"
 //  2. namespace name + pod name + container name
 //     (as defined by https://opentelemetry.io/docs/specs/semconv/resource/#service-experimental)
-func createServiceInstanceId(pod corev1.Pod, useLabelsForResourceAttributes bool, namespaceName, podName, containerName string) string {
+func createServiceInstanceId(pod corev1.Pod, namespaceName, podName, containerName string) string {
 	// Do not use labels for service instance id,
 	// because multiple containers in the same pod would get the same service instance id,
 	// which violates the uniqueness requirement of service instance id -
@@ -527,7 +527,7 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	k8sResources[semconv.K8SPodNameKey] = pod.Name
 	k8sResources[semconv.K8SPodUIDKey] = string(pod.UID)
 	k8sResources[semconv.K8SNodeNameKey] = pod.Spec.NodeName
-	k8sResources[semconv.ServiceInstanceIDKey] = createServiceInstanceId(pod, useLabelsForResourceAttributes, ns.Name, fmt.Sprintf("$(%s)", constants.EnvPodName), pod.Spec.Containers[index].Name)
+	k8sResources[semconv.ServiceInstanceIDKey] = createServiceInstanceId(pod, ns.Name, fmt.Sprintf("$(%s)", constants.EnvPodName), pod.Spec.Containers[index].Name)
 	i.addParentResourceLabels(ctx, otelinst.Spec.Resource.AddK8sUIDAttributes, ns, pod.ObjectMeta, k8sResources)
 
 	for k, v := range k8sResources {
