@@ -30,7 +30,7 @@ IMG ?= ${IMG_PREFIX}/${IMG_REPO}:${VERSION}
 BUNDLE_IMG ?= ${IMG_PREFIX}/${IMG_REPO}-bundle:${VERSION}
 
 TARGETALLOCATOR_IMG_REPO ?= target-allocator
-TARGETALLOCATOR_IMG ?= ntakashi/otel-target-allocator:$(addprefix v,${VERSION})
+TARGETALLOCATOR_IMG ?= ntakashi/otel-target-allocator:custom-0.0.1
 
 OPERATOROPAMPBRIDGE_IMG_REPO ?= operator-opamp-bridge
 OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addprefix v,${VERSION})
