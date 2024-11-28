@@ -5,7 +5,7 @@ change_type: 'bug_fix'
 component: 'github action'
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Adding new line character at the end of PrometheusRule file.
+note: Add new line character at the end of PrometheusRule file.
 
 # One or more tracking issues related to the change
 issues: [3503]
