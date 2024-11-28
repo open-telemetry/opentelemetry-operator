@@ -794,6 +794,35 @@ The priority for setting resource attributes is as follows (first found wins):
 This priority is applied for each resource attribute separately, so it is possible to set some attributes via
 annotations and others via labels.
 
+### How resource attributes are calculated from the pod's metadata
+
+The following resource attributes are calculated from the pod's metadata.
+
+#### How service.name is calculated
+
+Choose the first value found: 
+
+- `k8s.depleyment.name`
+- `k8s.replicaset.name`
+- `k8s.statefulset.name`
+- `k8s.daemonset.name`
+- `k8s.cronjob.name`
+- `k8s.job.name`
+- `k8s.pod.name`
+- `k8s.container.name`
+
+#### How service.version is calculated
+
+Take the tag from the docker image name of the container.
+If the tag contains a `/`, the tag is ignored (this can happen if the image name contains a port number).
+
+#### How service.instance.id is calculated
+                                   
+Create a unique identifier for the application running in the container. 
+The identifier is created by concatenating the following values:
+
+`<k8s.namespace.name>.<k8s.pod.name>.<k8s.container.name>`
+
 ## Contributing and Developing
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md).
