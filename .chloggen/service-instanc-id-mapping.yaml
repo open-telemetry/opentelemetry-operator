@@ -16,7 +16,7 @@ issues: [3495]
 subtext: |
   Technically, this is a breaking change, but we regard it as a bug fix because the previous behavior was incorrect.
   
-  In you did have multiple containers and use `app.kubernetes.io/instance` to set the `service.instance.id`, 
+  if you did have multiple container instrumentation and use `app.kubernetes.io/instance` to set the `service.instance.id`, 
   you will now see multiple instances in the UI - which is the correct behavior.
   
   You can still use the attribute `resource.opentelemetry.io/service.instance.id` to set the `service.instance.id`,
