@@ -20,7 +20,7 @@ subtext: |
   you will now see multiple instances in the UI - which is the correct behavior.
   
   You can still use the attribute `resource.opentelemetry.io/service.instance.id` to set the `service.instance.id`,
-  which will be shared across all containers in the pod - but this is not recommended.
+  which will be shared across all containers in the pod - but this is not recommended for multiple container instrumentation instances.
   
   Refer to the [semantic conventions](https://opentelemetry.io/docs/specs/semconv/resource/#service-experimental) 
   for more information.
