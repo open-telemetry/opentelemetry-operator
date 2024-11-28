@@ -107,7 +107,6 @@ func prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob int) map[str
 	numJobs := numGroups / groupsPerJob
 	jobNamePrefix := "test-"
 	groupLabels := model.LabelSet{
-		"__address__": "10.8.110.131:8080",
 		"__meta_kubernetes_endpointslice_address_target_kind":                                                "Pod",
 		"__meta_kubernetes_endpointslice_address_target_name":                                                "parquet-test-job-gen-ax-28878990-dbmj2",
 		"__meta_kubernetes_endpointslice_address_type":                                                       "IPv4",
@@ -301,6 +300,7 @@ func prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob int) map[str
 	}
 	targets := []model.LabelSet{}
 	for i := 0; i < numTargets; i++ {
+		exampleTarget["__address__"] = model.LabelValue(fmt.Sprintf("10.8.110.%d:8080", i))
 		targets = append(targets, exampleTarget.Clone())
 	}
 	groups := make([]*targetgroup.Group, numGroups)

@@ -17,6 +17,8 @@ package target
 import (
 	"hash"
 	"hash/fnv"
+	"sync"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
@@ -27,6 +29,7 @@ import (
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
@@ -44,21 +47,26 @@ var (
 		Buckets: []float64{1, 5, 10, 30, 60, 120},
 	})
 
-	processTargetGroupsDuration = promauto.NewHistogram(prometheus.HistogramOpts{
+	processTargetGroupsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "opentelemetry_allocator_process_target_groups_duration_seconds",
 		Help:    "Duration of processing target groups.",
 		Buckets: []float64{1, 5, 10, 30, 60, 120},
-	})
+	}, []string{"job_name"})
 )
 
 type Discoverer struct {
-	log                  logr.Logger
-	manager              *discovery.Manager
-	close                chan struct{}
-	configsMap           map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig
-	hook                 discoveryHook
-	scrapeConfigsHash    hash.Hash
-	scrapeConfigsUpdater scrapeConfigsUpdater
+	log                    logr.Logger
+	manager                *discovery.Manager
+	close                  chan struct{}
+	mtxScrape              sync.Mutex // Guards the fields below.
+	configsMap             map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig
+	hook                   discoveryHook
+	scrapeConfigsHash      hash.Hash
+	scrapeConfigsUpdater   scrapeConfigsUpdater
+	targetSets             map[string][]*targetgroup.Group
+	triggerReload          chan struct{}
+	processTargetsCallBack func(targets map[string]*Item)
+	mtxTargets             sync.Mutex
 }
 
 type discoveryHook interface {
@@ -74,6 +82,7 @@ func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHo
 		log:                  log,
 		manager:              manager,
 		close:                make(chan struct{}),
+		triggerReload:        make(chan struct{}, 1),
 		configsMap:           make(map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig),
 		hook:                 hook,
 		scrapeConfigsHash:    nil, // we want the first update to succeed even if the config is empty
@@ -118,6 +127,15 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 }
 
 func (m *Discoverer) Watch(fn func(targets map[string]*Item)) error {
+	m.processTargetsCallBack = fn
+	m.Run(m.manager.SyncCh())
+	<-m.close
+	m.log.V(int(zap.DebugLevel)).Info("Service Discovery watch event stopped: discovery manager closed")
+	return nil
+}
+
+func (m *Discoverer) Watch1(fn func(targets map[string]*Item)) error {
+	labelsBuilder := labels.NewBuilder(labels.EmptyLabels())
 	for {
 		select {
 		case <-m.close:
@@ -125,17 +143,109 @@ func (m *Discoverer) Watch(fn func(targets map[string]*Item)) error {
 			return nil
 		case tsets := <-m.manager.SyncCh():
 			m.log.Info("Service Discovery watch event received", "targets groups", len(tsets))
-			go m.ProcessTargets(labels.NewBuilder(labels.EmptyLabels()), tsets, fn)
+			m.ProcessTargets(labelsBuilder, tsets, fn)
+		}
+	}
+}
+
+func (m *Discoverer) Run(tsets <-chan map[string][]*targetgroup.Group) error {
+	go m.reloader()
+	for {
+		select {
+		case ts := <-tsets:
+			m.log.Info("Service Discovery watch event received", "targets groups", len(ts))
+			m.updateTsets(ts)
+
+			select {
+			case m.triggerReload <- struct{}{}:
+			default:
+			}
+
+		case <-m.close:
+			m.log.Info("Service Discovery watch event stopped: discovery manager closed")
+			return nil
+		}
+	}
+}
+
+func (m *Discoverer) updateTsets(tsets map[string][]*targetgroup.Group) {
+	m.mtxScrape.Lock()
+	m.targetSets = tsets
+	m.mtxScrape.Unlock()
+}
+
+func (m *Discoverer) reloader() {
+	reloadIntervalDuration := model.Duration(5 * time.Second)
+	ticker := time.NewTicker(time.Duration(reloadIntervalDuration))
+
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-m.close:
+			return
+		case <-ticker.C:
+			select {
+			case <-m.triggerReload:
+				m.reload()
+			case <-m.close:
+				return
+			}
+		}
+	}
+}
+
+func (m *Discoverer) reload() {
+	m.mtxScrape.Lock()
+	var wg sync.WaitGroup
+	targets := map[string]*Item{}
+	timer := prometheus.NewTimer(processTargetsDuration)
+	defer timer.ObserveDuration()
+
+	for setName, groups := range m.targetSets {
+		wg.Add(1)
+		// Run the sync in parallel as these take a while and at high load can't catch up.
+		go func(setName string, groups []*targetgroup.Group) {
+			m.processTargetGroups(setName, groups, targets)
+			wg.Done()
+		}(setName, groups)
+	}
+	m.mtxScrape.Unlock()
+	wg.Wait()
+	m.processTargetsCallBack(targets)
+
+}
+
+func (m *Discoverer) processTargetGroups(setName string, groups []*targetgroup.Group, targets map[string]*Item) {
+	builder := labels.NewBuilder(labels.Labels{})
+	timer := prometheus.NewTimer(processTargetGroupsDuration.WithLabelValues(setName))
+	defer timer.ObserveDuration()
+	for _, tg := range groups {
+		builder.Reset(labels.EmptyLabels())
+		for ln, lv := range tg.Labels {
+			builder.Set(string(ln), string(lv))
+		}
+		groupLabels := builder.Labels()
+		for _, t := range tg.Targets {
+			builder.Reset(groupLabels)
+			for ln, lv := range t {
+				builder.Set(string(ln), string(lv))
+			}
+			item := NewItem(setName, string(t[model.AddressLabel]), builder.Labels(), "")
+			m.mtxTargets.Lock()
+			targets[item.Hash()] = item
+			m.mtxTargets.Unlock()
 		}
 	}
 }
 
 func (m *Discoverer) ProcessTargets(builder *labels.Builder, tsets map[string][]*targetgroup.Group, fn func(targets map[string]*Item)) {
 	targets := map[string]*Item{}
+	now := time.Now()
 	timer := prometheus.NewTimer(processTargetsDuration)
 	defer timer.ObserveDuration()
 	for jobName, tgs := range tsets {
-		timer := prometheus.NewTimer(processTargetGroupsDuration)
+		timer := prometheus.NewTimer(processTargetGroupsDuration.WithLabelValues(jobName))
 		var count float64 = 0
 		for _, tg := range tgs {
 			builder.Reset(labels.EmptyLabels())
@@ -150,6 +260,10 @@ func (m *Discoverer) ProcessTargets(builder *labels.Builder, tsets map[string][]
 					builder.Set(string(ln), string(lv))
 				}
 				item := NewItem(jobName, string(t[model.AddressLabel]), builder.Labels(), "")
+				if a, ok := targets[item.Hash()]; ok {
+					m.log.Info("Target already exists", "target", item)
+					m.log.Info("Target already exists", "target", a)
+				}
 				targets[item.Hash()] = item
 			}
 		}
@@ -157,6 +271,7 @@ func (m *Discoverer) ProcessTargets(builder *labels.Builder, tsets map[string][]
 		timer.ObserveDuration()
 	}
 	fn(targets)
+	m.log.V(int(zap.DebugLevel)).Info("Processed target groups", "targets", len(targets), "duration", time.Since(now).Seconds())
 }
 
 func (m *Discoverer) Close() {
