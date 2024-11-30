@@ -54,6 +54,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
+const resourceOwnerKey = ".metadata.owner"
+
 var (
 	ownedClusterObjectTypes = []client.Object{
 		&rbacv1.ClusterRole{},
@@ -83,6 +85,7 @@ type Params struct {
 
 func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
 	ownedObjects := map[types.UID]client.Object{}
+	collectorConfigMaps := []*corev1.ConfigMap{}
 	ownedObjectTypes := r.GetOwnedResourceTypes()
 	listOpts := []client.ListOption{
 		client.InNamespace(params.OtelCol.Namespace),
@@ -96,9 +99,27 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 		for uid, object := range objs {
 			ownedObjects[uid] = object
 		}
+		// save Collector ConfigMaps into a separate slice, we need to do additional filtering on them
+		if _, ok := objectType.(*corev1.ConfigMap); ok {
+			for _, object := range objs {
+				if !featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() && object.GetLabels()["app.kubernetes.io/component"] != "opentelemetry-collector" {
+					// we only apply this to collector ConfigMaps
+					continue
+				}
+				configMap := object.(*corev1.ConfigMap)
+				collectorConfigMaps = append(collectorConfigMaps, configMap)
+			}
+		}
 	}
 
-	removeKeptConfigMapVersions(params.OtelCol.Spec.ConfigVersions, ownedObjects)
+	// at this point we don't know if the most recent ConfigMap will still be the most recent after reconciliation, or
+	// if a new one will be created. We keep one additional ConfigMap to account for this. The next reconciliation that
+	// doesn't spawn a new ConfigMap will delete the extra one we kept here.
+	configVersionsToKeep := max(params.OtelCol.Spec.ConfigVersions, 1) + 1
+	configMapsToKeep := getCollectorConfigMapsToKeep(configVersionsToKeep, collectorConfigMaps)
+	for _, configMap := range configMapsToKeep {
+		delete(ownedObjects, configMap.GetUID())
+	}
 
 	return ownedObjects, nil
 }
@@ -126,34 +147,21 @@ func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Co
 	return ownedObjects, nil
 }
 
-// removeKeptConfigMaps removes old ConfigMaps that we want to keep from the map of owned objects.
-// Normally the controller would delete them after determining they're not in the list of desired objects generated
-// from the OpenTelemetryCollector CR, but we want to keep them around.
-func removeKeptConfigMapVersions(configVersionsToKeep int, ownedObjects map[types.UID]client.Object) {
+// getCollectorConfigMapsToKeep gets ConfigMaps the controller would normally delete, but which we want to keep around
+// anyway. This is part of a feature to keep around previous ConfigMap versions to make rollbacks easier.
+// Fundamentally, this just sorts by time created and picks configVersionsToKeep latest ones.
+func getCollectorConfigMapsToKeep(configVersionsToKeep int, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
 	configVersionsToKeep = max(1, configVersionsToKeep)
-	ownedConfigMaps := []client.Object{}
-	for _, ownedObject := range ownedObjects {
-		if ownedObject.GetObjectKind().GroupVersionKind().Kind != "ConfigMap" {
-			continue
-		}
-		if !featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() && ownedObject.GetLabels()["app.kubernetes.io/component"] != "opentelemetry-collector" {
-			// we only apply this to collector ConfigMaps
-			continue
-		}
-		ownedConfigMaps = append(ownedConfigMaps, ownedObject)
-	}
-	sort.Slice(ownedConfigMaps, func(i, j int) bool {
-		iTime := ownedConfigMaps[i].GetCreationTimestamp().Time
-		jTime := ownedConfigMaps[j].GetCreationTimestamp().Time
+	sort.Slice(configMaps, func(i, j int) bool {
+		iTime := configMaps[i].GetCreationTimestamp().Time
+		jTime := configMaps[j].GetCreationTimestamp().Time
 		// sort the ConfigMaps newest to oldest
 		return iTime.After(jTime)
 	})
 
-	configMapsToKeep := min(configVersionsToKeep+1, len(ownedConfigMaps))
-	// remove the first configVersionsToKeep items
-	for i := range ownedConfigMaps[:configMapsToKeep] {
-		delete(ownedObjects, ownedConfigMaps[i].GetUID())
-	}
+	configMapsToKeep := min(configVersionsToKeep, len(configMaps))
+	// return the first configVersionsToKeep items
+	return configMaps[:configMapsToKeep]
 }
 
 func (r *OpenTelemetryCollectorReconciler) GetParams(ctx context.Context, instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
@@ -376,5 +384,3 @@ func (r *OpenTelemetryCollectorReconciler) finalizeCollector(ctx context.Context
 	}
 	return nil
 }
-
-const resourceOwnerKey = ".metadata.owner"

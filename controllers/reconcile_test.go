@@ -850,6 +850,152 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 	}
 }
 
+func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
+	collectorName := sanitizeResourceName(t.Name())
+	collector := &v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      collectorName,
+			Namespace: metav1.NamespaceDefault,
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			ConfigVersions: 1,
+			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
+				Enabled: true,
+				PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+					Enabled: true,
+				},
+			},
+			Mode: v1beta1.ModeStatefulSet,
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"prometheus": map[string]interface{}{
+							"config": map[string]interface{}{
+								"scrape_configs": []interface{}{},
+							},
+						},
+						"nop": map[string]interface{}{},
+					},
+				},
+				Exporters: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"nop": map[string]interface{}{},
+					},
+				},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"logs": {
+							Exporters: []string{"nop"},
+							Receivers: []string{"nop"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	testCtx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	reconciler := createTestReconciler(t, testCtx, config.New(
+		config.WithCollectorImage("default-collector"),
+		config.WithTargetAllocatorImage("default-ta-allocator"),
+		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
+		config.WithPrometheusCRAvailability(prometheus.Available),
+	))
+
+	nsn := types.NamespacedName{Name: collector.Name, Namespace: collector.Namespace}
+	// the base query for the underlying objects
+	opts := []client.ListOption{
+		client.InNamespace(collector.Namespace),
+		client.MatchingLabels(map[string]string{
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/instance":   naming.Truncate("%s.%s", 63, nsn.Namespace, nsn.Name),
+		}),
+	}
+
+	clientCtx := context.Background()
+	err := k8sClient.Create(clientCtx, collector)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		deleteErr := k8sClient.Delete(clientCtx, collector)
+		require.NoError(t, deleteErr)
+	})
+	err = k8sClient.Get(clientCtx, nsn, collector)
+	require.NoError(t, err)
+	req := k8sreconcile.Request{
+		NamespacedName: nsn,
+	}
+	_, reconcileErr := reconciler.Reconcile(clientCtx, req)
+	assert.NoError(t, reconcileErr)
+
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		configMaps := &v1.ConfigMapList{}
+		listErr := k8sClient.List(clientCtx, configMaps, opts...)
+		assert.NoError(collect, listErr)
+		assert.NotEmpty(collect, configMaps)
+		assert.Len(collect, configMaps.Items, 2)
+	}, time.Second*5, time.Millisecond)
+
+	// modify the ConfigMap, it should be kept
+	err = k8sClient.Get(clientCtx, nsn, collector)
+	require.NoError(t, err)
+	collector.Spec.Config.Exporters.Object["debug"] = map[string]interface{}{}
+	err = k8sClient.Update(clientCtx, collector)
+	require.NoError(t, err)
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		actual := &v1beta1.OpenTelemetryCollector{}
+		err = reconciler.Get(clientCtx, nsn, actual)
+		assert.NoError(collect, err)
+		assert.Equal(collect, collector.Spec, actual.Spec)
+	}, time.Second*5, time.Millisecond)
+
+	_, reconcileErr = reconciler.Reconcile(clientCtx, req)
+	assert.NoError(t, reconcileErr)
+
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		configMaps := &v1.ConfigMapList{}
+		listErr := k8sClient.List(clientCtx, configMaps, opts...)
+		assert.NoError(collect, listErr)
+		assert.NotEmpty(collect, configMaps)
+		assert.Len(collect, configMaps.Items, 3)
+	}, time.Second*5, time.Millisecond)
+
+	// modify the ConfigMap again, the oldest one is still kept, but is dropped after next reconciliation
+	err = k8sClient.Get(clientCtx, nsn, collector)
+	require.NoError(t, err)
+	collector.Spec.Config.Exporters.Object["debug/2"] = map[string]interface{}{}
+	err = k8sClient.Update(clientCtx, collector)
+	require.NoError(t, err)
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		actual := &v1beta1.OpenTelemetryCollector{}
+		err = reconciler.Get(clientCtx, nsn, actual)
+		assert.NoError(collect, err)
+		assert.Equal(collect, collector.Spec, actual.Spec)
+	}, time.Second*5, time.Millisecond)
+
+	_, reconcileErr = reconciler.Reconcile(clientCtx, req)
+	assert.NoError(t, reconcileErr)
+
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		configMaps := &v1.ConfigMapList{}
+		listErr := k8sClient.List(clientCtx, configMaps, opts...)
+		assert.NoError(collect, listErr)
+		assert.NotEmpty(collect, configMaps)
+		assert.Len(collect, configMaps.Items, 4)
+	}, time.Second*5, time.Millisecond)
+
+	_, reconcileErr = reconciler.Reconcile(clientCtx, req)
+	assert.NoError(t, reconcileErr)
+
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		configMaps := &v1.ConfigMapList{}
+		listErr := k8sClient.List(clientCtx, configMaps, opts...)
+		assert.NoError(collect, listErr)
+		assert.NotEmpty(collect, configMaps)
+		assert.Len(collect, configMaps.Items, 3)
+	}, time.Second*5, time.Millisecond)
+}
+
 func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 	addedMetadataDeployment := opampBridgeParams()
 	addedMetadataDeployment.OpAMPBridge.Labels = map[string]string{
