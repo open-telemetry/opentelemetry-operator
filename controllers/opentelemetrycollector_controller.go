@@ -47,7 +47,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
-	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	internalRbac "github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
@@ -130,10 +130,8 @@ func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Co
 	// Remove cluster roles and bindings.
 	// Users might switch off the RBAC creation feature on the operator which should remove existing RBAC.
 	listOpsCluster := &client.ListOptions{
-		LabelSelector: labels.SelectorFromSet(map[string]string{
-			"app.kubernetes.io/managed-by": "opentelemetry-operator",
-			"app.kubernetes.io/instance":   naming.Truncate("%s.%s", 63, params.OtelCol.Namespace, params.OtelCol.Name),
-		}),
+		LabelSelector: labels.SelectorFromSet(
+			manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)),
 	}
 	for _, objectType := range ownedClusterObjectTypes {
 		objs, err := getList(ctx, r, objectType, listOpsCluster)
