@@ -55,6 +55,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.Factory(MonitoringService),
 		manifests.Factory(ExtensionService),
 		manifests.Factory(Ingress),
+		manifests.Factory(ExtensionIngress),
 	}...)
 
 	if featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() {
