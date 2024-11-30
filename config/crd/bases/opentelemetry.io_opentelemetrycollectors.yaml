@@ -6042,6 +6042,49 @@ spec:
                       x-kubernetes-map-type: atomic
                   type: object
                 type: array
+              extensionIngress:
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  hostname:
+                    type: string
+                  ingressClassName:
+                    type: string
+                  route:
+                    properties:
+                      termination:
+                        enum:
+                        - insecure
+                        - edge
+                        - passthrough
+                        - reencrypt
+                        type: string
+                    type: object
+                  ruleType:
+                    enum:
+                    - path
+                    - subdomain
+                    type: string
+                  tls:
+                    items:
+                      properties:
+                        hosts:
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
+                        secretName:
+                          type: string
+                      type: object
+                    type: array
+                  type:
+                    enum:
+                    - ingress
+                    - route
+                    type: string
+                type: object
               hostNetwork:
                 type: boolean
               image:
