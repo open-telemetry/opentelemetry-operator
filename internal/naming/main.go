@@ -131,6 +131,11 @@ func Ingress(otelcol string) string {
 	return DNSName(Truncate("%s-ingress", 63, otelcol))
 }
 
+// Extension Ingress builds the ingress name for the extensions.
+func ExtensionIngress(otelcol string) string {
+	return DNSName(Truncate("%s-extension-ingress", 63, otelcol))
+}
+
 // Route builds the route name based on the instance.
 func Route(otelcol string, prefix string) string {
 	return DNSName(Truncate("%s-%s-route", 63, prefix, otelcol))

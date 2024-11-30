@@ -50,9 +50,9 @@ func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 	var rules []networkingv1.IngressRule
 	switch params.OtelCol.Spec.Ingress.RuleType {
 	case v1beta1.IngressRuleTypePath, "":
-		rules = []networkingv1.IngressRule{createPathIngressRules(params.OtelCol.Name, params.OtelCol.Spec.Ingress.Hostname, ports)}
+		rules = []networkingv1.IngressRule{createPathIngressRules(params.OtelCol.Name, params.OtelCol.Spec.Ingress.Hostname, ports, "service")}
 	case v1beta1.IngressRuleTypeSubdomain:
-		rules = createSubdomainIngressRules(params.OtelCol.Name, params.OtelCol.Spec.Ingress.Hostname, ports)
+		rules = createSubdomainIngressRules(params.OtelCol.Name, params.OtelCol.Spec.Ingress.Hostname, ports, "service")
 	}
 
 	return &networkingv1.Ingress{
@@ -70,9 +70,53 @@ func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 	}, nil
 }
 
-func createPathIngressRules(otelcol string, hostname string, ports []corev1.ServicePort) networkingv1.IngressRule {
+func ExtensionIngress(params manifests.Params) (*networkingv1.Ingress, error) {
+	name := naming.ExtensionIngress(params.OtelCol.Name)
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+
+	if params.OtelCol.Spec.ExtensionIngress.Type != v1beta1.IngressTypeIngress {
+		return nil, nil
+	}
+
+	ports, err := extensionServicePortsFromCfg(params.Log, params.OtelCol)
+	if err != nil || len(ports) == 0 {
+		return nil, err
+	}
+
+	var rules []networkingv1.IngressRule
+	switch params.OtelCol.Spec.Ingress.RuleType {
+	case v1beta1.IngressRuleTypePath, "":
+		rules = []networkingv1.IngressRule{createPathIngressRules(params.OtelCol.Name, params.OtelCol.Spec.ExtensionIngress.Hostname, ports, "extension")}
+	case v1beta1.IngressRuleTypeSubdomain:
+		rules = createSubdomainIngressRules(params.OtelCol.Name, params.OtelCol.Spec.ExtensionIngress.Hostname, ports, "extension")
+	}
+
+	return &networkingv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   params.OtelCol.Namespace,
+			Annotations: params.OtelCol.Spec.ExtensionIngress.Annotations,
+			Labels:      labels,
+		},
+		Spec: networkingv1.IngressSpec{
+			TLS:              params.OtelCol.Spec.ExtensionIngress.TLS,
+			Rules:            rules,
+			IngressClassName: params.OtelCol.Spec.ExtensionIngress.IngressClassName,
+		},
+	}, nil
+}
+
+func createPathIngressRules(otelcol string, hostname string, ports []corev1.ServicePort, serviceType string) networkingv1.IngressRule {
 	pathType := networkingv1.PathTypePrefix
 	paths := make([]networkingv1.HTTPIngressPath, len(ports))
+
+	var name string
+	if serviceType == "extension" {
+		name = naming.ExtensionService(otelcol)
+	} else {
+		name = naming.Service(otelcol)
+	}
+
 	for i, port := range ports {
 		portName := naming.PortName(port.Name, port.Port)
 		paths[i] = networkingv1.HTTPIngressPath{
@@ -80,7 +124,7 @@ func createPathIngressRules(otelcol string, hostname string, ports []corev1.Serv
 			PathType: &pathType,
 			Backend: networkingv1.IngressBackend{
 				Service: &networkingv1.IngressServiceBackend{
-					Name: naming.Service(otelcol),
+					Name: name,
 					Port: networkingv1.ServiceBackendPort{
 						Name: portName,
 					},
@@ -98,9 +142,17 @@ func createPathIngressRules(otelcol string, hostname string, ports []corev1.Serv
 	}
 }
 
-func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1.ServicePort) []networkingv1.IngressRule {
+func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1.ServicePort, serviceType string) []networkingv1.IngressRule {
 	var rules []networkingv1.IngressRule
 	pathType := networkingv1.PathTypePrefix
+
+	var name string
+	if serviceType == "extension" {
+		name = naming.ExtensionService(otelcol)
+	} else {
+		name = naming.Service(otelcol)
+	}
+
 	for _, port := range ports {
 		portName := naming.PortName(port.Name, port.Port)
 
@@ -119,7 +171,7 @@ func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1
 							PathType: &pathType,
 							Backend: networkingv1.IngressBackend{
 								Service: &networkingv1.IngressServiceBackend{
-									Name: naming.Service(otelcol),
+									Name: name,
 									Port: networkingv1.ServiceBackendPort{
 										Name: portName,
 									},
@@ -158,6 +210,15 @@ func servicePortsFromCfg(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollec
 		}
 
 		ports = append(toServicePorts(otelcol.Spec.Ports), resultingInferredPorts...)
+	}
+
+	return ports, nil
+}
+
+func extensionServicePortsFromCfg(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector) ([]corev1.ServicePort, error) {
+	ports, err := otelcol.Spec.Config.GetExtensionPorts(logger)
+	if err != nil {
+		return nil, err
 	}
 
 	return ports, nil
