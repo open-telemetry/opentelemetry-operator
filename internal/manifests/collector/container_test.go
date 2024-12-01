@@ -873,6 +873,8 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 
 	flgs := featuregate.Flags(colfg.GlobalRegistry())
 	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
+	otelcol.Spec.TargetAllocator.Enabled = true
+
 	require.NoError(t, err)
 
 	// test
