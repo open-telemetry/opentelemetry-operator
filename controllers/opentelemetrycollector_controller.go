@@ -100,7 +100,8 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 			ownedObjects[uid] = object
 		}
 		// save Collector ConfigMaps into a separate slice, we need to do additional filtering on them
-		if _, ok := objectType.(*corev1.ConfigMap); ok {
+		switch objectType.(type) {
+		case *corev1.ConfigMap:
 			for _, object := range objs {
 				if !featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() && object.GetLabels()["app.kubernetes.io/component"] != "opentelemetry-collector" {
 					// we only apply this to collector ConfigMaps
@@ -109,6 +110,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 				configMap := object.(*corev1.ConfigMap)
 				collectorConfigMaps = append(collectorConfigMaps, configMap)
 			}
+		default:
 		}
 	}
 
