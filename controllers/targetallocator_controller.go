@@ -89,7 +89,7 @@ func (r *TargetAllocatorReconciler) getParams(ctx context.Context, instance v1al
 func (r *TargetAllocatorReconciler) getCollector(ctx context.Context, instance v1alpha1.TargetAllocator) (*v1beta1.OpenTelemetryCollector, error) {
 	var collector v1beta1.OpenTelemetryCollector
 
-	// check if a collactor is the owner of this Target Allocator
+	// check if a collector is the owner of this Target Allocator
 	ownerReferences := instance.GetOwnerReferences()
 	collectorIndex := slices.IndexFunc(ownerReferences, func(reference metav1.OwnerReference) bool {
 		return reference.Kind == "OpenTelemetryCollector"
