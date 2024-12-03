@@ -89,7 +89,7 @@ spec:
     - name: OTEL_SERVICE_NAME
       value: javaapp
     - name: JAVA_TOOL_OPTIONS
-      value: '-javaagent:/otel-auto-instrumentation-java/javaagent.jar'
+      value: ' -javaagent:/otel-auto-instrumentation-java/javaagent.jar'
     - name: OTEL_TRACES_SAMPLER
       value: parentbased_traceidratio
     - name: OTEL_TRACES_SAMPLER_ARG
