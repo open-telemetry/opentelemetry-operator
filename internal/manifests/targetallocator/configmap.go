@@ -90,6 +90,11 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	} else {
 		taConfig["allocation_strategy"] = v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
 	}
+
+	if featuregate.EnableTargetAllocatorFallbackStrategy.IsEnabled() {
+		taConfig["allocation_fallback_strategy"] = v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
+	}
+
 	taConfig["filter_strategy"] = taSpec.FilterStrategy
 
 	if taSpec.PrometheusCR.Enabled {

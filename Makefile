@@ -206,6 +206,7 @@ add-rbac-permissions-to-operator: manifests kustomize
 	# This folder is ignored by .gitignore
 	mkdir -p config/rbac/extra-permissions-operator
 	cp -r tests/e2e-automatic-rbac/extra-permissions-operator/* config/rbac/extra-permissions-operator
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/clusterresourcequotas.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/cronjobs.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/daemonsets.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/events.yaml

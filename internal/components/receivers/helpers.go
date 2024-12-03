@@ -143,6 +143,9 @@ var (
 		components.NewBuilder[k8seventsConfig]().WithName("k8s_events").
 			WithClusterRoleRulesGen(generatek8seventsClusterRoleRules).
 			MustBuild(),
+		components.NewBuilder[k8sclusterConfig]().WithName("k8s_cluster").
+			WithClusterRoleRulesGen(generatek8sclusterRbacRules).
+			MustBuild(),
 		components.NewBuilder[k8sobjectsConfig]().WithName("k8sobjects").
 			WithClusterRoleRulesGen(generatek8sobjectsClusterRoleRules).
 			MustBuild(),

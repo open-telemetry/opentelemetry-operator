@@ -76,6 +76,11 @@ func (a *allocator) SetFilter(filter Filter) {
 	a.filter = filter
 }
 
+// SetFallbackStrategy sets the fallback strategy to use.
+func (a *allocator) SetFallbackStrategy(strategy Strategy) {
+	a.strategy.SetFallbackStrategy(strategy)
+}
+
 // SetTargets accepts a list of targets that will be used to make
 // load balancing decisions. This method should be called when there are
 // new targets discovered or existing targets are shutdown.

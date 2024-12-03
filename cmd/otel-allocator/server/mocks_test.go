@@ -32,6 +32,7 @@ func (m *mockAllocator) SetTargets(_ map[string]*target.Item)                   
 func (m *mockAllocator) Collectors() map[string]*allocation.Collector                   { return nil }
 func (m *mockAllocator) GetTargetsForCollectorAndJob(_ string, _ string) []*target.Item { return nil }
 func (m *mockAllocator) SetFilter(_ allocation.Filter)                                  {}
+func (m *mockAllocator) SetFallbackStrategy(_ allocation.Strategy)                      {}
 
 func (m *mockAllocator) TargetItems() map[string]*target.Item {
 	return m.targetItems

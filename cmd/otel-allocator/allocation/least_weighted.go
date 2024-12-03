@@ -54,3 +54,5 @@ func (s *leastWeightedStrategy) GetCollectorForTarget(collectors map[string]*Col
 }
 
 func (s *leastWeightedStrategy) SetCollectors(_ map[string]*Collector) {}
+
+func (s *leastWeightedStrategy) SetFallbackStrategy(fallbackStrategy Strategy) {}

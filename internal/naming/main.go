@@ -116,6 +116,11 @@ func MonitoringService(otelcol string) string {
 	return DNSName(Truncate("%s-monitoring", 63, Service(otelcol)))
 }
 
+// ExtensionService builds the name for the extension service based on the instance.
+func ExtensionService(otelcol string) string {
+	return DNSName(Truncate("%s-extension", 63, Service(otelcol)))
+}
+
 // Service builds the service name based on the instance.
 func Service(otelcol string) string {
 	return DNSName(Truncate("%s-collector", 63, otelcol))

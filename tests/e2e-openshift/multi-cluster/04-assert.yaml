@@ -4,9 +4,7 @@ metadata:
   name: generate-traces-http
   namespace: chainsaw-multi-cluster-send
 status:
-  conditions:
-    - status: "True"
-      type: Complete
+  succeeded: 1
 
 ---
 apiVersion: batch/v1
@@ -15,6 +13,4 @@ metadata:
   name: generate-traces-grpc
   namespace: chainsaw-multi-cluster-send
 status:
-  conditions:
-    - status: "True"
-      type: Complete
+  succeeded: 1

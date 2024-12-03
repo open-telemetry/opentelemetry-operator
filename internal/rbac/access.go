@@ -29,6 +29,13 @@ const (
 	serviceAccountFmtStr = "system:serviceaccount:%s:%s"
 )
 
+type SAReviewer interface {
+	CheckPolicyRules(ctx context.Context, serviceAccount, serviceAccountNamespace string, rules ...*rbacv1.PolicyRule) ([]*v1.SubjectAccessReview, error)
+	CanAccess(ctx context.Context, serviceAccount, serviceAccountNamespace string, res *v1.ResourceAttributes, nonResourceAttributes *v1.NonResourceAttributes) (*v1.SubjectAccessReview, error)
+}
+
+var _ SAReviewer = &Reviewer{}
+
 type Reviewer struct {
 	client kubernetes.Interface
 }

@@ -14,17 +14,8 @@
         "typescript": "^5.6.3"
     },
     "dependencies": {
-        "@opentelemetry/api": "1.9.0",
-        "@opentelemetry/auto-instrumentations-node": "0.52.0",
-        "@opentelemetry/exporter-metrics-otlp-grpc": "0.54.0",
-        "@opentelemetry/exporter-prometheus": "0.54.0",
-        "@opentelemetry/exporter-trace-otlp-grpc": "0.54.0",
-        "@opentelemetry/resource-detector-alibaba-cloud": "0.29.4",
-        "@opentelemetry/resource-detector-aws": "1.7.0",
-        "@opentelemetry/resource-detector-container": "0.5.0",
-        "@opentelemetry/resource-detector-gcp": "0.29.13",
-        "@opentelemetry/resources": "1.27.0",
-        "@opentelemetry/sdk-metrics": "1.27.0",
-        "@opentelemetry/sdk-node": "0.54.0"
+        "@opentelemetry/exporter-metrics-otlp-grpc": "0.55.0",
+        "@opentelemetry/auto-instrumentations-node": "0.53.0",
+        "@opentelemetry/exporter-prometheus": "0.55.0"
     }
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
 // Params holds the reconciliation-specific parameters.
@@ -35,4 +36,6 @@ type Params struct {
 	TargetAllocator *v1alpha1.TargetAllocator
 	OpAMPBridge     v1alpha1.OpAMPBridge
 	Config          config.Config
+	Reviewer        rbac.SAReviewer
+	ErrorAsWarning  bool
 }

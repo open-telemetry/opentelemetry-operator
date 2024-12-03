@@ -67,6 +67,14 @@ var (
 		featuregate.WithRegisterDescription("enables mTLS between the target allocator and the collector"),
 		featuregate.WithRegisterFromVersion("v0.111.0"),
 	)
+	// EnableTargetAllocatorFallbackStrategy is the feature gate that enables consistent-hashing as the fallback
+	// strategy for allocation strategies that might not assign all jobs (per-node).
+	EnableTargetAllocatorFallbackStrategy = featuregate.GlobalRegistry().MustRegister(
+		"operator.targetallocator.fallbackstrategy",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables fallback allocation strategy for the target allocator"),
+		featuregate.WithRegisterFromVersion("v0.114.0"),
+	)
 	// EnableConfigDefaulting is the feature gate that enables the operator to default the endpoint for known components.
 	EnableConfigDefaulting = featuregate.GlobalRegistry().MustRegister(
 		"operator.collector.default.config",

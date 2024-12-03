@@ -22,6 +22,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
@@ -48,6 +49,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
@@ -74,6 +76,18 @@ var (
 type check[T any] func(t *testing.T, params T)
 
 func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
+	// enable the collector CR feature flag, as these tests assume it
+	// TODO: drop this after the flag is enabled by default
+	registry := colfeaturegate.GlobalRegistry()
+	current := featuregate.CollectorUsesTargetAllocatorCR.IsEnabled()
+	require.False(t, current, "don't set gates which are enabled by default")
+	err := registry.Set(featuregate.CollectorUsesTargetAllocatorCR.ID(), true)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		err := registry.Set(featuregate.CollectorUsesTargetAllocatorCR.ID(), current)
+		require.NoError(t, err)
+	})
+
 	addedMetadataDeployment := testCollectorWithMode("test-deployment", v1alpha1.ModeDeployment)
 	addedMetadataDeployment.Labels = map[string]string{
 		labelName: labelVal,
