@@ -182,4 +182,59 @@ service:
 		assert.NoError(t, err)
 
 	})
+
+	t.Run("Should return expected collector config map without mTLS config", func(t *testing.T) {
+		expectedData := map[string]string{
+			"collector.yaml": `exporters:
+  debug:
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: serviceMonitor/test/test/0
+        static_configs:
+        - targets: ["prom.domain:1001", "prom.domain:1002", "prom.domain:1003"]
+          labels:
+            my: label
+        file_sd_configs:
+        - files:
+          - file2.json
+service:
+  pipelines:
+    metrics:
+      exporters:
+      - debug
+      receivers:
+      - prometheus
+`,
+		}
+
+		param, err := newParams("test/test-img", "testdata/http_sd_config_servicemonitor_test.yaml", config.WithCertManagerAvailability(certmanager.Available))
+		require.NoError(t, err)
+		flgs := featuregate.Flags(colfg.GlobalRegistry())
+		err = flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
+		param.TargetAllocator = nil
+		require.NoError(t, err)
+
+		hash, _ := manifestutils.GetConfigMapSHA(param.OtelCol.Spec.Config)
+		expectedName := naming.ConfigMap("test", hash)
+
+		expectedLables["app.kubernetes.io/component"] = "opentelemetry-collector"
+		expectedLables["app.kubernetes.io/name"] = "test-collector"
+		expectedLables["app.kubernetes.io/version"] = "latest"
+
+		actual, err := ConfigMap(param)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedName, actual.Name)
+		assert.Equal(t, expectedLables, actual.Labels)
+		assert.Equal(t, len(expectedData), len(actual.Data))
+		for k, expected := range expectedData {
+			assert.YAMLEq(t, expected, actual.Data[k])
+		}
+
+		// Reset the value
+		expectedLables["app.kubernetes.io/version"] = "0.47.0"
+		assert.NoError(t, err)
+	})
 }
