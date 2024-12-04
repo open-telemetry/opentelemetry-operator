@@ -6,7 +6,7 @@ retract v1.51.0
 
 require (
 	dario.cat/mergo v1.0.1
-	github.com/Masterminds/semver/v3 v3.3.0
+	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buraksezer/consistent v0.10.0
 	github.com/cespare/xxhash/v2 v2.3.0
@@ -30,8 +30,8 @@ require (
 	github.com/prometheus/prometheus v0.55.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.9.0
-	go.opentelemetry.io/collector/featuregate v1.19.0
+	github.com/stretchr/testify v1.10.0
+	go.opentelemetry.io/collector/featuregate v1.20.0
 	go.opentelemetry.io/otel v1.32.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.32.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.54.0
@@ -42,15 +42,15 @@ require (
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.31.2
-	k8s.io/apiextensions-apiserver v0.31.2
-	k8s.io/apimachinery v0.31.2
-	k8s.io/client-go v0.31.2
-	k8s.io/component-base v0.31.2
+	k8s.io/api v0.31.3
+	k8s.io/apiextensions-apiserver v0.31.3
+	k8s.io/apimachinery v0.31.3
+	k8s.io/client-go v0.31.3
+	k8s.io/component-base v0.31.3
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubectl v0.31.2
+	k8s.io/kubectl v0.31.3
 	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6
-	sigs.k8s.io/controller-runtime v0.19.1
+	sigs.k8s.io/controller-runtime v0.19.2
 	sigs.k8s.io/gateway-api v1.1.0 // indirect
 	sigs.k8s.io/yaml v1.4.0
 )

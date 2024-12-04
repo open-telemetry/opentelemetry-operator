@@ -17,11 +17,6 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: status.podIP
-    - name: JAVA_TOOL_OPTIONS
-      valueFrom:
-        configMapKeyRef:
-          name: config-java
-          key: system-properties
     - name: OTEL_JAVAAGENT_DEBUG
       value: "true"
     - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
@@ -29,7 +24,7 @@ spec:
     - name: SPLUNK_PROFILER_ENABLED
       value: "false"
     - name: JAVA_TOOL_OPTIONS
-      value: '$(JAVA_TOOL_OPTIONS) -javaagent:/otel-auto-instrumentation-java/javaagent.jar'
+      value: ' -javaagent:/otel-auto-instrumentation-java/javaagent.jar'
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
