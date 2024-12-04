@@ -362,6 +362,8 @@ https:
 prometheus_cr:
   enabled: true
   pod_monitor_selector: null
+  probe_selector: null
+  scrape_config_selector: null
   scrape_interval: 30s
   service_monitor_selector: null
 `,
