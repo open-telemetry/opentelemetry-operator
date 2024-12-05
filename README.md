@@ -802,7 +802,6 @@ In addition to the [core responsibilities](https://github.com/open-telemetry/com
 
 Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-telemetry/teams/operator-approvers)):
 
-- [Benedikt Bongartz](https://github.com/frzifus), Red Hat
 - [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), Red Hat
 - [Israel Blancas](https://github.com/iblancasa), Red Hat
@@ -818,6 +817,7 @@ Emeritus Approvers:
 
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
+- [Benedikt Bongartz](https://github.com/frzifus), Red Hat
 - [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
 - [Mikołaj Świątek](https://github.com/swiatekm), Elastic
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
