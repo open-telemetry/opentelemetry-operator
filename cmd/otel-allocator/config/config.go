@@ -21,9 +21,11 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"reflect"
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/mitchellh/mapstructure"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install"
@@ -153,6 +155,58 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	return nil
 }
 
+func StringToModelDurationHookFunc() mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{},
+	) (interface{}, error) {
+		if f.Kind() != reflect.String {
+			return data, nil
+		}
+		if t != reflect.TypeOf(model.Duration(5)) {
+			return data, nil
+		}
+
+		// Convert it by parsing
+		return time.ParseDuration(data.(string))
+	}
+}
+
+func decodeSubConfig(t interface{}, dc mapstructure.DecoderConfig) error {
+	dec, decError := mapstructure.NewDecoder(&dc)
+	if decError != nil {
+		return decError
+	}
+	if err := dec.Decode(t); err != nil {
+		return err
+	}
+	return nil
+}
+
+func flexibleUnmarshal(yamlFile []byte, cfg *Config) error {
+	t := make(map[string]interface{})
+	if err := yaml.Unmarshal(yamlFile, &t); err != nil {
+		return fmt.Errorf("error unmarshaling YAML: %w", err)
+	}
+
+	if t["collector_selector"] != nil {
+		dc := mapstructure.DecoderConfig{TagName: "yaml", Result: cfg.CollectorSelector}
+		if err := decodeSubConfig(t["collector_selector"], dc); err != nil {
+			return err
+		}
+	}
+
+	if t["prometheus_cr"] != nil {
+		dc := mapstructure.DecoderConfig{TagName: "yaml", Result: &cfg.PrometheusCR, DecodeHook: StringToModelDurationHookFunc()}
+		if err := decodeSubConfig(t["prometheus_cr"], dc); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func unmarshal(cfg *Config, configFile string) error {
 	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
@@ -161,6 +215,11 @@ func unmarshal(cfg *Config, configFile string) error {
 	if err = yaml.Unmarshal(yamlFile, cfg); err != nil {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
 	}
+
+	if err := flexibleUnmarshal(yamlFile, cfg); err != nil {
+		return err
+	}
+
 	return nil
 }
 
