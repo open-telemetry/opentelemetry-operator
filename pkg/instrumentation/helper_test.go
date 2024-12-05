@@ -20,6 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
@@ -184,6 +185,92 @@ func TestDuplicatedContainers(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ok := findDuplicatedContainers(test.containers)
 			assert.Equal(t, test.expectedDuplicates, ok)
+		})
+	}
+}
+
+func TestInstrVolume(t *testing.T) {
+	tests := []struct {
+		name       string
+		volume     corev1.PersistentVolumeClaimTemplate
+		volumeName string
+		quantity   *resource.Quantity
+		expected   corev1.Volume
+	}{
+		{
+			name: "With volume",
+			volume: corev1.PersistentVolumeClaimTemplate{
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+				},
+			},
+			volumeName: "default-vol",
+			quantity:   nil,
+			expected: corev1.Volume{
+				Name: "default-vol",
+				VolumeSource: corev1.VolumeSource{
+					Ephemeral: &corev1.EphemeralVolumeSource{
+						VolumeClaimTemplate: &corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
+					},
+				}},
+		},
+		{
+			name:       "With volume size limit",
+			volume:     corev1.PersistentVolumeClaimTemplate{},
+			volumeName: "default-vol",
+			quantity:   &defaultVolumeLimitSize,
+			expected: corev1.Volume{
+				Name: "default-vol",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: &defaultVolumeLimitSize,
+					},
+				}},
+		},
+		{
+			name:       "No volume or size limit",
+			volume:     corev1.PersistentVolumeClaimTemplate{},
+			volumeName: "default-vol",
+			quantity:   nil,
+			expected: corev1.Volume{
+				Name: "default-vol",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: &defaultSize,
+					},
+				}},
+		},
+		{
+			name: "With volume and size limit",
+			volume: corev1.PersistentVolumeClaimTemplate{
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+				},
+			},
+			volumeName: "default-vol",
+			quantity:   &defaultVolumeLimitSize,
+			expected: corev1.Volume{
+				Name: "default-vol",
+				VolumeSource: corev1.VolumeSource{
+					Ephemeral: &corev1.EphemeralVolumeSource{
+						VolumeClaimTemplate: &corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
+					},
+				}},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res := instrVolume(test.volume, test.volumeName, test.quantity)
+			assert.Equal(t, test.expected, res)
 		})
 	}
 }

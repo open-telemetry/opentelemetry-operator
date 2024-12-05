@@ -29,6 +29,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
+	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -121,7 +122,7 @@ func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object
 		c.metrics.create(ctx, otelcol)
 	}
 	if c.bv != nil {
-		newWarnings := c.bv(*otelcol)
+		newWarnings := c.bv(ctx, *otelcol)
 		warnings = append(warnings, newWarnings...)
 	}
 	return warnings, nil
@@ -151,7 +152,7 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj run
 	}
 
 	if c.bv != nil {
-		newWarnings := c.bv(*otelcol)
+		newWarnings := c.bv(ctx, *otelcol)
 		warnings = append(warnings, newWarnings...)
 	}
 	return warnings, nil
@@ -186,6 +187,11 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	// validate volumeClaimTemplates
 	if r.Spec.Mode != ModeStatefulSet && len(r.Spec.VolumeClaimTemplates) > 0 {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'volumeClaimTemplates'", r.Spec.Mode)
+	}
+
+	// validate persistentVolumeClaimRetentionPolicy
+	if r.Spec.Mode != ModeStatefulSet && r.Spec.PersistentVolumeClaimRetentionPolicy != nil {
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'persistentVolumeClaimRetentionPolicy'", r.Spec.Mode)
 	}
 
 	// validate tolerations
@@ -336,8 +342,12 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 	}
 	// if the prometheusCR is enabled, it needs a suite of permissions to function
 	if r.Spec.TargetAllocator.PrometheusCR.Enabled {
+		saname := r.Spec.TargetAllocator.ServiceAccount
+		if len(r.Spec.TargetAllocator.ServiceAccount) == 0 {
+			saname = naming.TargetAllocatorServiceAccount(r.Name)
+		}
 		warnings, err := CheckTargetAllocatorPrometheusCRPolicyRules(
-			ctx, c.reviewer, r.Spec.TargetAllocator.ServiceAccount, r.GetNamespace())
+			ctx, c.reviewer, r.GetNamespace(), saname)
 		if err != nil || len(warnings) > 0 {
 			return warnings, err
 		}
@@ -385,13 +395,13 @@ func ValidatePorts(ports []PortsSpec) error {
 func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	if autoscaler.Behavior != nil {
 		if autoscaler.Behavior.ScaleDown != nil && autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds != nil &&
-			*autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds < int32(1) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleDown should be one or more")
+			(*autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds < int32(0) || *autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds > 3600) {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleDown.stabilizationWindowSeconds should be >=0 and <=3600")
 		}
 
 		if autoscaler.Behavior.ScaleUp != nil && autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds != nil &&
-			*autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(1) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp should be one or more")
+			(*autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(0) || *autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds > 3600) {
+			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp.stabilizationWindowSeconds should be >=0 and <=3600")
 		}
 	}
 	if autoscaler.TargetCPUUtilization != nil && *autoscaler.TargetCPUUtilization < int32(1) {
@@ -425,7 +435,7 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 
 // BuildValidator enables running the manifest generators for the collector reconciler
 // +kubebuilder:object:generate=false
-type BuildValidator func(c OpenTelemetryCollector) admission.Warnings
+type BuildValidator func(ctx context.Context, c OpenTelemetryCollector) admission.Warnings
 
 func NewCollectorWebhook(
 	logger logr.Logger,

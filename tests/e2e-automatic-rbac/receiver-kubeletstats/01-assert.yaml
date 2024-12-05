@@ -1,0 +1,48 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: simplest-chainsaw-kubeletstats-cluster-role
+rules:
+- apiGroups: [""]
+  resources: ["nodes/stats"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: chainsaw-kubeletstats.simplest
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: simplest-chainsaw-kubeletstats-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: simplest-chainsaw-kubeletstats-collector
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: simplest-chainsaw-kubeletstats-cluster-role
+subjects:
+- kind: ServiceAccount
+  name: simplest-collector
+  namespace: chainsaw-kubeletstats
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: chainsaw-kubeletstats.simplest
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: simplest-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  namespace: chainsaw-kubeletstats
+spec:
+  containers:
+  - name: otc-container
+    env:
+    - name: POD_NAME
+    - name: K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName

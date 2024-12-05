@@ -78,22 +78,47 @@ func getPrometheusCREnabled(flagSet *pflag.FlagSet) (value bool, changed bool, e
 	return
 }
 
-func getHttpsListenAddr(flagSet *pflag.FlagSet) (string, error) {
-	return flagSet.GetString(listenAddrHttpsFlagName)
+func getHttpsListenAddr(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	if changed = flagSet.Changed(listenAddrHttpsFlagName); !changed {
+		value, err = ":8443", nil
+		return
+	}
+	value, err = flagSet.GetString(listenAddrHttpsFlagName)
+	return
 }
 
-func getHttpsEnabled(flagSet *pflag.FlagSet) (bool, error) {
-	return flagSet.GetBool(httpsEnabledFlagName)
+func getHttpsEnabled(flagSet *pflag.FlagSet) (value bool, changed bool, err error) {
+	if changed = flagSet.Changed(httpsEnabledFlagName); !changed {
+		value, err = false, nil
+		return
+	}
+	value, err = flagSet.GetBool(httpsEnabledFlagName)
+	return
 }
 
-func getHttpsCAFilePath(flagSet *pflag.FlagSet) (string, error) {
-	return flagSet.GetString(httpsCAFilePathFlagName)
+func getHttpsCAFilePath(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	if changed = flagSet.Changed(httpsCAFilePathFlagName); !changed {
+		value, err = "", nil
+		return
+	}
+	value, err = flagSet.GetString(httpsCAFilePathFlagName)
+	return
 }
 
-func getHttpsTLSCertFilePath(flagSet *pflag.FlagSet) (string, error) {
-	return flagSet.GetString(httpsTLSCertFilePathFlagName)
+func getHttpsTLSCertFilePath(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	if changed = flagSet.Changed(httpsTLSCertFilePathFlagName); !changed {
+		value, err = "", nil
+		return
+	}
+	value, err = flagSet.GetString(httpsTLSCertFilePathFlagName)
+	return
 }
 
-func getHttpsTLSKeyFilePath(flagSet *pflag.FlagSet) (string, error) {
-	return flagSet.GetString(httpsTLSKeyFilePathFlagName)
+func getHttpsTLSKeyFilePath(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	if changed = flagSet.Changed(httpsTLSKeyFilePathFlagName); !changed {
+		value, err = "", nil
+		return
+	}
+	value, err = flagSet.GetString(httpsTLSKeyFilePathFlagName)
+	return
 }

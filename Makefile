@@ -204,11 +204,28 @@ add-image-opampbridge:
 add-rbac-permissions-to-operator: manifests kustomize
 	# Kustomize only allows patches in the folder where the kustomization is located
 	# This folder is ignored by .gitignore
-	cp -r tests/e2e-automatic-rbac/extra-permissions-operator/ config/rbac/extra-permissions-operator
+	mkdir -p config/rbac/extra-permissions-operator
+	cp -r tests/e2e-automatic-rbac/extra-permissions-operator/* config/rbac/extra-permissions-operator
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/clusterresourcequotas.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/cronjobs.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/daemonsets.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/events.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/extensions.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/namespaces.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/namespaces-status.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/nodes.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/nodes-proxy.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/nodes-spec.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/pod-status.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/rbac.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/replicaset.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/replicationcontrollers.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/resourcequotas.yaml
+
+.PHONY: enable-targetallocator-cr
+enable-targetallocator-cr:
+	@$(MAKE) add-operator-arg OPERATOR_ARG='--feature-gates=operator.collector.targetallocatorcr'
+	cd config/crd && $(KUSTOMIZE) edit add resource bases/opentelemetry.io_targetallocators.yaml
 
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
@@ -267,6 +284,13 @@ generate: controller-gen
 e2e: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e
 
+# e2e-native-sidecar
+# NOTE: make sure the k8s featuregate "SidecarContainers" is set to true.
+# NOTE: make sure the operator featuregate "operator.sidecarcontainers.native" is enabled.
+.PHONY: e2e-native-sidecar
+e2e-native-sidecar: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-native-sidecar
+
 # end-to-end-test for testing automatic RBAC creation
 .PHONY: e2e-automatic-rbac
 e2e-automatic-rbac: chainsaw
@@ -311,6 +335,23 @@ e2e-prometheuscr: chainsaw
 .PHONY: e2e-targetallocator
 e2e-targetallocator: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator
+
+# Target allocator CR end-to-tests
+.PHONY: e2e-targetallocator-cr
+e2e-targetallocator-cr: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator-cr
+
+.PHONY: add-certmanager-permissions
+add-certmanager-permissions: 
+	# Kustomize only allows patches in the folder where the kustomization is located
+	# This folder is ignored by .gitignore
+	cp -r tests/e2e-ta-collector-mtls/certmanager-permissions config/rbac/certmanager-permissions
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path certmanager-permissions/certmanager.yaml
+
+# Target allocator collector mTLS end-to-tests
+.PHONY: e2e-ta-collector-mtls
+e2e-ta-collector-mtls: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-ta-collector-mtls
 
 # end-to-end-test for Annotations/Labels Filters
 .PHONY: e2e-metadata-filters
@@ -454,7 +495,7 @@ KUSTOMIZE_VERSION ?= v5.0.3
 CONTROLLER_TOOLS_VERSION ?= v0.16.1
 GOLANGCI_LINT_VERSION ?= v1.57.2
 KIND_VERSION ?= v0.20.0
-CHAINSAW_VERSION ?= v0.2.5
+CHAINSAW_VERSION ?= v0.2.8
 
 .PHONY: install-tools
 install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kind operator-sdk chainsaw
@@ -474,12 +515,12 @@ kind: ## Download kind locally if necessary.
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
 $(CONTROLLER_GEN): $(LOCALBIN)
-	@test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+	$(call go-get-tool,$(CONTROLLER_GEN), sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_TOOLS_VERSION))
 
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	@test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	$(call go-get-tool,$(ENVTEST), sigs.k8s.io/controller-runtime/tools/setup-envtest,latest)
 
 CRDOC = $(shell pwd)/bin/crdoc
 .PHONY: crdoc

@@ -55,6 +55,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -63,7 +64,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
-	// +kubebuilder:scaffold:imports
 )
 
 var (
@@ -100,6 +100,7 @@ type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
 	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
+	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 }
 
 func (m *mockAutoDetect) FIPSEnabled(ctx context.Context) bool {
@@ -125,6 +126,13 @@ func (m *mockAutoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availabi
 		return m.RBACPermissionsFunc(ctx)
 	}
 	return autoRBAC.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) CertManagerAvailability(ctx context.Context) (certmanager.Availability, error) {
+	if m.CertManagerAvailabilityFunc != nil {
+		return m.CertManagerAvailabilityFunc(ctx)
+	}
+	return certmanager.NotAvailable, nil
 }
 
 func TestMain(m *testing.M) {
@@ -186,6 +194,11 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
+	if err = v1alpha1.SetupTargetAllocatorWebhook(mgr, config.New(), reviewer); err != nil {
+		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
+		os.Exit(1)
+	}
+
 	if err = v1alpha1.SetupTargetAllocatorWebhook(mgr, config.New(), reviewer); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)

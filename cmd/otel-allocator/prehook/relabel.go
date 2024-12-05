@@ -16,8 +16,6 @@ package prehook
 
 import (
 	"github.com/go-logr/logr"
-	"github.com/prometheus/common/model"
-	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
@@ -35,18 +33,6 @@ func NewRelabelConfigTargetFilter(log logr.Logger) Hook {
 	}
 }
 
-// helper function converts from model.LabelSet to []labels.Label.
-func convertLabelToPromLabelSet(lbls model.LabelSet) []labels.Label {
-	newLabels := make([]labels.Label, len(lbls))
-	index := 0
-	for k, v := range lbls {
-		newLabels[index].Name = string(k)
-		newLabels[index].Value = string(v)
-		index++
-	}
-	return newLabels
-}
-
 func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[string]*target.Item {
 	numTargets := len(targets)
 
@@ -57,19 +43,14 @@ func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[
 
 	// Note: jobNameKey != tItem.JobName (jobNameKey is hashed)
 	for jobNameKey, tItem := range targets {
-		keepTarget := true
-		lset := convertLabelToPromLabelSet(tItem.Labels)
+		var keepTarget bool
+		lset := tItem.Labels
 		for _, cfg := range tf.relabelCfg[tItem.JobName] {
-			if newLset, keep := relabel.Process(lset, cfg); !keep {
-				keepTarget = false
+			lset, keepTarget = relabel.Process(lset, cfg)
+			if !keepTarget {
+				delete(targets, jobNameKey)
 				break // inner loop
-			} else {
-				lset = newLset
 			}
-		}
-
-		if !keepTarget {
-			delete(targets, jobNameKey)
 		}
 	}
 

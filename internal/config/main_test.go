@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -56,6 +57,9 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		RBACPermissionsFunc: func(ctx context.Context) (rbac.Availability, error) {
 			return rbac.Available, nil
 		},
+		CertManagerAvailabilityFunc: func(ctx context.Context) (certmanager.Availability, error) {
+			return certmanager.Available, nil
+		},
 	}
 	cfg := config.New(
 		config.WithAutoDetect(mock),
@@ -80,6 +84,7 @@ type mockAutoDetect struct {
 	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
 	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
 	RBACPermissionsFunc             func(ctx context.Context) (rbac.Availability, error)
+	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 }
 
 func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
@@ -105,4 +110,11 @@ func (m *mockAutoDetect) RBACPermissions(ctx context.Context) (rbac.Availability
 		return m.RBACPermissionsFunc(ctx)
 	}
 	return rbac.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) CertManagerAvailability(ctx context.Context) (certmanager.Availability, error) {
+	if m.CertManagerAvailabilityFunc != nil {
+		return m.CertManagerAvailabilityFunc(ctx)
+	}
+	return certmanager.NotAvailable, nil
 }

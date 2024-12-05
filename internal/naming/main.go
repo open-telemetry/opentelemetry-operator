@@ -116,6 +116,11 @@ func MonitoringService(otelcol string) string {
 	return DNSName(Truncate("%s-monitoring", 63, Service(otelcol)))
 }
 
+// ExtensionService builds the name for the extension service based on the instance.
+func ExtensionService(otelcol string) string {
+	return DNSName(Truncate("%s-extension", 63, Service(otelcol)))
+}
+
 // Service builds the service name based on the instance.
 func Service(otelcol string) string {
 	return DNSName(Truncate("%s-collector", 63, otelcol))
@@ -179,4 +184,39 @@ func TargetAllocatorServiceMonitor(otelcol string) string {
 // OpAMPBridgeServiceAccount builds the service account name based on the instance.
 func OpAMPBridgeServiceAccount(opampBridge string) string {
 	return DNSName(Truncate("%s-opamp-bridge", 63, opampBridge))
+}
+
+// SelfSignedIssuer returns the SelfSigned Issuer name based on the instance.
+func SelfSignedIssuer(otelcol string) string {
+	return DNSName(Truncate("%s-self-signed-issuer", 63, otelcol))
+}
+
+// CAIssuer returns the CA Issuer name based on the instance.
+func CAIssuer(otelcol string) string {
+	return DNSName(Truncate("%s-ca-issuer", 63, otelcol))
+}
+
+// CACertificateSecret returns the Secret name based on the instance.
+func CACertificate(otelcol string) string {
+	return DNSName(Truncate("%s-ca-cert", 63, otelcol))
+}
+
+// TAServerCertificate returns the Certificate name based on the instance.
+func TAServerCertificate(otelcol string) string {
+	return DNSName(Truncate("%s-ta-server-cert", 63, otelcol))
+}
+
+// TAServerCertificateSecretName returns the Secret name based on the instance.
+func TAServerCertificateSecretName(otelcol string) string {
+	return DNSName(Truncate("%s-ta-server-cert", 63, otelcol))
+}
+
+// TAClientCertificate returns the Certificate name based on the instance.
+func TAClientCertificate(otelcol string) string {
+	return DNSName(Truncate("%s-ta-client-cert", 63, otelcol))
+}
+
+// TAClientCertificateSecretName returns the Secret name based on the instance.
+func TAClientCertificateSecretName(otelcol string) string {
+	return DNSName(Truncate("%s-ta-client-cert", 63, otelcol))
 }

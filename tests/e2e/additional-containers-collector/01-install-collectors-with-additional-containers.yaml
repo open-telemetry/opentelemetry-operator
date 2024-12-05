@@ -1,0 +1,88 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: deployment
+  labels:
+    additional-containers: with
+spec:
+  mode: deployment
+  additionalContainers:
+  - image: alpine
+    name: alpine
+  - image: alpine
+    name: alpine2
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+    processors: {}
+
+    exporters:
+      debug: {}
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
+
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: daemonset
+  labels:
+    additional-containers: with
+spec:
+  mode: daemonset
+  additionalContainers:
+  - image: alpine
+    name: alpine
+  - image: alpine
+    name: alpine2
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+    processors: {}
+
+    exporters:
+      debug: {}
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
+
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: statefulset
+  labels:
+    additional-containers: with
+spec:
+  mode: statefulset
+  additionalContainers:
+  - image: alpine
+    name: alpine
+  - image: alpine
+    name: alpine2
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+    processors: {}
+
+    exporters:
+      debug: {}
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]

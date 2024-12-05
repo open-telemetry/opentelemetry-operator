@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+    affinity: with
+spec:
+  template:
+    spec:
+      (affinity != null): true

@@ -12,7 +12,7 @@ Steps to release a new version of the OpenTelemetry Operator:
         > DO NOT BUMP JAVA PAST `1.X.X` AND DO NOT BUMP .NET PAST `1.2.0`. Upgrades past these versions will introduce breaking HTTP semantic convention changes.
    1. Check if the compatible OpenShift versions are updated in the `Makefile`.
    1. Update the bundle by running `make bundle VERSION=$VERSION`.
-   1. Change the compatibility matrix in the [readme](./README.md) file, using the OpenTelemetry Operator version to be released and the current latest Kubernetes version as the latest supported version. Remove the oldest entry.
+   1. Change the compatibility matrix in the [compatibility doc](./docs/compatibility.md) file, using the OpenTelemetry Operator version to be released and the current latest Kubernetes version as the latest supported version. Remove the oldest entry.
    1. Update release schedule table, by moving the current release manager to the end of the table with updated release version.
    1. Add the changes to the changelog by running `make chlog-update VERSION=$VERSION`.
    1. Check the OpenTelemetry Collector's changelog and ensure migration steps are present in `pkg/collector/upgrade`
@@ -44,9 +44,10 @@ The operator should be released within a week after the [OpenTelemetry collector
 
 | Version  | Release manager |
 |----------|-----------------|
-| v0.110.0 | @swiatekm       |
-| v0.111.0 | @frzifus        |
-| v0.112.0 | @yuriolisa      |
-| v0.113.0 | @pavolloffay    |
-| v0.114.0 | @TylerHelmuth   |
-| v0.115.0 | @jaronoff97     |
+| v0.115.0 | @TylerHelmuth   |
+| v0.116.0 | @jaronoff97     |
+| v0.117.0 | @iblancasa      |
+| v0.118.0 | @frzifus        |
+| v0.119.0 | @yuriolisa      |
+| v0.120.0 | @pavolloffay    |
+| v0.121.0 | @swiatekm       |

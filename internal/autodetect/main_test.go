@@ -33,6 +33,8 @@ import (
 	kubeTesting "k8s.io/client-go/testing"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/autodetectutils"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -243,8 +245,8 @@ func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
 	} {
 		t.Run(tt.description, func(t *testing.T) {
 			// These settings can be get from env vars
-			t.Setenv(autoRBAC.NAMESPACE_ENV_VAR, tt.namespace)
-			t.Setenv(autoRBAC.SA_ENV_VAR, tt.serviceAccount)
+			t.Setenv(autodetectutils.NAMESPACE_ENV_VAR, tt.namespace)
+			t.Setenv(autodetectutils.SA_ENV_VAR, tt.serviceAccount)
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {}))
 			defer server.Close()
@@ -259,6 +261,97 @@ func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
 
 			// verify
 			assert.Equal(t, tt.expectedAvailability, rAuto)
+			if tt.shouldError {
+				require.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestCertManagerAvailability(t *testing.T) {
+	// test data
+	for _, tt := range []struct {
+		description          string
+		apiGroupList         *metav1.APIGroupList
+		expectedAvailability certmanager.Availability
+		namespace            string
+		serviceAccount       string
+		clientGenerator      fakeClientGenerator
+		shouldError          bool
+	}{
+		{
+			description:          "CertManager is not installed",
+			namespace:            "default",
+			serviceAccount:       "defaultSA",
+			apiGroupList:         &metav1.APIGroupList{},
+			expectedAvailability: certmanager.NotAvailable,
+			clientGenerator: reactorFactory(v1.SubjectAccessReviewStatus{
+				Allowed: true,
+			}),
+			shouldError: false,
+		},
+		{
+			description:    "CertManager is installed but RBAC permissions are not granted",
+			namespace:      "default",
+			serviceAccount: "defaultSA",
+			apiGroupList: &metav1.APIGroupList{
+				Groups: []metav1.APIGroup{
+					{
+						Name: "cert-manager.io",
+					},
+				},
+			},
+			expectedAvailability: certmanager.NotAvailable,
+			clientGenerator: reactorFactory(v1.SubjectAccessReviewStatus{
+				Allowed: false,
+			}),
+			shouldError: true,
+		},
+		{
+			description:    "CertManager is installed and RBAC permissions are granted",
+			namespace:      "default",
+			serviceAccount: "defaultSA",
+			apiGroupList: &metav1.APIGroupList{
+				Groups: []metav1.APIGroup{
+					{
+						Name: "cert-manager.io",
+					},
+				},
+			},
+			expectedAvailability: certmanager.Available,
+			clientGenerator: reactorFactory(v1.SubjectAccessReviewStatus{
+				Allowed: true,
+			}),
+			shouldError: false,
+		},
+	} {
+		t.Run(tt.description, func(t *testing.T) {
+			t.Setenv(autodetectutils.NAMESPACE_ENV_VAR, tt.namespace)
+			t.Setenv(autodetectutils.SA_ENV_VAR, tt.serviceAccount)
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				output, err := json.Marshal(tt.apiGroupList)
+				require.NoError(t, err)
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, err = w.Write(output)
+				require.NoError(t, err)
+			}))
+			defer server.Close()
+
+			r := rbac.NewReviewer(tt.clientGenerator())
+
+			aD, err := autodetect.New(&rest.Config{Host: server.URL}, r)
+			require.NoError(t, err)
+
+			// test
+			cma, err := aD.CertManagerAvailability(context.Background())
+
+			// verify
+			assert.Equal(t, tt.expectedAvailability, cma)
 			if tt.shouldError {
 				require.Error(t, err)
 			} else {

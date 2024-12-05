@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -46,7 +47,9 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
+	internalRbac "github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -64,6 +67,7 @@ type OpenTelemetryCollectorReconciler struct {
 	scheme   *runtime.Scheme
 	log      logr.Logger
 	config   config.Config
+	reviewer *internalRbac.Reviewer
 }
 
 // Params is the set of options to build a new OpenTelemetryCollectorReconciler.
@@ -73,6 +77,7 @@ type Params struct {
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
 	Config   config.Config
+	Reviewer *internalRbac.Reviewer
 }
 
 func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
@@ -168,7 +173,7 @@ func (r *OpenTelemetryCollectorReconciler) getConfigMapsToRemove(configVersionsT
 	return ownedConfigMaps
 }
 
-func (r *OpenTelemetryCollectorReconciler) GetParams(instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
+func (r *OpenTelemetryCollectorReconciler) GetParams(ctx context.Context, instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
 	p := manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
@@ -176,15 +181,29 @@ func (r *OpenTelemetryCollectorReconciler) GetParams(instance v1beta1.OpenTeleme
 		Log:      r.log,
 		Scheme:   r.scheme,
 		Recorder: r.recorder,
+		Reviewer: r.reviewer,
 	}
 
 	// generate the target allocator CR from the collector CR
-	targetAllocator, err := collector.TargetAllocator(p)
+	targetAllocator, err := r.getTargetAllocator(ctx, p)
 	if err != nil {
 		return p, err
 	}
 	p.TargetAllocator = targetAllocator
 	return p, nil
+}
+
+func (r *OpenTelemetryCollectorReconciler) getTargetAllocator(ctx context.Context, params manifests.Params) (*v1alpha1.TargetAllocator, error) {
+	if taName, ok := params.OtelCol.GetLabels()[constants.LabelTargetAllocator]; ok {
+		targetAllocator := &v1alpha1.TargetAllocator{}
+		taKey := client.ObjectKey{Name: taName, Namespace: params.OtelCol.GetNamespace()}
+		err := r.Client.Get(ctx, taKey, targetAllocator)
+		if err != nil {
+			return nil, err
+		}
+		return targetAllocator, nil
+	}
+	return collector.TargetAllocator(params)
 }
 
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
@@ -195,6 +214,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 		scheme:   p.Scheme,
 		config:   p.Config,
 		recorder: p.Recorder,
+		reviewer: p.Reviewer,
 	}
 	return r
 }
@@ -212,6 +232,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/finalizers,verbs=get;update;patch
+// +kubebuilder:rbac:groups=opentelemetry.io,resources=targetallocators,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile the current state of an OpenTelemetry collector resource with the desired state.
 func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -229,7 +250,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	params, err := r.GetParams(instance)
+	params, err := r.GetParams(ctx, instance)
 	if err != nil {
 		log.Error(err, "Failed to create manifest.Params")
 		return ctrl.Result{}, err

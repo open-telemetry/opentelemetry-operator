@@ -15,12 +15,16 @@
 package constants
 
 const (
-	EnvOTELServiceName          = "OTEL_SERVICE_NAME"
-	EnvOTELExporterOTLPEndpoint = "OTEL_EXPORTER_OTLP_ENDPOINT"
-	EnvOTELResourceAttrs        = "OTEL_RESOURCE_ATTRIBUTES"
-	EnvOTELPropagators          = "OTEL_PROPAGATORS"
-	EnvOTELTracesSampler        = "OTEL_TRACES_SAMPLER"
-	EnvOTELTracesSamplerArg     = "OTEL_TRACES_SAMPLER_ARG"
+	EnvOTELServiceName      = "OTEL_SERVICE_NAME"
+	EnvOTELResourceAttrs    = "OTEL_RESOURCE_ATTRIBUTES"
+	EnvOTELPropagators      = "OTEL_PROPAGATORS"
+	EnvOTELTracesSampler    = "OTEL_TRACES_SAMPLER"
+	EnvOTELTracesSamplerArg = "OTEL_TRACES_SAMPLER_ARG"
+
+	EnvOTELExporterOTLPEndpoint      = "OTEL_EXPORTER_OTLP_ENDPOINT"
+	EnvOTELExporterCertificate       = "OTEL_EXPORTER_OTLP_CERTIFICATE"
+	EnvOTELExporterClientCertificate = "OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE"
+	EnvOTELExporterClientKey         = "OTEL_EXPORTER_OTLP_CLIENT_KEY"
 
 	InstrumentationPrefix                           = "instrumentation.opentelemetry.io/"
 	AnnotationDefaultAutoInstrumentationJava        = InstrumentationPrefix + "default-auto-instrumentation-java-image"
@@ -36,6 +40,7 @@ const (
 	LabelAppVersion  = "app.kubernetes.io/version"
 	LabelAppPartOf   = "app.kubernetes.io/part-of"
 
+	LabelTargetAllocator              = "opentelemetry.io/target-allocator"
 	ResourceAttributeAnnotationPrefix = "resource.opentelemetry.io/"
 
 	EnvPodName  = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
@@ -52,4 +57,9 @@ const (
 	FlagNginx       = "enable-nginx-instrumentation"
 	FlagNodeJS      = "enable-nodejs-instrumentation"
 	FlagJava        = "enable-java-instrumentation"
+
+	TACollectorTLSDirPath      = "/tls"
+	TACollectorCAFileName      = "ca.crt"
+	TACollectorTLSKeyFileName  = "tls.key"
+	TACollectorTLSCertFileName = "tls.crt"
 )

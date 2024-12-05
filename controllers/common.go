@@ -35,6 +35,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func isNamespaceScoped(obj client.Object) bool {
@@ -59,22 +60,26 @@ func BuildCollector(params manifests.Params) ([]client.Object, error) {
 		}
 		resources = append(resources, objs...)
 	}
-	// TODO: Remove this after TargetAllocator CRD is reconciled
-	if params.TargetAllocator != nil {
-		taParams := targetallocator.Params{
-			Client:          params.Client,
-			Scheme:          params.Scheme,
-			Recorder:        params.Recorder,
-			Log:             params.Log,
-			Config:          params.Config,
-			Collector:       &params.OtelCol,
-			TargetAllocator: *params.TargetAllocator,
+	// If we're not building a TargetAllocator CRD, then we need to separately invoke its builder
+	// to directly build the manifests. This is what used to happen before the TargetAllocator CRD
+	// was introduced.
+	if !featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() {
+		if params.TargetAllocator != nil {
+			taParams := targetallocator.Params{
+				Client:          params.Client,
+				Scheme:          params.Scheme,
+				Recorder:        params.Recorder,
+				Log:             params.Log,
+				Config:          params.Config,
+				Collector:       &params.OtelCol,
+				TargetAllocator: *params.TargetAllocator,
+			}
+			taResources, err := BuildTargetAllocator(taParams)
+			if err != nil {
+				return nil, err
+			}
+			resources = append(resources, taResources...)
 		}
-		taResources, err := BuildTargetAllocator(taParams)
-		if err != nil {
-			return nil, err
-		}
-		resources = append(resources, taResources...)
 	}
 	return resources, nil
 }
@@ -155,7 +160,7 @@ func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logg
 			op = result
 			return createOrUpdateErr
 		})
-		if crudErr != nil && errors.Is(crudErr, manifests.ImmutableChangeErr) {
+		if crudErr != nil && errors.As(crudErr, &manifests.ImmutableChangeErr) {
 			l.Error(crudErr, "detected immutable field change, trying to delete, new object will be created on next reconcile", "existing", existing.GetName())
 			delErr := kubeClient.Delete(ctx, existing)
 			if delErr != nil {

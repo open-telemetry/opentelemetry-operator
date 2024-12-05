@@ -19,10 +19,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
+
+var defaultVolumeSize = resource.MustParse("200Mi")
 
 func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	inst := &Instrumentation{}
@@ -109,6 +113,111 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 				Spec: InstrumentationSpec{
 					Sampler: Sampler{
 						Type: ParentBasedTraceIDRatio,
+					},
+				},
+			},
+		},
+		{
+			name: "with volume and volumeSizeLimit",
+			err:  "spec.nodejs.volumeClaimTemplate and spec.nodejs.volumeSizeLimit cannot both be defined",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					NodeJS: NodeJS{
+						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
+						VolumeSizeLimit: &defaultVolumeSize,
+					},
+				},
+			},
+			warnings: []string{"sampler type not set"},
+		},
+		{
+			name: "exporter: tls cert set but missing key",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
+						Argument: "0.99",
+					},
+					Exporter: Exporter{
+						Endpoint: "https://collector:4317",
+						TLS: &TLS{
+							Cert: "cert",
+						},
+					},
+				},
+			},
+			warnings: []string{"both exporter.tls.key and exporter.tls.cert mut be set"},
+		},
+		{
+			name: "exporter: tls key set but missing cert",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
+						Argument: "0.99",
+					},
+					Exporter: Exporter{
+						Endpoint: "https://collector:4317",
+						TLS: &TLS{
+							Key: "key",
+						},
+					},
+				},
+			},
+			warnings: []string{"both exporter.tls.key and exporter.tls.cert mut be set"},
+		},
+		{
+			name: "exporter: tls set but using http://",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
+						Argument: "0.99",
+					},
+					Exporter: Exporter{
+						Endpoint: "http://collector:4317",
+						TLS: &TLS{
+							Key:  "key",
+							Cert: "cert",
+						},
+					},
+				},
+			},
+			warnings: []string{"exporter.tls is configured but exporter.endpoint is not enabling TLS with https://"},
+		},
+		{
+			name: "exporter: exporter using http://, but the tls is nil",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
+						Argument: "0.99",
+					},
+					Exporter: Exporter{
+						Endpoint: "https://collector:4317",
+					},
+				},
+			},
+			warnings: []string{"exporter is using https:// but exporter.tls is unset"},
+		},
+		{
+			name: "exporter no warning set",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type:     ParentBasedTraceIDRatio,
+						Argument: "0.99",
+					},
+					Exporter: Exporter{
+						Endpoint: "https://collector:4317",
+						TLS: &TLS{
+							Key:  "key",
+							Cert: "cert",
+						},
 					},
 				},
 			},

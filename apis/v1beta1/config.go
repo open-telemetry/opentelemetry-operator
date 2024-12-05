@@ -206,7 +206,12 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 		case KindProcessor:
 			continue
 		case KindExtension:
-			continue
+			retriever = extensions.ParserFor
+			if c.Extensions == nil {
+				cfg = AnyConfig{}
+			} else {
+				cfg = *c.Extensions
+			}
 		}
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.
@@ -226,8 +231,47 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 	return ports, nil
 }
 
+// getEnvironmentVariablesForComponentKinds gets the environment variables for the given ComponentKind(s).
+func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]corev1.EnvVar, error) {
+	var envVars []corev1.EnvVar = []corev1.EnvVar{}
+	enabledComponents := c.GetEnabledComponents()
+	for _, componentKind := range componentKinds {
+		var retriever components.ParserRetriever
+		var cfg AnyConfig
+
+		switch componentKind {
+		case KindReceiver:
+			retriever = receivers.ReceiverFor
+			cfg = c.Receivers
+		case KindExporter:
+			continue
+		case KindProcessor:
+			continue
+		case KindExtension:
+			continue
+		}
+		for componentName := range enabledComponents[componentKind] {
+			parser := retriever(componentName)
+			if parsedEnvVars, err := parser.GetEnvironmentVariables(logger, cfg.Object[componentName]); err != nil {
+				return nil, err
+			} else {
+				envVars = append(envVars, parsedEnvVars...)
+			}
+		}
+	}
+
+	sort.Slice(envVars, func(i, j int) bool {
+		return envVars[i].Name < envVars[j].Name
+	})
+
+	return envVars, nil
+}
+
 // applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
 func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) error {
+	if err := c.Service.ApplyDefaults(); err != nil {
+		return err
+	}
 	enabledComponents := c.GetEnabledComponents()
 	for _, componentKind := range componentKinds {
 		var retriever components.ParserRetriever
@@ -279,8 +323,20 @@ func (c *Config) GetExporterPorts(logger logr.Logger) ([]corev1.ServicePort, err
 	return c.getPortsForComponentKinds(logger, KindExporter)
 }
 
-func (c *Config) GetAllPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
+func (c *Config) GetExtensionPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
+	return c.getPortsForComponentKinds(logger, KindExtension)
+}
+
+func (c *Config) GetReceiverAndExporterPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
 	return c.getPortsForComponentKinds(logger, KindReceiver, KindExporter)
+}
+
+func (c *Config) GetAllPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
+	return c.getPortsForComponentKinds(logger, KindReceiver, KindExporter, KindExtension)
+}
+
+func (c *Config) GetEnvironmentVariables(logger logr.Logger) ([]corev1.EnvVar, error) {
+	return c.getEnvironmentVariablesForComponentKinds(logger, KindReceiver)
 }
 
 func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error) {
@@ -371,24 +427,55 @@ type Service struct {
 	Pipelines map[string]*Pipeline `json:"pipelines" yaml:"pipelines"`
 }
 
-// MetricsPort gets the port number for the metrics endpoint from the collector config if it has been set.
-func (s *Service) MetricsPort() (int32, error) {
+// MetricsEndpoint gets the port number and host address for the metrics endpoint from the collector config if it has been set.
+func (s *Service) MetricsEndpoint() (string, int32, error) {
+	defaultAddr := "0.0.0.0"
 	if s.GetTelemetry() == nil {
 		// telemetry isn't set, use the default
-		return 8888, nil
+		return defaultAddr, 8888, nil
 	}
-	_, port, netErr := net.SplitHostPort(s.GetTelemetry().Metrics.Address)
+	host, port, netErr := net.SplitHostPort(s.GetTelemetry().Metrics.Address)
 	if netErr != nil && strings.Contains(netErr.Error(), "missing port in address") {
-		return 8888, nil
+		return defaultAddr, 8888, nil
 	} else if netErr != nil {
-		return 0, netErr
+		return "", 0, netErr
 	}
 	i64, err := strconv.ParseInt(port, 10, 32)
 	if err != nil {
-		return 0, err
+		return "", 0, err
 	}
 
-	return int32(i64), nil
+	if host == "" {
+		host = defaultAddr
+	}
+
+	return host, int32(i64), nil
+}
+
+// ApplyDefaults inserts configuration defaults if it has not been set.
+func (s *Service) ApplyDefaults() error {
+	telemetryAddr, telemetryPort, err := s.MetricsEndpoint()
+	if err != nil {
+		return err
+	}
+	tm := &AnyConfig{
+		Object: map[string]interface{}{
+			"metrics": map[string]interface{}{
+				"address": fmt.Sprintf("%s:%d", telemetryAddr, telemetryPort),
+			},
+		},
+	}
+
+	if s.Telemetry == nil {
+		s.Telemetry = tm
+		return nil
+	}
+	// NOTE: Merge without overwrite. If a telemetry endpoint is specified, the defaulting
+	// respects the configuration and returns an equal value.
+	if err := mergo.Merge(s.Telemetry, tm); err != nil {
+		return fmt.Errorf("telemetry config merge failed: %w", err)
+	}
+	return nil
 }
 
 // MetricsConfig comes from the collector.

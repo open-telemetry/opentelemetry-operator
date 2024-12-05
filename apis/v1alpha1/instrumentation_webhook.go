@@ -17,6 +17,7 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -127,13 +128,13 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	if r.Spec.Python.Resources.Limits == nil {
 		r.Spec.Python.Resources.Limits = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("500m"),
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
 		}
 	}
 	if r.Spec.Python.Resources.Requests == nil {
 		r.Spec.Python.Resources.Requests = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("50m"),
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
 		}
 	}
 	if r.Spec.DotNet.Image == "" {
@@ -157,13 +158,13 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	if r.Spec.Go.Resources.Limits == nil {
 		r.Spec.Go.Resources.Limits = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("500m"),
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
 		}
 	}
 	if r.Spec.Go.Resources.Requests == nil {
 		r.Spec.Go.Resources.Requests = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("50m"),
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
 		}
 	}
 	if r.Spec.ApacheHttpd.Image == "" {
@@ -236,7 +237,59 @@ func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings
 	default:
 		return warnings, fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Sampler.Type)
 	}
+
+	var err error
+	err = validateInstrVolume(r.Spec.ApacheHttpd.VolumeClaimTemplate, r.Spec.ApacheHttpd.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.apachehttpd.volumeClaimTemplate and spec.apachehttpd.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.DotNet.VolumeClaimTemplate, r.Spec.DotNet.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.dotnet.volumeClaimTemplate and spec.dotnet.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.Go.VolumeClaimTemplate, r.Spec.Go.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.go.volumeClaimTemplate and spec.go.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.Java.VolumeClaimTemplate, r.Spec.Java.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.java.volumeClaimTemplate and spec.java.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.Nginx.VolumeClaimTemplate, r.Spec.Nginx.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.nginx.volumeClaimTemplate and spec.nginx.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.NodeJS.VolumeClaimTemplate, r.Spec.NodeJS.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.nodejs.volumeClaimTemplate and spec.nodejs.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.Python.VolumeClaimTemplate, r.Spec.Python.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.python.volumeClaimTemplate and spec.python.volumeSizeLimit cannot both be defined: %w", err)
+	}
+
+	warnings = append(warnings, validateExporter(r.Spec.Exporter)...)
+
 	return warnings, nil
+}
+
+func validateExporter(exporter Exporter) []string {
+	var warnings []string
+	if exporter.TLS != nil {
+		tls := exporter.TLS
+		if tls.Key != "" && tls.Cert == "" || tls.Cert != "" && tls.Key == "" {
+			warnings = append(warnings, "both exporter.tls.key and exporter.tls.cert mut be set")
+		}
+
+		if !strings.HasPrefix(exporter.Endpoint, "https://") {
+			warnings = append(warnings, "exporter.tls is configured but exporter.endpoint is not enabling TLS with https://")
+		}
+	}
+	if strings.HasPrefix(exporter.Endpoint, "https://") && exporter.TLS == nil {
+		warnings = append(warnings, "exporter is using https:// but exporter.tls is unset")
+	}
+
+	return warnings
 }
 
 func validateJaegerRemoteSamplerArgument(argument string) error {
@@ -266,6 +319,13 @@ func validateJaegerRemoteSamplerArgument(argument string) error {
 				return fmt.Errorf("initialSamplingRate should be in rage [0..1]: %s", kv[1])
 			}
 		}
+	}
+	return nil
+}
+
+func validateInstrVolume(volumeClaimTemplate corev1.PersistentVolumeClaimTemplate, volumeSizeLimit *resource.Quantity) error {
+	if !reflect.ValueOf(volumeClaimTemplate).IsZero() && volumeSizeLimit != nil {
+		return fmt.Errorf("unable to resolve volume size")
 	}
 	return nil
 }

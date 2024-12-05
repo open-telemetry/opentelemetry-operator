@@ -1,0 +1,187 @@
+apiVersion: v1
+automountServiceAccountToken: true
+kind: ServiceAccount
+metadata:
+  name: ta
+---
+apiVersion: v1
+automountServiceAccountToken: true
+kind: ServiceAccount
+metadata:
+  name: collector
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: (join('-', ['ta', $namespace]))
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - nodes
+  - services
+  - endpoints
+  - configmaps
+  - secrets
+  - namespaces
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  - services
+  - endpoints
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  - podmonitors
+  verbs:
+  - get
+  - watch
+  - list
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: (join('-', ['collector', $namespace]))
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - nodes
+  - nodes/metrics
+  - services
+  - endpoints
+  - namespaces
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - watch
+  - list
+- nonResourceURLs:
+  - /metrics
+  - /metrics/cadvisor
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: (join('-', ['ta', $namespace]))
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: (join('-', ['ta', $namespace]))
+subjects:
+- kind: ServiceAccount
+  name: ta
+  namespace: ($namespace)
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: (join('-', ['collector', $namespace]))
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: (join('-', ['collector', $namespace]))
+subjects:
+- kind: ServiceAccount
+  name: collector
+  namespace: ($namespace)
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: prometheus-cr
+spec:
+  config: |
+    receivers:
+      prometheus:
+        config:
+          scrape_configs: []
+
+    processors:
+
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:9090
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          exporters: [prometheus]
+  mode: statefulset
+  serviceAccount: collector
+  targetAllocator:
+    enabled: true
+    prometheusCR:
+      enabled: true
+      scrapeInterval: 1s
+    serviceAccount: ta
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-serving-over-https
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-ta
+          image: curlimages/curl
+          volumeMounts:
+            - name: tls-secret
+              mountPath: /etc/tls
+              readOnly: true
+          args:
+            - /bin/sh
+            - -c
+            - |
+              curl -s \
+                --cert /etc/tls/tls.crt \
+                --key /etc/tls/tls.key \
+                --cacert /etc/tls/ca.crt \
+                https://prometheus-cr-targetallocator:443
+      volumes:
+        - name: tls-secret
+          secret:
+            secretName: prometheus-cr-ta-client-cert

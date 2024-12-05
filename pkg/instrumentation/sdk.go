@@ -110,7 +110,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range insts.Python.Containers {
 			index := getContainerIndex(container, pod)
-			pod, err = injectPythonSDK(otelinst.Spec.Python, pod, index)
+			pod, err = injectPythonSDK(otelinst.Spec.Python, pod, index, insts.Python.AdditionalAnnotations[annotationPythonPlatform])
 			if err != nil {
 				i.logger.Info("Skipping Python SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
@@ -304,15 +304,7 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 			Value: chooseServiceName(pod, useLabelsForResourceAttributes, resourceMap, appIndex),
 		})
 	}
-	if otelinst.Spec.Exporter.Endpoint != "" {
-		idx = getIndexOfEnv(container.Env, constants.EnvOTELExporterOTLPEndpoint)
-		if idx == -1 {
-			container.Env = append(container.Env, corev1.EnvVar{
-				Name:  constants.EnvOTELExporterOTLPEndpoint,
-				Value: otelinst.Spec.Endpoint,
-			})
-		}
-	}
+	configureExporter(otelinst.Spec.Exporter, &pod, container)
 
 	// Always retrieve the pod name from the Downward API. Ensure that the OTEL_RESOURCE_ATTRIBUTES_POD_NAME env exists.
 	container.Env = append(container.Env, corev1.EnvVar{

@@ -35,6 +35,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	promcommconfig "github.com/prometheus/common/config"
 	promconfig "github.com/prometheus/prometheus/config"
+	"github.com/prometheus/prometheus/model/labels"
 	"gopkg.in/yaml.v2"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
@@ -57,8 +58,17 @@ var (
 )
 
 type collectorJSON struct {
-	Link string         `json:"_link"`
-	Jobs []*target.Item `json:"targets"`
+	Link string        `json:"_link"`
+	Jobs []*targetJSON `json:"targets"`
+}
+
+type linkJSON struct {
+	Link string `json:"_link"`
+}
+
+type targetJSON struct {
+	TargetURL []string      `json:"targets"`
+	Labels    labels.Labels `json:"labels"`
 }
 
 type Server struct {
@@ -263,9 +273,9 @@ func (s *Server) ReadinessProbeHandler(c *gin.Context) {
 }
 
 func (s *Server) JobHandler(c *gin.Context) {
-	displayData := make(map[string]target.LinkJSON)
+	displayData := make(map[string]linkJSON)
 	for _, v := range s.allocator.TargetItems() {
-		displayData[v.JobName] = target.LinkJSON{Link: v.Link.Link}
+		displayData[v.JobName] = linkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(v.JobName))}
 	}
 	s.jsonHandler(c.Writer, displayData)
 }
@@ -294,16 +304,16 @@ func (s *Server) TargetsHandler(c *gin.Context) {
 	if len(q) == 0 {
 		displayData := GetAllTargetsByJob(s.allocator, jobId)
 		s.jsonHandler(c.Writer, displayData)
-
 	} else {
-		tgs := s.allocator.GetTargetsForCollectorAndJob(q[0], jobId)
+		targets := GetAllTargetsByCollectorAndJob(s.allocator, q[0], jobId)
 		// Displays empty list if nothing matches
-		if len(tgs) == 0 {
+		if len(targets) == 0 {
 			s.jsonHandler(c.Writer, []interface{}{})
 			return
 		}
-		s.jsonHandler(c.Writer, tgs)
+		s.jsonHandler(c.Writer, targets)
 	}
+
 }
 
 func (s *Server) errorHandler(w http.ResponseWriter, err error) {
@@ -323,10 +333,23 @@ func (s *Server) jsonHandler(w http.ResponseWriter, data interface{}) {
 func GetAllTargetsByJob(allocator allocation.Allocator, job string) map[string]collectorJSON {
 	displayData := make(map[string]collectorJSON)
 	for _, col := range allocator.Collectors() {
-		items := allocator.GetTargetsForCollectorAndJob(col.Name, job)
-		displayData[col.Name] = collectorJSON{Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(job), col.Name), Jobs: items}
+		targets := GetAllTargetsByCollectorAndJob(allocator, col.Name, job)
+		displayData[col.Name] = collectorJSON{
+			Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(job), col.Name),
+			Jobs: targets,
+		}
 	}
 	return displayData
+}
+
+// GetAllTargetsByCollector returns all the targets for a given collector and job.
+func GetAllTargetsByCollectorAndJob(allocator allocation.Allocator, collectorName string, jobName string) []*targetJSON {
+	items := allocator.GetTargetsForCollectorAndJob(collectorName, jobName)
+	targets := make([]*targetJSON, len(items))
+	for i, item := range items {
+		targets[i] = targetJsonFromTargetItem(item)
+	}
+	return targets
 }
 
 // registerPprof registers the pprof handlers and either serves the requested
@@ -347,4 +370,11 @@ func registerPprof(g *gin.RouterGroup) {
 			gin.WrapF(pprof.Index)(c)
 		}
 	})
+}
+
+func targetJsonFromTargetItem(item *target.Item) *targetJSON {
+	return &targetJSON{
+		TargetURL: []string{item.TargetURL},
+		Labels:    item.Labels,
+	}
 }

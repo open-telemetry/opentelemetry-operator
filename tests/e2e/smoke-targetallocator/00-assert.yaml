@@ -50,6 +50,9 @@ data:
                     - debug
                 receivers:
                     - jaeger
+        telemetry:
+            metrics:
+                address: 0.0.0.0:8888
 kind: ConfigMap
 metadata:
-  name: stateful-collector-57180221
+  name: stateful-collector-7a42612e

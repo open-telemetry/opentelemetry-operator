@@ -15,36 +15,30 @@
 package target
 
 import (
-	"fmt"
-	"net/url"
+	"strconv"
 
-	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/model/labels"
 )
 
 // nodeLabels are labels that are used to identify the node on which the given
 // target is residing. To learn more about these labels, please refer to:
 // https://prometheus.io/docs/prometheus/latest/configuration/configuration/#kubernetes_sd_config
 var (
-	nodeLabels = []model.LabelName{
+	nodeLabels = []string{
 		"__meta_kubernetes_pod_node_name",
 		"__meta_kubernetes_node_name",
 		"__meta_kubernetes_endpoint_node_name",
 	}
-	endpointSliceTargetKindLabel model.LabelName = "__meta_kubernetes_endpointslice_address_target_kind"
-	endpointSliceTargetNameLabel model.LabelName = "__meta_kubernetes_endpointslice_address_target_name"
+	endpointSliceTargetKindLabel = "__meta_kubernetes_endpointslice_address_target_kind"
+	endpointSliceTargetNameLabel = "__meta_kubernetes_endpointslice_address_target_name"
+	relevantLabelNames           = append(nodeLabels, endpointSliceTargetKindLabel, endpointSliceTargetNameLabel)
 )
 
-// LinkJSON This package contains common structs and methods that relate to scrape targets.
-type LinkJSON struct {
-	Link string `json:"_link"`
-}
-
 type Item struct {
-	JobName       string         `json:"-"`
-	Link          LinkJSON       `json:"-"`
-	TargetURL     []string       `json:"targets"`
-	Labels        model.LabelSet `json:"labels"`
-	CollectorName string         `json:"-"`
+	JobName       string
+	TargetURL     string
+	Labels        labels.Labels
+	CollectorName string
 	hash          string
 }
 
@@ -53,30 +47,30 @@ func (t *Item) Hash() string {
 }
 
 func (t *Item) GetNodeName() string {
+	relevantLabels := t.Labels.MatchLabels(true, relevantLabelNames...)
 	for _, label := range nodeLabels {
-		if val, ok := t.Labels[label]; ok {
-			return string(val)
+		if val := relevantLabels.Get(label); val != "" {
+			return val
 		}
 	}
 
-	if val := t.Labels[endpointSliceTargetKindLabel]; val != "Node" {
+	if val := relevantLabels.Get(endpointSliceTargetKindLabel); val != "Node" {
 		return ""
 	}
 
-	return string(t.Labels[endpointSliceTargetNameLabel])
+	return relevantLabels.Get(endpointSliceTargetNameLabel)
 }
 
 // NewItem Creates a new target item.
 // INVARIANTS:
 // * Item fields must not be modified after creation.
 // * Item should only be made via its constructor, never directly.
-func NewItem(jobName string, targetURL string, label model.LabelSet, collectorName string) *Item {
+func NewItem(jobName string, targetURL string, labels labels.Labels, collectorName string) *Item {
 	return &Item{
 		JobName:       jobName,
-		Link:          LinkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))},
-		hash:          jobName + targetURL + label.Fingerprint().String(),
-		TargetURL:     []string{targetURL},
-		Labels:        label,
+		hash:          jobName + targetURL + strconv.FormatUint(labels.Hash(), 10),
+		TargetURL:     targetURL,
+		Labels:        labels,
 		CollectorName: collectorName,
 	}
 }

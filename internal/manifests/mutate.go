@@ -15,11 +15,11 @@
 package manifests
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 
 	"dario.cat/mergo"
+	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -31,10 +31,20 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
+type ImmutableFieldChangeErr struct {
+	Field string
+}
+
+func (e *ImmutableFieldChangeErr) Error() string {
+	return fmt.Sprintf("Immutable field change attempted: %s", e.Field)
+}
+
 var (
-	ImmutableChangeErr = errors.New("immutable field change attempted")
+	ImmutableChangeErr *ImmutableFieldChangeErr
 )
 
 // MutateFuncFor returns a mutate function based on the
@@ -55,6 +65,7 @@ var (
 // - HorizontalPodAutoscaler
 // - Route
 // - Secret
+// - TargetAllocator
 // In order for the operator to reconcile other types, they must be added here.
 // The function returned takes no arguments but instead uses the existing and desired inputs here. Existing is expected
 // to be set by the controller-runtime package through a client get call.
@@ -166,6 +177,21 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 			wantPr := desired.(*corev1.Secret)
 			mutateSecret(pr, wantPr)
 
+		case *cmv1.Certificate:
+			cert := existing.(*cmv1.Certificate)
+			wantCert := desired.(*cmv1.Certificate)
+			mutateCertificate(cert, wantCert)
+
+		case *cmv1.Issuer:
+			issuer := existing.(*cmv1.Issuer)
+			wantIssuer := desired.(*cmv1.Issuer)
+			mutateIssuer(issuer, wantIssuer)
+
+		case *v1alpha1.TargetAllocator:
+			ta := existing.(*v1alpha1.TargetAllocator)
+			wantTa := desired.(*v1alpha1.TargetAllocator)
+			mutateTargetAllocator(ta, wantTa)
+
 		default:
 			t := reflect.TypeOf(existing).String()
 			return fmt.Errorf("missing mutate implementation for resource type: %s", t)
@@ -176,10 +202,6 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 
 func mergeWithOverride(dst, src interface{}) error {
 	return mergo.Merge(dst, src, mergo.WithOverride)
-}
-
-func mergeWithOverwriteWithEmptyValue(dst, src interface{}) error {
-	return mergo.Merge(dst, src, mergo.WithOverwriteWithEmptyValue)
 }
 
 func mutateSecret(existing, desired *corev1.Secret) {
@@ -259,90 +281,131 @@ func mutatePodMonitor(existing, desired *monitoringv1.PodMonitor) {
 	existing.Spec = desired.Spec
 }
 
+func mutateTargetAllocator(existing, desired *v1alpha1.TargetAllocator) {
+	existing.Annotations = desired.Annotations
+	existing.Labels = desired.Labels
+	existing.Spec = desired.Spec
+}
+
 func mutateService(existing, desired *corev1.Service) {
 	existing.Spec.Ports = desired.Spec.Ports
 	existing.Spec.Selector = desired.Spec.Selector
 }
 
 func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
-	if !existing.CreationTimestamp.IsZero() && !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
-		return ImmutableChangeErr
+	if !existing.CreationTimestamp.IsZero() {
+		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
+			return &ImmutableFieldChangeErr{Field: "Spec.Selector"}
+		}
+		if err := hasImmutableLabelChange(existing.Spec.Selector.MatchLabels, desired.Spec.Template.Labels); err != nil {
+			return err
+		}
 	}
-	// Daemonset selector is immutable so we set this value only if
-	// a new object is going to be created
-	if existing.CreationTimestamp.IsZero() {
-		existing.Spec.Selector = desired.Spec.Selector
-	}
-	if err := mergeWithOverride(&existing.Spec, desired.Spec); err != nil {
+
+	existing.Spec.MinReadySeconds = desired.Spec.MinReadySeconds
+	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
+	existing.Spec.UpdateStrategy = desired.Spec.UpdateStrategy
+
+	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
 		return err
 	}
-	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Template.Spec.NodeSelector, desired.Spec.Template.Spec.NodeSelector); err != nil {
-		return err
-	}
+
 	return nil
 }
 
 func mutateDeployment(existing, desired *appsv1.Deployment) error {
-	if !existing.CreationTimestamp.IsZero() && !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
-		return ImmutableChangeErr
+	if !existing.CreationTimestamp.IsZero() {
+		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
+			return &ImmutableFieldChangeErr{Field: "Spec.Selector"}
+		}
+		if err := hasImmutableLabelChange(existing.Spec.Selector.MatchLabels, desired.Spec.Template.Labels); err != nil {
+			return err
+		}
 	}
-	// Deployment selector is immutable so we set this value only if
-	// a new object is going to be created
-	if existing.CreationTimestamp.IsZero() {
-		existing.Spec.Selector = desired.Spec.Selector
-	}
+
+	existing.Spec.MinReadySeconds = desired.Spec.MinReadySeconds
+	existing.Spec.Paused = desired.Spec.Paused
+	existing.Spec.ProgressDeadlineSeconds = desired.Spec.ProgressDeadlineSeconds
 	existing.Spec.Replicas = desired.Spec.Replicas
-	if err := mergeWithOverride(&existing.Spec.Template, desired.Spec.Template); err != nil {
+	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
+	existing.Spec.Strategy = desired.Spec.Strategy
+
+	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
 		return err
 	}
-	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Template.Spec.NodeSelector, desired.Spec.Template.Spec.NodeSelector); err != nil {
-		return err
-	}
-	if err := mergeWithOverride(&existing.Spec.Strategy, desired.Spec.Strategy); err != nil {
-		return err
-	}
+
 	return nil
 }
 
 func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
-	if hasChange, field := hasImmutableFieldChange(existing, desired); hasChange {
-		return fmt.Errorf("%s is being changed, %w", field, ImmutableChangeErr)
+	if !existing.CreationTimestamp.IsZero() {
+		if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
+			return &ImmutableFieldChangeErr{Field: "Spec.Selector"}
+		}
+		if err := hasImmutableLabelChange(existing.Spec.Selector.MatchLabels, desired.Spec.Template.Labels); err != nil {
+			return err
+		}
+		if hasVolumeClaimsTemplatesChanged(existing, desired) {
+			return &ImmutableFieldChangeErr{Field: "Spec.VolumeClaimTemplates"}
+		}
 	}
-	// StatefulSet selector is immutable so we set this value only if
-	// a new object is going to be created
-	if existing.CreationTimestamp.IsZero() {
-		existing.Spec.Selector = desired.Spec.Selector
-	}
+
+	existing.Spec.MinReadySeconds = desired.Spec.MinReadySeconds
+	existing.Spec.Ordinals = desired.Spec.Ordinals
+	existing.Spec.PersistentVolumeClaimRetentionPolicy = desired.Spec.PersistentVolumeClaimRetentionPolicy
 	existing.Spec.PodManagementPolicy = desired.Spec.PodManagementPolicy
 	existing.Spec.Replicas = desired.Spec.Replicas
+	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
+	existing.Spec.ServiceName = desired.Spec.ServiceName
+	existing.Spec.UpdateStrategy = desired.Spec.UpdateStrategy
 
 	for i := range existing.Spec.VolumeClaimTemplates {
 		existing.Spec.VolumeClaimTemplates[i].TypeMeta = desired.Spec.VolumeClaimTemplates[i].TypeMeta
 		existing.Spec.VolumeClaimTemplates[i].ObjectMeta = desired.Spec.VolumeClaimTemplates[i].ObjectMeta
 		existing.Spec.VolumeClaimTemplates[i].Spec = desired.Spec.VolumeClaimTemplates[i].Spec
 	}
-	if err := mergeWithOverride(&existing.Spec.Template, desired.Spec.Template); err != nil {
+
+	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
 		return err
 	}
-	if err := mergeWithOverwriteWithEmptyValue(&existing.Spec.Template.Spec.NodeSelector, desired.Spec.Template.Spec.NodeSelector); err != nil {
-		return err
-	}
+
 	return nil
 }
 
-func hasImmutableFieldChange(existing, desired *appsv1.StatefulSet) (bool, string) {
-	if existing.CreationTimestamp.IsZero() {
-		return false, ""
-	}
-	if !apiequality.Semantic.DeepEqual(desired.Spec.Selector, existing.Spec.Selector) {
-		return true, fmt.Sprintf("Spec.Selector: desired: %s existing: %s", desired.Spec.Selector, existing.Spec.Selector)
+func mutateCertificate(existing, desired *cmv1.Certificate) {
+	existing.Annotations = desired.Annotations
+	existing.Labels = desired.Labels
+	existing.Spec = desired.Spec
+}
+
+func mutateIssuer(existing, desired *cmv1.Issuer) {
+	existing.Annotations = desired.Annotations
+	existing.Labels = desired.Labels
+	existing.Spec = desired.Spec
+}
+
+func mutatePodTemplate(existing, desired *corev1.PodTemplateSpec) error {
+	if err := mergeWithOverride(&existing.Labels, desired.Labels); err != nil {
+		return err
 	}
 
-	if hasVolumeClaimsTemplatesChanged(existing, desired) {
-		return true, "Spec.VolumeClaimTemplates"
+	if err := mergeWithOverride(&existing.Annotations, desired.Annotations); err != nil {
+		return err
 	}
 
-	return false, ""
+	existing.Spec = desired.Spec
+
+	return nil
+
+}
+
+func hasImmutableLabelChange(existingSelectorLabels, desiredLabels map[string]string) error {
+	for k, v := range existingSelectorLabels {
+		if vv, ok := desiredLabels[k]; !ok || vv != v {
+			return &ImmutableFieldChangeErr{Field: "Spec.Template.Metadata.Labels"}
+		}
+	}
+	return nil
 }
 
 // hasVolumeClaimsTemplatesChanged if volume claims template change has been detected.
@@ -363,6 +426,9 @@ func hasVolumeClaimsTemplatesChanged(existing, desired *appsv1.StatefulSet) bool
 			return true
 		}
 		if !apiequality.Semantic.DeepEqual(desired.Spec.VolumeClaimTemplates[i].Annotations, existing.Spec.VolumeClaimTemplates[i].Annotations) {
+			return true
+		}
+		if !apiequality.Semantic.DeepEqual(desired.Spec.VolumeClaimTemplates[i].Labels, existing.Spec.VolumeClaimTemplates[i].Labels) {
 			return true
 		}
 		if !apiequality.Semantic.DeepEqual(desired.Spec.VolumeClaimTemplates[i].Spec, existing.Spec.VolumeClaimTemplates[i].Spec) {

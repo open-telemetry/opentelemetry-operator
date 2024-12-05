@@ -46,24 +46,29 @@ const (
 )
 
 type Config struct {
-	ListenAddr         string                `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath string                `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig      *rest.Config          `yaml:"-"`
-	RootLogger         logr.Logger           `yaml:"-"`
-	CollectorSelector  *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	PromConfig         *promconfig.Config    `yaml:"config"`
-	AllocationStrategy string                `yaml:"allocation_strategy,omitempty"`
-	FilterStrategy     string                `yaml:"filter_strategy,omitempty"`
-	PrometheusCR       PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
-	HTTPS              HTTPSServerConfig     `yaml:"https,omitempty"`
+	ListenAddr                 string                `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath         string                `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig              *rest.Config          `yaml:"-"`
+	RootLogger                 logr.Logger           `yaml:"-"`
+	CollectorSelector          *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
+	PromConfig                 *promconfig.Config    `yaml:"config"`
+	AllocationStrategy         string                `yaml:"allocation_strategy,omitempty"`
+	AllocationFallbackStrategy string                `yaml:"allocation_fallback_strategy,omitempty"`
+	FilterStrategy             string                `yaml:"filter_strategy,omitempty"`
+	PrometheusCR               PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
+	HTTPS                      HTTPSServerConfig     `yaml:"https,omitempty"`
 }
 
 type PrometheusCRConfig struct {
 	Enabled                         bool                  `yaml:"enabled,omitempty"`
 	PodMonitorSelector              *metav1.LabelSelector `yaml:"pod_monitor_selector,omitempty"`
+	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
 	ServiceMonitorSelector          *metav1.LabelSelector `yaml:"service_monitor_selector,omitempty"`
 	ServiceMonitorNamespaceSelector *metav1.LabelSelector `yaml:"service_monitor_namespace_selector,omitempty"`
-	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
+	ScrapeConfigSelector            *metav1.LabelSelector `yaml:"scrape_config_selector,omitempty"`
+	ScrapeConfigNamespaceSelector   *metav1.LabelSelector `yaml:"scrape_config_namespace_selector,omitempty"`
+	ProbeSelector                   *metav1.LabelSelector `yaml:"probe_selector,omitempty"`
+	ProbeNamespaceSelector          *metav1.LabelSelector `yaml:"probe_namespace_selector,omitempty"`
 	ScrapeInterval                  model.Duration        `yaml:"scrape_interval,omitempty"`
 }
 
@@ -115,29 +120,34 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		target.PrometheusCR.Enabled = prometheusCREnabled
 	}
 
-	target.HTTPS.Enabled, err = getHttpsEnabled(flagSet)
-	if err != nil {
+	if httpsEnabled, changed, err := getHttpsEnabled(flagSet); err != nil {
 		return err
+	} else if changed {
+		target.HTTPS.Enabled = httpsEnabled
 	}
 
-	target.HTTPS.ListenAddr, err = getHttpsListenAddr(flagSet)
-	if err != nil {
+	if listenAddrHttps, changed, err := getHttpsListenAddr(flagSet); err != nil {
 		return err
+	} else if changed {
+		target.HTTPS.ListenAddr = listenAddrHttps
 	}
 
-	target.HTTPS.CAFilePath, err = getHttpsCAFilePath(flagSet)
-	if err != nil {
+	if caFilePath, changed, err := getHttpsCAFilePath(flagSet); err != nil {
 		return err
+	} else if changed {
+		target.HTTPS.CAFilePath = caFilePath
 	}
 
-	target.HTTPS.TLSCertFilePath, err = getHttpsTLSCertFilePath(flagSet)
-	if err != nil {
+	if tlsCertFilePath, changed, err := getHttpsTLSCertFilePath(flagSet); err != nil {
 		return err
+	} else if changed {
+		target.HTTPS.TLSCertFilePath = tlsCertFilePath
 	}
 
-	target.HTTPS.TLSKeyFilePath, err = getHttpsTLSKeyFilePath(flagSet)
-	if err != nil {
+	if tlsKeyFilePath, changed, err := getHttpsTLSKeyFilePath(flagSet); err != nil {
 		return err
+	} else if changed {
+		target.HTTPS.TLSKeyFilePath = tlsKeyFilePath
 	}
 
 	return nil
@@ -156,8 +166,9 @@ func unmarshal(cfg *Config, configFile string) error {
 
 func CreateDefaultConfig() Config {
 	return Config{
-		AllocationStrategy: DefaultAllocationStrategy,
-		FilterStrategy:     DefaultFilterStrategy,
+		AllocationStrategy:         DefaultAllocationStrategy,
+		AllocationFallbackStrategy: "",
+		FilterStrategy:             DefaultFilterStrategy,
 		PrometheusCR: PrometheusCRConfig{
 			ScrapeInterval: DefaultCRScrapeInterval,
 		},
