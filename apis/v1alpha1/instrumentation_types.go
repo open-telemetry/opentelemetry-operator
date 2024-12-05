@@ -152,7 +152,6 @@ type Defaults struct {
 	//   - `app.kubernetes.io/name` becomes `service.name`
 	//   - `app.kubernetes.io/version` becomes `service.version`
 	//   - `app.kubernetes.io/part-of` becomes `service.namespace`
-	//   - `app.kubernetes.io/instance` becomes `service.instance.id`
 	UseLabelsForResourceAttributes bool `json:"useLabelsForResourceAttributes,omitempty"`
 }
 

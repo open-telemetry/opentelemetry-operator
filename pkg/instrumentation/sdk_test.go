@@ -156,10 +156,9 @@ func TestSDKInjection(t *testing.T) {
 						},
 					},
 					Labels: map[string]string{
-						"app.kubernetes.io/name":     "app-name",
-						"app.kubernetes.io/instance": "app-id",
-						"app.kubernetes.io/version":  "v1",
-						"app.kubernetes.io/part-of":  "shop",
+						"app.kubernetes.io/name":    "app-name",
+						"app.kubernetes.io/version": "v1",
+						"app.kubernetes.io/part-of": "shop",
 					},
 					Annotations: map[string]string{
 						"resource.opentelemetry.io/foo": "bar",
@@ -180,10 +179,9 @@ func TestSDKInjection(t *testing.T) {
 					Name:      "app",
 					UID:       "pod-uid",
 					Labels: map[string]string{
-						"app.kubernetes.io/name":     "app-name",
-						"app.kubernetes.io/instance": "app-id",
-						"app.kubernetes.io/version":  "v1",
-						"app.kubernetes.io/part-of":  "shop",
+						"app.kubernetes.io/name":    "app-name",
+						"app.kubernetes.io/version": "v1",
+						"app.kubernetes.io/part-of": "shop",
 					},
 					Annotations: map[string]string{
 						"resource.opentelemetry.io/foo": "bar",
@@ -396,10 +394,9 @@ func TestSDKInjection(t *testing.T) {
 						},
 					},
 					Labels: map[string]string{
-						"app.kubernetes.io/name":     "app-name",
-						"app.kubernetes.io/instance": "app-id",
-						"app.kubernetes.io/version":  "v1",
-						"app.kubernetes.io/part-of":  "shop",
+						"app.kubernetes.io/name":    "app-name",
+						"app.kubernetes.io/version": "v1",
+						"app.kubernetes.io/part-of": "shop",
 					},
 					Annotations: map[string]string{
 						"resource.opentelemetry.io/foo": "bar",
@@ -420,10 +417,9 @@ func TestSDKInjection(t *testing.T) {
 					Name:      "app",
 					UID:       "pod-uid",
 					Labels: map[string]string{
-						"app.kubernetes.io/name":     "app-name",
-						"app.kubernetes.io/instance": "app-id",
-						"app.kubernetes.io/version":  "v1",
-						"app.kubernetes.io/part-of":  "shop",
+						"app.kubernetes.io/name":    "app-name",
+						"app.kubernetes.io/version": "v1",
+						"app.kubernetes.io/part-of": "shop",
 					},
 					Annotations: map[string]string{
 						"resource.opentelemetry.io/foo": "bar",
@@ -481,7 +477,7 @@ func TestSDKInjection(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "foo=bar,k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.instance.id=app-id,service.namespace=shop,service.version=v1",
+									Value: "foo=bar,k8s.container.name=application-name,k8s.deployment.name=my-deployment,k8s.deployment.uid=depuid,k8s.namespace.name=project1,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),k8s.pod.uid=pod-uid,k8s.replicaset.name=my-replicaset,k8s.replicaset.uid=rsuid,service.instance.id=project1.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).application-name,service.namespace=shop,service.version=v1",
 								},
 							},
 						},
@@ -516,10 +512,9 @@ func TestSDKInjection(t *testing.T) {
 					Namespace: "project1",
 					Name:      "app",
 					Labels: map[string]string{
-						"app.kubernetes.io/name":     "not-used",
-						"app.kubernetes.io/instance": "not-used",
-						"app.kubernetes.io/version":  "not-used",
-						"app.kubernetes.io/part-of":  "not-used",
+						"app.kubernetes.io/name":    "not-used",
+						"app.kubernetes.io/version": "not-used",
+						"app.kubernetes.io/part-of": "not-used",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -557,10 +552,9 @@ func TestSDKInjection(t *testing.T) {
 					Namespace: "project1",
 					Name:      "app",
 					Labels: map[string]string{
-						"app.kubernetes.io/name":     "not-used",
-						"app.kubernetes.io/instance": "not-used",
-						"app.kubernetes.io/version":  "not-used",
-						"app.kubernetes.io/part-of":  "not-used",
+						"app.kubernetes.io/name":    "not-used",
+						"app.kubernetes.io/version": "not-used",
+						"app.kubernetes.io/part-of": "not-used",
 					},
 				},
 				Spec: corev1.PodSpec{
