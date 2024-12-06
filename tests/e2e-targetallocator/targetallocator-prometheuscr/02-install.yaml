@@ -1,0 +1,133 @@
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: prometheus-cr-v1beta1
+spec:
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs: []
+
+    processors:
+
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:9090
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          exporters: [prometheus]
+  mode: statefulset
+  serviceAccount: collector
+  targetAllocator:
+    enabled: true
+    prometheusCR:
+      enabled: true
+      scrapeInterval: 1s
+      scrapeConfigSelector: {}
+      probeSelector: {}
+    serviceAccount: ta
+---
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: scrape-config-cr
+spec:
+  kubernetesSDConfigs:
+    - role: Node
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: blackbox-exporter
+spec:
+  jobName: http-get
+  interval: 60s
+  module: http_2xx
+  prober:
+    url: blackbox-exporter.monitoring-system.svc:19115
+    scheme: http
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - https://example.com
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-scrape-config-v1beta1
+spec:
+  template:
+    metadata:
+      labels:
+        checker: "true"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-metrics
+          image: curlimages/curl
+          args:
+            - /bin/sh
+            - -c
+            - curl -s http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "scrape-config-cr"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-jobs-scrape-configs-v1beta1
+spec:
+  template:
+    metadata:
+      labels:
+        checker: "true"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-metrics
+          image: curlimages/curl
+          args:
+            - /bin/sh
+            - -c
+            - curl -s http://prometheus-cr-v1beta1-targetallocator/jobs | grep "scrape-config-cr"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-probe-config-v1beta1
+spec:
+  template:
+    metadata:
+      labels:
+        checker: "true"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-metrics
+          image: curlimages/curl
+          args:
+            - /bin/sh
+            - -c
+            - curl -s http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "blackbox-exporter"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-jobs-probes-v1beta1
+spec:
+  template:
+    metadata:
+      labels:
+        checker: "true"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-metrics
+          image: curlimages/curl
+          args:
+            - /bin/sh
+            - -c
+            - curl -s http://prometheus-cr-v1beta1-targetallocator/jobs | grep "blackbox-exporter"

@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus-cr-v1beta1-collector
+status:
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-cr-v1beta1-targetallocator
+status:
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: v1
+data:
+  targetallocator.yaml:
+    ( contains(@, join(':', ['service_monitor_selector', ' null'])) ): true
+    ( contains(@, join(':', ['pod_monitor_selector', ' null'])) ): true
+    ( contains(@, join(':', ['probe_selector', ' null'])) ): false
+    ( contains(@, join(':', ['scrape_config_selector', ' null'])) ): false
+    ( contains(@, join(':', ['matchlabels', ' {}}'])) ): false
+    ( contains(@, join(':', ['matchexpressions', ' {}}'])) ): false
+kind: ConfigMap
+metadata:
+  name: prometheus-cr-v1beta1-targetallocator
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-scrape-config-v1beta1
+status:
+  succeeded: 1
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-jobs-scrape-configs-v1beta1
+status:
+  succeeded: 1
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-probe-config-v1beta1
+status:
+  succeeded: 1
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-jobs-probes-v1beta1
+status:
+  succeeded: 1
