@@ -27,7 +27,7 @@ type ResourceDetectionConfig struct {
 	Detectors []string `mapstructure:"detectors"`
 }
 
-func GenerateResourceDetectionRbacRules(_ logr.Logger, config ResourceDetectionConfig) ([]rbacv1.PolicyRule, error) {
+func generateResourceDetectionClusterRoleRules(_ logr.Logger, config ResourceDetectionConfig) ([]rbacv1.PolicyRule, error) {
 	var prs []rbacv1.PolicyRule
 	for _, d := range config.Detectors {
 		detectorName := fmt.Sprint(d)

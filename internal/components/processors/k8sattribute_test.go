@@ -141,11 +141,11 @@ func TestGenerateK8SAttrRbacRules(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			parser := processors.ProcessorFor("k8sattributes")
-			got, err := parser.GetRBACRules(logger, tt.args.config)
-			if !tt.wantErr(t, err, fmt.Sprintf("GetRBACRules(%v)", tt.args.config)) {
+			got, err := parser.GetClusterRoleRules(logger, tt.args.config)
+			if !tt.wantErr(t, err, fmt.Sprintf("GetClusterRoleRules(%v)", tt.args.config)) {
 				return
 			}
-			assert.Equalf(t, tt.want, got, "GetRBACRules(%v)", tt.args.config)
+			assert.Equalf(t, tt.want, got, "GetClusterRoleRules(%v)", tt.args.config)
 		})
 	}
 }

@@ -235,12 +235,18 @@ func mutateRole(existing, desired *rbacv1.Role) {
 	existing.Annotations = desired.Annotations
 	existing.Labels = desired.Labels
 	existing.Rules = desired.Rules
+	// This role can exists in a different namespace than the otel collector, so we need to remove the owner references
+	// since cross namespace owner references are not allowed
+	existing.SetOwnerReferences(nil)
 }
 
 func mutateRoleBinding(existing, desired *rbacv1.RoleBinding) {
 	existing.Annotations = desired.Annotations
 	existing.Labels = desired.Labels
 	existing.Subjects = desired.Subjects
+	// This role binding can exists in a different namespace than the otel collector, so we need to remove the owner references
+	// since cross namespace owner references are not allowed
+	existing.SetOwnerReferences(nil)
 }
 
 func mutateAutoscalingHPA(existing, desired *autoscalingv2.HorizontalPodAutoscaler) {

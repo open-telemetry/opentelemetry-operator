@@ -28,7 +28,7 @@ import (
 )
 
 func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
-	rules, err := params.OtelCol.Spec.Config.GetAllRbacRules(params.Log)
+	rules, err := params.OtelCol.Spec.Config.GetAllClusterRoleRbacRules(params.Log)
 	if err != nil {
 		return nil, err
 	} else if len(rules) == 0 {
@@ -54,7 +54,7 @@ func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
 }
 
 func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, error) {
-	rules, err := params.OtelCol.Spec.Config.GetAllRbacRules(params.Log)
+	rules, err := params.OtelCol.Spec.Config.GetAllClusterRoleRbacRules(params.Log)
 	if err != nil {
 		return nil, err
 	} else if len(rules) == 0 {
@@ -90,14 +90,55 @@ func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, er
 	}, nil
 }
 
-func CheckRbacRules(params manifests.Params, saName string) ([]string, error) {
-	ctx := context.Background()
+func Role(params manifests.Params) ([]*rbacv1.Role, error) {
+	roles, err := params.OtelCol.Spec.Config.GetAllRbacRoles(params.Log, params.OtelCol.Name)
+	if err != nil {
+		return nil, err
+	} else if len(roles) == 0 {
+		return nil, nil
+	}
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
 
-	rules, err := params.OtelCol.Spec.Config.GetAllRbacRules(params.Log)
 	if err != nil {
 		return nil, err
 	}
 
+	for _, role := range roles {
+		role.ObjectMeta.Labels = manifestutils.Labels(params.OtelCol.ObjectMeta, role.ObjectMeta.Name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+		role.ObjectMeta.Annotations = annotations
+	}
+
+	return roles, nil
+}
+
+func RoleBinding(params manifests.Params) ([]*rbacv1.RoleBinding, error) {
+	rbs, err := params.OtelCol.Spec.Config.GetAllRbacRoleBindings(params.Log, ServiceAccountName(params.OtelCol), params.OtelCol.Name, params.OtelCol.Namespace)
+	if err != nil {
+		return nil, err
+	} else if len(rbs) == 0 {
+		return nil, nil
+	}
+
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	if err != nil {
+		return nil, err
+	}
+
+	for _, rb := range rbs {
+		rb.ObjectMeta.Labels = manifestutils.Labels(params.OtelCol.ObjectMeta, rb.ObjectMeta.Name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+		rb.ObjectMeta.Annotations = annotations
+	}
+
+	return rbs, nil
+}
+
+func CheckRbacRules(params manifests.Params, saName string) ([]string, error) {
+	ctx := context.Background()
+
+	rules, err := params.OtelCol.Spec.Config.GetAllClusterRoleRbacRules(params.Log)
+	if err != nil {
+		return nil, err
+	}
 	r := []*rbacv1.PolicyRule{}
 
 	for _, rule := range rules {

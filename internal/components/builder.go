@@ -26,19 +26,21 @@ import (
 type ParserOption[ComponentConfigType any] func(*Settings[ComponentConfigType])
 
 type Settings[ComponentConfigType any] struct {
-	protocol        corev1.Protocol
-	appProtocol     *string
-	targetPort      intstr.IntOrString
-	nodePort        int32
-	name            string
-	port            int32
-	defaultRecAddr  string
-	portParser      PortParser[ComponentConfigType]
-	rbacGen         RBACRuleGenerator[ComponentConfigType]
-	livenessGen     ProbeGenerator[ComponentConfigType]
-	readinessGen    ProbeGenerator[ComponentConfigType]
-	defaultsApplier Defaulter[ComponentConfigType]
-	envVarGen       EnvVarGenerator[ComponentConfigType]
+	protocol            corev1.Protocol
+	appProtocol         *string
+	targetPort          intstr.IntOrString
+	nodePort            int32
+	name                string
+	port                int32
+	defaultRecAddr      string
+	portParser          PortParser[ComponentConfigType]
+	clusterRoleRulesGen ClusterRoleRulesGenerator[ComponentConfigType]
+	roleGen             RoleGenerator[ComponentConfigType]
+	roleBindingGen      RoleBindingGenerator[ComponentConfigType]
+	livenessGen         ProbeGenerator[ComponentConfigType]
+	readinessGen        ProbeGenerator[ComponentConfigType]
+	defaultsApplier     Defaulter[ComponentConfigType]
+	envVarGen           EnvVarGenerator[ComponentConfigType]
 }
 
 func NewEmptySettings[ComponentConfigType any]() *Settings[ComponentConfigType] {
@@ -108,9 +110,19 @@ func (b Builder[ComponentConfigType]) WithPortParser(portParser PortParser[Compo
 		o.portParser = portParser
 	})
 }
-func (b Builder[ComponentConfigType]) WithRbacGen(rbacGen RBACRuleGenerator[ComponentConfigType]) Builder[ComponentConfigType] {
+func (b Builder[ComponentConfigType]) WithClusterRoleRulesGen(clusterRoleRulesGen ClusterRoleRulesGenerator[ComponentConfigType]) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
-		o.rbacGen = rbacGen
+		o.clusterRoleRulesGen = clusterRoleRulesGen
+	})
+}
+func (b Builder[ComponentConfigType]) WithRoleGen(roleGen RoleGenerator[ComponentConfigType]) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
+		o.roleGen = roleGen
+	})
+}
+func (b Builder[ComponentConfigType]) WithRoleBindingGen(roleBindingGen RoleBindingGenerator[ComponentConfigType]) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
+		o.roleBindingGen = roleBindingGen
 	})
 }
 
@@ -143,14 +155,16 @@ func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigTyp
 		return nil, fmt.Errorf("invalid settings struct, no name specified")
 	}
 	return &GenericParser[ComponentConfigType]{
-		name:            o.name,
-		portParser:      o.portParser,
-		rbacGen:         o.rbacGen,
-		envVarGen:       o.envVarGen,
-		livenessGen:     o.livenessGen,
-		readinessGen:    o.readinessGen,
-		defaultsApplier: o.defaultsApplier,
-		settings:        o,
+		name:                o.name,
+		portParser:          o.portParser,
+		clusterRoleRulesGen: o.clusterRoleRulesGen,
+		roleGen:             o.roleGen,
+		roleBindingGen:      o.roleBindingGen,
+		envVarGen:           o.envVarGen,
+		livenessGen:         o.livenessGen,
+		readinessGen:        o.readinessGen,
+		defaultsApplier:     o.defaultsApplier,
+		settings:            o,
 	}, nil
 }
 

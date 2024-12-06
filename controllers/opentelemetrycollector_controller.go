@@ -57,6 +57,8 @@ var (
 	ownedClusterObjectTypes = []client.Object{
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&rbacv1.Role{},
+		&rbacv1.RoleBinding{},
 	}
 )
 
@@ -110,7 +112,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 		}
 	}
 	if params.Config.CreateRBACPermissions() == rbac.Available {
-		objs, err := r.findClusterRoleObjects(ctx, params)
+		objs, err := r.findRBACObjects(ctx, params)
 		if err != nil {
 			return nil, err
 		}
@@ -132,11 +134,15 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 	return ownedObjects, nil
 }
 
-// The cluster scope objects do not have owner reference.
-func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
+// findRBACObjects finds ClusterRoles, ClusterRoleBindings, Roles, and RoleBindings.
+// Those objects do not have owner references.
+//   - ClusterRoles and ClusterRoleBindings cannot have owner references
+//   - Roles and RoleBindings can exist in a different namespace than the OpenTelemetryCollector
+//
+// Users might switch off the RBAC creation feature on the operator which should remove existing RBAC.
+func (r *OpenTelemetryCollectorReconciler) findRBACObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
 	ownedObjects := map[types.UID]client.Object{}
-	// Remove cluster roles and bindings.
-	// Users might switch off the RBAC creation feature on the operator which should remove existing RBAC.
+
 	listOpsCluster := &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)),
 	}
@@ -325,6 +331,8 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 	if r.config.CreateRBACPermissions() == rbac.Available {
 		builder.Owns(&rbacv1.ClusterRoleBinding{})
 		builder.Owns(&rbacv1.ClusterRole{})
+		builder.Owns(&rbacv1.RoleBinding{})
+		builder.Owns(&rbacv1.Role{})
 	}
 
 	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability() == prometheus.Available {
@@ -343,7 +351,7 @@ const collectorFinalizer = "opentelemetrycollector.opentelemetry.io/finalizer"
 func (r *OpenTelemetryCollectorReconciler) finalizeCollector(ctx context.Context, params manifests.Params) error {
 	// The cluster scope objects do not have owner reference. They need to be deleted explicitly
 	if params.Config.CreateRBACPermissions() == rbac.Available {
-		objects, err := r.findClusterRoleObjects(ctx, params)
+		objects, err := r.findRBACObjects(ctx, params)
 		if err != nil {
 			return err
 		}
