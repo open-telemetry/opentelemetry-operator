@@ -55,6 +55,9 @@ var (
 				return components.ParseSingleEndpointSilent(logger, name, defaultPort, &config.SingleEndpointConfig)
 			}).
 			MustBuild(),
+		components.NewSinglePortParserBuilder("jaeger_query", 16686).
+			WithTargetPort(16686).
+			MustBuild(),
 	}
 )
 

@@ -17,7 +17,7 @@ spec:
         fieldRef:
           fieldPath: status.podIP
     - name: JAVA_TOOL_OPTIONS
-      value: '-javaagent:/otel-auto-instrumentation-java/javaagent.jar'
+      value: ' -javaagent:/otel-auto-instrumentation-java/javaagent.jar'
     - name: OTEL_SERVICE_NAME
       value: my-java
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
