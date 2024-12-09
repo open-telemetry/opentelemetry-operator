@@ -4,7 +4,7 @@ import { OTLPTraceExporter as OTLPHttpTraceExporter } from '@opentelemetry/expor
 import { OTLPTraceExporter as OTLPGrpcTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
-import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import { ExplicitBucketHistogramAggregation, PeriodicExportingMetricReader, View } from "@opentelemetry/sdk-metrics";
 import { alibabaCloudEcsDetector } from '@opentelemetry/resource-detector-alibaba-cloud';
 import { awsEc2Detector, awsEksDetector } from '@opentelemetry/resource-detector-aws';
 import { containerDetector } from '@opentelemetry/resource-detector-container';
@@ -50,11 +50,39 @@ function getMetricReader() {
     }
 }
 
+function getViews() {
+  const histogramBuckets = process.env.OTEL_OPERATOR_NODEJS_HISTOGRAM_BUCKETS;
+  if (histogramBuckets) {
+    try {
+      let views = [];
+      for (const viewCfg of JSON.parse(histogramBuckets)) {
+        views.push(
+          new View({
+            instrumentName: viewCfg["instrumentName"],
+            aggregation: new ExplicitBucketHistogramAggregation(
+              viewCfg["buckets"],
+            ),
+          }),
+        );
+      }
+      return views;
+    } catch (error) {
+      diag.error(
+        "Failed to parse OTEL_OPERATOR_NODEJS_HISTOGRAM_BUCKETS:",
+        error,
+      );
+    }
+    return [];
+  }
+  return [];
+}
+
 const sdk = new NodeSDK({
     autoDetectResources: true,
     instrumentations: [getNodeAutoInstrumentations()],
     traceExporter: getTraceExporter(),
     metricReader: getMetricReader(),
+    views: getViews(),
     resourceDetectors:
         [
             // Standard resource detectors.
@@ -75,3 +103,4 @@ const sdk = new NodeSDK({
 });
 
 sdk.start();
+
