@@ -28,7 +28,6 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
-	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/require"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -45,18 +44,17 @@ import (
 // the HTTP server afterward. Test data is chosen to be reasonably representative of what the Prometheus service discovery
 // outputs in the real world.
 func BenchmarkProcessTargets(b *testing.B) {
-	numTargets := 10000
+	numTargets := 800000
 	targetsPerGroup := 5
 	groupsPerJob := 20
 	tsets := prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob)
-	labelsBuilder := labels.NewBuilder(labels.EmptyLabels())
-
-	b.ResetTimer()
 	for _, strategy := range allocation.GetRegisteredAllocatorNames() {
 		b.Run(strategy, func(b *testing.B) {
-			targetDiscoverer, allocator := createTestDiscoverer(strategy, map[string][]*relabel.Config{})
+			targetDiscoverer := createTestDiscoverer(strategy, map[string][]*relabel.Config{})
+			targetDiscoverer.UpdateTsets(tsets)
+			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				targetDiscoverer.ProcessTargets(labelsBuilder, tsets, allocator.SetTargets)
+				targetDiscoverer.Reload()
 			}
 		})
 	}
@@ -65,11 +63,10 @@ func BenchmarkProcessTargets(b *testing.B) {
 // BenchmarkProcessTargetsWithRelabelConfig is BenchmarkProcessTargets with a relabel config set. The relabel config
 // does not actually modify any records, but does force the prehook to perform any necessary conversions along the way.
 func BenchmarkProcessTargetsWithRelabelConfig(b *testing.B) {
-	numTargets := 10000
+	numTargets := 800000
 	targetsPerGroup := 5
 	groupsPerJob := 20
 	tsets := prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob)
-	labelsBuilder := labels.NewBuilder(labels.EmptyLabels())
 	prehookConfig := make(map[string][]*relabel.Config, len(tsets))
 	for jobName := range tsets {
 		// keep all targets in half the jobs, drop the rest
@@ -91,12 +88,13 @@ func BenchmarkProcessTargetsWithRelabelConfig(b *testing.B) {
 		}
 	}
 
-	b.ResetTimer()
 	for _, strategy := range allocation.GetRegisteredAllocatorNames() {
 		b.Run(strategy, func(b *testing.B) {
-			targetDiscoverer, allocator := createTestDiscoverer(strategy, prehookConfig)
+			targetDiscoverer := createTestDiscoverer(strategy, prehookConfig)
+			targetDiscoverer.UpdateTsets(tsets)
+			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				targetDiscoverer.ProcessTargets(labelsBuilder, tsets, allocator.SetTargets)
+				targetDiscoverer.Reload()
 			}
 		})
 	}
@@ -172,7 +170,7 @@ func prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob int) map[str
 	return tsets
 }
 
-func createTestDiscoverer(allocationStrategy string, prehookConfig map[string][]*relabel.Config) (*target.Discoverer, allocation.Allocator) {
+func createTestDiscoverer(allocationStrategy string, prehookConfig map[string][]*relabel.Config) *target.Discoverer {
 	ctx := context.Background()
 	logger := ctrl.Log.WithName(fmt.Sprintf("bench-%s", allocationStrategy))
 	ctrl.SetLogger(logr.New(log.NullLogSink{}))
@@ -187,6 +185,6 @@ func createTestDiscoverer(allocationStrategy string, prehookConfig map[string][]
 	registry := prometheus.NewRegistry()
 	sdMetrics, _ := discovery.CreateAndRegisterSDMetrics(registry)
 	discoveryManager := discovery.NewManager(ctx, gokitlog.NewNopLogger(), registry, sdMetrics)
-	targetDiscoverer := target.NewDiscoverer(logger, discoveryManager, allocatorPrehook, srv)
-	return targetDiscoverer, allocator
+	targetDiscoverer := target.NewDiscoverer(logger, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
+	return targetDiscoverer
 }
