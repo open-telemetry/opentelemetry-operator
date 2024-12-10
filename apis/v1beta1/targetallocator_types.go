@@ -42,6 +42,18 @@ type TargetAllocatorPrometheusCR struct {
 	// label selector matches no objects.
 	// +optional
 	ServiceMonitorSelector *metav1.LabelSelector `json:"serviceMonitorSelector,omitempty"`
+	// ScrapeConfigs to be selected for target discovery.
+	// A label selector is a label query over a set of resources. The result of matchLabels and
+	// matchExpressions are ANDed. An empty label selector matches all objects. A null
+	// label selector matches no objects.
+	// +optional
+	ScrapeConfigSelector *metav1.LabelSelector `json:"scrapeConfigSelector,omitempty"`
+	// Probes to be selected for target discovery.
+	// A label selector is a label query over a set of resources. The result of matchLabels and
+	// matchExpressions are ANDed. An empty label selector matches all objects. A null
+	// label selector matches no objects.
+	// +optional
+	ProbeSelector *metav1.LabelSelector `json:"probeSelector,omitempty"`
 }
 
 type (

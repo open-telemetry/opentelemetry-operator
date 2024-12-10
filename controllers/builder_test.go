@@ -1513,6 +1513,8 @@ filter_strategy: relabel-config
 prometheus_cr:
   enabled: true
   pod_monitor_selector: null
+  probe_selector: null
+  scrape_config_selector: null
   service_monitor_selector: null
 `,
 					},
@@ -1546,7 +1548,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "9d78d2ecfad18bad24dec7e9a825b4ce45657ecbb2e6b32845b585b7c15ea407",
+									"opentelemetry-targetallocator-config/hash": "286a5a4e7ec6d2ce652a4ce23e135c10053b4c87fd080242daa5bf21dcd5a337",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -1678,7 +1680,7 @@ prometheus_cr:
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-targetallocator-config/hash": "9d78d2ecfad18bad24dec7e9a825b4ce45657ecbb2e6b32845b585b7c15ea407",
+							"opentelemetry-targetallocator-config/hash": "286a5a4e7ec6d2ce652a4ce23e135c10053b4c87fd080242daa5bf21dcd5a337",
 						},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
@@ -1970,6 +1972,8 @@ filter_strategy: relabel-config
 prometheus_cr:
   enabled: true
   pod_monitor_selector: null
+  probe_selector: null
+  scrape_config_selector: null
   service_monitor_selector: null
 `,
 					},
@@ -2003,7 +2007,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "9d78d2ecfad18bad24dec7e9a825b4ce45657ecbb2e6b32845b585b7c15ea407",
+									"opentelemetry-targetallocator-config/hash": "286a5a4e7ec6d2ce652a4ce23e135c10053b4c87fd080242daa5bf21dcd5a337",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -2135,7 +2139,7 @@ prometheus_cr:
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-targetallocator-config/hash": "9d78d2ecfad18bad24dec7e9a825b4ce45657ecbb2e6b32845b585b7c15ea407",
+							"opentelemetry-targetallocator-config/hash": "286a5a4e7ec6d2ce652a4ce23e135c10053b4c87fd080242daa5bf21dcd5a337",
 						},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
@@ -2472,6 +2476,8 @@ https:
 prometheus_cr:
   enabled: true
   pod_monitor_selector: null
+  probe_selector: null
+  scrape_config_selector: null
   service_monitor_selector: null
 `,
 					},
@@ -2505,7 +2511,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "f1ce0fdbf69924576576d1d6eb2a3cc91a3f72675b3facbb36702d57027bc6ae",
+									"opentelemetry-targetallocator-config/hash": "3e2818ab54d866289de7837779e86e9c95803c43c0c4b58b25123e809ae9b771",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -2663,7 +2669,7 @@ prometheus_cr:
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-targetallocator-config/hash": "f1ce0fdbf69924576576d1d6eb2a3cc91a3f72675b3facbb36702d57027bc6ae",
+							"opentelemetry-targetallocator-config/hash": "3e2818ab54d866289de7837779e86e9c95803c43c0c4b58b25123e809ae9b771",
 						},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
@@ -3539,6 +3545,8 @@ filter_strategy: relabel-config
 prometheus_cr:
   enabled: true
   pod_monitor_selector: null
+  probe_selector: null
+  scrape_config_selector: null
   service_monitor_selector: null
 `,
 					},
@@ -3572,7 +3580,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "88ab06aab167d58ae2316ddecc9cf0600b9094d27054781dd6aa6e44dcf902fc",
+									"opentelemetry-targetallocator-config/hash": "f80c054419fe2f9030368557da143e200c70772d1d5f1be50ed55ae960b4b17d",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -3704,7 +3712,7 @@ prometheus_cr:
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-targetallocator-config/hash": "88ab06aab167d58ae2316ddecc9cf0600b9094d27054781dd6aa6e44dcf902fc",
+							"opentelemetry-targetallocator-config/hash": "f80c054419fe2f9030368557da143e200c70772d1d5f1be50ed55ae960b4b17d",
 						},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
@@ -3812,6 +3820,8 @@ filter_strategy: relabel-config
 prometheus_cr:
   enabled: true
   pod_monitor_selector: null
+  probe_selector: null
+  scrape_config_selector: null
   service_monitor_selector: null
 `,
 					},
@@ -3845,7 +3855,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "88ab06aab167d58ae2316ddecc9cf0600b9094d27054781dd6aa6e44dcf902fc",
+									"opentelemetry-targetallocator-config/hash": "f80c054419fe2f9030368557da143e200c70772d1d5f1be50ed55ae960b4b17d",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -3977,7 +3987,7 @@ prometheus_cr:
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-targetallocator-config/hash": "88ab06aab167d58ae2316ddecc9cf0600b9094d27054781dd6aa6e44dcf902fc",
+							"opentelemetry-targetallocator-config/hash": "f80c054419fe2f9030368557da143e200c70772d1d5f1be50ed55ae960b4b17d",
 						},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
@@ -4135,6 +4145,8 @@ filter_strategy: relabel-config
 prometheus_cr:
   enabled: true
   pod_monitor_selector: null
+  probe_selector: null
+  scrape_config_selector: null
   service_monitor_selector: null
 `,
 					},
@@ -4168,7 +4180,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "9d78d2ecfad18bad24dec7e9a825b4ce45657ecbb2e6b32845b585b7c15ea407",
+									"opentelemetry-targetallocator-config/hash": "286a5a4e7ec6d2ce652a4ce23e135c10053b4c87fd080242daa5bf21dcd5a337",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -4300,7 +4312,7 @@ prometheus_cr:
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-targetallocator-config/hash": "9d78d2ecfad18bad24dec7e9a825b4ce45657ecbb2e6b32845b585b7c15ea407",
+							"opentelemetry-targetallocator-config/hash": "286a5a4e7ec6d2ce652a4ce23e135c10053b4c87fd080242daa5bf21dcd5a337",
 						},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
@@ -4432,6 +4444,8 @@ https:
 prometheus_cr:
   enabled: true
   pod_monitor_selector: null
+  probe_selector: null
+  scrape_config_selector: null
   service_monitor_selector: null
 `,
 					},
@@ -4465,7 +4479,7 @@ prometheus_cr:
 									"app.kubernetes.io/version":    "latest",
 								},
 								Annotations: map[string]string{
-									"opentelemetry-targetallocator-config/hash": "f1ce0fdbf69924576576d1d6eb2a3cc91a3f72675b3facbb36702d57027bc6ae",
+									"opentelemetry-targetallocator-config/hash": "3e2818ab54d866289de7837779e86e9c95803c43c0c4b58b25123e809ae9b771",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -4623,7 +4637,7 @@ prometheus_cr:
 							"app.kubernetes.io/version":    "latest",
 						},
 						Annotations: map[string]string{
-							"opentelemetry-targetallocator-config/hash": "f1ce0fdbf69924576576d1d6eb2a3cc91a3f72675b3facbb36702d57027bc6ae",
+							"opentelemetry-targetallocator-config/hash": "3e2818ab54d866289de7837779e86e9c95803c43c0c4b58b25123e809ae9b771",
 						},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
