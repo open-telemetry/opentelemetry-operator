@@ -427,16 +427,18 @@ type Service struct {
 	Pipelines map[string]*Pipeline `json:"pipelines" yaml:"pipelines"`
 }
 
+const defaultServicePort int32 = 8888
+
 // MetricsEndpoint gets the port number and host address for the metrics endpoint from the collector config if it has been set.
 func (s *Service) MetricsEndpoint() (string, int32, error) {
 	defaultAddr := "0.0.0.0"
 	if s.GetTelemetry() == nil {
 		// telemetry isn't set, use the default
-		return defaultAddr, 8888, nil
+		return defaultAddr, defaultServicePort, nil
 	}
 	host, port, netErr := net.SplitHostPort(s.GetTelemetry().Metrics.Address)
 	if netErr != nil && strings.Contains(netErr.Error(), "missing port in address") {
-		return defaultAddr, 8888, nil
+		return defaultAddr, defaultServicePort, nil
 	} else if netErr != nil {
 		return "", 0, netErr
 	}
@@ -450,6 +452,26 @@ func (s *Service) MetricsEndpoint() (string, int32, error) {
 	}
 
 	return host, int32(i64), nil
+}
+
+// NaivePort attempts gets the port number from the host address without doing any validation regarding the address itself.
+// It works even before env var expansion happens, when a simple `net.SplitHostPort` would fail because of  the extra colon
+// from the env var, i.e. the address looks like "${env:POD_IP}:4317" or "${env:POD_IP}".
+// It does not work in cases which the port itself is a variable, i.e. "${env:POD_IP}:${env:PORT}".
+func (s *Service) NaivePort() (int32, error) {
+	telemetry := s.GetTelemetry()
+	if telemetry == nil {
+		return defaultServicePort, nil
+	}
+	splitAddress := strings.Split(telemetry.Metrics.Address, ":")
+	if len(splitAddress) == 1 {
+		return defaultServicePort, nil
+	}
+	port, err := strconv.Atoi(splitAddress[len(splitAddress)-1])
+	if err != nil {
+		return 0, err
+	}
+	return int32(port), nil
 }
 
 // ApplyDefaults inserts configuration defaults if it has not been set.

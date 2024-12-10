@@ -588,7 +588,17 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	five := int32(5)
 	maxInt := int32(math.MaxInt32)
 
-	cfg := v1beta1.Config{}
+	cfg := v1beta1.Config{
+		Service: v1beta1.Service{
+			Telemetry: &v1beta1.AnyConfig{
+				Object: map[string]interface{}{
+					"metrics": map[string]interface{}{
+						"address": "${env:POD_ID}:8888",
+					},
+				},
+			},
+		},
+	}
 	err := yaml.Unmarshal([]byte(cfgYaml), &cfg)
 	require.NoError(t, err)
 
