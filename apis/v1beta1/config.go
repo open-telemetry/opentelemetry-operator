@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net"
 	"reflect"
 	"sort"
 	"strconv"
@@ -269,7 +268,7 @@ func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, co
 
 // applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
 func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) error {
-	if err := c.Service.ApplyDefaults(); err != nil {
+	if err := c.Service.ApplyDefaults(logger); err != nil {
 		return err
 	}
 	enabledComponents := c.GetEnabledComponents()
@@ -427,59 +426,46 @@ type Service struct {
 	Pipelines map[string]*Pipeline `json:"pipelines" yaml:"pipelines"`
 }
 
-const defaultServicePort int32 = 8888
+type serviceParseError string
 
-// MetricsEndpoint gets the port number and host address for the metrics endpoint from the collector config if it has been set.
-func (s *Service) MetricsEndpoint() (string, int32, error) {
-	defaultAddr := "0.0.0.0"
-	if s.GetTelemetry() == nil {
-		// telemetry isn't set, use the default
-		return defaultAddr, defaultServicePort, nil
-	}
-	host, port, netErr := net.SplitHostPort(s.GetTelemetry().Metrics.Address)
-	if netErr != nil && strings.Contains(netErr.Error(), "missing port in address") {
-		return defaultAddr, defaultServicePort, nil
-	} else if netErr != nil {
-		return "", 0, netErr
-	}
-	i64, err := strconv.ParseInt(port, 10, 32)
-	if err != nil {
-		return "", 0, err
-	}
-
-	if host == "" {
-		host = defaultAddr
-	}
-
-	return host, int32(i64), nil
+func (s serviceParseError) Error() string {
+	return string(s)
 }
 
-// NaivePort attempts gets the port number from the host address without doing any validation regarding the address itself.
+const (
+	defaultServicePort int32 = 8888
+	defaultServiceHost       = "0.0.0.0"
+)
+
+// MetricsEndpoint attempts gets the host and port number from the host address without doing any validation regarding the
+// address itself.
 // It works even before env var expansion happens, when a simple `net.SplitHostPort` would fail because of  the extra colon
 // from the env var, i.e. the address looks like "${env:POD_IP}:4317" or "${env:POD_IP}".
 // It does not work in cases which the port itself is a variable, i.e. "${env:POD_IP}:${env:PORT}".
-func (s *Service) NaivePort() (int32, error) {
+// It does not work for IPv6 hostnames/addresses.
+func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32) {
 	telemetry := s.GetTelemetry()
 	if telemetry == nil {
-		return defaultServicePort, nil
+		return defaultServiceHost, defaultServicePort
 	}
 	splitAddress := strings.Split(telemetry.Metrics.Address, ":")
 	if len(splitAddress) == 1 {
-		return defaultServicePort, nil
+		return defaultServiceHost, defaultServicePort
 	}
-	port, err := strconv.Atoi(splitAddress[len(splitAddress)-1])
+	port, err := strconv.ParseInt(splitAddress[len(splitAddress)-1], 10, 32)
 	if err != nil {
-		return 0, err
+		errMsg := fmt.Sprintf("couldn't determine metrics port from configuration, using default: %s:%d",
+			defaultServiceHost, defaultServicePort)
+		logger.Info(errMsg, "error", err)
+		return defaultServiceHost, defaultServicePort
 	}
-	return int32(port), nil
+	host := strings.Join(splitAddress[0:len(splitAddress)-1], ":")
+	return host, int32(port)
 }
 
 // ApplyDefaults inserts configuration defaults if it has not been set.
-func (s *Service) ApplyDefaults() error {
-	telemetryAddr, telemetryPort, err := s.MetricsEndpoint()
-	if err != nil {
-		return err
-	}
+func (s *Service) ApplyDefaults(logger logr.Logger) error {
+	telemetryAddr, telemetryPort := s.MetricsEndpoint(logger)
 	tm := &AnyConfig{
 		Object: map[string]interface{}{
 			"metrics": map[string]interface{}{

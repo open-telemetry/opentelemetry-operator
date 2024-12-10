@@ -83,10 +83,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 		return nil, err
 	}
 
-	metricsPort, err := params.OtelCol.Spec.Config.Service.NaivePort()
-	if err != nil {
-		return nil, err
-	}
+	_, metricsPort := params.OtelCol.Spec.Config.Service.MetricsEndpoint(params.Log)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
