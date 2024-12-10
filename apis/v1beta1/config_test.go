@@ -225,13 +225,13 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 	}{
 		{
 			"custom port",
-			"0.0.0.0",
+			"localhost",
 			9090,
 			Service{
 				Telemetry: &AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
-							"address": "0.0.0.0:9090",
+							"address": "localhost:9090",
 						},
 					},
 				},
@@ -239,13 +239,41 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 		},
 		{
 			"missing port",
-			"0.0.0.0",
+			"localhost",
 			8888,
 			Service{
 				Telemetry: &AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
-							"address": "0.0.0.0",
+							"address": "localhost",
+						},
+					},
+				},
+			},
+		},
+		{
+			"env var and missing port",
+			"${env:POD_IP}",
+			8888,
+			Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "${env:POD_IP}",
+						},
+					},
+				},
+			},
+		},
+		{
+			"env var and with port",
+			"${POD_IP}",
+			1234,
+			Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "${POD_IP}:1234",
 						},
 					},
 				},

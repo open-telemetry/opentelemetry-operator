@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -440,26 +441,29 @@ const (
 // MetricsEndpoint attempts gets the host and port number from the host address without doing any validation regarding the
 // address itself.
 // It works even before env var expansion happens, when a simple `net.SplitHostPort` would fail because of  the extra colon
-// from the env var, i.e. the address looks like "${env:POD_IP}:4317" or "${env:POD_IP}".
+// from the env var, i.e. the address looks like "${env:POD_IP}:4317", "${env:POD_IP}", or "${POD_IP}".
 // It does not work in cases which the port itself is a variable, i.e. "${env:POD_IP}:${env:PORT}".
-// It does not work for IPv6 hostnames/addresses.
+// It does not work for IPv6 addresses.
 func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32) {
 	telemetry := s.GetTelemetry()
-	if telemetry == nil {
+	if telemetry == nil || telemetry.Metrics.Address == "" {
 		return defaultServiceHost, defaultServicePort
 	}
-	splitAddress := strings.Split(telemetry.Metrics.Address, ":")
-	if len(splitAddress) == 1 {
-		return defaultServiceHost, defaultServicePort
+
+	explicitPortMatches := regexp.MustCompile(`:(\d+$)`).FindStringSubmatch(telemetry.Metrics.Address)
+	if len(explicitPortMatches) <= 1 {
+		return telemetry.Metrics.Address, defaultServicePort
 	}
-	port, err := strconv.ParseInt(splitAddress[len(splitAddress)-1], 10, 32)
+
+	port, err := strconv.ParseInt(explicitPortMatches[1], 10, 32)
 	if err != nil {
 		errMsg := fmt.Sprintf("couldn't determine metrics port from configuration, using default: %s:%d",
 			defaultServiceHost, defaultServicePort)
 		logger.Info(errMsg, "error", err)
 		return defaultServiceHost, defaultServicePort
 	}
-	host := strings.Join(splitAddress[0:len(splitAddress)-1], ":")
+
+	host, _, _ := strings.Cut(telemetry.Metrics.Address, explicitPortMatches[0])
 	return host, int32(port)
 }
 
