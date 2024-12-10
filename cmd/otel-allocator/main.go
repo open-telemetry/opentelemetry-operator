@@ -97,14 +97,14 @@ func main() {
 		httpOptions = append(httpOptions, server.WithTLSConfig(tlsConfig, cfg.HTTPS.ListenAddr))
 	}
 	srv := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
-
+	promLogger := gokitlog.With(gokitlog.NewJSONLogger(gokitlog.NewSyncWriter(os.Stdout)), "logger", "prometheus-discovery")
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(prometheus.DefaultRegisterer)
 	if err != nil {
 		setupLog.Error(err, "Unable to register metrics for Prometheus service discovery")
 		os.Exit(1)
 	}
-	discoveryManager = discovery.NewManager(discoveryCtx, gokitlog.NewNopLogger(), prometheus.DefaultRegisterer, sdMetrics)
+	discoveryManager = discovery.NewManager(discoveryCtx, promLogger, prometheus.DefaultRegisterer, sdMetrics)
 
 	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv)
 	collectorWatcherType, err := collector.ParseCollectorWatcherType(cfg.CollectorWatcher.WatcherType)
