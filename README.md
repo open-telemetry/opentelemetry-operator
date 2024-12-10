@@ -798,7 +798,7 @@ annotations and others via labels.
 
 The following resource attributes are calculated from the pod's metadata.
 
-#### How service.name is calculated
+#### How `service.name` is calculated
 
 Choose the first value found: 
 
