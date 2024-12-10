@@ -87,7 +87,7 @@ func TestDiscovery(t *testing.T) {
 		err := manager.Watch(func(targets map[string]*Item) {
 			var result []string
 			for _, t := range targets {
-				result = append(result, t.TargetURL[0])
+				result = append(result, t.TargetURL)
 			}
 			results <- result
 		})

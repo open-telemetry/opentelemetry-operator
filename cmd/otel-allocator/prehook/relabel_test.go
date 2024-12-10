@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -184,10 +185,10 @@ func makeNNewTargets(rCfgs []relabelConfigObj, n int, numCollectors int, startin
 	relabelConfig := make(map[string][]*relabel.Config)
 	for i := startingIndex; i < n+startingIndex; i++ {
 		collector := fmt.Sprintf("collector-%d", colIndex(i, numCollectors))
-		label := model.LabelSet{
-			"collector": model.LabelValue(collector),
-			"i":         model.LabelValue(strconv.Itoa(i)),
-			"total":     model.LabelValue(strconv.Itoa(n + startingIndex)),
+		label := labels.Labels{
+			{Name: "collector", Value: collector},
+			{Name: "i", Value: strconv.Itoa(i)},
+			{Name: "total", Value: strconv.Itoa(n + startingIndex)},
 		}
 		jobName := fmt.Sprintf("test-job-%d", i)
 		newTarget := target.NewItem(jobName, "test-url", label, collector)

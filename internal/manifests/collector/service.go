@@ -42,10 +42,11 @@ const (
 	BaseServiceType ServiceType = iota
 	HeadlessServiceType
 	MonitoringServiceType
+	ExtensionServiceType
 )
 
 func (s ServiceType) String() string {
-	return [...]string{"base", "headless", "monitoring"}[s]
+	return [...]string{"base", "headless", "monitoring", "extension"}[s]
 }
 
 func HeadlessService(params manifests.Params) (*corev1.Service, error) {
@@ -108,6 +109,39 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 	}, nil
 }
 
+func ExtensionService(params manifests.Params) (*corev1.Service, error) {
+	name := naming.ExtensionService(params.OtelCol.Name)
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	labels[serviceTypeLabel] = ExtensionServiceType.String()
+
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	if err != nil {
+		return nil, err
+	}
+
+	ports, err := params.OtelCol.Spec.Config.GetExtensionPorts(params.Log)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(ports) == 0 {
+		return nil, nil
+	}
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   params.OtelCol.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:    ports,
+			Selector: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
+		},
+	}, nil
+}
+
 func Service(params manifests.Params) (*corev1.Service, error) {
 	name := naming.Service(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
@@ -118,7 +152,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 		return nil, err
 	}
 
-	ports, err := params.OtelCol.Spec.Config.GetAllPorts(params.Log)
+	ports, err := params.OtelCol.Spec.Config.GetReceiverAndExporterPorts(params.Log)
 	if err != nil {
 		return nil, err
 	}

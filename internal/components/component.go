@@ -49,6 +49,10 @@ type RBACRuleGenerator[ComponentConfigType any] func(logger logr.Logger, config 
 // It's expected that type Config is the configuration used by a parser.
 type ProbeGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) (*corev1.Probe, error)
 
+// EnvVarGenerator is a function that generates a list of environment variables for a given config.
+// It's expected that type Config is the configuration used by a parser.
+type EnvVarGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) ([]corev1.EnvVar, error)
+
 // Defaulter is a function that applies given defaults to the passed Config.
 // It's expected that type Config is the configuration used by a parser.
 type Defaulter[ComponentConfigType any] func(logger logr.Logger, defaultAddr string, defaultPort int32, config ComponentConfigType) (map[string]interface{}, error)
@@ -104,6 +108,9 @@ type Parser interface {
 
 	// GetLivenessProbe returns a liveness probe set for the collector
 	GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)
+
+	// GetEnvironmentVariables returns a list of environment variables for the collector
+	GetEnvironmentVariables(logger logr.Logger, config interface{}) ([]corev1.EnvVar, error)
 
 	// GetReadinessProbe returns a readiness probe set for the collector
 	GetReadinessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)

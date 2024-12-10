@@ -83,7 +83,7 @@ func TestValidate(t *testing.T) {
 		},
 	}
 
-	bv := func(collector v1beta1.OpenTelemetryCollector) admission.Warnings {
+	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
 		cfg := config.New(
 			config.WithCollectorImage("default-collector"),
@@ -518,7 +518,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 		},
 	}
 
-	bv := func(collector v1beta1.OpenTelemetryCollector) admission.Warnings {
+	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
 		cfg := config.New(
 			config.WithCollectorImage("default-collector"),
@@ -1365,7 +1365,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 		},
 	}
 
-	bv := func(collector v1beta1.OpenTelemetryCollector) admission.Warnings {
+	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
 		cfg := config.New(
 			config.WithCollectorImage("default-collector"),
@@ -1433,7 +1433,7 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 		},
 	}
 
-	bv := func(collector v1beta1.OpenTelemetryCollector) admission.Warnings {
+	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
 		cfg := config.New(
 			config.WithCollectorImage("default-collector"),

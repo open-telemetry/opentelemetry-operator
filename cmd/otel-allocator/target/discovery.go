@@ -24,6 +24,8 @@ import (
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
+	"github.com/prometheus/prometheus/discovery/targetgroup"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
 	"gopkg.in/yaml.v3"
 
@@ -104,28 +106,42 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 }
 
 func (m *Discoverer) Watch(fn func(targets map[string]*Item)) error {
+	labelsBuilder := labels.NewBuilder(labels.EmptyLabels())
 	for {
 		select {
 		case <-m.close:
 			m.log.Info("Service Discovery watch event stopped: discovery manager closed")
 			return nil
 		case tsets := <-m.manager.SyncCh():
-			targets := map[string]*Item{}
-
-			for jobName, tgs := range tsets {
-				var count float64 = 0
-				for _, tg := range tgs {
-					for _, t := range tg.Targets {
-						count++
-						item := NewItem(jobName, string(t[model.AddressLabel]), t.Merge(tg.Labels), "")
-						targets[item.Hash()] = item
-					}
-				}
-				targetsDiscovered.WithLabelValues(jobName).Set(count)
-			}
-			fn(targets)
+			m.ProcessTargets(labelsBuilder, tsets, fn)
 		}
 	}
+}
+
+func (m *Discoverer) ProcessTargets(builder *labels.Builder, tsets map[string][]*targetgroup.Group, fn func(targets map[string]*Item)) {
+	targets := map[string]*Item{}
+
+	for jobName, tgs := range tsets {
+		var count float64 = 0
+		for _, tg := range tgs {
+			builder.Reset(labels.EmptyLabels())
+			for ln, lv := range tg.Labels {
+				builder.Set(string(ln), string(lv))
+			}
+			groupLabels := builder.Labels()
+			for _, t := range tg.Targets {
+				count++
+				builder.Reset(groupLabels)
+				for ln, lv := range t {
+					builder.Set(string(ln), string(lv))
+				}
+				item := NewItem(jobName, string(t[model.AddressLabel]), builder.Labels(), "")
+				targets[item.Hash()] = item
+			}
+		}
+		targetsDiscovered.WithLabelValues(jobName).Set(count)
+	}
+	fn(targets)
 }
 
 func (m *Discoverer) Close() {

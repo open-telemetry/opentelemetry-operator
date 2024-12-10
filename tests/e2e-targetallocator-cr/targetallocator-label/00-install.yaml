@@ -1,0 +1,30 @@
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: ta
+spec:
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: ta
+spec:
+  mode: statefulset
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: 'otel-collector'
+              scrape_interval: 10s
+              static_configs:
+                - targets: [ '0.0.0.0:8888' ]
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          exporters: [debug]
+

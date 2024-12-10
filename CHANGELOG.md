@@ -2,6 +2,80 @@
 
 <!-- next version -->
 
+## 0.114.0
+
+### 💡 Enhancements 💡
+
+- `collector`: Create RBAC rules for the k8s_cluster receiver automatically. (#3427)
+- `collector`: Create RBAC rules for the k8sobjects receiver automatically. (#3429)
+- `collector`: Add a warning message when one created collector needs extra RBAC permissions and the service account doesn't have them. (#3432)
+- `target allocator`: Added allocation_fallback_strategy option as fallback strategy for per-node allocation strategy, can be enabled with feature flag operator.targetallocator.fallbackstrategy (#3477)
+  
+  If using per-node allocation strategy, targets that are not attached to a node will not
+  be allocated. As the per-node strategy is required when running as a daemonset, it is 
+  not possible to assign some targets under a daemonset deployment.
+  Feature flag operator.targetallocator.fallbackstrategy has been added and results in consistent-hashing
+  being used as the fallback allocation strategy for "per-node" only at this time.
+  
+- `auto-instrumentation`: updated node auto-instrumentation dependencies to the latest version (#3476)
+  
+  - auto-instrumentations-node to 0.53.0
+  - exporter-metrics-otlp-grpc to 0.55.0
+  - exporter-prometheus to 0.55.0
+  
+- `operator`: Replace references to gcr.io/kubebuilder/kube-rbac-proxy with quay.io/brancz/kube-rbac-proxy (#3485)
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Operator pod crashed if the Service Monitor for the operator metrics was created before by another operator pod. (#3446)
+  
+  Operator fails when the pod is restarted and the Service Monitor for operator metrics was already created by another operator pod.
+  To fix this, the operator now sets the owner reference on the Service Monitor to itself and checks if the Service Monitor already exists.
+  
+- `auto-instrumentation`: Bump base memory requirements for python and go (#3479)
+
+### Components
+
+* [OpenTelemetry Collector - v0.114.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.114.0)
+* [OpenTelemetry Contrib - v0.114.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.114.0)
+* [Java auto-instrumentation - v1.33.5](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.5)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.53.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.53.0)
+* [Python - v0.48b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.48b0)
+* [Go - v0.17.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.17.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.113.0
+
+### 💡 Enhancements 💡
+
+- `operator`: Programmatically create the `ServiceMonitor` for the operator metrics endpoint, ensuring correct namespace handling and dynamic configuration. (#3370)
+  Previously, the `ServiceMonitor` was created statically from a manifest file, causing failures when the
+  operator was deployed in a non-default namespace. This enhancement ensures automatic adjustment of the
+  `serverName` and seamless metrics scraping.
+- `collector`: Create RBAC rules for the k8s_events receiver automatically. (#3420)
+- `collector`: Inject environment K8S_NODE_NAME environment variable for the Kubelet Stats Receiver. (#2779)
+- `auto-instrumentation`: add config for installing musl based auto-instrumentation for Python (#2264)
+- `auto-instrumentation`: Support `http/json` and `http/protobuf` via OTEL_EXPORTER_OTLP_PROTOCOL environment variable in addition to default `grpc` for exporting traces (#3412)
+- `target allocator`: enables support for pulling scrape config and probe CRDs in the target allocator (#1842)
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fix mutation of deployments, statefulsets, and daemonsets allowing to remove fields on update (#2947)
+
+### Components
+
+* [OpenTelemetry Collector - v0.113.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.113.0)
+* [OpenTelemetry Contrib - v0.113.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.113.0)
+* [Java auto-instrumentation - v1.33.5](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.5)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.53.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.53.0)
+* [Python - v0.48b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.48b0)
+* [Go - v0.17.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.17.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.112.0
 
 ### 💡 Enhancements 💡

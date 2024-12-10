@@ -1,0 +1,12 @@
+---
+- op: add
+  path: /rules/-
+  value:
+    apiGroups:
+    - batch
+    resources:
+    - cronjobs
+    verbs:
+    - get
+    - list
+    - watch

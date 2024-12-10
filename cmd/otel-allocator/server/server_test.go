@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,11 +42,11 @@ import (
 
 var (
 	logger       = logf.Log.WithName("server-unit-tests")
-	baseLabelSet = model.LabelSet{
-		"test_label": "test-value",
+	baseLabelSet = labels.Labels{
+		{Name: "test_label", Value: "test-value"},
 	}
-	testJobLabelSetTwo = model.LabelSet{
-		"test_label": "test-value2",
+	testJobLabelSetTwo = labels.Labels{
+		{Name: "test_label", Value: "test-value2"},
 	}
 	baseTargetItem       = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
 	secondTargetItem     = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
@@ -74,7 +75,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 		allocator allocation.Allocator
 	}
 	type want struct {
-		items     []*target.Item
+		items     []*targetJSON
 		errString string
 	}
 	tests := []struct {
@@ -91,7 +92,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 				allocator: leastWeighted,
 			},
 			want: want{
-				items: []*target.Item{},
+				items: []*targetJSON{},
 			},
 		},
 		{
@@ -105,11 +106,11 @@ func TestServer_TargetsHandler(t *testing.T) {
 				allocator: leastWeighted,
 			},
 			want: want{
-				items: []*target.Item{
+				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
-						Labels: map[model.LabelName]model.LabelValue{
-							"test_label": "test-value",
+						Labels: labels.Labels{
+							{Name: "test_label", Value: "test-value"},
 						},
 					},
 				},
@@ -127,11 +128,11 @@ func TestServer_TargetsHandler(t *testing.T) {
 				allocator: leastWeighted,
 			},
 			want: want{
-				items: []*target.Item{
+				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
-						Labels: map[model.LabelName]model.LabelValue{
-							"test_label": "test-value",
+						Labels: labels.Labels{
+							{Name: "test_label", Value: "test-value"},
 						},
 					},
 				},
@@ -149,17 +150,17 @@ func TestServer_TargetsHandler(t *testing.T) {
 				allocator: leastWeighted,
 			},
 			want: want{
-				items: []*target.Item{
+				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
-						Labels: map[model.LabelName]model.LabelValue{
-							"test_label": "test-value",
+						Labels: labels.Labels{
+							{Name: "test_label", Value: "test-value"},
 						},
 					},
 					{
 						TargetURL: []string{"test-url2"},
-						Labels: map[model.LabelName]model.LabelValue{
-							"test_label": "test-value2",
+						Labels: labels.Labels{
+							{Name: "test_label", Value: "test-value2"},
 						},
 					},
 				},
@@ -186,7 +187,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 				assert.EqualError(t, err, tt.want.errString)
 				return
 			}
-			var itemResponse []*target.Item
+			var itemResponse []*targetJSON
 			err = json.Unmarshal(bodyBytes, &itemResponse)
 			assert.NoError(t, err)
 			assert.ElementsMatch(t, tt.want.items, itemResponse)
@@ -555,40 +556,40 @@ func TestServer_JobHandler(t *testing.T) {
 		description  string
 		targetItems  map[string]*target.Item
 		expectedCode int
-		expectedJobs map[string]target.LinkJSON
+		expectedJobs map[string]linkJSON
 	}{
 		{
 			description:  "nil jobs",
 			targetItems:  nil,
 			expectedCode: http.StatusOK,
-			expectedJobs: make(map[string]target.LinkJSON),
+			expectedJobs: make(map[string]linkJSON),
 		},
 		{
 			description:  "empty jobs",
 			targetItems:  map[string]*target.Item{},
 			expectedCode: http.StatusOK,
-			expectedJobs: make(map[string]target.LinkJSON),
+			expectedJobs: make(map[string]linkJSON),
 		},
 		{
 			description: "one job",
 			targetItems: map[string]*target.Item{
-				"targetitem": target.NewItem("job1", "", model.LabelSet{}, ""),
+				"targetitem": target.NewItem("job1", "", labels.Labels{}, ""),
 			},
 			expectedCode: http.StatusOK,
-			expectedJobs: map[string]target.LinkJSON{
+			expectedJobs: map[string]linkJSON{
 				"job1": newLink("job1"),
 			},
 		},
 		{
 			description: "multiple jobs",
 			targetItems: map[string]*target.Item{
-				"a": target.NewItem("job1", "", model.LabelSet{}, ""),
-				"b": target.NewItem("job2", "", model.LabelSet{}, ""),
-				"c": target.NewItem("job3", "", model.LabelSet{}, ""),
-				"d": target.NewItem("job3", "", model.LabelSet{}, ""),
-				"e": target.NewItem("job3", "", model.LabelSet{}, "")},
+				"a": target.NewItem("job1", "", labels.Labels{}, ""),
+				"b": target.NewItem("job2", "", labels.Labels{}, ""),
+				"c": target.NewItem("job3", "", labels.Labels{}, ""),
+				"d": target.NewItem("job3", "", labels.Labels{}, ""),
+				"e": target.NewItem("job3", "", labels.Labels{}, "")},
 			expectedCode: http.StatusOK,
-			expectedJobs: map[string]target.LinkJSON{
+			expectedJobs: map[string]linkJSON{
 				"job1": newLink("job1"),
 				"job2": newLink("job2"),
 				"job3": newLink("job3"),
@@ -609,7 +610,7 @@ func TestServer_JobHandler(t *testing.T) {
 			assert.Equal(t, tc.expectedCode, result.StatusCode)
 			bodyBytes, err := io.ReadAll(result.Body)
 			require.NoError(t, err)
-			jobs := map[string]target.LinkJSON{}
+			jobs := map[string]linkJSON{}
 			err = json.Unmarshal(bodyBytes, &jobs)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedJobs, jobs)
@@ -737,6 +738,6 @@ func TestServer_ScrapeConfigRespose(t *testing.T) {
 	}
 }
 
-func newLink(jobName string) target.LinkJSON {
-	return target.LinkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))}
+func newLink(jobName string) linkJSON {
+	return linkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(jobName))}
 }

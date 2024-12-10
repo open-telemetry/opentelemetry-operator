@@ -48,27 +48,32 @@ const (
 )
 
 type Config struct {
-	ListenAddr         string                 `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath string                 `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig      *rest.Config           `yaml:"-"`
-	RootLogger         logr.Logger            `yaml:"-"`
-	CollectorSelector  *metav1.LabelSelector  `yaml:"collector_selector,omitempty"`
-	PromConfig         *promconfig.Config     `yaml:"config"`
-	AllocationStrategy string                 `yaml:"allocation_strategy,omitempty"`
-	FilterStrategy     string                 `yaml:"filter_strategy,omitempty"`
-	PrometheusCR       PrometheusCRConfig     `yaml:"prometheus_cr,omitempty"`
-	HTTPS              HTTPSServerConfig      `yaml:"https,omitempty"`
-	CollectorWatcher   CollectorWatcherConfig `yaml:"collector_watcher,omitempty"`
-	Runtime            RuntimeConfig          `yaml:"runtime,omitempty"`
-	MinUpdateInterval  time.Duration          `yaml:"min_update_interval,omitempty"`
+	ListenAddr                 string                 `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath         string                 `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig              *rest.Config           `yaml:"-"`
+	RootLogger                 logr.Logger            `yaml:"-"`
+	CollectorSelector          *metav1.LabelSelector  `yaml:"collector_selector,omitempty"`
+	PromConfig                 *promconfig.Config     `yaml:"config"`
+	AllocationStrategy         string                 `yaml:"allocation_strategy,omitempty"`
+	AllocationFallbackStrategy string                 `yaml:"allocation_fallback_strategy,omitempty"`
+	FilterStrategy             string                 `yaml:"filter_strategy,omitempty"`
+	PrometheusCR               PrometheusCRConfig     `yaml:"prometheus_cr,omitempty"`
+	HTTPS                      HTTPSServerConfig      `yaml:"https,omitempty"`
+	CollectorWatcher           CollectorWatcherConfig `yaml:"collector_watcher,omitempty"`
+	Runtime                    RuntimeConfig          `yaml:"runtime,omitempty"`
+	MinUpdateInterval          time.Duration          `yaml:"min_update_interval,omitempty"`
 }
 
 type PrometheusCRConfig struct {
 	Enabled                         bool                  `yaml:"enabled,omitempty"`
 	PodMonitorSelector              *metav1.LabelSelector `yaml:"pod_monitor_selector,omitempty"`
+	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
 	ServiceMonitorSelector          *metav1.LabelSelector `yaml:"service_monitor_selector,omitempty"`
 	ServiceMonitorNamespaceSelector *metav1.LabelSelector `yaml:"service_monitor_namespace_selector,omitempty"`
-	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
+	ScrapeConfigSelector            *metav1.LabelSelector `yaml:"scrape_config_selector,omitempty"`
+	ScrapeConfigNamespaceSelector   *metav1.LabelSelector `yaml:"scrape_config_namespace_selector,omitempty"`
+	ProbeSelector                   *metav1.LabelSelector `yaml:"probe_selector,omitempty"`
+	ProbeNamespaceSelector          *metav1.LabelSelector `yaml:"probe_namespace_selector,omitempty"`
 	ScrapeInterval                  model.Duration        `yaml:"scrape_interval,omitempty"`
 }
 
@@ -217,8 +222,9 @@ func unmarshal(cfg *Config, configFile string) error {
 
 func CreateDefaultConfig() Config {
 	return Config{
-		AllocationStrategy: DefaultAllocationStrategy,
-		FilterStrategy:     DefaultFilterStrategy,
+		AllocationStrategy:         DefaultAllocationStrategy,
+		AllocationFallbackStrategy: "",
+		FilterStrategy:             DefaultFilterStrategy,
 		PrometheusCR: PrometheusCRConfig{
 			ScrapeInterval: DefaultCRScrapeInterval,
 		},

@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Read version
-        run: echo VERSION=$(cat autoinstrumentation/nodejs/package.json | jq -r '.dependencies."@opentelemetry/sdk-node"') >> $GITHUB_ENV
+        run: echo VERSION=$(cat autoinstrumentation/nodejs/package.json | jq -r '.dependencies."@opentelemetry/auto-instrumentations-node"') >> $GITHUB_ENV
 
       - name: Docker meta
         id: meta

@@ -206,7 +206,12 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 		case KindProcessor:
 			continue
 		case KindExtension:
-			continue
+			retriever = extensions.ParserFor
+			if c.Extensions == nil {
+				cfg = AnyConfig{}
+			} else {
+				cfg = *c.Extensions
+			}
 		}
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.
@@ -224,6 +229,42 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 	})
 
 	return ports, nil
+}
+
+// getEnvironmentVariablesForComponentKinds gets the environment variables for the given ComponentKind(s).
+func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]corev1.EnvVar, error) {
+	var envVars []corev1.EnvVar = []corev1.EnvVar{}
+	enabledComponents := c.GetEnabledComponents()
+	for _, componentKind := range componentKinds {
+		var retriever components.ParserRetriever
+		var cfg AnyConfig
+
+		switch componentKind {
+		case KindReceiver:
+			retriever = receivers.ReceiverFor
+			cfg = c.Receivers
+		case KindExporter:
+			continue
+		case KindProcessor:
+			continue
+		case KindExtension:
+			continue
+		}
+		for componentName := range enabledComponents[componentKind] {
+			parser := retriever(componentName)
+			if parsedEnvVars, err := parser.GetEnvironmentVariables(logger, cfg.Object[componentName]); err != nil {
+				return nil, err
+			} else {
+				envVars = append(envVars, parsedEnvVars...)
+			}
+		}
+	}
+
+	sort.Slice(envVars, func(i, j int) bool {
+		return envVars[i].Name < envVars[j].Name
+	})
+
+	return envVars, nil
 }
 
 // applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
@@ -282,8 +323,20 @@ func (c *Config) GetExporterPorts(logger logr.Logger) ([]corev1.ServicePort, err
 	return c.getPortsForComponentKinds(logger, KindExporter)
 }
 
-func (c *Config) GetAllPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
+func (c *Config) GetExtensionPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
+	return c.getPortsForComponentKinds(logger, KindExtension)
+}
+
+func (c *Config) GetReceiverAndExporterPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
 	return c.getPortsForComponentKinds(logger, KindReceiver, KindExporter)
+}
+
+func (c *Config) GetAllPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
+	return c.getPortsForComponentKinds(logger, KindReceiver, KindExporter, KindExtension)
+}
+
+func (c *Config) GetEnvironmentVariables(logger logr.Logger) ([]corev1.EnvVar, error) {
+	return c.getEnvironmentVariablesForComponentKinds(logger, KindReceiver)
 }
 
 func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error) {

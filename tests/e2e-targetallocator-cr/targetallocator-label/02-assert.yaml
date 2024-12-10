@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: ta-collector
+data:
+  collector.yaml: |
+    exporters:
+        debug: {}
+    receivers:
+        prometheus:
+            config: {}
+            target_allocator:
+                collector_id: ${POD_NAME}
+                endpoint: http://ta-targetallocator:80
+                interval: 30s
+    service:
+        pipelines:
+            metrics:
+                exporters:
+                    - debug
+                receivers:
+                    - prometheus
+        telemetry:
+            metrics:
+                address: 0.0.0.0:8888
+---
+apiVersion: v1
+data:
+  targetallocator.yaml:
+    ( contains(@, join(':', ['app.kubernetes.io/component', ' opentelemetry-collector'])) ): true
+    ( contains(@, join('', ['app.kubernetes.io/instance:', ' ', $namespace, '.ta'])) ): true
+    ( contains(@, join(':', ['app.kubernetes.io/managed-by', ' opentelemetry-operator'])) ): true
+    ( contains(@, join(':', ['app.kubernetes.io/part-of', ' opentelemetry'])) ): true
+    ( contains(@, join(':', ['job_name', ' otel-collector'])) ): false
+kind: ConfigMap
+metadata:
+  name: ta-targetallocator

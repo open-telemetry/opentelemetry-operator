@@ -90,6 +90,11 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	} else {
 		taConfig["allocation_strategy"] = v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
 	}
+
+	if featuregate.EnableTargetAllocatorFallbackStrategy.IsEnabled() {
+		taConfig["allocation_fallback_strategy"] = v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
+	}
+
 	taConfig["filter_strategy"] = taSpec.FilterStrategy
 
 	if taSpec.PrometheusCR.Enabled {
@@ -103,6 +108,10 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
 
 		prometheusCRConfig["pod_monitor_selector"] = taSpec.PrometheusCR.PodMonitorSelector
+
+		prometheusCRConfig["scrape_config_selector"] = taSpec.PrometheusCR.ScrapeConfigSelector
+
+		prometheusCRConfig["probe_selector"] = taSpec.PrometheusCR.ProbeSelector
 
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}

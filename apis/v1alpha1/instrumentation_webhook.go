@@ -128,13 +128,13 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	if r.Spec.Python.Resources.Limits == nil {
 		r.Spec.Python.Resources.Limits = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("500m"),
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
 		}
 	}
 	if r.Spec.Python.Resources.Requests == nil {
 		r.Spec.Python.Resources.Requests = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("50m"),
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
 		}
 	}
 	if r.Spec.DotNet.Image == "" {
@@ -158,13 +158,13 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	if r.Spec.Go.Resources.Limits == nil {
 		r.Spec.Go.Resources.Limits = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("500m"),
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
 		}
 	}
 	if r.Spec.Go.Resources.Requests == nil {
 		r.Spec.Go.Resources.Requests = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("50m"),
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
 		}
 	}
 	if r.Spec.ApacheHttpd.Image == "" {

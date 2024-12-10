@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: opentelemetry-operator
+    control-plane: controller-manager
+  namespace: ($OTEL_NAMESPACE)
+status:
+  containerStatuses:
+  - name: kube-rbac-proxy
+    ready: true
+    started: true
+  - name: manager
+    ready: true
+    started: true
+  phase: Running
