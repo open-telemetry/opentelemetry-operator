@@ -817,7 +817,7 @@ Choose the first value found:
 
 - `pod.annotation[resource.opentelemetry.io/service.version]`
 - `if (cfg[useLabelsForResourceAttributes]) pod.label[app.kubernetes.io/version]`
-- `if (contains(container.image.tags[0], '/') == false) contains(container.image.tags[0]
+- `if (contains(container docker image tag, '/') == false) container docker image tag`
 
 #### How `service.instance.id` is calculated
                                    
