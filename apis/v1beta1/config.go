@@ -427,12 +427,6 @@ type Service struct {
 	Pipelines map[string]*Pipeline `json:"pipelines" yaml:"pipelines"`
 }
 
-type serviceParseError string
-
-func (s serviceParseError) Error() string {
-	return string(s)
-}
-
 const (
 	defaultServicePort int32 = 8888
 	defaultServiceHost       = "0.0.0.0"
