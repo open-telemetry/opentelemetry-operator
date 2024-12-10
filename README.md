@@ -802,6 +802,8 @@ The following resource attributes are calculated from the pod's metadata.
 
 Choose the first value found: 
 
+- `pod.annotation[resource.opentelemetry.io/service.name]`
+- `if (config[useLabelsForResourceAttributes]) pod.label[app.kubernetes.io/name]`
 - `k8s.depleyment.name`
 - `k8s.replicaset.name`
 - `k8s.statefulset.name`
@@ -813,15 +815,16 @@ Choose the first value found:
 
 #### How service.version is calculated
 
-Take the tag from the docker image name of the container.
-If the tag contains a `/`, the tag is ignored (this can happen if the image name contains a port number).
+- `pod.annotation[resource.opentelemetry.io/service.version]`
+- `if (cfg[useLabelsForResourceAttributes]) pod.label[app.kubernetes.io/version]`
+- `if (contains(container.image.tags[0], '/') == false) contains(container.image.tags[0]
 
-#### How service.instance.id is calculated
+#### How `service.instance.id` is calculated
                                    
-Create a unique identifier for the application running in the container. 
-The identifier is created by concatenating the following values:
 
-`<k8s.namespace.name>.<k8s.pod.name>.<k8s.container.name>`
+- `pod.annotation[resource.opentelemetry.io/service.instance.id]`
+- `if (config[useLabelsForResourceAttributes]) pod.label[app.kubernetes.io/instance]`
+- `concat([k8s.namespace.name, k8s.pod.name, k8s.container.name], '.')`
 
 ## Contributing and Developing
 
