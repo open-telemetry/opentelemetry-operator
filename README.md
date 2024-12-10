@@ -725,7 +725,8 @@ EOF
 
 ### Configure resource attributes with annotations
 
-This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. These annotations can be used to add resource attributes to data produced by OpenTelemetry instrumentation.
+This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. 
+These annotations can be used to add resource attributes to data produced by OpenTelemetry instrumentation.
 
 ```yaml
 apiVersion: v1
@@ -733,6 +734,7 @@ kind: Pod
 metadata:
   name: example-pod
   annotations:
+    # this is just an example, you can create any resource attributes you need
     resource.opentelemetry.io/service.name: "my-service"
     resource.opentelemetry.io/service.version: "1.0.0"
     resource.opentelemetry.io/environment: "production"
@@ -750,7 +752,6 @@ The following labels are supported:
 - `app.kubernetes.io/name` becomes `service.name`
 - `app.kubernetes.io/version` becomes `service.version`
 - `app.kubernetes.io/part-of` becomes `service.namespace`
-- `app.kubernetes.io/instance` becomes `service.instance.id`
 
 ```yaml
 apiVersion: v1
@@ -761,7 +762,6 @@ metadata:
     app.kubernetes.io/name: "my-service"
     app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/part-of: "shop"
-    app.kubernetes.io/instance: "my-service-123"
 spec:
   containers:
   - name: main-container
@@ -793,6 +793,38 @@ The priority for setting resource attributes is as follows (first found wins):
 
 This priority is applied for each resource attribute separately, so it is possible to set some attributes via
 annotations and others via labels.
+
+### How resource attributes are calculated from the pod's metadata
+
+The following resource attributes are calculated from the pod's metadata.
+
+#### How `service.name` is calculated
+
+Choose the first value found: 
+
+- `pod.annotation[resource.opentelemetry.io/service.name]`
+- `if (config[useLabelsForResourceAttributes]) pod.label[app.kubernetes.io/name]`
+- `k8s.depleyment.name`
+- `k8s.replicaset.name`
+- `k8s.statefulset.name`
+- `k8s.daemonset.name`
+- `k8s.cronjob.name`
+- `k8s.job.name`
+- `k8s.pod.name`
+- `k8s.container.name`
+
+#### How `service.version` is calculated
+
+- `pod.annotation[resource.opentelemetry.io/service.version]`
+- `if (cfg[useLabelsForResourceAttributes]) pod.label[app.kubernetes.io/version]`
+- `if (contains(container docker image tag, '/') == false) container docker image tag`
+
+#### How `service.instance.id` is calculated
+                                   
+
+- `pod.annotation[resource.opentelemetry.io/service.instance.id]`
+- `if (config[useLabelsForResourceAttributes]) pod.label[app.kubernetes.io/instance]`
+- `concat([k8s.namespace.name, k8s.pod.name, k8s.container.name], '.')`
 
 ## Contributing and Developing
 
