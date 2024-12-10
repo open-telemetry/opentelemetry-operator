@@ -813,7 +813,7 @@ Choose the first value found:
 - `k8s.pod.name`
 - `k8s.container.name`
 
-#### How service.version is calculated
+#### How `service.version` is calculated
 
 - `pod.annotation[resource.opentelemetry.io/service.version]`
 - `if (cfg[useLabelsForResourceAttributes]) pod.label[app.kubernetes.io/version]`
