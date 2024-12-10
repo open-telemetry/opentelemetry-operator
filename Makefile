@@ -494,7 +494,7 @@ CHAINSAW ?= $(LOCALBIN)/chainsaw
 # renovate: datasource=go depName=sigs.k8s.io/kustomize/kustomize/v5
 KUSTOMIZE_VERSION ?= v5.5.0
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
-CONTROLLER_TOOLS_VERSION ?= v0.16.1
+CONTROLLER_TOOLS_VERSION ?= v0.16.5
 # renovate: datasource=go depName=github.com/golangci/golangci-lint/cmd/golangci-lint
 GOLANGCI_LINT_VERSION ?= v1.57.2
 # renovate: datasource=go depName=sigs.k8s.io/kind
