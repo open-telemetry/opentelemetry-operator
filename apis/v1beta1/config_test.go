@@ -216,8 +216,7 @@ func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
 	assert.Nil(t, cfg.Service.GetTelemetry())
 }
 
-func TestConfigToMetricsPort(t *testing.T) {
-
+func TestConfigMetricsEndpoint(t *testing.T) {
 	for _, tt := range []struct {
 		desc         string
 		expectedAddr string
@@ -226,27 +225,55 @@ func TestConfigToMetricsPort(t *testing.T) {
 	}{
 		{
 			"custom port",
-			"0.0.0.0",
+			"localhost",
 			9090,
 			Service{
 				Telemetry: &AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
-							"address": "0.0.0.0:9090",
+							"address": "localhost:9090",
 						},
 					},
 				},
 			},
 		},
 		{
-			"bad address",
-			"0.0.0.0",
+			"missing port",
+			"localhost",
 			8888,
 			Service{
 				Telemetry: &AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
-							"address": "0.0.0.0",
+							"address": "localhost",
+						},
+					},
+				},
+			},
+		},
+		{
+			"env var and missing port",
+			"${env:POD_IP}",
+			8888,
+			Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "${env:POD_IP}",
+						},
+					},
+				},
+			},
+		},
+		{
+			"env var and with port",
+			"${POD_IP}",
+			1234,
+			Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "${POD_IP}:1234",
 						},
 					},
 				},
@@ -296,9 +323,9 @@ func TestConfigToMetricsPort(t *testing.T) {
 		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
+			logger := logr.Discard()
 			// these are acceptable failures, we return to the collector's default metric port
-			addr, port, err := tt.config.MetricsEndpoint()
-			assert.NoError(t, err)
+			addr, port := tt.config.MetricsEndpoint(logger)
 			assert.Equal(t, tt.expectedAddr, addr)
 			assert.Equal(t, tt.expectedPort, port)
 		})
