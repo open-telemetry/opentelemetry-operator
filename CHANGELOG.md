@@ -2,6 +2,46 @@
 
 <!-- next version -->
 
+## 0.115.0
+
+### 💡 Enhancements 💡
+
+- `collector`: enables support for pulling scrape config and probe CRDs in the target allocator (#1842)
+- `collector`: support for creating a service for extensions when ports are specified. (#3460)
+
+### 🧰 Bug fixes 🧰
+
+- `github action`: Add new line character at the end of PrometheusRule file. (#3503)
+- `auto-instrumentation`: Reverts PR 3379 which inadvertently broke users setting JAVA_TOOL_OPTIONS (#3463)
+  Reverts a previous PR which was causing JAVA_TOOL_OPTIONS to not be overriden when
+  set by users. This was resulting in application crashloopbackoffs for users relying
+  on java autoinstrumentation.
+  
+- `auto-instrumentation`: Remove the mapping of `app.kubernetes.io/instance` to `service.instance.id` (#3495)
+  Technically, this is a breaking change, but we regard it as a bug fix because the previous behavior was incorrect.
+  
+  if you did have multiple container instrumentation and use `app.kubernetes.io/instance` to set the `service.instance.id`, 
+  you will now see multiple instances in the UI - which is the correct behavior.
+  
+  You can still use the attribute `resource.opentelemetry.io/service.instance.id` to set the `service.instance.id`,
+  which will be shared across all containers in the pod - but this is not recommended for multiple container instrumentation instances.
+  
+  Refer to the [semantic conventions](https://opentelemetry.io/docs/specs/semconv/resource/#service-experimental) 
+  for more information.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.115.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.115.1)
+* [OpenTelemetry Contrib - v0.115.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.115.1)
+* [Java auto-instrumentation - v1.33.5](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.5)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.53.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.53.0)
+* [Python - v0.48b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.48b0)
+* [Go - v0.19.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.19.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.114.0
 
 ### 💡 Enhancements 💡
