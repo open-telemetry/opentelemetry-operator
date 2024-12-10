@@ -5,10 +5,10 @@ change_type: enhancement
 component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Create RBAC rules for the k8s_cluster receiver automatically.
+note: enables support for pulling scrape config and probe CRDs in the target allocator
 
 # One or more tracking issues related to the change
-issues: [3427]
+issues: [1842]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.

@@ -59,6 +59,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 	}
 	if insts.Java.Instrumentation != nil {
 		otelinst := *insts.Java.Instrumentation
+		var err error
 		i.logger.V(1).Info("injecting Java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
 		if len(insts.Java.Containers) == 0 {
@@ -67,10 +68,14 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range insts.Java.Containers {
 			index := getContainerIndex(container, pod)
-			pod = injectJavaagent(otelinst.Spec.Java, pod, index)
-			pod = i.injectCommonEnvVar(otelinst, pod, index)
-			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
-			pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, javaInitContainerName)
+			pod, err = injectJavaagent(otelinst.Spec.Java, pod, index)
+			if err != nil {
+				i.logger.Info("Skipping javaagent injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
+			} else {
+				pod = i.injectCommonEnvVar(otelinst, pod, index)
+				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, javaInitContainerName)
+			}
 		}
 	}
 	if insts.NodeJS.Instrumentation != nil {

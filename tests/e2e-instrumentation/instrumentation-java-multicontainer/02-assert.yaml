@@ -36,7 +36,7 @@ spec:
     - name: SPLUNK_PROFILER_ENABLED
       value: "false"
     - name: JAVA_TOOL_OPTIONS
-      value: '-javaagent:/otel-auto-instrumentation-java/javaagent.jar'
+      value: ' -javaagent:/otel-auto-instrumentation-java/javaagent.jar'
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
