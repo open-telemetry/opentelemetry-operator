@@ -4,31 +4,29 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package collector
 
 import (
+	"errors"
+	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
-
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 )
 
 const (
@@ -43,102 +41,169 @@ var (
 	})
 )
 
-type Watcher struct {
-	log               logr.Logger
-	k8sClient         kubernetes.Interface
-	close             chan struct{}
-	minUpdateInterval time.Duration
-}
+type CollectorWatcherType int
 
-func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config) (*Watcher, error) {
-	clientset, err := kubernetes.NewForConfig(kubeConfig)
-	if err != nil {
-		return &Watcher{}, err
-	}
+const (
+	K8sCollectorWatcher CollectorWatcherType = iota
+	AwsCloudMapCollectorWatcher
+)
 
-	return &Watcher{
-		log:               logger.WithValues("component", "opentelemetry-targetallocator"),
-		k8sClient:         clientset,
-		close:             make(chan struct{}),
-		minUpdateInterval: defaultMinUpdateInterval,
-	}, nil
-}
+var collectorWatcherTypeStrings = []string{"k8s", "aws-cloud-map"}
 
-func (k *Watcher) Watch(labelSelector *metav1.LabelSelector, fn func(collectors map[string]*allocation.Collector)) error {
-	selector, err := metav1.LabelSelectorAsSelector(labelSelector)
-	if err != nil {
-		return err
-	}
-
-	listOptionsFunc := func(listOptions *metav1.ListOptions) {
-		listOptions.LabelSelector = selector.String()
-	}
-	informerFactory := informers.NewSharedInformerFactoryWithOptions(
-		k.k8sClient,
-		time.Second*30,
-		informers.WithNamespace(ns),
-		informers.WithTweakListOptions(listOptionsFunc))
-	informer := informerFactory.Core().V1().Pods().Informer()
-
-	notify := make(chan struct{}, 1)
-	go k.rateLimitedCollectorHandler(notify, informer.GetStore(), fn)
-
-	notifyFunc := func(_ interface{}) {
-		select {
-		case notify <- struct{}{}:
-		default:
+func ParseCollectorWatcherType(s string) (CollectorWatcherType, error) {
+	for i, name := range collectorWatcherTypeStrings {
+		if strings.ToLower(s) == name {
+			return CollectorWatcherType(i), nil
 		}
 	}
-	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: notifyFunc,
-		UpdateFunc: func(oldObj, newObj interface{}) {
-			notifyFunc(newObj)
-		},
-		DeleteFunc: notifyFunc,
-	})
-	if err != nil {
-		return err
+	return 0, errors.New("invalid collector watcher type")
+}
+
+// Implement the Stringer interface for CollectorWatcherType
+func (c CollectorWatcherType) String() string {
+	if int(c) < len(collectorWatcherTypeStrings) {
+		return collectorWatcherTypeStrings[c]
+	}
+	return "unknown"
+}
+
+// Implement the Set method for pflag
+func (c *CollectorWatcherType) Set(value string) error {
+	for i, name := range collectorWatcherTypeStrings {
+		if strings.ToLower(value) == name {
+			*c = CollectorWatcherType(i)
+			return nil
+		}
+	}
+	return errors.New("invalid collector watcher type")
+}
+
+// Implement the Type method for pflag
+func (c *CollectorWatcherType) Type() string {
+	return "CollectorWatcherType"
+}
+
+var _ Watcher = &watcher{}
+
+// CollectorWatcher interface defines the common methods for watchers
+type Watcher interface {
+	Watch(...WatchOption) error
+	Close()
+}
+
+type watcher struct {
+	log               logr.Logger
+	minUpdateInterval time.Duration
+	close             chan struct{}
+}
+
+func (w *watcher) Watch(options ...WatchOption) error {
+	config := &WatchConfig{}
+	for _, opt := range options {
+		opt(config)
 	}
 
-	informer.Run(k.close)
+	if config.fn == nil {
+		return fmt.Errorf("fn is required")
+	}
+
+	if config.labelSelector == nil {
+		config.labelSelector = &metav1.LabelSelector{}
+	}
+
+	if w.minUpdateInterval == 0 {
+		w.minUpdateInterval = defaultMinUpdateInterval
+	}
+
+	if w.close == nil {
+		w.close = make(chan struct{})
+	}
 	return nil
 }
 
-// rateLimitedCollectorHandler runs fn on collectors present in the store whenever it gets a notification on the notify channel,
-// but not more frequently than once per k.eventPeriod.
-func (k *Watcher) rateLimitedCollectorHandler(notify chan struct{}, store cache.Store, fn func(collectors map[string]*allocation.Collector)) {
-	ticker := time.NewTicker(k.minUpdateInterval)
-	defer ticker.Stop()
+func (w *watcher) Close() {
+	if w.close != nil {
+		close(w.close)
+	}
+}
 
-	for {
-		select {
-		case <-k.close:
-			return
-		case <-ticker.C: // throttle events to avoid excessive updates
-			select {
-			case <-notify:
-				k.runOnCollectors(store, fn)
-			default:
+// WatchConfig struct defines the common parameters for the watch method of Collector Watchers
+type WatchConfig struct {
+	labelSelector *metav1.LabelSelector
+	fn            func(collectors map[string]*allocation.Collector)
+}
+
+type WatchOption func(wc *WatchConfig)
+
+func WithLabelSelector(labelSelector *metav1.LabelSelector) WatchOption {
+	return func(wc *WatchConfig) {
+		wc.labelSelector = labelSelector
+	}
+}
+
+func WithFn(fn func(collectors map[string]*allocation.Collector)) WatchOption {
+	return func(wc *WatchConfig) {
+		wc.fn = fn
+	}
+}
+
+type WatcherOption struct {
+	k8sOption         K8sWatcherOption
+	awsCloudMapOption AwsCloudMapWatcherOption
+}
+
+func WithMinUpdateInterval(interval time.Duration) WatcherOption {
+	return WatcherOption{
+		k8sOption: func(w *K8sWatcher) {
+			w.watcher.minUpdateInterval = interval
+		},
+		awsCloudMapOption: func(w *AwsCloudMapWatcher) {
+			w.watcher.minUpdateInterval = interval
+		},
+	}
+}
+
+func WithLogger(logger logr.Logger) WatcherOption {
+	return WatcherOption{
+		k8sOption: func(w *K8sWatcher) {
+			w.watcher.log = logger
+		},
+		awsCloudMapOption: func(w *AwsCloudMapWatcher) {
+			w.watcher.log = logger
+		},
+	}
+}
+
+func WithKubeConfig(config *rest.Config) WatcherOption {
+	return WatcherOption{
+		k8sOption: func(w *K8sWatcher) {
+			clientset, err := kubernetes.NewForConfig(config)
+			if err != nil {
+				// Handle error, perhaps log it or panic
+				w.watcher.log.Error(err, "Failed to create Kubernetes client")
+				return
 			}
-		}
+			w.k8sClient = clientset
+		},
 	}
 }
 
-// runOnCollectors runs the provided function on the set of collectors from the Store.
-func (k *Watcher) runOnCollectors(store cache.Store, fn func(collectors map[string]*allocation.Collector)) {
-	collectorMap := map[string]*allocation.Collector{}
-	objects := store.List()
-	for _, obj := range objects {
-		pod := obj.(*v1.Pod)
-		if pod.Spec.NodeName == "" {
-			continue
-		}
-		collectorMap[pod.Name] = allocation.NewCollector(pod.Name, pod.Spec.NodeName)
+func WithCloudMapConfig(namespaceName, serviceName *string) WatcherOption {
+	return WatcherOption{
+		awsCloudMapOption: func(w *AwsCloudMapWatcher) {
+			w.namespaceName = namespaceName
+			w.serviceName = serviceName
+		},
 	}
-	collectorsDiscovered.Set(float64(len(collectorMap)))
-	fn(collectorMap)
 }
 
-func (k *Watcher) Close() {
-	close(k.close)
+func NewCollectorWatcher(t CollectorWatcherType, options ...WatcherOption) (Watcher, error) {
+	switch t {
+	case K8sCollectorWatcher:
+		return NewK8sWatcher(options...)
+	case AwsCloudMapCollectorWatcher:
+		return NewAwsCloudMapWatcher(options...)
+	default:
+		return nil, fmt.Errorf("invalid collector watcher type: %v", t)
+	}
 }
