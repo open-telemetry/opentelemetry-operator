@@ -500,7 +500,7 @@ GOLANGCI_LINT_VERSION ?= v1.57.2
 # renovate: datasource=go depName=sigs.k8s.io/kind
 KIND_VERSION ?= v0.25.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
-CHAINSAW_VERSION ?= v0.2.8
+CHAINSAW_VERSION ?= v0.2.12
 
 .PHONY: install-tools
 install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kind operator-sdk chainsaw
