@@ -815,15 +815,17 @@ Choose the first value found:
 
 #### How `service.version` is calculated
 
+Choose the first value found:
+
 - `pod.annotation[resource.opentelemetry.io/service.version]`
 - `if (cfg[useLabelsForResourceAttributes]) pod.label[app.kubernetes.io/version]`
 - `if (contains(container docker image tag, '/') == false) container docker image tag`
 
 #### How `service.instance.id` is calculated
-                                   
 
+Choose the first value found:
+                                   
 - `pod.annotation[resource.opentelemetry.io/service.instance.id]`
-- `if (config[useLabelsForResourceAttributes]) pod.label[app.kubernetes.io/instance]`
 - `concat([k8s.namespace.name, k8s.pod.name, k8s.container.name], '.')`
 
 ## Contributing and Developing
