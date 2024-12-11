@@ -436,34 +436,46 @@ const (
 // address itself.
 // It works even before env var expansion happens, when a simple `net.SplitHostPort` would fail because of  the extra colon
 // from the env var, i.e. the address looks like "${env:POD_IP}:4317", "${env:POD_IP}", or "${POD_IP}".
-// It does not work in cases which the port itself is a variable, i.e. "${env:POD_IP}:${env:PORT}".
-// It does not work for IPv6 addresses.
-func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32) {
+// In cases which the port itself is a variable, i.e. "${env:POD_IP}:${env:PORT}", this returns an error.
+// It should work with IPv4 and IPv6 addresses.
+func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
 	telemetry := s.GetTelemetry()
 	if telemetry == nil || telemetry.Metrics.Address == "" {
-		return defaultServiceHost, defaultServicePort
+		return defaultServiceHost, defaultServicePort, nil
+	}
+
+	isPortEnvVar := regexp.MustCompile(`:\${[env:]?.*}$`).MatchString(telemetry.Metrics.Address)
+	if isPortEnvVar {
+		errMsg := fmt.Sprintf("couldn't determine metrics port from configuration: %s",
+			telemetry.Metrics.Address)
+		logger.Info(errMsg)
+		return "", 0, fmt.Errorf(errMsg)
 	}
 
 	explicitPortMatches := regexp.MustCompile(`:(\d+$)`).FindStringSubmatch(telemetry.Metrics.Address)
 	if len(explicitPortMatches) <= 1 {
-		return telemetry.Metrics.Address, defaultServicePort
+		return telemetry.Metrics.Address, defaultServicePort, nil
 	}
 
 	port, err := strconv.ParseInt(explicitPortMatches[1], 10, 32)
 	if err != nil {
-		errMsg := fmt.Sprintf("couldn't determine metrics port from configuration, using default: %s:%d",
-			defaultServiceHost, defaultServicePort)
+		errMsg := fmt.Sprintf("couldn't determine metrics port from configuration: %s",
+			telemetry.Metrics.Address)
 		logger.Info(errMsg, "error", err)
-		return defaultServiceHost, defaultServicePort
+		return "", 0, err
 	}
 
 	host, _, _ := strings.Cut(telemetry.Metrics.Address, explicitPortMatches[0])
-	return host, int32(port)
+	return host, int32(port), nil
 }
 
 // ApplyDefaults inserts configuration defaults if it has not been set.
 func (s *Service) ApplyDefaults(logger logr.Logger) error {
-	telemetryAddr, telemetryPort := s.MetricsEndpoint(logger)
+	telemetryAddr, telemetryPort, err := s.MetricsEndpoint(logger)
+	if err != nil {
+		return err
+	}
+
 	tm := &AnyConfig{
 		Object: map[string]interface{}{
 			"metrics": map[string]interface{}{
