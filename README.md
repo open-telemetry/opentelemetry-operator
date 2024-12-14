@@ -538,9 +538,10 @@ apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
   name: my-instrumentation
-  apache:
+spec:
+  apacheHttpd:
     image: your-customized-auto-instrumentation-image:apache-httpd
-    version: 2.2
+    version: "2.2"
     configPath: /your-custom-config-path
     attrs:
       - name: ApacheModuleOtelMaxQueueSize
@@ -560,6 +561,7 @@ apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
   name: my-instrumentation
+spec:
   nginx:
     image: your-customized-auto-instrumentation-image:nginx # if custom instrumentation image is needed
     configFile: /my/custom-dir/custom-nginx.conf
