@@ -29,6 +29,7 @@ import (
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
+	"go.uber.org/zap/zapcore"
 	"gopkg.in/yaml.v3"
 
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
@@ -217,7 +218,7 @@ func (m *Discoverer) run(tsets <-chan map[string][]*targetgroup.Group) error {
 	for {
 		select {
 		case ts := <-tsets:
-			m.log.Info("Service Discovery watch event received", "targets groups", len(ts))
+			m.log.V(int(zapcore.DebugLevel)).Info("Service Discovery watch event received", "targets groups", len(ts))
 			m.UpdateTsets(ts)
 
 			select {
