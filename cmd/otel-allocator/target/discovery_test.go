@@ -90,7 +90,7 @@ func TestDiscovery(t *testing.T) {
 		assert.Error(t, err)
 	}()
 	go func() {
-		err := manager.Watch()
+		err := manager.Run()
 		assert.NoError(t, err)
 	}()
 	for _, tt := range tests {

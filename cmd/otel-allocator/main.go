@@ -175,7 +175,7 @@ func main() {
 				setupLog.Info("Prometheus config empty, skipping initial discovery configuration")
 			}
 
-			err := targetDiscoverer.Watch()
+			err := targetDiscoverer.Run()
 			setupLog.Info("Target discoverer exited")
 			return err
 		},

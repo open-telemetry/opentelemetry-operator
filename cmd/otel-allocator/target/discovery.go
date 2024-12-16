@@ -127,7 +127,7 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 	return m.manager.ApplyConfig(discoveryCfg)
 }
 
-func (m *Discoverer) Watch() error {
+func (m *Discoverer) Run() error {
 	err := m.run(m.manager.SyncCh())
 	if err != nil {
 		m.log.Error(err, "Service Discovery watch event failed")
