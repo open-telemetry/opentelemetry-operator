@@ -14,7 +14,7 @@ WORKDIR /
 COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Copy binary built on the host
-COPY bin/manager_${TARGETARCH} manager
+COPY bin/manager_${TARGETOS}_${TARGETARCH} manager
 
 USER 65532:65532
 
