@@ -26,6 +26,11 @@ spec:
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
+        # following to test lifecycle removal in cloned init container
+        lifecycle:
+          postStart:
+            exec:
+              command: [ "/bin/sh", "-c", "echo Hello from the postStart handler" ]
         ports:
         - containerPort: 8080
         resources:
