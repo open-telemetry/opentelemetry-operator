@@ -138,12 +138,16 @@ func (m *Discoverer) Run() error {
 	return nil
 }
 
+// UpdateTsets updates the target sets to be scraped.
 func (m *Discoverer) UpdateTsets(tsets map[string][]*targetgroup.Group) {
 	m.mtxScrape.Lock()
 	m.targetSets = tsets
 	m.mtxScrape.Unlock()
 }
 
+// reloader triggers a reload of the scrape configs at regular intervals.
+// The time between reloads is defined by reloadIntervalDuration to avoid overloading the system
+// with too many reloads, because some service discovery mechanisms can be quite chatty.
 func (m *Discoverer) reloader() {
 	reloadIntervalDuration := model.Duration(5 * time.Second)
 	ticker := time.NewTicker(time.Duration(reloadIntervalDuration))
@@ -165,6 +169,8 @@ func (m *Discoverer) reloader() {
 	}
 }
 
+// Reload triggers a reload of the scrape configs.
+// This will process the target groups and update the targets concurrently.
 func (m *Discoverer) Reload() {
 	m.mtxScrape.Lock()
 	var wg sync.WaitGroup
@@ -176,7 +182,12 @@ func (m *Discoverer) Reload() {
 		wg.Add(1)
 		// Run the sync in parallel as these take a while and at high load can't catch up.
 		go func(jobName string, groups []*targetgroup.Group) {
-			m.processTargetGroups(jobName, groups, targets)
+			processedTargets := m.processTargetGroups(jobName, groups)
+			m.mtxTargets.Lock()
+			for k, v := range processedTargets {
+				targets[k] = v
+			}
+			m.mtxTargets.Unlock()
 			wg.Done()
 		}(jobName, groups)
 	}
@@ -185,9 +196,11 @@ func (m *Discoverer) Reload() {
 	m.processTargetsCallBack(targets)
 }
 
-func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.Group, targets map[string]*Item) {
+// processTargetGroups processes the target groups and returns a map of targets.
+func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.Group) map[string]*Item {
 	builder := labels.NewBuilder(labels.Labels{})
 	timer := prometheus.NewTimer(processTargetGroupsDuration.WithLabelValues(jobName))
+	targets := map[string]*Item{}
 	defer timer.ObserveDuration()
 	var count float64 = 0
 	for _, tg := range groups {
@@ -203,12 +216,11 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 				builder.Set(string(ln), string(lv))
 			}
 			item := NewItem(jobName, string(t[model.AddressLabel]), builder.Labels(), "")
-			m.mtxTargets.Lock()
 			targets[item.Hash()] = item
-			m.mtxTargets.Unlock()
 		}
 	}
 	targetsDiscovered.WithLabelValues(jobName).Set(count)
+	return targets
 }
 
 // Run receives and saves target set updates and triggers the scraping loops reloading.
