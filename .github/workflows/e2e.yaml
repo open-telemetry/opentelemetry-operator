@@ -21,7 +21,7 @@ jobs:
        # should be compatible with them.
        kube-version:
          - "1.23"
-         - "1.31"
+         - "1.32"
        group:
          - e2e
          - e2e-automatic-rbac
