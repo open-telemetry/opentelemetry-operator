@@ -38,25 +38,30 @@ import (
 )
 
 const (
-	DefaultResyncTime                        = 5 * time.Minute
-	DefaultConfigFilePath     string         = "/conf/targetallocator.yaml"
-	DefaultCRScrapeInterval   model.Duration = model.Duration(time.Second * 30)
-	DefaultAllocationStrategy                = "consistent-hashing"
-	DefaultFilterStrategy                    = "relabel-config"
+	DefaultResyncTime                          = 5 * time.Minute
+	DefaultConfigFilePath       string         = "/conf/targetallocator.yaml"
+	DefaultCRScrapeInterval     model.Duration = model.Duration(time.Second * 30)
+	DefaultAllocationStrategy                  = "consistent-hashing"
+	DefaultFilterStrategy                      = "relabel-config"
+	DefaultCollectorWatcherType                = "k8s"
+	DefaultMinUpdateInterval                   = 5 * time.Second
 )
 
 type Config struct {
-	ListenAddr                 string                `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath         string                `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig              *rest.Config          `yaml:"-"`
-	RootLogger                 logr.Logger           `yaml:"-"`
-	CollectorSelector          *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	PromConfig                 *promconfig.Config    `yaml:"config"`
-	AllocationStrategy         string                `yaml:"allocation_strategy,omitempty"`
-	AllocationFallbackStrategy string                `yaml:"allocation_fallback_strategy,omitempty"`
-	FilterStrategy             string                `yaml:"filter_strategy,omitempty"`
-	PrometheusCR               PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
-	HTTPS                      HTTPSServerConfig     `yaml:"https,omitempty"`
+	ListenAddr                 string                 `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath         string                 `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig              *rest.Config           `yaml:"-"`
+	RootLogger                 logr.Logger            `yaml:"-"`
+	CollectorSelector          *metav1.LabelSelector  `yaml:"collector_selector,omitempty"`
+	PromConfig                 *promconfig.Config     `yaml:"config"`
+	AllocationStrategy         string                 `yaml:"allocation_strategy,omitempty"`
+	AllocationFallbackStrategy string                 `yaml:"allocation_fallback_strategy,omitempty"`
+	FilterStrategy             string                 `yaml:"filter_strategy,omitempty"`
+	PrometheusCR               PrometheusCRConfig     `yaml:"prometheus_cr,omitempty"`
+	HTTPS                      HTTPSServerConfig      `yaml:"https,omitempty"`
+	CollectorWatcher           CollectorWatcherConfig `yaml:"collector_watcher,omitempty"`
+	Runtime                    RuntimeConfig          `yaml:"runtime,omitempty"`
+	MinUpdateInterval          time.Duration          `yaml:"min_update_interval,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -80,6 +85,24 @@ type HTTPSServerConfig struct {
 	TLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
 }
 
+type CollectorWatcherConfig struct {
+	WatcherType string            `yaml:"type,omitempty"`
+	AwsCloudMap AwsCloudMapConfig `yaml:"aws_cloud_map,omitempty"`
+}
+
+type AwsCloudMapConfig struct {
+	Namespace   string `yaml:"namespace,omitempty"`
+	ServiceName string `yaml:"service_name,omitempty"`
+}
+
+type RuntimeConfig struct {
+	Kubernetes KubernetesRuntimeConfig `yaml:"kubernetes,omitempty"`
+}
+
+type KubernetesRuntimeConfig struct {
+	Enabled bool `yaml:"enabled,omitempty"`
+}
+
 func LoadFromFile(file string, target *Config) error {
 	return unmarshal(target, file)
 }
@@ -95,19 +118,28 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	if err != nil {
 		return err
 	}
-	clusterConfig, err := clientcmd.BuildConfigFromFlags("", target.KubeConfigFilePath)
-	if err != nil {
-		pathError := &fs.PathError{}
-		if ok := errors.As(err, &pathError); !ok {
-			return err
-		}
-		clusterConfig, err = rest.InClusterConfig()
-		if err != nil {
-			return err
-		}
-		target.KubeConfigFilePath = ""
+
+	if runtimeKubernetesEnabled, changed, flagErr := getRuntimeKubernetesEnabled(flagSet); flagErr != nil {
+		return flagErr
+	} else if changed {
+		target.Runtime.Kubernetes.Enabled = runtimeKubernetesEnabled
 	}
-	target.ClusterConfig = clusterConfig
+
+	if target.Runtime.Kubernetes.Enabled {
+		clusterConfig, err := clientcmd.BuildConfigFromFlags("", target.KubeConfigFilePath)
+		if err != nil {
+			pathError := &fs.PathError{}
+			if ok := errors.As(err, &pathError); !ok {
+				return err
+			}
+			clusterConfig, err = rest.InClusterConfig()
+			if err != nil {
+				return err
+			}
+			target.KubeConfigFilePath = ""
+		}
+		target.ClusterConfig = clusterConfig
+	}
 
 	target.ListenAddr, err = getListenAddr(flagSet)
 	if err != nil {
@@ -150,6 +182,30 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 		target.HTTPS.TLSKeyFilePath = tlsKeyFilePath
 	}
 
+	if cwType, changed, err := getCollectorWatcherType(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.CollectorWatcher.WatcherType = cwType
+	}
+
+	if collectorWatcherNamespace, changed, err := getAWSCloudMapNamespace(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.CollectorWatcher.AwsCloudMap.Namespace = collectorWatcherNamespace
+	}
+
+	if collectorWatcherServiceName, changed, err := getAWSCloudMapServiceName(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.CollectorWatcher.AwsCloudMap.ServiceName = collectorWatcherServiceName
+	}
+
+	if minUpdateInterval, changed, err := getMinUpdateInterval(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.MinUpdateInterval = minUpdateInterval
+	}
+
 	return nil
 }
 
@@ -172,6 +228,7 @@ func CreateDefaultConfig() Config {
 		PrometheusCR: PrometheusCRConfig{
 			ScrapeInterval: DefaultCRScrapeInterval,
 		},
+		MinUpdateInterval: DefaultMinUpdateInterval,
 	}
 }
 
