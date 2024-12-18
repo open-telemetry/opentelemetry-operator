@@ -111,6 +111,11 @@ type OpenTelemetryCollectorSpec struct {
 	// Valid modes are: deployment, daemonset and statefulset.
 	// +optional
 	Ingress Ingress `json:"ingress,omitempty"`
+	// ExtensionIngress is used to specify how OpenTelemetry Collector is exposed. This
+	// functionality is only available if one of the valid modes is set.
+	// Valid modes are: deployment, daemonset and statefulset.
+	// +optional
+	ExtensionIngress Ingress `json:"extensionIngress,omitempty"`
 	// Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional

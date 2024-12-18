@@ -284,3 +284,229 @@ func TestDesiredIngresses(t *testing.T) {
 		}, got)
 	})
 }
+
+func TestExtensionIngress(t *testing.T) {
+	t.Run("no ingress for incorrect ingress type", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					ExtensionIngress: v1beta1.Ingress{
+						Type: v1beta1.IngressType("unknown"),
+					},
+				},
+			},
+		}
+		actual, err := ExtensionIngress(params)
+		assert.Nil(t, actual)
+		assert.NoError(t, err)
+	})
+	t.Run("no ingress if there's no port for extension", func(t *testing.T) {
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test",
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Service: v1beta1.Service{
+							Extensions: []string{"jaeger_query"},
+						},
+						Extensions: &v1beta1.AnyConfig{
+							Object: map[string]interface{}{},
+						},
+					},
+					ExtensionIngress: v1beta1.Ingress{
+						Type: v1beta1.IngressType("ingress"),
+					},
+				},
+			},
+		}
+
+		actual, err := ExtensionIngress(params)
+		assert.Nil(t, actual)
+		assert.NoError(t, err)
+	})
+	t.Run("ingress for extensions for rule type path", func(t *testing.T) {
+		var (
+			ns               = "test-ns"
+			hostname         = "example.com"
+			ingressClassName = "nginx"
+			pathType         = networkingv1.PathTypePrefix
+		)
+
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: ns,
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Service: v1beta1.Service{
+							Extensions: []string{"jaeger_query"},
+						},
+						Extensions: &v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"jaeger_query": map[string]interface{}{
+									"http": map[string]interface{}{
+										"endpoint": "0.0.0.0:16686",
+									},
+								},
+							},
+						},
+					},
+					ExtensionIngress: v1beta1.Ingress{
+						Type:             v1beta1.IngressType("ingress"),
+						IngressClassName: &ingressClassName,
+						Hostname:         hostname,
+						Annotations:      map[string]string{"some.key": "some.value"},
+						RuleType:         v1beta1.IngressRuleTypePath,
+					},
+				},
+			},
+		}
+
+		actual, err := ExtensionIngress(params)
+		assert.NoError(t, err)
+		assert.NotNil(t, actual)
+		assert.NotEqual(t, networkingv1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        naming.ExtensionIngress(params.OtelCol.Name),
+				Namespace:   ns,
+				Annotations: params.OtelCol.Spec.ExtensionIngress.Annotations,
+				Labels: map[string]string{
+					"app.kubernetes.io/name":       naming.ExtensionIngress(params.OtelCol.Name),
+					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
+					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/component":  "opentelemetry-collector",
+					"app.kubernetes.io/part-of":    "opentelemetry",
+					"app.kubernetes.io/version":    "latest",
+				},
+			},
+			Spec: networkingv1.IngressSpec{
+				IngressClassName: &ingressClassName,
+				Rules: []networkingv1.IngressRule{
+					{
+						Host: hostname,
+						IngressRuleValue: networkingv1.IngressRuleValue{
+							HTTP: &networkingv1.HTTPIngressRuleValue{
+								Paths: []networkingv1.HTTPIngressPath{
+									{
+										Path:     "/jaeger-query",
+										PathType: &pathType,
+										Backend: networkingv1.IngressBackend{
+											Service: &networkingv1.IngressServiceBackend{
+												Name: naming.ExtensionService(params.OtelCol.Name),
+												Port: networkingv1.ServiceBackendPort{
+													Name:   "jaeger-query",
+													Number: 16686,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, actual)
+	})
+	t.Run("ingress for extensions for rule type subdomain", func(t *testing.T) {
+		var (
+			ns               = "test-ns"
+			hostname         = "example.com"
+			ingressClassName = "nginx"
+			pathType         = networkingv1.PathTypePrefix
+		)
+
+		params := manifests.Params{
+			Config: config.Config{},
+			Log:    logger,
+			OtelCol: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: ns,
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Service: v1beta1.Service{
+							Extensions: []string{"jaeger_query"},
+						},
+						Extensions: &v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"jaeger_query": map[string]interface{}{
+									"http": map[string]interface{}{
+										"endpoint": "0.0.0.0:16686",
+									},
+								},
+							},
+						},
+					},
+					ExtensionIngress: v1beta1.Ingress{
+						Type:             v1beta1.IngressType("ingress"),
+						IngressClassName: &ingressClassName,
+						Hostname:         hostname,
+						Annotations:      map[string]string{"some.key": "some.value"},
+						RuleType:         v1beta1.IngressRuleTypeSubdomain,
+					},
+				},
+			},
+		}
+
+		actual, err := ExtensionIngress(params)
+		assert.NoError(t, err)
+		assert.NotNil(t, actual)
+		assert.NotEqual(t, networkingv1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        naming.ExtensionIngress(params.OtelCol.Name),
+				Namespace:   ns,
+				Annotations: params.OtelCol.Spec.ExtensionIngress.Annotations,
+				Labels: map[string]string{
+					"app.kubernetes.io/name":       naming.ExtensionIngress(params.OtelCol.Name),
+					"app.kubernetes.io/instance":   fmt.Sprintf("%s.%s", params.OtelCol.Namespace, params.OtelCol.Name),
+					"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					"app.kubernetes.io/component":  "opentelemetry-collector",
+					"app.kubernetes.io/part-of":    "opentelemetry",
+					"app.kubernetes.io/version":    "latest",
+				},
+			},
+			Spec: networkingv1.IngressSpec{
+				IngressClassName: &ingressClassName,
+				Rules: []networkingv1.IngressRule{
+					{
+						Host: "jaeger-query." + hostname,
+						IngressRuleValue: networkingv1.IngressRuleValue{
+							HTTP: &networkingv1.HTTPIngressRuleValue{
+								Paths: []networkingv1.HTTPIngressPath{
+									{
+										Path:     "/",
+										PathType: &pathType,
+										Backend: networkingv1.IngressBackend{
+											Service: &networkingv1.IngressServiceBackend{
+												Name: naming.ExtensionService(params.OtelCol.Name),
+												Port: networkingv1.ServiceBackendPort{
+													Name:   "jaeger-query",
+													Number: 16686,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, actual)
+	})
+}
