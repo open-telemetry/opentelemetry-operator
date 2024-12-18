@@ -107,7 +107,7 @@ func NewMetricReporter(logger logr.Logger, dest *protobufs.TelemetryConnectionSe
 
 	reporter.meter = provider.Meter("opamp")
 
-	reporter.process, err = process.NewProcess(int32(os.Getpid()))
+	reporter.process, err = process.NewProcess(int32(os.Getpid())) //nolint: gosec // this is guaranteed to not overflow
 	if err != nil {
 		return nil, fmt.Errorf("cannot query own process: %w", err)
 	}

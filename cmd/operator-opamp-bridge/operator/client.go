@@ -117,7 +117,7 @@ func (c Client) Apply(name string, namespace string, configmap *protobufs.AgentC
 }
 
 func (c Client) validateComponents(collectorConfig *v1beta1.Config) error {
-	if c.componentsAllowed == nil || len(c.componentsAllowed) == 0 {
+	if len(c.componentsAllowed) == 0 {
 		return nil
 	}
 

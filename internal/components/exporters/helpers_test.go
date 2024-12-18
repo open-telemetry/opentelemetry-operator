@@ -54,7 +54,7 @@ func TestExporterComponentParsers(t *testing.T) {
 	for _, tt := range []struct {
 		exporterName string
 		parserName   string
-		defaultPort  int
+		defaultPort  int32
 	}{
 		{"prometheus", "__prometheus", 8888},
 	} {
@@ -88,7 +88,7 @@ func TestExporterComponentParsers(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Len(t, ports, 1)
 				assert.EqualValues(t, tt.defaultPort, ports[0].Port)
-				assert.Equal(t, naming.PortName(tt.exporterName, int32(tt.defaultPort)), ports[0].Name)
+				assert.Equal(t, naming.PortName(tt.exporterName, tt.defaultPort), ports[0].Name)
 			})
 
 			t.Run("allows port to be overridden", func(t *testing.T) {
@@ -104,7 +104,7 @@ func TestExporterComponentParsers(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Len(t, ports, 1)
 				assert.EqualValues(t, 65535, ports[0].Port)
-				assert.Equal(t, naming.PortName(tt.exporterName, int32(tt.defaultPort)), ports[0].Name)
+				assert.Equal(t, naming.PortName(tt.exporterName, tt.defaultPort), ports[0].Name)
 			})
 		})
 	}

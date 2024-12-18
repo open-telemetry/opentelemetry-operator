@@ -89,7 +89,7 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 		return UnsetPort, PortNotFoundErr
 	}
 
-	return int32(port), err
+	return int32(port), err //nolint: gosec // disable G115, this is guaranteed to not overflow due to the bitSize in the ParseInt call
 }
 
 type ParserRetriever func(string) Parser
