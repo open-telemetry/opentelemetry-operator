@@ -137,19 +137,23 @@ var (
 			WithTargetPort(3100).
 			MustBuild(),
 		components.NewBuilder[kubeletStatsConfig]().WithName("kubeletstats").
-			WithRbacGen(generateKubeletStatsRbacRules).
+			WithClusterRoleRulesGen(generateKubeletStatsClusterRoleRules).
 			WithEnvVarGen(generateKubeletStatsEnvVars).
 			MustBuild(),
 		components.NewBuilder[k8seventsConfig]().WithName("k8s_events").
-			WithRbacGen(generatek8seventsRbacRules).
+			WithClusterRoleRulesGen(generatek8seventsClusterRoleRules).
 			MustBuild(),
 		components.NewBuilder[k8sclusterConfig]().WithName("k8s_cluster").
-			WithRbacGen(generatek8sclusterRbacRules).
+			WithClusterRoleRulesGen(generatek8sclusterRbacRules).
 			MustBuild(),
 		components.NewBuilder[k8sobjectsConfig]().WithName("k8sobjects").
-			WithRbacGen(generatek8sobjectsRbacRules).
+			WithClusterRoleRulesGen(generatek8sobjectsClusterRoleRules).
 			MustBuild(),
-		NewScraperParser("prometheus"),
+		components.NewBuilder[prometheusReceiverConfig]().WithName("prometheus").
+			WithPort(components.UnsetPort).
+			WithRoleGen(generatePrometheusReceiverRoles).
+			WithRoleBindingGen(generatePrometheusReceiverRoleBindings).
+			MustBuild(),
 		NewScraperParser("sshcheck"),
 		NewScraperParser("cloudfoundry"),
 		NewScraperParser("vcenter"),

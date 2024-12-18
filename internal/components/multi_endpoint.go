@@ -112,7 +112,15 @@ func (m *MultiPortReceiver) GetReadinessProbe(logger logr.Logger, config interfa
 	return nil, nil
 }
 
-func (m *MultiPortReceiver) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.PolicyRule, error) {
+func (m *MultiPortReceiver) GetClusterRoleRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error) {
+	return nil, nil
+}
+
+func (m *MultiPortReceiver) GetRbacRoleBindings(logger logr.Logger, otelCollectorName string, config interface{}, serviceAccountName string, otelCollectorNamespace string) ([]*rbacv1.RoleBinding, error) {
+	return nil, nil
+}
+
+func (m *MultiPortReceiver) GetRbacRoles(logger logr.Logger, otelCollectorName string, config interface{}) ([]*rbacv1.Role, error) {
 	return nil, nil
 }
 

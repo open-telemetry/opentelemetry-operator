@@ -41,9 +41,17 @@ type PortRetriever interface {
 // PortParser is a function that returns a list of servicePorts given a config of type Config.
 type PortParser[ComponentConfigType any] func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config ComponentConfigType) ([]corev1.ServicePort, error)
 
-// RBACRuleGenerator is a function that generates a list of RBAC Rules given a configuration of type Config
+// ClusterRoleRulesGenerator is a function that generates a list of RBAC Rules given a configuration of type Config
 // It's expected that type Config is the configuration used by a parser.
-type RBACRuleGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) ([]rbacv1.PolicyRule, error)
+type ClusterRoleRulesGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) ([]rbacv1.PolicyRule, error)
+
+// RoleGenerator is a function that generates a list of RBACRoles given a configuration of type Config
+// It's expected that type Config is the configuration used by a parser.
+type RoleGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType, componentName string, otelCollectorName string) ([]*rbacv1.Role, error)
+
+// RoleBindingGenerator is a function that generates a list of RBACRoleBindings given a configuration of type Config
+// It's expected that type Config is the configuration used by a parser.
+type RoleBindingGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType, componentName string, serviceAccountName string, otelCollectorName string, otelCollectorNamespace string) ([]*rbacv1.RoleBinding, error)
 
 // ProbeGenerator is a function that generates a valid probe for a container given Config
 // It's expected that type Config is the configuration used by a parser.
@@ -103,8 +111,14 @@ type Parser interface {
 	// of the form "name" or "type/name"
 	Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error)
 
-	// GetRBACRules returns the rbac rules for this component
-	GetRBACRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error)
+	// GetClusterRoleRules returns the rbac rules for this component
+	GetClusterRoleRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error)
+
+	// GetRbacRoleBindings returns the rbac role bindings for this component
+	GetRbacRoleBindings(logger logr.Logger, otelCollectorName string, config interface{}, serviceAccountName string, otelCollectorNamespace string) ([]*rbacv1.RoleBinding, error)
+
+	// GetRbacRoles returns the rbac roles for this component
+	GetRbacRoles(logger logr.Logger, otelCollectorName string, config interface{}) ([]*rbacv1.Role, error)
 
 	// GetLivenessProbe returns a liveness probe set for the collector
 	GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)

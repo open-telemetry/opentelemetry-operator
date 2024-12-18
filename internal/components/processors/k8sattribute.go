@@ -42,7 +42,7 @@ type K8sAttributeConfig struct {
 	Extract Extract `mapstructure:"extract"`
 }
 
-func GenerateK8SAttrRbacRules(_ logr.Logger, config K8sAttributeConfig) ([]rbacv1.PolicyRule, error) {
+func generateK8SAttrClusterRoleRules(_ logr.Logger, config K8sAttributeConfig) ([]rbacv1.PolicyRule, error) {
 	// These policies need to be added always
 	var prs = []rbacv1.PolicyRule{
 		{

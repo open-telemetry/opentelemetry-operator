@@ -30,14 +30,16 @@ var (
 // GenericParser serves as scaffolding for custom parsing logic by isolating
 // functionality to idempotent functions.
 type GenericParser[T any] struct {
-	name            string
-	settings        *Settings[T]
-	portParser      PortParser[T]
-	rbacGen         RBACRuleGenerator[T]
-	envVarGen       EnvVarGenerator[T]
-	livenessGen     ProbeGenerator[T]
-	readinessGen    ProbeGenerator[T]
-	defaultsApplier Defaulter[T]
+	name                string
+	settings            *Settings[T]
+	portParser          PortParser[T]
+	clusterRoleRulesGen ClusterRoleRulesGenerator[T]
+	roleGen             RoleGenerator[T]
+	roleBindingGen      RoleBindingGenerator[T]
+	envVarGen           EnvVarGenerator[T]
+	livenessGen         ProbeGenerator[T]
+	readinessGen        ProbeGenerator[T]
+	defaultsApplier     Defaulter[T]
 }
 
 func (g *GenericParser[T]) GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error) {
@@ -78,15 +80,38 @@ func (g *GenericParser[T]) GetReadinessProbe(logger logr.Logger, config interfac
 	return g.readinessGen(logger, parsed)
 }
 
-func (g *GenericParser[T]) GetRBACRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error) {
-	if g.rbacGen == nil {
+func (g *GenericParser[T]) GetClusterRoleRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error) {
+	if g.clusterRoleRulesGen == nil {
 		return nil, nil
 	}
 	var parsed T
 	if err := mapstructure.Decode(config, &parsed); err != nil {
 		return nil, err
 	}
-	return g.rbacGen(logger, parsed)
+	return g.clusterRoleRulesGen(logger, parsed)
+}
+
+func (g *GenericParser[T]) GetRbacRoles(logger logr.Logger, otelCollectorName string, config interface{}) ([]*rbacv1.Role, error) {
+	if g.roleGen == nil {
+		return nil, nil
+	}
+	var parsed T
+	if err := mapstructure.Decode(config, &parsed); err != nil {
+		return nil, err
+	}
+	return g.roleGen(logger, parsed, g.name, otelCollectorName)
+}
+
+func (g *GenericParser[T]) GetRbacRoleBindings(logger logr.Logger, otelCollectorName string, config interface{}, serviceAccountName string, otelCollectorNamespace string) ([]*rbacv1.RoleBinding, error) {
+	if g.roleBindingGen == nil {
+		return nil, nil
+	}
+	var parsed T
+	if err := mapstructure.Decode(config, &parsed); err != nil {
+		return nil, err
+	}
+
+	return g.roleBindingGen(logger, parsed, g.name, serviceAccountName, otelCollectorName, otelCollectorNamespace)
 }
 
 func (g *GenericParser[T]) GetEnvironmentVariables(logger logr.Logger, config interface{}) ([]corev1.EnvVar, error) {

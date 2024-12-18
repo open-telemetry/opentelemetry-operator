@@ -85,7 +85,7 @@ func TestGenerateKubeletStatsRbacRules(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rules, err := generateKubeletStatsRbacRules(logr.Logger{}, tt.config)
+			rules, err := generateKubeletStatsClusterRoleRules(logr.Logger{}, tt.config)
 
 			if tt.expectedErrMsg != "" {
 				require.Error(t, err)

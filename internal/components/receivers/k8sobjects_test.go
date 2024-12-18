@@ -128,7 +128,7 @@ func Test_generatek8sobjectsRbacRules(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := generatek8sobjectsRbacRules(logr.Logger{}, tt.config)
+			got, err := generatek8sobjectsClusterRoleRules(logr.Logger{}, tt.config)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
