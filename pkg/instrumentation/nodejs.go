@@ -16,7 +16,7 @@ package instrumentation
 
 import (
 	corev1 "k8s.io/api/core/v1"
-
+  "encoding/json"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
@@ -26,9 +26,25 @@ const (
 	nodejsInitContainerName = initContainerName + "-nodejs"
 	nodejsVolumeName        = volumeName + "-nodejs"
 	nodejsInstrMountPath    = "/otel-auto-instrumentation-nodejs"
+	histogramBucketsEnvVarName = "OTEL_OPERATOR_NODEJS_HISTOGRAM_BUCKETS"
 )
 
 func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (corev1.Pod, error) {
+  if len(nodeJSSpec.HistogramBuckets) > 0 {
+		bucketsJSON, err := json.Marshal(nodeJSSpec.HistogramBuckets)
+	  if err != nil {
+			// handle error, possibly log and skip injection for this resource
+			return pod, err
+		}
+
+		// Inject as an environment variable in the pod
+		bucketsJSONEnvVar := corev1.EnvVar{
+			Name:  histogramBucketsEnvVarName,
+			Value: string(bucketsJSON),
+		}
+		nodeJSSpec.Env = append(nodeJSSpec.Env, bucketsJSONEnvVar)
+	}
+
 	volume := instrVolume(nodeJSSpec.VolumeClaimTemplate, nodejsVolumeName, nodeJSSpec.VolumeSizeLimit)
 
 	// caller checks if there is at least one container.
