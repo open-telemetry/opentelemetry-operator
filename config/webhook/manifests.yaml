@@ -70,6 +70,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-opentelemetry-io-v1beta1-targetallocator
+  failurePolicy: Fail
+  name: mtargetallocatorbeta.kb.io
+  rules:
+  - apiGroups:
+    - opentelemetry.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - targetallocators
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-v1-pod
   failurePolicy: Ignore
   name: mpod.kb.io
@@ -205,4 +225,43 @@ webhooks:
     - DELETE
     resources:
     - opampbridges
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-opentelemetry-io-v1beta1-targetallocator
+  failurePolicy: Fail
+  name: vtargetallocatorcreateupdatebeta.kb.io
+  rules:
+  - apiGroups:
+    - opentelemetry.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - targetallocators
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-opentelemetry-io-v1beta1-targetallocator
+  failurePolicy: Ignore
+  name: vtargetallocatordeletebeta.kb.io
+  rules:
+  - apiGroups:
+    - opentelemetry.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - DELETE
+    resources:
+    - targetallocators
   sideEffects: None

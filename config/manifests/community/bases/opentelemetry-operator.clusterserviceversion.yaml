@@ -153,6 +153,52 @@ spec:
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: targetAllocator.observability.metrics.enableMetrics
       version: v1alpha1
+    - description: TargetAllocator is the Schema for the targetallocators API.
+      displayName: Target Allocator
+      kind: TargetAllocator
+      name: targetallocators.opentelemetry.io
+      resources:
+      - kind: ConfigMaps
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: apps/v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: PodDisruptionBudget
+        name: ""
+        version: policy/v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: ServiceAccount
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: ObservabilitySpec defines how telemetry data gets handled.
+        displayName: Observability
+        path: observability
+      - description: Metrics defines the metrics configuration for operands.
+        displayName: Metrics Config
+        path: observability.metrics
+      - description: Metrics defines the metrics configuration for operands.
+        displayName: Metrics Config
+        path: observability.metrics
+      - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
+          mode) should be created for the service managed by the OpenTelemetry Operator.
+          The operator.observability.prometheus feature gate must be enabled to use
+          this feature.
+        displayName: Create ServiceMonitors for OpenTelemetry Collector
+        path: observability.metrics.enableMetrics
+      - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
+          mode) should be created for the service managed by the OpenTelemetry Operator.
+          The operator.observability.prometheus feature gate must be enabled to use
+          this feature.
+        displayName: Create ServiceMonitors for OpenTelemetry Collector
+        path: observability.metrics.enableMetrics
+      version: v1alpha1
   description: |-
     OpenTelemetry is a collection of tools, APIs, and SDKs. You use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) for analysis in order to understand your software's performance and behavior.
 

@@ -1,0 +1,168 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: cr-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: cr-targetallocator
+  ownerReferences:
+    - apiVersion: opentelemetry.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: TargetAllocator
+      name: cr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-targetallocator
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/name: cr-targetallocator
+      app.kubernetes.io/part-of: opentelemetry
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: opentelemetry-targetallocator
+        app.kubernetes.io/managed-by: opentelemetry-operator
+        app.kubernetes.io/name: cr-targetallocator
+        app.kubernetes.io/part-of: opentelemetry
+        app.kubernetes.io/version: latest
+    spec:
+      containers:
+        - env:
+            - name: OTELCOL_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /livez
+              port: 8080
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: ta-container
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /readyz
+              port: 8080
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources: {}
+          volumeMounts:
+            - mountPath: /conf
+              name: ta-internal
+      serviceAccountName: cr-targetallocator
+      volumes:
+        - configMap:
+            defaultMode: 420
+            items:
+              - key: targetallocator.yaml
+                path: targetallocator.yaml
+            name: cr-targetallocator
+          name: ta-internal
+status:
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: v1
+data:
+  targetallocator.yaml: |
+    allocation_strategy: consistent-hashing
+    collector_selector: null
+    config:
+      scrape_configs:
+      - job_name: prometheus
+        static_configs:
+        - targets:
+          - localhost:9090
+    filter_strategy: relabel-config
+kind: ConfigMap
+metadata:
+  name: cr-targetallocator
+  ownerReferences:
+    - apiVersion: opentelemetry.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: TargetAllocator
+      name: cr
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: cr-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: cr-targetallocator
+  ownerReferences:
+    - apiVersion: opentelemetry.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: TargetAllocator
+      name: cr
+spec:
+  ports:
+  - name: targetallocation
+    port: 80
+    protocol: TCP
+    targetPort: http
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: cr-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: cr-targetallocator
+  ownerReferences:
+    - apiVersion: opentelemetry.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: TargetAllocator
+      name: cr
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: cr-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+  name: cr-targetallocator
+  ownerReferences:
+    - apiVersion: opentelemetry.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: TargetAllocator
+      name: cr
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-targetallocator
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/name: cr-targetallocator
+      app.kubernetes.io/part-of: opentelemetry
+  maxUnavailable: 1
