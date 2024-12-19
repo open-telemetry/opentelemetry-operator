@@ -58,6 +58,7 @@ type Discoverer struct {
 	log                    logr.Logger
 	manager                *discovery.Manager
 	close                  chan struct{}
+	mtxScrape              sync.Mutex // Guards the fields below.
 	configsMap             map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig
 	hook                   discoveryHook
 	scrapeConfigsHash      hash.Hash
@@ -139,7 +140,9 @@ func (m *Discoverer) Run() error {
 
 // UpdateTsets updates the target sets to be scraped.
 func (m *Discoverer) UpdateTsets(tsets map[string][]*targetgroup.Group) {
+	m.mtxScrape.Lock()
 	m.targetSets = tsets
+	m.mtxScrape.Unlock()
 }
 
 // reloader triggers a reload of the scrape configs at regular intervals.
@@ -169,13 +172,13 @@ func (m *Discoverer) reloader() {
 // Reload triggers a reload of the scrape configs.
 // This will process the target groups and update the targets concurrently.
 func (m *Discoverer) Reload() {
-	targetSets := m.targetSets
+	m.mtxScrape.Lock()
 	var wg sync.WaitGroup
 	targets := map[string]*Item{}
 	timer := prometheus.NewTimer(processTargetsDuration)
 	defer timer.ObserveDuration()
 
-	for jobName, groups := range targetSets {
+	for jobName, groups := range m.targetSets {
 		wg.Add(1)
 		// Run the sync in parallel as these take a while and at high load can't catch up.
 		go func(jobName string, groups []*targetgroup.Group) {
@@ -188,6 +191,7 @@ func (m *Discoverer) Reload() {
 			wg.Done()
 		}(jobName, groups)
 	}
+	m.mtxScrape.Unlock()
 	wg.Wait()
 	m.processTargetsCallBack(targets)
 }
