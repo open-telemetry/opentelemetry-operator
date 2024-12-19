@@ -524,15 +524,16 @@ func main() {
 
 func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v version.Version) error {
 	// adds the upgrade mechanism to be executed once the manager is ready
-	err := mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		up := &collectorupgrade.VersionUpgrade{
-			Log:      ctrl.Log.WithName("collector-upgrade"),
-			Version:  v,
-			Client:   mgr.GetClient(),
-			Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
-		}
-		return up.ManagedInstances(c)
-	}))
+	up := &collectorupgrade.VersionUpgrade{
+		Log:      ctrl.Log.WithName("collector-upgrade"),
+		Version:  v,
+		Client:   mgr.GetClient(),
+		Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
+	}
+	err := mgr.Add(leaderElectionRunnable{
+		up: up,
+	})
+
 	if err != nil {
 		return fmt.Errorf("failed to upgrade OpenTelemetryCollector instances: %w", err)
 	}
@@ -598,4 +599,18 @@ func parseFipsFlag(fipsFlag string) ([]string, []string, []string, []string) {
 		}
 	}
 	return receivers, exporters, processors, extensions
+}
+
+var _ manager.LeaderElectionRunnable = (*leaderElectionRunnable)(nil)
+
+type leaderElectionRunnable struct {
+	up *collectorupgrade.VersionUpgrade
+}
+
+func (l leaderElectionRunnable) Start(ctx context.Context) error {
+	return l.up.ManagedInstances(ctx)
+}
+
+func (l leaderElectionRunnable) NeedLeaderElection() bool {
+	return true
 }
