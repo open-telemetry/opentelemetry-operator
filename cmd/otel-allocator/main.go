@@ -112,7 +112,7 @@ func main() {
 	}
 	discoveryManager = discovery.NewManager(discoveryCtx, gokitlog.NewNopLogger(), prometheus.DefaultRegisterer, sdMetrics)
 
-	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv)
+	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
 	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, cfg.ClusterConfig)
 	if collectorWatcherErr != nil {
 		setupLog.Error(collectorWatcherErr, "Unable to initialize collector watcher")
@@ -175,7 +175,7 @@ func main() {
 				setupLog.Info("Prometheus config empty, skipping initial discovery configuration")
 			}
 
-			err := targetDiscoverer.Watch(allocator.SetTargets)
+			err := targetDiscoverer.Run()
 			setupLog.Info("Target discoverer exited")
 			return err
 		},
