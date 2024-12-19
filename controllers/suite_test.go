@@ -48,6 +48,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/yaml"
@@ -138,6 +139,9 @@ func TestMain(m *testing.M) {
 	var err error
 	ctx, cancel = context.WithCancel(context.TODO())
 	defer cancel()
+
+	// logging is useful for these tests
+	logf.SetLogger(zap.New())
 
 	// +kubebuilder:scaffold:scheme
 	utilruntime.Must(monitoringv1.AddToScheme(testScheme))
