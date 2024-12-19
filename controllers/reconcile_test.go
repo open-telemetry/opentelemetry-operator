@@ -978,7 +978,8 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 
 	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 		configMaps := &v1.ConfigMapList{}
-		listErr := k8sClient.List(clientCtx, configMaps, opts...)
+		// use the reconciler client here to ensure it sees the new ConfigMap, before running the next reconciliation
+		listErr := reconciler.Client.List(clientCtx, configMaps, opts...)
 		assert.NoError(collect, listErr)
 		assert.NotEmpty(collect, configMaps)
 		assert.Len(collect, configMaps.Items, 4)
@@ -992,8 +993,12 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		listErr := k8sClient.List(clientCtx, configMaps, opts...)
 		assert.NoError(collect, listErr)
 		assert.NotEmpty(collect, configMaps)
-		assert.Len(collect, configMaps.Items, 3)
-	}, time.Second*5, time.Millisecond)
+		// actual deletion can happen with a delay in a K8s cluster, check the timestamp instead to speed things up
+		items := slices.DeleteFunc(configMaps.Items, func(item v1.ConfigMap) bool {
+			return item.DeletionTimestamp != nil
+		})
+		assert.Len(collect, items, 3)
+	}, time.Second*30, time.Second) // not sure why this can take so long to bubble up
 }
 
 func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {

@@ -113,7 +113,6 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 		default:
 		}
 	}
-
 	// at this point we don't know if the most recent ConfigMap will still be the most recent after reconciliation, or
 	// if a new one will be created. We keep one additional ConfigMap to account for this. The next reconciliation that
 	// doesn't spawn a new ConfigMap will delete the extra one we kept here.
