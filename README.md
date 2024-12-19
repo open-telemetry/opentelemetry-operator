@@ -584,7 +584,7 @@ instrumentation.opentelemetry.io/inject-sdk: "true"
 
 #### Controlling Instrumentation Capabilities
 
-The operator allows specifying, via the flags, which languages the Instrumentation resource may instrument.
+The operator allows specifying, via the flags (`--set manager.extraArgs={"<Name-of-the-gate>=<Value>"}`), which languages the Instrumentation resource may instrument.
 If a language is enabled by default its gate only needs to be supplied when disabling the gate.
 Language support can be disabled by passing the flag with a value of `false`.
 
