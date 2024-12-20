@@ -2,6 +2,39 @@
 
 <!-- next version -->
 
+## 0.116.0
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Process discovered targets asyncchronously (#1842)
+  This change enables the target allocator to process discovered targets asynchronously. 
+  This is a significant performance improvement for the target allocator, as it allows it to process targets in parallel, rather than sequentially. 
+  This change also introduces new metrics to track the performance of the target allocator.
+    - opentelemetry_allocator_process_targets_duration_seconds: The duration of the process targets operation.
+    - opentelemetry_allocator_process_target_groups_duration_seconds: The duration of the process target groups operation.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Fix the admission webhook to when metrics service address host uses env var expansion (#3513)
+  This should allow the metrics service address to have the host portion expanded from an environment variable,
+  like `$(env:POD_IP)` instead of using `0.0.0.0`, which is the [recommended by the Collector](https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/security-best-practices.md#safeguards-against-denial-of-service-attacks).
+  
+- `auto-instrumentation`: Apache instrumentation sidecar fails to start if target container define lifecycle (#3547)
+- `collector`: Fix deletion of optional resources for OpenTelemetryCollector CRs (#3454)
+
+### Components
+
+* [OpenTelemetry Collector - v0.116.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.116.1)
+* [OpenTelemetry Contrib - v0.116.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.116.1)
+* [Java auto-instrumentation - v1.33.5](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.5)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.53.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.53.0)
+* [Python - v0.50b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.50b0)
+* [Go - v0.19.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.19.0-alpha)
+* [ApacheHTTPD - 1.1.0](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.1.0)
+* [Nginx - 1.1.0](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.1.0)
+
 ## 0.115.0
 
 ### 💡 Enhancements 💡
