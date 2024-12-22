@@ -1,18 +1,19 @@
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { getNodeAutoInstrumentations, getResourceDetectorsFromEnv } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter as OTLPProtoTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { OTLPTraceExporter as OTLPHttpTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPTraceExporter as OTLPGrpcTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
-import { alibabaCloudEcsDetector } from '@opentelemetry/resource-detector-alibaba-cloud';
-import { awsEc2Detector, awsEksDetector } from '@opentelemetry/resource-detector-aws';
-import { containerDetector } from '@opentelemetry/resource-detector-container';
-import { gcpDetector } from '@opentelemetry/resource-detector-gcp';
-import { envDetector, hostDetector, osDetector, processDetector } from '@opentelemetry/resources';
-import { diag } from '@opentelemetry/api';
+import { diag, DiagConsoleLogger } from '@opentelemetry/api';
 
-import { NodeSDK } from '@opentelemetry/sdk-node';
+import { NodeSDK, core } from '@opentelemetry/sdk-node';
+
+diag.setLogger(
+    new DiagConsoleLogger(),
+    core.getEnv().OTEL_LOG_LEVEL
+);
+
 
 function getTraceExporter() {
     let protocol = process.env.OTEL_EXPORTER_OTLP_PROTOCOL;
@@ -52,26 +53,32 @@ function getMetricReader() {
 
 const sdk = new NodeSDK({
     autoDetectResources: true,
-    instrumentations: [getNodeAutoInstrumentations()],
+    instrumentations: getNodeAutoInstrumentations(),
     traceExporter: getTraceExporter(),
     metricReader: getMetricReader(),
-    resourceDetectors:
-        [
-            // Standard resource detectors.
-            containerDetector,
-            envDetector,
-            hostDetector,
-            osDetector,
-            processDetector,
-
-            // Cloud resource detectors.
-            alibabaCloudEcsDetector,
-            // Ordered AWS Resource Detectors as per:
-            // https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/resourcedetectionprocessor/README.md#ordering
-            awsEksDetector,
-            awsEc2Detector,
-            gcpDetector,
-        ],
+    resourceDetectors: getResourceDetectorsFromEnv()
 });
 
-sdk.start();
+try {
+    sdk.start();
+    diag.info('OpenTelemetry automatic instrumentation started successfully');
+} catch (error) {
+    diag.error(
+        'Error initializing OpenTelemetry SDK. Your application is not instrumented and will not produce telemetry',
+        error
+    );
+}
+
+async function shutdown(): Promise<void> {
+    try {
+        await sdk.shutdown();
+        diag.debug('OpenTelemetry SDK terminated');
+    } catch (error) {
+        diag.error('Error terminating OpenTelemetry SDK', error);
+    }
+}
+
+// Gracefully shutdown SDK if a SIGTERM is received
+process.on('SIGTERM', shutdown);
+// Gracefully shutdown SDK if Node.js is exiting normally
+process.once('beforeExit', shutdown);
