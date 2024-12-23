@@ -36,24 +36,48 @@ type TargetAllocatorPrometheusCR struct {
 	// label selector matches no objects.
 	// +optional
 	PodMonitorSelector *metav1.LabelSelector `json:"podMonitorSelector,omitempty"`
+	// Namespaces to be selected to look for PodMonitors for target discovery.
+	// A label selector is a label query over a set of resources. The result of matchLabels and
+	// matchExpressions are ANDed. An empty label selector matches all objects. A null
+	// label selector matches no objects.
+	// +optional
+	PodMonitorNamespaceSelector *metav1.LabelSelector `json:"podMonitorNamespaceSelector,omitempty"`
 	// ServiceMonitors to be selected for target discovery.
 	// A label selector is a label query over a set of resources. The result of matchLabels and
 	// matchExpressions are ANDed. An empty label selector matches all objects. A null
 	// label selector matches no objects.
 	// +optional
 	ServiceMonitorSelector *metav1.LabelSelector `json:"serviceMonitorSelector,omitempty"`
+	// Namespaces to be selected to look for ServiceMonitors for target discovery.
+	// A label selector is a label query over a set of resources. The result of matchLabels and
+	// matchExpressions are ANDed. An empty label selector matches all objects. A null
+	// label selector matches no objects.
+	// +optional
+	ServiceMonitorNamespaceSelector *metav1.LabelSelector `json:"serviceMonitorNamespaceSelector,omitempty"`
 	// ScrapeConfigs to be selected for target discovery.
 	// A label selector is a label query over a set of resources. The result of matchLabels and
 	// matchExpressions are ANDed. An empty label selector matches all objects. A null
 	// label selector matches no objects.
 	// +optional
 	ScrapeConfigSelector *metav1.LabelSelector `json:"scrapeConfigSelector,omitempty"`
+	// Namespaces to be selected to look for ScrapeConfigs for target discovery.
+	// A label selector is a label query over a set of resources. The result of matchLabels and
+	// matchExpressions are ANDed. An empty label selector matches all objects. A null
+	// label selector matches no objects.
+	// +optional
+	ScrapeConfigNamespaceSelector *metav1.LabelSelector `json:"scrapeConfigNamespaceSelector,omitempty"`
 	// Probes to be selected for target discovery.
 	// A label selector is a label query over a set of resources. The result of matchLabels and
 	// matchExpressions are ANDed. An empty label selector matches all objects. A null
 	// label selector matches no objects.
 	// +optional
 	ProbeSelector *metav1.LabelSelector `json:"probeSelector,omitempty"`
+	// Namespaces to be selected to look for Probes for target discovery.
+	// A label selector is a label query over a set of resources. The result of matchLabels and
+	// matchExpressions are ANDed. An empty label selector matches all objects. A null
+	// label selector matches no objects.
+	// +optional
+	ProbeNamespaceSelector *metav1.LabelSelector `json:"probeNamespaceSelector,omitempty"`
 }
 
 type (
