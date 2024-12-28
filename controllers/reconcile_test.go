@@ -88,8 +88,8 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 	registry := colfeaturegate.GlobalRegistry()
 	current := featuregate.CollectorUsesTargetAllocatorCR.IsEnabled()
 	require.False(t, current, "don't set gates which are enabled by default")
-	err := registry.Set(featuregate.CollectorUsesTargetAllocatorCR.ID(), true)
-	require.NoError(t, err)
+	regErr := registry.Set(featuregate.CollectorUsesTargetAllocatorCR.ID(), true)
+	require.NoError(t, regErr)
 	t.Cleanup(func() {
 		err := registry.Set(featuregate.CollectorUsesTargetAllocatorCR.ID(), current)
 		require.NoError(t, err)
@@ -648,6 +648,14 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			if !firstCheck.validateErr(t, createErr) {
 				return
 			}
+			// wait until the reconciler sees the object in its cache
+			if createErr == nil {
+				assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+					actual := &v1beta1.OpenTelemetryCollector{}
+					err := reconciler.Get(testContext, nsn, actual)
+					assert.NoError(collect, err)
+				}, time.Second*5, time.Millisecond)
+			}
 			if deletionTimestamp != nil {
 				err := k8sClient.Delete(testContext, &tt.args.params, client.PropagationPolicy(metav1.DeletePropagationForeground))
 				assert.NoError(t, err)
@@ -679,6 +687,13 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				if err != nil {
 					continue
 				}
+				// wait until the reconciler sees the object in its cache
+				assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+					actual := &v1alpha1.OpenTelemetryCollector{}
+					err = reconciler.Get(testContext, nsn, actual)
+					assert.NoError(collect, err)
+					assert.Equal(collect, updateParam.Spec, actual.Spec)
+				}, time.Second*5, time.Millisecond)
 				req := k8sreconcile.Request{
 					NamespacedName: nsn,
 				}
@@ -1265,6 +1280,13 @@ service:
 	// delete collector and check if the cluster role was deleted
 	clientErr = k8sClient.Delete(context.Background(), otelcol)
 	require.NoError(t, clientErr)
+	// wait until the reconciler sees the object as deleted in its cache
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		actual := &v1beta1.OpenTelemetryCollector{}
+		err := reconciler.Get(context.Background(), nsn, actual)
+		assert.NoError(collect, err)
+		assert.NotNil(t, actual.GetDeletionTimestamp())
+	}, time.Second*5, time.Millisecond)
 
 	reconcile, reconcileErr = reconciler.Reconcile(context.Background(), req)
 	require.NoError(t, reconcileErr)
