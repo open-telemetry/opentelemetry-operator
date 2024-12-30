@@ -34462,6 +34462,7 @@ It is only effective when healthcheckextension is configured in the OpenTelemetr
           Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)<br/>
           <br/>
             <i>Enum</i>: daemonset, deployment, sidecar, statefulset<br/>
+            <i>Default</i>: deployment<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -34636,6 +34637,7 @@ This only works with the following OpenTelemetryCollector mode's: statefulset, a
           UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed<br/>
           <br/>
             <i>Enum</i>: automatic, none<br/>
+            <i>Default</i>: automatic<br/>
         </td>
         <td>false</td>
       </tr><tr>

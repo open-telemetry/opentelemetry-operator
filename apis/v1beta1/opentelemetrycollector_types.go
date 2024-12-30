@@ -77,6 +77,8 @@ type OpenTelemetryCollectorStatus struct {
 }
 
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
+// +kubebuilder:validation:XValidation:rule="!(self.Mode != 'statefulset' && size(self.VolumeClaimTemplates) > 0)",message="the OpenTelemetry Collector attribute 'volumeClaimTemplates' is only supported if mode is set to 'statefulset'"
+// +kubebuilder:validation:XValidation:rule="!(self.Mode != 'statefulset' && has(self.persistentVolumeClaimRetentionPolicy))",message="the OpenTelemetry Collector attribute 'persistentVolumeClaimRetentionPolicy' is only supported if mode is set to 'statefulset'"
 type OpenTelemetryCollectorSpec struct {
 	// OpenTelemetryCommonFields are fields that are on all OpenTelemetry CRD workloads.
 	OpenTelemetryCommonFields `json:",inline"`
@@ -90,9 +92,11 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	TargetAllocator TargetAllocatorEmbedded `json:"targetAllocator,omitempty"`
 	// Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)
+	// +kubebuilder:default:=deployment
 	// +optional
 	Mode Mode `json:"mode,omitempty"`
 	// UpgradeStrategy represents how the operator will handle upgrades to the CR when a newer version of the operator is deployed
+	// +kubebuilder:default:=automatic
 	// +optional
 	UpgradeStrategy UpgradeStrategy `json:"upgradeStrategy"`
 	// Config is the raw JSON to be used as the collector's configuration. Refer to the OpenTelemetry Collector documentation for details.
