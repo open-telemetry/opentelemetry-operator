@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: stateful-collector
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: stateful-collector
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: stateful-collector
+---
+(x_k8s_exists($client, 'autoscaling/v2', 'HorizontalPodAutoscaler', $namespace, 'stateful-collector')): false
+---
+(x_k8s_exists($client, 'v1', 'Service', $namespace, 'stateful-collector')): false
+---
+(x_k8s_exists($client, 'v1', 'Service', $namespace, 'stateful-collector-headless')): false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stateful-collector-monitoring
+---
+(x_k8s_exists($client, 'monitoring.coreos.com/v1', 'ServiceMonitor', $namespace, 'stateful-monitoring-collector')): false
+---
+(x_k8s_exists($client, 'apps/v1', 'Deployment', $namespace, 'stateful-targetallocator')): false
+---
+(x_k8s_exists($client, 'v1', 'ConfigMap', $namespace, 'stateful-targetallocator')): false
+---
+(x_k8s_exists($client, 'v1', 'Service', $namespace, 'stateful-targetallocator')): false
+---
+(x_k8s_exists($client, 'policy/v1', 'PodDisruptionBudget', $namespace, 'stateful-targetallocator')): false
+---
+(x_k8s_exists($client, 'monitoring.coreos.com/v1', 'ServiceMonitor', $namespace, 'stateful-targetallocator')): false

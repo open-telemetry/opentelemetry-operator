@@ -60,6 +60,8 @@ rules:
   resources:
   - servicemonitors
   - podmonitors
+  - scrapeconfigs
+  - probes
   verbs:
   - get
   - watch

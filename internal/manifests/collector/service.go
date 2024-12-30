@@ -73,7 +73,6 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 }
 
 func MonitoringService(params manifests.Params) (*corev1.Service, error) {
-
 	name := naming.MonitoringService(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[monitoringLabel] = valueExists
@@ -84,7 +83,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 		return nil, err
 	}
 
-	_, metricsPort, err := params.OtelCol.Spec.Config.Service.MetricsEndpoint()
+	_, metricsPort, err := params.OtelCol.Spec.Config.Service.MetricsEndpoint(params.Log)
 	if err != nil {
 		return nil, err
 	}

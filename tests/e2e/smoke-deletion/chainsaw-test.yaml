@@ -2,8 +2,7 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  creationTimestamp: null
-  name: targetallocator-prometheuscr
+  name: smoke-deletion
 spec:
   steps:
   - name: step-00
@@ -15,19 +14,13 @@ spec:
         file: 00-assert.yaml
     catch:
     - podLogs:
-        selector: app.kubernetes.io/managed-by=opentelemetry-operator
+        selector: app.kubernetes.io/component=opentelemetry-targetallocator
   - name: step-01
     try:
     - apply:
         file: 01-install.yaml
     - assert:
         file: 01-assert.yaml
-  - name: step-02
-    try:
-      - apply:
-          file: 02-install.yaml
-      - assert:
-          file: 02-assert.yaml
     catch:
       - podLogs:
-          selector: checker=true
+          selector: app.kubernetes.io/component=opentelemetry-targetallocator

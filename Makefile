@@ -491,11 +491,16 @@ CHLOGGEN ?= $(LOCALBIN)/chloggen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 CHAINSAW ?= $(LOCALBIN)/chainsaw
 
-KUSTOMIZE_VERSION ?= v5.0.3
-CONTROLLER_TOOLS_VERSION ?= v0.16.1
+# renovate: datasource=go depName=sigs.k8s.io/kustomize/kustomize/v5
+KUSTOMIZE_VERSION ?= v5.5.0
+# renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
+CONTROLLER_TOOLS_VERSION ?= v0.16.5
+# renovate: datasource=go depName=github.com/golangci/golangci-lint/cmd/golangci-lint
 GOLANGCI_LINT_VERSION ?= v1.57.2
-KIND_VERSION ?= v0.20.0
-CHAINSAW_VERSION ?= v0.2.8
+# renovate: datasource=go depName=sigs.k8s.io/kind
+KIND_VERSION ?= v0.26.0
+# renovate: datasource=go depName=github.com/kyverno/chainsaw
+CHAINSAW_VERSION ?= v0.2.12
 
 .PHONY: install-tools
 install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kind operator-sdk chainsaw
