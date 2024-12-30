@@ -6929,6 +6929,7 @@ spec:
                 - unmanaged
                 type: string
               mode:
+                default: deployment
                 enum:
                 - daemonset
                 - deployment
@@ -8181,6 +8182,7 @@ spec:
                   type: object
                 type: array
               upgradeStrategy:
+                default: automatic
                 enum:
                 - automatic
                 - none
@@ -9195,6 +9197,14 @@ spec:
             - config
             - managementState
             type: object
+            x-kubernetes-validations:
+            - message: the OpenTelemetry Collector attribute 'volumeClaimTemplates'
+                is only supported if mode is set to 'statefulset'
+              rule: '!(self.Mode != ''statefulset'' && size(self.VolumeClaimTemplates)
+                > 0)'
+            - message: the OpenTelemetry Collector attribute 'persistentVolumeClaimRetentionPolicy'
+                is only supported if mode is set to 'statefulset'
+              rule: '!(self.Mode != ''statefulset'' && has(self.persistentVolumeClaimRetentionPolicy))'
           status:
             properties:
               image:
