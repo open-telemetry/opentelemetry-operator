@@ -62,8 +62,9 @@ jobs:
       with:
         path: |
           /home/runner/.cache/golangci-lint
-        key: golangcilint-${{ hashFiles('**/go.sum') }}
+        key: golangcilint-${{ runner.os }}-${{ runner.arch }}-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('**/go.sum')}}
         restore-keys: |
+          golangcilint-${{ runner.os }}-${{ runner.arch }}-
           golangcilint-
 
     - name: Lint
