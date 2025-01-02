@@ -194,6 +194,264 @@ func TestLoad(t *testing.T) {
 			},
 			wantErr: assert.NoError,
 		},
+		{
+			name: "service monitor pod monitor selector with camelcase",
+			args: args{
+				file: "./testdata/pod_service_selector_camelcase_test.yaml",
+			},
+			want: Config{
+				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app.kubernetes.io/instance":   "default.test",
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				FilterStrategy: DefaultFilterStrategy,
+				PrometheusCR: PrometheusCRConfig{
+					PodMonitorSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"release": "test",
+						},
+					},
+					ServiceMonitorSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"release": "test",
+						},
+					},
+					ScrapeInterval: DefaultCRScrapeInterval,
+				},
+				PromConfig: &promconfig.Config{
+					GlobalConfig: promconfig.GlobalConfig{
+						ScrapeInterval:     model.Duration(60 * time.Second),
+						ScrapeProtocols:    defaultScrapeProtocols,
+						ScrapeTimeout:      model.Duration(10 * time.Second),
+						EvaluationInterval: model.Duration(60 * time.Second),
+					},
+					Runtime: promconfig.DefaultRuntimeConfig,
+					ScrapeConfigs: []*promconfig.ScrapeConfig{
+						{
+							JobName:           "prometheus",
+							EnableCompression: true,
+							HonorTimestamps:   true,
+							ScrapeInterval:    model.Duration(60 * time.Second),
+							ScrapeProtocols:   defaultScrapeProtocols,
+							ScrapeTimeout:     model.Duration(10 * time.Second),
+							MetricsPath:       "/metrics",
+							Scheme:            "http",
+							HTTPClientConfig: commonconfig.HTTPClientConfig{
+								FollowRedirects: true,
+								EnableHTTP2:     true,
+							},
+							ServiceDiscoveryConfigs: []discovery.Config{
+								discovery.StaticConfig{
+									{
+										Targets: []model.LabelSet{
+											{model.AddressLabel: "prom.domain:9001"},
+											{model.AddressLabel: "prom.domain:9002"},
+											{model.AddressLabel: "prom.domain:9003"},
+										},
+										Labels: model.LabelSet{
+											"my": "label",
+										},
+										Source: "0",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "service monitor pod monitor selector with matchexpressions",
+			args: args{
+				file: "./testdata/pod_service_selector_expressions_test.yaml",
+			},
+			want: Config{
+				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorSelector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "app.kubernetes.io/instance",
+							Operator: metav1.LabelSelectorOpIn,
+							Values: []string{
+								"default.test",
+							},
+						},
+						{
+							Key:      "app.kubernetes.io/managed-by",
+							Operator: metav1.LabelSelectorOpIn,
+							Values: []string{
+								"opentelemetry-operator",
+							},
+						},
+					},
+				},
+				FilterStrategy: DefaultFilterStrategy,
+				PrometheusCR: PrometheusCRConfig{
+					PodMonitorSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      "release",
+								Operator: metav1.LabelSelectorOpIn,
+								Values: []string{
+									"test",
+								},
+							},
+						},
+					},
+					ServiceMonitorSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      "release",
+								Operator: metav1.LabelSelectorOpIn,
+								Values: []string{
+									"test",
+								},
+							},
+						},
+					},
+					ScrapeInterval: DefaultCRScrapeInterval,
+				},
+				PromConfig: &promconfig.Config{
+					GlobalConfig: promconfig.GlobalConfig{
+						ScrapeInterval:     model.Duration(60 * time.Second),
+						ScrapeProtocols:    defaultScrapeProtocols,
+						ScrapeTimeout:      model.Duration(10 * time.Second),
+						EvaluationInterval: model.Duration(60 * time.Second),
+					},
+					Runtime: promconfig.DefaultRuntimeConfig,
+					ScrapeConfigs: []*promconfig.ScrapeConfig{
+						{
+							JobName:           "prometheus",
+							EnableCompression: true,
+							HonorTimestamps:   true,
+							ScrapeInterval:    model.Duration(60 * time.Second),
+							ScrapeProtocols:   defaultScrapeProtocols,
+							ScrapeTimeout:     model.Duration(10 * time.Second),
+							MetricsPath:       "/metrics",
+							Scheme:            "http",
+							HTTPClientConfig: commonconfig.HTTPClientConfig{
+								FollowRedirects: true,
+								EnableHTTP2:     true,
+							},
+							ServiceDiscoveryConfigs: []discovery.Config{
+								discovery.StaticConfig{
+									{
+										Targets: []model.LabelSet{
+											{model.AddressLabel: "prom.domain:9001"},
+											{model.AddressLabel: "prom.domain:9002"},
+											{model.AddressLabel: "prom.domain:9003"},
+										},
+										Labels: model.LabelSet{
+											"my": "label",
+										},
+										Source: "0",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "service monitor pod monitor selector with camelcase matchexpressions",
+			args: args{
+				file: "./testdata/pod_service_selector_camelcase_expressions_test.yaml",
+			},
+			want: Config{
+				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorSelector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "app.kubernetes.io/instance",
+							Operator: metav1.LabelSelectorOpIn,
+							Values: []string{
+								"default.test",
+							},
+						},
+						{
+							Key:      "app.kubernetes.io/managed-by",
+							Operator: metav1.LabelSelectorOpIn,
+							Values: []string{
+								"opentelemetry-operator",
+							},
+						},
+					},
+				},
+				FilterStrategy: DefaultFilterStrategy,
+				PrometheusCR: PrometheusCRConfig{
+					PodMonitorSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      "release",
+								Operator: metav1.LabelSelectorOpIn,
+								Values: []string{
+									"test",
+								},
+							},
+						},
+					},
+					ServiceMonitorSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      "release",
+								Operator: metav1.LabelSelectorOpIn,
+								Values: []string{
+									"test",
+								},
+							},
+						},
+					},
+					ScrapeInterval: DefaultCRScrapeInterval,
+				},
+				PromConfig: &promconfig.Config{
+					GlobalConfig: promconfig.GlobalConfig{
+						ScrapeInterval:     model.Duration(60 * time.Second),
+						ScrapeProtocols:    defaultScrapeProtocols,
+						ScrapeTimeout:      model.Duration(10 * time.Second),
+						EvaluationInterval: model.Duration(60 * time.Second),
+					},
+					Runtime: promconfig.DefaultRuntimeConfig,
+					ScrapeConfigs: []*promconfig.ScrapeConfig{
+						{
+							JobName:           "prometheus",
+							EnableCompression: true,
+							HonorTimestamps:   true,
+							ScrapeInterval:    model.Duration(60 * time.Second),
+							ScrapeProtocols:   defaultScrapeProtocols,
+							ScrapeTimeout:     model.Duration(10 * time.Second),
+							MetricsPath:       "/metrics",
+							Scheme:            "http",
+							HTTPClientConfig: commonconfig.HTTPClientConfig{
+								FollowRedirects: true,
+								EnableHTTP2:     true,
+							},
+							ServiceDiscoveryConfigs: []discovery.Config{
+								discovery.StaticConfig{
+									{
+										Targets: []model.LabelSet{
+											{model.AddressLabel: "prom.domain:9001"},
+											{model.AddressLabel: "prom.domain:9002"},
+											{model.AddressLabel: "prom.domain:9003"},
+										},
+										Labels: model.LabelSet{
+											"my": "label",
+										},
+										Source: "0",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: assert.NoError,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
