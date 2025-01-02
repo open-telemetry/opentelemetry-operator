@@ -5,6 +5,18 @@
   "customManagers": [
     {
       "customType": "regex",
+      "description" : "Update Go versions used for building in the CI",
+      "datasourceTemplate": "golang-version",
+      "depNameTemplate": "go",
+      "fileMatch": [
+        "(^|/)\\.github/workflows/.+\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "go-version: \"~(?<currentValue>.+)\""
+      ]
+    },
+    {
+      "customType": "regex",
       "description" : "Update tool versions in the Makefile",
       "fileMatch": [
         "(^|/)Makefile$"
@@ -15,6 +27,12 @@
     }
   ],
   "packageRules": [
+    {
+      "matchDatasources": ["golang-version"],
+      "matchManagers": ["regex"],
+      "matchFileNames": [".github/workflows/*.yaml", ".github/workflows/*.yml"],
+      "commitMessageTopic": "go version in CI"
+    },
     {
       "matchManagers": ["regex"],
       "matchFileNames": ["Makefile"],
