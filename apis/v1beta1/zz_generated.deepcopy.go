@@ -308,6 +308,7 @@ func (in *OpenTelemetryCollectorSpec) DeepCopyInto(out *OpenTelemetryCollectorSp
 	in.TargetAllocator.DeepCopyInto(&out.TargetAllocator)
 	in.Config.DeepCopyInto(&out.Config)
 	in.Ingress.DeepCopyInto(&out.Ingress)
+	in.ExtensionIngress.DeepCopyInto(&out.ExtensionIngress)
 	if in.LivenessProbe != nil {
 		in, out := &in.LivenessProbe, &out.LivenessProbe
 		*out = new(Probe)
