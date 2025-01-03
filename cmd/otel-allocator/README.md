@@ -86,6 +86,7 @@ The easiest way to do this is to grab a copy of the individual [`PodMonitor`](ht
 > ✨ For more information on configuring the `PodMonitor` and `ServiceMonitor`, check out the [PodMonitor API](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.PodMonitor) and the [ServiceMonitor API](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.ServiceMonitor).
 
 # Usage
+
 The `spec.targetAllocator:` controls the TargetAllocator general properties. Full API spec can be found here: [api.md#opentelemetrycollectorspectargetallocator](../../docs/api.md#opentelemetrycollectorspectargetallocator)
 
 A basic example that deploys.
@@ -121,6 +122,51 @@ spec:
 In essence, Prometheus Receiver configs are overridden with a `http_sd_config` directive that points to the
 Allocator, these are then loadbalanced/sharded to the Collectors. The [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) configs that are overridden
 are what will be distributed with the same name.
+
+## TargetAllocator CRD
+
+The `spec.targetAllocator` attribute allows very limited control over the target allocator resources. More customization is possible by using
+the `TargetAllocator` CRD. We create the `TargetAllocator` CR, and then add its name in the `opentelemetry.io/target-allocator` label on the respective OpenTelemetryCollector CR.
+
+The basic example from above looks as follows with this setup:
+
+```yaml
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: collector-with-ta
+  labels:
+    opentelemetry.io/target-allocator: ta
+spec:
+  mode: statefulset
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: 'otel-collector'
+            scrape_interval: 10s
+            static_configs:
+            - targets: [ '0.0.0.0:8888' ]
+
+    exporters:
+      debug: {}
+
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          exporters: [debug]
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: ta
+spec:
+```
+
+Note that the scrape configs can be specified either in the prometheus receiver configuration, or directly in the TargetAllocator CRD. The resultant
+target allocator will use both.
 
 ## PrometheusCR specifics
 

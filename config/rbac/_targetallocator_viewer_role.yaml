@@ -1,0 +1,27 @@
+# permissions for end users to view targetallocators.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: targetallocator-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: targetallocator-viewer-role
+rules:
+- apiGroups:
+  - opentelemetry.io
+  resources:
+  - targetallocators
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - opentelemetry.io
+  resources:
+  - targetallocators/status
+  verbs:
+  - get
