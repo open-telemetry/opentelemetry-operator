@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus-cr-collector
+status:
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: v1
+data:
+  collector.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    exporters:
+      debug: null
+    service:
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8888
+      pipelines:
+        traces:
+          exporters:
+            - debug
+          receivers:
+            - otlp
+kind: ConfigMap
+metadata:
+  name: prometheus-cr-collector-aec5aa11

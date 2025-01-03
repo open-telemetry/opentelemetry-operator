@@ -873,6 +873,8 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 
 	flgs := featuregate.Flags(colfg.GlobalRegistry())
 	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
+	otelcol.Spec.TargetAllocator.Enabled = true
+
 	require.NoError(t, err)
 
 	// test
@@ -880,6 +882,26 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 
 	// verify
 	assert.Contains(t, c.VolumeMounts, corev1.VolumeMount{
+		Name:      naming.TAClientCertificate(""),
+		MountPath: constants.TACollectorTLSDirPath,
+	})
+}
+
+func TestContainerWithFeaturegateEnabledButTADisabled(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{}
+
+	cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+
+	flgs := featuregate.Flags(colfg.GlobalRegistry())
+	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
+
+	require.NoError(t, err)
+
+	// test
+	c := Container(cfg, logger, otelcol, true)
+
+	// verify
+	assert.NotContains(t, c.VolumeMounts, corev1.VolumeMount{
 		Name:      naming.TAClientCertificate(""),
 		MountPath: constants.TACollectorTLSDirPath,
 	})
