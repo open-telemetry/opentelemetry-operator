@@ -2,6 +2,16 @@
 
 <!-- next version -->
 
+## vTODO
+
+### 💡 Enhancements 💡
+
+- `operator`: Support for Kubernetes `1.32`  version. ()
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Prevent mounting secrets to collector when TA is not deployed and mTLS feature gate is enabled (#3456)
+
 ## 0.116.0
 
 ### 💡 Enhancements 💡
