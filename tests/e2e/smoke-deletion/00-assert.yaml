@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: stateful-collector
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/name: stateful-collector
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: stateful-collector
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: stateful-collector
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stateful-collector
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stateful-collector-headless
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stateful-collector-monitoring
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: stateful-monitoring-collector
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stateful-targetallocator
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stateful-targetallocator
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stateful-targetallocator
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: stateful-targetallocator
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: stateful-targetallocator

@@ -216,47 +216,157 @@ func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
 	assert.Nil(t, cfg.Service.GetTelemetry())
 }
 
-func TestConfigToMetricsPort(t *testing.T) {
-
+func TestConfigMetricsEndpoint(t *testing.T) {
 	for _, tt := range []struct {
 		desc         string
 		expectedAddr string
 		expectedPort int32
+		expectedErr  bool
 		config       Service
 	}{
 		{
-			"custom port",
-			"0.0.0.0",
-			9090,
-			Service{
+			desc:         "custom port",
+			expectedAddr: "localhost",
+			expectedPort: 9090,
+			config: Service{
 				Telemetry: &AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
-							"address": "0.0.0.0:9090",
+							"address": "localhost:9090",
 						},
 					},
 				},
 			},
 		},
 		{
-			"bad address",
-			"0.0.0.0",
-			8888,
-			Service{
+			desc:         "custom port ipv6",
+			expectedAddr: "[::]",
+			expectedPort: 9090,
+			config: Service{
 				Telemetry: &AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
-							"address": "0.0.0.0",
+							"address": "[::]:9090",
 						},
 					},
 				},
 			},
 		},
 		{
-			"missing address",
-			"0.0.0.0",
-			8888,
-			Service{
+			desc:         "missing port",
+			expectedAddr: "localhost",
+			expectedPort: 8888,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "localhost",
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:         "missing port ipv6",
+			expectedAddr: "[::]",
+			expectedPort: 8888,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "[::]",
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:         "env var and missing port",
+			expectedAddr: "${env:POD_IP}",
+			expectedPort: 8888,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "${env:POD_IP}",
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:         "env var and missing port ipv6",
+			expectedAddr: "[${env:POD_IP}]",
+			expectedPort: 8888,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "[${env:POD_IP}]",
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:         "env var and with port",
+			expectedAddr: "${POD_IP}",
+			expectedPort: 1234,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "${POD_IP}:1234",
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:         "env var and with port ipv6",
+			expectedAddr: "[${POD_IP}]",
+			expectedPort: 1234,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "[${POD_IP}]:1234",
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:        "port is env var",
+			expectedErr: true,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "localhost:${env:POD_PORT}",
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:        "port is env var ipv6",
+			expectedErr: true,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "[::]:${env:POD_PORT}",
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:         "missing address",
+			expectedAddr: "0.0.0.0",
+			expectedPort: 8888,
+			config: Service{
 				Telemetry: &AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
@@ -267,24 +377,23 @@ func TestConfigToMetricsPort(t *testing.T) {
 			},
 		},
 		{
-			"missing metrics",
-			"0.0.0.0",
-			8888,
-			Service{
+			desc:         "missing metrics",
+			expectedAddr: "0.0.0.0",
+			expectedPort: 8888,
+			config: Service{
 				Telemetry: &AnyConfig{},
 			},
 		},
 		{
-			"missing telemetry",
-			"0.0.0.0",
-			8888,
-			Service{},
+			desc:         "missing telemetry",
+			expectedAddr: "0.0.0.0",
+			expectedPort: 8888,
 		},
 		{
-			"configured telemetry",
-			"1.2.3.4",
-			4567,
-			Service{
+			desc:         "configured telemetry",
+			expectedAddr: "1.2.3.4",
+			expectedPort: 4567,
+			config: Service{
 				Telemetry: &AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
@@ -296,9 +405,14 @@ func TestConfigToMetricsPort(t *testing.T) {
 		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
+			logger := logr.Discard()
 			// these are acceptable failures, we return to the collector's default metric port
-			addr, port, err := tt.config.MetricsEndpoint()
-			assert.NoError(t, err)
+			addr, port, err := tt.config.MetricsEndpoint(logger)
+			if tt.expectedErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
 			assert.Equal(t, tt.expectedAddr, addr)
 			assert.Equal(t, tt.expectedPort, port)
 		})

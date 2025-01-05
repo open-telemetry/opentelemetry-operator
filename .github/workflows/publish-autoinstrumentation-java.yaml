@@ -37,6 +37,7 @@ jobs:
             ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java
           tags: |
             type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
+            type=semver,pattern={{major}},value=v${{ env.VERSION }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3

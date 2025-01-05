@@ -215,7 +215,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 				},
 			},
 		},
-		// === Test Removal of probes  =============================
+		// === Test Removal of probes and lifecycle =============================
 		{
 			name:        "Probes removed on clone init container",
 			ApacheHttpd: v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
@@ -226,6 +226,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							ReadinessProbe: &corev1.Probe{},
 							StartupProbe:   &corev1.Probe{},
 							LivenessProbe:  &corev1.Probe{},
+							Lifecycle:      &corev1.Lifecycle{},
 						},
 					},
 				},
@@ -307,6 +308,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							ReadinessProbe: &corev1.Probe{},
 							StartupProbe:   &corev1.Probe{},
 							LivenessProbe:  &corev1.Probe{},
+							Lifecycle:      &corev1.Lifecycle{},
 						},
 					},
 				},
