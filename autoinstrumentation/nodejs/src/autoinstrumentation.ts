@@ -1,4 +1,4 @@
-import { getNodeAutoInstrumentations, getResourceDetectorsFromEnv } from '@opentelemetry/auto-instrumentations-node';
+import { getNodeAutoInstrumentations, getResourceDetectors } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter as OTLPProtoTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { OTLPTraceExporter as OTLPHttpTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPTraceExporter as OTLPGrpcTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
@@ -56,7 +56,7 @@ const sdk = new NodeSDK({
     instrumentations: getNodeAutoInstrumentations(),
     traceExporter: getTraceExporter(),
     metricReader: getMetricReader(),
-    resourceDetectors: getResourceDetectorsFromEnv()
+    resourceDetectors: getResourceDetectors()
 });
 
 try {
