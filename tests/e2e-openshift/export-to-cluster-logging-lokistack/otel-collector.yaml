@@ -17,6 +17,9 @@ rules:
  - apiGroups: [""]
    resources: ["pods", "namespaces", "nodes"]
    verbs: ["get", "watch", "list"]
+ - apiGroups: ["apps"]
+   resources: ["replicasets"]
+   verbs: ["get", "list", "watch"]
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -39,7 +42,7 @@ metadata:
   name: otel
   namespace: openshift-logging
 spec:
-  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.107.0
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.116.1
   serviceAccount: otel-collector-deployment
   config:
     extensions:
@@ -51,66 +54,44 @@ spec:
           grpc: {}
           http: {}
     processors:
-      k8sattributes:
-        auth_type: "serviceAccount"
-        passthrough: false
-        extract:
-          metadata:
-            - k8s.pod.name
-            - k8s.container.name
-            - k8s.namespace.name
-          labels:
-          - tag_name: app.label.component
-            key: app.kubernetes.io/component
-            from: pod
-        pod_association:
-          - sources:
-              - from: resource_attribute
-                name: k8s.pod.name
-              - from: resource_attribute
-                name: k8s.container.name
-              - from: resource_attribute
-                name: k8s.namespace.name
-          - sources:
-              - from: connection
+      k8sattributes: {}
       resource:
         attributes:
-          - key: loki.format
-            action: insert
-            value: json
-          - key:  kubernetes_namespace_name
+          - key:  kubernetes.namespace_name
             from_attribute: k8s.namespace.name
             action: upsert
-          - key:  kubernetes_pod_name
+          - key:  kubernetes.pod_name
             from_attribute: k8s.pod.name
             action: upsert
-          - key: kubernetes_container_name
+          - key: kubernetes.container_name
             from_attribute: k8s.container.name
             action: upsert
           - key: log_type
             value: application
             action: upsert
-          - key: loki.resource.labels
-            value: log_type, kubernetes_namespace_name, kubernetes_pod_name, kubernetes_container_name
-            action: insert
       transform:
         log_statements:
           - context: log
             statements:
               - set(attributes["level"], ConvertCase(severity_text, "lower"))
-
     exporters:
-      loki:
-        endpoint: https://logging-loki-gateway-http.openshift-logging.svc.cluster.local:8080/api/logs/v1/application/loki/api/v1/push
+      otlphttp:
+        endpoint: https://logging-loki-gateway-http.openshift-logging.svc.cluster.local:8080/api/logs/v1/application/otlp
+        encoding: json
         tls:
           ca_file: "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
         auth:
           authenticator: bearertokenauth
-
+      debug:
+        verbosity: detailed
     service:
       extensions: [bearertokenauth]
       pipelines:
         logs:
           receivers: [otlp]
           processors: [k8sattributes, transform, resource]
-          exporters: [loki]
+          exporters: [otlphttp]
+        logs/test:
+          receivers: [otlp]
+          processors: []
+          exporters: [debug]
