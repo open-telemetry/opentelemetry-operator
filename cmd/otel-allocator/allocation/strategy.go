@@ -47,7 +47,7 @@ var (
 		Name: "opentelemetry_allocator_time_to_allocate",
 		Help: "The time it takes to allocate",
 	}, []string{"method", "strategy"})
-	targetsRemaining = promauto.NewCounter(prometheus.CounterOpts{
+	TargetsRemaining = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "opentelemetry_allocator_targets_remaining",
 		Help: "Number of targets kept after filtering.",
 	})
@@ -80,7 +80,7 @@ func WithFallbackStrategy(fallbackStrategy string) AllocationOption {
 }
 
 func RecordTargetsKept(targets map[string]*target.Item) {
-	targetsRemaining.Add(float64(len(targets)))
+	TargetsRemaining.Set(float64(len(targets)))
 }
 
 func New(name string, log logr.Logger, opts ...AllocationOption) (Allocator, error) {
