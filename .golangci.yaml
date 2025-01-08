@@ -57,10 +57,6 @@ issues:
     - linters:
         - gci
       source: "// \\+kubebuilder"
-    # For some reason goheader complains about these files, even though the headers are correct
-    - linters:
-        - goheader
-      path: upgrade_strategy\.go
 
 linters:
   enable:
