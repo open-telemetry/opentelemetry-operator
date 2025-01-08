@@ -1,0 +1,18 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: breaking
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: operator
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Make ServiceMonitor for operator metrics optional and disable it by default
+
+# One or more tracking issues related to the change
+issues: [3474]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  Add `--create-sm-operator-metrics` flag to create a ServiceMonitor for the operator metrics.
+  This is disabled by default, which is a breaking change, because it was enabled by default in 0.113.0 and 0.114.0.
