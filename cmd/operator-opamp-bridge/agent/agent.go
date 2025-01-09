@@ -17,6 +17,7 @@ package agent
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -95,10 +96,18 @@ func (agent *Agent) getHealth() *protobufs.ComponentHealth {
 			LastError:         err.Error(),
 		}
 	}
+	statusTime, err := agent.getCurrentTimeUnixNano()
+	if err != nil {
+		return &protobufs.ComponentHealth{
+			Healthy:           false,
+			StartTimeUnixNano: agent.startTime,
+			LastError:         err.Error(),
+		}
+	}
 	return &protobufs.ComponentHealth{
 		Healthy:            true,
 		StartTimeUnixNano:  agent.startTime,
-		StatusTimeUnixNano: uint64(agent.clock.Now().UnixNano()),
+		StatusTimeUnixNano: statusTime,
 		LastError:          "",
 		ComponentHealthMap: healthMap,
 	}
@@ -124,9 +133,17 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 		for _, pod := range podMap {
 			isPoolHealthy = isPoolHealthy && pod.Healthy
 		}
+		podStartTime, err := timeToUnixNanoUnsigned(col.ObjectMeta.GetCreationTimestamp().Time)
+		if err != nil {
+			return nil, err
+		}
+		statusTime, err := agent.getCurrentTimeUnixNano()
+		if err != nil {
+			return nil, err
+		}
 		healthMap[key.String()] = &protobufs.ComponentHealth{
-			StartTimeUnixNano:  uint64(col.ObjectMeta.GetCreationTimestamp().UnixNano()),
-			StatusTimeUnixNano: uint64(agent.clock.Now().UnixNano()),
+			StartTimeUnixNano:  podStartTime,
+			StatusTimeUnixNano: statusTime,
 			Status:             col.Status.Scale.StatusReplicas,
 			ComponentHealthMap: podMap,
 			Healthy:            isPoolHealthy,
@@ -158,6 +175,10 @@ func (agent *Agent) getCollectorSelector(col v1beta1.OpenTelemetryCollector) map
 }
 
 func (agent *Agent) generateCollectorHealth(selectorLabels map[string]string, namespace string) (map[string]*protobufs.ComponentHealth, error) {
+	statusTime, err := agent.getCurrentTimeUnixNano()
+	if err != nil {
+		return nil, err
+	}
 	pods, err := agent.applier.GetCollectorPods(selectorLabels, namespace)
 	if err != nil {
 		return nil, err
@@ -169,15 +190,18 @@ func (agent *Agent) generateCollectorHealth(selectorLabels map[string]string, na
 		if item.Status.Phase != "Running" {
 			healthy = false
 		}
-		var startTime int64
+		var startTime uint64
 		if item.Status.StartTime != nil {
-			startTime = item.Status.StartTime.UnixNano()
+			startTime, err = timeToUnixNanoUnsigned(item.Status.StartTime.Time)
+			if err != nil {
+				return nil, err
+			}
 		} else {
 			healthy = false
 		}
 		healthMap[key.String()] = &protobufs.ComponentHealth{
-			StartTimeUnixNano:  uint64(startTime),
-			StatusTimeUnixNano: uint64(agent.clock.Now().UnixNano()),
+			StartTimeUnixNano:  startTime,
+			StatusTimeUnixNano: statusTime,
 			Status:             string(item.Status.Phase),
 			Healthy:            healthy,
 		}
@@ -197,7 +221,7 @@ func (agent *Agent) onConnectFailed(ctx context.Context, err error) {
 
 // onError is called when an agent receives an error response from the server.
 func (agent *Agent) onError(ctx context.Context, err *protobufs.ServerErrorResponse) {
-	agent.logger.Error(fmt.Errorf(err.GetErrorMessage()), "server returned an error response")
+	agent.logger.Error(errors.New(err.GetErrorMessage()), "server returned an error response")
 }
 
 // saveRemoteConfigStatus receives a status from the server when the server sets a remote configuration.
@@ -207,7 +231,11 @@ func (agent *Agent) saveRemoteConfigStatus(_ context.Context, status *protobufs.
 
 // Start sets up the callbacks for the OpAMP client and begins the client's connection to the server.
 func (agent *Agent) Start() error {
-	agent.startTime = uint64(agent.clock.Now().UnixNano())
+	startTime, err := agent.getCurrentTimeUnixNano()
+	if err != nil {
+		return err
+	}
+	agent.startTime = startTime
 	settings := types.StartSettings{
 		OpAMPServerURL: agent.config.Endpoint,
 		Header:         agent.config.Headers.ToHTTPHeader(),
@@ -224,7 +252,7 @@ func (agent *Agent) Start() error {
 		PackagesStateProvider: nil,
 		Capabilities:          agent.config.GetCapabilities(),
 	}
-	err := agent.opampClient.SetAgentDescription(agent.agentDescription)
+	err = agent.opampClient.SetAgentDescription(agent.agentDescription)
 	if err != nil {
 		return err
 	}
@@ -428,4 +456,21 @@ func (agent *Agent) onMessage(ctx context.Context, msg *types.MessageData) {
 	if msg.OwnMetricsConnSettings != nil {
 		agent.initMeter(msg.OwnMetricsConnSettings)
 	}
+}
+
+// getCurrentTimeUnixNano returns the current time as a uint64, which the protocol expects.
+func (agent *Agent) getCurrentTimeUnixNano() (uint64, error) {
+	// technically this could be negative if the system time is set to before 1970-01-1
+	// the proto demands this to be a nonnegative number, so in that case, just return 0
+	return timeToUnixNanoUnsigned(agent.clock.Now())
+}
+
+// timeToUnixNanoUnsigned returns the number of nanoseconds elapsed from 1970-01-01 to the given time, but returns an
+// error if the value is negative. OpAMP expects these values to be non-negative.
+func timeToUnixNanoUnsigned(t time.Time) (uint64, error) {
+	signedUnixNano := t.UnixNano()
+	if signedUnixNano < 0 {
+		return 0, fmt.Errorf("invalid system time, must be after 01-01-1970 due to OpAMP requirements: %v", t)
+	}
+	return uint64(signedUnixNano), nil
 }

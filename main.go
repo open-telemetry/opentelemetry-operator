@@ -287,9 +287,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	clientset, clientErr := kubernetes.NewForConfig(mgr.GetConfig())
+	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
 	if err != nil {
-		setupLog.Error(clientErr, "failed to create kubernetes clientset")
+		setupLog.Error(err, "failed to create kubernetes clientset")
 	}
 
 	ctx := ctrl.SetupSignalHandler()

@@ -17,6 +17,7 @@ package v1beta1
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -452,7 +453,7 @@ func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
 		errMsg := fmt.Sprintf("couldn't determine metrics port from configuration: %s",
 			telemetry.Metrics.Address)
 		logger.Info(errMsg)
-		return "", 0, fmt.Errorf(errMsg)
+		return "", 0, errors.New(errMsg)
 	}
 
 	// The regex below matches on strings that end with a colon followed by 1 or more numbers (representing the port).
