@@ -1,20 +1,3 @@
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: prometheus-cr-collector
-status:
-  readyReplicas: 1
-  replicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: prometheus-cr-targetallocator
-status:
-  observedGeneration: 1
-  readyReplicas: 1
-  replicas: 1
----
 apiVersion: v1
 data:
   targetallocator.yaml:
@@ -25,4 +8,3 @@ data:
 kind: ConfigMap
 metadata:
   name: prometheus-cr-v1beta1-targetallocator
----
