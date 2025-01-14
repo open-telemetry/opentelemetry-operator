@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"regexp"
+	"reflect"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -29,6 +29,7 @@ import (
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
+
 	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -36,6 +37,8 @@ import (
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/go-viper/mapstructure/v2"
 )
 
 const (
@@ -79,6 +82,101 @@ type HTTPSServerConfig struct {
 	CAFilePath      string `yaml:"ca_file_path,omitempty"`
 	TLSCertFilePath string `yaml:"tls_cert_file_path,omitempty"`
 	TLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
+}
+
+// StringToModelDurationHookFunc returns a DecodeHookFuncType
+// that converts string to time.Duration, which can be used
+// as model.Duration.
+func StringToModelDurationHookFunc() mapstructure.DecodeHookFuncType {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{},
+	) (interface{}, error) {
+		if f.Kind() != reflect.String {
+			return data, nil
+		}
+
+		if t != reflect.TypeOf(model.Duration(5)) {
+			return data, nil
+		}
+
+		return time.ParseDuration(data.(string))
+	}
+}
+
+// MapToPromConfig returns a DecodeHookFuncType that provides a mechanism
+// for decoding promconfig.Config involving its own unmarshal logic.
+func MapToPromConfig() mapstructure.DecodeHookFuncType {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{},
+	) (interface{}, error) {
+		if f.Kind() != reflect.Map {
+			return data, nil
+		}
+
+		if t != reflect.TypeOf(&promconfig.Config{}) {
+			return data, nil
+		}
+
+		pConfig := &promconfig.Config{}
+
+		mb, err := yaml.Marshal(data.(map[any]any))
+		if err != nil {
+			return nil, err
+		}
+
+		err = yaml.Unmarshal(mb, pConfig)
+		if err != nil {
+			return nil, err
+		}
+		return pConfig, nil
+	}
+}
+
+// MapToLabelSelector returns a DecodeHookFuncType that
+// provides a mechanism for decoding both matchLabels and matchExpressions from camelcase to lowercase
+// because we use yaml unmarshaling that supports lowercase field names if no `yaml` tag is defined
+// and metav1.LabelSelector uses `json` tags.
+// If both the camelcase and lowercase version is present, then the camelcase version takes precedence.
+func MapToLabelSelector() mapstructure.DecodeHookFuncType {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{},
+	) (interface{}, error) {
+		if f.Kind() != reflect.Map {
+			return data, nil
+		}
+
+		if t != reflect.TypeOf(&metav1.LabelSelector{}) {
+			return data, nil
+		}
+
+		result := &metav1.LabelSelector{}
+		fMap := data.(map[any]any)
+		if matchLabels, ok := fMap["matchLabels"]; ok {
+			fMap["matchlabels"] = matchLabels
+			delete(fMap, "matchLabels")
+		}
+		if matchExpressions, ok := fMap["matchExpressions"]; ok {
+			fMap["matchexpressions"] = matchExpressions
+			delete(fMap, "matchExpressions")
+		}
+
+		b, err := yaml.Marshal(fMap)
+		if err != nil {
+			return nil, err
+		}
+
+		err = yaml.Unmarshal(b, result)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
 }
 
 func LoadFromFile(file string, target *Config) error {
@@ -154,23 +252,40 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	return nil
 }
 
+// unmarshal decodes the contents of the configFile into the cfg argument, using a
+// mapstructure decoder with the following notable behaviors.
+// Decodes time.Duration from strings (see StringToModelDurationHookFunc).
+// Allows custom unmarshaling for promconfig.Config struct that implements yaml.Unmarshaler (see MapToPromConfig).
+// Allows custom unmarshaling for metav1.LabelSelector struct using both camelcase and lowercase field names (see MapToLabelSelector).
 func unmarshal(cfg *Config, configFile string) error {
 	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
 		return err
 	}
 
-	// Changing matchLabels and matchExpressions from camel case to lower case
-	// because we use yaml unmarshaling that supports lower case field names if no `yaml` tag is defined
-	// and metav1.LabelSelector uses `json` tags.
-	reLabels := regexp.MustCompile(`([ \t\f\v]*)matchLabels:([ \t\f\v]*\n)`)
-	yamlFile = reLabels.ReplaceAll(yamlFile, []byte("${1}matchlabels:${2}"))
-	reExpressions := regexp.MustCompile(`([ \t\f\v]*)matchExpressions:([ \t\f\v]*\n)`)
-	yamlFile = reExpressions.ReplaceAll(yamlFile, []byte("${1}matchexpressions:${2}"))
-
-	if err = yaml.Unmarshal(yamlFile, cfg); err != nil {
+	m := make(map[string]interface{})
+	if err := yaml.Unmarshal(yamlFile, &m); err != nil {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
 	}
+
+	dc := mapstructure.DecoderConfig{
+		TagName: "yaml",
+		Result:  cfg,
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			StringToModelDurationHookFunc(),
+			MapToPromConfig(),
+			MapToLabelSelector(),
+		),
+	}
+
+	decoder, err := mapstructure.NewDecoder(&dc)
+	if err != nil {
+		return err
+	}
+	if err := decoder.Decode(m); err != nil {
+		return err
+	}
+
 	return nil
 }
 
