@@ -21,11 +21,10 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"reflect"
+	"regexp"
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/mitchellh/mapstructure"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install"
@@ -48,24 +47,29 @@ const (
 )
 
 type Config struct {
-	ListenAddr         string                `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath string                `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig      *rest.Config          `yaml:"-"`
-	RootLogger         logr.Logger           `yaml:"-"`
-	CollectorSelector  *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	PromConfig         *promconfig.Config    `yaml:"config"`
-	AllocationStrategy string                `yaml:"allocation_strategy,omitempty"`
-	FilterStrategy     string                `yaml:"filter_strategy,omitempty"`
-	PrometheusCR       PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
-	HTTPS              HTTPSServerConfig     `yaml:"https,omitempty"`
+	ListenAddr                 string                `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath         string                `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig              *rest.Config          `yaml:"-"`
+	RootLogger                 logr.Logger           `yaml:"-"`
+	CollectorSelector          *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
+	PromConfig                 *promconfig.Config    `yaml:"config"`
+	AllocationStrategy         string                `yaml:"allocation_strategy,omitempty"`
+	AllocationFallbackStrategy string                `yaml:"allocation_fallback_strategy,omitempty"`
+	FilterStrategy             string                `yaml:"filter_strategy,omitempty"`
+	PrometheusCR               PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
+	HTTPS                      HTTPSServerConfig     `yaml:"https,omitempty"`
 }
 
 type PrometheusCRConfig struct {
 	Enabled                         bool                  `yaml:"enabled,omitempty"`
 	PodMonitorSelector              *metav1.LabelSelector `yaml:"pod_monitor_selector,omitempty"`
+	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
 	ServiceMonitorSelector          *metav1.LabelSelector `yaml:"service_monitor_selector,omitempty"`
 	ServiceMonitorNamespaceSelector *metav1.LabelSelector `yaml:"service_monitor_namespace_selector,omitempty"`
-	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
+	ScrapeConfigSelector            *metav1.LabelSelector `yaml:"scrape_config_selector,omitempty"`
+	ScrapeConfigNamespaceSelector   *metav1.LabelSelector `yaml:"scrape_config_namespace_selector,omitempty"`
+	ProbeSelector                   *metav1.LabelSelector `yaml:"probe_selector,omitempty"`
+	ProbeNamespaceSelector          *metav1.LabelSelector `yaml:"probe_namespace_selector,omitempty"`
 	ScrapeInterval                  model.Duration        `yaml:"scrape_interval,omitempty"`
 }
 
@@ -150,78 +154,31 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	return nil
 }
 
-func StringToModelDurationHookFunc() mapstructure.DecodeHookFunc {
-	return func(
-		f reflect.Type,
-		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
-		if f.Kind() != reflect.String {
-			return data, nil
-		}
-		if t != reflect.TypeOf(model.Duration(5)) {
-			return data, nil
-		}
-
-		// Convert it by parsing
-		return time.ParseDuration(data.(string))
-	}
-}
-
-func decodeSubConfig(t interface{}, dc mapstructure.DecoderConfig) error {
-	dec, decError := mapstructure.NewDecoder(&dc)
-	if decError != nil {
-		return decError
-	}
-	if err := dec.Decode(t); err != nil {
-		return err
-	}
-	return nil
-}
-
-func flexibleUnmarshal(yamlFile []byte, cfg *Config) error {
-	t := make(map[string]interface{})
-	if err := yaml.Unmarshal(yamlFile, &t); err != nil {
-		return fmt.Errorf("error unmarshaling YAML: %w", err)
-	}
-
-	if t["collector_selector"] != nil {
-		dc := mapstructure.DecoderConfig{TagName: "yaml", Result: cfg.CollectorSelector}
-		if err := decodeSubConfig(t["collector_selector"], dc); err != nil {
-			return err
-		}
-	}
-
-	if t["prometheus_cr"] != nil {
-		dc := mapstructure.DecoderConfig{TagName: "yaml", Result: &cfg.PrometheusCR, DecodeHook: StringToModelDurationHookFunc()}
-		if err := decodeSubConfig(t["prometheus_cr"], dc); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func unmarshal(cfg *Config, configFile string) error {
 	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
 		return err
 	}
+
+	// Changing matchLabels and matchExpressions from camel case to lower case
+	// because we use yaml unmarshaling that supports lower case field names if no `yaml` tag is defined
+	// and metav1.LabelSelector uses `json` tags.
+	reLabels := regexp.MustCompile(`([ \t\f\v]*)matchLabels:([ \t\f\v]*\n)`)
+	yamlFile = reLabels.ReplaceAll(yamlFile, []byte("${1}matchlabels:${2}"))
+	reExpressions := regexp.MustCompile(`([ \t\f\v]*)matchExpressions:([ \t\f\v]*\n)`)
+	yamlFile = reExpressions.ReplaceAll(yamlFile, []byte("${1}matchexpressions:${2}"))
+
 	if err = yaml.Unmarshal(yamlFile, cfg); err != nil {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
 	}
-
-	if err := flexibleUnmarshal(yamlFile, cfg); err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func CreateDefaultConfig() Config {
 	return Config{
-		AllocationStrategy: DefaultAllocationStrategy,
-		FilterStrategy:     DefaultFilterStrategy,
+		AllocationStrategy:         DefaultAllocationStrategy,
+		AllocationFallbackStrategy: "",
+		FilterStrategy:             DefaultFilterStrategy,
 		PrometheusCR: PrometheusCRConfig{
 			ScrapeInterval: DefaultCRScrapeInterval,
 		},
