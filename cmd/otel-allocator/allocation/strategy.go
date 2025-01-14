@@ -29,6 +29,8 @@ import (
 type AllocatorProvider func(log logr.Logger, opts ...AllocationOption) Allocator
 
 var (
+	strategies = map[string]Strategy{}
+
 	registry = map[string]AllocatorProvider{}
 
 	// TargetsPerCollector records how many targets have been assigned to each collector.
@@ -45,7 +47,7 @@ var (
 		Name: "opentelemetry_allocator_time_to_allocate",
 		Help: "The time it takes to allocate",
 	}, []string{"method", "strategy"})
-	targetsRemaining = promauto.NewCounter(prometheus.CounterOpts{
+	TargetsRemaining = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "opentelemetry_allocator_targets_remaining",
 		Help: "Number of targets kept after filtering.",
 	})
@@ -67,8 +69,18 @@ func WithFilter(filter Filter) AllocationOption {
 	}
 }
 
+func WithFallbackStrategy(fallbackStrategy string) AllocationOption {
+	var strategy, ok = strategies[fallbackStrategy]
+	if fallbackStrategy != "" && !ok {
+		panic(fmt.Errorf("unregistered strategy used as fallback: %s", fallbackStrategy))
+	}
+	return func(allocator Allocator) {
+		allocator.SetFallbackStrategy(strategy)
+	}
+}
+
 func RecordTargetsKept(targets map[string]*target.Item) {
-	targetsRemaining.Add(float64(len(targets)))
+	TargetsRemaining.Set(float64(len(targets)))
 }
 
 func New(name string, log logr.Logger, opts ...AllocationOption) (Allocator, error) {
@@ -101,6 +113,7 @@ type Allocator interface {
 	Collectors() map[string]*Collector
 	GetTargetsForCollectorAndJob(collector string, job string) []*target.Item
 	SetFilter(filter Filter)
+	SetFallbackStrategy(strategy Strategy)
 }
 
 type Strategy interface {
@@ -110,6 +123,8 @@ type Strategy interface {
 	// SetCollectors call. Strategies which don't need this information can just ignore it.
 	SetCollectors(map[string]*Collector)
 	GetName() string
+	// Add fallback strategy for strategies whose main allocation method can sometimes leave targets unassigned
+	SetFallbackStrategy(Strategy)
 }
 
 var _ consistent.Member = Collector{}
@@ -136,22 +151,18 @@ func NewCollector(name, node string) *Collector {
 }
 
 func init() {
-	err := Register(leastWeightedStrategyName, func(log logr.Logger, opts ...AllocationOption) Allocator {
-		return newAllocator(log, newleastWeightedStrategy(), opts...)
-	})
-	if err != nil {
-		panic(err)
+	strategies = map[string]Strategy{
+		leastWeightedStrategyName:     newleastWeightedStrategy(),
+		consistentHashingStrategyName: newConsistentHashingStrategy(),
+		perNodeStrategyName:           newPerNodeStrategy(),
 	}
-	err = Register(consistentHashingStrategyName, func(log logr.Logger, opts ...AllocationOption) Allocator {
-		return newAllocator(log, newConsistentHashingStrategy(), opts...)
-	})
-	if err != nil {
-		panic(err)
-	}
-	err = Register(perNodeStrategyName, func(log logr.Logger, opts ...AllocationOption) Allocator {
-		return newAllocator(log, newPerNodeStrategy(), opts...)
-	})
-	if err != nil {
-		panic(err)
+
+	for strategyName, strategy := range strategies {
+		err := Register(strategyName, func(log logr.Logger, opts ...AllocationOption) Allocator {
+			return newAllocator(log, strategy, opts...)
+		})
+		if err != nil {
+			panic(err)
+		}
 	}
 }

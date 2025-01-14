@@ -64,7 +64,7 @@ func TestDownstreamParsers(t *testing.T) {
 		desc             string
 		receiverName     string
 		parserName       string
-		defaultPort      int
+		defaultPort      int32
 		listenAddrParser bool
 	}{
 		{"zipkin", "zipkin", "__zipkin", 9411, false},
@@ -83,7 +83,6 @@ func TestDownstreamParsers(t *testing.T) {
 		{"awsxray", "awsxray", "__awsxray", 2000, false},
 		{"tcplog", "tcplog", "__tcplog", 0, true},
 		{"udplog", "udplog", "__udplog", 0, true},
-		{"k8s_cluster", "k8s_cluster", "__k8s_cluster", 0, false},
 	} {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
@@ -119,7 +118,7 @@ func TestDownstreamParsers(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Len(t, ports, 1)
 				assert.EqualValues(t, tt.defaultPort, ports[0].Port)
-				assert.Equal(t, naming.PortName(tt.receiverName, int32(tt.defaultPort)), ports[0].Name)
+				assert.Equal(t, naming.PortName(tt.receiverName, tt.defaultPort), ports[0].Name)
 			})
 
 			t.Run("allows port to be overridden", func(t *testing.T) {
@@ -143,7 +142,7 @@ func TestDownstreamParsers(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Len(t, ports, 1)
 				assert.EqualValues(t, 65535, ports[0].Port)
-				assert.Equal(t, naming.PortName(tt.receiverName, int32(tt.defaultPort)), ports[0].Name)
+				assert.Equal(t, naming.PortName(tt.receiverName, tt.defaultPort), ports[0].Name)
 			})
 
 			t.Run("returns a default config", func(t *testing.T) {

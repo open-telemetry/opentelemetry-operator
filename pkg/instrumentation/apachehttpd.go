@@ -103,6 +103,8 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 		cloneContainer.LivenessProbe = nil
 		cloneContainer.ReadinessProbe = nil
 		cloneContainer.StartupProbe = nil
+		// remove lifecycle, since not supported on init containers
+		cloneContainer.Lifecycle = nil
 
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, *cloneContainer)
 

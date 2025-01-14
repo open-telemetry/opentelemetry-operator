@@ -48,6 +48,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/yaml"
@@ -64,7 +65,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
-	// +kubebuilder:scaffold:imports
 )
 
 var (
@@ -73,8 +73,7 @@ var (
 	testScheme *runtime.Scheme = scheme.Scheme
 	ctx        context.Context
 	cancel     context.CancelFunc
-	err        error
-	cfg        *rest.Config
+	restCfg    *rest.Config
 	logger     = logf.Log.WithName("unit-tests")
 
 	instanceUID      = uuid.NewUUID()
@@ -137,14 +136,14 @@ func (m *mockAutoDetect) CertManagerAvailability(ctx context.Context) (certmanag
 }
 
 func TestMain(m *testing.M) {
+	var err error
 	ctx, cancel = context.WithCancel(context.TODO())
 	defer cancel()
 
-	if err != nil {
-		fmt.Printf("failed to start testEnv: %v", err)
-		os.Exit(1)
-	}
+	// logging is useful for these tests
+	logf.SetLogger(zap.New())
 
+	// +kubebuilder:scaffold:scheme
 	utilruntime.Must(monitoringv1.AddToScheme(testScheme))
 	utilruntime.Must(networkingv1.AddToScheme(testScheme))
 	utilruntime.Must(routev1.AddToScheme(testScheme))
@@ -158,10 +157,13 @@ func TestMain(m *testing.M) {
 			Paths: []string{filepath.Join("..", "config", "webhook")},
 		},
 	}
-	cfg, err = testEnv.Start()
-	// +kubebuilder:scaffold:scheme
+	restCfg, err = testEnv.Start()
+	if err != nil {
+		fmt.Printf("failed to start testEnv: %v", err)
+		os.Exit(1)
+	}
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: testScheme})
+	k8sClient, err = client.New(restCfg, client.Options{Scheme: testScheme})
 	if err != nil {
 		fmt.Printf("failed to setup a Kubernetes client: %v", err)
 		os.Exit(1)
@@ -169,7 +171,7 @@ func TestMain(m *testing.M) {
 
 	// start webhook server using Manager
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
-	mgr, mgrErr := ctrl.NewManager(cfg, ctrl.Options{
+	mgr, mgrErr := ctrl.NewManager(restCfg, ctrl.Options{
 		Scheme:         testScheme,
 		LeaderElection: false,
 		WebhookServer: webhook.NewServer(webhook.Options{
@@ -185,8 +187,8 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to start webhook server: %v", mgrErr)
 		os.Exit(1)
 	}
-	clientset, clientErr := kubernetes.NewForConfig(cfg)
-	if err != nil {
+	clientset, clientErr := kubernetes.NewForConfig(restCfg)
+	if clientErr != nil {
 		fmt.Printf("failed to setup kubernetes clientset %v", clientErr)
 	}
 	reviewer := rbac.NewReviewer(clientset)
@@ -507,10 +509,10 @@ func populateObjectIfExists(t testing.TB, object client.Object, namespacedName t
 }
 
 func getConfigMapSHAFromString(configStr string) (string, error) {
-	var config v1beta1.Config
-	err := yaml.Unmarshal([]byte(configStr), &config)
+	var cfg v1beta1.Config
+	err := yaml.Unmarshal([]byte(configStr), &cfg)
 	if err != nil {
 		return "", err
 	}
-	return manifestutils.GetConfigMapSHA(config)
+	return manifestutils.GetConfigMapSHA(cfg)
 }

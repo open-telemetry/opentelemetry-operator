@@ -22,7 +22,7 @@ jobs:
       uses: actions/setup-go@v5
       id: setup-go
       with:
-        go-version: "~1.22.4"
+        go-version: "~1.23.4"
 
     - name: Cache tools
       uses: actions/cache@v4
@@ -46,7 +46,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: "~1.22.4"
+        go-version: "~1.23.4"
 
     - name: Cache tools
       uses: actions/cache@v4
@@ -62,8 +62,6 @@ jobs:
       with:
         path: |
           /home/runner/.cache/golangci-lint
-          /home/runner/go/pkg/mod
-          ./bin
         key: golangcilint-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           golangcilint-
@@ -81,7 +79,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: "~1.22.4"
+        go-version: "~1.23.4"
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3

@@ -122,7 +122,7 @@ func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object
 		c.metrics.create(ctx, otelcol)
 	}
 	if c.bv != nil {
-		newWarnings := c.bv(*otelcol)
+		newWarnings := c.bv(ctx, *otelcol)
 		warnings = append(warnings, newWarnings...)
 	}
 	return warnings, nil
@@ -152,7 +152,7 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj run
 	}
 
 	if c.bv != nil {
-		newWarnings := c.bv(*otelcol)
+		newWarnings := c.bv(ctx, *otelcol)
 		warnings = append(warnings, newWarnings...)
 	}
 	return warnings, nil
@@ -435,7 +435,7 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 
 // BuildValidator enables running the manifest generators for the collector reconciler
 // +kubebuilder:object:generate=false
-type BuildValidator func(c OpenTelemetryCollector) admission.Warnings
+type BuildValidator func(ctx context.Context, c OpenTelemetryCollector) admission.Warnings
 
 func NewCollectorWebhook(
 	logger logr.Logger,

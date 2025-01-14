@@ -73,24 +73,24 @@ func TestDiscovery(t *testing.T) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, gokitlog.NewNopLogger(), registry, sdMetrics)
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
+	results := make(chan []string)
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, func(targets map[string]*Item) {
+		var result []string
+		for _, t := range targets {
+			result = append(result, t.TargetURL)
+		}
+		results <- result
+	})
 
 	defer func() { manager.Close() }()
 	defer cancelFunc()
 
-	results := make(chan []string)
 	go func() {
 		err := d.Run()
 		assert.Error(t, err)
 	}()
 	go func() {
-		err := manager.Watch(func(targets map[string]*Item) {
-			var result []string
-			for _, t := range targets {
-				result = append(result, t.TargetURL[0])
-			}
-			results <- result
-		})
+		err := manager.Run()
 		assert.NoError(t, err)
 	}()
 	for _, tt := range tests {
@@ -321,7 +321,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, gokitlog.NewNopLogger(), registry, sdMetrics)
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
@@ -360,7 +360,7 @@ func TestDiscovery_NoConfig(t *testing.T) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, gokitlog.NewNopLogger(), registry, sdMetrics)
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
 	defer close(manager.close)
 	defer cancelFunc()
 
@@ -410,7 +410,7 @@ func BenchmarkApplyScrapeConfig(b *testing.B) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(b, err)
 	d := discovery.NewManager(ctx, gokitlog.NewNopLogger(), registry, sdMetrics)
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu)
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

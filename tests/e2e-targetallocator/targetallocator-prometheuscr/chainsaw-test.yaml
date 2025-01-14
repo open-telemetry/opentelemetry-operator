@@ -22,3 +22,12 @@ spec:
         file: 01-install.yaml
     - assert:
         file: 01-assert.yaml
+  - name: step-02
+    try:
+      - apply:
+          file: 02-install.yaml
+      - assert:
+          file: 02-assert.yaml
+    catch:
+      - podLogs:
+          selector: checker=true

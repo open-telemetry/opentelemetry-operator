@@ -17,7 +17,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
 	"github.com/go-logr/logr"
@@ -30,14 +29,17 @@ import (
 	policyV1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -46,9 +48,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
+	internalRbac "github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
+
+const resourceOwnerKey = ".metadata.owner"
 
 var (
 	ownedClusterObjectTypes = []client.Object{
@@ -64,6 +70,7 @@ type OpenTelemetryCollectorReconciler struct {
 	scheme   *runtime.Scheme
 	log      logr.Logger
 	config   config.Config
+	reviewer *internalRbac.Reviewer
 }
 
 // Params is the set of options to build a new OpenTelemetryCollectorReconciler.
@@ -73,55 +80,46 @@ type Params struct {
 	Scheme   *runtime.Scheme
 	Log      logr.Logger
 	Config   config.Config
+	Reviewer *internalRbac.Reviewer
 }
 
 func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
 	ownedObjects := map[types.UID]client.Object{}
-	ownedObjectTypes := []client.Object{
-		&autoscalingv2.HorizontalPodAutoscaler{},
-		&networkingv1.Ingress{},
-		&policyV1.PodDisruptionBudget{},
-	}
-	listOps := &client.ListOptions{
-		Namespace:     params.OtelCol.Namespace,
-		LabelSelector: labels.SelectorFromSet(manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)),
-	}
-	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability() == prometheus.Available {
-		ownedObjectTypes = append(ownedObjectTypes,
-			&monitoringv1.ServiceMonitor{},
-			&monitoringv1.PodMonitor{},
-		)
-	}
-	if params.Config.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
-		ownedObjectTypes = append(ownedObjectTypes, &routev1.Route{})
+	collectorConfigMaps := []*corev1.ConfigMap{}
+	ownedObjectTypes := r.GetOwnedResourceTypes()
+	listOpts := []client.ListOption{
+		client.InNamespace(params.OtelCol.Namespace),
+		client.MatchingFields{resourceOwnerKey: params.OtelCol.Name},
 	}
 	for _, objectType := range ownedObjectTypes {
-		objs, err := getList(ctx, r, objectType, listOps)
+		objs, err := getList(ctx, r, objectType, listOpts...)
 		if err != nil {
 			return nil, err
 		}
 		for uid, object := range objs {
 			ownedObjects[uid] = object
 		}
-	}
-	if params.Config.CreateRBACPermissions() == rbac.Available {
-		objs, err := r.findClusterRoleObjects(ctx, params)
-		if err != nil {
-			return nil, err
+		// save Collector ConfigMaps into a separate slice, we need to do additional filtering on them
+		switch objectType.(type) {
+		case *corev1.ConfigMap:
+			for _, object := range objs {
+				if !featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() && object.GetLabels()["app.kubernetes.io/component"] != "opentelemetry-collector" {
+					// we only apply this to collector ConfigMaps
+					continue
+				}
+				configMap := object.(*corev1.ConfigMap)
+				collectorConfigMaps = append(collectorConfigMaps, configMap)
+			}
+		default:
 		}
-		for uid, object := range objs {
-			ownedObjects[uid] = object
-		}
 	}
-
-	configMapList := &corev1.ConfigMapList{}
-	err := r.List(ctx, configMapList, listOps)
-	if err != nil {
-		return nil, fmt.Errorf("error listing ConfigMaps: %w", err)
-	}
-	ownedConfigMaps := r.getConfigMapsToRemove(params.OtelCol.Spec.ConfigVersions, configMapList)
-	for i := range ownedConfigMaps {
-		ownedObjects[ownedConfigMaps[i].GetUID()] = &ownedConfigMaps[i]
+	// at this point we don't know if the most recent ConfigMap will still be the most recent after reconciliation, or
+	// if a new one will be created. We keep one additional ConfigMap to account for this. The next reconciliation that
+	// doesn't spawn a new ConfigMap will delete the extra one we kept here.
+	configVersionsToKeep := max(params.OtelCol.Spec.ConfigVersions, 1) + 1
+	configMapsToKeep := getCollectorConfigMapsToKeep(configVersionsToKeep, collectorConfigMaps)
+	for _, configMap := range configMapsToKeep {
+		delete(ownedObjects, configMap.GetUID())
 	}
 
 	return ownedObjects, nil
@@ -133,7 +131,8 @@ func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Co
 	// Remove cluster roles and bindings.
 	// Users might switch off the RBAC creation feature on the operator which should remove existing RBAC.
 	listOpsCluster := &client.ListOptions{
-		LabelSelector: labels.SelectorFromSet(manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)),
+		LabelSelector: labels.SelectorFromSet(
+			manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, collector.ComponentOpenTelemetryCollector)),
 	}
 	for _, objectType := range ownedClusterObjectTypes {
 		objs, err := getList(ctx, r, objectType, listOpsCluster)
@@ -147,28 +146,24 @@ func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Co
 	return ownedObjects, nil
 }
 
-// getConfigMapsToRemove returns a list of ConfigMaps to remove based on the number of ConfigMaps to keep.
-// It keeps the newest ConfigMap, the `configVersionsToKeep` next newest ConfigMaps, and returns the remainder.
-func (r *OpenTelemetryCollectorReconciler) getConfigMapsToRemove(configVersionsToKeep int, configMapList *corev1.ConfigMapList) []corev1.ConfigMap {
+// getCollectorConfigMapsToKeep gets ConfigMaps the controller would normally delete, but which we want to keep around
+// anyway. This is part of a feature to keep around previous ConfigMap versions to make rollbacks easier.
+// Fundamentally, this just sorts by time created and picks configVersionsToKeep latest ones.
+func getCollectorConfigMapsToKeep(configVersionsToKeep int, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
 	configVersionsToKeep = max(1, configVersionsToKeep)
-	ownedConfigMaps := []corev1.ConfigMap{}
-	sort.Slice(configMapList.Items, func(i, j int) bool {
-		iTime := configMapList.Items[i].GetCreationTimestamp().Time
-		jTime := configMapList.Items[j].GetCreationTimestamp().Time
+	sort.Slice(configMaps, func(i, j int) bool {
+		iTime := configMaps[i].GetCreationTimestamp().Time
+		jTime := configMaps[j].GetCreationTimestamp().Time
 		// sort the ConfigMaps newest to oldest
 		return iTime.After(jTime)
 	})
 
-	for i := range configMapList.Items {
-		if i > configVersionsToKeep {
-			ownedConfigMaps = append(ownedConfigMaps, configMapList.Items[i])
-		}
-	}
-
-	return ownedConfigMaps
+	configMapsToKeep := min(configVersionsToKeep, len(configMaps))
+	// return the first configVersionsToKeep items
+	return configMaps[:configMapsToKeep]
 }
 
-func (r *OpenTelemetryCollectorReconciler) GetParams(instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
+func (r *OpenTelemetryCollectorReconciler) GetParams(ctx context.Context, instance v1beta1.OpenTelemetryCollector) (manifests.Params, error) {
 	p := manifests.Params{
 		Config:   r.config,
 		Client:   r.Client,
@@ -176,15 +171,29 @@ func (r *OpenTelemetryCollectorReconciler) GetParams(instance v1beta1.OpenTeleme
 		Log:      r.log,
 		Scheme:   r.scheme,
 		Recorder: r.recorder,
+		Reviewer: r.reviewer,
 	}
 
 	// generate the target allocator CR from the collector CR
-	targetAllocator, err := collector.TargetAllocator(p)
+	targetAllocator, err := r.getTargetAllocator(ctx, p)
 	if err != nil {
 		return p, err
 	}
 	p.TargetAllocator = targetAllocator
 	return p, nil
+}
+
+func (r *OpenTelemetryCollectorReconciler) getTargetAllocator(ctx context.Context, params manifests.Params) (*v1alpha1.TargetAllocator, error) {
+	if taName, ok := params.OtelCol.GetLabels()[constants.LabelTargetAllocator]; ok {
+		targetAllocator := &v1alpha1.TargetAllocator{}
+		taKey := client.ObjectKey{Name: taName, Namespace: params.OtelCol.GetNamespace()}
+		err := r.Client.Get(ctx, taKey, targetAllocator)
+		if err != nil {
+			return nil, err
+		}
+		return targetAllocator, nil
+	}
+	return collector.TargetAllocator(params)
 }
 
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
@@ -195,6 +204,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 		scheme:   p.Scheme,
 		config:   p.Config,
 		recorder: p.Recorder,
+		reviewer: p.Reviewer,
 	}
 	return r
 }
@@ -230,7 +240,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	params, err := r.GetParams(instance)
+	params, err := r.GetParams(ctx, instance)
 	if err != nil {
 		log.Error(err, "Failed to create manifest.Params")
 		return ctrl.Result{}, err
@@ -290,32 +300,74 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 
 // SetupWithManager tells the manager what our controller is interested in.
 func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	err := r.SetupCaches(mgr)
+	if err != nil {
+		return err
+	}
+
+	ownedResources := r.GetOwnedResourceTypes()
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&v1beta1.OpenTelemetryCollector{}).
-		Owns(&corev1.ConfigMap{}).
-		Owns(&corev1.ServiceAccount{}).
-		Owns(&corev1.Service{}).
-		Owns(&appsv1.Deployment{}).
-		Owns(&appsv1.DaemonSet{}).
-		Owns(&appsv1.StatefulSet{}).
-		Owns(&networkingv1.Ingress{}).
-		Owns(&autoscalingv2.HorizontalPodAutoscaler{}).
-		Owns(&policyV1.PodDisruptionBudget{})
+		For(&v1beta1.OpenTelemetryCollector{})
 
-	if r.config.CreateRBACPermissions() == rbac.Available {
-		builder.Owns(&rbacv1.ClusterRoleBinding{})
-		builder.Owns(&rbacv1.ClusterRole{})
-	}
-
-	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability() == prometheus.Available {
-		builder.Owns(&monitoringv1.ServiceMonitor{})
-		builder.Owns(&monitoringv1.PodMonitor{})
-	}
-	if r.config.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
-		builder.Owns(&routev1.Route{})
+	for _, resource := range ownedResources {
+		builder.Owns(resource)
 	}
 
 	return builder.Complete(r)
+}
+
+// SetupCaches sets up caching and indexing for our controller.
+func (r *OpenTelemetryCollectorReconciler) SetupCaches(cluster cluster.Cluster) error {
+	ownedResources := r.GetOwnedResourceTypes()
+	for _, resource := range ownedResources {
+		if err := cluster.GetCache().IndexField(context.Background(), resource, resourceOwnerKey, func(rawObj client.Object) []string {
+			owner := metav1.GetControllerOf(rawObj)
+			if owner == nil {
+				return nil
+			}
+			// make sure it's an OpenTelemetryCollector
+			if owner.Kind != "OpenTelemetryCollector" {
+				return nil
+			}
+
+			return []string{owner.Name}
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// GetOwnedResourceTypes returns all the resource types the controller can own. Even though this method returns an array
+// of client.Object, these are (empty) example structs rather than actual resources.
+func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Object {
+	ownedResources := []client.Object{
+		&corev1.ConfigMap{},
+		&corev1.ServiceAccount{},
+		&corev1.Service{},
+		&appsv1.Deployment{},
+		&appsv1.DaemonSet{},
+		&appsv1.StatefulSet{},
+		&networkingv1.Ingress{},
+		&autoscalingv2.HorizontalPodAutoscaler{},
+		&policyV1.PodDisruptionBudget{},
+	}
+
+	if r.config.CreateRBACPermissions() == rbac.Available {
+		ownedResources = append(ownedResources, &rbacv1.ClusterRole{})
+		ownedResources = append(ownedResources, &rbacv1.ClusterRoleBinding{})
+	}
+
+	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability() == prometheus.Available {
+		ownedResources = append(ownedResources, &monitoringv1.PodMonitor{})
+		ownedResources = append(ownedResources, &monitoringv1.ServiceMonitor{})
+	}
+
+	if r.config.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
+		ownedResources = append(ownedResources, &routev1.Route{})
+	}
+
+	return ownedResources
 }
 
 const collectorFinalizer = "opentelemetrycollector.opentelemetry.io/finalizer"

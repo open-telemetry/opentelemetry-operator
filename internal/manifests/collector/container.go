@@ -229,11 +229,12 @@ func getConfigContainerPorts(logger logr.Logger, conf v1beta1.Config) (map[strin
 		}
 	}
 
-	_, metricsPort, err := conf.Service.MetricsEndpoint()
+	_, metricsPort, err := conf.Service.MetricsEndpoint(logger)
 	if err != nil {
 		logger.Info("couldn't determine metrics port from configuration, using 8888 default value", "error", err)
 		metricsPort = 8888
 	}
+
 	ports["metrics"] = corev1.ContainerPort{
 		Name:          "metrics",
 		ContainerPort: metricsPort,

@@ -81,7 +81,13 @@ func main() {
 	log := ctrl.Log.WithName("allocator")
 
 	allocatorPrehook = prehook.New(cfg.FilterStrategy, log)
-	allocator, err = allocation.New(cfg.AllocationStrategy, log, allocation.WithFilter(allocatorPrehook))
+
+	var allocationOptions []allocation.AllocationOption
+	allocationOptions = append(allocationOptions, allocation.WithFilter(allocatorPrehook))
+	if cfg.AllocationFallbackStrategy != "" {
+		allocationOptions = append(allocationOptions, allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
+	}
+	allocator, err = allocation.New(cfg.AllocationStrategy, log, allocationOptions...)
 	if err != nil {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)
@@ -106,7 +112,7 @@ func main() {
 	}
 	discoveryManager = discovery.NewManager(discoveryCtx, gokitlog.NewNopLogger(), prometheus.DefaultRegisterer, sdMetrics)
 
-	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv)
+	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
 	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, cfg.ClusterConfig)
 	if collectorWatcherErr != nil {
 		setupLog.Error(collectorWatcherErr, "Unable to initialize collector watcher")
@@ -169,7 +175,7 @@ func main() {
 				setupLog.Info("Prometheus config empty, skipping initial discovery configuration")
 			}
 
-			err := targetDiscoverer.Watch(allocator.SetTargets)
+			err := targetDiscoverer.Run()
 			setupLog.Info("Target discoverer exited")
 			return err
 		},

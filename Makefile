@@ -59,7 +59,7 @@ endif
 
 START_KIND_CLUSTER ?= true
 
-KUBE_VERSION ?= 1.31
+KUBE_VERSION ?= 1.32
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 KIND_CLUSTER_NAME ?= "otel-operator"
 
@@ -206,12 +206,21 @@ add-rbac-permissions-to-operator: manifests kustomize
 	# This folder is ignored by .gitignore
 	mkdir -p config/rbac/extra-permissions-operator
 	cp -r tests/e2e-automatic-rbac/extra-permissions-operator/* config/rbac/extra-permissions-operator
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/clusterresourcequotas.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/cronjobs.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/daemonsets.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/events.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/extensions.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/namespaces.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/namespaces-status.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/nodes.yaml
-	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/nodes-stats.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/nodes-proxy.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/nodes-spec.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/pod-status.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/rbac.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/replicaset.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/replicationcontrollers.yaml
+	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/resourcequotas.yaml
 
 .PHONY: enable-targetallocator-cr
 enable-targetallocator-cr:
@@ -326,6 +335,11 @@ e2e-prometheuscr: chainsaw
 .PHONY: e2e-targetallocator
 e2e-targetallocator: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator
+
+# Target allocator CR end-to-tests
+.PHONY: e2e-targetallocator-cr
+e2e-targetallocator-cr: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator-cr
 
 .PHONY: add-certmanager-permissions
 add-certmanager-permissions: 
@@ -477,11 +491,16 @@ CHLOGGEN ?= $(LOCALBIN)/chloggen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 CHAINSAW ?= $(LOCALBIN)/chainsaw
 
-KUSTOMIZE_VERSION ?= v5.0.3
-CONTROLLER_TOOLS_VERSION ?= v0.16.1
-GOLANGCI_LINT_VERSION ?= v1.57.2
-KIND_VERSION ?= v0.20.0
-CHAINSAW_VERSION ?= v0.2.8
+# renovate: datasource=go depName=sigs.k8s.io/kustomize/kustomize/v5
+KUSTOMIZE_VERSION ?= v5.5.0
+# renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
+CONTROLLER_TOOLS_VERSION ?= v0.17.1
+# renovate: datasource=go depName=github.com/golangci/golangci-lint/cmd/golangci-lint
+GOLANGCI_LINT_VERSION ?= v1.63.4
+# renovate: datasource=go depName=sigs.k8s.io/kind
+KIND_VERSION ?= v0.26.0
+# renovate: datasource=go depName=github.com/kyverno/chainsaw
+CHAINSAW_VERSION ?= v0.2.12
 
 .PHONY: install-tools
 install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kind operator-sdk chainsaw

@@ -21,8 +21,8 @@ import (
 
 	"github.com/go-logr/logr"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -119,18 +119,32 @@ func BuildTargetAllocator(params targetallocator.Params) ([]client.Object, error
 // getList queries the Kubernetes API to list the requested resource, setting the list l of type T.
 func getList[T client.Object](ctx context.Context, cl client.Client, l T, options ...client.ListOption) (map[types.UID]client.Object, error) {
 	ownedObjects := map[types.UID]client.Object{}
-	list := &unstructured.UnstructuredList{}
 	gvk, err := apiutil.GVKForObject(l, cl.Scheme())
 	if err != nil {
 		return nil, err
 	}
-	list.SetGroupVersionKind(gvk)
-	err = cl.List(ctx, list, options...)
+	gvk.Kind = fmt.Sprintf("%sList", gvk.Kind)
+	list, err := cl.Scheme().New(gvk)
+	if err != nil {
+		return nil, fmt.Errorf("unable to list objects of type %s: %w", gvk.Kind, err)
+	}
+
+	objList := list.(client.ObjectList)
+
+	err = cl.List(ctx, objList, options...)
 	if err != nil {
 		return ownedObjects, fmt.Errorf("error listing %T: %w", l, err)
 	}
-	for i := range list.Items {
-		ownedObjects[list.Items[i].GetUID()] = &list.Items[i]
+	objs, err := apimeta.ExtractList(objList)
+	if err != nil {
+		return ownedObjects, fmt.Errorf("error listing %T: %w", l, err)
+	}
+	for i := range objs {
+		typedObj, ok := objs[i].(T)
+		if !ok {
+			return ownedObjects, fmt.Errorf("error listing %T: %w", l, err)
+		}
+		ownedObjects[typedObj.GetUID()] = typedObj
 	}
 	return ownedObjects, nil
 }

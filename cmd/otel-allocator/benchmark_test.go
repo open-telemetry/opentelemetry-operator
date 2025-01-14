@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 	"testing"
 
 	gokitlog "github.com/go-kit/log"
@@ -27,6 +29,7 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/relabel"
+	"github.com/stretchr/testify/require"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -41,17 +44,17 @@ import (
 // the HTTP server afterward. Test data is chosen to be reasonably representative of what the Prometheus service discovery
 // outputs in the real world.
 func BenchmarkProcessTargets(b *testing.B) {
-	numTargets := 10000
+	numTargets := 800000
 	targetsPerGroup := 5
 	groupsPerJob := 20
 	tsets := prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob)
-
-	b.ResetTimer()
 	for _, strategy := range allocation.GetRegisteredAllocatorNames() {
 		b.Run(strategy, func(b *testing.B) {
-			targetDiscoverer, allocator := createTestDiscoverer(strategy, map[string][]*relabel.Config{})
+			targetDiscoverer := createTestDiscoverer(strategy, map[string][]*relabel.Config{})
+			targetDiscoverer.UpdateTsets(tsets)
+			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				targetDiscoverer.ProcessTargets(tsets, allocator.SetTargets)
+				targetDiscoverer.Reload()
 			}
 		})
 	}
@@ -60,26 +63,38 @@ func BenchmarkProcessTargets(b *testing.B) {
 // BenchmarkProcessTargetsWithRelabelConfig is BenchmarkProcessTargets with a relabel config set. The relabel config
 // does not actually modify any records, but does force the prehook to perform any necessary conversions along the way.
 func BenchmarkProcessTargetsWithRelabelConfig(b *testing.B) {
-	numTargets := 10000
+	numTargets := 800000
 	targetsPerGroup := 5
 	groupsPerJob := 20
 	tsets := prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob)
 	prehookConfig := make(map[string][]*relabel.Config, len(tsets))
 	for jobName := range tsets {
+		// keep all targets in half the jobs, drop the rest
+		jobNrStr := strings.Split(jobName, "-")[1]
+		jobNr, err := strconv.Atoi(jobNrStr)
+		require.NoError(b, err)
+		var action relabel.Action
+		if jobNr%2 == 0 {
+			action = "keep"
+		} else {
+			action = "drop"
+		}
 		prehookConfig[jobName] = []*relabel.Config{
 			{
-				Action: "keep",
-				Regex:  relabel.MustNewRegexp(".*"),
+				Action:       action,
+				Regex:        relabel.MustNewRegexp(".*"),
+				SourceLabels: model.LabelNames{"__address__"},
 			},
 		}
 	}
 
-	b.ResetTimer()
 	for _, strategy := range allocation.GetRegisteredAllocatorNames() {
 		b.Run(strategy, func(b *testing.B) {
-			targetDiscoverer, allocator := createTestDiscoverer(strategy, prehookConfig)
+			targetDiscoverer := createTestDiscoverer(strategy, prehookConfig)
+			targetDiscoverer.UpdateTsets(tsets)
+			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				targetDiscoverer.ProcessTargets(tsets, allocator.SetTargets)
+				targetDiscoverer.Reload()
 			}
 		})
 	}
@@ -155,7 +170,7 @@ func prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob int) map[str
 	return tsets
 }
 
-func createTestDiscoverer(allocationStrategy string, prehookConfig map[string][]*relabel.Config) (*target.Discoverer, allocation.Allocator) {
+func createTestDiscoverer(allocationStrategy string, prehookConfig map[string][]*relabel.Config) *target.Discoverer {
 	ctx := context.Background()
 	logger := ctrl.Log.WithName(fmt.Sprintf("bench-%s", allocationStrategy))
 	ctrl.SetLogger(logr.New(log.NullLogSink{}))
@@ -170,6 +185,6 @@ func createTestDiscoverer(allocationStrategy string, prehookConfig map[string][]
 	registry := prometheus.NewRegistry()
 	sdMetrics, _ := discovery.CreateAndRegisterSDMetrics(registry)
 	discoveryManager := discovery.NewManager(ctx, gokitlog.NewNopLogger(), registry, sdMetrics)
-	targetDiscoverer := target.NewDiscoverer(logger, discoveryManager, allocatorPrehook, srv)
-	return targetDiscoverer, allocator
+	targetDiscoverer := target.NewDiscoverer(logger, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
+	return targetDiscoverer
 }
