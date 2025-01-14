@@ -810,7 +810,7 @@ Choose the first value found:
 
 - `pod.annotation[resource.opentelemetry.io/service.name]`
 - `if (config[useLabelsForResourceAttributes]) pod.label[app.kubernetes.io/name]`
-- `k8s.depleyment.name`
+- `k8s.deployment.name`
 - `k8s.replicaset.name`
 - `k8s.statefulset.name`
 - `k8s.daemonset.name`
