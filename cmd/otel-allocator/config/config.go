@@ -25,11 +25,11 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
-
 	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -37,8 +37,6 @@ import (
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	"github.com/go-viper/mapstructure/v2"
 )
 
 const (
@@ -264,7 +262,8 @@ func unmarshal(cfg *Config, configFile string) error {
 	}
 
 	m := make(map[string]interface{})
-	if err := yaml.Unmarshal(yamlFile, &m); err != nil {
+	err = yaml.Unmarshal(yamlFile, &m)
+	if err != nil {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
 	}
 
