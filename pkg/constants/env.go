@@ -55,6 +55,7 @@ const (
 	FlagPython      = "enable-python-instrumentation"
 	FlagNginx       = "enable-nginx-instrumentation"
 	FlagNodeJS      = "enable-nodejs-instrumentation"
+	FlagDeno        = "enable-deno-instrumentation"
 	FlagJava        = "enable-java-instrumentation"
 
 	TACollectorTLSDirPath      = "/tls"

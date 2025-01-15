@@ -57,6 +57,10 @@ type InstrumentationSpec struct {
 	// +optional
 	NodeJS NodeJS `json:"nodejs,omitempty"`
 
+	// Deno defines configuration for Deno auto-instrumentation.
+	// +optional
+	Deno Deno `json:"deno,omitempty"`
+
 	// Python defines configuration for python auto-instrumentation.
 	// +optional
 	Python Python `json:"python,omitempty"`
@@ -216,6 +220,15 @@ type NodeJS struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+}
+
+// Deno defines Deno SDK and instrumentation configuration.
+type Deno struct {
+	// Env defines deno specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // Python defines Python SDK and instrumentation configuration.

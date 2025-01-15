@@ -54,6 +54,7 @@ type Config struct {
 	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
 	enableNodeJSInstrumentation         bool
+	enableDenoInstrumentation           bool
 	enableJavaInstrumentation           bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
@@ -103,6 +104,7 @@ func New(opts ...Option) Config {
 		enableNginxInstrumentation:          o.enableNginxInstrumentation,
 		enablePythonInstrumentation:         o.enablePythonInstrumentation,
 		enableNodeJSInstrumentation:         o.enableNodeJSInstrumentation,
+		enableDenoInstrumentation:           o.enableDenoInstrumentation,
 		enableJavaInstrumentation:           o.enableJavaInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
@@ -195,14 +197,19 @@ func (c *Config) EnableJavaAutoInstrumentation() bool {
 	return c.enableJavaInstrumentation
 }
 
-// EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+// EnablePythonAutoInstrumentation is true when the operator supports python auto instrumentation.
 func (c *Config) EnablePythonAutoInstrumentation() bool {
 	return c.enablePythonInstrumentation
 }
 
-// EnableNodeJSAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+// EnableNodeJSAutoInstrumentation is true when the operator supports nodejs auto instrumentation.
 func (c *Config) EnableNodeJSAutoInstrumentation() bool {
 	return c.enableNodeJSInstrumentation
+}
+
+// EnableDenoAutoInstrumentation is true when the operator supports deno auto instrumentation.
+func (c *Config) EnableDenoAutoInstrumentation() bool {
+	return c.enableDenoInstrumentation
 }
 
 // CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.

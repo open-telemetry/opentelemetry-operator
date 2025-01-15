@@ -1,0 +1,13 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: deno
+spec:
+  exporter:
+    endpoint: http://localhost:4318
+  sampler:
+    type: always_on
+  deno:
+    env:
+      - name: OTEL_DENO_CONSOLE
+        value: "replace"

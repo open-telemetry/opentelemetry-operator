@@ -119,6 +119,7 @@ func main() {
 		createOpenShiftDashboard         bool
 		enableMultiInstrumentation       bool
 		enableApacheHttpdInstrumentation bool
+		enableDenoInstrumentation        bool
 		enableDotNetInstrumentation      bool
 		enableGoInstrumentation          bool
 		enablePythonInstrumentation      bool
@@ -163,6 +164,7 @@ func main() {
 	pflag.BoolVar(&enablePythonInstrumentation, constants.FlagPython, true, "Controls whether the operator supports python auto-instrumentation")
 	pflag.BoolVar(&enableNginxInstrumentation, constants.FlagNginx, false, "Controls whether the operator supports nginx auto-instrumentation")
 	pflag.BoolVar(&enableNodeJSInstrumentation, constants.FlagNodeJS, true, "Controls whether the operator supports nodejs auto-instrumentation")
+	pflag.BoolVar(&enableDenoInstrumentation, constants.FlagDeno, false, "Controls whether the operator supports Deno auto-instrumentation")
 	pflag.BoolVar(&enableJavaInstrumentation, constants.FlagJava, true, "Controls whether the operator supports java auto-instrumentation")
 	pflag.BoolVar(&enableCRMetrics, constants.FlagCRMetrics, false, "Controls whether exposing the CR metrics is enabled")
 
@@ -228,6 +230,7 @@ func main() {
 		"enable-python-instrumentation", enablePythonInstrumentation,
 		"enable-nginx-instrumentation", enableNginxInstrumentation,
 		"enable-nodejs-instrumentation", enableNodeJSInstrumentation,
+		"enable-deno-instrumentation", enableDenoInstrumentation,
 		"enable-java-instrumentation", enableJavaInstrumentation,
 		"create-openshift-dashboard", createOpenShiftDashboard,
 		"zap-message-key", encodeMessageKey,
@@ -321,6 +324,7 @@ func main() {
 		config.WithEnableNginxInstrumentation(enableNginxInstrumentation),
 		config.WithEnablePythonInstrumentation(enablePythonInstrumentation),
 		config.WithEnableNodeJSInstrumentation(enableNodeJSInstrumentation),
+		config.WithEnableDenoInstrumentation(enableDenoInstrumentation),
 		config.WithEnableJavaInstrumentation(enableJavaInstrumentation),
 		config.WithTargetAllocatorImage(targetAllocatorImage),
 		config.WithOperatorOpAMPBridgeImage(operatorOpAMPBridgeImage),

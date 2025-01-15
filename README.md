@@ -224,7 +224,7 @@ kubectl patch serviceaccount <service-account-name> -p '{"imagePullSecrets": [{"
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, Deno, DotNet, Go, Java, Nginx, NodeJS and Python are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -334,6 +334,14 @@ securityContext:
   privileged: true
   runAsUser: 0
 ```
+
+Deno:
+
+```bash
+instrumentation.opentelemetry.io/inject-deno: "true"
+```
+
+OpenTelemetry in Deno is unstable, so workloads must be run with the `--unstable-otel` flag to enable OpenTelemetry support.
 
 Apache HTTPD:
 
@@ -595,6 +603,7 @@ Language support can be disabled by passing the flag with a value of `false`.
 | Python      | `enable-python-instrumentation`       | `true`        |
 | DotNet      | `enable-dotnet-instrumentation`       | `true`        |
 | ApacheHttpD | `enable-apache-httpd-instrumentation` | `true`        |
+| Deno        | `enable-deno-instrumentation`         | `false`        |
 | Go          | `enable-go-instrumentation`           | `false`       |
 | Nginx       | `enable-nginx-instrumentation`        | `false`       |
 

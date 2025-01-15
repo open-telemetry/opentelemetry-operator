@@ -190,6 +190,7 @@ add-image-targetallocator:
 
 .PHONY: add-instrumentation-params
 add-instrumentation-params:
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-deno-instrumentation=true
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-go-instrumentation=true
 
 .PHONY: add-multi-instrumentation-params

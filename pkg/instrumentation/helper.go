@@ -75,7 +75,10 @@ func isAutoInstrumentationInjected(pod corev1.Pod) bool {
 			}
 		}
 	}
-	return false
+
+	// Deno does not have an init container or sidecar, so we check using an
+	// explicit "has-injected-deno" annotation
+	return pod.Annotations[annotationDenoHasInjected] == "true"
 }
 
 // Look for duplicates in the provided containers.

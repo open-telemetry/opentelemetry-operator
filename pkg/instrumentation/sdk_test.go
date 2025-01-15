@@ -1155,6 +1155,107 @@ func TestInjectNodeJS(t *testing.T) {
 	}, pod)
 }
 
+func TestInjectDeno(t *testing.T) {
+	inst := v1alpha1.Instrumentation{
+		Spec: v1alpha1.InstrumentationSpec{
+			Deno: v1alpha1.Deno{},
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "https://collector:4318",
+			},
+		},
+	}
+	insts := languageInstrumentations{
+		Deno: instrumentationWithContainers{
+			Instrumentation: &inst,
+			Containers:      []string{"app"},
+		},
+	}
+	inj := sdkInjector{
+		logger: logr.Discard(),
+	}
+	config := config.New()
+	pod := inj.inject(context.Background(), insts,
+		testNamespace,
+		corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{},
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name:  "app",
+						Image: "app:latest",
+					},
+				},
+			},
+		}, config)
+	assert.Equal(t, corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"instrumentation.opentelemetry.io/has-injected-deno": "true",
+			},
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  "app",
+					Image: "app:latest",
+					Env: []corev1.EnvVar{
+						{
+							Name: "OTEL_NODE_IP",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "status.hostIP",
+								},
+							},
+						},
+						{
+							Name: "OTEL_POD_IP",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "status.podIP",
+								},
+							},
+						},
+						{
+							Name:  "OTEL_DENO",
+							Value: "true",
+						},
+						{
+							Name:  "OTEL_SERVICE_NAME",
+							Value: "app",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "https://collector:4318",
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
+							Name:  "OTEL_RESOURCE_ATTRIBUTES",
+							Value: "k8s.container.name=app,k8s.namespace.name=ns,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ns.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.version=latest",
+						},
+					},
+				},
+			},
+		},
+	}, pod)
+}
+
 func TestInjectPython(t *testing.T) {
 	inst := v1alpha1.Instrumentation{
 		Spec: v1alpha1.InstrumentationSpec{

@@ -55,6 +55,7 @@ type instrumentationWithContainers struct {
 type languageInstrumentations struct {
 	Java        instrumentationWithContainers
 	NodeJS      instrumentationWithContainers
+	Deno        instrumentationWithContainers
 	Python      instrumentationWithContainers
 	DotNet      instrumentationWithContainers
 	ApacheHttpd instrumentationWithContainers
@@ -84,6 +85,14 @@ func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bo
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.NodeJS)
 		allContainers = append(allContainers, langInsts.NodeJS.Containers...)
 		if len(langInsts.NodeJS.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
+	}
+	if langInsts.Deno.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Deno)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Deno)
+		allContainers = append(allContainers, langInsts.Deno.Containers...)
+		if len(langInsts.Deno.Containers) == 0 {
 			instrumentationWithNoContainers = true
 		}
 	}
@@ -185,6 +194,9 @@ func (langInsts *languageInstrumentations) setCommonInstrumentedContainers(ns co
 	if langInsts.NodeJS.Instrumentation != nil {
 		langInsts.NodeJS.Containers = containers
 	}
+	if langInsts.Deno.Instrumentation != nil {
+		langInsts.Deno.Containers = containers
+	}
 	if langInsts.Python.Instrumentation != nil {
 		langInsts.Python.Containers = containers
 	}
@@ -218,6 +230,10 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns meta
 		{
 			iwc:        &langInsts.NodeJS,
 			annotation: annotationInjectNodeJSContainersName,
+		},
+		{
+			iwc:        &langInsts.Deno,
+			annotation: annotationInjectDenoContainersName,
 		},
 		{
 			iwc:        &langInsts.Python,
@@ -314,6 +330,18 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for NodeJS auto instrumentation is not enabled")
 	}
 
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectDeno); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	if pm.config.EnableDenoAutoInstrumentation() || inst == nil {
+		insts.Deno.Instrumentation = inst
+	} else {
+		logger.Error(nil, "support for Deno auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Deno auto instrumentation is not enabled")
+	}
+
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectPython); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
@@ -383,10 +411,9 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 	insts.Sdk.Instrumentation = inst
 
-	if insts.Java.Instrumentation == nil && insts.NodeJS.Instrumentation == nil && insts.Python.Instrumentation == nil &&
-		insts.DotNet.Instrumentation == nil && insts.Go.Instrumentation == nil && insts.ApacheHttpd.Instrumentation == nil &&
-		insts.Nginx.Instrumentation == nil &&
-		insts.Sdk.Instrumentation == nil {
+	if insts.Java.Instrumentation == nil && insts.NodeJS.Instrumentation == nil && insts.Deno.Instrumentation == nil &&
+		insts.Python.Instrumentation == nil && insts.DotNet.Instrumentation == nil && insts.Go.Instrumentation == nil &&
+		insts.ApacheHttpd.Instrumentation == nil && insts.Nginx.Instrumentation == nil && insts.Sdk.Instrumentation == nil {
 
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
 		return pod, nil
@@ -475,6 +502,7 @@ func (pm *instPodMutator) validateInstrumentations(ctx context.Context, inst lan
 		{inst.Java.Instrumentation},
 		{inst.Python.Instrumentation},
 		{inst.NodeJS.Instrumentation},
+		{inst.Deno.Instrumentation},
 		{inst.DotNet.Instrumentation},
 		{inst.Go.Instrumentation},
 		{inst.ApacheHttpd.Instrumentation},

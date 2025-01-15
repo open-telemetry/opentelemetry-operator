@@ -50,6 +50,7 @@ type options struct {
 	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
 	enableNodeJSInstrumentation         bool
+	enableDenoInstrumentation           bool
 	enableJavaInstrumentation           bool
 	targetAllocatorConfigMapEntry       string
 	operatorOpAMPBridgeConfigMapEntry   string
@@ -125,6 +126,11 @@ func WithEnablePythonInstrumentation(s bool) Option {
 func WithEnableNodeJSInstrumentation(s bool) Option {
 	return func(o *options) {
 		o.enableNodeJSInstrumentation = s
+	}
+}
+func WithEnableDenoInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableDenoInstrumentation = s
 	}
 }
 func WithTargetAllocatorConfigMapEntry(s string) Option {
