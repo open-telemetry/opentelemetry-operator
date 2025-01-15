@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "clean": "rimraf build/*",
-        "postcompile": "copyfiles -f 'build/src/**' build/workspace/ && copyfiles 'node_modules/**' package.json build/workspace/ && npm -C build/workspace prune --omit=dev --no-package-lock"
+        "postinstall": "copyfiles -f 'build/src/**' build/workspace/ && copyfiles 'node_modules/**' package.json build/workspace/ && npm -C build/workspace prune --omit=dev --no-package-lock"
     },
     "devDependencies": {
         "copyfiles": "^2.4.1",
