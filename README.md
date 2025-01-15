@@ -743,7 +743,7 @@ metadata:
     # this is just an example, you can create any resource attributes you need
     resource.opentelemetry.io/service.name: "my-service"
     resource.opentelemetry.io/service.version: "1.0.0"
-    resource.opentelemetry.io/environment: "production"
+    resource.opentelemetry.io/deployment.environment.name: "production"
 spec:
   containers:
   - name: main-container
