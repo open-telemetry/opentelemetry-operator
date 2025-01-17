@@ -750,7 +750,7 @@ metadata:
     # this is just an example, you can create any resource attributes you need
     resource.opentelemetry.io/service.name: "my-service"
     resource.opentelemetry.io/service.version: "1.0.0"
-    resource.opentelemetry.io/environment: "production"
+    resource.opentelemetry.io/deployment.environment.name: "production"
 spec:
   containers:
   - name: main-container
@@ -817,7 +817,7 @@ Choose the first value found:
 
 - `pod.annotation[resource.opentelemetry.io/service.name]`
 - `if (config[useLabelsForResourceAttributes]) pod.label[app.kubernetes.io/name]`
-- `k8s.depleyment.name`
+- `k8s.deployment.name`
 - `k8s.replicaset.name`
 - `k8s.statefulset.name`
 - `k8s.daemonset.name`
