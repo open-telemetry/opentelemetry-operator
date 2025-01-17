@@ -60,6 +60,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
@@ -101,17 +102,11 @@ type mockAutoDetect struct {
 	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
 	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
+	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
 }
 
-func (m *mockAutoDetect) FIPSEnabled(ctx context.Context) bool {
+func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
 	return false
-}
-
-func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, error) {
-	if m.PrometheusCRsAvailabilityFunc != nil {
-		return m.PrometheusCRsAvailabilityFunc()
-	}
-	return prometheus.NotAvailable, nil
 }
 
 func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error) {
@@ -119,6 +114,13 @@ func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailabi
 		return m.OpenShiftRoutesAvailabilityFunc()
 	}
 	return openshift.RoutesNotAvailable, nil
+}
+
+func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, error) {
+	if m.PrometheusCRsAvailabilityFunc != nil {
+		return m.PrometheusCRsAvailabilityFunc()
+	}
+	return prometheus.NotAvailable, nil
 }
 
 func (m *mockAutoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
@@ -133,6 +135,13 @@ func (m *mockAutoDetect) CertManagerAvailability(ctx context.Context) (certmanag
 		return m.CertManagerAvailabilityFunc(ctx)
 	}
 	return certmanager.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) TargetAllocatorAvailability() (targetallocator.Availability, error) {
+	if m.TargetAllocatorAvailabilityFunc != nil {
+		return m.TargetAllocatorAvailabilityFunc()
+	}
+	return targetallocator.NotAvailable, nil
 }
 
 func TestMain(m *testing.M) {

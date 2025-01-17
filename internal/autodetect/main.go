@@ -18,7 +18,9 @@ package autodetect
 import (
 	"context"
 	"fmt"
+	"slices"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 
@@ -27,6 +29,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
@@ -38,6 +41,7 @@ type AutoDetect interface {
 	PrometheusCRsAvailability() (prometheus.Availability, error)
 	RBACPermissions(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailability(ctx context.Context) (certmanager.Availability, error)
+	TargetAllocatorAvailability() (targetallocator.Availability, error)
 	FIPSEnabled(ctx context.Context) bool
 }
 
@@ -155,6 +159,38 @@ func (a *autoDetect) CertManagerAvailability(ctx context.Context) (certmanager.A
 	}
 
 	return certmanager.Available, nil
+}
+
+// TargetAllocatorAvailability checks if OpenShift Route are available.
+func (a *autoDetect) TargetAllocatorAvailability() (targetallocator.Availability, error) {
+	apiList, err := a.dcl.ServerGroups()
+	if err != nil {
+		return targetallocator.NotAvailable, err
+	}
+
+	apiGroups := apiList.Groups
+	otelGroupIndex := slices.IndexFunc(apiGroups, func(group metav1.APIGroup) bool {
+		return group.Name == "opentelemetry.io"
+	})
+	if otelGroupIndex == -1 {
+		return targetallocator.NotAvailable, nil
+	}
+
+	otelGroup := apiGroups[otelGroupIndex]
+	for _, groupVersion := range otelGroup.Versions {
+		resourceList, err := a.dcl.ServerResourcesForGroupVersion(groupVersion.GroupVersion)
+		if err != nil {
+			return targetallocator.NotAvailable, err
+		}
+		targetAllocatorIndex := slices.IndexFunc(resourceList.APIResources, func(group metav1.APIResource) bool {
+			return group.Kind == "TargetAllocator"
+		})
+		if targetAllocatorIndex >= 0 {
+			return targetallocator.Available, nil
+		}
+	}
+
+	return targetallocator.NotAvailable, nil
 }
 
 func (a *autoDetect) FIPSEnabled(_ context.Context) bool {
