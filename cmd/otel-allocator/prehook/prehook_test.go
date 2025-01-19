@@ -15,41 +15,43 @@
 package prehook
 
 import (
-	"errors"
+	"testing"
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/prometheus/model/relabel"
+	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
-type Hook interface {
-	Apply(map[string]*target.Item) map[string]*target.Item
-	SetConfig(map[string][]*relabel.Config)
-	GetConfig() map[string][]*relabel.Config
+type myHook struct {
 }
 
-type HookProvider func(log logr.Logger) Hook
-
-var (
-	registry = map[string]HookProvider{
-		relabelConfigTargetFilterName: newRelabelConfigTargetFilter,
-	}
-)
-
-func New(name string, log logr.Logger) Hook {
-	if p, ok := registry[name]; ok {
-		return p(log.WithName("Prehook").WithName(name))
-	}
-
-	log.Info("Unrecognized filter strategy; filtering disabled")
-	return nil
+func (m myHook) Apply(_ map[string]*target.Item) map[string]*target.Item {
+	panic("implement me")
 }
 
-func Register(name string, provider HookProvider) error {
-	if _, ok := registry[name]; ok {
-		return errors.New("already registered")
+func (m myHook) SetConfig(_ map[string][]*relabel.Config) {
+	panic("implement me")
+}
+
+func (m myHook) GetConfig() map[string][]*relabel.Config {
+	panic("implement me")
+}
+
+func TestRegister(t *testing.T) {
+	myProvider := func(log logr.Logger) Hook {
+		return myHook{}
 	}
-	registry[name] = provider
-	return nil
+
+	require.NoError(t, Register("foo", myProvider))
+
+	hook := New("foo", logr.New(log.NullLogSink{}))
+	require.NotNil(t, hook)
+}
+
+func TestRegisterMissing(t *testing.T) {
+	hook := New("bar", logr.New(log.NullLogSink{}))
+	require.Nil(t, hook)
 }
