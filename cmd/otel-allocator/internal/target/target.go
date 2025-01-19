@@ -19,11 +19,13 @@ var (
 	}
 	endpointSliceTargetKindLabel = "__meta_kubernetes_endpointslice_address_target_kind"
 	endpointSliceTargetNameLabel = "__meta_kubernetes_endpointslice_address_target_name"
+	endpointSliceName            = "__meta_kubernetes_endpointslice_name"
 	relevantLabelNames           = append(nodeLabels, endpointSliceTargetKindLabel, endpointSliceTargetNameLabel)
 )
 
 type ItemHash uint64
 
+// Item represents a target to be scraped.
 type Item struct {
 	JobName       string
 	TargetURL     string
@@ -52,6 +54,12 @@ func (t *Item) GetNodeName() string {
 	}
 
 	return relevantLabels.Get(endpointSliceTargetNameLabel)
+}
+
+// GetEndpointSliceName returns the name of the EndpointSlice that the target is part of.
+// If the target is not part of an EndpointSlice, it returns an empty string.
+func (t *Item) GetEndpointSliceName() string {
+	return t.Labels.Get(endpointSliceName)
 }
 
 // NewItem Creates a new target item.

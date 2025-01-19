@@ -4,12 +4,16 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/http/pprof"
 	"net/url"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -84,8 +88,13 @@ func (s *Server) setRouter(router *gin.Engine) {
 	router.UnescapePathValues = false
 	router.Use(s.PrometheusMiddleware)
 
+	router.GET("/", s.IndexHandler)
+	router.GET("/collector", s.CollectorHTMLHandler)
+	router.GET("/job", s.JobHTMLHandler)
+	router.GET("/target", s.TargetHTMLHandler)
+	router.GET("/targets", s.TargetsHTMLHandler)
 	router.GET("/scrape_configs", s.ScrapeConfigsHandler)
-	router.GET("/jobs", s.JobHandler)
+	router.GET("/jobs", s.JobsHandler)
 	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	router.GET("/livez", s.LivenessProbeHandler)
@@ -250,10 +259,14 @@ func (s *Server) ReadinessProbeHandler(c *gin.Context) {
 	}
 }
 
-func (s *Server) JobHandler(c *gin.Context) {
+func (s *Server) JobsHandler(c *gin.Context) {
 	displayData := make(map[string]linkJSON)
 	for _, v := range s.allocator.TargetItems() {
 		displayData[v.JobName] = linkJSON{Link: fmt.Sprintf("/jobs/%s/targets", url.QueryEscape(v.JobName))}
+	}
+	if strings.Contains(c.Request.Header.Get("Accept"), "text/html") {
+		s.JobsHTMLHandler(c)
+		return
 	}
 	s.jsonHandler(c.Writer, displayData)
 }
@@ -267,6 +280,402 @@ func (s *Server) PrometheusMiddleware(c *gin.Context) {
 	timer := prometheus.NewTimer(httpDuration.WithLabelValues(path))
 	c.Next()
 	timer.ObserveDuration()
+}
+
+func header(data ...string) string {
+	return "<thead><td>" + strings.Join(data, "</td><td>") + "</td></thead>\n"
+}
+
+func row(data ...string) string {
+	return "<tr><td>" + strings.Join(data, "</td><td>") + "</td></tr>\n"
+}
+
+// IndexHandler displays the main page of the allocator. It shows the number of jobs and targets.
+// It also displays a table with the collectors and the number of jobs and targets for each collector.
+// The collector names are links to the respective pages. The table is sorted by collector name.
+func (s *Server) IndexHandler(c *gin.Context) {
+	c.Writer.Header().Set("Content-Type", "text/html")
+	var b bytes.Buffer
+	b.WriteString(`<html>
+<body>
+<h1>OpenTelemetry Target Allocator</h1>
+`)
+
+	fmt.Fprint(&b, "<table>\n")
+	fmt.Fprint(&b, header("Category", "Count"))
+	fmt.Fprint(&b, row(jobsAnchorLink(), strconv.Itoa(s.getJobCount())))
+	fmt.Fprint(&b, row(targetsAnchorLink(), strconv.Itoa(len(s.allocator.TargetItems()))))
+	fmt.Fprint(&b, "</table>\n")
+
+	fmt.Fprint(&b, "<table>\n")
+	fmt.Fprint(&b, header("Collector", "Job Count", "Target Count"))
+
+	// Sort the collectors by name to ensure consistent order
+	collectorNames := []string{}
+	for k := range s.allocator.Collectors() {
+		collectorNames = append(collectorNames, k)
+	}
+	sort.Strings(collectorNames)
+
+	for _, colName := range collectorNames {
+		jobCount := strconv.Itoa(s.getJobCountForCollector(colName))
+		targetCount := strconv.Itoa(s.getTargetCountForCollector(colName))
+		fmt.Fprint(&b, row(collectorAnchorLink(colName), jobCount, targetCount))
+	}
+	b.WriteString(`</table>
+</body>
+</html>`)
+
+	_, err := c.Writer.Write(b.Bytes())
+	if err != nil {
+		s.logger.Error(err, "failed to write response")
+		c.Status(http.StatusInternalServerError)
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func targetsAnchorLink() string {
+	return `<a href="/targets">Targets</a>`
+}
+
+// TargetsHTMLHandler displays the targets in a table format. Each target is a row in the table.
+// The table has four columns: Job, Target, Collector, and Endpoint Slice.
+// The Job, Target, and Collector columns are links to the respective pages.
+func (s *Server) TargetsHTMLHandler(c *gin.Context) {
+	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
+	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	var b bytes.Buffer
+	b.WriteString(`<html>
+<body>
+<h1>Targets</h1>
+<table>
+`)
+	fmt.Fprint(&b, header("Job", "Target", "Collector", "Endpoint Slice"))
+	for _, v := range s.sortedTargetItems() {
+		fmt.Fprint(&b, row(jobAnchorLink(v.JobName), targetAnchorLink(v), collectorAnchorLink(v.CollectorName), v.GetEndpointSliceName()))
+	}
+
+	b.WriteString(`</table>
+</body>
+</html>`)
+
+	_, err := c.Writer.Write(b.Bytes())
+	if err != nil {
+		s.logger.Error(err, "failed to write response")
+		c.Status(http.StatusInternalServerError)
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func targetAnchorLink(t *target.Item) string {
+	return fmt.Sprintf("<a href=\"/target?target_hash=%s\">%s</a>", t.Hash(), t.TargetURL)
+}
+
+// TargetHTMLHandler displays information about a target in a table format.
+// There are two tables: one for high-level target information and another for the target's labels.
+func (s *Server) TargetHTMLHandler(c *gin.Context) {
+	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
+	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	targetHash := c.Request.URL.Query().Get("target_hash")
+	if targetHash == "" {
+		c.Status(http.StatusBadRequest)
+		_, err := c.Writer.WriteString(`<html>
+<body>
+<h1>Bad Request</h1>
+<p>Expected target_hash in the query string</p>
+<p>Example: /target?target_hash=my-target-42</p>
+</body>
+</html>`)
+		if err != nil {
+			s.logger.Error(err, "failed to write response")
+		}
+		return
+	}
+
+	target, found := s.allocator.TargetItems()[targetHash]
+	if !found {
+		c.Status(http.StatusNotFound)
+		t, err := template.New("unknown_target").Parse(`<html>
+<body>
+<h1>Unknown Target: {{.}}</h1>
+</body>
+</html>`)
+		if err != nil {
+			s.logger.Error(err, "failed to parse template")
+		}
+		err = t.Execute(c.Writer, targetHash)
+		if err != nil {
+			s.logger.Error(err, "failed to write response")
+		}
+		return
+	}
+
+	var b bytes.Buffer
+	b.WriteString(`<html>
+<body>
+<h1>Target: ` + target.TargetURL + `</h1>
+<table>
+`)
+
+	fmt.Fprint(&b, row("Collector", target.CollectorName))
+	fmt.Fprint(&b, row("Job", target.JobName))
+	if namespace := target.Labels.Get("__meta_kubernetes_namespace"); namespace != "" {
+		fmt.Fprint(&b, row("Namespace", namespace))
+	}
+	if service := target.Labels.Get("__meta_kubernetes_service_name"); service != "" {
+		fmt.Fprint(&b, row("Service Name", service))
+	}
+	if port := target.Labels.Get("__meta_kubernetes_service_port"); port != "" {
+		fmt.Fprint(&b, row("Service Port", port))
+	}
+	if podName := target.Labels.Get("__meta_kubernetes_pod_name"); podName != "" {
+		fmt.Fprint(&b, row("Pod Name", podName))
+	}
+	if container := target.Labels.Get("__meta_kubernetes_pod_container_name"); container != "" {
+		fmt.Fprint(&b, row("Container Name", container))
+	}
+	if containerPortName := target.Labels.Get("__meta_kubernetes_pod_container_port_name"); containerPortName != "" {
+		fmt.Fprint(&b, row("Container Port Name", containerPortName))
+	}
+	if node := target.GetNodeName(); node != "" {
+		fmt.Fprint(&b, row("Node Name", node))
+	}
+	if endpointSliceName := target.GetEndpointSliceName(); endpointSliceName != "" {
+		fmt.Fprint(&b, row("Endpoint Slice Name", endpointSliceName))
+	}
+
+	b.WriteString(`</table>
+<h2>Target Labels</h2>
+<table>
+`)
+	fmt.Fprint(&b, header("Label", "Value"))
+	for _, l := range target.Labels {
+		fmt.Fprint(&b, row(l.Name, l.Value))
+	}
+	b.WriteString(`</table>
+</body>
+</html>`)
+	_, err := c.Writer.Write(b.Bytes())
+	if err != nil {
+		s.logger.Error(err, "failed to write response")
+		c.Status(http.StatusInternalServerError)
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func jobsAnchorLink() string {
+	return `<a href="/jobs">Jobs</a>`
+}
+
+// JobsHTMLHandler displays the jobs in a table format. Each job is a row in the table.
+// The table has two columns: Job and Target Count. The Job column is a link to the job's targets.
+func (s *Server) JobsHTMLHandler(c *gin.Context) {
+	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
+	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	var b bytes.Buffer
+	b.WriteString(`<html>
+<body>
+<h1>Jobs</h1>
+<table>
+`)
+	fmt.Fprint(&b, header("Job", "Target Count"))
+
+	jobs := make(map[string]int)
+	for _, v := range s.allocator.TargetItems() {
+		jobs[v.JobName]++
+	}
+
+	// Sort the jobs by name to ensure consistent order
+	jobNames := make([]string, 0, len(jobs))
+	for k := range jobs {
+		jobNames = append(jobNames, k)
+	}
+	sort.Strings(jobNames)
+
+	for _, j := range jobNames {
+		fmt.Fprint(&b, row(jobAnchorLink(j), strconv.Itoa(jobs[j])))
+	}
+
+	b.WriteString(`</table>
+</body>
+</html>`)
+
+	_, err := c.Writer.Write(b.Bytes())
+	if err != nil {
+		s.logger.Error(err, "failed to write response")
+		c.Status(http.StatusInternalServerError)
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func jobAnchorLink(jobId string) string {
+	return fmt.Sprintf("<a href=\"/job?job_id=%s\">%s</a>", jobId, jobId)
+}
+func (s *Server) JobHTMLHandler(c *gin.Context) {
+	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
+	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	jobIdValues := c.Request.URL.Query()["job_id"]
+	if len(jobIdValues) != 1 {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	jobId := jobIdValues[0]
+
+	var b bytes.Buffer
+	t, err := template.New("job").Parse(`<html>
+<body>
+<h1>Job: {{.}}</h1>
+<table>
+`)
+	if err != nil {
+		s.logger.Error(err, "failed to parse template")
+		return
+	}
+	err = t.Execute(&b, jobId)
+	if err != nil {
+		s.logger.Error(err, "failed to execute template")
+		return
+	}
+	fmt.Fprint(&b, header("Collector", "Target Count"))
+
+	// Filter targets by job
+	targets := map[string]*target.Item{}
+	for k, v := range s.allocator.TargetItems() {
+		if v.JobName == jobId {
+			targets[k] = v
+		}
+	}
+
+	colNames := []string{}
+	for _, col := range s.allocator.Collectors() {
+		colNames = append(colNames, col.Name)
+	}
+	sort.Strings(colNames)
+
+	for _, colName := range colNames {
+		count := 0
+		for _, target := range targets {
+			if target.CollectorName == colName {
+				count++
+			}
+		}
+		fmt.Fprint(&b, row(collectorAnchorLink(colName), strconv.Itoa(count)))
+	}
+	b.WriteString(`</table>
+<table>
+`)
+	fmt.Fprint(&b, header("Collector", "Target"))
+	for _, v := range colNames {
+		for _, t := range targets {
+			if t.CollectorName == v {
+				fmt.Fprint(&b, row(collectorAnchorLink(v), targetAnchorLink(t)))
+			}
+		}
+	}
+	b.WriteString(`</table>
+</body>
+</html>`)
+	_, err = c.Writer.Write(b.Bytes())
+	if err != nil {
+		s.logger.Error(err, "failed to write response")
+		c.Status(http.StatusInternalServerError)
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func collectorAnchorLink(collectorId string) string {
+	return fmt.Sprintf("<a href=\"/collector?collector_id=%s\">%s</a>", collectorId, collectorId)
+}
+
+func (s *Server) CollectorHTMLHandler(c *gin.Context) {
+	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
+	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+	collectorIdValues := c.Request.URL.Query()["collector_id"]
+	collectorId := ""
+	if len(collectorIdValues) == 1 {
+		collectorId = collectorIdValues[0]
+	}
+
+	if collectorId == "" {
+		c.Status(http.StatusBadRequest)
+		_, err := c.Writer.WriteString(`<html>
+<body>
+<h1>Bad Request</h1>
+<p>Expected collector_id in the query string</p>
+<p>Example: /collector?collector_id=my-collector-42</p>
+</body>
+</html>`)
+		if err != nil {
+			s.logger.Error(err, "failed to write response")
+		}
+		return
+	}
+
+	found := false
+	for _, v := range s.allocator.Collectors() {
+		if v.Name == collectorId {
+			found = true
+			break
+		}
+	}
+	if !found {
+		c.Status(http.StatusNotFound)
+		t, err := template.New("unknown_collector").Parse(`<html>
+<body>
+<h1>Unknown Collector: {{.}}</h1>
+</body>
+</html>`)
+		if err != nil {
+			s.logger.Error(err, "failed to parse template")
+		}
+		err = t.Execute(c.Writer, collectorId)
+		if err != nil {
+			s.logger.Error(err, "failed to write response")
+		}
+		return
+	}
+
+	var b bytes.Buffer
+	t, err := template.New("collector").Parse(`<html>
+<body>
+<h1>Collector: {{.}}</h1>
+<table>
+`)
+	if err != nil {
+		s.logger.Error(err, "failed to parse template")
+		return
+	}
+	err = t.Execute(&b, collectorId)
+	if err != nil {
+		s.logger.Error(err, "failed to execute template")
+		return
+	}
+
+	fmt.Fprint(&b, header("Job", "Target", "Endpoint Slice"))
+	for _, v := range s.sortedTargetItems() {
+		if v.CollectorName == collectorId {
+			fmt.Fprint(&b, row(jobAnchorLink(v.JobName), targetAnchorLink(v), v.GetEndpointSliceName()))
+		}
+	}
+	b.WriteString(`</table>
+</body>
+</html>`)
+	_, err = c.Writer.Write(b.Bytes())
+	if err != nil {
+		s.logger.Error(err, "failed to write response")
+		c.Status(http.StatusInternalServerError)
+	}
+
+	c.Status(http.StatusOK)
 }
 
 func (s *Server) TargetsHandler(c *gin.Context) {
@@ -291,7 +700,6 @@ func (s *Server) TargetsHandler(c *gin.Context) {
 		}
 		s.jsonHandler(c.Writer, targets)
 	}
-
 }
 
 func (s *Server) errorHandler(w http.ResponseWriter, err error) {
@@ -305,6 +713,46 @@ func (s *Server) jsonHandler(w http.ResponseWriter, data interface{}) {
 	if err != nil {
 		s.logger.Error(err, "failed to encode data for http response")
 	}
+}
+
+// sortedTargetItems returns a sorted list of target items by its hash.
+func (s *Server) sortedTargetItems() []*target.Item {
+	targetItems := make([]*target.Item, 0, len(s.allocator.TargetItems()))
+	for _, v := range s.allocator.TargetItems() {
+		targetItems = append(targetItems, v)
+	}
+	sort.Slice(targetItems, func(i, j int) bool {
+		return targetItems[i].Hash() < targetItems[j].Hash()
+	})
+	return targetItems
+}
+
+func (s *Server) getJobCount() int {
+	jobs := make(map[string]struct{})
+	for _, v := range s.allocator.TargetItems() {
+		jobs[v.JobName] = struct{}{}
+	}
+	return len(jobs)
+}
+
+func (s *Server) getJobCountForCollector(collector string) int {
+	jobs := make(map[string]struct{})
+	for _, v := range s.allocator.TargetItems() {
+		if v.CollectorName == collector {
+			jobs[v.JobName] = struct{}{}
+		}
+	}
+	return len(jobs)
+}
+
+func (s *Server) getTargetCountForCollector(collector string) int {
+	count := 0
+	for _, v := range s.allocator.TargetItems() {
+		if v.CollectorName == collector {
+			count++
+		}
+	}
+	return count
 }
 
 // GetAllTargetsByJob is a relatively expensive call that is usually only used for debugging purposes.

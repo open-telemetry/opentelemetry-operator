@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -37,9 +38,10 @@ var (
 	testJobLabelSetTwo = labels.Labels{
 		{Name: "test_label", Value: "test-value2"},
 	}
-	baseTargetItem       = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
-	secondTargetItem     = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
-	testJobTargetItemTwo = target.NewItem("test-job", "test-url2", testJobLabelSetTwo, "test-collector2")
+	baseTargetItem          = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
+	secondTargetItem        = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
+	testJobTargetItemTwo    = target.NewItem("test-job", "test-url2", testJobLabelSetTwo, "test-collector2")
+	testJobTwoTargetItemTwo = target.NewItem("test-job2", "test-url3", testJobLabelSetTwo, "test-collector2")
 )
 
 func TestServer_LivenessProbeHandler(t *testing.T) {
@@ -610,6 +612,629 @@ func TestServer_JobHandler(t *testing.T) {
 		})
 	}
 }
+func TestServer_JobsHandler_HTML(t *testing.T) {
+	tests := []struct {
+		description  string
+		targetItems  map[string]*target.Item
+		expectedCode int
+		expectedJobs string
+	}{
+		{
+			description:  "nil jobs",
+			targetItems:  nil,
+			expectedCode: http.StatusOK,
+			expectedJobs: `<html>
+<body>
+<h1>Jobs</h1>
+<table>
+<thead><td>Job</td><td>Target Count</td></thead>
+</table>
+</body>
+</html>`,
+		},
+		{
+			description:  "empty jobs",
+			targetItems:  map[string]*target.Item{},
+			expectedCode: http.StatusOK,
+			expectedJobs: `<html>
+<body>
+<h1>Jobs</h1>
+<table>
+<thead><td>Job</td><td>Target Count</td></thead>
+</table>
+</body>
+</html>`,
+		},
+		{
+			description: "one job",
+			targetItems: map[string]*target.Item{
+				"targetitem": target.NewItem("job1", "", labels.Labels{}, ""),
+			},
+			expectedCode: http.StatusOK,
+			expectedJobs: `<html>
+<body>
+<h1>Jobs</h1>
+<table>
+<thead><td>Job</td><td>Target Count</td></thead>
+<tr><td><a href="/job?job_id=job1">job1</a></td><td>1</td></tr>
+</table>
+</body>
+</html>`,
+		},
+		{
+			description: "multiple jobs",
+			targetItems: map[string]*target.Item{
+				"a": target.NewItem("job1", "1.1.1.1:8080", labels.Labels{}, ""),
+				"b": target.NewItem("job2", "1.1.1.2:8080", labels.Labels{}, ""),
+				"c": target.NewItem("job3", "1.1.1.3:8080", labels.Labels{}, ""),
+				"d": target.NewItem("job3", "1.1.1.4:8080", labels.Labels{}, ""),
+				"e": target.NewItem("job3", "1.1.1.5:8080", labels.Labels{}, "")},
+			expectedCode: http.StatusOK,
+			expectedJobs: `<html>
+<body>
+<h1>Jobs</h1>
+<table>
+<thead><td>Job</td><td>Target Count</td></thead>
+<tr><td><a href="/job?job_id=job1">job1</a></td><td>1</td></tr>
+<tr><td><a href="/job?job_id=job2">job2</a></td><td>1</td></tr>
+<tr><td><a href="/job?job_id=job3">job3</a></td><td>3</td></tr>
+</table>
+</body>
+</html>`,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			a := &mockAllocator{targetItems: tc.targetItems}
+			s := NewServer(logger, a, listenAddr)
+			a.SetCollectors(map[string]*allocation.Collector{
+				"test-collector":  {Name: "test-collector"},
+				"test-collector2": {Name: "test-collector2"},
+			})
+			request := httptest.NewRequest("GET", "/jobs", nil)
+			request.Header.Set("Accept", "text/html")
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, tc.expectedCode, result.StatusCode)
+			bodyBytes, err := io.ReadAll(result.Body)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expectedJobs, string(bodyBytes))
+		})
+	}
+}
+
+func TestServer_JobHandler_HTML(t *testing.T) {
+	consistentHashing, _ := allocation.New("consistent-hashing", logger)
+	type args struct {
+		job       string
+		cMap      map[string]*target.Item
+		allocator allocation.Allocator
+	}
+	type want struct {
+		items     string
+		errString string
+	}
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "Empty target map",
+			args: args{
+				job:       "test-job",
+				cMap:      map[string]*target.Item{},
+				allocator: consistentHashing,
+			},
+			want: want{
+				items: `<html>
+<body>
+<h1>Job: test-job</h1>
+<table>
+<thead><td>Collector</td><td>Target Count</td></thead>
+<tr><td><a href="/collector?collector_id=test-collector">test-collector</a></td><td>0</td></tr>
+<tr><td><a href="/collector?collector_id=test-collector2">test-collector2</a></td><td>0</td></tr>
+</table>
+<table>
+<thead><td>Collector</td><td>Target</td></thead>
+</table>
+</body>
+</html>`},
+		},
+		{
+			name: "Single entry target map",
+			args: args{
+				job: "test-job",
+				cMap: map[string]*target.Item{
+					baseTargetItem.Hash(): baseTargetItem,
+				},
+				allocator: consistentHashing,
+			},
+			want: want{
+				items: `<html>
+<body>
+<h1>Job: test-job</h1>
+<table>
+<thead><td>Collector</td><td>Target Count</td></thead>
+<tr><td><a href="/collector?collector_id=test-collector">test-collector</a></td><td>0</td></tr>
+<tr><td><a href="/collector?collector_id=test-collector2">test-collector2</a></td><td>1</td></tr>
+</table>
+<table>
+<thead><td>Collector</td><td>Target</td></thead>
+<tr><td><a href="/collector?collector_id=test-collector2">test-collector2</a></td><td><a href="/target?target_hash=test-jobtest-url6020141254647672168">test-url</a></td></tr>
+</table>
+</body>
+</html>`,
+			},
+		},
+		{
+			name: "Multiple entry target map",
+			args: args{
+				job: "test-job",
+				cMap: map[string]*target.Item{
+					baseTargetItem.Hash():          baseTargetItem,
+					testJobTwoTargetItemTwo.Hash(): testJobTwoTargetItemTwo,
+				},
+				allocator: consistentHashing,
+			},
+			want: want{
+				items: `<html>
+<body>
+<h1>Job: test-job</h1>
+<table>
+<thead><td>Collector</td><td>Target Count</td></thead>
+<tr><td><a href="/collector?collector_id=test-collector">test-collector</a></td><td>0</td></tr>
+<tr><td><a href="/collector?collector_id=test-collector2">test-collector2</a></td><td>1</td></tr>
+</table>
+<table>
+<thead><td>Collector</td><td>Target</td></thead>
+<tr><td><a href="/collector?collector_id=test-collector2">test-collector2</a></td><td><a href="/target?target_hash=test-jobtest-url6020141254647672168">test-url</a></td></tr>
+</table>
+</body>
+</html>`,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			listenAddr := ":8080"
+			s := NewServer(logger, tt.args.allocator, listenAddr)
+			tt.args.allocator.SetCollectors(map[string]*allocation.Collector{
+				"test-collector":  {Name: "test-collector"},
+				"test-collector2": {Name: "test-collector2"},
+			})
+			tt.args.allocator.SetTargets(tt.args.cMap)
+			request := httptest.NewRequest("GET", fmt.Sprintf("/job?job_id=%s", tt.args.job), nil)
+			request.Header.Set("Accept", "text/html")
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, http.StatusOK, result.StatusCode)
+			body := result.Body
+			bodyBytes, err := io.ReadAll(body)
+			assert.NoError(t, err)
+			if len(tt.want.errString) != 0 {
+				assert.EqualError(t, err, tt.want.errString)
+				return
+			}
+			assert.Equal(t, tt.want.items, string(bodyBytes))
+		})
+	}
+}
+
+func TestServer_IndexHandler(t *testing.T) {
+	allocator, _ := allocation.New("consistent-hashing", logger)
+	tests := []struct {
+		description  string
+		allocator    allocation.Allocator
+		targetItems  map[string]*target.Item
+		expectedHTML string
+	}{
+		{
+			description: "Empty target map",
+			targetItems: map[string]*target.Item{},
+			allocator:   allocator,
+			expectedHTML: strings.Trim(`
+<html>
+<body>
+<h1>OpenTelemetry Target Allocator</h1>
+<table>
+<thead><td>Category</td><td>Count</td></thead>
+<tr><td><a href="/jobs">Jobs</a></td><td>0</td></tr>
+<tr><td><a href="/targets">Targets</a></td><td>0</td></tr>
+</table>
+<table>
+<thead><td>Collector</td><td>Job Count</td><td>Target Count</td></thead>
+<tr><td><a href="/collector?collector_id=test-collector1">test-collector1</a></td><td>0</td><td>0</td></tr>
+<tr><td><a href="/collector?collector_id=test-collector2">test-collector2</a></td><td>0</td><td>0</td></tr>
+</table>
+</body>
+</html>
+`, "\n"),
+		},
+		{
+			description: "Single entry target map",
+			targetItems: map[string]*target.Item{
+				baseTargetItem.Hash(): baseTargetItem,
+			},
+			allocator: allocator,
+			expectedHTML: strings.Trim(`
+<html>
+<body>
+<h1>OpenTelemetry Target Allocator</h1>
+<table>
+<thead><td>Category</td><td>Count</td></thead>
+<tr><td><a href="/jobs">Jobs</a></td><td>1</td></tr>
+<tr><td><a href="/targets">Targets</a></td><td>1</td></tr>
+</table>
+<table>
+<thead><td>Collector</td><td>Job Count</td><td>Target Count</td></thead>
+<tr><td><a href="/collector?collector_id=test-collector1">test-collector1</a></td><td>1</td><td>1</td></tr>
+<tr><td><a href="/collector?collector_id=test-collector2">test-collector2</a></td><td>0</td><td>0</td></tr>
+</table>
+</body>
+</html>
+`, "\n"),
+		},
+		{
+			description: "Multiple entry target map",
+			targetItems: map[string]*target.Item{
+				baseTargetItem.Hash():          baseTargetItem,
+				testJobTargetItemTwo.Hash():    testJobTargetItemTwo,
+				testJobTwoTargetItemTwo.Hash(): testJobTwoTargetItemTwo,
+			},
+			allocator: allocator,
+			expectedHTML: strings.Trim(`
+<html>
+<body>
+<h1>OpenTelemetry Target Allocator</h1>
+<table>
+<thead><td>Category</td><td>Count</td></thead>
+<tr><td><a href="/jobs">Jobs</a></td><td>2</td></tr>
+<tr><td><a href="/targets">Targets</a></td><td>3</td></tr>
+</table>
+<table>
+<thead><td>Collector</td><td>Job Count</td><td>Target Count</td></thead>
+<tr><td><a href="/collector?collector_id=test-collector1">test-collector1</a></td><td>2</td><td>2</td></tr>
+<tr><td><a href="/collector?collector_id=test-collector2">test-collector2</a></td><td>1</td><td>1</td></tr>
+</table>
+</body>
+</html>
+`, "\n"),
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			s := NewServer(logger, tc.allocator, listenAddr)
+			tc.allocator.SetCollectors(map[string]*allocation.Collector{
+				"test-collector1": {Name: "test-collector1"},
+				"test-collector2": {Name: "test-collector2"},
+			})
+			tc.allocator.SetTargets(tc.targetItems)
+			request := httptest.NewRequest("GET", "/", nil)
+			request.Header.Set("Accept", "text/html")
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, http.StatusOK, result.StatusCode)
+			body := result.Body
+			bodyBytes, err := io.ReadAll(body)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedHTML, string(bodyBytes))
+		})
+	}
+}
+func TestServer_TargetsHTMLHandler(t *testing.T) {
+	allocator, _ := allocation.New("consistent-hashing", logger)
+	tests := []struct {
+		description  string
+		allocator    allocation.Allocator
+		targetItems  map[string]*target.Item
+		expectedHTML string
+	}{
+		{
+			description: "Empty target map",
+			targetItems: map[string]*target.Item{},
+			allocator:   allocator,
+			expectedHTML: `<html>
+<body>
+<h1>Targets</h1>
+<table>
+<thead><td>Job</td><td>Target</td><td>Collector</td><td>Endpoint Slice</td></thead>
+</table>
+</body>
+</html>`,
+		},
+		{
+			description: "Single entry target map",
+			targetItems: map[string]*target.Item{
+				baseTargetItem.Hash(): baseTargetItem,
+			},
+			allocator: allocator,
+			expectedHTML: `<html>
+<body>
+<h1>Targets</h1>
+<table>
+<thead><td>Job</td><td>Target</td><td>Collector</td><td>Endpoint Slice</td></thead>
+<tr><td><a href="/job?job_id=test-job">test-job</a></td><td><a href="/target?target_hash=test-jobtest-url6020141254647672168">test-url</a></td><td><a href="/collector?collector_id=test-collector1">test-collector1</a></td><td></td></tr>
+</table>
+</body>
+</html>`,
+		},
+		{
+			description: "Multiple entry target map",
+			targetItems: map[string]*target.Item{
+				baseTargetItem.Hash():          baseTargetItem,
+				testJobTargetItemTwo.Hash():    testJobTargetItemTwo,
+				testJobTwoTargetItemTwo.Hash(): testJobTwoTargetItemTwo,
+			},
+			allocator: allocator,
+			expectedHTML: `<html>
+<body>
+<h1>Targets</h1>
+<table>
+<thead><td>Job</td><td>Target</td><td>Collector</td><td>Endpoint Slice</td></thead>
+<tr><td><a href="/job?job_id=test-job2">test-job2</a></td><td><a href="/target?target_hash=test-job2test-url31177771863092489626">test-url3</a></td><td><a href="/collector?collector_id=test-collector1">test-collector1</a></td><td></td></tr>
+<tr><td><a href="/job?job_id=test-job">test-job</a></td><td><a href="/target?target_hash=test-jobtest-url21177771863092489626">test-url2</a></td><td><a href="/collector?collector_id=test-collector2">test-collector2</a></td><td></td></tr>
+<tr><td><a href="/job?job_id=test-job">test-job</a></td><td><a href="/target?target_hash=test-jobtest-url6020141254647672168">test-url</a></td><td><a href="/collector?collector_id=test-collector1">test-collector1</a></td><td></td></tr>
+</table>
+</body>
+</html>`,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			s := NewServer(logger, tc.allocator, listenAddr)
+			tc.allocator.SetCollectors(map[string]*allocation.Collector{
+				"test-collector1": {Name: "test-collector1"},
+				"test-collector2": {Name: "test-collector2"},
+			})
+			tc.allocator.SetTargets(tc.targetItems)
+			request := httptest.NewRequest("GET", "/targets", nil)
+			request.Header.Set("Accept", "text/html")
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, http.StatusOK, result.StatusCode)
+			body := result.Body
+			bodyBytes, err := io.ReadAll(body)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedHTML, string(bodyBytes))
+		})
+	}
+}
+
+func TestServer_CollectorHandler(t *testing.T) {
+	allocator, _ := allocation.New("consistent-hashing", logger)
+	tests := []struct {
+		description  string
+		collectorId  string
+		allocator    allocation.Allocator
+		targetItems  map[string]*target.Item
+		expectedCode int
+		expectedHTML string
+	}{
+		{
+			description:  "Empty target map",
+			collectorId:  "test-collector",
+			targetItems:  map[string]*target.Item{},
+			allocator:    allocator,
+			expectedCode: http.StatusOK,
+			expectedHTML: `<html>
+<body>
+<h1>Collector: test-collector</h1>
+<table>
+<thead><td>Job</td><td>Target</td><td>Endpoint Slice</td></thead>
+</table>
+</body>
+</html>`,
+		},
+		{
+			description: "Single entry target map",
+			collectorId: "test-collector2",
+			targetItems: map[string]*target.Item{
+				baseTargetItem.Hash(): baseTargetItem,
+			},
+			allocator:    allocator,
+			expectedCode: http.StatusOK,
+			expectedHTML: `<html>
+<body>
+<h1>Collector: test-collector2</h1>
+<table>
+<thead><td>Job</td><td>Target</td><td>Endpoint Slice</td></thead>
+<tr><td><a href="/job?job_id=test-job">test-job</a></td><td><a href="/target?target_hash=test-jobtest-url6020141254647672168">test-url</a></td><td></td></tr>
+</table>
+</body>
+</html>`,
+		},
+		{
+			description: "Multiple entry target map",
+			collectorId: "test-collector2",
+			targetItems: map[string]*target.Item{
+				baseTargetItem.Hash():          baseTargetItem,
+				testJobTwoTargetItemTwo.Hash(): testJobTwoTargetItemTwo,
+			},
+			allocator:    allocator,
+			expectedCode: http.StatusOK,
+			expectedHTML: `<html>
+<body>
+<h1>Collector: test-collector2</h1>
+<table>
+<thead><td>Job</td><td>Target</td><td>Endpoint Slice</td></thead>
+<tr><td><a href="/job?job_id=test-job">test-job</a></td><td><a href="/target?target_hash=test-jobtest-url6020141254647672168">test-url</a></td><td></td></tr>
+</table>
+</body>
+</html>`,
+		},
+		{
+			description: "Multiple entry target map, collector id is empty",
+			collectorId: "",
+			targetItems: map[string]*target.Item{
+				baseTargetItem.Hash():          baseTargetItem,
+				testJobTwoTargetItemTwo.Hash(): testJobTwoTargetItemTwo,
+			},
+			allocator:    allocator,
+			expectedCode: http.StatusBadRequest,
+			expectedHTML: `<html>
+<body>
+<h1>Bad Request</h1>
+<p>Expected collector_id in the query string</p>
+<p>Example: /collector?collector_id=my-collector-42</p>
+</body>
+</html>`,
+		},
+		{
+			description: "Multiple entry target map, unknown collector id",
+			collectorId: "unknown-collector-1",
+			targetItems: map[string]*target.Item{
+				baseTargetItem.Hash():          baseTargetItem,
+				testJobTwoTargetItemTwo.Hash(): testJobTwoTargetItemTwo,
+			},
+			allocator:    allocator,
+			expectedCode: http.StatusNotFound,
+			expectedHTML: `<html>
+<body>
+<h1>Unknown Collector: unknown-collector-1</h1>
+</body>
+</html>`,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			s := NewServer(logger, tc.allocator, listenAddr)
+			tc.allocator.SetCollectors(map[string]*allocation.Collector{
+				"test-collector":  {Name: "test-collector"},
+				"test-collector2": {Name: "test-collector2"},
+			})
+			tc.allocator.SetTargets(tc.targetItems)
+			request := httptest.NewRequest("GET", "/collector", nil)
+			request.Header.Set("Accept", "text/html")
+			request.URL.RawQuery = "collector_id=" + tc.collectorId
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, tc.expectedCode, result.StatusCode)
+			body := result.Body
+			bodyBytes, err := io.ReadAll(body)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedHTML, string(bodyBytes))
+		})
+	}
+}
+
+func TestServer_TargetHTMLHandler(t *testing.T) {
+	allocator, _ := allocation.New("consistent-hashing", logger)
+	tests := []struct {
+		description  string
+		targetHash   string
+		allocator    allocation.Allocator
+		targetItems  map[string]*target.Item
+		expectedCode int
+		expectedHTML string
+	}{
+		{
+			description:  "Missing target hash",
+			targetHash:   "",
+			targetItems:  map[string]*target.Item{},
+			allocator:    allocator,
+			expectedCode: http.StatusBadRequest,
+			expectedHTML: `<html>
+<body>
+<h1>Bad Request</h1>
+<p>Expected target_hash in the query string</p>
+<p>Example: /target?target_hash=my-target-42</p>
+</body>
+</html>`,
+		},
+		{
+			description: "Single entry target map",
+			targetHash:  baseTargetItem.Hash(),
+			targetItems: map[string]*target.Item{
+				baseTargetItem.Hash(): baseTargetItem,
+			},
+			allocator:    allocator,
+			expectedCode: http.StatusOK,
+			expectedHTML: `<html>
+<body>
+<h1>Target: test-url</h1>
+<table>
+<tr><td>Collector</td><td>test-collector2</td></tr>
+<tr><td>Job</td><td>test-job</td></tr>
+</table>
+<h2>Target Labels</h2>
+<table>
+<thead><td>Label</td><td>Value</td></thead>
+<tr><td>test_label</td><td>test-value</td></tr>
+</table>
+</body>
+</html>`,
+		},
+		{
+			description: "Multiple entry target map",
+			targetHash:  testJobTwoTargetItemTwo.Hash(),
+			targetItems: map[string]*target.Item{
+				baseTargetItem.Hash():          baseTargetItem,
+				testJobTwoTargetItemTwo.Hash(): testJobTwoTargetItemTwo,
+			},
+			allocator:    allocator,
+			expectedCode: http.StatusOK,
+			expectedHTML: `<html>
+<body>
+<h1>Target: test-url3</h1>
+<table>
+<tr><td>Collector</td><td>test-collector</td></tr>
+<tr><td>Job</td><td>test-job2</td></tr>
+</table>
+<h2>Target Labels</h2>
+<table>
+<thead><td>Label</td><td>Value</td></thead>
+<tr><td>test_label</td><td>test-value2</td></tr>
+</table>
+</body>
+</html>`,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			s := NewServer(logger, tc.allocator, listenAddr)
+			tc.allocator.SetCollectors(map[string]*allocation.Collector{
+				"test-collector":  {Name: "test-collector"},
+				"test-collector2": {Name: "test-collector2"},
+			})
+			tc.allocator.SetTargets(tc.targetItems)
+			request := httptest.NewRequest("GET", "/target", nil)
+			request.Header.Set("Accept", "text/html")
+			request.URL.RawQuery = "target_hash=" + tc.targetHash
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, tc.expectedCode, result.StatusCode)
+			body := result.Body
+			bodyBytes, err := io.ReadAll(body)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedHTML, string(bodyBytes))
+		})
+	}
+}
+
 func TestServer_Readiness(t *testing.T) {
 	tests := []struct {
 		description   string
