@@ -344,8 +344,7 @@ func (c *Cluster) getOwnerResources(objList client.ObjectList, owner interface{}
 		return nil, err
 	}
 
-	resources := []client.Object{}
-
+	var resources []client.Object
 	items := reflect.ValueOf(objList).Elem().FieldByName("Items")
 	for i := 0; i < items.Len(); i++ {
 		item := items.Index(i).Addr().Interface().(client.Object)
