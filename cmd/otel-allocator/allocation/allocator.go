@@ -178,7 +178,7 @@ func (a *allocator) handleTargets(diff diff.Changes[*target.Item]) {
 	}
 
 	// Check for additions
-	assignmentErrors := []error{}
+	var assignmentErrors []error
 	for k, item := range diff.Additions() {
 		// Do nothing if the item is already there
 		if _, ok := a.targetItems[k]; ok {
@@ -297,7 +297,7 @@ func (a *allocator) handleCollectors(diff diff.Changes[*Collector]) {
 	a.strategy.SetCollectors(a.collectors)
 
 	// Re-Allocate all targets
-	assignmentErrors := []error{}
+	var assignmentErrors []error
 	for _, item := range a.targetItems {
 		err := a.addTargetToTargetItems(item)
 		if err != nil {
