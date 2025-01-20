@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
 const (
@@ -44,10 +45,8 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params targetal
 	}
 	changed := params.TargetAllocator.DeepCopy()
 
-	statusErr := UpdateTargetAllocatorStatus(ctx, params.Client, changed)
-	if statusErr != nil {
-		params.Recorder.Event(changed, eventTypeWarning, reasonStatusFailure, statusErr.Error())
-		return ctrl.Result{}, statusErr
+	if changed.Status.Version == "" {
+		changed.Status.Version = version.TargetAllocator()
 	}
 	statusPatch := client.MergeFrom(&params.TargetAllocator)
 	if err := params.Client.Status().Patch(ctx, changed, statusPatch); err != nil {
