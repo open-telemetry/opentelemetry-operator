@@ -16,6 +16,7 @@ package cluster
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -82,7 +83,7 @@ func (c *Cluster) getOperatorDeployment() (appsv1.Deployment, error) {
 	}
 
 	if len(operatorDeployments.Items) == 0 {
-		return appsv1.Deployment{}, fmt.Errorf("operator not found")
+		return appsv1.Deployment{}, errors.New("operator not found")
 	}
 
 	return operatorDeployments.Items[0], nil
