@@ -73,6 +73,7 @@ func (c *Cluster) getOperatorNamespace() (string, error) {
 func (c *Cluster) getOperatorDeployment() (appsv1.Deployment, error) {
 	operatorDeployments := appsv1.DeploymentList{}
 	err := c.config.KubernetesClient.List(context.TODO(), &operatorDeployments, &client.ListOptions{
+		Limit: 1,
 		LabelSelector: labels.SelectorFromSet(labels.Set{
 			"app.kubernetes.io/name": "opentelemetry-operator",
 		}),
@@ -99,6 +100,7 @@ func (c *Cluster) GetOperatorLogs() error {
 	labelSelector := labels.Set(deployment.Spec.Selector.MatchLabels).AsSelectorPreValidated()
 	operatorPods := corev1.PodList{}
 	err = c.config.KubernetesClient.List(context.TODO(), &operatorPods, &client.ListOptions{
+		Limit:         1,
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
