@@ -35,7 +35,6 @@ const (
 )
 
 // HandleReconcileStatus handles updating the status of the CRDs managed by the operator.
-// TODO: make the status more useful https://github.com/open-telemetry/opentelemetry-operator/issues/1972
 func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifests.Params, err error) (ctrl.Result, error) {
 	log.V(2).Info("updating opampbridge status")
 	if err != nil {
