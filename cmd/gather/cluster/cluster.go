@@ -107,6 +107,10 @@ func (c *Cluster) GetOperatorLogs() error {
 		return err
 	}
 
+	if len(operatorPods.Items) == 0 {
+		return errors.New("no operator pods found")
+	}
+
 	pod := operatorPods.Items[0]
 	c.getPodLogs(pod.Name, pod.Namespace, "manager")
 	return nil
