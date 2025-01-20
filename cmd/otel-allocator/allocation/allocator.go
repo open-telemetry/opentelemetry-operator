@@ -34,7 +34,7 @@ import (
 
 var _ Allocator = &allocator{}
 
-func newAllocator(log logr.Logger, strategy Strategy, opts ...AllocationOption) Allocator {
+func newAllocator(log logr.Logger, strategy Strategy, opts ...Option) Allocator {
 	chAllocator := &allocator{
 		strategy:                      strategy,
 		collectors:                    make(map[string]*Collector),
