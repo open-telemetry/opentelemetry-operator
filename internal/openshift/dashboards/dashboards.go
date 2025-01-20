@@ -22,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // The dashboard is created manually following the syntax from Grafana 5. For development purposes, this dashboard can be created just by loading the JSON file
@@ -35,17 +36,17 @@ const (
 	configMapName                = "opentelemetry-collector"
 )
 
-type DashboardManagement struct {
+type dashboardManagement struct {
 	clientset kubernetes.Interface
 }
 
-func NewDashboardManagement(clientset kubernetes.Interface) DashboardManagement {
-	return DashboardManagement{
+func NewDashboardManagement(clientset kubernetes.Interface) manager.Runnable {
+	return dashboardManagement{
 		clientset: clientset,
 	}
 }
 
-func (d DashboardManagement) Start(ctx context.Context) error {
+func (d dashboardManagement) Start(ctx context.Context) error {
 	cm := corev1.ConfigMap{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      configMapName,
@@ -69,6 +70,6 @@ func (d DashboardManagement) Start(ctx context.Context) error {
 	return d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Delete(ctx, configMapName, metav1.DeleteOptions{})
 }
 
-func (d DashboardManagement) NeedLeaderElection() bool {
+func (d dashboardManagement) NeedLeaderElection() bool {
 	return true
 }
