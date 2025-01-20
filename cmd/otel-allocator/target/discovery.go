@@ -252,11 +252,10 @@ func (m *Discoverer) Close() {
 // Calculate a hash for a scrape config map.
 // This is done by marshaling to YAML because it's the most straightforward and doesn't run into problems with unexported fields.
 func getScrapeConfigHash(jobToScrapeConfig map[string]*promconfig.ScrapeConfig) (hash.Hash64, error) {
-	var err error
 	hash := fnv.New64()
 	yamlEncoder := yaml.NewEncoder(hash)
 	for jobName, scrapeConfig := range jobToScrapeConfig {
-		_, err = hash.Write([]byte(jobName))
+		_, err := hash.Write([]byte(jobName))
 		if err != nil {
 			return nil, err
 		}
@@ -266,5 +265,5 @@ func getScrapeConfigHash(jobToScrapeConfig map[string]*promconfig.ScrapeConfig) 
 		}
 	}
 	yamlEncoder.Close()
-	return hash, err
+	return hash, nil
 }
