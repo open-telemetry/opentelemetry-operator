@@ -42,7 +42,7 @@ func TestUpdateCollectorStatusUnsupported(t *testing.T) {
 		},
 	}
 
-	err := UpdateCollectorStatus(ctx, cli, changed)
+	err := updateCollectorStatus(ctx, cli, changed)
 	assert.NoError(t, err)
 
 	assert.Equal(t, int32(0), changed.Status.Scale.Replicas, "expected replicas to be 0")
@@ -89,7 +89,7 @@ func TestUpdateCollectorStatusDeploymentMode(t *testing.T) {
 		},
 	}
 
-	err := UpdateCollectorStatus(ctx, cli, changed)
+	err := updateCollectorStatus(ctx, cli, changed)
 	assert.NoError(t, err)
 
 	assert.Equal(t, int32(1), changed.Status.Scale.Replicas, "expected replicas to be 1")
@@ -137,7 +137,7 @@ func TestUpdateCollectorStatusStatefulset(t *testing.T) {
 		},
 	}
 
-	err := UpdateCollectorStatus(ctx, cli, changed)
+	err := updateCollectorStatus(ctx, cli, changed)
 	assert.NoError(t, err)
 
 	assert.Equal(t, int32(1), changed.Status.Scale.Replicas, "expected replicas to be 1")
@@ -184,7 +184,7 @@ func TestUpdateCollectorStatusDaemonsetMode(t *testing.T) {
 		},
 	}
 
-	err := UpdateCollectorStatus(ctx, cli, changed)
+	err := updateCollectorStatus(ctx, cli, changed)
 	assert.NoError(t, err)
 
 	assert.Contains(t, changed.Status.Scale.Selector, "customLabel=customValue", "expected selector to contain customlabel=customValue")
