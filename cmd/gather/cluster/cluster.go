@@ -16,6 +16,7 @@ package cluster
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -102,6 +103,10 @@ func (c *Cluster) GetOperatorLogs() error {
 	})
 	if err != nil {
 		return err
+	}
+
+	if len(operatorPods.Items) == 0 {
+		return errors.New("no operator pods found")
 	}
 
 	pod := operatorPods.Items[0]
