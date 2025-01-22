@@ -22,12 +22,10 @@ import (
 	"regexp"
 )
 
-var regexpEndReplace, regexpBeginReplace *regexp.Regexp
-
-func init() {
-	regexpEndReplace, _ = regexp.Compile("[^A-Za-z0-9]+$")
-	regexpBeginReplace, _ = regexp.Compile("^[^A-Za-z0-9]+")
-}
+var (
+	regexpEndReplace   = regexp.MustCompile("[^A-Za-z0-9]+$")
+	regexpBeginReplace = regexp.MustCompile("^[^A-Za-z0-9]+")
+)
 
 // Truncate will shorten the length of the instance name so that it contains at most max chars when combined with the fixed part
 // If the fixed part is already bigger than the max, this function is noop.
