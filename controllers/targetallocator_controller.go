@@ -82,8 +82,14 @@ func (r *TargetAllocatorReconciler) getParams(ctx context.Context, instance v1al
 	return p, nil
 }
 
+// getCollector finds the OpenTelemetryCollector for the given TargetAllocator. We have the following possibilities:
+//   - Collector is the owner of the TargetAllocator
+//   - Collector is labeled with the TargetAllocator's name
+//   - No collector
 func (r *TargetAllocatorReconciler) getCollector(ctx context.Context, instance v1alpha1.TargetAllocator) (*v1beta1.OpenTelemetryCollector, error) {
 	var collector v1beta1.OpenTelemetryCollector
+
+	// check if a collector is the owner of this Target Allocator
 	ownerReferences := instance.GetOwnerReferences()
 	collectorIndex := slices.IndexFunc(ownerReferences, func(reference metav1.OwnerReference) bool {
 		return reference.Kind == "OpenTelemetryCollector"
@@ -99,6 +105,7 @@ func (r *TargetAllocatorReconciler) getCollector(ctx context.Context, instance v
 		return &collector, nil
 	}
 
+	// check if there are Collectors labeled with this Target Allocator's name
 	var collectors v1beta1.OpenTelemetryCollectorList
 	listOpts := []client.ListOption{
 		client.InNamespace(instance.GetNamespace()),
