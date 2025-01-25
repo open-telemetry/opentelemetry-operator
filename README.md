@@ -843,7 +843,7 @@ In addition to the [core responsibilities](https://github.com/open-telemetry/com
 Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-telemetry/teams/operator-approvers)):
 
 - [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
-- [Yuri Oliveira Sa](https://github.com/yuriolisa), Red Hat
+- [Yuri Oliveira Sa](https://github.com/yuriolisa), OllyGarden
 - [Israel Blancas](https://github.com/iblancasa), Red Hat
 
 Emeritus Approvers:
