@@ -17,7 +17,6 @@ package server
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
@@ -29,7 +28,7 @@ import (
 	yaml2 "github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
-	jsoniter "github.com/json-iterator/go"
+	"github.com/goccy/go-json"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -49,14 +48,6 @@ var (
 	}, []string{"path"})
 )
 
-var (
-	jsonConfig = jsoniter.Config{
-		EscapeHTML:                    false,
-		MarshalFloatWith6Digits:       true,
-		ObjectFieldMustBeSimpleString: true,
-	}.Froze()
-)
-
 type collectorJSON struct {
 	Link string        `json:"_link"`
 	Jobs []*targetJSON `json:"targets"`
@@ -72,11 +63,10 @@ type targetJSON struct {
 }
 
 type Server struct {
-	logger         logr.Logger
-	allocator      allocation.Allocator
-	server         *http.Server
-	httpsServer    *http.Server
-	jsonMarshaller jsoniter.API
+	logger      logr.Logger
+	allocator   allocation.Allocator
+	server      *http.Server
+	httpsServer *http.Server
 
 	// Use RWMutex to protect scrapeConfigResponse, since it
 	// will be predominantly read and only written when config
@@ -116,9 +106,8 @@ func (s *Server) setRouter(router *gin.Engine) {
 
 func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr string, options ...Option) *Server {
 	s := &Server{
-		logger:         log,
-		allocator:      allocator,
-		jsonMarshaller: jsonConfig,
+		logger:    log,
+		allocator: allocator,
 	}
 
 	gin.SetMode(gin.ReleaseMode)
@@ -323,7 +312,7 @@ func (s *Server) errorHandler(w http.ResponseWriter, err error) {
 
 func (s *Server) jsonHandler(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	err := s.jsonMarshaller.NewEncoder(w).Encode(data)
+	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
 		s.logger.Error(err, "failed to encode data for http response")
 	}
