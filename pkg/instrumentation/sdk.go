@@ -253,36 +253,26 @@ func getContainerIndex(containerName string, pod corev1.Pod) int {
 func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod corev1.Pod, index int) corev1.Pod {
 	container := &pod.Spec.Containers[index]
 
-	idx := getIndexOfEnv(container.Env, constants.EnvPodIP)
-	if idx == -1 {
-		container.Env = append([]corev1.EnvVar{{
+	container.Env = appendIfNotSet(container.Env,
+		corev1.EnvVar{
 			Name: constants.EnvPodIP,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "status.podIP",
 				},
 			},
-		}}, container.Env...)
-	}
-
-	idx = getIndexOfEnv(container.Env, constants.EnvNodeIP)
-	if idx == -1 {
-		container.Env = append([]corev1.EnvVar{{
+		},
+		corev1.EnvVar{
 			Name: constants.EnvNodeIP,
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "status.hostIP",
 				},
 			},
-		}}, container.Env...)
-	}
+		},
+	)
 
-	for _, env := range otelinst.Spec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
-	}
+	container.Env = appendIfNotSet(container.Env, otelinst.Spec.Env...)
 	return pod
 }
 
@@ -297,13 +287,10 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 	container := &pod.Spec.Containers[agentIndex]
 	useLabelsForResourceAttributes := otelinst.Spec.Defaults.UseLabelsForResourceAttributes
 	resourceMap := i.createResourceMap(ctx, otelinst, ns, pod, appIndex)
-	idx := getIndexOfEnv(container.Env, constants.EnvOTELServiceName)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  constants.EnvOTELServiceName,
-			Value: chooseServiceName(pod, useLabelsForResourceAttributes, resourceMap, appIndex),
-		})
-	}
+	container.Env = appendIfNotSet(container.Env, corev1.EnvVar{
+		Name:  constants.EnvOTELServiceName,
+		Value: chooseServiceName(pod, useLabelsForResourceAttributes, resourceMap, appIndex),
+	})
 	configureExporter(otelinst.Spec.Exporter, &pod, container)
 
 	// Always retrieve the pod name from the Downward API. Ensure that the OTEL_RESOURCE_ATTRIBUTES_POD_NAME env exists.
@@ -332,7 +319,7 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 		}
 	}
 
-	idx = getIndexOfEnv(container.Env, constants.EnvOTELResourceAttrs)
+	idx := getIndexOfEnv(container.Env, constants.EnvOTELResourceAttrs)
 	if idx == -1 || !strings.Contains(container.Env[idx].Value, string(semconv.ServiceVersionKey)) {
 		vsn := chooseServiceVersion(pod, useLabelsForResourceAttributes, appIndex)
 		if vsn != "" {
@@ -659,6 +646,20 @@ func getIndexOfEnv(envs []corev1.EnvVar, name string) int {
 		}
 	}
 	return -1
+}
+
+func appendIfNotSet(envs []corev1.EnvVar, newEnvVars ...corev1.EnvVar) []corev1.EnvVar {
+	keys := make(map[string]struct{}, len(envs))
+	for _, e := range envs {
+		keys[e.Name] = struct{}{}
+	}
+	for _, envVar := range newEnvVars {
+		if _, ok := keys[envVar.Name]; !ok {
+			envs = append(envs, envVar)
+			keys[envVar.Name] = struct{}{}
+		}
+	}
+	return envs
 }
 
 func moveEnvToListEnd(envs []corev1.EnvVar, idx int) []corev1.EnvVar {
