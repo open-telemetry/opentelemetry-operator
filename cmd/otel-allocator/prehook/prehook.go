@@ -15,8 +15,6 @@
 package prehook
 
 import (
-	"errors"
-
 	"github.com/go-logr/logr"
 	"github.com/prometheus/prometheus/model/relabel"
 
@@ -43,13 +41,5 @@ func New(name string, log logr.Logger) Hook {
 	}
 
 	log.Info("Unrecognized filter strategy; filtering disabled")
-	return nil
-}
-
-func Register(name string, provider HookProvider) error {
-	if _, ok := registry[name]; ok {
-		return errors.New("already registered")
-	}
-	registry[name] = provider
 	return nil
 }
