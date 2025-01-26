@@ -42,10 +42,10 @@ var labelSelector = metav1.LabelSelector{
 
 func getTestPodWatcher() Watcher {
 	podWatcher := Watcher{
-		k8sClient:         fake.NewSimpleClientset(),
-		close:             make(chan struct{}),
-		log:               logger,
-		minUpdateInterval: time.Millisecond,
+		k8sClient:      fake.NewSimpleClientset(),
+		close:          make(chan struct{}),
+		log:            logger,
+		updateInterval: time.Millisecond,
 	}
 	return podWatcher
 }

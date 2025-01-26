@@ -31,10 +31,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 )
 
-const (
-	defaultMinUpdateInterval = time.Second * 5
-)
-
 var (
 	ns                   = os.Getenv("OTELCOL_NAMESPACE")
 	collectorsDiscovered = promauto.NewGauge(prometheus.GaugeOpts{
@@ -44,23 +40,23 @@ var (
 )
 
 type Watcher struct {
-	log               logr.Logger
-	k8sClient         kubernetes.Interface
-	close             chan struct{}
-	minUpdateInterval time.Duration
+	log            logr.Logger
+	k8sClient      kubernetes.Interface
+	close          chan struct{}
+	updateInterval time.Duration
 }
 
-func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config) (*Watcher, error) {
+func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config, updateInterval time.Duration) (*Watcher, error) {
 	clientset, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
 		return &Watcher{}, err
 	}
 
 	return &Watcher{
-		log:               logger.WithValues("component", "opentelemetry-targetallocator"),
-		k8sClient:         clientset,
-		close:             make(chan struct{}),
-		minUpdateInterval: defaultMinUpdateInterval,
+		log:            logger.WithValues("component", "opentelemetry-targetallocator"),
+		k8sClient:      clientset,
+		close:          make(chan struct{}),
+		updateInterval: updateInterval,
 	}, nil
 }
 
@@ -105,9 +101,9 @@ func (k *Watcher) Watch(labelSelector *metav1.LabelSelector, fn func(collectors 
 }
 
 // rateLimitedCollectorHandler runs fn on collectors present in the store whenever it gets a notification on the notify channel,
-// but not more frequently than once per k.eventPeriod.
+// but not more frequently than once per k.updateInterval.
 func (k *Watcher) rateLimitedCollectorHandler(notify chan struct{}, store cache.Store, fn func(collectors map[string]*allocation.Collector)) {
-	ticker := time.NewTicker(k.minUpdateInterval)
+	ticker := time.NewTicker(k.updateInterval)
 	defer ticker.Stop()
 
 	for {

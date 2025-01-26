@@ -17,6 +17,7 @@ package config
 import (
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
@@ -90,6 +91,12 @@ func TestFlagGetters(t *testing.T) {
 				value, _, err := getHttpsTLSKeyFilePath(fs)
 				return value, err
 			},
+		},
+		{
+			name:          "GetUpdateInterval",
+			flagArgs:      []string{"--" + updateIntervalFlagName, "10s"},
+			expectedValue: 10 * time.Second,
+			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getUpdateInterval(fs) },
 		},
 	}
 

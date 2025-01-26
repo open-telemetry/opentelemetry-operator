@@ -23,3 +23,4 @@ config:
     - targets: ["prom.domain:9001", "prom.domain:9002", "prom.domain:9003"]
       labels:
         my: label
+update_interval: 60s

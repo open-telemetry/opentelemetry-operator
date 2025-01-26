@@ -17,6 +17,7 @@ package config
 import (
 	"flag"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/pflag"
 	"k8s.io/client-go/util/homedir"
@@ -35,6 +36,8 @@ const (
 	httpsCAFilePathFlagName      = "https-ca-file"
 	httpsTLSCertFilePathFlagName = "https-tls-cert-file"
 	httpsTLSKeyFilePathFlagName  = "https-tls-key-file"
+	updateIntervalFlagName       = "update-interval"
+	defaultUpdateInterval        = 5 * time.Second
 )
 
 // We can't bind this flag to our FlagSet, so we need to handle it separately.
@@ -51,6 +54,7 @@ func getFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet.String(httpsCAFilePathFlagName, "", "The path to the HTTPS server TLS CA file.")
 	flagSet.String(httpsTLSCertFilePathFlagName, "", "The path to the HTTPS server TLS certificate file.")
 	flagSet.String(httpsTLSKeyFilePathFlagName, "", "The path to the HTTPS server TLS key file.")
+	flagSet.Duration(updateIntervalFlagName, defaultUpdateInterval, "The interval in seconds to run a watch action, the default is 5s.")
 	zapFlagSet := flag.NewFlagSet("", flag.ErrorHandling(errorHandling))
 	zapCmdLineOpts.BindFlags(zapFlagSet)
 	flagSet.AddGoFlagSet(zapFlagSet)
@@ -121,4 +125,8 @@ func getHttpsTLSKeyFilePath(flagSet *pflag.FlagSet) (value string, changed bool,
 	}
 	value, err = flagSet.GetString(httpsTLSKeyFilePathFlagName)
 	return
+}
+
+func getUpdateInterval(flagSet *pflag.FlagSet) (time.Duration, error) {
+	return flagSet.GetDuration(updateIntervalFlagName)
 }
