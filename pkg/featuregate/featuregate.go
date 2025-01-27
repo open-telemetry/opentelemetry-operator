@@ -44,6 +44,7 @@ var (
 		"operator.sidecarcontainers.native",
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("controls whether the operator supports sidecar containers as init containers. Should only be enabled on k8s v1.29+"),
+		featuregate.WithRegisterFromVersion("v0.111.0"),
 	)
 	// PrometheusOperatorIsAvailable is the feature gate that enables features associated to the Prometheus Operator.
 	PrometheusOperatorIsAvailable = featuregate.GlobalRegistry().MustRegister(
