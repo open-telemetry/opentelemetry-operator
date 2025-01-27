@@ -39,7 +39,7 @@ const (
 	muslLinux                        = "musl"
 )
 
-func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, platform string) (corev1.Pod, error) {
+func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, platform string, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
 	volume := instrVolume(pythonSpec.VolumeClaimTemplate, pythonVolumeName, pythonSpec.VolumeSizeLimit)
 
 	// caller checks if there is at least one container.
@@ -131,6 +131,7 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, plat
 				Name:      volume.Name,
 				MountPath: pythonInstrMountPath,
 			}},
+			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy, pythonSpec.ImagePullPolicy),
 		})
 	}
 	return pod, nil

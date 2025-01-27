@@ -30,7 +30,7 @@ const (
 	javaInstrMountPath    = "/otel-auto-instrumentation-java"
 )
 
-func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.Pod, error) {
+func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
 	volume := instrVolume(javaSpec.VolumeClaimTemplate, javaVolumeName, javaSpec.VolumeSizeLimit)
 
 	// caller checks if there is at least one container.
@@ -81,6 +81,7 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.
 				Name:      volume.Name,
 				MountPath: javaInstrMountPath,
 			}},
+			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy, javaSpec.ImagePullPolicy),
 		})
 
 		for i, extension := range javaSpec.Extensions {

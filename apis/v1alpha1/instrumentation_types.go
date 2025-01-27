@@ -79,6 +79,12 @@ type InstrumentationSpec struct {
 	// Nginx defines configuration for Nginx auto-instrumentation.
 	// +optional
 	Nginx Nginx `json:"nginx,omitempty"`
+
+	// ImagePullPolicy
+	// One of Always, Never, IfNotPresent.
+	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
@@ -183,6 +189,12 @@ type Java struct {
 	// All extensions are copied to a single directory; if a JAR with the same name exists, it will be overwritten.
 	// +optional
 	Extensions []Extensions `json:"extensions,omitempty"`
+
+	// ImagePullPolicy
+	// One of Always, Never, IfNotPresent.
+	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 type Extensions struct {
@@ -216,6 +228,12 @@ type NodeJS struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+
+	// ImagePullPolicy
+	// One of Always, Never, IfNotPresent.
+	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // Python defines Python SDK and instrumentation configuration.
@@ -241,6 +259,12 @@ type Python struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+
+	// ImagePullPolicy
+	// One of Always, Never, IfNotPresent.
+	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // DotNet defines DotNet SDK and instrumentation configuration.
@@ -265,6 +289,12 @@ type DotNet struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+
+	// ImagePullPolicy
+	// One of Always, Never, IfNotPresent.
+	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 type Go struct {
@@ -289,6 +319,12 @@ type Go struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+
+	// ImagePullPolicy
+	// One of Always, Never, IfNotPresent.
+	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // ApacheHttpd defines Apache SDK and instrumentation configuration.
@@ -329,6 +365,12 @@ type ApacheHttpd struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+
+	// ImagePullPolicy
+	// One of Always, Never, IfNotPresent.
+	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // Nginx defines Nginx SDK and instrumentation configuration.
@@ -365,6 +407,12 @@ type Nginx struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+
+	// ImagePullPolicy
+	// One of Always, Never, IfNotPresent.
+	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // InstrumentationStatus defines status of the instrumentation.

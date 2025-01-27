@@ -50,7 +50,7 @@ const (
 	dotNetRuntimeLinuxMusl  = "linux-musl-x64"
 )
 
-func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runtime string) (corev1.Pod, error) {
+func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runtime string, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
 
 	volume := instrVolume(dotNetSpec.VolumeClaimTemplate, dotnetVolumeName, dotNetSpec.VolumeSizeLimit)
 
@@ -128,6 +128,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 				Name:      volume.Name,
 				MountPath: dotnetInstrMountPath,
 			}},
+			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy, dotNetSpec.ImagePullPolicy),
 		})
 	}
 	return pod, nil

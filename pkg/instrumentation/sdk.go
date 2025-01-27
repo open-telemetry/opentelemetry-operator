@@ -68,7 +68,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range insts.Java.Containers {
 			index := getContainerIndex(container, pod)
-			pod, err = injectJavaagent(otelinst.Spec.Java, pod, index)
+			pod, err = injectJavaagent(otelinst.Spec.Java, pod, index, otelinst.Spec)
 			if err != nil {
 				i.logger.Info("Skipping javaagent injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
@@ -89,7 +89,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range insts.NodeJS.Containers {
 			index := getContainerIndex(container, pod)
-			pod, err = injectNodeJSSDK(otelinst.Spec.NodeJS, pod, index)
+			pod, err = injectNodeJSSDK(otelinst.Spec.NodeJS, pod, index, otelinst.Spec)
 			if err != nil {
 				i.logger.Info("Skipping NodeJS SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
@@ -110,7 +110,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range insts.Python.Containers {
 			index := getContainerIndex(container, pod)
-			pod, err = injectPythonSDK(otelinst.Spec.Python, pod, index, insts.Python.AdditionalAnnotations[annotationPythonPlatform])
+			pod, err = injectPythonSDK(otelinst.Spec.Python, pod, index, insts.Python.AdditionalAnnotations[annotationPythonPlatform], otelinst.Spec)
 			if err != nil {
 				i.logger.Info("Skipping Python SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
@@ -131,7 +131,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range insts.DotNet.Containers {
 			index := getContainerIndex(container, pod)
-			pod, err = injectDotNetSDK(otelinst.Spec.DotNet, pod, index, insts.DotNet.AdditionalAnnotations[annotationDotNetRuntime])
+			pod, err = injectDotNetSDK(otelinst.Spec.DotNet, pod, index, insts.DotNet.AdditionalAnnotations[annotationDotNetRuntime], otelinst.Spec)
 			if err != nil {
 				i.logger.Info("Skipping DotNet SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
@@ -153,7 +153,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		// Go instrumentation supports only single container instrumentation.
 		index := getContainerIndex(insts.Go.Containers[0], pod)
-		pod, err = injectGoSDK(otelinst.Spec.Go, pod, cfg)
+		pod, err = injectGoSDK(otelinst.Spec.Go, pod, cfg, otelinst.Spec)
 		if err != nil {
 			i.logger.Info("Skipping Go SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 		} else {
@@ -182,7 +182,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			// Apache agent is configured via config files rather than env vars.
 			// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
 			useLabelsForResourceAttributes := otelinst.Spec.Defaults.UseLabelsForResourceAttributes
-			pod = injectApacheHttpdagent(i.logger, otelinst.Spec.ApacheHttpd, pod, useLabelsForResourceAttributes, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
+			pod = injectApacheHttpdagent(i.logger, otelinst.Spec.ApacheHttpd, pod, useLabelsForResourceAttributes, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index), otelinst.Spec)
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 			pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, apacheAgentInitContainerName)
@@ -203,7 +203,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			// Nginx agent is configured via config files rather than env vars.
 			// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
 			useLabelsForResourceAttributes := otelinst.Spec.Defaults.UseLabelsForResourceAttributes
-			pod = injectNginxSDK(i.logger, otelinst.Spec.Nginx, pod, useLabelsForResourceAttributes, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
+			pod = injectNginxSDK(i.logger, otelinst.Spec.Nginx, pod, useLabelsForResourceAttributes, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index), otelinst.Spec)
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 		}

@@ -180,6 +180,8 @@ spec:
                     type: array
                   image:
                     type: string
+                  imagePullPolicy:
+                    type: string
                   resourceRequirements:
                     properties:
                       claims:
@@ -408,6 +410,8 @@ spec:
                       type: object
                     type: array
                   image:
+                    type: string
+                  imagePullPolicy:
                     type: string
                   resourceRequirements:
                     properties:
@@ -715,6 +719,8 @@ spec:
                     type: array
                   image:
                     type: string
+                  imagePullPolicy:
+                    type: string
                   resourceRequirements:
                     properties:
                       claims:
@@ -867,6 +873,8 @@ spec:
                     pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                     x-kubernetes-int-or-string: true
                 type: object
+              imagePullPolicy:
+                type: string
               java:
                 properties:
                   env:
@@ -948,6 +956,8 @@ spec:
                       type: object
                     type: array
                   image:
+                    type: string
+                  imagePullPolicy:
                     type: string
                   resources:
                     properties:
@@ -1239,6 +1249,8 @@ spec:
                     type: array
                   image:
                     type: string
+                  imagePullPolicy:
+                    type: string
                   resourceRequirements:
                     properties:
                       claims:
@@ -1460,6 +1472,8 @@ spec:
                       type: object
                     type: array
                   image:
+                    type: string
+                  imagePullPolicy:
                     type: string
                   resourceRequirements:
                     properties:
@@ -1695,6 +1709,8 @@ spec:
                       type: object
                     type: array
                   image:
+                    type: string
+                  imagePullPolicy:
                     type: string
                   resourceRequirements:
                     properties:

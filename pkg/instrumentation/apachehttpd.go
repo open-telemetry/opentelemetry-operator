@@ -59,7 +59,7 @@ const (
 	6) Inject mounting of volumes / files into appropriate directories in application container
 */
 
-func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod corev1.Pod, useLabelsForResourceAttributes bool, index int, otlpEndpoint string, resourceMap map[string]string) corev1.Pod {
+func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod corev1.Pod, useLabelsForResourceAttributes bool, index int, otlpEndpoint string, resourceMap map[string]string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
 
 	volume := instrVolume(apacheSpec.VolumeClaimTemplate, apacheAgentVolume, apacheSpec.VolumeSizeLimit)
 
@@ -180,6 +180,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 					MountPath: apacheAgentConfDirFull,
 				},
 			},
+			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy, apacheSpec.ImagePullPolicy),
 		})
 	}
 
