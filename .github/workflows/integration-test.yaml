@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: make our image
-        run: make container
+        run: VERSION=dev make container
       - name: make java autoinstrumentation image
         run: |
           cd autoinstrumentation/java && docker build -t java-autoinstrumentation:dev
