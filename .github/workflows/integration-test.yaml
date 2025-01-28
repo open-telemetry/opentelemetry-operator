@@ -15,7 +15,7 @@ jobs:
         run: VERSION=dev make container
       - name: make java autoinstrumentation image
         run: |
-          cd autoinstrumentation/java && docker build -t java-autoinstrumentation:dev
+          cd autoinstrumentation/java && docker build -t java-autoinstrumentation:dev .
       - name: Create kind cluster
         uses: helm/kind-action@v1.11.0
         with:
