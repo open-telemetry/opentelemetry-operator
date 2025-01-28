@@ -1,0 +1,143 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: operator
+  template:
+    metadata:
+      name: operator
+      labels:
+        app: operator
+    spec:
+      serviceAccountName: operator
+      containers:
+        - image: manager:latest
+          name: operator
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA
+              value: java-autoinstrumentation
+            - name: KUBERNETES_MASTER
+              value: kube-apiserver-kind-control-plane
+          ports:
+            - containerPort: 9443
+              name: webhook-server
+          volumeMounts:
+            - mountPath: /tmp/k8s-webhook-server/serving-certs
+              name: certs
+      volumes:
+        - name: certs
+          configMap:
+            name: certs
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: operator
+rules:
+  - apiGroups: [""]
+    resources:
+      - configmaps
+      - persistentvolumeclaims
+      - persistentvolumes
+      - pods
+      - serviceaccounts
+      - services
+      - namespaces
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["apps", "extensions"]
+    resources:
+      - daemonsets
+      - deployments
+      - statefulsets
+      - replicasets
+    verbs: ["get", "watch", "list"]
+  - apiGroups: [ "autoscaling" ]
+    resources:
+      - horizontalpodautoscalers
+    verbs: [ "get", "watch", "list" ]
+  - apiGroups: [ "policy" ]
+    resources:
+      - poddisruptionbudgets
+    verbs: [ "get", "watch", "list" ]
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+    verbs: [ "get", "watch", "list" ]
+  - apiGroups: ["opentelemetry.io"]
+    resources:
+      - instrumentations
+      - opentelemetrycollectors
+      - opampbridges
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+      - watch
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: watch-deployments
+roleRef:
+  kind: ClusterRole
+  name: operator
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: operator
+    namespace: default
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: operator-webhook
+  namespace: default
+spec:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: webhook-server
+  selector:
+    app: operator
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  labels:
+    app.kubernetes.io/component: webhook
+  name: webhook-mutation
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURXakNDQWtLZ0F3SUJBZ0lVZFU1UW84cnN3cGdsSCsvQjdnNC83a1FSTEFrd0RRWUpLb1pJaHZjTkFRRUwKQlFBd0p6RWxNQ01HQTFVRUF3d2NiM0JsY21GMGIzSXRkMlZpYUc5dmF5NWtaV1poZFd4MExuTjJZekFnRncweQpOREV5TWpjeU1ERTNNREZhR0E4eU1EVXlNRFV4TkRJd01UY3dNVm93SnpFbE1DTUdBMVVFQXd3Y2IzQmxjbUYwCmIzSXRkMlZpYUc5dmF5NWtaV1poZFd4MExuTjJZekNDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0MKQVFvQ2dnRUJBTXcyZGoyTlByTVFyWTRTQXVQQTAvSWwrUEFXc3l4ZHRnNmhLemt2bzVVNVVOank0ZFhsZW44ZwpVTGZFaEVwS3Z0d0JvLzQvSTY4SWZpYUkyM2NIK3RZRFhhRkRjK205UHVtd081YWpuV1ZLYXp0S3REZTFndEkvCkc4NTkzSko3MHBNNHFmMlNTdXZQWmlkY2t0MEhjNnBiYmM5ZGZiUFc2VnFrTTdTNDAzTDdjUDF2UmdyYXFUT1AKUGFOdUNpMXFGVm00bGd1UTMwOTA2VnVTeUM4c0FmVERDUWRnektCSmJPTjgwS2xmQ0FiQnNmRTk4QWxoUU40eApkZEtuWWRpWjd2Z2ZRUGR2cmRmNWpNdFhGTHREM2JZRjlMWVkramswczl0aGlMSGNXaDBSNW5PTWdOd2lNRFBNCm53a0k2cTBIMXhHZjFNcTk0WUx0Y3RhYy8zeU1jNE1DQXdFQUFhTjhNSG93RGdZRFZSMFBBUUgvQkFRREFnV2cKTUNBR0ExVWRKUUVCL3dRV01CUUdDQ3NHQVFVRkJ3TUJCZ2dyQmdFRkJRY0RBakFuQmdOVkhSRUVJREFlZ2h4dgpjR1Z5WVhSdmNpMTNaV0pvYjI5ckxtUmxabUYxYkhRdWMzWmpNQjBHQTFVZERnUVdCQlRlVmkwMENJVUVFK0JrCmtFaURsMjVxalZjZkdUQU5CZ2txaGtpRzl3MEJBUXNGQUFPQ0FRRUFXWWZYVXdWOXdnSmhmUEladUk5cHVYNTkKZlhsemtzUy9YMkVFOUM5Z0RnNXp1UExaOE1tZkJnbEZSK3hCTzNQWExCS3hDVTBVMm53Wnd1S1QxcWJUWGNIZgprUHl3Tk9uTURBdmJmTzNJOHpnKzRlTmVNTTVXV3JyTDdKQTZMNmtTTVkzd2sxVlByaVJUYWpybUpQNTNUOXJJCjFYWkxSTTZDMHhsMzRnbmlPcVJLK0NubXBZVXcweVFVaTBuZWVNZ1FGbWh6Q2xhYWZkTldkNmFlckJRaWsxamcKa240aU5yNUZLZm1ESE5yL1dybWNESjhHVENnS1U0UitmNHpGRmhnTzdkSHBVczV6RDRzemlycTZuMmF5RWQ4YgphU1UwK3dMMkM0S2Q3MkFZREhya2FHMlFpMTl4Q1pKRElGcVQxNG01UmV4cGJ4NGkrOUU2TGdvbnFYMGc0dz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+      service:
+        name: operator-webhook
+        namespace: default
+        path: /mutate-v1-pod
+        port: 443
+    failurePolicy: Fail
+    name: mpod.kb.io
+    rules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+        resources:
+          - pods
+        scope: Namespaced
+    sideEffects: None
+    timeoutSeconds: 30
