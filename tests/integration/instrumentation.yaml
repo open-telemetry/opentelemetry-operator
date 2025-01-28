@@ -10,4 +10,4 @@ spec:
     - baggage
     - b3
   java:
-    image: java-autoinstrumentation:latest
+    image: java-autoinstrumentation:dev

@@ -15,12 +15,12 @@ spec:
     spec:
       serviceAccountName: operator
       containers:
-        - image: manager:latest
+        - image: manager:dev
           name: operator
           imagePullPolicy: IfNotPresent
           env:
             - name: RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA
-              value: java-autoinstrumentation
+              value: java-autoinstrumentation:dev
             - name: KUBERNETES_MASTER
               value: kube-apiserver-kind-control-plane
           ports:
