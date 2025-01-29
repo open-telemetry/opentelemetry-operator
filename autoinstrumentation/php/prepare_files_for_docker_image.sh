@@ -97,7 +97,7 @@ build_native_binaries_for_PHP_version_libc_variant() {
     current_user_group_id="$(id -g)"
     docker run --rm \
         -v "${dest_dir_for_current_args}:/dest_dir" \
-        ${PHP_docker_image} sh -c "\
+        "${PHP_docker_image}" sh -c "\
         mkdir -p /app && cd /app \
         ${install_compiler_command} \
         && pecl install opentelemetry-${opentelemetry_extension_version} \
@@ -119,20 +119,50 @@ build_native_binaries() {
     echo "Built extension binaries"
 }
 
+is_earlier_major_minor_version() {
+    local lhs_version="${1:?}"
+    local rhs_version="${2:?}"
+    local lhs_version_major
+    lhs_version_major=$(echo "${lhs_version}" | cut -d. -f1)
+    local rhs_version_major
+    rhs_version_major=$(echo "${rhs_version}" | cut -d. -f1)
+
+    if [ "${lhs_version_major}" -lt "${rhs_version_major}" ]; then
+        echo "true"
+        return
+    fi
+
+    if [ "${lhs_version_major}" -gt "${rhs_version_major}" ]; then
+        echo "false"
+        return
+    fi
+
+    local lhs_version_minor
+    lhs_version_minor=$(echo "${lhs_version}" | cut -d. -f2)
+    local rhs_version_minor
+    rhs_version_minor=$(echo "${rhs_version}" | cut -d. -f2)
+
+    if [ "${lhs_version_minor}" -lt "${rhs_version_minor}" ]; then
+        echo "true"
+        return
+    fi
+
+    echo "false"
+}
+
 select_composer_json_for_PHP_version() {
     local PHP_version="${1:?}"
-    case "${PHP_version}" in
-        8.0|8.1|8.2)
-            echo "composer_PHP_${PHP_version}.json"
-            ;;
-        8.3)
-            echo "composer_PHP_8.2.json"
-            ;;
-        *)
-            echo "Unexpected PHP version: ${PHP_version}"
-            exit 1
-            ;;
-    esac
+    #
+    # Supported instrumentations are different for PHP prior to 8.2 and for PHP 8.2 and later
+    # because PHP 8.2 added ability to instrument internal functions
+    #
+    local is_PHP_version_before_8_2
+    is_PHP_version_before_8_2=$(is_earlier_major_minor_version "${PHP_version}" "8.2")
+    if [ "${is_PHP_version_before_8_2}" == "true" ]; then
+        echo "composer_for_PHP_before_8.2.json"
+    else
+        echo "composer_for_PHP_8.2_and_later.json"
+    fi
 }
 
 download_PHP_packages_for_PHP_version() {
@@ -153,7 +183,7 @@ download_PHP_packages_for_PHP_version() {
         -v "${dest_dir_for_current_args}:/app/vendor" \
         -v "${PWD}/${composer_json_file_name}:/app/composer.json" \
         -w /app \
-        php:${PHP_version}-cli sh -c "\
+        "php:${PHP_version}"-cli sh -c "\
         apt-get update && apt-get install -y unzip \
         && curl -sS https://getcomposer.org/installer | php -- --filename=composer --install-dir=/usr/local/bin \
         && composer --ignore-platform-req=ext-opentelemetry --no-dev install \
