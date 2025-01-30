@@ -1,0 +1,9 @@
+FROM scratch
+
+LABEL fips=true
+
+ARG cp
+
+ADD $cp /cp
+
+ENTRYPOINT ["/cp"]

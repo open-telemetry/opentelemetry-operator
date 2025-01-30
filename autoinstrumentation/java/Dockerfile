@@ -4,10 +4,18 @@
 #  - Grant the necessary access to the jar. `chmod -R go+r /javaagent.jar`
 #  - For auto-instrumentation by container injection, the Linux command cp is
 #    used and must be availabe in the image.
-FROM busybox
+FROM busybox as downloader
 
 ARG version
 
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v$version/opentelemetry-javaagent.jar /javaagent.jar
 
 RUN chmod -R go+r /javaagent.jar
+
+FROM ghcr.io/open-telemetry/opentelemetry-operator/cp:1.0.0 AS cp
+
+FROM scratch
+
+COPY --from=cp /cp /usr/bin/cp
+
+COPY --from=downloader /javaagent.jar /javaagent.jar
