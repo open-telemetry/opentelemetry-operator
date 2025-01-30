@@ -1,0 +1,30 @@
+collector_selector:
+  matchexpressions:
+  - key: "app.kubernetes.io/instance"
+    operator: "In"
+    values:
+    - "default.test"
+  - key: "app.kubernetes.io/managed-by"
+    operator: "In"
+    values:
+    - "opentelemetry-operator"
+prometheus_cr:
+  pod_monitor_selector:
+    matchexpressions:
+    - key: "release"
+      operator: "In"
+      values:
+      - "test"
+  service_monitor_selector:
+    matchexpressions:
+    - key: "release"
+      operator: "In"
+      values:
+      - "test"
+config:
+  scrape_configs:
+    - job_name: prometheus
+      static_configs:
+        - targets: ["prom.domain:9001", "prom.domain:9002", "prom.domain:9003"]
+          labels:
+            my: label

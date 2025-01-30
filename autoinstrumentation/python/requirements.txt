@@ -15,6 +15,7 @@ opentelemetry-propagator-ot-trace==0.50b0
 opentelemetry-instrumentation-aio-pika==0.50b0
 opentelemetry-instrumentation-aiohttp-client==0.50b0
 opentelemetry-instrumentation-aiohttp-server==0.50b0
+opentelemetry-instrumentation-aiokafka==0.50.b0
 opentelemetry-instrumentation-aiopg==0.50b0
 opentelemetry-instrumentation-asgi==0.50b0
 opentelemetry-instrumentation-asyncio==0.50b0
@@ -25,6 +26,7 @@ opentelemetry-instrumentation-boto3sqs==0.50b0
 opentelemetry-instrumentation-botocore==0.50b0
 opentelemetry-instrumentation-cassandra==0.50b0
 opentelemetry-instrumentation-celery==0.50b0
+opentelemetry-instrumentation-click==0.50b0
 opentelemetry-instrumentation-confluent-kafka==0.50b0
 opentelemetry-instrumentation-dbapi==0.50b0
 opentelemetry-instrumentation-django==0.50b0
