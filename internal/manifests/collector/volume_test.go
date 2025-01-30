@@ -106,6 +106,7 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
+		otelcol.Spec.TargetAllocator.Enabled = true
 		require.NoError(t, err)
 
 		volumes := Volumes(cfg, otelcol)
@@ -139,5 +140,26 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 
 		volumes := Volumes(cfg, otelcol)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAClientCertificate(otelcol.Name)})
+	})
+
+	t.Run("Feature gate enabled but TargetAllocator disabled", func(t *testing.T) {
+		otelcol := v1beta1.OpenTelemetryCollector{}
+		cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+
+		flgs := featuregate.Flags(colfg.GlobalRegistry())
+		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
+
+		require.NoError(t, err)
+
+		volumes := Volumes(cfg, otelcol)
+		unexpectedVolume := corev1.Volume{
+			Name: naming.TAClientCertificate(otelcol.Name),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: naming.TAClientCertificateSecretName(otelcol.Name),
+				},
+			},
+		}
+		assert.NotContains(t, volumes, unexpectedVolume)
 	})
 }
