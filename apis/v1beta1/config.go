@@ -306,6 +306,9 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 				continue
 			}
 
+			if componentConf == nil {
+				componentConf = map[string]interface{}{}
+			}
 			if err := mergo.Merge(&mappedCfg, componentConf); err != nil {
 				return err
 			}
