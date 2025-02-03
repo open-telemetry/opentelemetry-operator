@@ -33,7 +33,7 @@ func Annotations(instance v1alpha1.OpAMPBridge, configMap *v1.ConfigMap, filterA
 	for key, value := range instance.Spec.PodAnnotations {
 		annotations[key] = value
 	}
-	if nil != instance.ObjectMeta.Annotations {
+	if instance.ObjectMeta.Annotations != nil {
 		for k, v := range instance.ObjectMeta.Annotations {
 			if !manifestutils.IsFilteredSet(k, filterAnnotations) {
 				annotations[k] = v
