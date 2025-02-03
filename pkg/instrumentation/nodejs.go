@@ -74,7 +74,7 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int, inst
 				Name:      volume.Name,
 				MountPath: nodejsInstrMountPath,
 			}},
-			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy, nodeJSSpec.ImagePullPolicy),
+			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy),
 		})
 	}
 	return pod, nil

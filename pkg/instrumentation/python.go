@@ -131,7 +131,7 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, plat
 				Name:      volume.Name,
 				MountPath: pythonInstrMountPath,
 			}},
-			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy, pythonSpec.ImagePullPolicy),
+			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy),
 		})
 	}
 	return pod, nil

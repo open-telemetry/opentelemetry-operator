@@ -244,7 +244,7 @@ mv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR
 				},
 			},
 			SecurityContext: pod.Spec.Containers[index].SecurityContext,
-			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy, nginxSpec.ImagePullPolicy),
+			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy),
 		})
 
 		found := false

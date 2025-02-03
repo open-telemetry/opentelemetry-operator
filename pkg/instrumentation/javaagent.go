@@ -81,7 +81,7 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int, instSpec
 				Name:      volume.Name,
 				MountPath: javaInstrMountPath,
 			}},
-			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy, javaSpec.ImagePullPolicy),
+			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy),
 		})
 
 		for i, extension := range javaSpec.Extensions {

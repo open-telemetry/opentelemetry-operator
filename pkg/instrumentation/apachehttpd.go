@@ -180,7 +180,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 					MountPath: apacheAgentConfDirFull,
 				},
 			},
-			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy, apacheSpec.ImagePullPolicy),
+			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy),
 		})
 	}
 
