@@ -251,15 +251,6 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>imagePullPolicy</b></td>
-        <td>string</td>
-        <td>
-          ImagePullPolicy
-One of Always, Never, IfNotPresent.
-Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#instrumentationspecapachehttpdresourcerequirements">resourceRequirements</a></b></td>
         <td>object</td>
         <td>
@@ -1446,15 +1437,6 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td>string</td>
         <td>
           Image is a container image with DotNet SDK and auto-instrumentation.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>imagePullPolicy</b></td>
-        <td>string</td>
-        <td>
-          ImagePullPolicy
-One of Always, Never, IfNotPresent.
-Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2713,15 +2695,6 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>imagePullPolicy</b></td>
-        <td>string</td>
-        <td>
-          ImagePullPolicy
-One of Always, Never, IfNotPresent.
-Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#instrumentationspecgoresourcerequirements">resourceRequirements</a></b></td>
         <td>object</td>
         <td>
@@ -3609,15 +3582,6 @@ All extensions are copied to a single directory; if a JAR with the same name exi
         <td>string</td>
         <td>
           Image is a container image with javaagent auto-instrumentation JAR.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>imagePullPolicy</b></td>
-        <td>string</td>
-        <td>
-          ImagePullPolicy
-One of Always, Never, IfNotPresent.
-Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4551,15 +4515,6 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td>string</td>
         <td>
           Image is a container image with Nginx SDK and auto-instrumentation.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>imagePullPolicy</b></td>
-        <td>string</td>
-        <td>
-          ImagePullPolicy
-One of Always, Never, IfNotPresent.
-Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5715,15 +5670,6 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>imagePullPolicy</b></td>
-        <td>string</td>
-        <td>
-          ImagePullPolicy
-One of Always, Never, IfNotPresent.
-Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#instrumentationspecnodejsresourcerequirements">resourceRequirements</a></b></td>
         <td>object</td>
         <td>
@@ -6603,15 +6549,6 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td>string</td>
         <td>
           Image is a container image with Python SDK and auto-instrumentation.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>imagePullPolicy</b></td>
-        <td>string</td>
-        <td>
-          ImagePullPolicy
-One of Always, Never, IfNotPresent.
-Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.<br/>
         </td>
         <td>false</td>
       </tr><tr>

@@ -182,8 +182,6 @@ spec:
                     type: array
                   image:
                     type: string
-                  imagePullPolicy:
-                    type: string
                   resourceRequirements:
                     properties:
                       claims:
@@ -412,8 +410,6 @@ spec:
                       type: object
                     type: array
                   image:
-                    type: string
-                  imagePullPolicy:
                     type: string
                   resourceRequirements:
                     properties:
@@ -721,8 +717,6 @@ spec:
                     type: array
                   image:
                     type: string
-                  imagePullPolicy:
-                    type: string
                   resourceRequirements:
                     properties:
                       claims:
@@ -958,8 +952,6 @@ spec:
                       type: object
                     type: array
                   image:
-                    type: string
-                  imagePullPolicy:
                     type: string
                   resources:
                     properties:
@@ -1251,8 +1243,6 @@ spec:
                     type: array
                   image:
                     type: string
-                  imagePullPolicy:
-                    type: string
                   resourceRequirements:
                     properties:
                       claims:
@@ -1474,8 +1464,6 @@ spec:
                       type: object
                     type: array
                   image:
-                    type: string
-                  imagePullPolicy:
                     type: string
                   resourceRequirements:
                     properties:
@@ -1711,8 +1699,6 @@ spec:
                       type: object
                     type: array
                   image:
-                    type: string
-                  imagePullPolicy:
                     type: string
                   resourceRequirements:
                     properties:
