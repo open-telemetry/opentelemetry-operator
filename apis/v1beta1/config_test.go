@@ -77,6 +77,22 @@ func TestNullObjects(t *testing.T) {
 	assert.Equal(t, []string{"connectors.spanmetrics:", "exporters.otlp.endpoint:", "extensions.health_check:", "processors.batch:", "receivers.otlp.protocols.grpc:", "receivers.otlp.protocols.http:"}, nullObjects)
 }
 
+func TestNullObjects_issue_3445(t *testing.T) {
+	collectorYaml, err := os.ReadFile("./testdata/issue-3452.yaml")
+	require.NoError(t, err)
+
+	collectorJson, err := yaml.YAMLToJSON(collectorYaml)
+	require.NoError(t, err)
+
+	cfg := &Config{}
+	err = json.Unmarshal(collectorJson, cfg)
+	require.NoError(t, err)
+
+	err = cfg.ApplyDefaults(logr.Discard())
+	require.NoError(t, err)
+	assert.Empty(t, cfg.nullObjects())
+}
+
 func TestConfigFiles_go_yaml(t *testing.T) {
 	files, err := os.ReadDir("./testdata")
 	require.NoError(t, err)
