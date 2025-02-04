@@ -126,8 +126,8 @@ func (k *Watcher) rateLimitedCollectorHandler(notify chan struct{}, store cache.
 
 // runOnCollectors runs the provided function on the set of collectors from the Store.
 func (k *Watcher) runOnCollectors(store cache.Store, fn func(collectors map[string]*allocation.Collector)) {
-	collectorMap := map[string]*allocation.Collector{}
 	objects := store.List()
+	collectorMap := make(map[string]*allocation.Collector, len(objects))
 	for _, obj := range objects {
 		pod := obj.(*v1.Pod)
 		if pod.Spec.NodeName == "" {

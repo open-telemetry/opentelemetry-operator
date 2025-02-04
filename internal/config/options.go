@@ -23,6 +23,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
@@ -58,6 +59,7 @@ type options struct {
 	openshiftRoutesAvailability         openshift.RoutesAvailability
 	prometheusCRAvailability            prometheus.Availability
 	certManagerAvailability             certmanager.Availability
+	targetAllocatorAvailability         targetallocator.Availability
 	labelsFilter                        []string
 	annotationsFilter                   []string
 }

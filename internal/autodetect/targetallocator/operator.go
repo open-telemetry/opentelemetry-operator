@@ -14,18 +14,17 @@
 
 package targetallocator
 
-import (
-	"context"
+// Availability represents that the TargetAllocator CR is available in the cluster.
+type Availability int
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
+const (
+	// NotAvailable TargetAllocator CR is available in the cluster.
+	NotAvailable Availability = iota
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	// Available TargetAllocator CR is available in the cluster.
+	Available
 )
 
-func UpdateTargetAllocatorStatus(ctx context.Context, cli client.Client, changed *v1alpha1.TargetAllocator) error {
-	if changed.Status.Version == "" {
-		changed.Status.Version = version.TargetAllocator()
-	}
-	return nil
+func (p Availability) String() string {
+	return [...]string{"NotAvailable", "Available"}[p]
 }

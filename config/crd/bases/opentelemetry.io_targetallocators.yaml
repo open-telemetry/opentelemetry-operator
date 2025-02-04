@@ -14,7 +14,18 @@ spec:
     singular: targetallocator
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - jsonPath: .status.image
+      name: Image
+      type: string
+    - description: Management State
+      jsonPath: .spec.managementState
+      name: Management
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         properties:

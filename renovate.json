@@ -22,7 +22,19 @@
         "(^|/)Makefile$"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: (?:packageName)=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?(?: registryUrl=(?<registryUrl>[^\\s]+?))?\\s+[A-Za-z0-9_]+?_VERSION\\s*:*\\??=\\s*[\"']?(?<currentValue>.+?)[\"']?\\s"
+        "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: (?:packageName)=(?<packageName>[^\\s]+?))?(?: versioning=(?<versioning>[^\\s]+?))?(?: extractVersion=(?<extractVersion>[^\\s]+?))?(?: registryUrl=(?<registryUrl>[^\\s]+?))\\s+[A-Za-z0-9_]+?_VERSION\\s*:*\\??=\\s*[\"']?(?<currentValue>.+?)[\"']?\\s"
+      ]
+    },
+    {
+      "customType": "regex",
+      "description" : "Update Chainsaw version in OpenShift CI tests runner Dockerfile",
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "kyverno/chainsaw",
+      "fileMatch": [
+        "(^|/)tests/e2e-openshift/Dockerfile$"
+      ],
+      "matchStrings": [
+        "ENV CHAINSAW_VERSION=(?<currentValue>v[\\d\\.]+)"
       ]
     }
   ],
@@ -37,6 +49,11 @@
       "matchManagers": ["regex"],
       "matchFileNames": ["Makefile"],
       "commitMessageTopic": "tool {{depName}}"
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchFileNames": ["tests/e2e-openshift/Dockerfile"],
+      "commitMessageTopic": "Update Chainsaw version in OpenShift CI Dockerfile"
     }
   ]
 }
