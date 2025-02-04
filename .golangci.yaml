@@ -7,7 +7,9 @@ run:
 # all available settings of specific linters
 linters-settings:
   goheader:
-    template-path: header.txt
+    template: |-
+      Copyright The OpenTelemetry Authors
+      SPDX-License-Identifier: Apache-2.0
   goimports:
     local-prefixes: github.com/open-telemetry/opentelemetry-operator
   gci:
