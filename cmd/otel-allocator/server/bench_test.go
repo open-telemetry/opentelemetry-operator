@@ -86,8 +86,7 @@ func BenchmarkScrapeConfigsHandler(b *testing.B) {
 func BenchmarkCollectorMapJSONHandler(b *testing.B) {
 	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
 	s := &Server{
-		logger:         logger,
-		jsonMarshaller: jsonConfig,
+		logger: logger,
 	}
 
 	tests := []struct {
@@ -142,8 +141,7 @@ func BenchmarkCollectorMapJSONHandler(b *testing.B) {
 func BenchmarkTargetItemsJSONHandler(b *testing.B) {
 	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
 	s := &Server{
-		logger:         logger,
-		jsonMarshaller: jsonConfig,
+		logger: logger,
 	}
 
 	tests := []struct {
