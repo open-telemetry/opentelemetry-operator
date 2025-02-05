@@ -709,8 +709,15 @@ spec:
     serviceAccount: everything-prometheus-operator-needs
     prometheusCR:
       enabled: true
+      scrapeInterval: 30s
       serviceMonitorSelector: {}
+      serviceMonitorNamespaceSelector: {}
       podMonitorSelector: {}
+      podMonitorNamespaceSelector: {}
+      scrapeConfigSelector: {}
+      scrapeConfigNamespaceSelector: {}
+      probeSelector: {}
+      probeNamespaceSelector: {}
   config:
     receivers:
       prometheus:
