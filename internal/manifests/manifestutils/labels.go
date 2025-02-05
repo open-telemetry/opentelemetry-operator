@@ -28,7 +28,7 @@ func Labels(instance metav1.ObjectMeta, name string, image string, component str
 	var versionLabel string
 	// new map every time, so that we don't touch the instance's label
 	base := map[string]string{}
-	if nil != instance.Labels {
+	if instance.Labels != nil {
 		for k, v := range instance.Labels {
 			if !IsFilteredSet(k, filterLabels) {
 				base[k] = v
