@@ -1,4 +1,4 @@
-# CRDs
+# API reference for CRDs
 
 - [Instrumentation](instrumentations.md)
 - [OpAMPBridge](opampbridges.md)

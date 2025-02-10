@@ -1,3 +1,3 @@
 # API Reference
 
-Moved to [here](/docs/api).
+This [page has moved](api).
