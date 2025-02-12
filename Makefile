@@ -625,8 +625,13 @@ api-docs: crdoc kustomize
 	cp -r config/crd/* $$TMP_MANIFEST_DIR; \
 	$(MAKE) CRD_OPTIONS=$(CRD_OPTIONS),maxDescLen=1200 MANIFEST_DIR=$$TMP_MANIFEST_DIR/bases manifests ;\
 	TMP_DIR=$$(mktemp -d) ; \
-	$(KUSTOMIZE) build $$TMP_MANIFEST_DIR -o $$TMP_DIR/crd-output.yaml ;\
-	$(CRDOC) --resources $$TMP_DIR/crd-output.yaml --output docs/api.md ;\
+	$(KUSTOMIZE) build $$TMP_MANIFEST_DIR -o $$TMP_DIR ;\
+	mkdir -p docs/api ;\
+	for crdmanifest in $$TMP_DIR/*; do \
+	  filename="$$(basename -s .opentelemetry.io.yaml $$crdmanifest)" ;\
+	  filename="$${filename#apiextensions.k8s.io_v1_customresourcedefinition_}" ;\
+	  $(CRDOC) --resources $$crdmanifest --output docs/api/$$filename.md ;\
+	done;\
 	}
 
 
