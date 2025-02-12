@@ -246,7 +246,7 @@ func TestInjectJavaagent(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectJavaagent(test.Java, test.pod, 0)
+			pod, err := injectJavaagent(test.Java, test.pod, 0, v1alpha1.InstrumentationSpec{})
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})
