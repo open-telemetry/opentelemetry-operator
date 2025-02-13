@@ -1,6 +1,6 @@
 opentelemetry-distro==0.50b0
 
-# We add a cap to urllib3 version else Python 3.8 support is dropped.
+# We add an upper limit to urllib3 version else Python 3.8 support is dropped.
 # TODO: Update autoinstrumentation image builds to support all supported Python versions
 #       https://github.com/open-telemetry/opentelemetry-operator/issues/3712
 urllib3 < 2.3.0
