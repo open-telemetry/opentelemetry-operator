@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	DefaultHealthcheckV1Path = "/"
-	DefaultHealthcheckV1Port = 13133
+	defaultHealthcheckV1Path = "/"
+	defaultHealthcheckV1Port = 13133
 )
 
 type healthcheckV1Config struct {
@@ -21,18 +21,18 @@ type healthcheckV1Config struct {
 	Path                            string `mapstructure:"path"`
 }
 
-// HealthCheckV1Probe returns the probe configuration for the healthcheck v1 extension.
+// healthCheckV1Probe returns the probe configuration for the healthcheck v1 extension.
 // Right now no TLS config is parsed.
-func HealthCheckV1Probe(logger logr.Logger, config healthcheckV1Config) (*corev1.Probe, error) {
+func healthCheckV1Probe(logger logr.Logger, config healthcheckV1Config) (*corev1.Probe, error) {
 	path := config.Path
 	if len(path) == 0 {
-		path = DefaultHealthcheckV1Path
+		path = defaultHealthcheckV1Path
 	}
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			HTTPGet: &corev1.HTTPGetAction{
 				Path: path,
-				Port: intstr.FromInt32(config.GetPortNumOrDefault(logger, DefaultHealthcheckV1Port)),
+				Port: intstr.FromInt32(config.GetPortNumOrDefault(logger, defaultHealthcheckV1Port)),
 			},
 		},
 	}, nil

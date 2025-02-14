@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package extensions_test
+package extensions
 
 import (
 	"fmt"
@@ -11,8 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"github.com/open-telemetry/opentelemetry-operator/internal/components/extensions"
 )
 
 func TestHealthCheckV1Probe(t *testing.T) {
@@ -55,7 +53,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path: "/healthz",
-						Port: intstr.FromInt32(extensions.DefaultHealthcheckV1Port),
+						Port: intstr.FromInt32(defaultHealthcheckV1Port),
 					},
 				},
 			},
@@ -91,7 +89,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path: "/",
-						Port: intstr.FromInt32(extensions.DefaultHealthcheckV1Port),
+						Port: intstr.FromInt32(defaultHealthcheckV1Port),
 					},
 				},
 			},
@@ -125,7 +123,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path: "/",
-						Port: intstr.FromInt32(extensions.DefaultHealthcheckV1Port),
+						Port: intstr.FromInt32(defaultHealthcheckV1Port),
 					},
 				},
 			},
@@ -154,7 +152,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path: "/healthz",
-						Port: intstr.FromInt32(extensions.DefaultHealthcheckV1Port),
+						Port: intstr.FromInt32(defaultHealthcheckV1Port),
 					},
 				},
 			},
@@ -164,7 +162,7 @@ func TestHealthCheckV1Probe(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			parser := extensions.ParserFor("health_check")
+			parser := ParserFor("health_check")
 			got, err := parser.GetLivenessProbe(logr.Discard(), tt.args.config)
 			if !tt.wantErr(t, err, fmt.Sprintf("GetLivenessProbe(%v)", tt.args.config)) {
 				return
