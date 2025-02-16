@@ -16,8 +16,16 @@ COPY . .
 
 RUN npm install
 
-FROM busybox
+FROM busybox as downloader
 
 COPY --from=build /operator-build/build/workspace /autoinstrumentation
 
 RUN chmod -R go+r /autoinstrumentation
+
+FROM ghcr.io/open-telemetry/opentelemetry-operator/cp:1.0.0 AS cp
+
+FROM scratch
+
+COPY --from=cp /cp /usr/bin/cp
+
+COPY --from=downloader /autoinstrumentation /autoinstrumentation

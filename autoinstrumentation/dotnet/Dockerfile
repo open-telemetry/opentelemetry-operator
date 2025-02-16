@@ -28,6 +28,9 @@ RUN unzip opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip &&\
     rm opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip opentelemetry-dotnet-instrumentation-linux-musl-x64.zip &&\
     chmod -R go+r .
 
-FROM busybox
+FROM ghcr.io/open-telemetry/opentelemetry-operator/cp:1.0.0 AS cp
 
+FROM scratch
+
+COPY --from=cp /cp /usr/bin/cp
 COPY --from=downloader /autoinstrumentation /autoinstrumentation
