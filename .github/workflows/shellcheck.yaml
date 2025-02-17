@@ -11,7 +11,8 @@ jobs:
     name: shellcheck
     runs-on: ubuntu-24.04
     env:
-      VERSION: v0.10.0
+      # renovate: datasource=github-releases depName=https://github.com/koalaman/shellcheck
+      SHELLCHECK_VERSION: v0.10.0
     steps:
       - uses: actions/checkout@v4
       - name: shellcheck ci scripts
@@ -21,7 +22,7 @@ jobs:
         with:
           scandir: ".ci"
           severity: warning
-          version: ${{ env.VERSION }}
+          version: ${{ env.SHELLCHECK_VERSION }}
       - name: shellcheck hack scripts
         uses: ludeeus/action-shellcheck@2.0.0
         env:
@@ -29,4 +30,4 @@ jobs:
         with:
           scandir: "hack"
           severity: warning
-          version: ${{ env.VERSION }}
+          version: ${{ env.SHELLCHECK_VERSION }}
