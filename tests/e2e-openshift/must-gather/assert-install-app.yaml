@@ -22,7 +22,7 @@ spec:
     - name: OTEL_NODEJS_DEBUG
       value: "true"
     - name: NODE_OPTIONS
-      value: ' --require /otel-auto-instrumentation-nodejs/node_modules/@opentelemetry/auto-instrumentations-node/build/src/register.js'
+      value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT

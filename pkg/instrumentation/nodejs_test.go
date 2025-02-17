@@ -65,7 +65,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "NODE_OPTIONS",
-									Value: " --require /otel-auto-instrumentation-nodejs/node_modules/@opentelemetry/auto-instrumentations-node/build/src/register.js",
+									Value: " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js",
 								},
 							},
 						},
@@ -126,7 +126,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 							Env: []corev1.EnvVar{
 								{
 									Name:  "NODE_OPTIONS",
-									Value: "-Dbaz=bar" + " --require /otel-auto-instrumentation-nodejs/node_modules/@opentelemetry/auto-instrumentations-node/build/src/register.js",
+									Value: "-Dbaz=bar" + " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js",
 								},
 							},
 						},

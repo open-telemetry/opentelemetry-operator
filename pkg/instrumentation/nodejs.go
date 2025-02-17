@@ -11,7 +11,7 @@ import (
 
 const (
 	envNodeOptions          = "NODE_OPTIONS"
-	nodeRequireArgument     = " --require /otel-auto-instrumentation-nodejs/node_modules/@opentelemetry/auto-instrumentations-node/build/src/register.js"
+	nodeRequireArgument     = " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js"
 	nodejsInitContainerName = initContainerName + "-nodejs"
 	nodejsVolumeName        = volumeName + "-nodejs"
 	nodejsInstrMountPath    = "/otel-auto-instrumentation-nodejs"
