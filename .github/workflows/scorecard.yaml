@@ -26,7 +26,7 @@ jobs:
         uses: actions/setup-go@v5
         id: setup-go
         with:
-          go-version: "~1.23.4"
+          go-version: "~1.23.6"
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4

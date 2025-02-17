@@ -3,6 +3,86 @@
 This document explains major changes made in new CRD versions. It is intended to help users migrate and take
 advantage of the new features.
 
+## TargetAllocator.opentelemetry.io/v1alpha1
+
+The target allocator is an application that can allocate Prometheus scrape targets to OpenTelemetry Collectors using the prometheus receiver,
+allowing transparent horizontal scaling for Prometheus metrics collection. You can learn more in the target allocator's [README](../cmd/otel-allocator/README.md).
+
+Until now, it could be enabled via the `targetAllocator` sub-resource in the OpenTelemetryCollector CR. This was, and continues to be fine for
+simpler use cases. Some users needed to customize the target allocator further, and embedding all the required attributes in the
+OpenTelemetryCollector CR would've made it unnecessarily large. Instead, we introduced a separate CRD for the target allocator.
+
+The following OpenTelemetryCollector CR:
+
+```yaml
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+spec:
+  targetAllocator:
+     enabled: true
+     prometheusCR:
+        enabled: true
+  config:
+    receivers:
+      prometheus:
+         config:
+            scrape_configs: []
+    processors:
+      batch:
+        send_batch_size: 1000
+        timeout: 10s
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [prometheus]
+          processors: [batch]
+          exporters: [debug]
+```
+
+is now equivalent to the pair:
+
+```yaml
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  labels:
+     opentelemetry.io/target-allocator: simplest-ta
+spec:
+  config:
+    receivers:
+      prometheus:
+         config:
+            scrape_configs: []
+    processors:
+      batch:
+        send_batch_size: 1000
+        timeout: 10s
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [prometheus]
+          processors: [batch]
+          exporters: [debug]
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+   name: simplest-ta
+spec:
+   prometheusCR:
+      enabled: true
+```
+
+> [!NOTE]  
+> The OpenTelemetryCollector is connected to the TargetAllocator by setting the `opentelemetry.io/target-allocator` label on the former.
+
 ## OpenTelemetryCollector.opentelemetry.io/v1beta1 
 
 ### Migration

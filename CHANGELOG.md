@@ -2,6 +2,63 @@
 
 <!-- next version -->
 
+## 0.118.0
+
+### 🚀 New components 🚀
+
+- `target allocator`: Introduce TargetAllocator CRD (#2422)
+  See the [CRD changelog](./docs/crd-changelog.md) for more information.
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Support camelcase matchLabels and matchExpressions in target allocator config (#3350)
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fix config handling with null values. (#3452)
+  Fix the defaulting webhook error `src and dst must not be nil` caused by defaulting a known component with a null value:
+  e.g. 
+  ```yaml
+  receivers:
+    zipkin:
+  ```
+- `collector`: Prevent mounting secrets to collector when TA is not deployed and mTLS feature gate is enabled (#3456)
+
+### Components
+
+* [OpenTelemetry Collector - v0.118.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.118.0)
+* [OpenTelemetry Contrib - v0.118.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.118.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.53.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.53.0)
+* [Python - v0.50b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.50b0)
+* [Go - v0.19.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.19.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.117.0
+
+### 🛑 Breaking changes 🛑
+
+- `target allocator`: change metric `opentelemetry_allocator_targets_remaining` type from counter to gauge (#3578)
+
+### 💡 Enhancements 💡
+
+- `auto-instrumentation`: add Python instrumentation of aiokafka, click (#3611)
+- `operator`: Add support for Kubernetes `1.32` (#3544)
+
+### Components
+
+* [OpenTelemetry Collector - v0.117.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.117.0)
+* [OpenTelemetry Contrib - v0.117.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.117.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.53.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.53.0)
+* [Python - v0.50b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.50b0)
+* [Go - v0.19.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.19.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.116.0
 
 ### 💡 Enhancements 💡
