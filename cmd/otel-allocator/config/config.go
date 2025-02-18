@@ -48,6 +48,7 @@ type Config struct {
 	FilterStrategy             string                `yaml:"filter_strategy,omitempty"`
 	PrometheusCR               PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	HTTPS                      HTTPSServerConfig     `yaml:"https,omitempty"`
+	UpdateInterval             time.Duration         `yaml:"update_interval,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -196,6 +197,11 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	target.ClusterConfig = clusterConfig
 
 	target.ListenAddr, err = getListenAddr(flagSet)
+	if err != nil {
+		return err
+	}
+
+	target.UpdateInterval, err = getUpdateInterval(flagSet)
 	if err != nil {
 		return err
 	}

@@ -102,6 +102,7 @@ func TestLoad(t *testing.T) {
 						},
 					},
 				},
+				UpdateInterval: time.Second * 60,
 			},
 			wantErr: assert.NoError,
 		},
