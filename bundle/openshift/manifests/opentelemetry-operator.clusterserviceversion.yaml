@@ -528,6 +528,7 @@ spec:
                 - --openshift-create-dashboard=true
                 - --feature-gates=+operator.observability.prometheus
                 - --enable-cr-metrics=true
+                - --create-sm-operator-metrics=true
                 env:
                 - name: SERVICE_ACCOUNT_NAME
                   valueFrom:
