@@ -648,6 +648,13 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			if deletionTimestamp != nil {
 				err := k8sClient.Delete(testContext, &tt.args.params, client.PropagationPolicy(metav1.DeletePropagationForeground))
 				assert.NoError(t, err)
+				// wait until the reconciler sees the deletion
+				assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+					actual := &v1beta1.OpenTelemetryCollector{}
+					err := reconciler.Get(testContext, nsn, actual)
+					assert.NoError(collect, err)
+					assert.NotNil(t, actual.GetDeletionTimestamp())
+				}, time.Second*5, time.Millisecond)
 			}
 			req := k8sreconcile.Request{
 				NamespacedName: nsn,
