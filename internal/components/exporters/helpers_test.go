@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package exporters_test
+package exporters
 
 import (
 	"testing"
@@ -10,13 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
-	"github.com/open-telemetry/opentelemetry-operator/internal/components/exporters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 func TestParserForReturns(t *testing.T) {
 	const testComponentName = "test"
-	parser := exporters.ParserFor(testComponentName)
+	parser := ParserFor(testComponentName)
 	assert.Equal(t, "test", parser.ParserType())
 	assert.Equal(t, "__test", parser.ParserName())
 	ports, err := parser.Ports(logr.Discard(), testComponentName, map[string]interface{}{
@@ -28,9 +27,8 @@ func TestParserForReturns(t *testing.T) {
 
 func TestCanRegister(t *testing.T) {
 	const testComponentName = "test"
-	exporters.Register(testComponentName, components.NewSinglePortParserBuilder(testComponentName, 9000).MustBuild())
-	assert.True(t, exporters.IsRegistered(testComponentName))
-	parser := exporters.ParserFor(testComponentName)
+	registry[testComponentName] = components.NewSinglePortParserBuilder(testComponentName, 9000).MustBuild()
+	parser := ParserFor(testComponentName)
 	assert.Equal(t, "test", parser.ParserType())
 	assert.Equal(t, "__test", parser.ParserName())
 	ports, err := parser.Ports(logr.Discard(), testComponentName, map[string]interface{}{})
@@ -49,11 +47,12 @@ func TestExporterComponentParsers(t *testing.T) {
 	} {
 		t.Run(tt.exporterName, func(t *testing.T) {
 			t.Run("is registered", func(t *testing.T) {
-				assert.True(t, exporters.IsRegistered(tt.exporterName))
+				_, ok := registry[tt.exporterName]
+				assert.True(t, ok)
 			})
 			t.Run("bad config errors", func(t *testing.T) {
 				// prepare
-				parser := exporters.ParserFor(tt.exporterName)
+				parser := ParserFor(tt.exporterName)
 
 				// test throwing in pure junk
 				_, err := parser.Ports(logr.Discard(), tt.exporterName, func() {})
@@ -64,7 +63,7 @@ func TestExporterComponentParsers(t *testing.T) {
 
 			t.Run("assigns the expected port", func(t *testing.T) {
 				// prepare
-				parser := exporters.ParserFor(tt.exporterName)
+				parser := ParserFor(tt.exporterName)
 
 				// test
 				ports, err := parser.Ports(logr.Discard(), tt.exporterName, map[string]interface{}{})
@@ -82,7 +81,7 @@ func TestExporterComponentParsers(t *testing.T) {
 
 			t.Run("allows port to be overridden", func(t *testing.T) {
 				// prepare
-				parser := exporters.ParserFor(tt.exporterName)
+				parser := ParserFor(tt.exporterName)
 
 				// test
 				ports, err := parser.Ports(logr.Discard(), tt.exporterName, map[string]interface{}{
