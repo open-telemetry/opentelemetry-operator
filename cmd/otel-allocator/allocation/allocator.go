@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package allocation
 
@@ -34,7 +23,7 @@ import (
 
 var _ Allocator = &allocator{}
 
-func newAllocator(log logr.Logger, strategy Strategy, opts ...AllocationOption) Allocator {
+func newAllocator(log logr.Logger, strategy Strategy, opts ...Option) Allocator {
 	chAllocator := &allocator{
 		strategy:                      strategy,
 		collectors:                    make(map[string]*Collector),
@@ -178,7 +167,7 @@ func (a *allocator) handleTargets(diff diff.Changes[*target.Item]) {
 	}
 
 	// Check for additions
-	assignmentErrors := []error{}
+	var assignmentErrors []error
 	for k, item := range diff.Additions() {
 		// Do nothing if the item is already there
 		if _, ok := a.targetItems[k]; ok {
@@ -297,7 +286,7 @@ func (a *allocator) handleCollectors(diff diff.Changes[*Collector]) {
 	a.strategy.SetCollectors(a.collectors)
 
 	// Re-Allocate all targets
-	assignmentErrors := []error{}
+	var assignmentErrors []error
 	for _, item := range a.targetItems {
 		err := a.addTargetToTargetItems(item)
 		if err != nil {

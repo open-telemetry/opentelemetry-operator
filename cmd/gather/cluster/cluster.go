@@ -1,21 +1,11 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package cluster
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -72,6 +62,7 @@ func (c *Cluster) getOperatorNamespace() (string, error) {
 func (c *Cluster) getOperatorDeployment() (appsv1.Deployment, error) {
 	operatorDeployments := appsv1.DeploymentList{}
 	err := c.config.KubernetesClient.List(context.TODO(), &operatorDeployments, &client.ListOptions{
+		Limit: 1,
 		LabelSelector: labels.SelectorFromSet(labels.Set{
 			"app.kubernetes.io/name": "opentelemetry-operator",
 		}),
@@ -82,7 +73,7 @@ func (c *Cluster) getOperatorDeployment() (appsv1.Deployment, error) {
 	}
 
 	if len(operatorDeployments.Items) == 0 {
-		return appsv1.Deployment{}, fmt.Errorf("operator not found")
+		return appsv1.Deployment{}, errors.New("operator not found")
 	}
 
 	return operatorDeployments.Items[0], nil
@@ -98,10 +89,15 @@ func (c *Cluster) GetOperatorLogs() error {
 	labelSelector := labels.Set(deployment.Spec.Selector.MatchLabels).AsSelectorPreValidated()
 	operatorPods := corev1.PodList{}
 	err = c.config.KubernetesClient.List(context.TODO(), &operatorPods, &client.ListOptions{
+		Limit:         1,
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
 		return err
+	}
+
+	if len(operatorPods.Items) == 0 {
+		return errors.New("no operator pods found")
 	}
 
 	pod := operatorPods.Items[0]
@@ -344,8 +340,7 @@ func (c *Cluster) getOwnerResources(objList client.ObjectList, owner interface{}
 		return nil, err
 	}
 
-	resources := []client.Object{}
-
+	var resources []client.Object
 	items := reflect.ValueOf(objList).Elem().FieldByName("Items")
 	for i := 0; i < items.Len(); i++ {
 		item := items.Index(i).Addr().Interface().(client.Object)
