@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package prehook
 
@@ -21,19 +10,23 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
-type RelabelConfigTargetFilter struct {
+const (
+	relabelConfigTargetFilterName = "relabel-config"
+)
+
+type relabelConfigTargetFilter struct {
 	log        logr.Logger
 	relabelCfg map[string][]*relabel.Config
 }
 
-func NewRelabelConfigTargetFilter(log logr.Logger) Hook {
-	return &RelabelConfigTargetFilter{
+func newRelabelConfigTargetFilter(log logr.Logger) Hook {
+	return &relabelConfigTargetFilter{
 		log:        log,
 		relabelCfg: make(map[string][]*relabel.Config),
 	}
 }
 
-func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[string]*target.Item {
+func (tf *relabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[string]*target.Item {
 	numTargets := len(targets)
 
 	// need to wait until relabelCfg is set
@@ -58,7 +51,7 @@ func (tf *RelabelConfigTargetFilter) Apply(targets map[string]*target.Item) map[
 	return targets
 }
 
-func (tf *RelabelConfigTargetFilter) SetConfig(cfgs map[string][]*relabel.Config) {
+func (tf *relabelConfigTargetFilter) SetConfig(cfgs map[string][]*relabel.Config) {
 	relabelCfgCopy := make(map[string][]*relabel.Config)
 	for key, val := range cfgs {
 		relabelCfgCopy[key] = tf.replaceRelabelConfig(val)
@@ -71,7 +64,7 @@ func (tf *RelabelConfigTargetFilter) SetConfig(cfgs map[string][]*relabel.Config
 // for why SHARD == 0 is a necessary substitution. Otherwise the keep action that uses this env variable,
 // would not match the regex and all targets end up dropped. Also note, $(SHARD) will always be 0 and it
 // does not make sense to read from the environment because it is never set in the allocator.
-func (tf *RelabelConfigTargetFilter) replaceRelabelConfig(cfg []*relabel.Config) []*relabel.Config {
+func (tf *relabelConfigTargetFilter) replaceRelabelConfig(cfg []*relabel.Config) []*relabel.Config {
 	for i := range cfg {
 		str := cfg[i].Regex.String()
 		if str == "$(SHARD)" {
@@ -82,7 +75,7 @@ func (tf *RelabelConfigTargetFilter) replaceRelabelConfig(cfg []*relabel.Config)
 	return cfg
 }
 
-func (tf *RelabelConfigTargetFilter) GetConfig() map[string][]*relabel.Config {
+func (tf *relabelConfigTargetFilter) GetConfig() map[string][]*relabel.Config {
 	relabelCfgCopy := make(map[string][]*relabel.Config)
 	for k, v := range tf.relabelCfg {
 		relabelCfgCopy[k] = v

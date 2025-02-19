@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 // Package controllers contains the main controller, where the reconciliation starts.
 package controllers
@@ -82,8 +71,14 @@ func (r *TargetAllocatorReconciler) getParams(ctx context.Context, instance v1al
 	return p, nil
 }
 
+// getCollector finds the OpenTelemetryCollector for the given TargetAllocator. We have the following possibilities:
+//   - Collector is the owner of the TargetAllocator
+//   - Collector is labeled with the TargetAllocator's name
+//   - No collector
 func (r *TargetAllocatorReconciler) getCollector(ctx context.Context, instance v1alpha1.TargetAllocator) (*v1beta1.OpenTelemetryCollector, error) {
 	var collector v1beta1.OpenTelemetryCollector
+
+	// check if a collector is the owner of this Target Allocator
 	ownerReferences := instance.GetOwnerReferences()
 	collectorIndex := slices.IndexFunc(ownerReferences, func(reference metav1.OwnerReference) bool {
 		return reference.Kind == "OpenTelemetryCollector"
@@ -99,6 +94,7 @@ func (r *TargetAllocatorReconciler) getCollector(ctx context.Context, instance v
 		return &collector, nil
 	}
 
+	// check if there are Collectors labeled with this Target Allocator's name
 	var collectors v1beta1.OpenTelemetryCollectorList
 	listOpts := []client.ListOption{
 		client.InNamespace(instance.GetNamespace()),

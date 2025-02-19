@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package config
 
@@ -147,6 +136,264 @@ func TestLoad(t *testing.T) {
 					ServiceMonitorSelector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"release": "test",
+						},
+					},
+					ScrapeInterval: DefaultCRScrapeInterval,
+				},
+				PromConfig: &promconfig.Config{
+					GlobalConfig: promconfig.GlobalConfig{
+						ScrapeInterval:     model.Duration(60 * time.Second),
+						ScrapeProtocols:    defaultScrapeProtocols,
+						ScrapeTimeout:      model.Duration(10 * time.Second),
+						EvaluationInterval: model.Duration(60 * time.Second),
+					},
+					Runtime: promconfig.DefaultRuntimeConfig,
+					ScrapeConfigs: []*promconfig.ScrapeConfig{
+						{
+							JobName:           "prometheus",
+							EnableCompression: true,
+							HonorTimestamps:   true,
+							ScrapeInterval:    model.Duration(60 * time.Second),
+							ScrapeProtocols:   defaultScrapeProtocols,
+							ScrapeTimeout:     model.Duration(10 * time.Second),
+							MetricsPath:       "/metrics",
+							Scheme:            "http",
+							HTTPClientConfig: commonconfig.HTTPClientConfig{
+								FollowRedirects: true,
+								EnableHTTP2:     true,
+							},
+							ServiceDiscoveryConfigs: []discovery.Config{
+								discovery.StaticConfig{
+									{
+										Targets: []model.LabelSet{
+											{model.AddressLabel: "prom.domain:9001"},
+											{model.AddressLabel: "prom.domain:9002"},
+											{model.AddressLabel: "prom.domain:9003"},
+										},
+										Labels: model.LabelSet{
+											"my": "label",
+										},
+										Source: "0",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "service monitor pod monitor selector with camelcase",
+			args: args{
+				file: "./testdata/pod_service_selector_camelcase_test.yaml",
+			},
+			want: Config{
+				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app.kubernetes.io/instance":   "default.test",
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				FilterStrategy: DefaultFilterStrategy,
+				PrometheusCR: PrometheusCRConfig{
+					PodMonitorSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"release": "test",
+						},
+					},
+					ServiceMonitorSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"release": "test",
+						},
+					},
+					ScrapeInterval: DefaultCRScrapeInterval,
+				},
+				PromConfig: &promconfig.Config{
+					GlobalConfig: promconfig.GlobalConfig{
+						ScrapeInterval:     model.Duration(60 * time.Second),
+						ScrapeProtocols:    defaultScrapeProtocols,
+						ScrapeTimeout:      model.Duration(10 * time.Second),
+						EvaluationInterval: model.Duration(60 * time.Second),
+					},
+					Runtime: promconfig.DefaultRuntimeConfig,
+					ScrapeConfigs: []*promconfig.ScrapeConfig{
+						{
+							JobName:           "prometheus",
+							EnableCompression: true,
+							HonorTimestamps:   true,
+							ScrapeInterval:    model.Duration(60 * time.Second),
+							ScrapeProtocols:   defaultScrapeProtocols,
+							ScrapeTimeout:     model.Duration(10 * time.Second),
+							MetricsPath:       "/metrics",
+							Scheme:            "http",
+							HTTPClientConfig: commonconfig.HTTPClientConfig{
+								FollowRedirects: true,
+								EnableHTTP2:     true,
+							},
+							ServiceDiscoveryConfigs: []discovery.Config{
+								discovery.StaticConfig{
+									{
+										Targets: []model.LabelSet{
+											{model.AddressLabel: "prom.domain:9001"},
+											{model.AddressLabel: "prom.domain:9002"},
+											{model.AddressLabel: "prom.domain:9003"},
+										},
+										Labels: model.LabelSet{
+											"my": "label",
+										},
+										Source: "0",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "service monitor pod monitor selector with matchexpressions",
+			args: args{
+				file: "./testdata/pod_service_selector_expressions_test.yaml",
+			},
+			want: Config{
+				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorSelector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "app.kubernetes.io/instance",
+							Operator: metav1.LabelSelectorOpIn,
+							Values: []string{
+								"default.test",
+							},
+						},
+						{
+							Key:      "app.kubernetes.io/managed-by",
+							Operator: metav1.LabelSelectorOpIn,
+							Values: []string{
+								"opentelemetry-operator",
+							},
+						},
+					},
+				},
+				FilterStrategy: DefaultFilterStrategy,
+				PrometheusCR: PrometheusCRConfig{
+					PodMonitorSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      "release",
+								Operator: metav1.LabelSelectorOpIn,
+								Values: []string{
+									"test",
+								},
+							},
+						},
+					},
+					ServiceMonitorSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      "release",
+								Operator: metav1.LabelSelectorOpIn,
+								Values: []string{
+									"test",
+								},
+							},
+						},
+					},
+					ScrapeInterval: DefaultCRScrapeInterval,
+				},
+				PromConfig: &promconfig.Config{
+					GlobalConfig: promconfig.GlobalConfig{
+						ScrapeInterval:     model.Duration(60 * time.Second),
+						ScrapeProtocols:    defaultScrapeProtocols,
+						ScrapeTimeout:      model.Duration(10 * time.Second),
+						EvaluationInterval: model.Duration(60 * time.Second),
+					},
+					Runtime: promconfig.DefaultRuntimeConfig,
+					ScrapeConfigs: []*promconfig.ScrapeConfig{
+						{
+							JobName:           "prometheus",
+							EnableCompression: true,
+							HonorTimestamps:   true,
+							ScrapeInterval:    model.Duration(60 * time.Second),
+							ScrapeProtocols:   defaultScrapeProtocols,
+							ScrapeTimeout:     model.Duration(10 * time.Second),
+							MetricsPath:       "/metrics",
+							Scheme:            "http",
+							HTTPClientConfig: commonconfig.HTTPClientConfig{
+								FollowRedirects: true,
+								EnableHTTP2:     true,
+							},
+							ServiceDiscoveryConfigs: []discovery.Config{
+								discovery.StaticConfig{
+									{
+										Targets: []model.LabelSet{
+											{model.AddressLabel: "prom.domain:9001"},
+											{model.AddressLabel: "prom.domain:9002"},
+											{model.AddressLabel: "prom.domain:9003"},
+										},
+										Labels: model.LabelSet{
+											"my": "label",
+										},
+										Source: "0",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "service monitor pod monitor selector with camelcase matchexpressions",
+			args: args{
+				file: "./testdata/pod_service_selector_camelcase_expressions_test.yaml",
+			},
+			want: Config{
+				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorSelector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "app.kubernetes.io/instance",
+							Operator: metav1.LabelSelectorOpIn,
+							Values: []string{
+								"default.test",
+							},
+						},
+						{
+							Key:      "app.kubernetes.io/managed-by",
+							Operator: metav1.LabelSelectorOpIn,
+							Values: []string{
+								"opentelemetry-operator",
+							},
+						},
+					},
+				},
+				FilterStrategy: DefaultFilterStrategy,
+				PrometheusCR: PrometheusCRConfig{
+					PodMonitorSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      "release",
+								Operator: metav1.LabelSelectorOpIn,
+								Values: []string{
+									"test",
+								},
+							},
+						},
+					},
+					ServiceMonitorSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      "release",
+								Operator: metav1.LabelSelectorOpIn,
+								Values: []string{
+									"test",
+								},
+							},
 						},
 					},
 					ScrapeInterval: DefaultCRScrapeInterval,

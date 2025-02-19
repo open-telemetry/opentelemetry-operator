@@ -5,9 +5,11 @@ resources:
 - bases/opentelemetry.io_opentelemetrycollectors.yaml
 - bases/opentelemetry.io_instrumentations.yaml
 - bases/opentelemetry.io_opampbridges.yaml
+- bases/opentelemetry.io_targetallocators.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 # patches here are for enabling the conversion webhook for each CRD
+#- patches/webhook_in_targetallocators.yaml
 # +kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # patches here are for enabling the CA injection for each CRD
@@ -16,6 +18,7 @@ patchesStrategicMerge:
 - patches/cainjection_in_opentelemetrycollectors.yaml
 - patches/cainjection_in_opampbridges.yaml
 - patches/webhook_in_opentelemetrycollectors.yaml
+- patches/cainjection_in_targetallocators.yaml
 # +kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.
