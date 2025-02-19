@@ -39,26 +39,26 @@ var (
 	openshiftInClusterMonitoringNamespace = "openshift-monitoring"
 )
 
-var _ manager.Runnable = &OperatorMetrics{}
+var _ manager.Runnable = operatorMetrics{}
 
-type OperatorMetrics struct {
+type operatorMetrics struct {
 	kubeClient client.Client
 	log        logr.Logger
 }
 
-func NewOperatorMetrics(config *rest.Config, scheme *runtime.Scheme, log logr.Logger) (OperatorMetrics, error) {
+func NewOperatorMetrics(config *rest.Config, scheme *runtime.Scheme, log logr.Logger) (manager.Runnable, error) {
 	kubeClient, err := client.New(config, client.Options{Scheme: scheme})
 	if err != nil {
-		return OperatorMetrics{}, err
+		return operatorMetrics{}, err
 	}
 
-	return OperatorMetrics{
+	return operatorMetrics{
 		kubeClient: kubeClient,
 		log:        log,
 	}, nil
 }
 
-func (om OperatorMetrics) Start(ctx context.Context) error {
+func (om operatorMetrics) Start(ctx context.Context) error {
 	err := om.createOperatorMetricsServiceMonitor(ctx)
 	if err != nil {
 		om.log.Error(err, "error creating Service Monitor for operator metrics")
@@ -67,11 +67,11 @@ func (om OperatorMetrics) Start(ctx context.Context) error {
 	return nil
 }
 
-func (om OperatorMetrics) NeedLeaderElection() bool {
+func (om operatorMetrics) NeedLeaderElection() bool {
 	return true
 }
 
-func (om OperatorMetrics) caConfigMapExists() bool {
+func (om operatorMetrics) caConfigMapExists() bool {
 	return om.kubeClient.Get(context.Background(), client.ObjectKey{
 		Name:      caBundleConfigMap,
 		Namespace: openshiftInClusterMonitoringNamespace,
@@ -79,7 +79,7 @@ func (om OperatorMetrics) caConfigMapExists() bool {
 	) == nil
 }
 
-func (om OperatorMetrics) getOwnerReferences(ctx context.Context, namespace string) (metav1.OwnerReference, error) {
+func (om operatorMetrics) getOwnerReferences(ctx context.Context, namespace string) (metav1.OwnerReference, error) {
 	var deploymentList appsv1.DeploymentList
 
 	listOptions := []client.ListOption{
@@ -110,7 +110,7 @@ func (om OperatorMetrics) getOwnerReferences(ctx context.Context, namespace stri
 	return ownerRef, nil
 }
 
-func (om OperatorMetrics) createOperatorMetricsServiceMonitor(ctx context.Context) error {
+func (om operatorMetrics) createOperatorMetricsServiceMonitor(ctx context.Context) error {
 	rawNamespace, err := os.ReadFile(namespaceFile)
 	if err != nil {
 		return fmt.Errorf("error reading namespace file: %w", err)
