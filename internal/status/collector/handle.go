@@ -47,7 +47,7 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifest
 		log.V(2).Error(upgradeErr, "failed to upgrade the OpenTelemetry CR")
 	}
 	changed = &upgraded
-	statusErr := UpdateCollectorStatus(ctx, params.Client, changed)
+	statusErr := updateCollectorStatus(ctx, params.Client, changed)
 	if statusErr != nil {
 		params.Recorder.Event(changed, eventTypeWarning, reasonStatusFailure, statusErr.Error())
 		return ctrl.Result{}, statusErr
