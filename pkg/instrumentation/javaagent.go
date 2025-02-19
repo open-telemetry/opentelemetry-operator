@@ -31,12 +31,7 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int) (corev1.
 	}
 
 	// inject Java instrumentation spec env vars.
-	for _, env := range javaSpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
-	}
+	container.Env = appendIfNotSet(container.Env, javaSpec.Env...)
 
 	javaJVMArgument := javaAgent
 	if len(javaSpec.Extensions) > 0 {

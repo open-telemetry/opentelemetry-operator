@@ -29,12 +29,7 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (cor
 	}
 
 	// inject NodeJS instrumentation spec env vars.
-	for _, env := range nodeJSSpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
-	}
+	container.Env = appendIfNotSet(container.Env, nodeJSSpec.Env...)
 
 	idx := getIndexOfEnv(container.Env, envNodeOptions)
 	if idx == -1 {

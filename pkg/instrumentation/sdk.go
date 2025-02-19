@@ -650,6 +650,20 @@ func getIndexOfEnv(envs []corev1.EnvVar, name string) int {
 	return -1
 }
 
+func appendIfNotSet(envs []corev1.EnvVar, newEnvVars ...corev1.EnvVar) []corev1.EnvVar {
+	keys := make(map[string]struct{}, len(envs))
+	for _, e := range envs {
+		keys[e.Name] = struct{}{}
+	}
+	for _, envVar := range newEnvVars {
+		if _, ok := keys[envVar.Name]; !ok {
+			envs = append(envs, envVar)
+			keys[envVar.Name] = struct{}{}
+		}
+	}
+	return envs
+}
+
 func moveEnvToListEnd(envs []corev1.EnvVar, idx int) []corev1.EnvVar {
 	if idx >= 0 && idx < len(envs) {
 		envToMove := envs[idx]

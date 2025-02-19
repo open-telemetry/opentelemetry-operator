@@ -57,12 +57,7 @@ func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, use
 	container := &pod.Spec.Containers[index]
 
 	// inject env vars
-	for _, env := range nginxSpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
-	}
+	container.Env = appendIfNotSet(container.Env, nginxSpec.Env...)
 
 	// First make a clone of the instrumented container to take the existing Nginx configuration from
 	// and create init container from it

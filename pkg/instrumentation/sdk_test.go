@@ -2552,3 +2552,85 @@ func TestChooseServiceName(t *testing.T) {
 		})
 	}
 }
+
+func TestAppendIfNotSet(t *testing.T) {
+	tests := []struct {
+		name    string
+		envVars []corev1.EnvVar
+		newVars []corev1.EnvVar
+		result  []corev1.EnvVar
+	}{
+		{
+			name: "add to empty",
+			newVars: []corev1.EnvVar{
+				{
+					Name:  "foo",
+					Value: "bar",
+				},
+			},
+			result: []corev1.EnvVar{
+				{
+					Name:  "foo",
+					Value: "bar",
+				},
+			},
+		},
+		{
+			name: "do not update if set",
+			envVars: []corev1.EnvVar{
+				{
+					Name:  "foo",
+					Value: "bar",
+				},
+			},
+			newVars: []corev1.EnvVar{
+				{
+					Name:  "foo",
+					Value: "foobar",
+				},
+			},
+			result: []corev1.EnvVar{
+				{
+					Name:  "foo",
+					Value: "bar",
+				},
+			},
+		},
+		{
+			name: "mixed use",
+			envVars: []corev1.EnvVar{
+				{
+					Name:  "foo",
+					Value: "bar",
+				},
+			},
+			newVars: []corev1.EnvVar{
+				{
+					Name:  "foo",
+					Value: "foobar",
+				},
+				{
+					Name:  "alpha",
+					Value: "beta",
+				},
+			},
+			result: []corev1.EnvVar{
+				{
+					Name:  "foo",
+					Value: "bar",
+				},
+				{
+					Name:  "alpha",
+					Value: "beta",
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := appendIfNotSet(test.envVars, test.newVars...)
+			assert.Equal(t, test.result, result)
+		})
+	}
+}

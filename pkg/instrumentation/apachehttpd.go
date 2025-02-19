@@ -56,12 +56,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 	container := &pod.Spec.Containers[index]
 
 	// inject env vars
-	for _, env := range apacheSpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
-	}
+	container.Env = appendIfNotSet(container.Env, apacheSpec.Env...)
 
 	// First make a clone of the instrumented container to take the existing Apache configuration from
 	// and create init container from it
