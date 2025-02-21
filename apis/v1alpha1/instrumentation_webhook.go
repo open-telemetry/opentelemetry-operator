@@ -81,6 +81,21 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	if r.Labels == nil {
 		r.Labels = map[string]string{}
 	}
+	if r.Spec.Injector.Image == "" {
+		r.Spec.Injector.Image = w.cfg.AutoInstrumentationInjectorImage()
+	}
+	if r.Spec.Injector.Resources.Limits == nil {
+		r.Spec.Injector.Resources.Limits = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		}
+	}
+	if r.Spec.Injector.Resources.Requests == nil {
+		r.Spec.Injector.Resources.Requests = corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		}
+	}
 	if r.Spec.Java.Image == "" {
 		r.Spec.Java.Image = w.cfg.AutoInstrumentationJavaImage()
 	}
@@ -187,6 +202,7 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	if r.Annotations == nil {
 		r.Annotations = map[string]string{}
 	}
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationInjector] = w.cfg.AutoInstrumentationInjectorImage()
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationJava] = w.cfg.AutoInstrumentationJavaImage()
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS] = w.cfg.AutoInstrumentationNodeJSImage()
 	r.Annotations[constants.AnnotationDefaultAutoInstrumentationPython] = w.cfg.AutoInstrumentationPythonImage()
@@ -243,6 +259,10 @@ func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings
 	err = validateInstrVolume(r.Spec.Java.VolumeClaimTemplate, r.Spec.Java.VolumeSizeLimit)
 	if err != nil {
 		return warnings, fmt.Errorf("spec.java.volumeClaimTemplate and spec.java.volumeSizeLimit cannot both be defined: %w", err)
+	}
+	err = validateInstrVolume(r.Spec.Injector.VolumeClaimTemplate, r.Spec.Injector.VolumeSizeLimit)
+	if err != nil {
+		return warnings, fmt.Errorf("spec.injector.volumeClaimTemplate and spec.injector.volumeSizeLimit cannot both be defined: %w", err)
 	}
 	err = validateInstrVolume(r.Spec.Nginx.VolumeClaimTemplate, r.Spec.Nginx.VolumeSizeLimit)
 	if err != nil {

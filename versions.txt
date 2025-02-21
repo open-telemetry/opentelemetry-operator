@@ -13,6 +13,9 @@ targetallocator=0.118.0
 # Represents the current release of the Operator OpAMP Bridge.
 operator-opamp-bridge=0.118.0
 
+# Represents the current release of Injector instrumentation.
+autoinstrumentation-injector=0.0.1a0
+
 # Represents the current release of Java instrumentation.
 # Should match autoinstrumentation/java/version.txt
 autoinstrumentation-java=1.33.6

@@ -45,6 +45,7 @@ type Config struct {
 	enablePythonInstrumentation         bool
 	enableNodeJSInstrumentation         bool
 	enableJavaInstrumentation           bool
+	enableInjectorInstrumentation       bool
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
 	autoInstrumentationApacheHttpdImage string
@@ -53,6 +54,7 @@ type Config struct {
 	operatorOpAMPBridgeConfigMapEntry   string
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationJavaImage        string
+	autoInstrumentationInjectorImage    string
 
 	openshiftRoutesAvailability openshift.RoutesAvailability
 	prometheusCRAvailability    prometheus.Availability
@@ -96,6 +98,7 @@ func New(opts ...Option) Config {
 		enablePythonInstrumentation:         o.enablePythonInstrumentation,
 		enableNodeJSInstrumentation:         o.enableNodeJSInstrumentation,
 		enableJavaInstrumentation:           o.enableJavaInstrumentation,
+		enableInjectorInstrumentation:       o.enableInjectorInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
 		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
 		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
@@ -105,6 +108,7 @@ func New(opts ...Option) Config {
 		prometheusCRAvailability:            o.prometheusCRAvailability,
 		certManagerAvailability:             o.certManagerAvailability,
 		targetAllocatorAvailability:         o.targetAllocatorAvailability,
+		autoInstrumentationInjectorImage:    o.autoInstrumentationInjectorImage,
 		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
@@ -191,6 +195,11 @@ func (c *Config) EnableNginxAutoInstrumentation() bool {
 }
 
 // EnableJavaAutoInstrumentation is true when the operator supports nginx auto instrumentation.
+func (c *Config) EnableInjectorAutoInstrumentation() bool {
+	return c.enableInjectorInstrumentation
+}
+
+// EnableJavaAutoInstrumentation is true when the operator supports nginx auto instrumentation.
 func (c *Config) EnableJavaAutoInstrumentation() bool {
 	return c.enableJavaInstrumentation
 }
@@ -253,6 +262,11 @@ func (c *Config) CertManagerAvailability() certmanager.Availability {
 // TargetAllocatorAvailability represents the availability of the TargetAllocator CRD.
 func (c *Config) TargetAllocatorAvailability() targetallocator.Availability {
 	return c.targetAllocatorAvailability
+}
+
+// AutoInstrumentationInjectorImage returns OpenTelemetry Injector auto-instrumentation container image.
+func (c *Config) AutoInstrumentationInjectorImage() string {
+	return c.autoInstrumentationInjectorImage
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.

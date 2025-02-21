@@ -16,6 +16,7 @@ const (
 	EnvOTELExporterClientKey         = "OTEL_EXPORTER_OTLP_CLIENT_KEY"
 
 	InstrumentationPrefix                           = "instrumentation.opentelemetry.io/"
+	AnnotationDefaultAutoInstrumentationInjector    = InstrumentationPrefix + "default-auto-instrumentation-injector-image"
 	AnnotationDefaultAutoInstrumentationJava        = InstrumentationPrefix + "default-auto-instrumentation-java-image"
 	AnnotationDefaultAutoInstrumentationNodeJS      = InstrumentationPrefix + "default-auto-instrumentation-nodejs-image"
 	AnnotationDefaultAutoInstrumentationPython      = InstrumentationPrefix + "default-auto-instrumentation-python-image"
@@ -45,6 +46,7 @@ const (
 	FlagNginx       = "enable-nginx-instrumentation"
 	FlagNodeJS      = "enable-nodejs-instrumentation"
 	FlagJava        = "enable-java-instrumentation"
+	FlagInjector    = "enable-injector-instrumentation"
 
 	TACollectorTLSDirPath      = "/tls"
 	TACollectorCAFileName      = "ca.crt"

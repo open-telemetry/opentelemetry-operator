@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-app
+spec:
+  selector:
+    matchLabels:
+      app: test-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: test-app
+      annotations:
+        instrumentation.opentelemetry.io/inject-injector: "true"
+    spec:
+      containers:
+        - name: main
+          image: ubuntu
+          command: ["sleep", "infinity"]
