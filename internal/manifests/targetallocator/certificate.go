@@ -17,7 +17,7 @@ import (
 // / CACertificate returns a CA Certificate for the given instance.
 func CACertificate(params Params) *cmv1.Certificate {
 	name := naming.CACertificate(params.TargetAllocator.Name)
-	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator)
 
 	return &cmv1.Certificate{
 		ObjectMeta: metav1.ObjectMeta{
@@ -43,7 +43,7 @@ func CACertificate(params Params) *cmv1.Certificate {
 // ServingCertificate returns a serving Certificate for the given instance.
 func ServingCertificate(params Params) *cmv1.Certificate {
 	name := naming.TAServerCertificate(params.TargetAllocator.Name)
-	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator)
 
 	return &cmv1.Certificate{
 		ObjectMeta: metav1.ObjectMeta{
@@ -76,7 +76,7 @@ func ServingCertificate(params Params) *cmv1.Certificate {
 // ClientCertificate returns a client Certificate for the given instance.
 func ClientCertificate(params Params) *cmv1.Certificate {
 	name := naming.TAClientCertificate(params.TargetAllocator.Name)
-	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator)
 
 	return &cmv1.Certificate{
 		ObjectMeta: metav1.ObjectMeta{
