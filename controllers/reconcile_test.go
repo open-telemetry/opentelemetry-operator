@@ -1362,7 +1362,7 @@ func createTestReconciler(t *testing.T, ctx context.Context, cfg config.Config) 
 	require.NoError(t, err)
 	go func() {
 		startErr := runtimeCluster.Start(ctx)
-		require.NoError(t, startErr)
+		assert.NoError(t, startErr)
 	}()
 
 	cacheClient := runtimeCluster.GetClient()
@@ -1375,6 +1375,8 @@ func createTestReconciler(t *testing.T, ctx context.Context, cfg config.Config) 
 	})
 	err = reconciler.SetupCaches(runtimeCluster)
 	require.NoError(t, err)
+	synced := runtimeCluster.GetCache().WaitForCacheSync(ctx)
+	require.True(t, synced, "caches didn't sync successfully")
 	return reconciler
 }
 
