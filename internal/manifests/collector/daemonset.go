@@ -16,12 +16,21 @@ import (
 // DaemonSet builds the deployment for the given instance.
 func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, manifestutils.WithFilterLabels(params.Config.LabelsFilter()))
 
 	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
 	if err != nil {
 		return nil, err
 	}
+
+	podLabels := manifestutils.Labels(
+		params.OtelCol.ObjectMeta,
+		name,
+		params.OtelCol.Spec.Image,
+		ComponentOpenTelemetryCollector,
+		manifestutils.WithFilterLabels(params.Config.LabelsFilter()),
+		manifestutils.WithAdditionalLabels(params.OtelCol.Spec.PodLabels),
+	)
 
 	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter())
 	if err != nil {
@@ -41,7 +50,7 @@ func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels,
+					Labels:      podLabels,
 					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{

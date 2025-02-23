@@ -246,6 +246,45 @@ func TestStatefulSetPodAnnotations(t *testing.T) {
 	assert.Equal(t, expectedAnnotations, ss.Spec.Template.Annotations)
 }
 
+func TestStatefulSetPodLabels(t *testing.T) {
+	// prepare
+	testPodLabelValues := map[string]string{"label-key": "label-value"}
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PodLabels: testPodLabelValues,
+			},
+		},
+	}
+	cfg := config.New()
+
+	params := manifests.Params{
+		OtelCol: otelcol,
+		Config:  cfg,
+		Log:     logger,
+	}
+
+	// test
+	ss, err := StatefulSet(params)
+	require.NoError(t, err)
+
+	expectedLabels := map[string]string{
+		"label-key":                    "label-value",
+		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/instance":   "my-instance",
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/name":       "my-instance-collector",
+		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/version":    "latest",
+	}
+	// verify
+	assert.Equal(t, "my-instance-collector", ss.Name)
+	assert.Equal(t, expectedLabels, ss.Spec.Template.Labels)
+}
+
 func TestStatefulSetPodSecurityContext(t *testing.T) {
 	runAsNonRoot := true
 	runAsUser := int64(1337)

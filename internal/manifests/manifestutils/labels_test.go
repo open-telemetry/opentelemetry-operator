@@ -33,7 +33,7 @@ func TestLabelsCommonSet(t *testing.T) {
 	}
 
 	// test
-	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector")
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "0.47.0", labels["app.kubernetes.io/version"])
@@ -53,7 +53,7 @@ func TestLabelsSha256Set(t *testing.T) {
 	}
 
 	// test
-	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector")
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "c6671841470b83007e0553cdadbc9d05f6cfe17b3ebe9733728dc4a579a5b53", labels["app.kubernetes.io/version"])
@@ -72,7 +72,7 @@ func TestLabelsSha256Set(t *testing.T) {
 	}
 
 	// test
-	labelsTag := Labels(otelcolTag.ObjectMeta, collectorName, otelcolTag.Spec.Image, "opentelemetry-collector", []string{})
+	labelsTag := Labels(otelcolTag.ObjectMeta, collectorName, otelcolTag.Spec.Image, "opentelemetry-collector")
 	assert.Equal(t, "opentelemetry-operator", labelsTag["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labelsTag["app.kubernetes.io/instance"])
 	assert.Equal(t, "0.81.0", labelsTag["app.kubernetes.io/version"])
@@ -92,7 +92,7 @@ func TestLabelsTagUnset(t *testing.T) {
 	}
 
 	// test
-	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector")
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "latest", labels["app.kubernetes.io/version"])
@@ -115,7 +115,7 @@ func TestLabelsPropagateDown(t *testing.T) {
 	}
 
 	// test
-	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector")
 
 	// verify
 	assert.Len(t, labels, 7)
@@ -134,12 +134,67 @@ func TestLabelsFilter(t *testing.T) {
 	}
 
 	// This requires the filter to be in regex match form and not the other simpler wildcard one.
-	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", []string{".*.bar.io"})
+	labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", WithFilterLabels([]string{".*.bar.io"}))
 
 	// verify
 	assert.Len(t, labels, 7)
 	assert.NotContains(t, labels, "test.bar.io")
 	assert.Equal(t, "bar", labels["test.foo.io"])
+}
+
+func TestAdditionalLabeles(t *testing.T) {
+	otelcol := v1alpha1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{"key": "value"},
+		},
+		Spec: v1alpha1.OpenTelemetryCollectorSpec{
+			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator",
+		},
+	}
+
+	for _, tc := range []struct {
+		name           string
+		labels         map[string]string
+		expectedSize   int
+		expectedLabels map[string]string
+	}{
+		{
+			name: "new labels labels",
+			labels: map[string]string{
+				"newKey1": "newValue1",
+				"newKey2": "newValue2",
+			},
+			expectedSize: 9,
+			expectedLabels: map[string]string{
+				"newKey1": "newValue1",
+				"newKey2": "newValue2",
+			},
+		},
+		{
+			name: "existing key",
+			labels: map[string]string{
+				"key": "newValue",
+			},
+			expectedSize: 7,
+			expectedLabels: map[string]string{
+				"key": "value",
+			},
+		},
+		{
+			name:         "nil labels",
+			labels:       nil,
+			expectedSize: 7,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			labels := Labels(otelcol.ObjectMeta, collectorName, otelcol.Spec.Image, "opentelemetry-collector", WithAdditionalLabels(tc.labels))
+
+			assert.Len(t, labels, tc.expectedSize)
+			for k, v := range tc.expectedLabels {
+				assert.Equal(t, v, labels[k])
+			}
+		})
+	}
 }
 
 func TestSelectorLabels(t *testing.T) {
@@ -172,7 +227,7 @@ func TestLabelsTACommonSet(t *testing.T) {
 	}
 
 	// test
-	labels := Labels(tainstance.ObjectMeta, taname, tainstance.Spec.Image, "opentelemetry-targetallocator", nil)
+	labels := Labels(tainstance.ObjectMeta, taname, tainstance.Spec.Image, "opentelemetry-targetallocator")
 	assert.Equal(t, "opentelemetry-operator", labels["app.kubernetes.io/managed-by"])
 	assert.Equal(t, "my-ns.my-instance", labels["app.kubernetes.io/instance"])
 	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
@@ -193,7 +248,7 @@ func TestLabelsTAPropagateDown(t *testing.T) {
 	}
 
 	// test
-	labels := Labels(tainstance.ObjectMeta, taname, tainstance.Spec.Image, "opentelemetry-targetallocator", nil)
+	labels := Labels(tainstance.ObjectMeta, taname, tainstance.Spec.Image, "opentelemetry-targetallocator")
 
 	selectorLabels := TASelectorLabels(tainstance, "opentelemetry-targetallocator")
 

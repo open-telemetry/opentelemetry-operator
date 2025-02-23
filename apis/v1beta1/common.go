@@ -134,6 +134,10 @@ type OpenTelemetryCommonFields struct {
 	// the generated pods.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
+	// PodLabels is the set of labels that will be attached to
+	// Collector and Target Allocator pods.
+	// +optional
+	PodLabels map[string]string `json:"podLabels,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
 	// the operator will not automatically create a ServiceAccount.
 	// +optional
