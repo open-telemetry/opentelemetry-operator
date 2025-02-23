@@ -8,6 +8,7 @@ import (
 	"errors"
 	"hash"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -360,6 +362,525 @@ func TestDiscovery_NoConfig(t *testing.T) {
 	// check the updated scrape configs
 	expectedScrapeConfigs := map[string]*promconfig.ScrapeConfig{}
 	assert.Equal(t, expectedScrapeConfigs, scu.mockCfg)
+}
+
+func TestDiscovery_NewItem(t *testing.T) {
+	type targetInfo struct {
+		jobName    string
+		targetURL  string
+		labels     labels.Labels
+		relabelCfg []*relabel.Config
+	}
+	type args struct {
+		targets []targetInfo
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]*Item
+	}{
+		{
+			name: "normal process",
+			args: args{
+				targets: []targetInfo{
+					{
+						jobName:   "prometheus-1",
+						targetURL: "prom.domain:1234",
+						labels: labels.Labels{
+							{
+								Name:  "__address__",
+								Value: "prom.domain:1234",
+							},
+							{
+								Name:  "job",
+								Value: "prometheus-1",
+							},
+							{
+								Name:  "key1",
+								Value: "value1",
+							},
+						},
+						relabelCfg: []*relabel.Config{
+							{
+								SourceLabels: model.LabelNames{"__address__"},
+								Regex:        relabel.MustNewRegexp(".*"),
+								Action:       relabel.Replace,
+								TargetLabel:  model.AddressLabel,
+								Replacement:  "prom.domain:80",
+							},
+						},
+					},
+					{
+						jobName:   "prometheus-1",
+						targetURL: "prom.domain:1235",
+						labels: labels.Labels{
+							{
+								Name:  "__address__",
+								Value: "prom.domain:1235",
+							},
+							{
+								Name:  "job",
+								Value: "prometheus-1",
+							},
+							{
+								Name:  "key1",
+								Value: "value1",
+							},
+						},
+						relabelCfg: []*relabel.Config{
+							{
+								SourceLabels: model.LabelNames{"__address__"},
+								Regex:        relabel.MustNewRegexp(".*"),
+								Action:       relabel.Replace,
+								TargetLabel:  model.AddressLabel,
+								Replacement:  "prom.domain:81",
+							},
+						},
+					},
+					{
+						jobName:   "prometheus-1",
+						targetURL: "prom.domain:1236",
+						labels: labels.Labels{
+							{
+								Name:  "__address__",
+								Value: "prom.domain:1236",
+							},
+							{
+								Name:  "job",
+								Value: "prometheus-1",
+							},
+							{
+								Name:  "key1",
+								Value: "value1",
+							},
+						},
+						relabelCfg: nil,
+					},
+				},
+			},
+			want: map[string]*Item{
+				"prometheus-1" + "prom.domain:80" + strconv.FormatUint(labels.Labels{
+					{
+						Name:  "__address__",
+						Value: "prom.domain:80",
+					},
+					{
+						Name:  "job",
+						Value: "prometheus-1",
+					},
+					{
+						Name:  "key1",
+						Value: "value1",
+					},
+				}.Hash(), 10): {
+					JobName:   "prometheus-1",
+					TargetURL: "prom.domain:1234",
+					Labels: labels.Labels{
+						{
+							Name:  "__address__",
+							Value: "prom.domain:1234",
+						},
+						{
+							Name:  "job",
+							Value: "prometheus-1",
+						},
+						{
+							Name:  "key1",
+							Value: "value1",
+						},
+					},
+					hash: "prometheus-1" + "prom.domain:80" + strconv.FormatUint(labels.Labels{
+						{
+							Name:  "__address__",
+							Value: "prom.domain:80",
+						},
+						{
+							Name:  "job",
+							Value: "prometheus-1",
+						},
+						{
+							Name:  "key1",
+							Value: "value1",
+						},
+					}.Hash(), 10),
+					RelabeledKeep:      true,
+					TargetURLRelabeled: "prom.domain:80",
+				},
+				"prometheus-1" + "prom.domain:81" + strconv.FormatUint(labels.Labels{
+					{
+						Name:  "__address__",
+						Value: "prom.domain:81",
+					},
+					{
+						Name:  "job",
+						Value: "prometheus-1",
+					},
+					{
+						Name:  "key1",
+						Value: "value1",
+					},
+				}.Hash(), 10): {
+					JobName:   "prometheus-1",
+					TargetURL: "prom.domain:1235",
+					Labels: labels.Labels{
+						{
+							Name:  "__address__",
+							Value: "prom.domain:1235",
+						},
+						{
+							Name:  "job",
+							Value: "prometheus-1",
+						},
+						{
+							Name:  "key1",
+							Value: "value1",
+						},
+					},
+					hash: "prometheus-1" + "prom.domain:81" + strconv.FormatUint(labels.Labels{
+						{
+							Name:  "__address__",
+							Value: "prom.domain:81",
+						},
+						{
+							Name:  "job",
+							Value: "prometheus-1",
+						},
+						{
+							Name:  "key1",
+							Value: "value1",
+						},
+					}.Hash(), 10),
+					RelabeledKeep:      true,
+					TargetURLRelabeled: "prom.domain:81",
+				},
+				"prometheus-1" + "prom.domain:1236" + strconv.FormatUint(labels.Labels{
+					{
+						Name:  "__address__",
+						Value: "prom.domain:1236",
+					},
+					{
+						Name:  "job",
+						Value: "prometheus-1",
+					},
+					{
+						Name:  "key1",
+						Value: "value1",
+					},
+				}.Hash(), 10): {
+					JobName:   "prometheus-1",
+					TargetURL: "prom.domain:1236",
+					Labels: labels.Labels{
+						{
+							Name:  "__address__",
+							Value: "prom.domain:1236",
+						},
+						{
+							Name:  "job",
+							Value: "prometheus-1",
+						},
+						{
+							Name:  "key1",
+							Value: "value1",
+						},
+					},
+					hash: "prometheus-1" + "prom.domain:1236" + strconv.FormatUint(labels.Labels{
+						{
+							Name:  "__address__",
+							Value: "prom.domain:1236",
+						},
+						{
+							Name:  "job",
+							Value: "prometheus-1",
+						},
+						{
+							Name:  "key1",
+							Value: "value1",
+						},
+					}.Hash(), 10),
+					RelabeledKeep:      true,
+					TargetURLRelabeled: "prom.domain:1236",
+				},
+			},
+		},
+		{
+			name: "remove duplication",
+			args: args{
+				targets: []targetInfo{
+					{
+						jobName:   "prometheus-1",
+						targetURL: "prom.domain:1234",
+						labels: labels.Labels{
+							{
+								Name:  "__address__",
+								Value: "prom.domain:1234",
+							},
+							{
+								Name:  "job",
+								Value: "prometheus-1",
+							},
+							{
+								Name:  "key1",
+								Value: "value1",
+							},
+						},
+						relabelCfg: []*relabel.Config{
+							{
+								SourceLabels: model.LabelNames{"__address__"},
+								Regex:        relabel.MustNewRegexp(".*"),
+								Action:       relabel.Replace,
+								TargetLabel:  model.AddressLabel,
+								Replacement:  "prom.domain:80",
+							},
+						},
+					},
+					{
+						jobName:   "prometheus-1",
+						targetURL: "prom.domain:1235",
+						labels: labels.Labels{
+							{
+								Name:  "__address__",
+								Value: "prom.domain:1235",
+							},
+							{
+								Name:  "job",
+								Value: "prometheus-1",
+							},
+							{
+								Name:  "key1",
+								Value: "value1",
+							},
+						},
+						relabelCfg: []*relabel.Config{
+							{
+								SourceLabels: model.LabelNames{"__address__"},
+								Regex:        relabel.MustNewRegexp(".*"),
+								Action:       relabel.Replace,
+								TargetLabel:  model.AddressLabel,
+								Replacement:  "prom.domain:80",
+							},
+						},
+					},
+				},
+			},
+			want: map[string]*Item{
+				"prometheus-1" + "prom.domain:80" + strconv.FormatUint(labels.Labels{
+					{
+						Name:  "__address__",
+						Value: "prom.domain:80",
+					},
+					{
+						Name:  "job",
+						Value: "prometheus-1",
+					},
+					{
+						Name:  "key1",
+						Value: "value1",
+					},
+				}.Hash(), 10): {
+					JobName:   "prometheus-1",
+					TargetURL: "prom.domain:1235",
+					Labels: labels.Labels{
+						{
+							Name:  "__address__",
+							Value: "prom.domain:1235",
+						},
+						{
+							Name:  "job",
+							Value: "prometheus-1",
+						},
+						{
+							Name:  "key1",
+							Value: "value1",
+						},
+					},
+					hash: "prometheus-1" + "prom.domain:80" + strconv.FormatUint(labels.Labels{
+						{
+							Name:  "__address__",
+							Value: "prom.domain:80",
+						},
+						{
+							Name:  "job",
+							Value: "prometheus-1",
+						},
+						{
+							Name:  "key1",
+							Value: "value1",
+						},
+					}.Hash(), 10),
+					RelabeledKeep:      true,
+					TargetURLRelabeled: "prom.domain:80",
+				},
+			},
+		},
+		{
+			name: "relabel drop",
+			args: args{
+				targets: []targetInfo{
+					{
+						jobName:   "prometheus-1",
+						targetURL: "prom.domain:1236",
+						labels: labels.Labels{
+							{
+								Name:  "__address__",
+								Value: "prom.domain:1236",
+							},
+							{
+								Name:  "job",
+								Value: "prometheus-1",
+							},
+							{
+								Name:  "key1",
+								Value: "value1",
+							},
+						},
+						relabelCfg: []*relabel.Config{
+							{
+								SourceLabels: model.LabelNames{"key1"},
+								Regex:        relabel.MustNewRegexp("value1"),
+								Action:       relabel.Drop,
+							},
+						},
+					},
+				},
+			},
+			want: map[string]*Item{
+				"prometheus-1" + "prom.domain:1236" + strconv.FormatUint(labels.Labels{
+					{
+						Name:  "__address__",
+						Value: "prom.domain:1236",
+					},
+					{
+						Name:  "job",
+						Value: "prometheus-1",
+					},
+					{
+						Name:  "key1",
+						Value: "value1",
+					},
+				}.Hash(), 10): {
+					JobName:   "prometheus-1",
+					TargetURL: "prom.domain:1236",
+					Labels: labels.Labels{
+						{
+							Name:  "__address__",
+							Value: "prom.domain:1236",
+						},
+						{
+							Name:  "job",
+							Value: "prometheus-1",
+						},
+						{
+							Name:  "key1",
+							Value: "value1",
+						},
+					},
+					hash: "prometheus-1" + "prom.domain:1236" + strconv.FormatUint(labels.Labels{
+						{
+							Name:  "__address__",
+							Value: "prom.domain:1236",
+						},
+						{
+							Name:  "job",
+							Value: "prometheus-1",
+						},
+						{
+							Name:  "key1",
+							Value: "value1",
+						},
+					}.Hash(), 10),
+					RelabeledKeep:      false,
+					TargetURLRelabeled: "prom.domain:1236",
+				},
+			},
+		},
+		{
+			name: "without relabel",
+			args: args{
+				targets: []targetInfo{
+					{
+						jobName:   "prometheus-1",
+						targetURL: "prom.domain:1236",
+						labels: labels.Labels{
+							{
+								Name:  "__address__",
+								Value: "prom.domain:1236",
+							},
+							{
+								Name:  "job",
+								Value: "prometheus-1",
+							},
+							{
+								Name:  "key1",
+								Value: "value1",
+							},
+						},
+						relabelCfg: nil,
+					},
+				},
+			},
+			want: map[string]*Item{
+				"prometheus-1" + "prom.domain:1236" + strconv.FormatUint(labels.Labels{
+					{
+						Name:  "__address__",
+						Value: "prom.domain:1236",
+					},
+					{
+						Name:  "job",
+						Value: "prometheus-1",
+					},
+					{
+						Name:  "key1",
+						Value: "value1",
+					},
+				}.Hash(), 10): {
+					JobName:   "prometheus-1",
+					TargetURL: "prom.domain:1236",
+					Labels: labels.Labels{
+						{
+							Name:  "__address__",
+							Value: "prom.domain:1236",
+						},
+						{
+							Name:  "job",
+							Value: "prometheus-1",
+						},
+						{
+							Name:  "key1",
+							Value: "value1",
+						},
+					},
+					hash: "prometheus-1" + "prom.domain:1236" + strconv.FormatUint(labels.Labels{
+						{
+							Name:  "__address__",
+							Value: "prom.domain:1236",
+						},
+						{
+							Name:  "job",
+							Value: "prometheus-1",
+						},
+						{
+							Name:  "key1",
+							Value: "value1",
+						},
+					}.Hash(), 10),
+					RelabeledKeep:      true,
+					TargetURLRelabeled: "prom.domain:1236",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			targets := map[string]*Item{}
+			for _, tg := range tt.args.targets {
+				item := NewItem(tg.jobName, tg.targetURL, tg.labels, "", tg.relabelCfg...)
+				targets[item.Hash()] = item
+			}
+			assert.Equal(t, len(tt.want), len(targets))
+			assert.Equal(t, tt.want, targets)
+		})
+	}
 }
 
 func BenchmarkApplyScrapeConfig(b *testing.B) {

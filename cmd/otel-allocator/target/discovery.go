@@ -49,6 +49,7 @@ type Discoverer struct {
 	close                  chan struct{}
 	mtxScrape              sync.Mutex // Guards the fields below.
 	configsMap             map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig
+	relabelCfg             map[string][]*relabel.Config
 	hook                   discoveryHook
 	scrapeConfigsHash      hash.Hash
 	scrapeConfigsUpdater   scrapeConfigsUpdater
@@ -73,6 +74,7 @@ func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHo
 		close:                  make(chan struct{}),
 		triggerReload:          make(chan struct{}, 1),
 		configsMap:             make(map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig),
+		relabelCfg:             make(map[string][]*relabel.Config),
 		hook:                   hook,
 		scrapeConfigsHash:      nil, // we want the first update to succeed even if the config is empty
 		scrapeConfigsUpdater:   scrapeConfigsUpdater,
@@ -85,13 +87,12 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 	jobToScrapeConfig := make(map[string]*promconfig.ScrapeConfig)
 
 	discoveryCfg := make(map[string]discovery.Configs)
-	relabelCfg := make(map[string][]*relabel.Config)
 
 	for _, configs := range m.configsMap {
 		for _, scrapeConfig := range configs {
 			jobToScrapeConfig[scrapeConfig.JobName] = scrapeConfig
 			discoveryCfg[scrapeConfig.JobName] = scrapeConfig.ServiceDiscoveryConfigs
-			relabelCfg[scrapeConfig.JobName] = scrapeConfig.RelabelConfigs
+			m.relabelCfg[scrapeConfig.JobName] = scrapeConfig.RelabelConfigs
 		}
 	}
 
@@ -111,7 +112,8 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 	}
 
 	if m.hook != nil {
-		m.hook.SetConfig(relabelCfg)
+		// Since the hook's `SetConfig` is a deep copy, there is no need to worry that the hook will affect `m.relabelCfg`
+		m.hook.SetConfig(m.relabelCfg)
 	}
 	return m.manager.ApplyConfig(discoveryCfg)
 }
@@ -204,7 +206,7 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 			for ln, lv := range t {
 				builder.Set(string(ln), string(lv))
 			}
-			item := NewItem(jobName, string(t[model.AddressLabel]), builder.Labels(), "")
+			item := NewItem(jobName, string(t[model.AddressLabel]), builder.Labels(), "", m.relabelCfg[jobName]...)
 			targets[item.Hash()] = item
 		}
 	}

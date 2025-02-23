@@ -180,7 +180,6 @@ func makeNNewTargets(rCfgs []relabelConfigObj, n int, numCollectors int, startin
 			{Name: "total", Value: strconv.Itoa(n + startingIndex)},
 		}
 		jobName := fmt.Sprintf("test-job-%d", i)
-		newTarget := target.NewItem(jobName, "test-url", label, collector)
 		// add a single replace, drop, or keep action as relabel_config for targets
 		var index int
 		ind, _ := rand.Int(rand.Reader, big.NewInt(int64(len(relabelConfigs))))
@@ -188,6 +187,7 @@ func makeNNewTargets(rCfgs []relabelConfigObj, n int, numCollectors int, startin
 		index = int(ind.Int64())
 
 		relabelConfig[jobName] = rCfgs[index].cfg
+		newTarget := target.NewItem(jobName, "test-url", label, collector, relabelConfig[jobName]...)
 
 		targetKey := newTarget.Hash()
 		if relabelConfigs[index].isDrop {
