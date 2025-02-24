@@ -18,13 +18,13 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/collector"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/prehook"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/server"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
-	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/collector"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/prehook"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/server"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
+	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
 
 var (

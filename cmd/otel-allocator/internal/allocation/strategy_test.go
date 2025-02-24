@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/diff"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/diff"
 )
 
 func BenchmarkGetAllTargetsByCollectorAndJob(b *testing.B) {
