@@ -2,6 +2,31 @@
 
 <!-- next version -->
 
+## 0.119.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: Make ServiceMonitor for operator metrics optional and disable it by default (#3474)
+  Add `--create-sm-operator-metrics` flag to create a ServiceMonitor for the operator metrics.
+  This is disabled by default, which is a breaking change, because it was enabled by default in 0.113.0 and 0.114.0.
+
+### 🧰 Bug fixes 🧰
+
+- `auto-instrumentation`: add upper version limit to Python dependency urllib3 (#3616)
+- `target allocator`: check for Prometheus CRDs before watching Service/Pod Monitors (#3726)
+
+### Components
+
+* [OpenTelemetry Collector - v0.119.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.119.0)
+* [OpenTelemetry Contrib - v0.119.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.119.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.53.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.53.0)
+* [Python - v0.51b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.51b0)
+* [Go - v0.19.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.19.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.118.0
 
 ### 🚀 New components 🚀
