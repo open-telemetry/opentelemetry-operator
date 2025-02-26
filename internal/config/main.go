@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 // Package config contains the operator's runtime configuration.
 package config
@@ -27,6 +16,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
@@ -67,6 +57,7 @@ type Config struct {
 	openshiftRoutesAvailability openshift.RoutesAvailability
 	prometheusCRAvailability    prometheus.Availability
 	certManagerAvailability     certmanager.Availability
+	targetAllocatorAvailability targetallocator.Availability
 	labelsFilter                []string
 	annotationsFilter           []string
 }
@@ -79,6 +70,7 @@ func New(opts ...Option) Config {
 		openshiftRoutesAvailability:       openshift.RoutesNotAvailable,
 		createRBACPermissions:             autoRBAC.NotAvailable,
 		certManagerAvailability:           certmanager.NotAvailable,
+		targetAllocatorAvailability:       targetallocator.NotAvailable,
 		collectorConfigMapEntry:           defaultCollectorConfigMapEntry,
 		targetAllocatorConfigMapEntry:     defaultTargetAllocatorConfigMapEntry,
 		operatorOpAMPBridgeConfigMapEntry: defaultOperatorOpAMPBridgeConfigMapEntry,
@@ -112,6 +104,7 @@ func New(opts ...Option) Config {
 		openshiftRoutesAvailability:         o.openshiftRoutesAvailability,
 		prometheusCRAvailability:            o.prometheusCRAvailability,
 		certManagerAvailability:             o.certManagerAvailability,
+		targetAllocatorAvailability:         o.targetAllocatorAvailability,
 		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
@@ -156,6 +149,13 @@ func (c *Config) AutoDetect() error {
 	}
 	c.certManagerAvailability = cmAvl
 	c.logger.V(2).Info("the cert manager crd and permissions are set for the operator", "availability", cmAvl)
+
+	taAvl, err := c.autoDetect.TargetAllocatorAvailability()
+	if err != nil {
+		return err
+	}
+	c.targetAllocatorAvailability = taAvl
+	c.logger.V(2).Info("determined TargetAllocator CRD availability", "availability", cmAvl)
 
 	return nil
 }
@@ -248,6 +248,11 @@ func (c *Config) PrometheusCRAvailability() prometheus.Availability {
 // CertManagerAvailability represents the availability of the Cert-Manager.
 func (c *Config) CertManagerAvailability() certmanager.Availability {
 	return c.certManagerAvailability
+}
+
+// TargetAllocatorAvailability represents the availability of the TargetAllocator CRD.
+func (c *Config) TargetAllocatorAvailability() targetallocator.Availability {
+	return c.targetAllocatorAvailability
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.
