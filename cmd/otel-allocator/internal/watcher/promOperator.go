@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/blang/semver/v4"
-	gokitlog "github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
@@ -42,8 +40,7 @@ const (
 )
 
 func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
-	// TODO: Remove this after go 1.23 upgrade
-	promLogger := level.NewFilter(gokitlog.NewLogfmtLogger(os.Stderr), level.AllowWarn())
+	promLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	slogger := slog.New(logr.ToSlogHandler(logger))
 	var resourceSelector *prometheus.ResourceSelector
 	mClient, err := monitoringclient.NewForConfig(cfg.ClusterConfig)
@@ -84,7 +81,7 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 		},
 	}
 
-	generator, err := prometheus.NewConfigGenerator(promLogger, prom, true)
+	generator, err := prometheus.NewConfigGenerator(promLogger, prom, prometheus.WithEndpointSliceSupport())
 
 	if err != nil {
 		return nil, err
@@ -152,7 +149,7 @@ type PrometheusCRWatcher struct {
 	store                           *assets.StoreBuilder
 }
 
-func getNamespaceInformer(ctx context.Context, allowList map[string]struct{}, promOperatorLogger gokitlog.Logger, clientset kubernetes.Interface, operatorMetrics *operator.Metrics) (cache.SharedIndexInformer, error) {
+func getNamespaceInformer(ctx context.Context, allowList map[string]struct{}, promOperatorLogger *slog.Logger, clientset kubernetes.Interface, operatorMetrics *operator.Metrics) (cache.SharedIndexInformer, error) {
 	kubernetesVersion, err := clientset.Discovery().ServerVersion()
 	if err != nil {
 		return nil, err
@@ -369,7 +366,7 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 			"",
 			nil,
 			nil,
-			monitoringv1.TSDBSpec{},
+			&monitoringv1.TSDBSpec{},
 			nil,
 			nil,
 			serviceMonitorInstances,
