@@ -45,6 +45,7 @@ type languageInstrumentations struct {
 	Java        instrumentationWithContainers
 	NodeJS      instrumentationWithContainers
 	Python      instrumentationWithContainers
+	Ruby        instrumentationWithContainers
 	DotNet      instrumentationWithContainers
 	ApacheHttpd instrumentationWithContainers
 	Nginx       instrumentationWithContainers
@@ -81,6 +82,14 @@ func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bo
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.Python)
 		allContainers = append(allContainers, langInsts.Python.Containers...)
 		if len(langInsts.Python.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
+	}
+	if langInsts.Ruby.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Ruby)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Ruby)
+		allContainers = append(allContainers, langInsts.Ruby.Containers...)
+		if len(langInsts.Ruby.Containers) == 0 {
 			instrumentationWithNoContainers = true
 		}
 	}
@@ -177,6 +186,9 @@ func (langInsts *languageInstrumentations) setCommonInstrumentedContainers(ns co
 	if langInsts.Python.Instrumentation != nil {
 		langInsts.Python.Containers = containers
 	}
+	if langInsts.Ruby.Instrumentation != nil {
+		langInsts.Ruby.Containers = containers
+	}
 	if langInsts.DotNet.Instrumentation != nil {
 		langInsts.DotNet.Containers = containers
 	}
@@ -211,6 +223,10 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns meta
 		{
 			iwc:        &langInsts.Python,
 			annotation: annotationInjectPythonContainersName,
+		},
+		{
+			iwc:        &langInsts.Ruby,
+			annotation: annotationInjectRubyContainersName,
 		},
 		{
 			iwc:        &langInsts.DotNet,
@@ -316,6 +332,18 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Python auto instrumentation is not enabled")
 	}
 
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectRuby); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	if pm.config.EnableRubyAutoInstrumentation() || inst == nil {
+		insts.Ruby.Instrumentation = inst
+	} else {
+		logger.Error(err, "support for Ruby auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Ruby auto instrumentation is not enabled")
+	}
+
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectDotNet); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
@@ -375,6 +403,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	if insts.Java.Instrumentation == nil && insts.NodeJS.Instrumentation == nil && insts.Python.Instrumentation == nil &&
 		insts.DotNet.Instrumentation == nil && insts.Go.Instrumentation == nil && insts.ApacheHttpd.Instrumentation == nil &&
 		insts.Nginx.Instrumentation == nil &&
+		insts.Ruby.Instrumentation == nil &&
 		insts.Sdk.Instrumentation == nil {
 
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
@@ -463,6 +492,7 @@ func (pm *instPodMutator) validateInstrumentations(ctx context.Context, inst lan
 	}{
 		{inst.Java.Instrumentation},
 		{inst.Python.Instrumentation},
+		{inst.Ruby.Instrumentation},
 		{inst.NodeJS.Instrumentation},
 		{inst.DotNet.Instrumentation},
 		{inst.Go.Instrumentation},

@@ -28,6 +28,7 @@ type options struct {
 	autoInstrumentationJavaImage        string
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationPythonImage      string
+	autoInstrumentationRubyImage        string
 	autoInstrumentationApacheHttpdImage string
 	autoInstrumentationNginxImage       string
 	collectorImage                      string
@@ -39,6 +40,7 @@ type options struct {
 	enableGoInstrumentation             bool
 	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
+	enableRubyInstrumentation           bool
 	enableNodeJSInstrumentation         bool
 	enableJavaInstrumentation           bool
 	targetAllocatorConfigMapEntry       string
@@ -113,6 +115,11 @@ func WithEnablePythonInstrumentation(s bool) Option {
 		o.enablePythonInstrumentation = s
 	}
 }
+func WithEnableRubyInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableRubyInstrumentation = s
+	}
+}
 func WithEnableNodeJSInstrumentation(s bool) Option {
 	return func(o *options) {
 		o.enableNodeJSInstrumentation = s
@@ -154,6 +161,12 @@ func WithAutoInstrumentationNodeJSImage(s string) Option {
 func WithAutoInstrumentationPythonImage(s string) Option {
 	return func(o *options) {
 		o.autoInstrumentationPythonImage = s
+	}
+}
+
+func WithAutoInstrumentationRubyImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationRubyImage = s
 	}
 }
 

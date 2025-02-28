@@ -49,6 +49,7 @@ func TestUpgrade(t *testing.T) {
 			config.WithAutoInstrumentationJavaImage("java:1"),
 			config.WithAutoInstrumentationNodeJSImage("nodejs:1"),
 			config.WithAutoInstrumentationPythonImage("python:1"),
+			config.WithAutoInstrumentationRubyImage("ruby:1"),
 			config.WithAutoInstrumentationDotNetImage("dotnet:1"),
 			config.WithAutoInstrumentationGoImage("go:1"),
 			config.WithAutoInstrumentationApacheHttpdImage("apache-httpd:1"),
@@ -58,6 +59,7 @@ func TestUpgrade(t *testing.T) {
 			config.WithEnableGoInstrumentation(true),
 			config.WithEnableNginxInstrumentation(true),
 			config.WithEnablePythonInstrumentation(true),
+			config.WithEnableRubyInstrumentation(true),
 			config.WithEnableNodeJSInstrumentation(true),
 			config.WithEnableJavaInstrumentation(true),
 		),
@@ -66,6 +68,7 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "java:1", inst.Spec.Java.Image)
 	assert.Equal(t, "nodejs:1", inst.Spec.NodeJS.Image)
 	assert.Equal(t, "python:1", inst.Spec.Python.Image)
+	assert.Equal(t, "ruby:1", inst.Spec.Ruby.Image)
 	assert.Equal(t, "dotnet:1", inst.Spec.DotNet.Image)
 	assert.Equal(t, "go:1", inst.Spec.Go.Image)
 	assert.Equal(t, "apache-httpd:1", inst.Spec.ApacheHttpd.Image)
@@ -77,6 +80,7 @@ func TestUpgrade(t *testing.T) {
 		config.WithAutoInstrumentationJavaImage("java:2"),
 		config.WithAutoInstrumentationNodeJSImage("nodejs:2"),
 		config.WithAutoInstrumentationPythonImage("python:2"),
+		config.WithAutoInstrumentationRubyImage("ruby:2"),
 		config.WithAutoInstrumentationDotNetImage("dotnet:2"),
 		config.WithAutoInstrumentationGoImage("go:2"),
 		config.WithAutoInstrumentationApacheHttpdImage("apache-httpd:2"),
@@ -86,6 +90,7 @@ func TestUpgrade(t *testing.T) {
 		config.WithEnableGoInstrumentation(true),
 		config.WithEnableNginxInstrumentation(true),
 		config.WithEnablePythonInstrumentation(true),
+		config.WithEnableRubyInstrumentation(true),
 		config.WithEnableNodeJSInstrumentation(true),
 		config.WithEnableJavaInstrumentation(true),
 	)
@@ -106,6 +111,8 @@ func TestUpgrade(t *testing.T) {
 	assert.Equal(t, "nodejs:2", updated.Spec.NodeJS.Image)
 	assert.Equal(t, "python:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationPython])
 	assert.Equal(t, "python:2", updated.Spec.Python.Image)
+	assert.Equal(t, "ruby:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationRuby])
+	assert.Equal(t, "ruby:2", updated.Spec.Ruby.Image)
 	assert.Equal(t, "dotnet:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationDotNet])
 	assert.Equal(t, "dotnet:2", updated.Spec.DotNet.Image)
 	assert.Equal(t, "go:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationGo])
