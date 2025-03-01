@@ -290,7 +290,11 @@ func CreateDefaultConfig() Config {
 		AllocationFallbackStrategy: "",
 		FilterStrategy:             DefaultFilterStrategy,
 		PrometheusCR: PrometheusCRConfig{
-			ScrapeInterval: DefaultCRScrapeInterval,
+			ScrapeInterval:                  DefaultCRScrapeInterval,
+			ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+			PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+			ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+			ProbeNamespaceSelector:          &metav1.LabelSelector{},
 		},
 	}
 }
