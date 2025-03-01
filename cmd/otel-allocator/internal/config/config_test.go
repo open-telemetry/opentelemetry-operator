@@ -51,8 +51,12 @@ func TestLoad(t *testing.T) {
 				},
 				FilterStrategy: DefaultFilterStrategy,
 				PrometheusCR: PrometheusCRConfig{
-					Enabled:        true,
-					ScrapeInterval: model.Duration(time.Second * 60),
+					Enabled:                         true,
+					ScrapeInterval:                  model.Duration(time.Second * 60),
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 				},
 				HTTPS: HTTPSServerConfig{
 					Enabled:         true,
@@ -142,7 +146,11 @@ func TestLoad(t *testing.T) {
 							"release": "test",
 						},
 					},
-					ScrapeInterval: DefaultCRScrapeInterval,
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
@@ -213,7 +221,11 @@ func TestLoad(t *testing.T) {
 							"release": "test",
 						},
 					},
-					ScrapeInterval: DefaultCRScrapeInterval,
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
@@ -308,7 +320,11 @@ func TestLoad(t *testing.T) {
 							},
 						},
 					},
-					ScrapeInterval: DefaultCRScrapeInterval,
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
@@ -403,7 +419,11 @@ func TestLoad(t *testing.T) {
 							},
 						},
 					},
-					ScrapeInterval: DefaultCRScrapeInterval,
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
