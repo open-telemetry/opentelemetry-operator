@@ -10,6 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
@@ -21,6 +22,7 @@ var (
 		leastWeightedStrategyName:     newleastWeightedStrategy(),
 		consistentHashingStrategyName: newConsistentHashingStrategy(),
 		perNodeStrategyName:           newPerNodeStrategy(),
+		perZoneStrategyName:           newPerZoneStrategy(),
 	}
 
 	// TargetsPerCollector records how many targets have been assigned to each collector.
@@ -69,6 +71,12 @@ func WithFallbackStrategy(fallbackStrategy string) Option {
 	}
 }
 
+func WithKubeClient(kubeClient kubernetes.Interface) Option {
+	return func(allocator Allocator) {
+		allocator.SetKubeClient(kubeClient)
+	}
+}
+
 func RecordTargetsKept(targets map[string]*target.Item) {
 	TargetsRemaining.Set(float64(len(targets)))
 }
@@ -96,6 +104,7 @@ type Allocator interface {
 	GetTargetsForCollectorAndJob(collector string, job string) []*target.Item
 	SetFilter(filter Filter)
 	SetFallbackStrategy(strategy Strategy)
+	SetKubeClient(kubeConfig kubernetes.Interface)
 }
 
 type Strategy interface {
@@ -107,6 +116,7 @@ type Strategy interface {
 	GetName() string
 	// SetFallbackStrategy adds fallback strategy for strategies whose main allocation method can sometimes leave targets unassigned
 	SetFallbackStrategy(Strategy)
+	SetKubeClient(kubeClient kubernetes.Interface)
 }
 
 var _ consistent.Member = Collector{}

@@ -4,6 +4,8 @@
 package allocation
 
 import (
+	"k8s.io/client-go/kubernetes"
+
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
 
@@ -45,3 +47,5 @@ func (s *leastWeightedStrategy) GetCollectorForTarget(collectors map[string]*Col
 func (s *leastWeightedStrategy) SetCollectors(_ map[string]*Collector) {}
 
 func (s *leastWeightedStrategy) SetFallbackStrategy(fallbackStrategy Strategy) {}
+
+func (s *leastWeightedStrategy) SetKubeClient(kubeClient kubernetes.Interface) {}

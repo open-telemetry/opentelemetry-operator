@@ -4,6 +4,8 @@
 package server
 
 import (
+	"k8s.io/client-go/kubernetes"
+
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
 )
@@ -22,6 +24,7 @@ func (m *mockAllocator) Collectors() map[string]*allocation.Collector           
 func (m *mockAllocator) GetTargetsForCollectorAndJob(_ string, _ string) []*target.Item { return nil }
 func (m *mockAllocator) SetFilter(_ allocation.Filter)                                  {}
 func (m *mockAllocator) SetFallbackStrategy(_ allocation.Strategy)                      {}
+func (m *mockAllocator) SetKubeClient(kubeConfig kubernetes.Interface)                  {}
 
 func (m *mockAllocator) TargetItems() map[string]*target.Item {
 	return m.targetItems
