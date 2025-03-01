@@ -83,6 +83,7 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 				ProbeNamespaceSelector:          cfg.PrometheusCR.ProbeNamespaceSelector,
 				ServiceDiscoveryRole:            &serviceDiscoveryRole,
 			},
+			EvaluationInterval: monitoringv1.Duration("30s"),
 		},
 	}
 
@@ -133,6 +134,7 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 		probeNamespaceSelector:          cfg.PrometheusCR.ProbeNamespaceSelector,
 		resourceSelector:                resourceSelector,
 		store:                           store,
+		prometheusCR:                    prom,
 	}, nil
 }
 
@@ -152,6 +154,7 @@ type PrometheusCRWatcher struct {
 	probeNamespaceSelector          *metav1.LabelSelector
 	resourceSelector                *prometheus.ResourceSelector
 	store                           *assets.StoreBuilder
+	prometheusCR                    *monitoringv1.Prometheus
 }
 
 func getNamespaceInformer(ctx context.Context, allowList, denyList map[string]struct{}, promOperatorLogger *slog.Logger, clientset kubernetes.Interface, operatorMetrics *operator.Metrics) (cache.SharedIndexInformer, error) {
@@ -367,13 +370,7 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 		}
 
 		generatedConfig, err := w.configGenerator.GenerateServerConfiguration(
-			"30s",
-			"",
-			nil,
-			nil,
-			&monitoringv1.TSDBSpec{},
-			nil,
-			nil,
+			w.prometheusCR,
 			serviceMonitorInstances,
 			podMonitorInstances,
 			probeInstances,
