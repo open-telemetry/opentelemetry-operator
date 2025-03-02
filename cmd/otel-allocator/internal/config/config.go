@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
+	"math"
 	"os"
 	"reflect"
 	"time"
@@ -37,6 +39,17 @@ const (
 	DefaultFilterStrategy                              = "relabel-config"
 	DefaultCollectorNotReadyGracePeriod                = 0 * time.Second
 )
+
+// By default, scrape protocols include PrometheusText1_0_0, which only Prometheus >=3.0 supports.
+// Manually exclude this protocol until several versions of the Otel Collector support it.
+var DefaultScrapeProtocols = []promconfig.ScrapeProtocol{
+	promconfig.OpenMetricsText1_0_0,
+	promconfig.OpenMetricsText0_0_1,
+	promconfig.PrometheusText0_0_4,
+}
+
+// logger which discards all messages written to it. Replace this with slog.DiscardHandler after we require Go 1.24.
+var NopLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(math.MaxInt)}))
 
 type Config struct {
 	ListenAddr                   string                `yaml:"listen_addr,omitempty"`

@@ -39,11 +39,13 @@ import (
 var defaultScrapeProtocols = []promconfig.ScrapeProtocol{
 	promconfig.OpenMetricsText1_0_0,
 	promconfig.OpenMetricsText0_0_1,
+	promconfig.PrometheusText1_0_0,
 	promconfig.PrometheusText0_0_4,
 }
 
 func TestLoadConfig(t *testing.T) {
 	namespace := "test"
+	portName := "web"
 	tests := []struct {
 		name            string
 		serviceMonitors []*monitoringv1.ServiceMonitor
@@ -66,7 +68,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -82,7 +84,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -155,7 +157,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "auth",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 								BasicAuth: &monitoringv1.BasicAuth{
 									Username: v1.SecretKeySelector{
 										LocalObjectReference: v1.LocalObjectReference{
@@ -233,7 +235,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "bearer",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 								Authorization: &monitoringv1.SafeAuthorization{
 									Type: "Bearer",
 									Credentials: &v1.SecretKeySelector{
@@ -301,7 +303,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -317,7 +319,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -331,7 +333,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 								RelabelConfigs: []monitoringv1.RelabelConfig{
 									{
 										Action:      "keep",
@@ -412,7 +414,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -426,7 +428,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 								RelabelConfigs: []monitoringv1.RelabelConfig{
 									{
 										Action:      "keep",
@@ -450,7 +452,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -526,7 +528,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -540,7 +542,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: namespace,
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -597,7 +599,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -611,7 +613,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -795,7 +797,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -809,7 +811,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -865,7 +867,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -879,7 +881,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -958,6 +960,7 @@ func TestLoadConfig(t *testing.T) {
 func TestNamespaceLabelUpdate(t *testing.T) {
 	var err error
 	namespace := "test"
+	portName := "web"
 	podMonitors := []*monitoringv1.PodMonitor{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -968,7 +971,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 				JobLabel: "test",
 				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 					{
-						Port: "web",
+						Port: &portName,
 					},
 				},
 			},
@@ -982,7 +985,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 				JobLabel: "test",
 				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 					{
-						Port: "web",
+						Port: &portName,
 					},
 				},
 			},
