@@ -74,9 +74,20 @@ flowchart RL
   oc1 --> ta
   oc2 --> ta
   oc3 --> ta
-  sm ~~~|"1. Discover Prometheus Operator CRs"| sm
-  ta ~~~|"2. Add job to TA scrape configuration"| ta
-  oc3 ~~~|"3. Add job to OTel Collector scrape configuration"| oc3
+
+  %% Labels positioned correctly using text nodes
+  crs@{shape: text, label: "Discover Prometheus Operator CRs"}
+  ta_scrape@{shape: text, label: "Add job to TA scrape configuration"}
+  oc_scrape@{shape: text, label: "Add job to OTel Collector scrape configuration"}
+
+  oc_scrape ~~~ ta
+  oc_scrape ~~~ ta_scrape
+  ta ~~~ crs
+
+  %% Apply grey background to text labels
+  style crs fill:#e0e0e0,stroke:#cccccc
+  style ta_scrape fill:#e0e0e0,stroke:#cccccc
+  style oc_scrape fill:#e0e0e0,stroke:#cccccc
 ```
 
 Even though Prometheus is not required to be installed in your Kubernetes cluster to use the Target Allocator for Prometheus CR discovery, the TA does require that the ServiceMonitor and PodMonitor be installed. These CRs are bundled with Prometheus Operator; however, they can be installed standalone as well.
