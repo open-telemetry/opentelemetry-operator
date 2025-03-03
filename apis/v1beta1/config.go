@@ -474,23 +474,81 @@ func (s *Service) ApplyDefaults(logger logr.Logger) error {
 		return err
 	}
 
-	tm := &AnyConfig{
-		Object: map[string]interface{}{
-			"metrics": map[string]interface{}{
-				"address": fmt.Sprintf("%s:%d", telemetryAddr, telemetryPort),
-			},
-		},
+	if s.Telemetry == nil {
+		s.Telemetry = &AnyConfig{
+			Object: map[string]any{},
+		}
 	}
 
-	if s.Telemetry == nil {
-		s.Telemetry = tm
+	metrics, ok := s.Telemetry.Object["metrics"]
+	if !ok {
+		metrics = map[string]any{}
+		s.Telemetry.Object["metrics"] = metrics
+	}
+	metricsMap, ok := metrics.(map[string]any)
+	if !ok {
+		logger.Info("metrics field is not a map")
 		return nil
 	}
-	// NOTE: Merge without overwrite. If a telemetry endpoint is specified, the defaulting
-	// respects the configuration and returns an equal value.
-	if err := mergo.Merge(s.Telemetry, tm); err != nil {
-		return fmt.Errorf("telemetry config merge failed: %w", err)
+
+	readers, ok := metricsMap["readers"]
+	if !ok {
+		readers = []any{}
+		metricsMap["readers"] = readers
 	}
+	readersSlice, ok := readers.([]any)
+	if !ok {
+		logger.Info("readers field is not a slice")
+		return nil
+	}
+
+	var found bool
+	for _, reader := range readersSlice {
+		readerMap, ok := reader.(map[string]any)
+		if !ok {
+			logger.Info("reader field is not a map")
+			return nil
+		}
+
+		pull, ok := readerMap["pull"]
+		if !ok {
+			continue
+		}
+		pullMap, ok := pull.(map[string]any)
+		if !ok {
+			logger.Info("pull field is not a map")
+			return nil
+		}
+
+		exporter, ok := pullMap["exporter"]
+		if !ok {
+			continue
+		}
+		exporterMap, ok := exporter.(map[string]any)
+		if !ok {
+			logger.Info("exporter field is not a map")
+			return nil
+		}
+
+		if _, ok := exporterMap["prometheus"]; ok {
+			found = true
+			break
+		}
+	}
+	if !found {
+		readersSlice = append(readersSlice, map[string]any{
+			"pull": map[string]any{
+				"exporter": map[string]any{
+					"prometheus": map[string]any{
+						"host": telemetryAddr,
+						"port": int(telemetryPort),
+					},
+				},
+			},
+		})
+		metricsMap["readers"] = readersSlice
+	}
+
 	return nil
 }
 
