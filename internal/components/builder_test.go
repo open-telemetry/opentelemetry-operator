@@ -112,7 +112,7 @@ func TestBuilder_Build(t *testing.T) {
 					WithName("secure-service").
 					WithPort(443).
 					WithProtocol(corev1.ProtocolTCP).
-					WithRbacGen(func(logger logr.Logger, config sampleConfig) ([]rbacv1.PolicyRule, error) {
+					WithClusterRoleRulesGen(func(logger logr.Logger, config sampleConfig) ([]rbacv1.PolicyRule, error) {
 						rules := []rbacv1.PolicyRule{
 							{
 								NonResourceURLs: []string{config.example},
@@ -163,7 +163,7 @@ func TestBuilder_Build(t *testing.T) {
 					WithName("secure-service").
 					WithPort(443).
 					WithProtocol(corev1.ProtocolTCP).
-					WithRbacGen(func(logger logr.Logger, config sampleConfig) ([]rbacv1.PolicyRule, error) {
+					WithClusterRoleRulesGen(func(logger logr.Logger, config sampleConfig) ([]rbacv1.PolicyRule, error) {
 						rules := []rbacv1.PolicyRule{
 							{
 								NonResourceURLs: []string{config.example},
@@ -279,7 +279,7 @@ func TestBuilder_Build(t *testing.T) {
 			ports, err := got.Ports(logr.Discard(), got.ParserType(), tt.params.conf)
 			assert.NoError(t, err)
 			assert.Equalf(t, tt.want.ports, ports, "Ports()")
-			rules, rbacErr := got.GetRBACRules(logr.Discard(), tt.params.conf)
+			rules, rbacErr := got.GetClusterRoleRules(logr.Discard(), tt.params.conf)
 			if tt.wantRbacErr(t, rbacErr, "WantRbacErr()") && rbacErr != nil {
 				return
 			}
