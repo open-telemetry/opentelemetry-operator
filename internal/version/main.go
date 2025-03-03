@@ -15,6 +15,7 @@ var (
 	otelCol                        string
 	targetAllocator                string
 	operatorOpAMPBridge            string
+	autoInstrumentationInjector    string
 	autoInstrumentationJava        string
 	autoInstrumentationNodeJS      string
 	autoInstrumentationPython      string
@@ -32,6 +33,7 @@ type Version struct {
 	Go                             string `json:"go-version"`
 	TargetAllocator                string `json:"target-allocator-version"`
 	OperatorOpAMPBridge            string `json:"operator-opamp-bridge"`
+	AutoInstrumentationInjector    string `json:"auto-instrumentation-injector"`
 	AutoInstrumentationJava        string `json:"auto-instrumentation-java"`
 	AutoInstrumentationNodeJS      string `json:"auto-instrumentation-nodejs"`
 	AutoInstrumentationPython      string `json:"auto-instrumentation-python"`
@@ -50,6 +52,7 @@ func Get() Version {
 		Go:                             runtime.Version(),
 		TargetAllocator:                TargetAllocator(),
 		OperatorOpAMPBridge:            OperatorOpAMPBridge(),
+		AutoInstrumentationInjector:    AutoInstrumentationInjector(),
 		AutoInstrumentationJava:        AutoInstrumentationJava(),
 		AutoInstrumentationNodeJS:      AutoInstrumentationNodeJS(),
 		AutoInstrumentationPython:      AutoInstrumentationPython(),
@@ -109,6 +112,13 @@ func OperatorOpAMPBridge() string {
 	}
 
 	// fallback value, useful for tests
+	return "0.0.0"
+}
+
+func AutoInstrumentationInjector() string {
+	if len(autoInstrumentationInjector) > 0 {
+		return autoInstrumentationInjector
+	}
 	return "0.0.0"
 }
 

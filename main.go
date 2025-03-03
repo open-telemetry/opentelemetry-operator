@@ -114,11 +114,13 @@ func main() {
 		enableNginxInstrumentation       bool
 		enableNodeJSInstrumentation      bool
 		enableJavaInstrumentation        bool
+		enableInjectorInstrumentation    bool
 		enableCRMetrics                  bool
 		createSMOperatorMetrics          bool
 		collectorImage                   string
 		targetAllocatorImage             string
 		operatorOpAMPBridgeImage         string
+		autoInstrumentationInjector      string
 		autoInstrumentationJava          string
 		autoInstrumentationNodeJS        string
 		autoInstrumentationPython        string
@@ -154,12 +156,14 @@ func main() {
 	pflag.BoolVar(&enableNginxInstrumentation, constants.FlagNginx, false, "Controls whether the operator supports nginx auto-instrumentation")
 	pflag.BoolVar(&enableNodeJSInstrumentation, constants.FlagNodeJS, true, "Controls whether the operator supports nodejs auto-instrumentation")
 	pflag.BoolVar(&enableJavaInstrumentation, constants.FlagJava, true, "Controls whether the operator supports java auto-instrumentation")
+	pflag.BoolVar(&enableInjectorInstrumentation, constants.FlagInjector, true, "Controls whether the operator supports injector auto-instrumentation")
 	pflag.BoolVar(&enableCRMetrics, constants.FlagCRMetrics, false, "Controls whether exposing the CR metrics is enabled")
 	pflag.BoolVar(&createSMOperatorMetrics, "create-sm-operator-metrics", false, "Create a ServiceMonitor for the operator metrics")
 
 	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&operatorOpAMPBridgeImage, "operator-opamp-bridge-image", "RELATED_IMAGE_OPERATOR_OPAMP_BRIDGE", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:%s", v.OperatorOpAMPBridge), "The default OpenTelemetry Operator OpAMP Bridge image. This image is used when no image is specified in the CustomResource.")
+	stringFlagOrEnv(&autoInstrumentationInjector, "auto-instrumentation-injector-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_INJECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-injector:%s", v.AutoInstrumentationInjector), "The default OpenTelemetry Injector instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationJava, "auto-instrumentation-java-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:%s", v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationNodeJS, "auto-instrumentation-nodejs-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_NODEJS", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:%s", v.AutoInstrumentationNodeJS), "The default OpenTelemetry NodeJS instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationPython, "auto-instrumentation-python-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:%s", v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
@@ -198,6 +202,7 @@ func main() {
 		"opentelemetry-collector", collectorImage,
 		"opentelemetry-targetallocator", targetAllocatorImage,
 		"operator-opamp-bridge", operatorOpAMPBridgeImage,
+		"auto-instrumentation-injector", autoInstrumentationInjector,
 		"auto-instrumentation-java", autoInstrumentationJava,
 		"auto-instrumentation-nodejs", autoInstrumentationNodeJS,
 		"auto-instrumentation-python", autoInstrumentationPython,
@@ -220,6 +225,7 @@ func main() {
 		"enable-nginx-instrumentation", enableNginxInstrumentation,
 		"enable-nodejs-instrumentation", enableNodeJSInstrumentation,
 		"enable-java-instrumentation", enableJavaInstrumentation,
+		"enable-injector-instrumentation", enableInjectorInstrumentation,
 		"create-openshift-dashboard", createOpenShiftDashboard,
 		"create-sm-operator-metrics", createSMOperatorMetrics,
 		"zap-message-key", encodeMessageKey,
@@ -314,9 +320,11 @@ func main() {
 		config.WithEnablePythonInstrumentation(enablePythonInstrumentation),
 		config.WithEnableNodeJSInstrumentation(enableNodeJSInstrumentation),
 		config.WithEnableJavaInstrumentation(enableJavaInstrumentation),
+		config.WithEnableInjectorInstrumentation(enableInjectorInstrumentation),
 		config.WithTargetAllocatorImage(targetAllocatorImage),
 		config.WithOperatorOpAMPBridgeImage(operatorOpAMPBridgeImage),
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
+		config.WithAutoInstrumentationInjectorImage(autoInstrumentationInjector),
 		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
 		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
 		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),

@@ -1,0 +1,15 @@
+# Open questions
+
+* How can the injector "inherit" features of other instrumentations, e.g.:
+  * Specific versions
+  * JavaAgent extensions
+* Detect libc (Python, .NET) -> Will need likely a zig injector
+
+$ TODOs
+
+* C Lint
+* Swap default off
+* Injector Image CI build
+* Documentation
+* OTep
+* Versioning scheme

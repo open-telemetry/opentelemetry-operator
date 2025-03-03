@@ -592,6 +592,88 @@ func TestMutatePod(t *testing.T) {
 			config: config.New(),
 		},
 		{
+			name: "injector injection feature gate disabled",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "injector-disabled",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "injector-disabled",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					Injector: v1alpha1.Injector{
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_INJECTOR_DEBUG",
+								Value: "true",
+							},
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_TRACES_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+							Value: "http://localhost:4317",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+							Value: "20",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER",
+							Value: "parentbased_traceidratio",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER_ARG",
+							Value: "0.85",
+						},
+						{
+							Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+							Value: "true",
+						},
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectInjector: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectInjector: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			config: config.New(config.WithEnableInjectorInstrumentation(false)),
+		},
+		{
 			name: "javaagent injection feature gate disabled",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -4443,6 +4525,15 @@ func TestMutatePod(t *testing.T) {
 							},
 						},
 					},
+					Injector: v1alpha1.Injector{
+						Image: "otel/injector:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+						},
+					},
 					Java: v1alpha1.Java{
 						Image: "otel/java:1",
 						Env: []corev1.EnvVar{
@@ -4478,10 +4569,11 @@ func TestMutatePod(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectDotNet: "true",
-						annotationInjectJava:   "true",
-						annotationInjectNodeJS: "true",
-						annotationInjectPython: "true",
+						annotationInjectDotNet:   "true",
+						annotationInjectInjector: "true",
+						annotationInjectJava:     "true",
+						annotationInjectNodeJS:   "true",
+						annotationInjectPython:   "true",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -4491,6 +4583,12 @@ func TestMutatePod(t *testing.T) {
 						},
 						{
 							Name: "dotnet2",
+						},
+						{
+							Name: "injector1",
+						},
+						{
+							Name: "injector2",
 						},
 						{
 							Name: "java1",
@@ -4522,10 +4620,11 @@ func TestMutatePod(t *testing.T) {
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectDotNet: "true",
-						annotationInjectJava:   "true",
-						annotationInjectNodeJS: "true",
-						annotationInjectPython: "true",
+						annotationInjectDotNet:   "true",
+						annotationInjectJava:     "true",
+						annotationInjectInjector: "true",
+						annotationInjectNodeJS:   "true",
+						annotationInjectPython:   "true",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -4535,6 +4634,12 @@ func TestMutatePod(t *testing.T) {
 						},
 						{
 							Name: "dotnet2",
+						},
+						{
+							Name: "injector1",
+						},
+						{
+							Name: "injector2",
 						},
 						{
 							Name: "java1",
@@ -4563,7 +4668,7 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableMultiInstrumentation(true), config.WithEnableJavaInstrumentation(false)),
+			config: config.New(config.WithEnableMultiInstrumentation(true), config.WithEnableJavaInstrumentation(false), config.WithEnableInjectorInstrumentation(false)),
 		},
 		{
 			name: "multi instrumentation feature gate enabled, single instrumentation annotation set, no containers",
