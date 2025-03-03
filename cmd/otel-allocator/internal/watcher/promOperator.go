@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/blang/semver/v4"
@@ -53,7 +54,21 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 		return nil, err
 	}
 
-	factory := informers.NewMonitoringInformerFactories(map[string]struct{}{v1.NamespaceAll: {}}, map[string]struct{}{}, mClient, allocatorconfig.DefaultResyncTime, nil) //TODO decide what strategy to use regarding namespaces
+	// Check env var for WATCH_NAMESPACE and use it if its set, else use v1.NamespaceAll
+	// This is to allow the operator to watch only a specific namespace
+	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
+	allowList := map[string]struct{}{}
+	if found {
+		logger.Info("watching namespace(s)", "namespaces", watchNamespace)
+		for _, ns := range strings.Split(watchNamespace, ",") {
+			allowList[ns] = struct{}{}
+		}
+	} else {
+		allowList = map[string]struct{}{v1.NamespaceAll: {}}
+		logger.Info("the env var WATCH_NAMESPACE isn't set, watching all namespaces")
+	}
+
+	factory := informers.NewMonitoringInformerFactories(allowList, map[string]struct{}{}, mClient, allocatorconfig.DefaultResyncTime, nil) //TODO decide what strategy to use regarding namespaces
 
 	monitoringInformers, err := getInformers(factory)
 	if err != nil {
@@ -99,7 +114,7 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 			logger.Error(err, "Retrying namespace informer creation in promOperator CRD watcher")
 			return true
 		}, func() error {
-			nsMonInf, err = getNamespaceInformer(ctx, map[string]struct{}{v1.NamespaceAll: {}}, promLogger, clientset, operatorMetrics)
+			nsMonInf, err = getNamespaceInformer(ctx, allowList, promLogger, clientset, operatorMetrics)
 			return err
 		})
 	if getNamespaceInformerErr != nil {
