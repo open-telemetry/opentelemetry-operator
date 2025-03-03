@@ -9,12 +9,13 @@ OPERATOR_OPAMP_BRIDGE_VERSION ?= "$(shell grep -v '\#' versions.txt | grep opera
 AUTO_INSTRUMENTATION_JAVA_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-java | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-nodejs | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-python | awk -F= '{print $$2}')"
+AUTO_INSTRUMENTATION_RUBY_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-ruby | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-dotnet | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_GO_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-go | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-apache-httpd | awk -F= '{print $$2}')"
 AUTO_INSTRUMENTATION_NGINX_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-nginx | awk -F= '{print $$2}')"
 COMMON_LDFLAGS ?= -s -w
-OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELCOL_VERSION} -X ${VERSION_PKG}.targetAllocator=${TARGETALLOCATOR_VERSION} -X ${VERSION_PKG}.operatorOpAMPBridge=${OPERATOR_OPAMP_BRIDGE_VERSION} -X ${VERSION_PKG}.autoInstrumentationJava=${AUTO_INSTRUMENTATION_JAVA_VERSION} -X ${VERSION_PKG}.autoInstrumentationNodeJS=${AUTO_INSTRUMENTATION_NODEJS_VERSION} -X ${VERSION_PKG}.autoInstrumentationPython=${AUTO_INSTRUMENTATION_PYTHON_VERSION} -X ${VERSION_PKG}.autoInstrumentationDotNet=${AUTO_INSTRUMENTATION_DOTNET_VERSION} -X ${VERSION_PKG}.autoInstrumentationGo=${AUTO_INSTRUMENTATION_GO_VERSION} -X ${VERSION_PKG}.autoInstrumentationApacheHttpd=${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION} -X ${VERSION_PKG}.autoInstrumentationNginx=${AUTO_INSTRUMENTATION_NGINX_VERSION}
+OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELCOL_VERSION} -X ${VERSION_PKG}.targetAllocator=${TARGETALLOCATOR_VERSION} -X ${VERSION_PKG}.operatorOpAMPBridge=${OPERATOR_OPAMP_BRIDGE_VERSION} -X ${VERSION_PKG}.autoInstrumentationJava=${AUTO_INSTRUMENTATION_JAVA_VERSION} -X ${VERSION_PKG}.autoInstrumentationNodeJS=${AUTO_INSTRUMENTATION_NODEJS_VERSION} -X ${VERSION_PKG}.autoInstrumentationPython=${AUTO_INSTRUMENTATION_PYTHON_VERSION} -X ${VERSION_PKG}.autoInstrumentationRuby=${AUTO_INSTRUMENTATION_RUBY_VERSION} -X ${VERSION_PKG}.autoInstrumentationDotNet=${AUTO_INSTRUMENTATION_DOTNET_VERSION} -X ${VERSION_PKG}.autoInstrumentationGo=${AUTO_INSTRUMENTATION_GO_VERSION} -X ${VERSION_PKG}.autoInstrumentationApacheHttpd=${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION} -X ${VERSION_PKG}.autoInstrumentationNginx=${AUTO_INSTRUMENTATION_NGINX_VERSION}
 ARCH ?= $(shell go env GOARCH)
 ifeq ($(shell uname), Darwin)
   SED_INPLACE := sed -i ''
@@ -667,6 +668,7 @@ chlog-insert-components:
 	@echo "* [.NET auto-instrumentation - v${AUTO_INSTRUMENTATION_DOTNET_VERSION}](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v${AUTO_INSTRUMENTATION_DOTNET_VERSION})" >>components.md
 	@echo "* [Node.JS - v${AUTO_INSTRUMENTATION_NODEJS_VERSION}](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv${AUTO_INSTRUMENTATION_NODEJS_VERSION})" >>components.md
 	@echo "* [Python - v${AUTO_INSTRUMENTATION_PYTHON_VERSION}](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v${AUTO_INSTRUMENTATION_PYTHON_VERSION})" >>components.md
+	@echo "* [Ruby - v${AUTO_INSTRUMENTATION_RUBY_VERSION}](https://github.com/open-telemetry/opentelemetry-ruby-contrib/releases/tag/v${AUTO_INSTRUMENTATION_RUBY_VERSION})" >>components.md
 	@echo "* [Go - ${AUTO_INSTRUMENTATION_GO_VERSION}](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/${AUTO_INSTRUMENTATION_GO_VERSION})" >>components.md
 	@echo "* [ApacheHTTPD - ${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION})" >>components.md
 	@echo "* [Nginx - ${AUTO_INSTRUMENTATION_NGINX_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${AUTO_INSTRUMENTATION_NGINX_VERSION})" >>components.md

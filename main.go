@@ -111,6 +111,7 @@ func main() {
 		enableDotNetInstrumentation      bool
 		enableGoInstrumentation          bool
 		enablePythonInstrumentation      bool
+		enableRubyInstrumentation        bool
 		enableNginxInstrumentation       bool
 		enableNodeJSInstrumentation      bool
 		enableJavaInstrumentation        bool
@@ -122,6 +123,7 @@ func main() {
 		autoInstrumentationJava          string
 		autoInstrumentationNodeJS        string
 		autoInstrumentationPython        string
+		autoInstrumentationRuby          string
 		autoInstrumentationDotNet        string
 		autoInstrumentationApacheHttpd   string
 		autoInstrumentationNginx         string
@@ -151,6 +153,7 @@ func main() {
 	pflag.BoolVar(&enableDotNetInstrumentation, constants.FlagDotNet, true, "Controls whether the operator supports dotnet auto-instrumentation")
 	pflag.BoolVar(&enableGoInstrumentation, constants.FlagGo, false, "Controls whether the operator supports Go auto-instrumentation")
 	pflag.BoolVar(&enablePythonInstrumentation, constants.FlagPython, true, "Controls whether the operator supports python auto-instrumentation")
+	pflag.BoolVar(&enableRubyInstrumentation, constants.FlagRuby, true, "Controls whether the operator supports ruby auto-instrumentation")
 	pflag.BoolVar(&enableNginxInstrumentation, constants.FlagNginx, false, "Controls whether the operator supports nginx auto-instrumentation")
 	pflag.BoolVar(&enableNodeJSInstrumentation, constants.FlagNodeJS, true, "Controls whether the operator supports nodejs auto-instrumentation")
 	pflag.BoolVar(&enableJavaInstrumentation, constants.FlagJava, true, "Controls whether the operator supports java auto-instrumentation")
@@ -163,6 +166,7 @@ func main() {
 	stringFlagOrEnv(&autoInstrumentationJava, "auto-instrumentation-java-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:%s", v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationNodeJS, "auto-instrumentation-nodejs-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_NODEJS", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:%s", v.AutoInstrumentationNodeJS), "The default OpenTelemetry NodeJS instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationPython, "auto-instrumentation-python-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:%s", v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
+	stringFlagOrEnv(&autoInstrumentationRuby, "auto-instrumentation-ruby-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_RUBY", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-ruby:%s", v.AutoInstrumentationRuby), "The default OpenTelemetry Ruby instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationDotNet, "auto-instrumentation-dotnet-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:%s", v.AutoInstrumentationDotNet), "The default OpenTelemetry DotNet instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationGo, "auto-instrumentation-go-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_GO", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:%s", v.AutoInstrumentationGo), "The default OpenTelemetry Go instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationApacheHttpd, "auto-instrumentation-apache-httpd-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_APACHE_HTTPD", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationApacheHttpd), "The default OpenTelemetry Apache HTTPD instrumentation image. This image is used when no image is specified in the CustomResource.")
@@ -201,6 +205,7 @@ func main() {
 		"auto-instrumentation-java", autoInstrumentationJava,
 		"auto-instrumentation-nodejs", autoInstrumentationNodeJS,
 		"auto-instrumentation-python", autoInstrumentationPython,
+		"auto-instrumentation-ruby", autoInstrumentationRuby,
 		"auto-instrumentation-dotnet", autoInstrumentationDotNet,
 		"auto-instrumentation-go", autoInstrumentationGo,
 		"auto-instrumentation-apache-httpd", autoInstrumentationApacheHttpd,
@@ -217,6 +222,7 @@ func main() {
 		"enable-dotnet-instrumentation", enableDotNetInstrumentation,
 		"enable-go-instrumentation", enableGoInstrumentation,
 		"enable-python-instrumentation", enablePythonInstrumentation,
+		"enable-ruby-instrumentation", enableRubyInstrumentation,
 		"enable-nginx-instrumentation", enableNginxInstrumentation,
 		"enable-nodejs-instrumentation", enableNodeJSInstrumentation,
 		"enable-java-instrumentation", enableJavaInstrumentation,
@@ -312,6 +318,7 @@ func main() {
 		config.WithEnableGoInstrumentation(enableGoInstrumentation),
 		config.WithEnableNginxInstrumentation(enableNginxInstrumentation),
 		config.WithEnablePythonInstrumentation(enablePythonInstrumentation),
+		config.WithEnableRubyInstrumentation(enableRubyInstrumentation),
 		config.WithEnableNodeJSInstrumentation(enableNodeJSInstrumentation),
 		config.WithEnableJavaInstrumentation(enableJavaInstrumentation),
 		config.WithTargetAllocatorImage(targetAllocatorImage),
@@ -319,6 +326,7 @@ func main() {
 		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
 		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
 		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
+		config.WithAutoInstrumentationRubyImage(autoInstrumentationRuby),
 		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
 		config.WithAutoInstrumentationGoImage(autoInstrumentationGo),
 		config.WithAutoInstrumentationApacheHttpdImage(autoInstrumentationApacheHttpd),
