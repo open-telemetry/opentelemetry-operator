@@ -9480,6 +9480,20 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>allowNamespaces</b></td>
+        <td>[]string</td>
+        <td>
+          AllowNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (allow list). This is mutually exclusive with DenyNamespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>denyNamespaces</b></td>
+        <td>[]string</td>
+        <td>
+          DenyNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (deny list). This is mutually exclusive with AllowNamespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>

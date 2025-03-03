@@ -1,0 +1,35 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: prometheus-cr
+  namespace: ($namespace)
+  labels:
+    opentelemetry.io/target-allocator: cr
+spec:
+  observability:
+    metrics:
+      disablePrometheusAnnotations: true
+      enableMetrics: true
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs: []
+
+    processors:
+
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:9090
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          exporters: [prometheus]
+      telemetry:
+        logs:
+          level: "DEBUG"
+          development: true
+          encoding: "json"
+  mode: statefulset
+  serviceAccount: collector

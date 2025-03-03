@@ -76,6 +76,7 @@ status:
 ---
 apiVersion: v1
 data:
+  # Note: The content of this file must match exactly (careful about the order of keys) the content of the file in the ConfigMap
   targetallocator.yaml: |
     allocation_strategy: consistent-hashing
     collector_selector: null

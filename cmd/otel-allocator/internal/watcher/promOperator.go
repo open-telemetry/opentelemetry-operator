@@ -53,7 +53,9 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 		return nil, err
 	}
 
-	factory := informers.NewMonitoringInformerFactories(map[string]struct{}{v1.NamespaceAll: {}}, map[string]struct{}{}, mClient, allocatorconfig.DefaultResyncTime, nil) //TODO decide what strategy to use regarding namespaces
+	allowList, denyList := cfg.PrometheusCR.GetAllowDenyLists()
+
+	factory := informers.NewMonitoringInformerFactories(allowList, denyList, mClient, allocatorconfig.DefaultResyncTime, nil)
 
 	monitoringInformers, err := getInformers(factory)
 	if err != nil {
@@ -102,7 +104,7 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 			logger.Error(err, "Retrying namespace informer creation in promOperator CRD watcher")
 			return true
 		}, func() error {
-			nsMonInf, err = getNamespaceInformer(ctx, map[string]struct{}{v1.NamespaceAll: {}}, promLogger, clientset, operatorMetrics)
+			nsMonInf, err = getNamespaceInformer(ctx, allowList, denyList, promLogger, clientset, operatorMetrics)
 			return err
 		})
 	if getNamespaceInformerErr != nil {
@@ -152,7 +154,7 @@ type PrometheusCRWatcher struct {
 	store                           *assets.StoreBuilder
 }
 
-func getNamespaceInformer(ctx context.Context, allowList map[string]struct{}, promOperatorLogger *slog.Logger, clientset kubernetes.Interface, operatorMetrics *operator.Metrics) (cache.SharedIndexInformer, error) {
+func getNamespaceInformer(ctx context.Context, allowList, denyList map[string]struct{}, promOperatorLogger *slog.Logger, clientset kubernetes.Interface, operatorMetrics *operator.Metrics) (cache.SharedIndexInformer, error) {
 	kubernetesVersion, err := clientset.Discovery().ServerVersion()
 	if err != nil {
 		return nil, err
@@ -168,7 +170,7 @@ func getNamespaceInformer(ctx context.Context, allowList map[string]struct{}, pr
 		clientset.CoreV1(),
 		clientset.AuthorizationV1().SelfSubjectAccessReviews(),
 		allowList,
-		map[string]struct{}{},
+		denyList,
 	)
 	if err != nil {
 		return nil, err
