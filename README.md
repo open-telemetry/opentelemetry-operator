@@ -858,7 +858,7 @@ Emeritus Approvers:
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
 - [Benedikt Bongartz](https://github.com/frzifus), Red Hat
-- [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
+- [Jacob Aronoff](https://github.com/jaronoff97), Omlet
 - [Mikołaj Świątek](https://github.com/swiatekm), Elastic
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 
