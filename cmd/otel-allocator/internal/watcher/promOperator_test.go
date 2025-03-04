@@ -39,7 +39,6 @@ import (
 var defaultScrapeProtocols = []promconfig.ScrapeProtocol{
 	promconfig.OpenMetricsText1_0_0,
 	promconfig.OpenMetricsText0_0_1,
-	promconfig.PrometheusText1_0_0,
 	promconfig.PrometheusText0_0_4,
 }
 
@@ -1253,6 +1252,7 @@ func getTestPrometheusCRWatcher(
 				ScrapeConfigSelector:            cfg.PrometheusCR.ScrapeConfigSelector,
 				ScrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
 				ServiceDiscoveryRole:            &serviceDiscoveryRole,
+				Version:                         "2.55.1",
 			},
 			EvaluationInterval: monitoringv1.Duration("30s"),
 		},
