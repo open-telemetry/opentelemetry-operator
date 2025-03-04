@@ -39,6 +39,12 @@ const (
 	minEventInterval = time.Second * 5
 )
 
+var DefaultScrapeProtocols = []monitoringv1.ScrapeProtocol{
+	monitoringv1.OpenMetricsText1_0_0,
+	monitoringv1.OpenMetricsText0_0_1,
+	monitoringv1.PrometheusText0_0_4,
+}
+
 func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
 	promLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	slogger := slog.New(logr.ToSlogHandler(logger))
@@ -82,6 +88,8 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 				ProbeSelector:                   cfg.PrometheusCR.ProbeSelector,
 				ProbeNamespaceSelector:          cfg.PrometheusCR.ProbeNamespaceSelector,
 				ServiceDiscoveryRole:            &serviceDiscoveryRole,
+				Version:                         "2.55.1", // fix Prometheus version 2 to avoid generating incompatible config
+				ScrapeProtocols:                 DefaultScrapeProtocols,
 			},
 			EvaluationInterval: monitoringv1.Duration("30s"),
 		},
@@ -384,6 +392,11 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 			return nil, err
 		}
 
+		generatedConfig, err = applyPromConfigDefaults(generatedConfig)
+		if err != nil {
+			return nil, err
+		}
+
 		unmarshalErr := yaml.Unmarshal(generatedConfig, promCfg)
 		if unmarshalErr != nil {
 			return nil, unmarshalErr
@@ -442,4 +455,19 @@ func (w *PrometheusCRWatcher) WaitForNamedCacheSync(controllerName string, inf c
 	}
 
 	return ok
+}
+
+// applyPromConfigDefaults applies our own defaults to the Prometheus configuration. The unmarshalling process for
+// Prometheus config is quite involved, and as a result, we need to apply our own defaults before it happens.
+func applyPromConfigDefaults(configBytes []byte) ([]byte, error) {
+	var configMap map[any]any
+	err := yaml.Unmarshal(configBytes, &configMap)
+	if err != nil {
+		return nil, err
+	}
+	err = allocatorconfig.ApplyPromConfigDefaults(configMap)
+	if err != nil {
+		return nil, err
+	}
+	return yaml.Marshal(configMap)
 }

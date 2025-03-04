@@ -129,7 +129,12 @@ func MapToPromConfig() mapstructure.DecodeHookFuncType {
 
 		pConfig := &promconfig.Config{}
 
-		mb, err := yaml.Marshal(data.(map[any]any))
+		dataMap := data.(map[any]any)
+		err := ApplyPromConfigDefaults(dataMap)
+		if err != nil {
+			return nil, err
+		}
+		mb, err := yaml.Marshal(dataMap)
 		if err != nil {
 			return nil, err
 		}
@@ -140,6 +145,32 @@ func MapToPromConfig() mapstructure.DecodeHookFuncType {
 		}
 		return pConfig, nil
 	}
+}
+
+// applyPromConfigDefaults applies our own defaults to the Prometheus configuration. The unmarshalling process for
+// Prometheus config is quite involved, and as a result, we need to apply our own defaults before it happens.
+func ApplyPromConfigDefaults(promcCfgMap map[any]any) error {
+	// use our own struct definition here because we don't want Prometheus unmarshalling logic to apply here
+	promCfg := struct {
+		GlobalConfig struct {
+			ScrapeProtocols []promconfig.ScrapeProtocol `mapstructure:"scrape_protocols"`
+			Rest            map[any]any                 `mapstructure:",remain"`
+		} `mapstructure:"global"`
+		Rest map[any]any `mapstructure:",remain"`
+	}{}
+	err := mapstructure.Decode(promcCfgMap, &promCfg)
+	if err != nil {
+		return err
+	}
+	// apply defaults here
+	promCfg.GlobalConfig.ScrapeProtocols = DefaultScrapeProtocols
+
+	// decode back into the map
+	err = mapstructure.Decode(promCfg, &promcCfgMap)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // MapToLabelSelector returns a DecodeHookFuncType that
