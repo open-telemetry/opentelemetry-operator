@@ -112,7 +112,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 				Name:      volume.Name,
 				MountPath: dotnetInstrMountPath,
 			}},
-			ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy),
+			ImagePullPolicy: instSpec.ImagePullPolicy,
 		})
 	}
 	return pod, nil

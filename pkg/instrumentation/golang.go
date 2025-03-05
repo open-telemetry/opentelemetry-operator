@@ -57,7 +57,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config, instSpec
 				Name:      kernelDebugVolumeName,
 			},
 		},
-		ImagePullPolicy: setImagePullPolicy(instSpec.ImagePullPolicy),
+		ImagePullPolicy: instSpec.ImagePullPolicy,
 	}
 
 	// Annotation takes precedence for OTEL_GO_AUTO_TARGET_EXE

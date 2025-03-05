@@ -171,13 +171,3 @@ func setContainersFromAnnotation(inst *instrumentationWithContainers, annotation
 	inst.Containers = append(inst.Containers, languageContainers...)
 	return nil
 }
-
-func setImagePullPolicy(instSpec corev1.PullPolicy) corev1.PullPolicy {
-	var imagePullPolicy = corev1.PullAlways
-
-	if instSpec != imagePullPolicy {
-		imagePullPolicy = instSpec
-	}
-
-	return imagePullPolicy
-}
