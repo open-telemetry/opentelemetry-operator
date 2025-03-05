@@ -1141,21 +1141,21 @@ More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-ho
         <td><b><a href="#targetallocatorspecadditionalcontainersindexlifecyclepoststartexec">exec</a></b></td>
         <td>object</td>
         <td>
-          Exec specifies the action to take.<br/>
+          Exec specifies a command to execute in the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecadditionalcontainersindexlifecyclepoststarthttpget">httpGet</a></b></td>
         <td>object</td>
         <td>
-          HTTPGet specifies the http request to perform.<br/>
+          HTTPGet specifies an HTTP GET request to perform.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecadditionalcontainersindexlifecyclepoststartsleep">sleep</a></b></td>
         <td>object</td>
         <td>
-          Sleep represents the duration that the container should sleep before being terminated.<br/>
+          Sleep represents a duration that the container should sleep.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1163,8 +1163,8 @@ More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-ho
         <td>object</td>
         <td>
           Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility. There are no validation of this field and
-lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
+for backward compatibility. There is no validation of this field and
+lifecycle hooks will fail at runtime when it is specified.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1176,7 +1176,7 @@ lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
 
 
 
-Exec specifies the action to take.
+Exec specifies a command to execute in the container.
 
 <table>
     <thead>
@@ -1207,7 +1207,7 @@ Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
 
 
 
-HTTPGet specifies the http request to perform.
+HTTPGet specifies an HTTP GET request to perform.
 
 <table>
     <thead>
@@ -1301,7 +1301,7 @@ This will be canonicalized upon output, so case-variant names will be understood
 
 
 
-Sleep represents the duration that the container should sleep before being terminated.
+Sleep represents a duration that the container should sleep.
 
 <table>
     <thead>
@@ -1331,8 +1331,8 @@ Sleep represents the duration that the container should sleep before being termi
 
 
 Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility. There are no validation of this field and
-lifecycle hooks will fail in runtime when tcp handler is specified.
+for backward compatibility. There is no validation of this field and
+lifecycle hooks will fail at runtime when it is specified.
 
 <table>
     <thead>
@@ -1391,21 +1391,21 @@ More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-ho
         <td><b><a href="#targetallocatorspecadditionalcontainersindexlifecycleprestopexec">exec</a></b></td>
         <td>object</td>
         <td>
-          Exec specifies the action to take.<br/>
+          Exec specifies a command to execute in the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecadditionalcontainersindexlifecycleprestophttpget">httpGet</a></b></td>
         <td>object</td>
         <td>
-          HTTPGet specifies the http request to perform.<br/>
+          HTTPGet specifies an HTTP GET request to perform.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecadditionalcontainersindexlifecycleprestopsleep">sleep</a></b></td>
         <td>object</td>
         <td>
-          Sleep represents the duration that the container should sleep before being terminated.<br/>
+          Sleep represents a duration that the container should sleep.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1413,8 +1413,8 @@ More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-ho
         <td>object</td>
         <td>
           Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility. There are no validation of this field and
-lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
+for backward compatibility. There is no validation of this field and
+lifecycle hooks will fail at runtime when it is specified.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1426,7 +1426,7 @@ lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
 
 
 
-Exec specifies the action to take.
+Exec specifies a command to execute in the container.
 
 <table>
     <thead>
@@ -1457,7 +1457,7 @@ Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
 
 
 
-HTTPGet specifies the http request to perform.
+HTTPGet specifies an HTTP GET request to perform.
 
 <table>
     <thead>
@@ -1551,7 +1551,7 @@ This will be canonicalized upon output, so case-variant names will be understood
 
 
 
-Sleep represents the duration that the container should sleep before being terminated.
+Sleep represents a duration that the container should sleep.
 
 <table>
     <thead>
@@ -1581,8 +1581,8 @@ Sleep represents the duration that the container should sleep before being termi
 
 
 Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility. There are no validation of this field and
-lifecycle hooks will fail in runtime when tcp handler is specified.
+for backward compatibility. There is no validation of this field and
+lifecycle hooks will fail at runtime when it is specified.
 
 <table>
     <thead>
@@ -1636,7 +1636,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#targetallocatorspecadditionalcontainersindexlivenessprobeexec">exec</a></b></td>
         <td>object</td>
         <td>
-          Exec specifies the action to take.<br/>
+          Exec specifies a command to execute in the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1653,14 +1653,14 @@ Defaults to 3. Minimum value is 1.<br/>
         <td><b><a href="#targetallocatorspecadditionalcontainersindexlivenessprobegrpc">grpc</a></b></td>
         <td>object</td>
         <td>
-          GRPC specifies an action involving a GRPC port.<br/>
+          GRPC specifies a GRPC HealthCheckRequest.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecadditionalcontainersindexlivenessprobehttpget">httpGet</a></b></td>
         <td>object</td>
         <td>
-          HTTPGet specifies the http request to perform.<br/>
+          HTTPGet specifies an HTTP GET request to perform.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1697,7 +1697,7 @@ Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
         <td><b><a href="#targetallocatorspecadditionalcontainersindexlivenessprobetcpsocket">tcpSocket</a></b></td>
         <td>object</td>
         <td>
-          TCPSocket specifies an action involving a TCP port.<br/>
+          TCPSocket specifies a connection to a TCP port.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1738,7 +1738,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
 
 
 
-Exec specifies the action to take.
+Exec specifies a command to execute in the container.
 
 <table>
     <thead>
@@ -1769,7 +1769,7 @@ Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
 
 
 
-GRPC specifies an action involving a GRPC port.
+GRPC specifies a GRPC HealthCheckRequest.
 
 <table>
     <thead>
@@ -1810,7 +1810,7 @@ If this is not specified, the default behavior is defined by gRPC.<br/>
 
 
 
-HTTPGet specifies the http request to perform.
+HTTPGet specifies an HTTP GET request to perform.
 
 <table>
     <thead>
@@ -1904,7 +1904,7 @@ This will be canonicalized upon output, so case-variant names will be understood
 
 
 
-TCPSocket specifies an action involving a TCP port.
+TCPSocket specifies a connection to a TCP port.
 
 <table>
     <thead>
@@ -2026,7 +2026,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#targetallocatorspecadditionalcontainersindexreadinessprobeexec">exec</a></b></td>
         <td>object</td>
         <td>
-          Exec specifies the action to take.<br/>
+          Exec specifies a command to execute in the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2043,14 +2043,14 @@ Defaults to 3. Minimum value is 1.<br/>
         <td><b><a href="#targetallocatorspecadditionalcontainersindexreadinessprobegrpc">grpc</a></b></td>
         <td>object</td>
         <td>
-          GRPC specifies an action involving a GRPC port.<br/>
+          GRPC specifies a GRPC HealthCheckRequest.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecadditionalcontainersindexreadinessprobehttpget">httpGet</a></b></td>
         <td>object</td>
         <td>
-          HTTPGet specifies the http request to perform.<br/>
+          HTTPGet specifies an HTTP GET request to perform.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2087,7 +2087,7 @@ Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
         <td><b><a href="#targetallocatorspecadditionalcontainersindexreadinessprobetcpsocket">tcpSocket</a></b></td>
         <td>object</td>
         <td>
-          TCPSocket specifies an action involving a TCP port.<br/>
+          TCPSocket specifies a connection to a TCP port.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2128,7 +2128,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
 
 
 
-Exec specifies the action to take.
+Exec specifies a command to execute in the container.
 
 <table>
     <thead>
@@ -2159,7 +2159,7 @@ Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
 
 
 
-GRPC specifies an action involving a GRPC port.
+GRPC specifies a GRPC HealthCheckRequest.
 
 <table>
     <thead>
@@ -2200,7 +2200,7 @@ If this is not specified, the default behavior is defined by gRPC.<br/>
 
 
 
-HTTPGet specifies the http request to perform.
+HTTPGet specifies an HTTP GET request to perform.
 
 <table>
     <thead>
@@ -2294,7 +2294,7 @@ This will be canonicalized upon output, so case-variant names will be understood
 
 
 
-TCPSocket specifies an action involving a TCP port.
+TCPSocket specifies a connection to a TCP port.
 
 <table>
     <thead>
@@ -2865,7 +2865,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#targetallocatorspecadditionalcontainersindexstartupprobeexec">exec</a></b></td>
         <td>object</td>
         <td>
-          Exec specifies the action to take.<br/>
+          Exec specifies a command to execute in the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2882,14 +2882,14 @@ Defaults to 3. Minimum value is 1.<br/>
         <td><b><a href="#targetallocatorspecadditionalcontainersindexstartupprobegrpc">grpc</a></b></td>
         <td>object</td>
         <td>
-          GRPC specifies an action involving a GRPC port.<br/>
+          GRPC specifies a GRPC HealthCheckRequest.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecadditionalcontainersindexstartupprobehttpget">httpGet</a></b></td>
         <td>object</td>
         <td>
-          HTTPGet specifies the http request to perform.<br/>
+          HTTPGet specifies an HTTP GET request to perform.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2926,7 +2926,7 @@ Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
         <td><b><a href="#targetallocatorspecadditionalcontainersindexstartupprobetcpsocket">tcpSocket</a></b></td>
         <td>object</td>
         <td>
-          TCPSocket specifies an action involving a TCP port.<br/>
+          TCPSocket specifies a connection to a TCP port.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2967,7 +2967,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
 
 
 
-Exec specifies the action to take.
+Exec specifies a command to execute in the container.
 
 <table>
     <thead>
@@ -2998,7 +2998,7 @@ Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
 
 
 
-GRPC specifies an action involving a GRPC port.
+GRPC specifies a GRPC HealthCheckRequest.
 
 <table>
     <thead>
@@ -3039,7 +3039,7 @@ If this is not specified, the default behavior is defined by gRPC.<br/>
 
 
 
-HTTPGet specifies the http request to perform.
+HTTPGet specifies an HTTP GET request to perform.
 
 <table>
     <thead>
@@ -3133,7 +3133,7 @@ This will be canonicalized upon output, so case-variant names will be understood
 
 
 
-TCPSocket specifies an action involving a TCP port.
+TCPSocket specifies a connection to a TCP port.
 
 <table>
     <thead>
@@ -6052,21 +6052,21 @@ More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-ho
         <td><b><a href="#targetallocatorspecinitcontainersindexlifecyclepoststartexec">exec</a></b></td>
         <td>object</td>
         <td>
-          Exec specifies the action to take.<br/>
+          Exec specifies a command to execute in the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecinitcontainersindexlifecyclepoststarthttpget">httpGet</a></b></td>
         <td>object</td>
         <td>
-          HTTPGet specifies the http request to perform.<br/>
+          HTTPGet specifies an HTTP GET request to perform.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecinitcontainersindexlifecyclepoststartsleep">sleep</a></b></td>
         <td>object</td>
         <td>
-          Sleep represents the duration that the container should sleep before being terminated.<br/>
+          Sleep represents a duration that the container should sleep.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6074,8 +6074,8 @@ More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-ho
         <td>object</td>
         <td>
           Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility. There are no validation of this field and
-lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
+for backward compatibility. There is no validation of this field and
+lifecycle hooks will fail at runtime when it is specified.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6087,7 +6087,7 @@ lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
 
 
 
-Exec specifies the action to take.
+Exec specifies a command to execute in the container.
 
 <table>
     <thead>
@@ -6118,7 +6118,7 @@ Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
 
 
 
-HTTPGet specifies the http request to perform.
+HTTPGet specifies an HTTP GET request to perform.
 
 <table>
     <thead>
@@ -6212,7 +6212,7 @@ This will be canonicalized upon output, so case-variant names will be understood
 
 
 
-Sleep represents the duration that the container should sleep before being terminated.
+Sleep represents a duration that the container should sleep.
 
 <table>
     <thead>
@@ -6242,8 +6242,8 @@ Sleep represents the duration that the container should sleep before being termi
 
 
 Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility. There are no validation of this field and
-lifecycle hooks will fail in runtime when tcp handler is specified.
+for backward compatibility. There is no validation of this field and
+lifecycle hooks will fail at runtime when it is specified.
 
 <table>
     <thead>
@@ -6302,21 +6302,21 @@ More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-ho
         <td><b><a href="#targetallocatorspecinitcontainersindexlifecycleprestopexec">exec</a></b></td>
         <td>object</td>
         <td>
-          Exec specifies the action to take.<br/>
+          Exec specifies a command to execute in the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecinitcontainersindexlifecycleprestophttpget">httpGet</a></b></td>
         <td>object</td>
         <td>
-          HTTPGet specifies the http request to perform.<br/>
+          HTTPGet specifies an HTTP GET request to perform.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecinitcontainersindexlifecycleprestopsleep">sleep</a></b></td>
         <td>object</td>
         <td>
-          Sleep represents the duration that the container should sleep before being terminated.<br/>
+          Sleep represents a duration that the container should sleep.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6324,8 +6324,8 @@ More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-ho
         <td>object</td>
         <td>
           Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility. There are no validation of this field and
-lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
+for backward compatibility. There is no validation of this field and
+lifecycle hooks will fail at runtime when it is specified.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6337,7 +6337,7 @@ lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
 
 
 
-Exec specifies the action to take.
+Exec specifies a command to execute in the container.
 
 <table>
     <thead>
@@ -6368,7 +6368,7 @@ Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
 
 
 
-HTTPGet specifies the http request to perform.
+HTTPGet specifies an HTTP GET request to perform.
 
 <table>
     <thead>
@@ -6462,7 +6462,7 @@ This will be canonicalized upon output, so case-variant names will be understood
 
 
 
-Sleep represents the duration that the container should sleep before being terminated.
+Sleep represents a duration that the container should sleep.
 
 <table>
     <thead>
@@ -6492,8 +6492,8 @@ Sleep represents the duration that the container should sleep before being termi
 
 
 Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility. There are no validation of this field and
-lifecycle hooks will fail in runtime when tcp handler is specified.
+for backward compatibility. There is no validation of this field and
+lifecycle hooks will fail at runtime when it is specified.
 
 <table>
     <thead>
@@ -6547,7 +6547,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#targetallocatorspecinitcontainersindexlivenessprobeexec">exec</a></b></td>
         <td>object</td>
         <td>
-          Exec specifies the action to take.<br/>
+          Exec specifies a command to execute in the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6564,14 +6564,14 @@ Defaults to 3. Minimum value is 1.<br/>
         <td><b><a href="#targetallocatorspecinitcontainersindexlivenessprobegrpc">grpc</a></b></td>
         <td>object</td>
         <td>
-          GRPC specifies an action involving a GRPC port.<br/>
+          GRPC specifies a GRPC HealthCheckRequest.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecinitcontainersindexlivenessprobehttpget">httpGet</a></b></td>
         <td>object</td>
         <td>
-          HTTPGet specifies the http request to perform.<br/>
+          HTTPGet specifies an HTTP GET request to perform.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6608,7 +6608,7 @@ Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
         <td><b><a href="#targetallocatorspecinitcontainersindexlivenessprobetcpsocket">tcpSocket</a></b></td>
         <td>object</td>
         <td>
-          TCPSocket specifies an action involving a TCP port.<br/>
+          TCPSocket specifies a connection to a TCP port.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6649,7 +6649,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
 
 
 
-Exec specifies the action to take.
+Exec specifies a command to execute in the container.
 
 <table>
     <thead>
@@ -6680,7 +6680,7 @@ Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
 
 
 
-GRPC specifies an action involving a GRPC port.
+GRPC specifies a GRPC HealthCheckRequest.
 
 <table>
     <thead>
@@ -6721,7 +6721,7 @@ If this is not specified, the default behavior is defined by gRPC.<br/>
 
 
 
-HTTPGet specifies the http request to perform.
+HTTPGet specifies an HTTP GET request to perform.
 
 <table>
     <thead>
@@ -6815,7 +6815,7 @@ This will be canonicalized upon output, so case-variant names will be understood
 
 
 
-TCPSocket specifies an action involving a TCP port.
+TCPSocket specifies a connection to a TCP port.
 
 <table>
     <thead>
@@ -6937,7 +6937,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#targetallocatorspecinitcontainersindexreadinessprobeexec">exec</a></b></td>
         <td>object</td>
         <td>
-          Exec specifies the action to take.<br/>
+          Exec specifies a command to execute in the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6954,14 +6954,14 @@ Defaults to 3. Minimum value is 1.<br/>
         <td><b><a href="#targetallocatorspecinitcontainersindexreadinessprobegrpc">grpc</a></b></td>
         <td>object</td>
         <td>
-          GRPC specifies an action involving a GRPC port.<br/>
+          GRPC specifies a GRPC HealthCheckRequest.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecinitcontainersindexreadinessprobehttpget">httpGet</a></b></td>
         <td>object</td>
         <td>
-          HTTPGet specifies the http request to perform.<br/>
+          HTTPGet specifies an HTTP GET request to perform.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6998,7 +6998,7 @@ Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
         <td><b><a href="#targetallocatorspecinitcontainersindexreadinessprobetcpsocket">tcpSocket</a></b></td>
         <td>object</td>
         <td>
-          TCPSocket specifies an action involving a TCP port.<br/>
+          TCPSocket specifies a connection to a TCP port.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7039,7 +7039,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
 
 
 
-Exec specifies the action to take.
+Exec specifies a command to execute in the container.
 
 <table>
     <thead>
@@ -7070,7 +7070,7 @@ Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
 
 
 
-GRPC specifies an action involving a GRPC port.
+GRPC specifies a GRPC HealthCheckRequest.
 
 <table>
     <thead>
@@ -7111,7 +7111,7 @@ If this is not specified, the default behavior is defined by gRPC.<br/>
 
 
 
-HTTPGet specifies the http request to perform.
+HTTPGet specifies an HTTP GET request to perform.
 
 <table>
     <thead>
@@ -7205,7 +7205,7 @@ This will be canonicalized upon output, so case-variant names will be understood
 
 
 
-TCPSocket specifies an action involving a TCP port.
+TCPSocket specifies a connection to a TCP port.
 
 <table>
     <thead>
@@ -7776,7 +7776,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
         <td><b><a href="#targetallocatorspecinitcontainersindexstartupprobeexec">exec</a></b></td>
         <td>object</td>
         <td>
-          Exec specifies the action to take.<br/>
+          Exec specifies a command to execute in the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7793,14 +7793,14 @@ Defaults to 3. Minimum value is 1.<br/>
         <td><b><a href="#targetallocatorspecinitcontainersindexstartupprobegrpc">grpc</a></b></td>
         <td>object</td>
         <td>
-          GRPC specifies an action involving a GRPC port.<br/>
+          GRPC specifies a GRPC HealthCheckRequest.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecinitcontainersindexstartupprobehttpget">httpGet</a></b></td>
         <td>object</td>
         <td>
-          HTTPGet specifies the http request to perform.<br/>
+          HTTPGet specifies an HTTP GET request to perform.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7837,7 +7837,7 @@ Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
         <td><b><a href="#targetallocatorspecinitcontainersindexstartupprobetcpsocket">tcpSocket</a></b></td>
         <td>object</td>
         <td>
-          TCPSocket specifies an action involving a TCP port.<br/>
+          TCPSocket specifies a connection to a TCP port.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -7878,7 +7878,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
 
 
 
-Exec specifies the action to take.
+Exec specifies a command to execute in the container.
 
 <table>
     <thead>
@@ -7909,7 +7909,7 @@ Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
 
 
 
-GRPC specifies an action involving a GRPC port.
+GRPC specifies a GRPC HealthCheckRequest.
 
 <table>
     <thead>
@@ -7950,7 +7950,7 @@ If this is not specified, the default behavior is defined by gRPC.<br/>
 
 
 
-HTTPGet specifies the http request to perform.
+HTTPGet specifies an HTTP GET request to perform.
 
 <table>
     <thead>
@@ -8044,7 +8044,7 @@ This will be canonicalized upon output, so case-variant names will be understood
 
 
 
-TCPSocket specifies an action involving a TCP port.
+TCPSocket specifies a connection to a TCP port.
 
 <table>
     <thead>
@@ -8272,21 +8272,21 @@ More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-ho
         <td><b><a href="#targetallocatorspeclifecyclepoststartexec">exec</a></b></td>
         <td>object</td>
         <td>
-          Exec specifies the action to take.<br/>
+          Exec specifies a command to execute in the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspeclifecyclepoststarthttpget">httpGet</a></b></td>
         <td>object</td>
         <td>
-          HTTPGet specifies the http request to perform.<br/>
+          HTTPGet specifies an HTTP GET request to perform.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspeclifecyclepoststartsleep">sleep</a></b></td>
         <td>object</td>
         <td>
-          Sleep represents the duration that the container should sleep before being terminated.<br/>
+          Sleep represents a duration that the container should sleep.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8294,8 +8294,8 @@ More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-ho
         <td>object</td>
         <td>
           Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility. There are no validation of this field and
-lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
+for backward compatibility. There is no validation of this field and
+lifecycle hooks will fail at runtime when it is specified.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8307,7 +8307,7 @@ lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
 
 
 
-Exec specifies the action to take.
+Exec specifies a command to execute in the container.
 
 <table>
     <thead>
@@ -8338,7 +8338,7 @@ Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
 
 
 
-HTTPGet specifies the http request to perform.
+HTTPGet specifies an HTTP GET request to perform.
 
 <table>
     <thead>
@@ -8432,7 +8432,7 @@ This will be canonicalized upon output, so case-variant names will be understood
 
 
 
-Sleep represents the duration that the container should sleep before being terminated.
+Sleep represents a duration that the container should sleep.
 
 <table>
     <thead>
@@ -8462,8 +8462,8 @@ Sleep represents the duration that the container should sleep before being termi
 
 
 Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility. There are no validation of this field and
-lifecycle hooks will fail in runtime when tcp handler is specified.
+for backward compatibility. There is no validation of this field and
+lifecycle hooks will fail at runtime when it is specified.
 
 <table>
     <thead>
@@ -8522,21 +8522,21 @@ More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-ho
         <td><b><a href="#targetallocatorspeclifecycleprestopexec">exec</a></b></td>
         <td>object</td>
         <td>
-          Exec specifies the action to take.<br/>
+          Exec specifies a command to execute in the container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspeclifecycleprestophttpget">httpGet</a></b></td>
         <td>object</td>
         <td>
-          HTTPGet specifies the http request to perform.<br/>
+          HTTPGet specifies an HTTP GET request to perform.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspeclifecycleprestopsleep">sleep</a></b></td>
         <td>object</td>
         <td>
-          Sleep represents the duration that the container should sleep before being terminated.<br/>
+          Sleep represents a duration that the container should sleep.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8544,8 +8544,8 @@ More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-ho
         <td>object</td>
         <td>
           Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility. There are no validation of this field and
-lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
+for backward compatibility. There is no validation of this field and
+lifecycle hooks will fail at runtime when it is specified.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -8557,7 +8557,7 @@ lifecycle hooks will fail in runtime when tcp handler is specified.<br/>
 
 
 
-Exec specifies the action to take.
+Exec specifies a command to execute in the container.
 
 <table>
     <thead>
@@ -8588,7 +8588,7 @@ Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
 
 
 
-HTTPGet specifies the http request to perform.
+HTTPGet specifies an HTTP GET request to perform.
 
 <table>
     <thead>
@@ -8682,7 +8682,7 @@ This will be canonicalized upon output, so case-variant names will be understood
 
 
 
-Sleep represents the duration that the container should sleep before being terminated.
+Sleep represents a duration that the container should sleep.
 
 <table>
     <thead>
@@ -8712,8 +8712,8 @@ Sleep represents the duration that the container should sleep before being termi
 
 
 Deprecated. TCPSocket is NOT supported as a LifecycleHandler and kept
-for the backward compatibility. There are no validation of this field and
-lifecycle hooks will fail in runtime when tcp handler is specified.
+for backward compatibility. There is no validation of this field and
+lifecycle hooks will fail at runtime when it is specified.
 
 <table>
     <thead>
@@ -8916,14 +8916,15 @@ PodDNSConfigOption defines DNS resolver options of a pod.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Required.<br/>
+          Name is this DNS resolver option's name.
+Required.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>value</b></td>
         <td>string</td>
         <td>
-          <br/>
+          Value is this DNS resolver option's value.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -9027,6 +9028,28 @@ for that container.
 Note that this field cannot be set when spec.os.name is windows.<br/>
           <br/>
             <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>seLinuxChangePolicy</b></td>
+        <td>string</td>
+        <td>
+          seLinuxChangePolicy defines how the container's SELinux label is applied to all volumes used by the Pod.
+It has no effect on nodes that do not support SELinux or to volumes does not support SELinux.
+Valid values are "MountOption" and "Recursive".
+
+"Recursive" means relabeling of all files on all Pod volumes by the container runtime.
+This may be slow for large volumes, but allows mixing privileged and unprivileged Pods sharing the same volume on the same node.
+
+"MountOption" mounts all eligible Pod volumes with `-o context` mount option.
+This requires all Pods that share the same volume to use the same SELinux label.
+It is not possible to share the same volume among privileged and unprivileged Pods.
+Eligible volumes are in-tree FibreChannel and iSCSI volumes, and all CSI volumes
+whose CSI driver announces SELinux support by setting spec.seLinuxMount: true in their
+CSIDriver instance. Other volumes are always re-labelled recursively.
+"MountOption" value is allowed only when SELinuxMount feature gate is enabled.
+
+If not specified and SELinuxMount feature gate is enabled, "MountOption" is used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10783,6 +10806,8 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
         <td>
           awsElasticBlockStore represents an AWS Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
+Deprecated: AWSElasticBlockStore is deprecated. All operations for the in-tree
+awsElasticBlockStore type are redirected to the ebs.csi.aws.com CSI driver.
 More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore<br/>
         </td>
         <td>false</td>
@@ -10790,21 +10815,26 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockst
         <td><b><a href="#targetallocatorspecvolumesindexazuredisk">azureDisk</a></b></td>
         <td>object</td>
         <td>
-          azureDisk represents an Azure Data Disk mount on the host and bind mount to the pod.<br/>
+          azureDisk represents an Azure Data Disk mount on the host and bind mount to the pod.
+Deprecated: AzureDisk is deprecated. All operations for the in-tree azureDisk type
+are redirected to the disk.csi.azure.com CSI driver.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecvolumesindexazurefile">azureFile</a></b></td>
         <td>object</td>
         <td>
-          azureFile represents an Azure File Service mount on the host and bind mount to the pod.<br/>
+          azureFile represents an Azure File Service mount on the host and bind mount to the pod.
+Deprecated: AzureFile is deprecated. All operations for the in-tree azureFile type
+are redirected to the file.csi.azure.com CSI driver.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecvolumesindexcephfs">cephfs</a></b></td>
         <td>object</td>
         <td>
-          cephFS represents a Ceph FS mount on the host that shares a pod's lifetime<br/>
+          cephFS represents a Ceph FS mount on the host that shares a pod's lifetime.
+Deprecated: CephFS is deprecated and the in-tree cephfs type is no longer supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10812,6 +10842,8 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockst
         <td>object</td>
         <td>
           cinder represents a cinder volume attached and mounted on kubelets host machine.
+Deprecated: Cinder is deprecated. All operations for the in-tree cinder type
+are redirected to the cinder.csi.openstack.org CSI driver.
 More info: https://examples.k8s.io/mysql-cinder-pd/README.md<br/>
         </td>
         <td>false</td>
@@ -10826,7 +10858,7 @@ More info: https://examples.k8s.io/mysql-cinder-pd/README.md<br/>
         <td><b><a href="#targetallocatorspecvolumesindexcsi">csi</a></b></td>
         <td>object</td>
         <td>
-          csi (Container Storage Interface) represents ephemeral storage that is handled by certain external CSI drivers (Beta feature).<br/>
+          csi (Container Storage Interface) represents ephemeral storage that is handled by certain external CSI drivers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10886,14 +10918,16 @@ persistent volumes at the same time.<br/>
         <td>object</td>
         <td>
           flexVolume represents a generic volume resource that is
-provisioned/attached using an exec based plugin.<br/>
+provisioned/attached using an exec based plugin.
+Deprecated: FlexVolume is deprecated. Consider using a CSIDriver instead.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecvolumesindexflocker">flocker</a></b></td>
         <td>object</td>
         <td>
-          flocker represents a Flocker volume attached to a kubelet's host machine. This depends on the Flocker control service being running<br/>
+          flocker represents a Flocker volume attached to a kubelet's host machine. This depends on the Flocker control service being running.
+Deprecated: Flocker is deprecated and the in-tree flocker type is no longer supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10902,6 +10936,8 @@ provisioned/attached using an exec based plugin.<br/>
         <td>
           gcePersistentDisk represents a GCE Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
+Deprecated: GCEPersistentDisk is deprecated. All operations for the in-tree
+gcePersistentDisk type are redirected to the pd.csi.storage.gke.io CSI driver.
 More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk<br/>
         </td>
         <td>false</td>
@@ -10910,7 +10946,7 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
         <td>object</td>
         <td>
           gitRepo represents a git repository at a particular revision.
-DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an
+Deprecated: GitRepo is deprecated. To provision a container with a git repo, mount an
 EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir
 into the Pod's container.<br/>
         </td>
@@ -10920,6 +10956,7 @@ into the Pod's container.<br/>
         <td>object</td>
         <td>
           glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
+Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.
 More info: https://examples.k8s.io/volumes/glusterfs/README.md<br/>
         </td>
         <td>false</td>
@@ -10979,14 +11016,18 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persis
         <td><b><a href="#targetallocatorspecvolumesindexphotonpersistentdisk">photonPersistentDisk</a></b></td>
         <td>object</td>
         <td>
-          photonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine<br/>
+          photonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine.
+Deprecated: PhotonPersistentDisk is deprecated and the in-tree photonPersistentDisk type is no longer supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecvolumesindexportworxvolume">portworxVolume</a></b></td>
         <td>object</td>
         <td>
-          portworxVolume represents a portworx volume attached and mounted on kubelets host machine<br/>
+          portworxVolume represents a portworx volume attached and mounted on kubelets host machine.
+Deprecated: PortworxVolume is deprecated. All operations for the in-tree portworxVolume type
+are redirected to the pxd.portworx.com CSI driver when the CSIMigrationPortworx feature-gate
+is on.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11000,7 +11041,8 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persis
         <td><b><a href="#targetallocatorspecvolumesindexquobyte">quobyte</a></b></td>
         <td>object</td>
         <td>
-          quobyte represents a Quobyte mount on the host that shares a pod's lifetime<br/>
+          quobyte represents a Quobyte mount on the host that shares a pod's lifetime.
+Deprecated: Quobyte is deprecated and the in-tree quobyte type is no longer supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11008,6 +11050,7 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persis
         <td>object</td>
         <td>
           rbd represents a Rados Block Device mount on the host that shares a pod's lifetime.
+Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.
 More info: https://examples.k8s.io/volumes/rbd/README.md<br/>
         </td>
         <td>false</td>
@@ -11015,7 +11058,8 @@ More info: https://examples.k8s.io/volumes/rbd/README.md<br/>
         <td><b><a href="#targetallocatorspecvolumesindexscaleio">scaleIO</a></b></td>
         <td>object</td>
         <td>
-          scaleIO represents a ScaleIO persistent volume attached and mounted on Kubernetes nodes.<br/>
+          scaleIO represents a ScaleIO persistent volume attached and mounted on Kubernetes nodes.
+Deprecated: ScaleIO is deprecated and the in-tree scaleIO type is no longer supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -11030,14 +11074,17 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#secret<br/>
         <td><b><a href="#targetallocatorspecvolumesindexstorageos">storageos</a></b></td>
         <td>object</td>
         <td>
-          storageOS represents a StorageOS volume attached and mounted on Kubernetes nodes.<br/>
+          storageOS represents a StorageOS volume attached and mounted on Kubernetes nodes.
+Deprecated: StorageOS is deprecated and the in-tree storageos type is no longer supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#targetallocatorspecvolumesindexvspherevolume">vsphereVolume</a></b></td>
         <td>object</td>
         <td>
-          vsphereVolume represents a vSphere volume attached and mounted on kubelets host machine<br/>
+          vsphereVolume represents a vSphere volume attached and mounted on kubelets host machine.
+Deprecated: VsphereVolume is deprecated. All operations for the in-tree vsphereVolume type
+are redirected to the csi.vsphere.vmware.com CSI driver.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -11051,6 +11098,8 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#secret<br/>
 
 awsElasticBlockStore represents an AWS Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
+Deprecated: AWSElasticBlockStore is deprecated. All operations for the in-tree
+awsElasticBlockStore type are redirected to the ebs.csi.aws.com CSI driver.
 More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
 
 <table>
@@ -11110,6 +11159,8 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockst
 
 
 azureDisk represents an Azure Data Disk mount on the host and bind mount to the pod.
+Deprecated: AzureDisk is deprecated. All operations for the in-tree azureDisk type
+are redirected to the disk.csi.azure.com CSI driver.
 
 <table>
     <thead>
@@ -11179,6 +11230,8 @@ the ReadOnly setting in VolumeMounts.<br/>
 
 
 azureFile represents an Azure File Service mount on the host and bind mount to the pod.
+Deprecated: AzureFile is deprecated. All operations for the in-tree azureFile type
+are redirected to the file.csi.azure.com CSI driver.
 
 <table>
     <thead>
@@ -11220,7 +11273,8 @@ the ReadOnly setting in VolumeMounts.<br/>
 
 
 
-cephFS represents a Ceph FS mount on the host that shares a pod's lifetime
+cephFS represents a Ceph FS mount on the host that shares a pod's lifetime.
+Deprecated: CephFS is deprecated and the in-tree cephfs type is no longer supported.
 
 <table>
     <thead>
@@ -11323,6 +11377,8 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 
 
 cinder represents a cinder volume attached and mounted on kubelets host machine.
+Deprecated: Cinder is deprecated. All operations for the in-tree cinder type
+are redirected to the cinder.csi.openstack.org CSI driver.
 More info: https://examples.k8s.io/mysql-cinder-pd/README.md
 
 <table>
@@ -11531,7 +11587,7 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
 
 
 
-csi (Container Storage Interface) represents ephemeral storage that is handled by certain external CSI drivers (Beta feature).
+csi (Container Storage Interface) represents ephemeral storage that is handled by certain external CSI drivers.
 
 <table>
     <thead>
@@ -12466,6 +12522,7 @@ Either wwids or combination of targetWWNs and lun must be set, but not both simu
 
 flexVolume represents a generic volume resource that is
 provisioned/attached using an exec based plugin.
+Deprecated: FlexVolume is deprecated. Consider using a CSIDriver instead.
 
 <table>
     <thead>
@@ -12564,7 +12621,8 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 
 
 
-flocker represents a Flocker volume attached to a kubelet's host machine. This depends on the Flocker control service being running
+flocker represents a Flocker volume attached to a kubelet's host machine. This depends on the Flocker control service being running.
+Deprecated: Flocker is deprecated and the in-tree flocker type is no longer supported.
 
 <table>
     <thead>
@@ -12601,6 +12659,8 @@ should be considered as deprecated<br/>
 
 gcePersistentDisk represents a GCE Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
+Deprecated: GCEPersistentDisk is deprecated. All operations for the in-tree
+gcePersistentDisk type are redirected to the pd.csi.storage.gke.io CSI driver.
 More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
 
 <table>
@@ -12662,7 +12722,7 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
 
 
 gitRepo represents a git repository at a particular revision.
-DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an
+Deprecated: GitRepo is deprecated. To provision a container with a git repo, mount an
 EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir
 into the Pod's container.
 
@@ -12709,6 +12769,7 @@ the subdirectory with the given name.<br/>
 
 
 glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
+Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.
 More info: https://examples.k8s.io/volumes/glusterfs/README.md
 
 <table>
@@ -13076,7 +13137,8 @@ Default false.<br/>
 
 
 
-photonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine
+photonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine.
+Deprecated: PhotonPersistentDisk is deprecated and the in-tree photonPersistentDisk type is no longer supported.
 
 <table>
     <thead>
@@ -13112,7 +13174,10 @@ Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.<br/>
 
 
 
-portworxVolume represents a portworx volume attached and mounted on kubelets host machine
+portworxVolume represents a portworx volume attached and mounted on kubelets host machine.
+Deprecated: PortworxVolume is deprecated. All operations for the in-tree portworxVolume type
+are redirected to the pxd.portworx.com CSI driver when the CSIMigrationPortworx feature-gate
+is on.
 
 <table>
     <thead>
@@ -13847,7 +13912,8 @@ and must be at least 10 minutes.<br/>
 
 
 
-quobyte represents a Quobyte mount on the host that shares a pod's lifetime
+quobyte represents a Quobyte mount on the host that shares a pod's lifetime.
+Deprecated: Quobyte is deprecated and the in-tree quobyte type is no longer supported.
 
 <table>
     <thead>
@@ -13916,6 +13982,7 @@ Defaults to serivceaccount user<br/>
 
 
 rbd represents a Rados Block Device mount on the host that shares a pod's lifetime.
+Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.
 More info: https://examples.k8s.io/volumes/rbd/README.md
 
 <table>
@@ -14051,6 +14118,7 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 
 
 scaleIO represents a ScaleIO persistent volume attached and mounted on Kubernetes nodes.
+Deprecated: ScaleIO is deprecated and the in-tree scaleIO type is no longer supported.
 
 <table>
     <thead>
@@ -14301,6 +14369,7 @@ mode, like fsGroup, and the result can be other mode bits set.<br/>
 
 
 storageOS represents a StorageOS volume attached and mounted on Kubernetes nodes.
+Deprecated: StorageOS is deprecated and the in-tree storageos type is no longer supported.
 
 <table>
     <thead>
@@ -14399,7 +14468,9 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 
 
 
-vsphereVolume represents a vSphere volume attached and mounted on kubelets host machine
+vsphereVolume represents a vSphere volume attached and mounted on kubelets host machine.
+Deprecated: VsphereVolume is deprecated. All operations for the in-tree vsphereVolume type
+are redirected to the csi.vsphere.vmware.com CSI driver.
 
 <table>
     <thead>

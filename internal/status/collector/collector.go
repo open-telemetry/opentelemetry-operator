@@ -19,7 +19,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
-func UpdateCollectorStatus(ctx context.Context, cli client.Client, changed *v1beta1.OpenTelemetryCollector) error {
+func updateCollectorStatus(ctx context.Context, cli client.Client, changed *v1beta1.OpenTelemetryCollector) error {
 	if changed.Status.Version == "" {
 		// a version is not set, otherwise let the upgrade mechanism take care of it!
 		changed.Status.Version = version.OpenTelemetryCollector()

@@ -4,9 +4,7 @@
     "private": true,
     "scripts": {
         "clean": "rimraf build/*",
-        "prepare": "npm run compile",
-        "compile": "tsc -p .",
-        "postcompile": "copyfiles -f 'build/src/**' build/workspace/ && copyfiles 'node_modules/**' package.json build/workspace/ && npm -C build/workspace prune --omit=dev --no-package-lock"
+        "postinstall": "copyfiles -f 'build/src/**' build/workspace/ && copyfiles 'node_modules/**' package.json build/workspace/ && npm -C build/workspace prune --omit=dev --no-package-lock"
     },
     "devDependencies": {
         "copyfiles": "^2.4.1",
@@ -14,8 +12,7 @@
         "typescript": "^5.6.3"
     },
     "dependencies": {
-        "@opentelemetry/exporter-metrics-otlp-grpc": "0.55.0",
-        "@opentelemetry/auto-instrumentations-node": "0.53.0",
-        "@opentelemetry/exporter-prometheus": "0.55.0"
+        "@opentelemetry/api": "1.9.0",
+        "@opentelemetry/auto-instrumentations-node": "0.56.0"
     }
 }

@@ -31,7 +31,7 @@ func TestNewOperatorMetrics(t *testing.T) {
 	scheme := runtime.NewScheme()
 	metrics, err := NewOperatorMetrics(config, scheme, logr.Discard())
 	assert.NoError(t, err)
-	assert.NotNil(t, metrics.kubeClient)
+	assert.NotNil(t, metrics.(operatorMetrics).kubeClient)
 }
 
 func TestOperatorMetrics_Start(t *testing.T) {
@@ -56,7 +56,7 @@ func TestOperatorMetrics_Start(t *testing.T) {
 		},
 	).Build()
 
-	metrics := OperatorMetrics{kubeClient: client}
+	metrics := operatorMetrics{kubeClient: client}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	errChan := make(chan error)
@@ -94,7 +94,7 @@ func TestOperatorMetrics_Start(t *testing.T) {
 }
 
 func TestOperatorMetrics_NeedLeaderElection(t *testing.T) {
-	metrics := OperatorMetrics{}
+	metrics := operatorMetrics{}
 	assert.True(t, metrics.NeedLeaderElection())
 }
 
@@ -112,13 +112,13 @@ func TestOperatorMetrics_caConfigMapExists(t *testing.T) {
 		},
 	).Build()
 
-	metrics := OperatorMetrics{kubeClient: client}
+	metrics := operatorMetrics{kubeClient: client}
 
 	assert.True(t, metrics.caConfigMapExists())
 
 	// Test when the ConfigMap doesn't exist
 	clientWithoutConfigMap := fake.NewClientBuilder().WithScheme(scheme).Build()
-	metricsWithoutConfigMap := OperatorMetrics{kubeClient: clientWithoutConfigMap}
+	metricsWithoutConfigMap := operatorMetrics{kubeClient: clientWithoutConfigMap}
 	assert.False(t, metricsWithoutConfigMap.caConfigMapExists())
 }
 
@@ -172,7 +172,7 @@ func TestOperatorMetrics_getOwnerReferences(t *testing.T) {
 				WithObjects(tt.objects...).
 				Build()
 
-			om := OperatorMetrics{
+			om := operatorMetrics{
 				kubeClient: fakeClient,
 				log:        logr.Discard(),
 			}

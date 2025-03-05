@@ -17,7 +17,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
 )
 
 var logger = logf.Log.WithName("collector-unit-tests")

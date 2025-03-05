@@ -115,6 +115,7 @@ func main() {
 		enableNodeJSInstrumentation      bool
 		enableJavaInstrumentation        bool
 		enableCRMetrics                  bool
+		createSMOperatorMetrics          bool
 		collectorImage                   string
 		targetAllocatorImage             string
 		operatorOpAMPBridgeImage         string
@@ -154,6 +155,7 @@ func main() {
 	pflag.BoolVar(&enableNodeJSInstrumentation, constants.FlagNodeJS, true, "Controls whether the operator supports nodejs auto-instrumentation")
 	pflag.BoolVar(&enableJavaInstrumentation, constants.FlagJava, true, "Controls whether the operator supports java auto-instrumentation")
 	pflag.BoolVar(&enableCRMetrics, constants.FlagCRMetrics, false, "Controls whether exposing the CR metrics is enabled")
+	pflag.BoolVar(&createSMOperatorMetrics, "create-sm-operator-metrics", false, "Create a ServiceMonitor for the operator metrics")
 
 	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
@@ -219,6 +221,7 @@ func main() {
 		"enable-nodejs-instrumentation", enableNodeJSInstrumentation,
 		"enable-java-instrumentation", enableJavaInstrumentation,
 		"create-openshift-dashboard", createOpenShiftDashboard,
+		"create-sm-operator-metrics", createSMOperatorMetrics,
 		"zap-message-key", encodeMessageKey,
 		"zap-level-key", encodeLevelKey,
 		"zap-time-key", encodeTimeKey,
@@ -413,7 +416,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if cfg.PrometheusCRAvailability() == prometheus.Available {
+	if cfg.PrometheusCRAvailability() == prometheus.Available && createSMOperatorMetrics {
 		operatorMetrics, opError := operatormetrics.NewOperatorMetrics(mgr.GetConfig(), scheme, ctrl.Log.WithName("operator-metrics-sm"))
 		if opError != nil {
 			setupLog.Error(opError, "Failed to create the operator metrics SM")

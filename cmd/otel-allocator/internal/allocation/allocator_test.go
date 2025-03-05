@@ -9,7 +9,7 @@ import (
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
 func TestSetCollectors(t *testing.T) {

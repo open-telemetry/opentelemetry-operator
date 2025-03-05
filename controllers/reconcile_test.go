@@ -648,6 +648,13 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			if deletionTimestamp != nil {
 				err := k8sClient.Delete(testContext, &tt.args.params, client.PropagationPolicy(metav1.DeletePropagationForeground))
 				assert.NoError(t, err)
+				// wait until the reconciler sees the deletion
+				assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+					actual := &v1beta1.OpenTelemetryCollector{}
+					err := reconciler.Get(testContext, nsn, actual)
+					assert.NoError(collect, err)
+					assert.NotNil(t, actual.GetDeletionTimestamp())
+				}, time.Second*5, time.Millisecond)
 			}
 			req := k8sreconcile.Request{
 				NamespacedName: nsn,
@@ -1355,7 +1362,7 @@ func createTestReconciler(t *testing.T, ctx context.Context, cfg config.Config) 
 	require.NoError(t, err)
 	go func() {
 		startErr := runtimeCluster.Start(ctx)
-		require.NoError(t, startErr)
+		assert.NoError(t, startErr)
 	}()
 
 	cacheClient := runtimeCluster.GetClient()
@@ -1368,6 +1375,8 @@ func createTestReconciler(t *testing.T, ctx context.Context, cfg config.Config) 
 	})
 	err = reconciler.SetupCaches(runtimeCluster)
 	require.NoError(t, err)
+	synced := runtimeCluster.GetCache().WaitForCacheSync(ctx)
+	require.True(t, synced, "caches didn't sync successfully")
 	return reconciler
 }
 

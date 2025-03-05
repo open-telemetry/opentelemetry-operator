@@ -74,12 +74,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 	}
 
 	// inject .NET instrumentation spec env vars.
-	for _, env := range dotNetSpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
-	}
+	container.Env = appendIfNotSet(container.Env, dotNetSpec.Env...)
 
 	const (
 		doNotConcatEnvValues = false
