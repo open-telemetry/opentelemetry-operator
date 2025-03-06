@@ -21,3 +21,7 @@ FROM busybox
 COPY --from=build /operator-build/build/workspace /autoinstrumentation
 
 RUN chmod -R go+r /autoinstrumentation
+
+# Backward compatibility with old operator version
+RUN cp -r /autoinstrumentation/node_modules/@opentelemetry/auto-instrumentations-node/build/src/. /autoinstrumentation
+RUN ln /autoinstrumentation/register.js /autoinstrumentation/autoinstrumentation.js

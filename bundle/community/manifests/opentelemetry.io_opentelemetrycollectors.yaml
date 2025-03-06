@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: opentelemetry-operator-system/opentelemetry-operator-serving-cert
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: opentelemetry-operator
@@ -2401,6 +2401,8 @@ spec:
                   runAsUser:
                     format: int64
                     type: integer
+                  seLinuxChangePolicy:
+                    type: string
                   seLinuxOptions:
                     properties:
                       level:
@@ -3169,6 +3171,8 @@ spec:
                       runAsUser:
                         format: int64
                         type: integer
+                      seLinuxChangePolicy:
+                        type: string
                       seLinuxOptions:
                         properties:
                           level:
@@ -7034,6 +7038,8 @@ spec:
                   runAsUser:
                     format: int64
                     type: integer
+                  seLinuxChangePolicy:
+                    type: string
                   seLinuxOptions:
                     properties:
                       level:
@@ -7826,6 +7832,8 @@ spec:
                       runAsUser:
                         format: int64
                         type: integer
+                      seLinuxChangePolicy:
+                        type: string
                       seLinuxOptions:
                         properties:
                           level:

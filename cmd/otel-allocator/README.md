@@ -74,9 +74,20 @@ flowchart RL
   oc1 --> ta
   oc2 --> ta
   oc3 --> ta
-  sm ~~~|"1. Discover Prometheus Operator CRs"| sm
-  ta ~~~|"2. Add job to TA scrape configuration"| ta
-  oc3 ~~~|"3. Add job to OTel Collector scrape configuration"| oc3
+
+  %% Labels positioned correctly using text nodes
+  crs@{shape: text, label: "Discover Prometheus Operator CRs"}
+  ta_scrape@{shape: text, label: "Add job to TA scrape configuration"}
+  oc_scrape@{shape: text, label: "Add job to OTel Collector scrape configuration"}
+
+  oc_scrape ~~~ ta
+  oc_scrape ~~~ ta_scrape
+  ta ~~~ crs
+
+  %% Apply grey background to text labels
+  style crs fill:#e0e0e0,stroke:#cccccc
+  style ta_scrape fill:#e0e0e0,stroke:#cccccc
+  style oc_scrape fill:#e0e0e0,stroke:#cccccc
 ```
 
 Even though Prometheus is not required to be installed in your Kubernetes cluster to use the Target Allocator for Prometheus CR discovery, the TA does require that the ServiceMonitor and PodMonitor be installed. These CRs are bundled with Prometheus Operator; however, they can be installed standalone as well.
@@ -86,6 +97,7 @@ The easiest way to do this is to grab a copy of the individual [`PodMonitor`](ht
 > ✨ For more information on configuring the `PodMonitor` and `ServiceMonitor`, check out the [PodMonitor API](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.PodMonitor) and the [ServiceMonitor API](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.ServiceMonitor).
 
 # Usage
+
 The `spec.targetAllocator:` controls the TargetAllocator general properties. Full API spec can be found here: [api.md#opentelemetrycollectorspectargetallocator](../../docs/api.md#opentelemetrycollectorspectargetallocator)
 
 A basic example that deploys.
@@ -121,6 +133,51 @@ spec:
 In essence, Prometheus Receiver configs are overridden with a `http_sd_config` directive that points to the
 Allocator, these are then loadbalanced/sharded to the Collectors. The [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) configs that are overridden
 are what will be distributed with the same name.
+
+## TargetAllocator CRD
+
+The `spec.targetAllocator` attribute allows very limited control over the target allocator resources. More customization is possible by using
+the `TargetAllocator` CRD. We create the `TargetAllocator` CR, and then add its name in the `opentelemetry.io/target-allocator` label on the respective OpenTelemetryCollector CR.
+
+The basic example from above looks as follows with this setup:
+
+```yaml
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: collector-with-ta
+  labels:
+    opentelemetry.io/target-allocator: ta
+spec:
+  mode: statefulset
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: 'otel-collector'
+            scrape_interval: 10s
+            static_configs:
+            - targets: [ '0.0.0.0:8888' ]
+
+    exporters:
+      debug: {}
+
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          exporters: [debug]
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: ta
+spec:
+```
+
+Note that the scrape configs can be specified either in the prometheus receiver configuration, or directly in the TargetAllocator CRD. The resultant
+target allocator will use both.
 
 ## PrometheusCR specifics
 

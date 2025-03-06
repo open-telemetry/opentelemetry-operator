@@ -10,11 +10,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/oklog/ulid/v2"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/open-telemetry/opamp-go/server"
 	"github.com/open-telemetry/opamp-go/server/types"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/open-telemetry/opentelemetry-operator/tests/test-e2e-apps/bridge-server/data"
 )

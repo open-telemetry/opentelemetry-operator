@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus-cr-collector
+status:
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: v1
+data:
+  collector.yaml: |
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:14250
+      prometheus:
+        config:
+          global:
+            scrape_interval: 30s
+            scrape_protocols:
+              - PrometheusProto
+              - OpenMetricsText1.0.0
+              - OpenMetricsText0.0.1
+              - PrometheusText0.0.4
+          scrape_configs:
+            - job_name: otel-collector
+              scrape_interval: 10s
+              static_configs:
+                - targets:
+                    - 0.0.0.0:8888
+    exporters:
+      debug: null
+    service:
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8888
+      pipelines:
+        traces:
+          exporters:
+            - debug
+          receivers:
+            - jaeger
+kind: ConfigMap
+metadata:
+  name: prometheus-cr-collector-7a42612e

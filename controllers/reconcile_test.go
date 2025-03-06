@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package controllers_test
 
@@ -659,6 +648,13 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			if deletionTimestamp != nil {
 				err := k8sClient.Delete(testContext, &tt.args.params, client.PropagationPolicy(metav1.DeletePropagationForeground))
 				assert.NoError(t, err)
+				// wait until the reconciler sees the deletion
+				assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+					actual := &v1beta1.OpenTelemetryCollector{}
+					err := reconciler.Get(testContext, nsn, actual)
+					assert.NoError(collect, err)
+					assert.NotNil(t, actual.GetDeletionTimestamp())
+				}, time.Second*5, time.Millisecond)
 			}
 			req := k8sreconcile.Request{
 				NamespacedName: nsn,
@@ -1366,7 +1362,7 @@ func createTestReconciler(t *testing.T, ctx context.Context, cfg config.Config) 
 	require.NoError(t, err)
 	go func() {
 		startErr := runtimeCluster.Start(ctx)
-		require.NoError(t, startErr)
+		assert.NoError(t, startErr)
 	}()
 
 	cacheClient := runtimeCluster.GetClient()
@@ -1379,6 +1375,8 @@ func createTestReconciler(t *testing.T, ctx context.Context, cfg config.Config) 
 	})
 	err = reconciler.SetupCaches(runtimeCluster)
 	require.NoError(t, err)
+	synced := runtimeCluster.GetCache().WaitForCacheSync(ctx)
+	require.True(t, synced, "caches didn't sync successfully")
 	return reconciler
 }
 

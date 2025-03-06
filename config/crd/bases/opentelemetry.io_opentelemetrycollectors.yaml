@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: opentelemetrycollectors.opentelemetry.io
 spec:
   group: opentelemetry.io
@@ -2387,6 +2387,8 @@ spec:
                   runAsUser:
                     format: int64
                     type: integer
+                  seLinuxChangePolicy:
+                    type: string
                   seLinuxOptions:
                     properties:
                       level:
@@ -3155,6 +3157,8 @@ spec:
                       runAsUser:
                         format: int64
                         type: integer
+                      seLinuxChangePolicy:
+                        type: string
                       seLinuxOptions:
                         properties:
                           level:
@@ -7020,6 +7024,8 @@ spec:
                   runAsUser:
                     format: int64
                     type: integer
+                  seLinuxChangePolicy:
+                    type: string
                   seLinuxOptions:
                     properties:
                       level:
@@ -7812,6 +7818,8 @@ spec:
                       runAsUser:
                         format: int64
                         type: integer
+                      seLinuxChangePolicy:
+                        type: string
                       seLinuxOptions:
                         properties:
                           level:

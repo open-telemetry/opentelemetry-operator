@@ -1,6 +1,6 @@
 module github.com/open-telemetry/opentelemetry-operator/tests/test-e2e-apps/bridge-server
 
-go 1.22.1
+go 1.23.0
 
 require (
 	github.com/google/uuid v1.6.0
@@ -18,5 +18,5 @@ require (
 	go.opentelemetry.io/otel v1.27.0 // indirect
 	go.opentelemetry.io/otel/metric v1.27.0 // indirect
 	go.opentelemetry.io/otel/trace v1.27.0 // indirect
-	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 )

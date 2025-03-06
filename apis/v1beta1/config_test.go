@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package v1beta1
 
@@ -75,6 +64,22 @@ func TestNullObjects(t *testing.T) {
 
 	nullObjects := cfg.nullObjects()
 	assert.Equal(t, []string{"connectors.spanmetrics:", "exporters.otlp.endpoint:", "extensions.health_check:", "processors.batch:", "receivers.otlp.protocols.grpc:", "receivers.otlp.protocols.http:"}, nullObjects)
+}
+
+func TestNullObjects_issue_3445(t *testing.T) {
+	collectorYaml, err := os.ReadFile("./testdata/issue-3452.yaml")
+	require.NoError(t, err)
+
+	collectorJson, err := yaml.YAMLToJSON(collectorYaml)
+	require.NoError(t, err)
+
+	cfg := &Config{}
+	err = json.Unmarshal(collectorJson, cfg)
+	require.NoError(t, err)
+
+	err = cfg.ApplyDefaults(logr.Discard())
+	require.NoError(t, err)
+	assert.Empty(t, cfg.nullObjects())
 }
 
 func TestConfigFiles_go_yaml(t *testing.T) {

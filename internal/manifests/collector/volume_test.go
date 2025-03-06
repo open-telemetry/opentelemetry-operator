@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package collector_test
 
@@ -106,6 +95,7 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
+		otelcol.Spec.TargetAllocator.Enabled = true
 		require.NoError(t, err)
 
 		volumes := Volumes(cfg, otelcol)
@@ -139,5 +129,26 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 
 		volumes := Volumes(cfg, otelcol)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAClientCertificate(otelcol.Name)})
+	})
+
+	t.Run("Feature gate enabled but TargetAllocator disabled", func(t *testing.T) {
+		otelcol := v1beta1.OpenTelemetryCollector{}
+		cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+
+		flgs := featuregate.Flags(colfg.GlobalRegistry())
+		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
+
+		require.NoError(t, err)
+
+		volumes := Volumes(cfg, otelcol)
+		unexpectedVolume := corev1.Volume{
+			Name: naming.TAClientCertificate(otelcol.Name),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: naming.TAClientCertificateSecretName(otelcol.Name),
+				},
+			},
+		}
+		assert.NotContains(t, volumes, unexpectedVolume)
 	})
 }

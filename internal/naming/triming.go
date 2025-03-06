@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 // Additional copyrights:
 // Copyright The Jaeger Authors
@@ -22,12 +11,10 @@ import (
 	"regexp"
 )
 
-var regexpEndReplace, regexpBeginReplace *regexp.Regexp
-
-func init() {
-	regexpEndReplace, _ = regexp.Compile("[^A-Za-z0-9]+$")
-	regexpBeginReplace, _ = regexp.Compile("^[^A-Za-z0-9]+")
-}
+var (
+	regexpEndReplace   = regexp.MustCompile("[^A-Za-z0-9]+$")
+	regexpBeginReplace = regexp.MustCompile("^[^A-Za-z0-9]+")
+)
 
 // Truncate will shorten the length of the instance name so that it contains at most max chars when combined with the fixed part
 // If the fixed part is already bigger than the max, this function is noop.

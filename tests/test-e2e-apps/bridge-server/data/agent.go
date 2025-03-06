@@ -9,10 +9,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"google.golang.org/protobuf/proto"
-
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/open-telemetry/opamp-go/server/types"
+	"google.golang.org/protobuf/proto"
 )
 
 var _ json.Marshaler = &Agent{}
