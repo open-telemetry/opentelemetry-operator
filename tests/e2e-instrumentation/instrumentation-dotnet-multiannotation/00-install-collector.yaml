@@ -6,13 +6,13 @@ metadata:
   annotations:
     instrumentation.opentelemetry.io/inject-sdk: "true"
 ---
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: sidecar
   namespace: my-other-dotnet-ns
 spec:
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
