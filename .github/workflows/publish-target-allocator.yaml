@@ -23,7 +23,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '~1.23.6'
+          go-version: '~1.24.1'
 
       # TODO: We're currently not using this. Should we?
       - name: Read version
