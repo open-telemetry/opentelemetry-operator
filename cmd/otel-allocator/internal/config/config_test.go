@@ -5,6 +5,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/file"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -40,6 +42,7 @@ func TestLoad(t *testing.T) {
 			},
 			want: Config{
 				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorNamespace: "default",
 				CollectorSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app.kubernetes.io/instance":   "default.test",
@@ -120,6 +123,7 @@ func TestLoad(t *testing.T) {
 			},
 			want: Config{
 				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorNamespace: "default",
 				CollectorSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app.kubernetes.io/instance":   "default.test",
@@ -190,6 +194,7 @@ func TestLoad(t *testing.T) {
 			},
 			want: Config{
 				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorNamespace: "default",
 				CollectorSelector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app.kubernetes.io/instance":   "default.test",
@@ -260,6 +265,7 @@ func TestLoad(t *testing.T) {
 			},
 			want: Config{
 				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorNamespace: "default",
 				CollectorSelector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{
 						{
@@ -354,6 +360,7 @@ func TestLoad(t *testing.T) {
 			},
 			want: Config{
 				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorNamespace: "default",
 				CollectorSelector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{
 						{
@@ -454,6 +461,20 @@ func TestLoad(t *testing.T) {
 	}
 }
 
+func TestLoadFromEnv(t *testing.T) {
+	current := os.Getenv("OTELCOL_NAMESPACE")
+	t.Cleanup(func() {
+		err := os.Setenv("OTELCOL_NAMESPACE", current)
+		assert.NoError(t, err)
+	})
+	namespace := "default"
+	os.Setenv("OTELCOL_NAMESPACE", namespace)
+	cfg := &Config{}
+	err := LoadFromEnv(cfg)
+	require.NoError(t, err)
+	assert.Equal(t, namespace, cfg.CollectorNamespace)
+}
+
 func TestValidateConfig(t *testing.T) {
 	testCases := []struct {
 		name        string
@@ -461,8 +482,13 @@ func TestValidateConfig(t *testing.T) {
 		expectedErr error
 	}{
 		{
+			name:        "no namespace",
+			fileConfig:  Config{PrometheusCR: PrometheusCRConfig{Enabled: true}},
+			expectedErr: fmt.Errorf("collector namespace must be set"),
+		},
+		{
 			name:        "promCR enabled, no Prometheus config",
-			fileConfig:  Config{PromConfig: nil, PrometheusCR: PrometheusCRConfig{Enabled: true}},
+			fileConfig:  Config{PromConfig: nil, PrometheusCR: PrometheusCRConfig{Enabled: true}, CollectorNamespace: "default"},
 			expectedErr: nil,
 		},
 		{
@@ -478,15 +504,17 @@ func TestValidateConfig(t *testing.T) {
 		{
 			name: "promCR disabled, Prometheus config present, scrapeConfigs present",
 			fileConfig: Config{
-				PromConfig: &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				PromConfig:         &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				CollectorNamespace: "default",
 			},
 			expectedErr: nil,
 		},
 		{
 			name: "promCR enabled, Prometheus config present, scrapeConfigs present",
 			fileConfig: Config{
-				PromConfig:   &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
-				PrometheusCR: PrometheusCRConfig{Enabled: true},
+				PromConfig:         &promconfig.Config{ScrapeConfigs: []*promconfig.ScrapeConfig{{}}},
+				PrometheusCR:       PrometheusCRConfig{Enabled: true},
+				CollectorNamespace: "default",
 			},
 			expectedErr: nil,
 		},
