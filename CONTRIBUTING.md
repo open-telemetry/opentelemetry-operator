@@ -19,7 +19,7 @@ We gratefully welcome improvements to documentation as well as to code.
 * `make lint` to run linters
 * `make fmt` to format Go code
 * `make vet` to run `go vet`
-* `make generate` to generate code and manifests based on Go struct definitions for CRDs.
+* `make update` to generate code and manifests based on Go struct definitions for CRDs.
 
 `make precommit` includes all of the above.
 
@@ -40,7 +40,7 @@ gh pr create
 The following command should be run to make sure the project manifests are up-to-date:
 
 ```bash
-make generate manifests bundle api-docs reset
+make update
 ```
 
 The local changes after running the command should be added to the pull request:
@@ -48,7 +48,7 @@ The local changes after running the command should be added to the pull request:
 The following `make` target is run on CI to verify the project structure:
 
 ```bash
-make ensure-generate-is-noop
+make ensure-update-is-noop
 ```
 
 ### Adding new components - webhook, API

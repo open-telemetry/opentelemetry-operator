@@ -123,22 +123,23 @@ MIN_OPENSHIFT_VERSION ?= 4.12
 ## consistent with Linux.
 SED ?= $(shell which gsed 2>/dev/null || which sed)
 
-.PHONY: ensure-generate-is-noop
-ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
-ensure-generate-is-noop: DOCKER_USER=open-telemetry
-ensure-generate-is-noop: set-image-controller generate bundle
-	@# on make bundle config/manager/kustomization.yaml includes changes, which should be ignored for the below check
-	@git restore config/manager/kustomization.yaml
+.PHONY: ensure-update-is-noop
+ensure-update-is-noop: VERSION=$(OPERATOR_VERSION)
+ensure-update-is-noop: DOCKER_USER=open-telemetry
+ensure-update-is-noop: set-image-controller update
 	@git diff -s --exit-code apis/v1alpha1/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
 	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
-	@git diff -s --exit-code docs/api.md || (echo "Build failed: the api.md file has been changed but the generated api.md file isn't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
+	@git diff -s --exit-code docs/api || (echo "Build failed: a model has been changed but the generated docs/api/*.md files aren't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
 
 .PHONY: all
 all: manager targetallocator operator-opamp-bridge
 
 # No lint here, as CI runs it separately
 .PHONY: ci
-ci: generate fmt vet test ensure-generate-is-noop
+ci: generate fmt vet test ensure-update-is-noop
+
+.PHONY: update
+update: generate manifests bundle api-docs reset
 
 # Build manager binary
 .PHONY: manager
@@ -257,7 +258,7 @@ test: envtest
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
 
 .PHONY: precommit
-precommit: generate fmt vet lint test ensure-generate-is-noop reset
+precommit: fmt vet lint test ensure-update-is-noop
 
 # Run go fmt against code
 .PHONY: fmt
@@ -495,10 +496,10 @@ CHAINSAW ?= $(LOCALBIN)/chainsaw
 KUSTOMIZE_VERSION ?= v5.6.0
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
 CONTROLLER_TOOLS_VERSION ?= v0.17.1
-# renovate: datasource=go depName=github.com/golangci/golangci-lint/cmd/golangci-lint
-GOLANGCI_LINT_VERSION ?= v1.63.4
+# renovate: datasource=github-releases depName=golangci/golangci-lint
+GOLANGCI_LINT_VERSION ?= v1.64.6
 # renovate: datasource=go depName=sigs.k8s.io/kind
-KIND_VERSION ?= v0.26.0
+KIND_VERSION ?= v0.27.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
 CHAINSAW_VERSION ?= v0.2.12
 
