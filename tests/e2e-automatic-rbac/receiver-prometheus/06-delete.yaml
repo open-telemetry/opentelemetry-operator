@@ -1,0 +1,5 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: chainsaw-prometheus-receiver
