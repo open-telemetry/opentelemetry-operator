@@ -13,7 +13,7 @@ var _ allocation.Allocator = &mockAllocator{}
 // mockAllocator implements the Allocator interface, but all funcs other than
 // TargetItems() are a no-op.
 type mockAllocator struct {
-	targetItems map[string]*target.Item
+	targetItems map[target.ItemHash]*target.Item
 }
 
 func (m *mockAllocator) SetCollectors(_ map[string]*allocation.Collector)               {}
@@ -23,6 +23,6 @@ func (m *mockAllocator) GetTargetsForCollectorAndJob(_ string, _ string) []*targ
 func (m *mockAllocator) SetFilter(_ allocation.Filter)                                  {}
 func (m *mockAllocator) SetFallbackStrategy(_ allocation.Strategy)                      {}
 
-func (m *mockAllocator) TargetItems() map[string]*target.Item {
+func (m *mockAllocator) TargetItems() map[target.ItemHash]*target.Item {
 	return m.targetItems
 }
