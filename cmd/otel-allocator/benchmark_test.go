@@ -140,7 +140,10 @@ func prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob int) map[str
 	}
 	targets := []model.LabelSet{}
 	for i := 0; i < numTargets; i++ {
-		targets = append(targets, exampleTarget.Clone())
+		newTarget := exampleTarget.Clone()
+		// ensure each target has a unique label to avoid deduplication
+		newTarget["target_id"] = model.LabelValue(strconv.Itoa(i))
+		targets = append(targets, newTarget)
 	}
 	groups := make([]*targetgroup.Group, numGroups)
 	for i := 0; i < numGroups; i++ {
