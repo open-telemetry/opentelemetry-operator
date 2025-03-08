@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: targetallocator-namespace
+spec:
+  steps:
+  - try:
+    - apply:
+        file: resources/rbac.yaml
+    - apply:
+        file: resources/otelcol.yaml
+    - assert:
+        file: assert-workloads-ready.yaml
+    - apply:
+        file: resources/jobs.yaml
+    - assert:
+        file: assert-jobs-succeeded.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/managed-by=opentelemetry-operator
