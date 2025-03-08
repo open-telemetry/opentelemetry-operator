@@ -20,7 +20,7 @@ const (
 	kernelDebugVolumePath = "/sys/kernel/debug"
 )
 
-func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config) (corev1.Pod, error) {
+func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
 	// skip instrumentation if share process namespaces is explicitly disabled
 	if pod.Spec.ShareProcessNamespace != nil && !*pod.Spec.ShareProcessNamespace {
 		return pod, fmt.Errorf("shared process namespace has been explicitly disabled")
@@ -57,6 +57,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config) (corev1.
 				Name:      kernelDebugVolumeName,
 			},
 		},
+		ImagePullPolicy: instSpec.ImagePullPolicy,
 	}
 
 	// Annotation takes precedence for OTEL_GO_AUTO_TARGET_EXE
