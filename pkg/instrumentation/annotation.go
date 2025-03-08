@@ -61,6 +61,11 @@ func annotationValue(ns metav1.ObjectMeta, pod metav1.ObjectMeta, annotation str
 		return podAnnValue
 	}
 
+	// if both are 'true' or a defined instance-name, pod takes precedence
+	if !strings.EqualFold(nsAnnValue, "false") && !strings.EqualFold(podAnnValue, "false") {
+		return podAnnValue
+	}
+
 	// by now, the pod annotation is 'true', and the namespace annotation is either true or an instance name
 	// so, the namespace annotation can be used
 	return nsAnnValue
