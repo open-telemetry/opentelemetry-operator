@@ -145,6 +145,7 @@ config:
     - PrometheusProto
     - OpenMetricsText1.0.0
     - OpenMetricsText0.0.1
+    - PrometheusText1.0.0
     - PrometheusText0.0.4
   scrape_configs:
   - job_name: otel-collector
@@ -196,7 +197,7 @@ prometheus_cr:
 		targetAllocator.Spec.GlobalConfig = v1beta1.AnyConfig{
 			Object: map[string]interface{}{
 				"scrape_interval":  "30s",
-				"scrape_protocols": []string{"PrometheusProto", "OpenMetricsText1.0.0", "OpenMetricsText0.0.1", "PrometheusText0.0.4"},
+				"scrape_protocols": []string{"PrometheusProto", "OpenMetricsText1.0.0", "OpenMetricsText0.0.1", "PrometheusText1.0.0", "PrometheusText0.0.4"},
 			},
 		}
 		params.TargetAllocator = targetAllocator
@@ -494,7 +495,7 @@ func TestGetGlobalConfigFromOtelConfig(t *testing.T) {
 								"config": map[string]interface{}{
 									"global": map[string]interface{}{
 										"scrape_interval":  "15s",
-										"scrape_protocols": []string{"PrometheusProto", "OpenMetricsText1.0.0", "OpenMetricsText0.0.1", "PrometheusText0.0.4"},
+										"scrape_protocols": []string{"PrometheusProto", "OpenMetricsText1.0.0", "OpenMetricsText0.0.1", "PrometheusText1.0.0", "PrometheusText0.0.4"},
 									},
 								},
 							},
@@ -505,7 +506,7 @@ func TestGetGlobalConfigFromOtelConfig(t *testing.T) {
 			want: v1beta1.AnyConfig{
 				Object: map[string]interface{}{
 					"scrape_interval":  "15s",
-					"scrape_protocols": []string{"PrometheusProto", "OpenMetricsText1.0.0", "OpenMetricsText0.0.1", "PrometheusText0.0.4"},
+					"scrape_protocols": []string{"PrometheusProto", "OpenMetricsText1.0.0", "OpenMetricsText0.0.1", "PrometheusText1.0.0", "PrometheusText0.0.4"},
 				},
 			},
 			wantErr: nil,

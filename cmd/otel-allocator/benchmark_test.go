@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	gokitlog "github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
@@ -173,7 +172,7 @@ func createTestDiscoverer(allocationStrategy string, prehookConfig map[string][]
 	}
 	registry := prometheus.NewRegistry()
 	sdMetrics, _ := discovery.CreateAndRegisterSDMetrics(registry)
-	discoveryManager := discovery.NewManager(ctx, gokitlog.NewNopLogger(), registry, sdMetrics)
+	discoveryManager := discovery.NewManager(ctx, nil, registry, sdMetrics)
 	targetDiscoverer := target.NewDiscoverer(logger, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
 	return targetDiscoverer
 }

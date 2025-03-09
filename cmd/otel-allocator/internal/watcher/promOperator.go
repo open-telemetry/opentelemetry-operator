@@ -361,14 +361,21 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 			return nil, err
 		}
 
+		p := &monitoringv1.Prometheus{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "example",
+				Namespace: "default",
+			},
+			Spec: monitoringv1.PrometheusSpec{
+				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+					ScrapeInterval: "30s",
+				},
+				EvaluationInterval: "30s",
+			},
+		}
+
 		generatedConfig, err := w.configGenerator.GenerateServerConfiguration(
-			"30s",
-			"",
-			nil,
-			nil,
-			&monitoringv1.TSDBSpec{},
-			nil,
-			nil,
+			p,
 			serviceMonitorInstances,
 			podMonitorInstances,
 			probeInstances,
@@ -377,7 +384,7 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 			nil,
 			nil,
 			nil,
-			[]string{})
+			nil)
 		if err != nil {
 			return nil, err
 		}

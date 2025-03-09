@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	gokitlog "github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
 	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
@@ -25,12 +24,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
-
-var defaultScrapeProtocols = []promconfig.ScrapeProtocol{
-	promconfig.OpenMetricsText1_0_0,
-	promconfig.OpenMetricsText0_0_1,
-	promconfig.PrometheusText0_0_4,
-}
 
 func TestDiscovery(t *testing.T) {
 	type args struct {
@@ -61,7 +54,7 @@ func TestDiscovery(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
-	d := discovery.NewManager(ctx, gokitlog.NewNopLogger(), registry, sdMetrics)
+	d := discovery.NewManager(ctx, nil, registry, sdMetrics)
 	results := make(chan []string)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, func(targets map[string]*Item) {
 		var result []string
@@ -122,7 +115,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 						JobName:         "serviceMonitor/testapp/testapp/0",
 						HonorTimestamps: true,
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(30 * time.Second),
 						MetricsPath:     "/metrics",
 						Scheme:          "http",
@@ -151,7 +144,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 						JobName:         "serviceMonitor/testapp/testapp/0",
 						HonorTimestamps: false,
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(30 * time.Second),
 						MetricsPath:     "/metrics",
 						Scheme:          "http",
@@ -180,7 +173,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 						JobName:         "serviceMonitor/testapp/testapp/1",
 						HonorTimestamps: false,
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(30 * time.Second),
 						MetricsPath:     "/metrics",
 						Scheme:          "http",
@@ -209,7 +202,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 						JobName:         "serviceMonitor/testapp/testapp/1",
 						HonorTimestamps: false,
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(30 * time.Second),
 						MetricsPath:     "/metrics",
 						Scheme:          "http",
@@ -238,7 +231,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 						JobName:         "serviceMonitor/testapp/testapp/1",
 						HonorTimestamps: false,
 						ScrapeTimeout:   model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						MetricsPath:     "/metrics",
 						Scheme:          "http",
 						HTTPClientConfig: commonconfig.HTTPClientConfig{
@@ -266,7 +259,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 						JobName:         "serviceMonitor/testapp/testapp/1",
 						HonorTimestamps: false,
 						ScrapeTimeout:   model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						MetricsPath:     "/metrics",
 						Scheme:          "http",
 						HTTPClientConfig: commonconfig.HTTPClientConfig{
@@ -309,7 +302,7 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
-	d := discovery.NewManager(ctx, gokitlog.NewNopLogger(), registry, sdMetrics)
+	d := discovery.NewManager(ctx, nil, registry, sdMetrics)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
 
 	for _, tc := range tests {
@@ -348,7 +341,7 @@ func TestDiscovery_NoConfig(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
-	d := discovery.NewManager(ctx, gokitlog.NewNopLogger(), registry, sdMetrics)
+	d := discovery.NewManager(ctx, nil, registry, sdMetrics)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
 	defer close(manager.close)
 	defer cancelFunc()
@@ -398,7 +391,7 @@ func BenchmarkApplyScrapeConfig(b *testing.B) {
 	registry := prometheus.NewRegistry()
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(b, err)
-	d := discovery.NewManager(ctx, gokitlog.NewNopLogger(), registry, sdMetrics)
+	d := discovery.NewManager(ctx, nil, registry, sdMetrics)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
 
 	b.ResetTimer()

@@ -36,12 +36,6 @@ import (
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 )
 
-var defaultScrapeProtocols = []promconfig.ScrapeProtocol{
-	promconfig.OpenMetricsText1_0_0,
-	promconfig.OpenMetricsText0_0_1,
-	promconfig.PrometheusText0_0_4,
-}
-
 func TestLoadConfig(t *testing.T) {
 
 	tests := []struct {
@@ -82,7 +76,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: func(v string) *string { return &v }("web"),
 							},
 						},
 					},
@@ -99,7 +93,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/simple/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -121,7 +115,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/simple/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -192,7 +186,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/auth/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -233,7 +227,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "bearer",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: func(v string) *string { return &v }("web"),
 								Authorization: &monitoringv1.SafeAuthorization{
 									Type: "Bearer",
 									Credentials: &v1.SecretKeySelector{
@@ -260,7 +254,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/bearer/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -317,7 +311,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: func(v string) *string { return &v }("web"),
 							},
 						},
 					},
@@ -331,7 +325,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: func(v string) *string { return &v }("web"),
 								RelabelConfigs: []monitoringv1.RelabelConfig{
 									{
 										Action:      "keep",
@@ -356,7 +350,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/valid-sm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -378,7 +372,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -450,7 +444,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: func(v string) *string { return &v }("web"),
 							},
 						},
 					},
@@ -467,7 +461,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/valid-sm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -489,7 +483,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -560,7 +554,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/sm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -597,7 +591,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: func(v string) *string { return &v }("web"),
 							},
 						},
 					},
@@ -611,7 +605,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: func(v string) *string { return &v }("web"),
 							},
 						},
 					},
@@ -631,7 +625,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/pm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -692,7 +686,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "scrapeConfig/test/scrapeconfig-test-1",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -756,7 +750,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "probe/test/probe-test-1",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -831,7 +825,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/labellednamespace/sm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -865,7 +859,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: func(v string) *string { return &v }("web"),
 							},
 						},
 					},
@@ -879,7 +873,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: func(v string) *string { return &v }("web"),
 							},
 						},
 					},
@@ -901,7 +895,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/labellednamespace/pm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -947,6 +941,9 @@ func TestLoadConfig(t *testing.T) {
 			}
 
 			got, err := w.LoadConfig(context.Background())
+			if got == nil {
+				t.Errorf("got nil config %v", err)
+			}
 			assert.NoError(t, err)
 
 			sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
@@ -967,7 +964,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 				JobLabel: "test",
 				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 					{
-						Port: "web",
+						Port: func(v string) *string { return &v }("web"),
 					},
 				},
 			},
@@ -981,7 +978,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 				JobLabel: "test",
 				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 					{
-						Port: "web",
+						Port: func(v string) *string { return &v }("web"),
 					},
 				},
 			},
@@ -1005,7 +1002,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 			{
 				JobName:         "podMonitor/labellednamespace/pm-1/0",
 				ScrapeInterval:  model.Duration(30 * time.Second),
-				ScrapeProtocols: defaultScrapeProtocols,
+				ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 				ScrapeTimeout:   model.Duration(10 * time.Second),
 				HonorTimestamps: true,
 				HonorLabels:     false,
@@ -1225,6 +1222,10 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 	serviceDiscoveryRole := monitoringv1.ServiceDiscoveryRole("EndpointSlice")
 
 	prom := &monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-prom",
+			Namespace: "test",
+		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
 				ScrapeInterval:                  monitoringv1.Duration("30s"),

@@ -44,7 +44,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 			PodMetricsEndpoints: append(
 				[]monitoringv1.PodMetricsEndpoint{
 					{
-						Port: "monitoring",
+						Port: func(v string) *string { return &v }("monitoring"),
 					},
 				}, metricsEndpointsFromConfig(params.Log, params.OtelCol)...),
 		},
@@ -63,7 +63,7 @@ func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1beta1.OpenTelemetr
 	for _, port := range exporterPorts {
 		if strings.Contains(port.Name, "prometheus") {
 			e := monitoringv1.PodMetricsEndpoint{
-				Port: port.Name,
+				Port: &port.Name,
 			}
 			metricsEndpoints = append(metricsEndpoints, e)
 		}

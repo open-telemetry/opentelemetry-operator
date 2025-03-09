@@ -409,4 +409,3 @@ Shards the received targets based on the discovered Collector instances
 
 ### Collector
 Client to watch for deployed Collector instances which will then provided to the Allocator. 
-
