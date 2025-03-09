@@ -65,6 +65,10 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 
 	// TODO: We should make these durations configurable
 	prom := &monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example",
+			Namespace: "default",
+		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
 				ScrapeInterval:                  monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
