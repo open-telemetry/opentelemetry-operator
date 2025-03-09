@@ -54,18 +54,15 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 		return nil, err
 	}
 
-	// Check env var for WATCH_NAMESPACE and use it if its set, else use v1.NamespaceAll
-	// This is to allow the operator to watch only a specific namespace
-	watchNamespace, found := os.LookupEnv("WATCH_NAMESPACE")
 	allowList := map[string]struct{}{}
-	if found {
-		logger.Info("watching namespace(s)", "namespaces", watchNamespace)
-		for _, ns := range strings.Split(watchNamespace, ",") {
+	if cfg.PrometheusCR.WatchNamespace != "" {
+		logger.Info("watching namespace(s)", "namespaces", cfg.PrometheusCR.WatchNamespace)
+		for _, ns := range strings.Split(cfg.PrometheusCR.WatchNamespace, ",") {
 			allowList[ns] = struct{}{}
 		}
 	} else {
+		logger.Info("cfg.PrometheusCR.WatchNamespace is unset, watching all namespaces")
 		allowList = map[string]struct{}{v1.NamespaceAll: {}}
-		logger.Info("the env var WATCH_NAMESPACE isn't set, watching all namespaces")
 	}
 
 	factory := informers.NewMonitoringInformerFactories(allowList, map[string]struct{}{}, mClient, allocatorconfig.DefaultResyncTime, nil) //TODO decide what strategy to use regarding namespaces

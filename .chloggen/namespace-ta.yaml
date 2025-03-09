@@ -6,7 +6,7 @@ component: target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
 note: |
-  Add support for `WATCH_NAMESPACE` environment variable in the target allocator.
+  Add support for watch specific namespace(s) in the target allocator.
 
 # One or more tracking issues related to the change
 issues: [3086]
@@ -15,4 +15,4 @@ issues: [3086]
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
 subtext: |
-  This variable can be set to an empty string to watch all namespaces, or to a comma-separated list of namespaces to watch.
+  This flag can be set to an empty string to watch all namespaces (default) or to a comma-separated list of namespaces to watch.

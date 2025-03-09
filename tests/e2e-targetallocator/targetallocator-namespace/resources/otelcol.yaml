@@ -7,6 +7,7 @@ spec:
     "zap-log-level": "debug"
   prometheusCR:
     enabled: true
+    watchNamespace: ($namespace)
     scrapeInterval: 1s
     scrapeConfigSelector: {}
     probeSelector: {}
@@ -16,9 +17,6 @@ spec:
     metrics:
       disablePrometheusAnnotations: true
       enableMetrics: true
-  env:
-    - name: WATCH_NAMESPACE
-      value: "($namespace)"
   serviceAccount: ta
 ---
 apiVersion: opentelemetry.io/v1beta1

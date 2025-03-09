@@ -258,8 +258,8 @@ rules:
  
 #### Namespace-scoped RBAC
 
-If you want to have the TargetAllocator watch a specific namespace, you can set the WATCH_NAMESPACE environment variable
-in the TargetAllocator's deployment. This is useful if you want to restrict the TargetAllocator to only watch Prometheus
+If you want to have the TargetAllocator watch a specific namespace, you can set the watchNamespace field 
+in the TargetAllocator's prometheusCR configuration. This is useful if you want to restrict the TargetAllocator to only watch Prometheus
 CRs in a specific namespace, and not have cluster-wide access.
 
 ```yaml
@@ -268,13 +268,11 @@ CRs in a specific namespace, and not have cluster-wide access.
     serviceAccount: opentelemetry-targetallocator-sa
     prometheusCR:
       enabled: true
-    env:
-      - name: WATCH_NAMESPACE
-        value: "foo"
+      watchNamespace: foo
 ```
 
 In this case, you will need to create a Role and RoleBinding instead of a ClusterRole and ClusterRoleBinding. The Role
-and RoleBinding should be created in the namespace specified in the WATCH_NAMESPACE environment variable.
+and RoleBinding should be created in the namespace specified by the watchNamespace field.
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1

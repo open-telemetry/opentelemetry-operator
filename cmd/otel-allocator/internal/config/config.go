@@ -52,6 +52,7 @@ type Config struct {
 
 type PrometheusCRConfig struct {
 	Enabled                         bool                  `yaml:"enabled,omitempty"`
+	WatchNamespace                  string                `yaml:"watch_namespace,omitempty"`
 	PodMonitorSelector              *metav1.LabelSelector `yaml:"pod_monitor_selector,omitempty"`
 	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
 	ServiceMonitorSelector          *metav1.LabelSelector `yaml:"service_monitor_selector,omitempty"`
