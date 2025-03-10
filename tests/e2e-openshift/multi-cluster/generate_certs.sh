@@ -14,15 +14,29 @@ CERT_SUBJECT="/C=US/ST=California/L=San Francisco/O=My Organization/CN=opentelem
 # Create a temporary OpenSSL configuration file for SANs
 openssl_config="$CERT_DIR/openssl.cnf"
 cat <<EOF > "$openssl_config"
-[req]
-req_extensions = v3_req
+[ req ]
+default_bits       = 2048
+distinguished_name = req_distinguished_name
+req_extensions     = v3_req
 
-[v3_req]
+[ req_distinguished_name ]
+countryName                = Country Name (2 letter code)
+countryName_default        = US
+stateOrProvinceName        = State or Province Name (full name)
+stateOrProvinceName_default= California
+localityName               = Locality Name (eg, city)
+localityName_default       = San Francisco
+organizationName           = Organization Name (eg, company)
+organizationName_default   = My Organization
+commonName                 = Common Name (eg, your name or your server's hostname)
+commonName_max             = 64
+
+[ v3_req ]
 basicConstraints = CA:FALSE
 keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 subjectAltName = @alt_names
 
-[alt_names]
+[ alt_names ]
 DNS.1 = opentelemetry
 DNS.2 = $hostname_domain
 EOF
@@ -57,4 +71,3 @@ kubectl create configmap chainsaw-certs -n chainsaw-multi-cluster-receive \
   --from-file=server.key="$CERT_DIR/server.key" \
   --from-file=ca.crt="$CERT_DIR/ca.crt"
 
-echo "ConfigMaps created successfully."
