@@ -1,0 +1,55 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: cr
+spec:
+  args:
+    "zap-log-level": "debug"
+  prometheusCR:
+    enabled: true
+    watchNamespace: ($namespace)
+    scrapeInterval: 1s
+    scrapeConfigSelector: {}
+    probeSelector: {}
+    serviceMonitorSelector: {}
+    podMonitorSelector: {}
+  observability:
+    metrics:
+      disablePrometheusAnnotations: true
+      enableMetrics: true
+  serviceAccount: ta
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: prometheus-cr
+  labels:
+    opentelemetry.io/target-allocator: cr
+spec:
+  observability:
+    metrics:
+      disablePrometheusAnnotations: true
+      enableMetrics: true
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs: []
+
+    processors:
+
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:9090
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          exporters: [prometheus]
+      telemetry:
+        logs:
+          level: "DEBUG"
+          development: true
+          encoding: "json"
+  mode: statefulset
+  serviceAccount: collector

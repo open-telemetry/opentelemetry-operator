@@ -9539,6 +9539,13 @@ matchExpressions are ANDed. An empty label selector matches all objects. A null
 label selector matches no objects.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>watchNamespace</b></td>
+        <td>string</td>
+        <td>
+          WatchNamespace to look for Prometheus CRs. If not set, all namespaces are used which requires a ClusterRole for listing all namespaces.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
