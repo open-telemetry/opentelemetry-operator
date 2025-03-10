@@ -21,6 +21,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	inst := &Instrumentation{}
 	err := InstrumentationWebhook{
 		cfg: config.New(
+			config.WithAutoInstrumentationInjectorImage("injector-img:1"),
 			config.WithAutoInstrumentationJavaImage("java-img:1"),
 			config.WithAutoInstrumentationNodeJSImage("nodejs-img:1"),
 			config.WithAutoInstrumentationPythonImage("python-img:1"),
@@ -30,6 +31,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 		),
 	}.Default(context.Background(), inst)
 	assert.NoError(t, err)
+	assert.Equal(t, "injector-img:1", inst.Spec.Injector.Image)
 	assert.Equal(t, "java-img:1", inst.Spec.Java.Image)
 	assert.Equal(t, "nodejs-img:1", inst.Spec.NodeJS.Image)
 	assert.Equal(t, "python-img:1", inst.Spec.Python.Image)

@@ -46,6 +46,27 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 	if len(pod.Spec.Containers) < 1 {
 		return pod
 	}
+	if insts.Injector.Instrumentation != nil {
+		otelinst := *insts.Injector.Instrumentation
+		var err error
+		i.logger.V(1).Info("injecting LD_PRELOAD-based instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+
+		if len(insts.Injector.Containers) == 0 {
+			insts.Injector.Containers = []string{pod.Spec.Containers[0].Name}
+		}
+
+		for _, container := range insts.Injector.Containers {
+			index := getContainerIndex(container, pod)
+			pod, err = injectInjector(i.logger, otelinst.Spec.Injector, pod, index)
+			if err != nil {
+				i.logger.Info("Skipping injector injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
+			} else {
+				pod = i.injectCommonEnvVar(otelinst, pod, index)
+				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, injectorInitContainerName)
+			}
+		}
+	}
 	if insts.Java.Instrumentation != nil {
 		otelinst := *insts.Java.Instrumentation
 		var err error

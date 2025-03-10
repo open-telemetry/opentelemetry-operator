@@ -42,6 +42,7 @@ type instrumentationWithContainers struct {
 }
 
 type languageInstrumentations struct {
+	Injector    instrumentationWithContainers
 	Java        instrumentationWithContainers
 	NodeJS      instrumentationWithContainers
 	Python      instrumentationWithContainers
@@ -60,6 +61,14 @@ func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bo
 	var instrumentationWithNoContainers bool
 
 	// Check for instrumentations with and without containers.
+	if langInsts.Injector.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Injector)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Injector)
+		allContainers = append(allContainers, langInsts.Injector.Containers...)
+		if len(langInsts.Injector.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
+	}
 	if langInsts.Java.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.Java)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.Java)
@@ -168,6 +177,9 @@ func (langInsts *languageInstrumentations) setCommonInstrumentedContainers(ns co
 		containers = strings.Split(containersAnnotation, ",")
 	}
 
+	if langInsts.Injector.Instrumentation != nil {
+		langInsts.Injector.Containers = containers
+	}
 	if langInsts.Java.Instrumentation != nil {
 		langInsts.Java.Containers = containers
 	}
@@ -200,6 +212,10 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns meta
 		iwc        *instrumentationWithContainers
 		annotation string
 	}{
+		{
+			iwc:        &langInsts.Injector,
+			annotation: annotationInjectInjectorContainersName,
+		},
 		{
 			iwc:        &langInsts.Java,
 			annotation: annotationInjectJavaContainersName,
@@ -278,6 +294,18 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	insts := languageInstrumentations{}
 
 	// We bail out if any annotation fails to process.
+
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectInjector); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	if pm.config.EnableInjectorAutoInstrumentation() || inst == nil {
+		insts.Injector.Instrumentation = inst
+	} else {
+		logger.Error(nil, "support for Injector auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Injector auto instrumentation is not enabled")
+	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectJava); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
@@ -372,10 +400,9 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 	insts.Sdk.Instrumentation = inst
 
-	if insts.Java.Instrumentation == nil && insts.NodeJS.Instrumentation == nil && insts.Python.Instrumentation == nil &&
-		insts.DotNet.Instrumentation == nil && insts.Go.Instrumentation == nil && insts.ApacheHttpd.Instrumentation == nil &&
-		insts.Nginx.Instrumentation == nil &&
-		insts.Sdk.Instrumentation == nil {
+	if insts.Injector.Instrumentation == nil && insts.Java.Instrumentation == nil && insts.NodeJS.Instrumentation == nil &&
+		insts.Python.Instrumentation == nil && insts.DotNet.Instrumentation == nil && insts.Go.Instrumentation == nil &&
+		insts.ApacheHttpd.Instrumentation == nil && insts.Nginx.Instrumentation == nil && insts.Sdk.Instrumentation == nil {
 
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
 		return pod, nil
