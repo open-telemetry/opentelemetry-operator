@@ -39,7 +39,7 @@ func TestEffectiveAnnotationValue(t *testing.T) {
 
 		{
 			"ns-has-concrete-instance",
-			"some-instance",
+			"true",
 			corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
