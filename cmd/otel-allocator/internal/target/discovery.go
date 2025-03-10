@@ -54,7 +54,7 @@ type Discoverer struct {
 	scrapeConfigsUpdater   scrapeConfigsUpdater
 	targetSets             map[string][]*targetgroup.Group
 	triggerReload          chan struct{}
-	processTargetsCallBack func(targets map[string]*Item)
+	processTargetsCallBack func(targets []*Item)
 	mtxTargets             sync.Mutex
 }
 
@@ -66,7 +66,7 @@ type scrapeConfigsUpdater interface {
 	UpdateScrapeConfigResponse(map[string]*promconfig.ScrapeConfig) error
 }
 
-func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHook, scrapeConfigsUpdater scrapeConfigsUpdater, setTargets func(targets map[string]*Item)) *Discoverer {
+func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHook, scrapeConfigsUpdater scrapeConfigsUpdater, setTargets func(targets []*Item)) *Discoverer {
 	return &Discoverer{
 		log:                    log,
 		manager:                manager,
@@ -163,9 +163,17 @@ func (m *Discoverer) reloader() {
 func (m *Discoverer) Reload() {
 	m.mtxScrape.Lock()
 	var wg sync.WaitGroup
-	targets := map[string]*Item{}
 	timer := prometheus.NewTimer(processTargetsDuration)
 	defer timer.ObserveDuration()
+
+	// count targets and preallocate
+	targetCount := 0
+	for _, groups := range m.targetSets {
+		for _, group := range groups {
+			targetCount += len(group.Targets)
+		}
+	}
+	targets := make([]*Item, 0, targetCount)
 
 	for jobName, groups := range m.targetSets {
 		wg.Add(1)
@@ -173,9 +181,7 @@ func (m *Discoverer) Reload() {
 		go func(jobName string, groups []*targetgroup.Group) {
 			processedTargets := m.processTargetGroups(jobName, groups)
 			m.mtxTargets.Lock()
-			for k, v := range processedTargets {
-				targets[k] = v
-			}
+			targets = append(targets, processedTargets...)
 			m.mtxTargets.Unlock()
 			wg.Done()
 		}(jobName, groups)
@@ -186,10 +192,17 @@ func (m *Discoverer) Reload() {
 }
 
 // processTargetGroups processes the target groups and returns a map of targets.
-func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.Group) map[string]*Item {
+func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.Group) []*Item {
 	builder := labels.NewBuilder(labels.Labels{})
 	timer := prometheus.NewTimer(processTargetGroupsDuration.WithLabelValues(jobName))
-	targets := map[string]*Item{}
+
+	// count targets and preallocate
+	targetCount := 0
+	for _, group := range groups {
+		targetCount += len(group.Targets)
+	}
+	targets := make([]*Item, 0, targetCount)
+
 	defer timer.ObserveDuration()
 	var count float64 = 0
 	for _, tg := range groups {
@@ -205,7 +218,7 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 				builder.Set(string(ln), string(lv))
 			}
 			item := NewItem(jobName, string(t[model.AddressLabel]), builder.Labels(), "")
-			targets[item.Hash()] = item
+			targets = append(targets, item)
 		}
 	}
 	targetsDiscovered.WithLabelValues(jobName).Set(count)

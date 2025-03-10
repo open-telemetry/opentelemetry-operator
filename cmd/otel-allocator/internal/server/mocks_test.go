@@ -17,7 +17,7 @@ type mockAllocator struct {
 }
 
 func (m *mockAllocator) SetCollectors(_ map[string]*allocation.Collector)               {}
-func (m *mockAllocator) SetTargets(_ map[string]*target.Item)                           {}
+func (m *mockAllocator) SetTargets(_ []*target.Item)                                    {}
 func (m *mockAllocator) Collectors() map[string]*allocation.Collector                   { return nil }
 func (m *mockAllocator) GetTargetsForCollectorAndJob(_ string, _ string) []*target.Item { return nil }
 func (m *mockAllocator) SetFilter(_ allocation.Filter)                                  {}
