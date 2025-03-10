@@ -42,6 +42,7 @@ type Config struct {
 	ClusterConfig              *rest.Config          `yaml:"-"`
 	RootLogger                 logr.Logger           `yaml:"-"`
 	CollectorSelector          *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
+	CollectorNamespace         string                `yaml:"collector_namespace,omitempty"`
 	PromConfig                 *promconfig.Config    `yaml:"config"`
 	AllocationStrategy         string                `yaml:"allocation_strategy,omitempty"`
 	AllocationFallbackStrategy string                `yaml:"allocation_fallback_strategy,omitempty"`
@@ -239,6 +240,12 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	return nil
 }
 
+// LoadFromEnv loads configuration from environment variables.
+func LoadFromEnv(target *Config) error {
+	target.CollectorNamespace = os.Getenv("OTELCOL_NAMESPACE")
+	return nil
+}
+
 // unmarshal decodes the contents of the configFile into the cfg argument, using a
 // mapstructure decoder with the following notable behaviors.
 // Decodes time.Duration from strings (see StringToModelDurationHookFunc).
@@ -309,6 +316,11 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
+	err = LoadFromEnv(&config)
+	if err != nil {
+		return nil, err
+	}
+
 	err = LoadFromCLI(&config, flagSet)
 	if err != nil {
 		return nil, err
@@ -322,6 +334,9 @@ func ValidateConfig(config *Config) error {
 	scrapeConfigsPresent := (config.PromConfig != nil && len(config.PromConfig.ScrapeConfigs) > 0)
 	if !(config.PrometheusCR.Enabled || scrapeConfigsPresent) {
 		return fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
+	}
+	if config.CollectorNamespace == "" {
+		return fmt.Errorf("collector namespace must be set")
 	}
 	return nil
 }

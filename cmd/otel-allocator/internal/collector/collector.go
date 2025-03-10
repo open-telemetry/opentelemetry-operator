@@ -4,7 +4,6 @@
 package collector
 
 import (
-	"os"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -25,7 +24,6 @@ const (
 )
 
 var (
-	ns                   = os.Getenv("OTELCOL_NAMESPACE")
 	collectorsDiscovered = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "opentelemetry_allocator_collectors_discovered",
 		Help: "Number of collectors discovered.",
@@ -53,7 +51,11 @@ func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config) (*Watcher,
 	}, nil
 }
 
-func (k *Watcher) Watch(labelSelector *metav1.LabelSelector, fn func(collectors map[string]*allocation.Collector)) error {
+func (k *Watcher) Watch(
+	collectorNamespace string,
+	labelSelector *metav1.LabelSelector,
+	fn func(collectors map[string]*allocation.Collector),
+) error {
 	selector, err := metav1.LabelSelectorAsSelector(labelSelector)
 	if err != nil {
 		return err
@@ -65,7 +67,7 @@ func (k *Watcher) Watch(labelSelector *metav1.LabelSelector, fn func(collectors 
 	informerFactory := informers.NewSharedInformerFactoryWithOptions(
 		k.k8sClient,
 		time.Second*30,
-		informers.WithNamespace(ns),
+		informers.WithNamespace(collectorNamespace),
 		informers.WithTweakListOptions(listOptionsFunc))
 	informer := informerFactory.Core().V1().Pods().Informer()
 
