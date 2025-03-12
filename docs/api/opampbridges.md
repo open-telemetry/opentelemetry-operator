@@ -112,6 +112,13 @@ OpAMPBridgeSpec defines the desired state of OpAMPBridge.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opampbridgespecdescription">description</a></b></td>
+        <td>object</td>
+        <td>
+          Description allows the customization of the non identifying attributes for the OpAMP Bridge.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opampbridgespecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
@@ -1915,6 +1922,34 @@ the values array must be empty. This array is replaced during a strategic
 merge patch.<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpAMPBridge.spec.description
+<sup><sup>[↩ Parent](#opampbridgespec)</sup></sup>
+
+
+
+Description allows the customization of the non identifying attributes for the OpAMP Bridge.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>non_identifying_attributes</b></td>
+        <td>map[string]string</td>
+        <td>
+          NonIdentifyingAttributes are a map of key-value pairs that may be specified to provide
+extra information about the agent to the OpAMP server.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 

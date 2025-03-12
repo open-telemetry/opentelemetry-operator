@@ -39,6 +39,12 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 		config["componentsAllowed"] = params.OpAMPBridge.Spec.ComponentsAllowed
 	}
 
+	if params.OpAMPBridge.Spec.Description != nil {
+		config["description"] = map[string]any{
+			"non_identifying_attributes": params.OpAMPBridge.Spec.Description.NonIdentifyingAttributes,
+		}
+	}
+
 	configYAML, err := yaml.Marshal(config)
 	if err != nil {
 		return &corev1.ConfigMap{}, err

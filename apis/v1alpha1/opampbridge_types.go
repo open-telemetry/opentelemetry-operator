@@ -23,6 +23,9 @@ type OpAMPBridgeSpec struct {
 	// ComponentsAllowed is a list of allowed OpenTelemetry components for each pipeline type (receiver, processor, etc.)
 	// +optional
 	ComponentsAllowed map[string][]string `json:"componentsAllowed,omitempty"`
+	// Description allows the customization of the non identifying attributes for the OpAMP Bridge.
+	// +optional
+	Description *AgentDescription `json:"description,omitempty"`
 	// Resources to set on the OpAMPBridge pods.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
@@ -109,6 +112,12 @@ type OpAMPBridgeStatus struct {
 	// Version of the managed OpAMP Bridge (operand)
 	// +optional
 	Version string `json:"version,omitempty"`
+}
+
+type AgentDescription struct {
+	// NonIdentifyingAttributes are a map of key-value pairs that may be specified to provide
+	// extra information about the agent to the OpAMP server.
+	NonIdentifyingAttributes map[string]string `json:"non_identifying_attributes"`
 }
 
 // +kubebuilder:object:root=true

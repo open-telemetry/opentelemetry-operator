@@ -81,6 +81,7 @@ type Config struct {
 	ListenAddr         string       `yaml:"listenAddr,omitempty"`
 	ClusterConfig      *rest.Config `yaml:"-"`
 	RootLogger         logr.Logger  `yaml:"-"`
+	instanceId         uuid.UUID    `yaml:"-"`
 
 	// ComponentsAllowed is a list of allowed OpenTelemetry components for each pipeline type (receiver, processor, etc.)
 	ComponentsAllowed map[string][]string `yaml:"componentsAllowed,omitempty"`
@@ -89,10 +90,20 @@ type Config struct {
 	Capabilities      map[Capability]bool `yaml:"capabilities"`
 	HeartbeatInterval time.Duration       `yaml:"heartbeatInterval,omitempty"`
 	Name              string              `yaml:"name,omitempty"`
+	AgentDescription  AgentDescription    `yaml:"description,omitempty"`
+}
+
+// AgentDescription is copied from the OpAMP Extension in the collector.
+// https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/ccc3e6ed6386d404eb4beddd257ff979d2a346f4/extension/opampextension/config.go#L48
+type AgentDescription struct {
+	// NonIdentifyingAttributes are a map of key-value pairs that may be specified to provide
+	// extra information about the agent to the OpAMP server.
+	NonIdentifyingAttributes map[string]string `yaml:"non_identifying_attributes"`
 }
 
 func NewConfig(logger logr.Logger) *Config {
 	return &Config{
+		instanceId: mustGetInstanceId(),
 		RootLogger: logger,
 	}
 }
@@ -150,17 +161,33 @@ func (c *Config) GetAgentVersion() string {
 	return agentVersion
 }
 
+func (c *Config) GetInstanceId() uuid.UUID {
+	return c.instanceId
+}
+
 func (c *Config) GetDescription() *protobufs.AgentDescription {
 	return &protobufs.AgentDescription{
 		IdentifyingAttributes: []*protobufs.KeyValue{
 			keyValuePair("service.name", c.GetAgentType()),
+			keyValuePair("service.instance.id", c.GetInstanceId().String()),
 			keyValuePair("service.version", c.GetAgentVersion()),
 		},
-		NonIdentifyingAttributes: []*protobufs.KeyValue{
+		NonIdentifyingAttributes: append(
+			c.AgentDescription.nonIdentifyingAttributes(),
 			keyValuePair("os.family", runtime.GOOS),
 			keyValuePair("host.name", hostname),
-		},
+		),
 	}
+}
+
+func (ad *AgentDescription) nonIdentifyingAttributes() []*protobufs.KeyValue {
+	toReturn := make([]*protobufs.KeyValue, len(ad.NonIdentifyingAttributes))
+	i := 0
+	for k, v := range ad.NonIdentifyingAttributes {
+		toReturn[i] = keyValuePair(k, v)
+		i++
+	}
+	return toReturn
 }
 
 func keyValuePair(key string, value string) *protobufs.KeyValue {
@@ -174,13 +201,18 @@ func keyValuePair(key string, value string) *protobufs.KeyValue {
 	}
 }
 
-func (c *Config) GetNewInstanceId() uuid.UUID {
+func mustGetInstanceId() uuid.UUID {
 	u, err := uuid.NewV7()
 	if err != nil {
 		// This really should never happen and if it does we should fail.
 		panic(err)
 	}
 	return u
+}
+
+func (c *Config) GetNewInstanceId() uuid.UUID {
+	c.instanceId = mustGetInstanceId()
+	return c.instanceId
 }
 
 func (c *Config) RemoteConfigEnabled() bool {
