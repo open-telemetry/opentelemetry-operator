@@ -752,12 +752,12 @@ spec:
 
 ### Configure resource attributes with labels
 
-You can also use common labels to set resource attributes.
+You can also use common labels to set resource attributes (first entry wins).
 
 The following labels are supported:
+- `app.kubernetes.io/instance` becomes `service.name`
 - `app.kubernetes.io/name` becomes `service.name`
 - `app.kubernetes.io/version` becomes `service.version`
-- `app.kubernetes.io/part-of` becomes `service.namespace`
 
 ```yaml
 apiVersion: v1
