@@ -5,6 +5,7 @@ package instrumentation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -24,6 +25,7 @@ import (
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/distribution/reference"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
@@ -454,13 +456,46 @@ func chooseServiceVersion(pod corev1.Pod, useLabelsForResourceAttributes bool, i
 	if v != "" {
 		return v
 	}
-	parts := strings.Split(pod.Spec.Containers[index].Image, ":")
-	tag := parts[len(parts)-1]
-	//guard statement to handle case where image name has a port number
-	if strings.Contains(tag, "/") {
+	var err error
+	v, err = parseServiceVersionFromImage(pod.Spec.Containers[index].Image)
+	if err != nil {
 		return ""
 	}
-	return tag
+	return v
+}
+
+var cannotRetrieveImage = errors.New("cannot retrieve image name")
+
+// parseServiceVersionFromImage parses the service version for differently-formatted image names
+// according to https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/k8s-attributes.md#how-serviceversion-should-be-calculated
+func parseServiceVersionFromImage(image string) (string, error) {
+	ref, err := reference.Parse(image)
+	if err != nil {
+		return "", err
+	}
+
+	namedRef, ok := ref.(reference.Named)
+	if !ok {
+		return "", cannotRetrieveImage
+	}
+	var tag, digest string
+	if taggedRef, ok := namedRef.(reference.Tagged); ok {
+		tag = taggedRef.Tag()
+	}
+	if digestedRef, ok := namedRef.(reference.Digested); ok {
+		digest = digestedRef.Digest().String()
+	}
+	if digest != "" {
+		if tag != "" {
+			return fmt.Sprintf("%s@%s", tag, digest), nil
+		}
+		return digest, nil
+	}
+	if tag != "" {
+		return tag, nil
+	}
+
+	return "", cannotRetrieveImage
 }
 
 // chooseServiceInstanceId returns the service.instance.id to be used in the instrumentation.
