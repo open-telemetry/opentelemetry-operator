@@ -23,11 +23,11 @@ import (
 	k8sreconcile "sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/controllers"
 )
 
 var opampBridgeLogger = logf.Log.WithName("opamp-bridge-controller-unit-tests")
