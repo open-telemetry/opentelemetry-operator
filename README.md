@@ -729,6 +729,9 @@ EOF
 
 ## Configure resource attributes
 
+The OpenTelemetry Operator can automatically set resource attributes as defined in the 
+[OpenTelemetry Semantic Conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/k8s-attributes.md).
+
 ### Configure resource attributes with annotations
 
 This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. 
