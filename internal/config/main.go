@@ -6,8 +6,6 @@ package config
 
 import (
 	"context"
-	"time"
-
 	"github.com/go-logr/logr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -21,7 +19,6 @@ import (
 )
 
 const (
-	defaultAutoDetectFrequency               = 5 * time.Second
 	defaultCollectorConfigMapEntry           = "collector.yaml"
 	defaultTargetAllocatorConfigMapEntry     = "targetallocator.yaml"
 	defaultOperatorOpAMPBridgeConfigMapEntry = "remoteconfiguration.yaml"
