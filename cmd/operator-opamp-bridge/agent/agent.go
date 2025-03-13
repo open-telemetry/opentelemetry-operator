@@ -58,7 +58,7 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config
 		applier:             applier,
 		logger:              logger,
 		appliedKeys:         map[kubeResourceKey]bool{},
-		instanceId:          config.GetNewInstanceId(),
+		instanceId:          config.GetInstanceId(),
 		agentDescription:    config.GetDescription(),
 		remoteConfigEnabled: config.RemoteConfigEnabled(),
 		opampClient:         opampClient,
