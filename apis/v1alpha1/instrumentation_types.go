@@ -38,6 +38,10 @@ type InstrumentationSpec struct {
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
+	// Injector defines configuration for the injector-based auto-instrumentation.
+	// +optional
+	Injector Injector `json:"injector,omitempty"`
+
 	// Java defines configuration for java auto-instrumentation.
 	// +optional
 	Java Java `json:"java,omitempty"`
@@ -142,6 +146,30 @@ type Defaults struct {
 	//   - `app.kubernetes.io/version` becomes `service.version`
 	//   - `app.kubernetes.io/part-of` becomes `service.namespace`
 	UseLabelsForResourceAttributes bool `json:"useLabelsForResourceAttributes,omitempty"`
+}
+
+type Injector struct {
+	// Image is a container image with auto-instrumentation injector.
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
+
+	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
+	// The default size is 200Mi.
+	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
+
+	// Env defines instrumentation specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // Java defines Java SDK and instrumentation configuration.
