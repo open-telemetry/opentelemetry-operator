@@ -7999,6 +7999,8 @@ spec:
                             type: object
                         type: object
                         x-kubernetes-map-type: atomic
+                      watchNamespace:
+                        type: string
                     type: object
                   replicas:
                     format: int32

@@ -12,6 +12,9 @@ type TargetAllocatorPrometheusCR struct {
 	// Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
+	// WatchNamespace to look for Prometheus CRs. If not set, all namespaces are used which requires a ClusterRole for listing all namespaces.
+	// +optional
+	WatchNamespace string `json:"watchNamespace,omitempty"`
 	// Default interval between consecutive scrapes. Intervals set in ServiceMonitors and PodMonitors override it.
 	//Equivalent to the same setting on the Prometheus CR.
 	//

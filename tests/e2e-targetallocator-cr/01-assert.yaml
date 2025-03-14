@@ -87,6 +87,7 @@ data:
       scrape_config_selector: null
       scrape_interval: 30s
       service_monitor_selector: null
+      watch_namespace: ""
 kind: ConfigMap
 metadata:
   name: cr-targetallocator
