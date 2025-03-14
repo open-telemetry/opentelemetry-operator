@@ -5,12 +5,14 @@ package instrumentation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
 	"unsafe"
 
+	"github.com/distribution/reference"
 	"github.com/go-logr/logr"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
@@ -431,13 +433,15 @@ func chooseServiceName(pod corev1.Pod, useLabelsForResourceAttributes bool, reso
 // The precedence is as follows:
 // 1. annotation with key resource.opentelemetry.io/<resource>.
 // 2. label with key labelKey.
-func chooseLabelOrAnnotation(pod corev1.Pod, useLabelsForResourceAttributes bool, resource attribute.Key, labelKey string) string {
+func chooseLabelOrAnnotation(pod corev1.Pod, useLabelsForResourceAttributes bool, resource attribute.Key, labelKeys []string) string {
 	if v := pod.GetAnnotations()[(constants.ResourceAttributeAnnotationPrefix + string(resource))]; v != "" {
 		return v
 	}
 	if useLabelsForResourceAttributes {
-		if v := pod.GetLabels()[labelKey]; v != "" {
-			return v
+		for _, labelKey := range labelKeys {
+			if v := pod.GetLabels()[labelKey]; v != "" {
+				return v
+			}
 		}
 	}
 	return ""
@@ -452,13 +456,46 @@ func chooseServiceVersion(pod corev1.Pod, useLabelsForResourceAttributes bool, i
 	if v != "" {
 		return v
 	}
-	parts := strings.Split(pod.Spec.Containers[index].Image, ":")
-	tag := parts[len(parts)-1]
-	//guard statement to handle case where image name has a port number
-	if strings.Contains(tag, "/") {
+	var err error
+	v, err = parseServiceVersionFromImage(pod.Spec.Containers[index].Image)
+	if err != nil {
 		return ""
 	}
-	return tag
+	return v
+}
+
+var cannotRetrieveImage = errors.New("cannot retrieve image name")
+
+// parseServiceVersionFromImage parses the service version for differently-formatted image names
+// according to https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/k8s-attributes.md#how-serviceversion-should-be-calculated
+func parseServiceVersionFromImage(image string) (string, error) {
+	ref, err := reference.Parse(image)
+	if err != nil {
+		return "", err
+	}
+
+	namedRef, ok := ref.(reference.Named)
+	if !ok {
+		return "", cannotRetrieveImage
+	}
+	var tag, digest string
+	if taggedRef, ok := namedRef.(reference.Tagged); ok {
+		tag = taggedRef.Tag()
+	}
+	if digestedRef, ok := namedRef.(reference.Digested); ok {
+		digest = digestedRef.Digest().String()
+	}
+	if digest != "" {
+		if tag != "" {
+			return fmt.Sprintf("%s@%s", tag, digest), nil
+		}
+		return digest, nil
+	}
+	if tag != "" {
+		return tag, nil
+	}
+
+	return "", cannotRetrieveImage
 }
 
 // chooseServiceInstanceId returns the service.instance.id to be used in the instrumentation.
@@ -472,7 +509,7 @@ func createServiceInstanceId(pod corev1.Pod, namespaceName, podName, containerNa
 	// which violates the uniqueness requirement of service instance id -
 	// see https://opentelemetry.io/docs/specs/semconv/resource/#service-experimental.
 	// We still allow the user to set the service instance id via annotation, because this is explicitly set by the user.
-	serviceInstanceId := chooseLabelOrAnnotation(pod, false, semconv.ServiceInstanceIDKey, "")
+	serviceInstanceId := chooseLabelOrAnnotation(pod, false, semconv.ServiceInstanceIDKey, nil)
 	if serviceInstanceId != "" {
 		return serviceInstanceId
 	}
@@ -539,7 +576,7 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 			}
 		}
 	}
-	partOf := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceNamespaceKey, constants.LabelAppPartOf)
+	partOf := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceNamespaceKey, nil)
 	if partOf != "" && !existingRes[string(semconv.ServiceNamespaceKey)] {
 		res[string(semconv.ServiceNamespaceKey)] = partOf
 	}
