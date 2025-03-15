@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	defaultMinUpdateInterval = time.Second * 5
+	defaultMinUpdateInterval                 = time.Second * 5
+	defaultGracePeriodBeforeSkipBadCollector = time.Second * 30
 )
 
 var (
@@ -31,10 +32,11 @@ var (
 )
 
 type Watcher struct {
-	log               logr.Logger
-	k8sClient         kubernetes.Interface
-	close             chan struct{}
-	minUpdateInterval time.Duration
+	log                               logr.Logger
+	k8sClient                         kubernetes.Interface
+	close                             chan struct{}
+	minUpdateInterval                 time.Duration
+	gracePeriodBeforeSkipBadCollector time.Duration
 }
 
 func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config) (*Watcher, error) {
@@ -44,10 +46,11 @@ func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config) (*Watcher,
 	}
 
 	return &Watcher{
-		log:               logger.WithValues("component", "opentelemetry-targetallocator"),
-		k8sClient:         clientset,
-		close:             make(chan struct{}),
-		minUpdateInterval: defaultMinUpdateInterval,
+		log:                               logger.WithValues("component", "opentelemetry-targetallocator"),
+		k8sClient:                         clientset,
+		close:                             make(chan struct{}),
+		minUpdateInterval:                 defaultMinUpdateInterval,
+		gracePeriodBeforeSkipBadCollector: defaultGracePeriodBeforeSkipBadCollector,
 	}, nil
 }
 
@@ -124,6 +127,25 @@ func (k *Watcher) runOnCollectors(store cache.Store, fn func(collectors map[stri
 		if pod.Spec.NodeName == "" {
 			continue
 		}
+
+		isPodUnhealthy := false
+		timeNow := time.Now()
+		// stop assigning targets to a non-Running pod that has lasted for a specific period
+		if pod.Status.Phase != v1.PodRunning &&
+			pod.Status.StartTime != nil &&
+			(timeNow.Sub(pod.Status.StartTime.Time) > defaultGracePeriodBeforeSkipBadCollector) {
+			isPodUnhealthy = true
+		}
+		// stop assigning targets to a non-Ready pod that has lasted for a specific period
+		for _, condition := range pod.Status.Conditions {
+			if condition.Type == v1.PodReady && condition.Status != v1.ConditionTrue && (timeNow.Sub(condition.LastTransitionTime.Time) > defaultGracePeriodBeforeSkipBadCollector) {
+				isPodUnhealthy = true
+			}
+		}
+		if isPodUnhealthy {
+			continue
+		}
+
 		collectorMap[pod.Name] = allocation.NewCollector(pod.Name, pod.Spec.NodeName)
 	}
 	collectorsDiscovered.Set(float64(len(collectorMap)))
