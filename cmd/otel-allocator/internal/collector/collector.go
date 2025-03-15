@@ -127,12 +127,25 @@ func (k *Watcher) runOnCollectors(store cache.Store, fn func(collectors map[stri
 		if pod.Spec.NodeName == "" {
 			continue
 		}
+
+		isPodUnhealthy := false
+		timeNow := time.Now()
 		// stop assigning targets to a non-Running pod that has lasted for a specific period
 		if pod.Status.Phase != v1.PodRunning &&
 			pod.Status.StartTime != nil &&
-			(time.Now().Sub(pod.Status.StartTime.Time) > defaultGracePeriodBeforeSkipBadCollector) {
+			(timeNow.Sub(pod.Status.StartTime.Time) > defaultGracePeriodBeforeSkipBadCollector) {
+			isPodUnhealthy = true
+		}
+		// stop assigning targets to a non-Ready pod that has lasted for a specific period
+		for _, condition := range pod.Status.Conditions {
+			if condition.Type == v1.PodReady && condition.Status != v1.ConditionTrue && (timeNow.Sub(condition.LastTransitionTime.Time) > defaultGracePeriodBeforeSkipBadCollector) {
+				isPodUnhealthy = true
+			}
+		}
+		if isPodUnhealthy {
 			continue
 		}
+
 		collectorMap[pod.Name] = allocation.NewCollector(pod.Name, pod.Spec.NodeName)
 	}
 	collectorsDiscovered.Set(float64(len(collectorMap)))
