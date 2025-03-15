@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	defaultMinUpdateInterval = time.Second * 5
+	defaultMinUpdateInterval                 = time.Second * 5
+	defaultGracePeriodBeforeSkipBadCollector = time.Second * 30
 )
 
 var (
@@ -31,10 +32,11 @@ var (
 )
 
 type Watcher struct {
-	log               logr.Logger
-	k8sClient         kubernetes.Interface
-	close             chan struct{}
-	minUpdateInterval time.Duration
+	log                               logr.Logger
+	k8sClient                         kubernetes.Interface
+	close                             chan struct{}
+	minUpdateInterval                 time.Duration
+	gracePeriodBeforeSkipBadCollector time.Duration
 }
 
 func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config) (*Watcher, error) {
@@ -44,10 +46,11 @@ func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config) (*Watcher,
 	}
 
 	return &Watcher{
-		log:               logger.WithValues("component", "opentelemetry-targetallocator"),
-		k8sClient:         clientset,
-		close:             make(chan struct{}),
-		minUpdateInterval: defaultMinUpdateInterval,
+		log:                               logger.WithValues("component", "opentelemetry-targetallocator"),
+		k8sClient:                         clientset,
+		close:                             make(chan struct{}),
+		minUpdateInterval:                 defaultMinUpdateInterval,
+		gracePeriodBeforeSkipBadCollector: defaultGracePeriodBeforeSkipBadCollector,
 	}, nil
 }
 
@@ -122,6 +125,12 @@ func (k *Watcher) runOnCollectors(store cache.Store, fn func(collectors map[stri
 	for _, obj := range objects {
 		pod := obj.(*v1.Pod)
 		if pod.Spec.NodeName == "" {
+			continue
+		}
+		// stop assigning targets to a non-Running pod that has lasted for a specific period
+		if pod.Status.Phase != v1.PodRunning &&
+			pod.Status.StartTime != nil &&
+			(time.Now().Sub(pod.Status.StartTime.Time) > defaultGracePeriodBeforeSkipBadCollector) {
 			continue
 		}
 		collectorMap[pod.Name] = allocation.NewCollector(pod.Name, pod.Spec.NodeName)

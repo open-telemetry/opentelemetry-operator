@@ -31,10 +31,11 @@ var labelSelector = metav1.LabelSelector{
 
 func getTestPodWatcher() Watcher {
 	podWatcher := Watcher{
-		k8sClient:         fake.NewSimpleClientset(),
-		close:             make(chan struct{}),
-		log:               logger,
-		minUpdateInterval: time.Millisecond,
+		k8sClient:                         fake.NewSimpleClientset(),
+		close:                             make(chan struct{}),
+		log:                               logger,
+		minUpdateInterval:                 time.Millisecond,
+		gracePeriodBeforeSkipBadCollector: defaultGracePeriodBeforeSkipBadCollector,
 	}
 	return podWatcher
 }
@@ -49,6 +50,20 @@ func pod(name string) *v1.Pod {
 		Spec: v1.PodSpec{
 			NodeName: "test-node",
 		},
+	}
+}
+
+func podWithPodPhaseAndStartTime(name string, podPhase v1.PodPhase, startTime time.Time) *v1.Pod {
+	return &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "test-ns",
+			Labels:    labelMap,
+		},
+		Spec: v1.PodSpec{
+			NodeName: "test-node",
+		},
+		Status: v1.PodStatus{Phase: podPhase, StartTime: &metav1.Time{Time: startTime}},
 	}
 }
 
@@ -145,6 +160,92 @@ func Test_runWatch(t *testing.T) {
 			}(podWatcher)
 
 			tt.args.kubeFn(t, podWatcher)
+
+			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+				mapMutex.Lock()
+				defer mapMutex.Unlock()
+				assert.Len(collect, actual, len(tt.want))
+				assert.Equal(collect, actual, tt.want)
+				assert.Equal(collect, testutil.ToFloat64(collectorsDiscovered), float64(len(actual)))
+			}, time.Second*3, time.Millisecond)
+		})
+	}
+}
+
+func Test_gracePeriod(t *testing.T) {
+	namespace := "test-ns"
+	type args struct {
+		kubeFn       func(t *testing.T, podWatcher Watcher)
+		collectorMap map[string]*allocation.Collector
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]*allocation.Collector
+	}{
+		{
+			name: "pod add",
+			args: args{
+				collectorMap: map[string]*allocation.Collector{
+					"test-pod-running": {
+						Name:     "test-pod-running",
+						NodeName: "test-node",
+					},
+					"test-pod-unknown": {
+						Name:     "test-pod-unknown",
+						NodeName: "test-node",
+					},
+					"test-pod-pending": {
+						Name:     "test-pod-pending",
+						NodeName: "test-node",
+					},
+				},
+			},
+			want: map[string]*allocation.Collector{
+				"test-pod-running": {
+					Name:     "test-pod-running",
+					NodeName: "test-node",
+				},
+				"test-pod-unknown": {
+					Name:     "test-pod-unknown",
+					NodeName: "test-node",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			timeNow := time.Now()
+			podWatcher := getTestPodWatcher()
+			defer func() {
+				close(podWatcher.close)
+			}()
+			var actual map[string]*allocation.Collector
+			mapMutex := sync.Mutex{}
+			for _, k := range tt.args.collectorMap {
+				var p *v1.Pod
+				switch k.Name {
+				case "test-pod-running":
+					p = podWithPodPhaseAndStartTime(k.Name, v1.PodRunning, timeNow)
+				case "test-pod-unknown": // non-Running but still within the grace period
+					p = podWithPodPhaseAndStartTime(k.Name, v1.PodUnknown,
+						timeNow.Add(-1*podWatcher.gracePeriodBeforeSkipBadCollector).Add(podWatcher.gracePeriodBeforeSkipBadCollector/2))
+				case "test-pod-pending": // non-Running and already over the grace period
+					p = podWithPodPhaseAndStartTime(k.Name, v1.PodPending,
+						timeNow.Add(-1*podWatcher.gracePeriodBeforeSkipBadCollector).Add(-podWatcher.gracePeriodBeforeSkipBadCollector/2))
+				}
+				_, err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
+				assert.NoError(t, err)
+			}
+
+			go func(podWatcher Watcher) {
+				err := podWatcher.Watch(namespace, &labelSelector, func(colMap map[string]*allocation.Collector) {
+					mapMutex.Lock()
+					defer mapMutex.Unlock()
+					actual = colMap
+				})
+				require.NoError(t, err)
+			}(podWatcher)
 
 			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 				mapMutex.Lock()
