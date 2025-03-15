@@ -38,9 +38,10 @@ var (
 	// PrometheusOperatorIsAvailable is the feature gate that enables features associated to the Prometheus Operator.
 	PrometheusOperatorIsAvailable = featuregate.GlobalRegistry().MustRegister(
 		"operator.observability.prometheus",
-		featuregate.StageBeta,
+		featuregate.StageStable,
 		featuregate.WithRegisterDescription("enables features associated to the Prometheus Operator"),
 		featuregate.WithRegisterFromVersion("v0.82.0"),
+		featuregate.WithRegisterToVersion("v0.122.0"),
 	)
 	// SetGolangFlags is the feature gate that enables automatically setting GOMEMLIMIT and GOMAXPROCS for the
 	// collector, bridge, and target allocator.
