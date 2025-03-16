@@ -47,7 +47,25 @@ func WriteHTMLPageHeader(w io.Writer, hd HeaderData) {
 // PropertiesTableData contains data for properties table template.
 type PropertiesTableData struct {
 	Headers []string
-	Rows    [][]template.HTML
+	Rows    [][]Cell
+}
+
+// Cell represents a cell in a row.
+type Cell struct {
+	// Link is the URL to link to. If empty, no link is created.
+	Link string
+	// Text is the text to display in the cell.
+	Text string
+	// Preformatted indicates if the text should be displayed as preformatted text.
+	Preformatted bool
+}
+
+func NewCell(text string) Cell {
+	return Cell{Text: text}
+}
+
+func Text(text string) Cell {
+	return Cell{Text: text}
 }
 
 // WriteHTMLPropertiesTable writes the HTML for properties table.
