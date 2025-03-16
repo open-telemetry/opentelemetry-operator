@@ -11,7 +11,13 @@
     <tr {{ if (even $index) }}style="background: #eee"{{end}}>
         {{- range $index, $cell := $row}}
         <td style="vertical-align: top;">
-            {{$cell}}
+            {{- if $cell.Link }}
+            <a href="{{$cell.Link}}">{{$cell.Text}}</a>
+            {{- else if $cell.Preformatted }}
+            <pre>{{$cell.Text}}</pre>
+            {{- else}}
+            {{$cell.Text}}
+            {{- end}}
         </td>
         {{- end}}
     </tr>
