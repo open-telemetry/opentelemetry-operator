@@ -285,14 +285,6 @@ func (s *Server) PrometheusMiddleware(c *gin.Context) {
 	timer.ObserveDuration()
 }
 
-func header(data ...string) string {
-	return "<thead><td>" + strings.Join(data, "</td><td>") + "</td></thead>\n"
-}
-
-func row(data ...string) string {
-	return "<tr><td>" + strings.Join(data, "</td><td>") + "</td></tr>\n"
-}
-
 // IndexHandler displays the main page of the allocator. It shows the number of jobs and targets.
 // It also displays a table with the collectors and the number of jobs and targets for each collector.
 // The collector names are links to the respective pages. The table is sorted by collector name.
@@ -304,16 +296,16 @@ func (s *Server) IndexHandler(c *gin.Context) {
 
 	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
 		Headers: []string{"Category", "Count"},
-		Rows: [][]template.HTML{
-			{scrapeConfigAnchorLink(), template.HTML(strconv.Itoa(s.getScrapeConfigCount()))},
-			{jobsAnchorLink(), template.HTML(strconv.Itoa(s.getJobCount()))},
-			{targetsAnchorLink(), template.HTML(strconv.Itoa(len(s.allocator.TargetItems())))},
+		Rows: [][]Cell{
+			{scrapeConfigAnchorLink(), Text(strconv.Itoa(s.getScrapeConfigCount()))},
+			{jobsAnchorLink(), Text(strconv.Itoa(s.getJobCount()))},
+			{targetsAnchorLink(), Text(strconv.Itoa(len(s.allocator.TargetItems())))},
 		},
 	})
 	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
 		Headers: []string{"Collector", "Job Count", "Target Count"},
-		Rows: func() [][]template.HTML {
-			var rows [][]template.HTML
+		Rows: func() [][]Cell {
+			var rows [][]Cell
 			collectorNames := []string{}
 			for k := range s.allocator.Collectors() {
 				collectorNames = append(collectorNames, k)
@@ -323,7 +315,7 @@ func (s *Server) IndexHandler(c *gin.Context) {
 			for _, colName := range collectorNames {
 				jobCount := strconv.Itoa(s.getJobCountForCollector(colName))
 				targetCount := strconv.Itoa(s.getTargetCountForCollector(colName))
-				rows = append(rows, []template.HTML{collectorAnchorLink(colName), template.HTML(jobCount), template.HTML(targetCount)})
+				rows = append(rows, []Cell{collectorAnchorLink(colName), NewCell(jobCount), NewCell(targetCount)})
 			}
 			return rows
 		}(),
@@ -331,8 +323,11 @@ func (s *Server) IndexHandler(c *gin.Context) {
 	WriteHTMLPageFooter(c.Writer)
 }
 
-func targetsAnchorLink() template.HTML {
-	return `<a href="/targets">Targets</a>`
+func targetsAnchorLink() Cell {
+	return Cell{
+		Link: "/targets",
+		Text: "Targets",
+	}
 }
 
 // TargetsHTMLHandler displays the targets in a table format. Each target is a row in the table.
@@ -348,14 +343,14 @@ func (s *Server) TargetsHTMLHandler(c *gin.Context) {
 
 	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
 		Headers: []string{"Job", "Target", "Collector", "Endpoint Slice"},
-		Rows: func() [][]template.HTML {
-			var rows [][]template.HTML
+		Rows: func() [][]Cell {
+			var rows [][]Cell
 			for _, v := range s.sortedTargetItems() {
-				rows = append(rows, []template.HTML{
+				rows = append(rows, []Cell{
 					jobAnchorLink(v.JobName),
 					targetAnchorLink(v),
 					collectorAnchorLink(v.CollectorName),
-					template.HTML(v.GetEndpointSliceName()),
+					NewCell(v.GetEndpointSliceName()),
 				})
 			}
 			return rows
@@ -364,8 +359,11 @@ func (s *Server) TargetsHTMLHandler(c *gin.Context) {
 	WriteHTMLPageFooter(c.Writer)
 }
 
-func targetAnchorLink(t *target.Item) template.HTML {
-	return template.HTML(fmt.Sprintf("<a href=\"/target?target_hash=%s\">%s</a>", t.Hash(), t.TargetURL))
+func targetAnchorLink(t *target.Item) Cell {
+	return Cell{
+		Link: fmt.Sprintf("/target?target_hash=%s", t.Hash()),
+		Text: t.TargetURL,
+	}
 }
 
 // TargetHTMLHandler displays information about a target in a table format.
@@ -413,25 +411,25 @@ func (s *Server) TargetHTMLHandler(c *gin.Context) {
 	})
 	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
 		Headers: []string{"", ""},
-		Rows: [][]template.HTML{
-			{"Collector", collectorAnchorLink(target.CollectorName)},
-			{"Job", jobAnchorLink(target.JobName)},
-			{"Namespace", template.HTML(target.Labels.Get("__meta_kubernetes_namespace"))},
-			{"Service Name", template.HTML(target.Labels.Get("__meta_kubernetes_service_name"))},
-			{"Service Port", template.HTML(target.Labels.Get("__meta_kubernetes_service_port"))},
-			{"Pod Name", template.HTML(target.Labels.Get("__meta_kubernetes_pod_name"))},
-			{"Container Name", template.HTML(target.Labels.Get("__meta_kubernetes_pod_container_name"))},
-			{"Container Port Name", template.HTML(target.Labels.Get("__meta_kubernetes_pod_container_port_name"))},
-			{"Node Name", template.HTML(target.GetNodeName())},
-			{"Endpoint Slice Name", template.HTML(target.GetEndpointSliceName())},
+		Rows: [][]Cell{
+			{NewCell("Collector"), collectorAnchorLink(target.CollectorName)},
+			{NewCell("Job"), jobAnchorLink(target.JobName)},
+			{NewCell("Namespace"), NewCell(target.Labels.Get("__meta_kubernetes_namespace"))},
+			{NewCell("Service Name"), NewCell(target.Labels.Get("__meta_kubernetes_service_name"))},
+			{NewCell("Service Port"), NewCell(target.Labels.Get("__meta_kubernetes_service_port"))},
+			{NewCell("Pod Name"), NewCell(target.Labels.Get("__meta_kubernetes_pod_name"))},
+			{NewCell("Container Name"), NewCell(target.Labels.Get("__meta_kubernetes_pod_container_name"))},
+			{NewCell("Container Port Name"), NewCell(target.Labels.Get("__meta_kubernetes_pod_container_port_name"))},
+			{NewCell("Node Name"), NewCell(target.GetNodeName())},
+			{NewCell("Endpoint Slice Name"), NewCell(target.GetEndpointSliceName())},
 		},
 	})
 	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
 		Headers: []string{"Label", "Value"},
-		Rows: func() [][]template.HTML {
-			var rows [][]template.HTML
+		Rows: func() [][]Cell {
+			var rows [][]Cell
 			for _, l := range target.Labels {
-				rows = append(rows, []template.HTML{template.HTML(l.Name), template.HTML(l.Value)})
+				rows = append(rows, []Cell{NewCell(l.Name), NewCell(l.Value)})
 			}
 			return rows
 		}(),
@@ -439,8 +437,11 @@ func (s *Server) TargetHTMLHandler(c *gin.Context) {
 	WriteHTMLPageFooter(c.Writer)
 }
 
-func jobsAnchorLink() template.HTML {
-	return `<a href="/jobs">Jobs</a>`
+func jobsAnchorLink() Cell {
+	return Cell{
+		Link: "/jobs",
+		Text: "Jobs",
+	}
 }
 
 // JobsHTMLHandler displays the jobs in a table format. Each job is a row in the table.
@@ -454,8 +455,8 @@ func (s *Server) JobsHTMLHandler(c *gin.Context) {
 	})
 	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
 		Headers: []string{"Job", "Target Count"},
-		Rows: func() [][]template.HTML {
-			var rows [][]template.HTML
+		Rows: func() [][]Cell {
+			var rows [][]Cell
 			jobs := make(map[string]int)
 			for _, v := range s.allocator.TargetItems() {
 				jobs[v.JobName]++
@@ -469,7 +470,7 @@ func (s *Server) JobsHTMLHandler(c *gin.Context) {
 
 			for _, j := range jobNames {
 				v := jobs[j]
-				rows = append(rows, []template.HTML{jobAnchorLink(j), template.HTML(strconv.Itoa(v))})
+				rows = append(rows, []Cell{jobAnchorLink(j), NewCell(strconv.Itoa(v))})
 			}
 			return rows
 		}(),
@@ -477,8 +478,11 @@ func (s *Server) JobsHTMLHandler(c *gin.Context) {
 	WriteHTMLPageFooter(c.Writer)
 }
 
-func jobAnchorLink(jobId string) template.HTML {
-	return template.HTML(fmt.Sprintf("<a href=\"/job?job_id=%s\">%s</a>", jobId, jobId))
+func jobAnchorLink(jobId string) Cell {
+	return Cell{
+		Link: fmt.Sprintf("/job?job_id=%s", url.QueryEscape(jobId)),
+		Text: jobId,
+	}
 }
 func (s *Server) JobHTMLHandler(c *gin.Context) {
 	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
@@ -496,8 +500,8 @@ func (s *Server) JobHTMLHandler(c *gin.Context) {
 	})
 	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
 		Headers: []string{"Collector", "Target Count"},
-		Rows: func() [][]template.HTML {
-			var rows [][]template.HTML
+		Rows: func() [][]Cell {
+			var rows [][]Cell
 			targets := map[string]*target.Item{}
 			for k, v := range s.allocator.TargetItems() {
 				if v.JobName == jobId {
@@ -516,7 +520,7 @@ func (s *Server) JobHTMLHandler(c *gin.Context) {
 						count++
 					}
 				}
-				rows = append(rows, []template.HTML{collectorAnchorLink(colName), template.HTML(strconv.Itoa(count))})
+				rows = append(rows, []Cell{collectorAnchorLink(colName), NewCell(strconv.Itoa(count))})
 			}
 			return rows
 		}(),
@@ -524,8 +528,11 @@ func (s *Server) JobHTMLHandler(c *gin.Context) {
 	WriteHTMLPageFooter(c.Writer)
 }
 
-func collectorAnchorLink(collectorId string) template.HTML {
-	return template.HTML(fmt.Sprintf("<a href=\"/collector?collector_id=%s\">%s</a>", collectorId, collectorId))
+func collectorAnchorLink(collectorId string) Cell {
+	return Cell{
+		Link: fmt.Sprintf("/collector?collector_id=%s", url.QueryEscape(collectorId)),
+		Text: collectorId,
+	}
 }
 
 func (s *Server) CollectorHTMLHandler(c *gin.Context) {
@@ -581,14 +588,14 @@ func (s *Server) CollectorHTMLHandler(c *gin.Context) {
 	})
 	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
 		Headers: []string{"Job", "Target", "Endpoint Slice"},
-		Rows: func() [][]template.HTML {
-			var rows [][]template.HTML
+		Rows: func() [][]Cell {
+			var rows [][]Cell
 			for _, v := range s.sortedTargetItems() {
 				if v.CollectorName == collectorId {
-					rows = append(rows, []template.HTML{
+					rows = append(rows, []Cell{
 						jobAnchorLink(v.JobName),
 						targetAnchorLink(v),
-						template.HTML(v.GetEndpointSliceName()),
+						NewCell(v.GetEndpointSliceName()),
 					})
 				}
 			}
@@ -598,8 +605,11 @@ func (s *Server) CollectorHTMLHandler(c *gin.Context) {
 	WriteHTMLPageFooter(c.Writer)
 }
 
-func scrapeConfigAnchorLink() template.HTML {
-	return `<a href="/scrape_configs">Scrape Configs</a>`
+func scrapeConfigAnchorLink() Cell {
+	return Cell{
+		Link: "/scrape_configs",
+		Text: "Scrape Configs",
+	}
 }
 func (s *Server) ScrapeConfigsHTMLHandler(c *gin.Context) {
 	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
@@ -620,23 +630,16 @@ func (s *Server) ScrapeConfigsHTMLHandler(c *gin.Context) {
 
 	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
 		Headers: []string{"Job", "Scrape Config"},
-		Rows: func() [][]template.HTML {
-			var rows [][]template.HTML
+		Rows: func() [][]Cell {
+			var rows [][]Cell
 			for job, scrapeConfig := range scrapeConfigs {
-				scrapeConfigJSON, err := json.Marshal(scrapeConfig)
-				if err != nil {
-					s.errorHandler(c.Writer, err)
-					return nil
-				}
 				// pretty print the JSON
-				scrapeConfigJSON, err = json.MarshalIndent(scrapeConfig, "", "  ")
+				scrapeConfigJSON, err := json.MarshalIndent(scrapeConfig, "", "  ")
 				if err != nil {
 					s.errorHandler(c.Writer, err)
 					return nil
 				}
-				// Wrap the JSON in a <pre> tag to preserve formatting
-				scrapeConfigJSON = []byte(fmt.Sprintf("<pre>%s</pre>", scrapeConfigJSON))
-				rows = append(rows, []template.HTML{template.HTML(jobAnchorLink(job)), template.HTML(scrapeConfigJSON)})
+				rows = append(rows, []Cell{jobAnchorLink(job), {Text: string(scrapeConfigJSON), Preformatted: true}})
 			}
 			return rows
 		}(),

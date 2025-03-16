@@ -39,7 +39,7 @@ func TestNoCrash(t *testing.T) {
 	buf := new(bytes.Buffer)
 	assert.NotPanics(t, func() { WriteHTMLPageHeader(buf, HeaderData{Title: "Foo"}) })
 	assert.NotPanics(t, func() {
-		WriteHTMLPropertiesTable(buf, PropertiesTableData{Headers: []string{"foo"}, Rows: [][]template.HTML{{"bar"}}})
+		WriteHTMLPropertiesTable(buf, PropertiesTableData{Headers: []string{"foo"}, Rows: [][]Cell{{NewCell("bar")}}})
 	})
 	assert.NotPanics(t, func() { WriteHTMLPageFooter(buf) })
 }
