@@ -1,0 +1,19 @@
+<table>
+    <thead>
+    {{- range $index, $name := .Headers }}
+    <td>
+        {{$name}}
+    </td>
+    {{- end}}
+    </thead>
+    {{- $index := 0 }}
+    {{- range $index, $row := .Rows }}
+    <tr {{ if (even $index) }}style="background: #eee"{{end}}>
+        {{- range $index, $cell := $row}}
+        <td style="vertical-align: top;">
+            {{$cell}}
+        </td>
+        {{- end}}
+    </tr>
+    {{- end}}
+</table>

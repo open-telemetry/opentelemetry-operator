@@ -228,6 +228,8 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.5.0 // indirect
 )
 
+require gotest.tools/v3 v3.5.1
+
 require (
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
