@@ -4,7 +4,6 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -232,6 +231,10 @@ func (s *Server) UpdateScrapeConfigResponse(configs map[string]*promconfig.Scrap
 
 // ScrapeConfigsHandler returns the available scrape configuration discovered by the target allocator.
 func (s *Server) ScrapeConfigsHandler(c *gin.Context) {
+	if strings.Contains(c.Request.Header.Get("Accept"), "text/html") {
+		s.ScrapeConfigsHTMLHandler(c)
+		return
+	}
 	s.mtx.RLock()
 	result := s.scrapeConfigResponse
 	if c.Request.TLS != nil {
@@ -295,47 +298,40 @@ func row(data ...string) string {
 // The collector names are links to the respective pages. The table is sorted by collector name.
 func (s *Server) IndexHandler(c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", "text/html")
-	var b bytes.Buffer
-	b.WriteString(`<html>
-<body>
-<h1>OpenTelemetry Target Allocator</h1>
-`)
+	WriteHTMLPageHeader(c.Writer, HeaderData{
+		Title: "OpenTelemetry Target Allocator",
+	})
 
-	fmt.Fprint(&b, "<table>\n")
-	fmt.Fprint(&b, header("Category", "Count"))
-	fmt.Fprint(&b, row(jobsAnchorLink(), strconv.Itoa(s.getJobCount())))
-	fmt.Fprint(&b, row(targetsAnchorLink(), strconv.Itoa(len(s.allocator.TargetItems()))))
-	fmt.Fprint(&b, "</table>\n")
+	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
+		Headers: []string{"Category", "Count"},
+		Rows: [][]template.HTML{
+			{scrapeConfigAnchorLink(), template.HTML(strconv.Itoa(s.getScrapeConfigCount()))},
+			{jobsAnchorLink(), template.HTML(strconv.Itoa(s.getJobCount()))},
+			{targetsAnchorLink(), template.HTML(strconv.Itoa(len(s.allocator.TargetItems())))},
+		},
+	})
+	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
+		Headers: []string{"Collector", "Job Count", "Target Count"},
+		Rows: func() [][]template.HTML {
+			var rows [][]template.HTML
+			collectorNames := []string{}
+			for k := range s.allocator.Collectors() {
+				collectorNames = append(collectorNames, k)
+			}
+			sort.Strings(collectorNames)
 
-	fmt.Fprint(&b, "<table>\n")
-	fmt.Fprint(&b, header("Collector", "Job Count", "Target Count"))
-
-	// Sort the collectors by name to ensure consistent order
-	collectorNames := []string{}
-	for k := range s.allocator.Collectors() {
-		collectorNames = append(collectorNames, k)
-	}
-	sort.Strings(collectorNames)
-
-	for _, colName := range collectorNames {
-		jobCount := strconv.Itoa(s.getJobCountForCollector(colName))
-		targetCount := strconv.Itoa(s.getTargetCountForCollector(colName))
-		fmt.Fprint(&b, row(collectorAnchorLink(colName), jobCount, targetCount))
-	}
-	b.WriteString(`</table>
-</body>
-</html>`)
-
-	_, err := c.Writer.Write(b.Bytes())
-	if err != nil {
-		s.logger.Error(err, "failed to write response")
-		c.Status(http.StatusInternalServerError)
-	}
-
-	c.Status(http.StatusOK)
+			for _, colName := range collectorNames {
+				jobCount := strconv.Itoa(s.getJobCountForCollector(colName))
+				targetCount := strconv.Itoa(s.getTargetCountForCollector(colName))
+				rows = append(rows, []template.HTML{collectorAnchorLink(colName), template.HTML(jobCount), template.HTML(targetCount)})
+			}
+			return rows
+		}(),
+	})
+	WriteHTMLPageFooter(c.Writer)
 }
 
-func targetsAnchorLink() string {
+func targetsAnchorLink() template.HTML {
 	return `<a href="/targets">Targets</a>`
 }
 
@@ -346,32 +342,30 @@ func (s *Server) TargetsHTMLHandler(c *gin.Context) {
 	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
 	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	var b bytes.Buffer
-	b.WriteString(`<html>
-<body>
-<h1>Targets</h1>
-<table>
-`)
-	fmt.Fprint(&b, header("Job", "Target", "Collector", "Endpoint Slice"))
-	for _, v := range s.sortedTargetItems() {
-		fmt.Fprint(&b, row(jobAnchorLink(v.JobName), targetAnchorLink(v), collectorAnchorLink(v.CollectorName), v.GetEndpointSliceName()))
-	}
+	WriteHTMLPageHeader(c.Writer, HeaderData{
+		Title: "OpenTelemetry Target Allocator - Targets",
+	})
 
-	b.WriteString(`</table>
-</body>
-</html>`)
-
-	_, err := c.Writer.Write(b.Bytes())
-	if err != nil {
-		s.logger.Error(err, "failed to write response")
-		c.Status(http.StatusInternalServerError)
-	}
-
-	c.Status(http.StatusOK)
+	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
+		Headers: []string{"Job", "Target", "Collector", "Endpoint Slice"},
+		Rows: func() [][]template.HTML {
+			var rows [][]template.HTML
+			for _, v := range s.sortedTargetItems() {
+				rows = append(rows, []template.HTML{
+					jobAnchorLink(v.JobName),
+					targetAnchorLink(v),
+					collectorAnchorLink(v.CollectorName),
+					template.HTML(v.GetEndpointSliceName()),
+				})
+			}
+			return rows
+		}(),
+	})
+	WriteHTMLPageFooter(c.Writer)
 }
 
-func targetAnchorLink(t *target.Item) string {
-	return fmt.Sprintf("<a href=\"/target?target_hash=%s\">%s</a>", t.Hash(), t.TargetURL)
+func targetAnchorLink(t *target.Item) template.HTML {
+	return template.HTML(fmt.Sprintf("<a href=\"/target?target_hash=%s\">%s</a>", t.Hash(), t.TargetURL))
 }
 
 // TargetHTMLHandler displays information about a target in a table format.
@@ -414,61 +408,38 @@ func (s *Server) TargetHTMLHandler(c *gin.Context) {
 		return
 	}
 
-	var b bytes.Buffer
-	b.WriteString(`<html>
-<body>
-<h1>Target: ` + target.TargetURL + `</h1>
-<table>
-`)
-
-	fmt.Fprint(&b, row("Collector", target.CollectorName))
-	fmt.Fprint(&b, row("Job", target.JobName))
-	if namespace := target.Labels.Get("__meta_kubernetes_namespace"); namespace != "" {
-		fmt.Fprint(&b, row("Namespace", namespace))
-	}
-	if service := target.Labels.Get("__meta_kubernetes_service_name"); service != "" {
-		fmt.Fprint(&b, row("Service Name", service))
-	}
-	if port := target.Labels.Get("__meta_kubernetes_service_port"); port != "" {
-		fmt.Fprint(&b, row("Service Port", port))
-	}
-	if podName := target.Labels.Get("__meta_kubernetes_pod_name"); podName != "" {
-		fmt.Fprint(&b, row("Pod Name", podName))
-	}
-	if container := target.Labels.Get("__meta_kubernetes_pod_container_name"); container != "" {
-		fmt.Fprint(&b, row("Container Name", container))
-	}
-	if containerPortName := target.Labels.Get("__meta_kubernetes_pod_container_port_name"); containerPortName != "" {
-		fmt.Fprint(&b, row("Container Port Name", containerPortName))
-	}
-	if node := target.GetNodeName(); node != "" {
-		fmt.Fprint(&b, row("Node Name", node))
-	}
-	if endpointSliceName := target.GetEndpointSliceName(); endpointSliceName != "" {
-		fmt.Fprint(&b, row("Endpoint Slice Name", endpointSliceName))
-	}
-
-	b.WriteString(`</table>
-<h2>Target Labels</h2>
-<table>
-`)
-	fmt.Fprint(&b, header("Label", "Value"))
-	for _, l := range target.Labels {
-		fmt.Fprint(&b, row(l.Name, l.Value))
-	}
-	b.WriteString(`</table>
-</body>
-</html>`)
-	_, err := c.Writer.Write(b.Bytes())
-	if err != nil {
-		s.logger.Error(err, "failed to write response")
-		c.Status(http.StatusInternalServerError)
-	}
-
-	c.Status(http.StatusOK)
+	WriteHTMLPageHeader(c.Writer, HeaderData{
+		Title: "Target: " + target.TargetURL,
+	})
+	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
+		Headers: []string{"", ""},
+		Rows: [][]template.HTML{
+			{"Collector", collectorAnchorLink(target.CollectorName)},
+			{"Job", jobAnchorLink(target.JobName)},
+			{"Namespace", template.HTML(target.Labels.Get("__meta_kubernetes_namespace"))},
+			{"Service Name", template.HTML(target.Labels.Get("__meta_kubernetes_service_name"))},
+			{"Service Port", template.HTML(target.Labels.Get("__meta_kubernetes_service_port"))},
+			{"Pod Name", template.HTML(target.Labels.Get("__meta_kubernetes_pod_name"))},
+			{"Container Name", template.HTML(target.Labels.Get("__meta_kubernetes_pod_container_name"))},
+			{"Container Port Name", template.HTML(target.Labels.Get("__meta_kubernetes_pod_container_port_name"))},
+			{"Node Name", template.HTML(target.GetNodeName())},
+			{"Endpoint Slice Name", template.HTML(target.GetEndpointSliceName())},
+		},
+	})
+	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
+		Headers: []string{"Label", "Value"},
+		Rows: func() [][]template.HTML {
+			var rows [][]template.HTML
+			for _, l := range target.Labels {
+				rows = append(rows, []template.HTML{template.HTML(l.Name), template.HTML(l.Value)})
+			}
+			return rows
+		}(),
+	})
+	WriteHTMLPageFooter(c.Writer)
 }
 
-func jobsAnchorLink() string {
+func jobsAnchorLink() template.HTML {
 	return `<a href="/jobs">Jobs</a>`
 }
 
@@ -478,45 +449,36 @@ func (s *Server) JobsHTMLHandler(c *gin.Context) {
 	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
 	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	var b bytes.Buffer
-	b.WriteString(`<html>
-<body>
-<h1>Jobs</h1>
-<table>
-`)
-	fmt.Fprint(&b, header("Job", "Target Count"))
+	WriteHTMLPageHeader(c.Writer, HeaderData{
+		Title: "OpenTelemetry Target Allocator - Jobs",
+	})
+	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
+		Headers: []string{"Job", "Target Count"},
+		Rows: func() [][]template.HTML {
+			var rows [][]template.HTML
+			jobs := make(map[string]int)
+			for _, v := range s.allocator.TargetItems() {
+				jobs[v.JobName]++
+			}
+			// Sort the jobs by name to ensure consistent order
+			jobNames := make([]string, 0, len(jobs))
+			for k := range jobs {
+				jobNames = append(jobNames, k)
+			}
+			sort.Strings(jobNames)
 
-	jobs := make(map[string]int)
-	for _, v := range s.allocator.TargetItems() {
-		jobs[v.JobName]++
-	}
-
-	// Sort the jobs by name to ensure consistent order
-	jobNames := make([]string, 0, len(jobs))
-	for k := range jobs {
-		jobNames = append(jobNames, k)
-	}
-	sort.Strings(jobNames)
-
-	for _, j := range jobNames {
-		fmt.Fprint(&b, row(jobAnchorLink(j), strconv.Itoa(jobs[j])))
-	}
-
-	b.WriteString(`</table>
-</body>
-</html>`)
-
-	_, err := c.Writer.Write(b.Bytes())
-	if err != nil {
-		s.logger.Error(err, "failed to write response")
-		c.Status(http.StatusInternalServerError)
-	}
-
-	c.Status(http.StatusOK)
+			for _, j := range jobNames {
+				v := jobs[j]
+				rows = append(rows, []template.HTML{jobAnchorLink(j), template.HTML(strconv.Itoa(v))})
+			}
+			return rows
+		}(),
+	})
+	WriteHTMLPageFooter(c.Writer)
 }
 
-func jobAnchorLink(jobId string) string {
-	return fmt.Sprintf("<a href=\"/job?job_id=%s\">%s</a>", jobId, jobId)
+func jobAnchorLink(jobId string) template.HTML {
+	return template.HTML(fmt.Sprintf("<a href=\"/job?job_id=%s\">%s</a>", jobId, jobId))
 }
 func (s *Server) JobHTMLHandler(c *gin.Context) {
 	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
@@ -529,71 +491,41 @@ func (s *Server) JobHTMLHandler(c *gin.Context) {
 	}
 	jobId := jobIdValues[0]
 
-	var b bytes.Buffer
-	t, err := template.New("job").Parse(`<html>
-<body>
-<h1>Job: {{.}}</h1>
-<table>
-`)
-	if err != nil {
-		s.logger.Error(err, "failed to parse template")
-		return
-	}
-	err = t.Execute(&b, jobId)
-	if err != nil {
-		s.logger.Error(err, "failed to execute template")
-		return
-	}
-	fmt.Fprint(&b, header("Collector", "Target Count"))
-
-	// Filter targets by job
-	targets := map[string]*target.Item{}
-	for k, v := range s.allocator.TargetItems() {
-		if v.JobName == jobId {
-			targets[k] = v
-		}
-	}
-
-	colNames := []string{}
-	for _, col := range s.allocator.Collectors() {
-		colNames = append(colNames, col.Name)
-	}
-	sort.Strings(colNames)
-
-	for _, colName := range colNames {
-		count := 0
-		for _, target := range targets {
-			if target.CollectorName == colName {
-				count++
+	WriteHTMLPageHeader(c.Writer, HeaderData{
+		Title: "Job: " + jobId,
+	})
+	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
+		Headers: []string{"Collector", "Target Count"},
+		Rows: func() [][]template.HTML {
+			var rows [][]template.HTML
+			targets := map[string]*target.Item{}
+			for k, v := range s.allocator.TargetItems() {
+				if v.JobName == jobId {
+					targets[k] = v
+				}
 			}
-		}
-		fmt.Fprint(&b, row(collectorAnchorLink(colName), strconv.Itoa(count)))
-	}
-	b.WriteString(`</table>
-<table>
-`)
-	fmt.Fprint(&b, header("Collector", "Target"))
-	for _, v := range colNames {
-		for _, t := range targets {
-			if t.CollectorName == v {
-				fmt.Fprint(&b, row(collectorAnchorLink(v), targetAnchorLink(t)))
+			collectorNames := []string{}
+			for _, v := range s.allocator.Collectors() {
+				collectorNames = append(collectorNames, v.Name)
 			}
-		}
-	}
-	b.WriteString(`</table>
-</body>
-</html>`)
-	_, err = c.Writer.Write(b.Bytes())
-	if err != nil {
-		s.logger.Error(err, "failed to write response")
-		c.Status(http.StatusInternalServerError)
-	}
-
-	c.Status(http.StatusOK)
+			sort.Strings(collectorNames)
+			for _, colName := range collectorNames {
+				count := 0
+				for _, target := range targets {
+					if target.CollectorName == colName {
+						count++
+					}
+				}
+				rows = append(rows, []template.HTML{collectorAnchorLink(colName), template.HTML(strconv.Itoa(count))})
+			}
+			return rows
+		}(),
+	})
+	WriteHTMLPageFooter(c.Writer)
 }
 
-func collectorAnchorLink(collectorId string) string {
-	return fmt.Sprintf("<a href=\"/collector?collector_id=%s\">%s</a>", collectorId, collectorId)
+func collectorAnchorLink(collectorId string) template.HTML {
+	return template.HTML(fmt.Sprintf("<a href=\"/collector?collector_id=%s\">%s</a>", collectorId, collectorId))
 }
 
 func (s *Server) CollectorHTMLHandler(c *gin.Context) {
@@ -644,38 +576,72 @@ func (s *Server) CollectorHTMLHandler(c *gin.Context) {
 		return
 	}
 
-	var b bytes.Buffer
-	t, err := template.New("collector").Parse(`<html>
-<body>
-<h1>Collector: {{.}}</h1>
-<table>
-`)
+	WriteHTMLPageHeader(c.Writer, HeaderData{
+		Title: "Collector: " + collectorId,
+	})
+	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
+		Headers: []string{"Job", "Target", "Endpoint Slice"},
+		Rows: func() [][]template.HTML {
+			var rows [][]template.HTML
+			for _, v := range s.sortedTargetItems() {
+				if v.CollectorName == collectorId {
+					rows = append(rows, []template.HTML{
+						jobAnchorLink(v.JobName),
+						targetAnchorLink(v),
+						template.HTML(v.GetEndpointSliceName()),
+					})
+				}
+			}
+			return rows
+		}(),
+	})
+	WriteHTMLPageFooter(c.Writer)
+}
+
+func scrapeConfigAnchorLink() template.HTML {
+	return `<a href="/scrape_configs">Scrape Configs</a>`
+}
+func (s *Server) ScrapeConfigsHTMLHandler(c *gin.Context) {
+	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
+	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	WriteHTMLPageHeader(c.Writer, HeaderData{
+		Title: "OpenTelemetry Target Allocator - Scrape Configs",
+	})
+	//s.scrapeConfigResponse
+	// Marshal the scrape config to JSON
+	scrapeConfigs := make(map[string]interface{})
+	err := json.Unmarshal(s.scrapeConfigResponse, &scrapeConfigs)
 	if err != nil {
-		s.logger.Error(err, "failed to parse template")
+		s.errorHandler(c.Writer, err)
 		return
 	}
-	err = t.Execute(&b, collectorId)
-	if err != nil {
-		s.logger.Error(err, "failed to execute template")
-		return
-	}
+	// Display the JSON in a table
 
-	fmt.Fprint(&b, header("Job", "Target", "Endpoint Slice"))
-	for _, v := range s.sortedTargetItems() {
-		if v.CollectorName == collectorId {
-			fmt.Fprint(&b, row(jobAnchorLink(v.JobName), targetAnchorLink(v), v.GetEndpointSliceName()))
-		}
-	}
-	b.WriteString(`</table>
-</body>
-</html>`)
-	_, err = c.Writer.Write(b.Bytes())
-	if err != nil {
-		s.logger.Error(err, "failed to write response")
-		c.Status(http.StatusInternalServerError)
-	}
-
-	c.Status(http.StatusOK)
+	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
+		Headers: []string{"Job", "Scrape Config"},
+		Rows: func() [][]template.HTML {
+			var rows [][]template.HTML
+			for job, scrapeConfig := range scrapeConfigs {
+				scrapeConfigJSON, err := json.Marshal(scrapeConfig)
+				if err != nil {
+					s.errorHandler(c.Writer, err)
+					return nil
+				}
+				// pretty print the JSON
+				scrapeConfigJSON, err = json.MarshalIndent(scrapeConfig, "", "  ")
+				if err != nil {
+					s.errorHandler(c.Writer, err)
+					return nil
+				}
+				// Wrap the JSON in a <pre> tag to preserve formatting
+				scrapeConfigJSON = []byte(fmt.Sprintf("<pre>%s</pre>", scrapeConfigJSON))
+				rows = append(rows, []template.HTML{template.HTML(jobAnchorLink(job)), template.HTML(scrapeConfigJSON)})
+			}
+			return rows
+		}(),
+	})
+	WriteHTMLPageFooter(c.Writer)
 }
 
 func (s *Server) TargetsHandler(c *gin.Context) {
@@ -725,6 +691,15 @@ func (s *Server) sortedTargetItems() []*target.Item {
 		return targetItems[i].Hash() < targetItems[j].Hash()
 	})
 	return targetItems
+}
+
+func (s *Server) getScrapeConfigCount() int {
+	scrapeConfigs := make(map[string]interface{})
+	err := json.Unmarshal(s.scrapeConfigResponse, &scrapeConfigs)
+	if err != nil {
+		return 0
+	}
+	return len(scrapeConfigs)
 }
 
 func (s *Server) getJobCount() int {
