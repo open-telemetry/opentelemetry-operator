@@ -1,3 +1,4 @@
+collector_namespace: default
 collector_selector:
   matchlabels:
     app.kubernetes.io/instance: default.test

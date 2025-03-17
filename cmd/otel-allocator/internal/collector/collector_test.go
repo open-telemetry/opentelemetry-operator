@@ -53,6 +53,7 @@ func pod(name string) *v1.Pod {
 }
 
 func Test_runWatch(t *testing.T) {
+	namespace := "test-ns"
 	type args struct {
 		kubeFn       func(t *testing.T, podWatcher Watcher)
 		collectorMap map[string]*allocation.Collector
@@ -68,7 +69,7 @@ func Test_runWatch(t *testing.T) {
 				kubeFn: func(t *testing.T, podWatcher Watcher) {
 					for _, k := range []string{"test-pod1", "test-pod2", "test-pod3"} {
 						p := pod(k)
-						_, err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
+						_, err := podWatcher.k8sClient.CoreV1().Pods(namespace).Create(context.Background(), p, metav1.CreateOptions{})
 						assert.NoError(t, err)
 					}
 				},
@@ -94,7 +95,7 @@ func Test_runWatch(t *testing.T) {
 			args: args{
 				kubeFn: func(t *testing.T, podWatcher Watcher) {
 					for _, k := range []string{"test-pod2", "test-pod3"} {
-						err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Delete(context.Background(), k, metav1.DeleteOptions{})
+						err := podWatcher.k8sClient.CoreV1().Pods(namespace).Delete(context.Background(), k, metav1.DeleteOptions{})
 						assert.NoError(t, err)
 					}
 				},
@@ -135,7 +136,7 @@ func Test_runWatch(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			go func(podWatcher Watcher) {
-				err := podWatcher.Watch(&labelSelector, func(colMap map[string]*allocation.Collector) {
+				err := podWatcher.Watch(namespace, &labelSelector, func(colMap map[string]*allocation.Collector) {
 					mapMutex.Lock()
 					defer mapMutex.Unlock()
 					actual = colMap
@@ -165,7 +166,7 @@ func Test_closeChannel(t *testing.T) {
 
 	go func(podWatcher Watcher) {
 		defer wg.Done()
-		err := podWatcher.Watch(&labelSelector, func(colMap map[string]*allocation.Collector) {})
+		err := podWatcher.Watch("default", &labelSelector, func(colMap map[string]*allocation.Collector) {})
 		require.NoError(t, err)
 	}(podWatcher)
 

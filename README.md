@@ -840,6 +840,10 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 In addition to the [core responsibilities](https://github.com/open-telemetry/community/blob/main/community-membership.md) the operator project requires approvers and maintainers to be responsible for releasing the project. See [RELEASE.md](./RELEASE.md) for more information and release schedule.
 
+Triagers ([@open-telemetry/operator-triagers](https://github.com/orgs/open-telemetry/teams/operator-triagers)):
+
+- [Antoine Toulme](https://github.com/atoulme), Splunk
+
 Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-telemetry/teams/operator-approvers)):
 
 - [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
@@ -858,7 +862,7 @@ Emeritus Approvers:
 Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
 
 - [Benedikt Bongartz](https://github.com/frzifus), Red Hat
-- [Jacob Aronoff](https://github.com/jaronoff97), Lightstep
+- [Jacob Aronoff](https://github.com/jaronoff97), Omlet
 - [Mikołaj Świątek](https://github.com/swiatekm), Elastic
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 

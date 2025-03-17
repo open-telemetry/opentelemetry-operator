@@ -26,7 +26,7 @@ jobs:
         uses: actions/setup-go@v5
         id: setup-go
         with:
-          go-version: "~1.23.6"
+          go-version: "~1.24.1"
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
@@ -35,7 +35,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: bin
-          key: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
+          key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
 
       - name: Install tools
         run: make install-tools
