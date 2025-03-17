@@ -611,7 +611,7 @@ Language support can be disabled by passing the flag with a value of `false`.
 | ApacheHttpD | `enable-apache-httpd-instrumentation` | `true`        |
 | Go          | `enable-go-instrumentation`           | `false`       |
 | Nginx       | `enable-nginx-instrumentation`        | `false`       |
-| Ruby        | `enable-ruby-instrumentation`        | `false`       |
+| Ruby        | `enable-ruby-instrumentation`         | `false`       |
 
 
 OpenTelemetry Operator allows to instrument multiple containers using multiple language specific instrumentations.
