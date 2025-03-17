@@ -347,6 +347,12 @@ Nginx:
 instrumentation.opentelemetry.io/inject-nginx: "true"
 ```
 
+Ruby:
+
+```bash
+instrumentation.opentelemetry.io/inject-ruby: "true"
+```
+
 OpenTelemetry SDK environment variables only:
 
 ```bash
@@ -450,6 +456,12 @@ NGINX:
 instrumentation.opentelemetry.io/inject-nginx-container-names: "nginx1,nginx2"
 ```
 
+Ruby:
+
+```bash
+instrumentation.opentelemetry.io/ruby-container-names: "ruby1,ruby2"
+```
+
 SDK:
 
 ```bash
@@ -524,6 +536,8 @@ spec:
     image: your-customized-auto-instrumentation-image:apache-httpd
   nginx:
     image: your-customized-auto-instrumentation-image:nginx
+  ruby:
+    image: your-customized-auto-instrumentation-image:ruby
 ```
 
 The Dockerfiles for auto-instrumentation can be found in [autoinstrumentation directory](./autoinstrumentation).
@@ -597,6 +611,7 @@ Language support can be disabled by passing the flag with a value of `false`.
 | ApacheHttpD | `enable-apache-httpd-instrumentation` | `true`        |
 | Go          | `enable-go-instrumentation`           | `false`       |
 | Nginx       | `enable-nginx-instrumentation`        | `false`       |
+| Ruby        | `enable-ruby-instrumentation`        | `false`       |
 
 
 OpenTelemetry Operator allows to instrument multiple containers using multiple language specific instrumentations.
