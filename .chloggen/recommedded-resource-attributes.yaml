@@ -19,4 +19,5 @@ subtext: |
   - `service.version` now uses the docker image digest in addition to the tag
   - the well-known label `app.kubernetes.io/part-of` has been removed
   - the well-known label `app.kubernetes.io/instance` has been added (translates to `service.name`)
+  - `service.namespace` now also uses the Kubernetes namespace name (if `resource.opentelemetry.io/service.namespace` is not set)
   

@@ -833,9 +833,16 @@ Choose the first value found:
 #### How `service.instance.id` is calculated
 
 Choose the first value found:
-                                   
+
 - `pod.annotation[resource.opentelemetry.io/service.instance.id]`
 - `concat([k8s.namespace.name, k8s.pod.name, k8s.container.name], '.')`
+
+#### How `service.namespace` is calculated
+
+Choose the first value found:
+
+- `pod.annotation[resource.opentelemetry.io/service.namespace]`
+- `k8s.namespace.name`
 
 ## Contributing and Developing
 
