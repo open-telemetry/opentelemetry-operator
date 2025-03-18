@@ -20,6 +20,7 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -53,6 +54,8 @@ type Config struct {
 
 type PrometheusCRConfig struct {
 	Enabled                         bool                  `yaml:"enabled,omitempty"`
+	AllowNamespaces                 []string              `yaml:"allow_namespaces,omitempty"`
+	DenyNamespaces                  []string              `yaml:"deny_namespaces,omitempty"`
 	PodMonitorSelector              *metav1.LabelSelector `yaml:"pod_monitor_selector,omitempty"`
 	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
 	ServiceMonitorSelector          *metav1.LabelSelector `yaml:"service_monitor_selector,omitempty"`
@@ -342,6 +345,9 @@ func ValidateConfig(config *Config) error {
 	if config.CollectorNamespace == "" {
 		return fmt.Errorf("collector namespace must be set")
 	}
+	if len(config.PrometheusCR.AllowNamespaces) != 0 && len(config.PrometheusCR.DenyNamespaces) != 0 {
+		return fmt.Errorf("only one of allowNamespaces or denyNamespaces can be set")
+	}
 	return nil
 }
 
@@ -366,4 +372,26 @@ func (c HTTPSServerConfig) NewTLSConfig() (*tls.Config, error) {
 		MinVersion:   tls.VersionTLS12,
 	}
 	return tlsConfig, nil
+}
+
+// GetAllowDenyLists returns the allow and deny lists as maps. If the allow list is empty, it defaults to all namespaces.
+// If the deny list is empty, it defaults to an empty map.
+func (c PrometheusCRConfig) GetAllowDenyLists() (map[string]struct{}, map[string]struct{}) {
+	allowList := map[string]struct{}{}
+	if len(c.AllowNamespaces) != 0 {
+		for _, ns := range c.AllowNamespaces {
+			allowList[ns] = struct{}{}
+		}
+	} else {
+		allowList = map[string]struct{}{v1.NamespaceAll: {}}
+	}
+
+	denyList := map[string]struct{}{}
+	if len(c.DenyNamespaces) != 0 {
+		for _, ns := range c.DenyNamespaces {
+			denyList[ns] = struct{}{}
+		}
+	}
+
+	return allowList, denyList
 }

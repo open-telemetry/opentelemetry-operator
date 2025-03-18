@@ -7889,6 +7889,14 @@ spec:
                     type: object
                   prometheusCR:
                     properties:
+                      allowNamespaces:
+                        items:
+                          type: string
+                        type: array
+                      denyNamespaces:
+                        items:
+                          type: string
+                        type: array
                       enabled:
                         type: boolean
                       podMonitorSelector:

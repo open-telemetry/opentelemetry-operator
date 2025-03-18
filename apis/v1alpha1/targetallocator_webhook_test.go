@@ -301,6 +301,19 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 			},
 			expectedErr: "the OpenTelemetry Spec Ports configuration is incorrect",
 		},
+		{
+			name: "allowNamespaces and denyNamespaces can't both be set",
+			targetallocator: TargetAllocator{
+				Spec: TargetAllocatorSpec{
+					PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+						Enabled:         true,
+						AllowNamespaces: []string{"ns1"},
+						DenyNamespaces:  []string{"ns2"},
+					},
+				},
+			},
+			expectedErr: "allowNamespaces and denyNamespaces are mutually exclusive",
+		},
 	}
 
 	for _, test := range tests {

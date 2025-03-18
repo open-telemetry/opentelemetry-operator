@@ -116,6 +116,11 @@ func (w TargetAllocatorWebhook) validate(ctx context.Context, ta *TargetAllocato
 		if err != nil || len(warnings) > 0 {
 			return warnings, err
 		}
+
+		// Check to see that allowNamespaces and denyNamespaces are not both set at the same time
+		if len(ta.Spec.PrometheusCR.AllowNamespaces) > 0 && len(ta.Spec.PrometheusCR.DenyNamespaces) > 0 {
+			return warnings, fmt.Errorf("allowNamespaces and denyNamespaces are mutually exclusive")
+		}
 	}
 
 	return warnings, nil
