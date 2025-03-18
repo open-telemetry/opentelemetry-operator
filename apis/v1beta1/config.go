@@ -343,6 +343,10 @@ func (c *Config) ApplyDefaults(logger logr.Logger) error {
 // GetLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled
 // that provides the hinting for the liveness probe.
 func (c *Config) GetLivenessProbe(logger logr.Logger) (*corev1.Probe, error) {
+	if c.Extensions == nil {
+		return nil, nil
+	}
+
 	enabledComponents := c.GetEnabledComponents()
 	for componentName := range enabledComponents[KindExtension] {
 		// TODO: Clean up the naming here and make it simpler to use a retriever.
@@ -359,6 +363,10 @@ func (c *Config) GetLivenessProbe(logger logr.Logger) (*corev1.Probe, error) {
 // GetReadinessProbe gets the first enabled readiness probe. There should only ever be one extension enabled
 // that provides the hinting for the readiness probe.
 func (c *Config) GetReadinessProbe(logger logr.Logger) (*corev1.Probe, error) {
+	if c.Extensions == nil {
+		return nil, nil
+	}
+
 	enabledComponents := c.GetEnabledComponents()
 	for componentName := range enabledComponents[KindExtension] {
 		// TODO: Clean up the naming here and make it simpler to use a retriever.
