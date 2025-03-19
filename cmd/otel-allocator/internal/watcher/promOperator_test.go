@@ -1251,6 +1251,7 @@ func getTestPrometheusCRWatcher(
 				ScrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
 				ServiceDiscoveryRole:            &serviceDiscoveryRole,
 			},
+			EvaluationInterval: monitoringv1.Duration("30s"),
 		},
 	}
 
@@ -1295,6 +1296,7 @@ func getTestPrometheusCRWatcher(
 		scrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
 		resourceSelector:                resourceSelector,
 		store:                           store,
+		prometheusCR:                    prom,
 	}, source
 
 }
