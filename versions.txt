@@ -34,7 +34,7 @@ autoinstrumentation-go=v0.19.0-alpha
 
 # Represents the current release of PHP instrumentation.
 # Should match autoinstrumentation/php/version.txt
-autoinstrumentation-PHP=1.1.0
+# autoinstrumentation-PHP=1.1.0
 
 # Represents the current release of Apache HTTPD instrumentation.
 # Should match autoinstrumentation/apache-httpd/version.txt
