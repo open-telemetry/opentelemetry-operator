@@ -28,65 +28,70 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
+var targetCounts = []int{1000, 10000, 100000, 800000}
+
 // BenchmarkProcessTargets benchmarks the whole target allocation pipeline. It starts with data the prometheus
 // discovery manager would normally output, and pushes it all the way into the allocator. It notably doe *not* check
 // the HTTP server afterward. Test data is chosen to be reasonably representative of what the Prometheus service discovery
 // outputs in the real world.
 func BenchmarkProcessTargets(b *testing.B) {
-	numTargets := 800000
 	targetsPerGroup := 5
 	groupsPerJob := 20
-	tsets := prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob)
-	for _, strategy := range allocation.GetRegisteredAllocatorNames() {
-		b.Run(strategy, func(b *testing.B) {
-			targetDiscoverer := createTestDiscoverer(strategy, map[string][]*relabel.Config{})
-			targetDiscoverer.UpdateTsets(tsets)
-			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
-				targetDiscoverer.Reload()
-			}
-		})
+	for _, numTargets := range targetCounts {
+		tsets := prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob)
+		for _, strategy := range allocation.GetRegisteredAllocatorNames() {
+			b.Run(fmt.Sprintf("%s/%d", strategy, numTargets), func(b *testing.B) {
+				targetDiscoverer := createTestDiscoverer(strategy, map[string][]*relabel.Config{})
+				targetDiscoverer.UpdateTsets(tsets)
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					targetDiscoverer.Reload()
+				}
+			})
+		}
 	}
 }
 
 // BenchmarkProcessTargetsWithRelabelConfig is BenchmarkProcessTargets with a relabel config set. The relabel config
 // does not actually modify any records, but does force the prehook to perform any necessary conversions along the way.
 func BenchmarkProcessTargetsWithRelabelConfig(b *testing.B) {
-	numTargets := 800000
 	targetsPerGroup := 5
 	groupsPerJob := 20
-	tsets := prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob)
-	prehookConfig := make(map[string][]*relabel.Config, len(tsets))
-	for jobName := range tsets {
-		// keep all targets in half the jobs, drop the rest
-		jobNrStr := strings.Split(jobName, "-")[1]
-		jobNr, err := strconv.Atoi(jobNrStr)
-		require.NoError(b, err)
-		var action relabel.Action
-		if jobNr%2 == 0 {
-			action = "keep"
-		} else {
-			action = "drop"
+	for _, numTargets := range targetCounts {
+		tsets := prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob)
+		prehookConfig := make(map[string][]*relabel.Config, len(tsets))
+		for jobName := range tsets {
+			// keep all targets in half the jobs, drop the rest
+			jobNrStr := strings.Split(jobName, "-")[1]
+			jobNr, err := strconv.Atoi(jobNrStr)
+			require.NoError(b, err)
+			var action relabel.Action
+			if jobNr%2 == 0 {
+				action = "keep"
+			} else {
+				action = "drop"
+			}
+			prehookConfig[jobName] = []*relabel.Config{
+				{
+					Action:       action,
+					Regex:        relabel.MustNewRegexp(".*"),
+					SourceLabels: model.LabelNames{"__address__"},
+				},
+			}
 		}
-		prehookConfig[jobName] = []*relabel.Config{
-			{
-				Action:       action,
-				Regex:        relabel.MustNewRegexp(".*"),
-				SourceLabels: model.LabelNames{"__address__"},
-			},
+
+		for _, strategy := range allocation.GetRegisteredAllocatorNames() {
+			b.Run(fmt.Sprintf("%s/%d", strategy, numTargets), func(b *testing.B) {
+				targetDiscoverer := createTestDiscoverer(strategy, prehookConfig)
+				targetDiscoverer.UpdateTsets(tsets)
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					targetDiscoverer.Reload()
+				}
+			})
 		}
 	}
 
-	for _, strategy := range allocation.GetRegisteredAllocatorNames() {
-		b.Run(strategy, func(b *testing.B) {
-			targetDiscoverer := createTestDiscoverer(strategy, prehookConfig)
-			targetDiscoverer.UpdateTsets(tsets)
-			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
-				targetDiscoverer.Reload()
-			}
-		})
-	}
 }
 
 func prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob int) map[string][]*targetgroup.Group {
@@ -140,7 +145,10 @@ func prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob int) map[str
 	}
 	targets := []model.LabelSet{}
 	for i := 0; i < numTargets; i++ {
-		targets = append(targets, exampleTarget.Clone())
+		newTarget := exampleTarget.Clone()
+		// ensure each target has a unique label to avoid deduplication
+		newTarget["target_id"] = model.LabelValue(strconv.Itoa(i))
+		targets = append(targets, newTarget)
 	}
 	groups := make([]*targetgroup.Group, numGroups)
 	for i := 0; i < numGroups; i++ {
