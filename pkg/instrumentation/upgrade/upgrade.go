@@ -26,6 +26,7 @@ type InstrumentationUpgrade struct {
 	Client                     client.Client
 	Logger                     logr.Logger
 	Recorder                   record.EventRecorder
+	DefaultAutoInstInjector    string
 	DefaultAutoInstJava        string
 	DefaultAutoInstNodeJS      string
 	DefaultAutoInstPython      string
@@ -45,11 +46,13 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 		constants.AnnotationDefaultAutoInstrumentationPython:      {constants.FlagPython, cfg.EnablePythonAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationNodeJS:      {constants.FlagNodeJS, cfg.EnableNodeJSAutoInstrumentation()},
 		constants.AnnotationDefaultAutoInstrumentationJava:        {constants.FlagJava, cfg.EnableJavaAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationInjector:    {constants.FlagInjector, cfg.EnableInjectorAutoInstrumentation()},
 	}
 
 	return &InstrumentationUpgrade{
 		Client:                     client,
 		Logger:                     logger,
+		DefaultAutoInstInjector:    cfg.AutoInstrumentationInjectorImage(),
 		DefaultAutoInstJava:        cfg.AutoInstrumentationJavaImage(),
 		DefaultAutoInstNodeJS:      cfg.AutoInstrumentationNodeJSImage(),
 		DefaultAutoInstPython:      cfg.AutoInstrumentationPythonImage(),
@@ -132,6 +135,11 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 					if inst.Spec.Java.Image == autoInst {
 						upgraded.Spec.Java.Image = u.DefaultAutoInstJava
 						upgraded.Annotations[annotation] = u.DefaultAutoInstJava
+					}
+				case constants.AnnotationDefaultAutoInstrumentationInjector:
+					if inst.Spec.Injector.Image == autoInst {
+						upgraded.Spec.Injector.Image = u.DefaultAutoInstInjector
+						upgraded.Annotations[annotation] = u.DefaultAutoInstInjector
 					}
 				}
 

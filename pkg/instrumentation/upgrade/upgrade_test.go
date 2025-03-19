@@ -46,6 +46,7 @@ func TestUpgrade(t *testing.T) {
 		logr.Discard(),
 		testScheme,
 		config.New(
+			config.WithAutoInstrumentationInjectorImage("injector:1"),
 			config.WithAutoInstrumentationJavaImage("java:1"),
 			config.WithAutoInstrumentationNodeJSImage("nodejs:1"),
 			config.WithAutoInstrumentationPythonImage("python:1"),
@@ -60,9 +61,11 @@ func TestUpgrade(t *testing.T) {
 			config.WithEnablePythonInstrumentation(true),
 			config.WithEnableNodeJSInstrumentation(true),
 			config.WithEnableJavaInstrumentation(true),
+			config.WithEnableInjectorInstrumentation(true),
 		),
 	).Default(context.Background(), inst)
 	assert.Nil(t, err)
+	assert.Equal(t, "injector:1", inst.Spec.Injector.Image)
 	assert.Equal(t, "java:1", inst.Spec.Java.Image)
 	assert.Equal(t, "nodejs:1", inst.Spec.NodeJS.Image)
 	assert.Equal(t, "python:1", inst.Spec.Python.Image)
@@ -74,6 +77,7 @@ func TestUpgrade(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := config.New(
+		config.WithAutoInstrumentationInjectorImage("injector:2"),
 		config.WithAutoInstrumentationJavaImage("java:2"),
 		config.WithAutoInstrumentationNodeJSImage("nodejs:2"),
 		config.WithAutoInstrumentationPythonImage("python:2"),
@@ -88,6 +92,7 @@ func TestUpgrade(t *testing.T) {
 		config.WithEnablePythonInstrumentation(true),
 		config.WithEnableNodeJSInstrumentation(true),
 		config.WithEnableJavaInstrumentation(true),
+		config.WithEnableInjectorInstrumentation(true),
 	)
 	up := NewInstrumentationUpgrade(k8sClient, ctrl.Log.WithName("instrumentation-upgrade"), &record.FakeRecorder{}, cfg)
 
@@ -100,6 +105,8 @@ func TestUpgrade(t *testing.T) {
 		Name:      "my-inst",
 	}, &updated)
 	require.NoError(t, err)
+	assert.Equal(t, "injector:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationInjector])
+	assert.Equal(t, "injector:2", updated.Spec.Injector.Image)
 	assert.Equal(t, "java:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationJava])
 	assert.Equal(t, "java:2", updated.Spec.Java.Image)
 	assert.Equal(t, "nodejs:2", updated.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS])

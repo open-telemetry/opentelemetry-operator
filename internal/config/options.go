@@ -25,6 +25,7 @@ type options struct {
 	logger                              logr.Logger
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
+	autoInstrumentationInjectorImage    string
 	autoInstrumentationJavaImage        string
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationPythonImage      string
@@ -41,6 +42,7 @@ type options struct {
 	enablePythonInstrumentation         bool
 	enableNodeJSInstrumentation         bool
 	enableJavaInstrumentation           bool
+	enableInjectorInstrumentation       bool
 	targetAllocatorConfigMapEntry       string
 	operatorOpAMPBridgeConfigMapEntry   string
 	targetAllocatorImage                string
@@ -103,6 +105,11 @@ func WithEnableNginxInstrumentation(s bool) Option {
 		o.enableNginxInstrumentation = s
 	}
 }
+func WithEnableInjectorInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableInjectorInstrumentation = s
+	}
+}
 func WithEnableJavaInstrumentation(s bool) Option {
 	return func(o *options) {
 		o.enableJavaInstrumentation = s
@@ -136,6 +143,12 @@ func WithLogger(logger logr.Logger) Option {
 func WithVersion(v version.Version) Option {
 	return func(o *options) {
 		o.version = v
+	}
+}
+
+func WithAutoInstrumentationInjectorImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationInjectorImage = s
 	}
 }
 
