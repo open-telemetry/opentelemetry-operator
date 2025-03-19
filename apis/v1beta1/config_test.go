@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	go_yaml "gopkg.in/yaml.v3"
@@ -755,6 +756,344 @@ func TestConfig_GetExporterPorts(t *testing.T) {
 			}
 			require.NoError(t, err)
 			assert.ElementsMatchf(t, tt.want, ports, "GetReceiverPorts()")
+		})
+	}
+}
+
+func TestConfig_GetLivenessProbe(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    *Config
+		wantProbe *v1.Probe
+		wantErr   bool
+	}{
+		{
+			name: "nil extensions should return nil",
+			config: &Config{
+				Extensions: nil,
+				Service: Service{
+					Extensions: []string{},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "nil extensions with health_check in service extensions should return nil",
+			config: &Config{
+				Extensions: nil,
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "empty extensions should return nil",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{},
+				},
+				Service: Service{
+					Extensions: []string{},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "empty extensions with health_check in service extensions should return probe",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/",
+						Port: intstr.FromInt32(13133),
+					},
+				},
+			},
+		},
+		{
+			name: "health_check extension enabled should return probe",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": map[string]interface{}{},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/",
+						Port: intstr.FromInt32(13133),
+					},
+				},
+			},
+		},
+		{
+			name: "health_check extension with custom path",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": map[string]interface{}{
+							"path": "/healthz",
+						},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/healthz",
+						Port: intstr.FromInt32(13133),
+					},
+				},
+			},
+		},
+		{
+			name: "health_check extension with custom endpoint port",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": map[string]interface{}{
+							"endpoint": "0.0.0.0:8080",
+						},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/",
+						Port: intstr.FromInt32(8080),
+					},
+				},
+			},
+		},
+		{
+			name: "extension without liveness probe should return nil",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"jaeger_query": map[string]interface{}{},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"jaeger_query"},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "invalid health_check config should return error",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": func() {},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.config.GetLivenessProbe(logr.Discard())
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Config.GetLivenessProbe() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if diff := cmp.Diff(tt.wantProbe, got); diff != "" {
+				t.Errorf("Config.GetLivenessProbe() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestConfig_GetReadinessProbe(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    *Config
+		wantProbe *v1.Probe
+		wantErr   bool
+	}{
+		{
+			name: "nil extensions should return nil",
+			config: &Config{
+				Extensions: nil,
+				Service: Service{
+					Extensions: []string{},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "nil extensions with health_check in service extensions should return nil",
+			config: &Config{
+				Extensions: nil,
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "empty extensions should return nil",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{},
+				},
+				Service: Service{
+					Extensions: []string{},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "empty extensions with health_check in service extensions should return probe",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/",
+						Port: intstr.FromInt32(13133),
+					},
+				},
+			},
+		},
+		{
+			name: "health_check extension enabled should return probe",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": map[string]interface{}{},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/",
+						Port: intstr.FromInt32(13133),
+					},
+				},
+			},
+		},
+		{
+			name: "health_check extension with custom path",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": map[string]interface{}{
+							"path": "/healthz",
+						},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/healthz",
+						Port: intstr.FromInt32(13133),
+					},
+				},
+			},
+		},
+		{
+			name: "health_check extension with custom endpoint port",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": map[string]interface{}{
+							"endpoint": "0.0.0.0:8080",
+						},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/",
+						Port: intstr.FromInt32(8080),
+					},
+				},
+			},
+		},
+		{
+			name: "extension without readiness probe should return nil",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"jaeger_query": map[string]interface{}{},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"jaeger_query"},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "invalid health_check config should return error",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": func() {},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.config.GetReadinessProbe(logr.Discard())
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Config.GetReadinessProbe() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if diff := cmp.Diff(tt.wantProbe, got); diff != "" {
+				t.Errorf("Config.GetReadinessProbe() mismatch (-want +got):\n%s", diff)
+			}
 		})
 	}
 }
