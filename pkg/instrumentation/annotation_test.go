@@ -58,18 +58,57 @@ func TestEffectiveAnnotationValue(t *testing.T) {
 
 		{
 			"pod-has-concrete-instance",
-			"some-instance-from-pod",
+			"",
 			corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectJava: "some-instance-from-pod",
+						annotationInjectJavaContainersName: "some-instance-from-pod",
 					},
 				},
 			},
 			corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						annotationInjectJava: "some-instance",
+						annotationInjectJavaContainersName: "some-instance",
+					},
+				},
+			},
+		},
+
+		{
+			"pod-has-concrete-instance-and-inject",
+			"true",
+			corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectJava:               "true",
+						annotationInjectJavaContainersName: "some-instance-from-pod",
+					},
+				},
+			},
+			corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectJavaContainersName: "some-instance",
+					},
+				},
+			},
+		},
+
+		{
+			"pod-has-concrete-instance-and-ns-sdk",
+			"true",
+			corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectJava: "true",
+					},
+				},
+			},
+			corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectSdk: "true",
 					},
 				},
 			},

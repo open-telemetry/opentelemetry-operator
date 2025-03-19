@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: my-sdk
-  namespace: my-other-dotnet-ns
+  namespace: my-other-python-ns
 spec:
   selector:
     matchLabels:
@@ -20,5 +20,5 @@ spec:
         runAsGroup: 3000
         fsGroup: 3000
       containers:
-      - name: myapp
+      - name: my-sdk
         image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main

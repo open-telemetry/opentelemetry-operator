@@ -1,9 +1,8 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  namespace: my-other-dotnet-ns
+  namespace: my-other-python-ns
   annotations:
-    instrumentation.opentelemetry.io/inject-sdk: "true"
     sidecar.opentelemetry.io/inject: "true"
   labels:
     app: my-sdk
@@ -18,8 +17,14 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: status.podIP
-    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
-      value: "true"
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp
+    - name: OTEL_EXPORTER_OTLP_TIMEOUT
+      value: "20"
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.85"
     - name: OTEL_SERVICE_NAME
       value: my-sdk
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -35,13 +40,9 @@ spec:
           apiVersion: v1
           fieldPath: spec.nodeName
     - name: OTEL_PROPAGATORS
-      value: jaeger,b3
-    - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.25"
+      value: jaeger,b3multi
     - name: OTEL_RESOURCE_ATTRIBUTES
-    name: myapp
+    name: my-sdk
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
@@ -50,7 +51,7 @@ spec:
     name: otc-container
 status:
   containerStatuses:
-  - name: myapp
+  - name: my-sdk
     ready: true
     started: true
   - name: otc-container

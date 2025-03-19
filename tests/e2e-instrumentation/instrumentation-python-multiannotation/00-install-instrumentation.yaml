@@ -2,14 +2,12 @@
 apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
-  name: dotnet-multi
-  namespace: my-other-dotnet-ns
+  name: python-multi
+  namespace: my-other-python-ns
 spec:
   env:
     - name: OTEL_TRACES_EXPORTER
       value: otlp
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4317
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
       value: "20"
     - name: OTEL_TRACES_SAMPLER
@@ -24,3 +22,11 @@ spec:
   sampler:
     type: parentbased_traceidratio
     argument: "0.25"
+  python:
+    env:
+      - name: OTEL_LOG_LEVEL
+        value: "debug"
+      - name: OTEL_TRACES_EXPORTER
+        value: otlp
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://localhost:4318

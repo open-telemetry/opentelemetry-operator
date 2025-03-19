@@ -1,32 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-dotnet
-  namespace: my-other-dotnet-ns
+  name: my-python
+  namespace: my-other-python-ns
 spec:
   selector:
     matchLabels:
-      app: my-dotnet
+      app: my-python
   replicas: 1
   template:
     metadata:
       labels:
-        app: my-dotnet
+        app: my-python
       annotations:
+        instrumentation.opentelemetry.io/inject-python: "true"
         sidecar.opentelemetry.io/inject: "true"
-        instrumentation.opentelemetry.io/inject-dotnet: "true"
     spec:
       securityContext:
         runAsUser: 1000
         runAsGroup: 3000
         fsGroup: 3000
       containers:
-      - name: myapp
-        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-dotnet:main
+      - name: my-python
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
-        env:
-        - name: ASPNETCORE_URLS
-          value: "http://+:8080"

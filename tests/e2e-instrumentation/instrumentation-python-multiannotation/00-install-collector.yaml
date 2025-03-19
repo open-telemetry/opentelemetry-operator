@@ -2,26 +2,28 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: my-other-dotnet-ns
+  name: my-other-python-ns
   annotations:
     instrumentation.opentelemetry.io/inject-sdk: "true"
 ---
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
-  name: sidecar
-  namespace: my-other-dotnet-ns
+  name: sidecar-teste
+  namespace: my-other-python-ns
 spec:
   config:
     receivers:
       otlp:
         protocols:
           grpc:
+            endpoint: 0.0.0.0:4317
           http:
+            endpoint: 0.0.0.0:4318
     processors:
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
@@ -29,3 +31,4 @@ spec:
           receivers: [otlp]
           exporters: [debug]
   mode: sidecar
+  upgradeStrategy: automatic
