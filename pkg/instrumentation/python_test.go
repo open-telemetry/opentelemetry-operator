@@ -675,7 +675,7 @@ func TestInjectPythonSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectPythonSDK(test.Python, test.pod, 0, test.platform)
+			pod, err := injectPythonSDK(test.Python, test.pod, 0, test.platform, v1alpha1.InstrumentationSpec{})
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})
