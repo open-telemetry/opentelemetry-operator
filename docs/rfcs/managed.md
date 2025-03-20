@@ -1,4 +1,4 @@
-# TITLE
+# Managed CRD
 
 **Status:** *Draft*
 
