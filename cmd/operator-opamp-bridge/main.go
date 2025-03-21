@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/signal"
 
@@ -42,6 +43,10 @@ func main() {
 	opampProxy := proxy.NewOpAMPProxy(l.WithName("server"), cfg.ListenAddr)
 	opampAgent := agent.NewAgent(l.WithName("agent"), operatorClient, cfg, opampClient, opampProxy)
 
+	if err := opampProxy.Start(); err != nil {
+		l.Error(err, "failed to start OpAMP Server")
+		os.Exit(1)
+	}
 	if err := opampAgent.Start(); err != nil {
 		l.Error(err, "Cannot start OpAMP client")
 		os.Exit(1)
@@ -51,4 +56,8 @@ func main() {
 	signal.Notify(interrupt, os.Interrupt)
 	<-interrupt
 	opampAgent.Shutdown()
+	proxyStopErr := opampProxy.Stop(context.Background())
+	if proxyStopErr != nil {
+		l.Error(proxyStopErr, "failed to shutdown proxy server")
+	}
 }

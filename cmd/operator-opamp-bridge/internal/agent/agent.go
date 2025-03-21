@@ -267,10 +267,33 @@ func (agent *Agent) Start() error {
 	if agent.config.HeartbeatInterval > 0 {
 		go agent.runHeartbeat()
 	}
+	go agent.checkForProxyUpdates()
 
 	agent.logger.V(3).Info("OpAMP Client started.")
 
 	return nil
+}
+
+func (agent *Agent) checkForProxyUpdates() {
+	for {
+		select {
+		case <-agent.proxy.HasUpdates():
+			agent.logger.Info("new agent connected to proxy")
+			err := agent.opampClient.SetHealth(agent.getHealth())
+			if err != nil {
+				agent.logger.Error(err, "failed to update from proxy")
+				return
+			}
+			updateErr := agent.opampClient.UpdateEffectiveConfig(context.Background())
+			if updateErr != nil {
+				agent.logger.Error(updateErr, "failed to update from proxy")
+				return
+			}
+		case <-agent.done:
+			agent.logger.Info("stopping check for proxy updates")
+			return
+		}
+	}
 }
 
 // runHeartbeat sets health on an interval to keep the connection active.

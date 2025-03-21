@@ -4,7 +4,6 @@
 package proxy
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/go-logr/logr"
@@ -118,7 +117,6 @@ func (a *Agent) UpdateStatus(newStatus *protobufs.AgentToServer, response *proto
 
 	// True if the status was not fully reported.
 	statusIsCompressed := effectiveConfigOmitted || packageStatusesOmitted || remoteConfigStatusOmitted || healthOmitted
-	fmt.Println(statusIsCompressed, lostPreviousUpdate)
 	if statusIsCompressed && lostPreviousUpdate {
 		// The status message is not fully set in the message that we received, but we lost the previous
 		// status update. Request full status update from the a.
@@ -130,7 +128,9 @@ func (a *Agent) UpdateStatus(newStatus *protobufs.AgentToServer, response *proto
 		// And set connection settings that are appropriate for the Agent description.
 		a.calcConnectionSettings(response)
 	}
-	a.health = newStatus.Health
+	if newStatus.Health != nil {
+		a.health = newStatus.Health
+	}
 	if newStatus.EffectiveConfig != nil {
 		a.effectiveConfig = newStatus.EffectiveConfig
 	}

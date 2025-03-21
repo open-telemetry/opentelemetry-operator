@@ -133,8 +133,24 @@ var _ client.OpAMPClient = &mockOpampClient{}
 var _ proxy.Server = &mockProxy{}
 
 type mockProxy struct {
-	configs map[uuid.UUID]*protobufs.EffectiveConfig
-	healths map[uuid.UUID]*protobufs.ComponentHealth
+	configs     map[uuid.UUID]*protobufs.EffectiveConfig
+	healths     map[uuid.UUID]*protobufs.ComponentHealth
+	updatesChan chan struct{}
+}
+
+func (m *mockProxy) sendUpdate() {
+	if m.updatesChan == nil {
+		m.updatesChan = make(chan struct{}, 1)
+	}
+	m.updatesChan <- struct{}{}
+}
+
+// HasUpdates implements proxy.Server.
+func (m *mockProxy) HasUpdates() <-chan struct{} {
+	if m.updatesChan == nil {
+		m.updatesChan = make(chan struct{}, 1)
+	}
+	return m.updatesChan
 }
 
 func (m *mockProxy) GetConfigurations() map[uuid.UUID]*protobufs.EffectiveConfig {
@@ -147,6 +163,7 @@ func (m *mockProxy) GetHealth() map[uuid.UUID]*protobufs.ComponentHealth {
 
 type mockOpampClient struct {
 	lastStatus          *protobufs.RemoteConfigStatus
+	lastHealth          *protobufs.ComponentHealth
 	lastEffectiveConfig *protobufs.EffectiveConfig
 	settings            types.StartSettings
 }
@@ -180,7 +197,8 @@ func (m *mockOpampClient) AgentDescription() *protobufs.AgentDescription {
 	return nil
 }
 
-func (m *mockOpampClient) SetHealth(_ *protobufs.ComponentHealth) error {
+func (m *mockOpampClient) SetHealth(ch *protobufs.ComponentHealth) error {
+	m.lastHealth = ch
 	return nil
 }
 
@@ -999,6 +1017,52 @@ func Test_CanUpdateIdentity(t *testing.T) {
 	parsedUUID, err := uuid.FromBytes(marshalledId)
 	require.NoError(t, err)
 	assert.Equal(t, newId, parsedUUID)
+}
+
+func TestAgent_ListensForUpdates(t *testing.T) {
+	mockClient := &mockOpampClient{}
+	mockProxy := &mockProxy{}
+	conf := config.NewConfig(logr.Discard())
+	applier := getFakeApplier(t, conf)
+
+	agent := NewAgent(logr.Discard(), applier, conf, mockClient, mockProxy)
+	err := agent.Start()
+	require.NoError(t, err, "should be able to start agent")
+	defer agent.Shutdown()
+	assert.Len(t, mockClient.lastHealth.ComponentHealthMap, 0)
+	assert.Nil(t, mockClient.lastEffectiveConfig, 0)
+	mockInstanceId := uuid.New()
+	mockProxy.healths = map[uuid.UUID]*protobufs.ComponentHealth{
+		mockInstanceId: {
+			Healthy:            true,
+			StartTimeUnixNano:  0,
+			StatusTimeUnixNano: 0,
+		},
+	}
+	mockProxy.configs = map[uuid.UUID]*protobufs.EffectiveConfig{
+		mockInstanceId: {
+			ConfigMap: &protobufs.AgentConfigMap{
+				ConfigMap: map[string]*protobufs.AgentConfigFile{
+					"": {
+						Body:        []byte("hello"),
+						ContentType: "text",
+					},
+				},
+			},
+		},
+	}
+	assert.Len(t, mockClient.lastHealth.ComponentHealthMap, 0)
+	assert.Nil(t, mockClient.lastEffectiveConfig, 0)
+
+	// Simulate an update from the proxy
+	go func() {
+		mockProxy.sendUpdate()
+	}()
+
+	assert.Eventually(t, func() bool {
+		return len(mockClient.lastHealth.ComponentHealthMap) == 1 &&
+			len(mockClient.lastEffectiveConfig.ConfigMap.ConfigMap) == 1
+	}, 3*time.Second, 1*time.Second)
 }
 
 func getMessageDataFromConfigFile(filemap map[string]string) (*types.MessageData, error) {

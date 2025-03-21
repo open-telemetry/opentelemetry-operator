@@ -15,6 +15,7 @@ import (
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/open-telemetry/opamp-go/server"
 	"github.com/open-telemetry/opamp-go/server/types"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/logger"
 )
@@ -22,6 +23,7 @@ import (
 type Server interface {
 	GetConfigurations() map[uuid.UUID]*protobufs.EffectiveConfig
 	GetHealth() map[uuid.UUID]*protobufs.ComponentHealth
+	HasUpdates() <-chan struct{}
 }
 
 var _ Server = &OpAMPProxy{}
@@ -35,6 +37,8 @@ type OpAMPProxy struct {
 	// logger
 	logger logr.Logger
 
+	// updatesChan indicates if there any new agents
+	updatesChan chan struct{}
 	// internal state
 	mux        sync.RWMutex
 	agentsById map[uuid.UUID]*Agent
@@ -49,6 +53,7 @@ func NewOpAMPProxy(l logr.Logger, endpoint string) *OpAMPProxy {
 		endpoint:    endpoint,
 		agentsById:  map[uuid.UUID]*Agent{},
 		connections: map[types.Connection]map[uuid.UUID]bool{},
+		updatesChan: make(chan struct{}, 1),
 	}
 }
 
@@ -69,6 +74,7 @@ func (s *OpAMPProxy) Start() error {
 			},
 		},
 		ListenEndpoint: s.endpoint,
+		HTTPMiddleware: otelhttp.NewMiddleware("/v1/opamp"),
 	}
 	// TODO: In the future we will probably want some TLS configuration.
 	// tlsConfig, err := internal.CreateServerTLSConfig(
@@ -80,6 +86,7 @@ func (s *OpAMPProxy) Start() error {
 	// 	srv.logger.Debugf(context.Background(), "Could not load TLS config, working without TLS: %v", err.Error())
 	// }
 	// settings.TLSConfig = tlsConfig
+	s.logger.Info("starting opamp server", "address", s.endpoint)
 	return s.OpAMPServer.Start(settings)
 }
 
@@ -109,7 +116,7 @@ func (s *OpAMPProxy) onMessage(ctx context.Context, conn types.Connection, msg *
 		}
 		return response
 	}
-	s.logger.Info("received message", "instance ID", instanceId)
+	s.logger.V(5).Info("received message", "instance ID", instanceId)
 
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -120,6 +127,7 @@ func (s *OpAMPProxy) onMessage(ctx context.Context, conn types.Connection, msg *
 			s.connections[conn] = map[uuid.UUID]bool{}
 		}
 		s.connections[conn][instanceId] = true
+		s.updatesChan <- struct{}{}
 	}
 	s.agentsById[instanceId].UpdateStatus(msg, response)
 	// Send the response back to the Agent.
@@ -146,6 +154,11 @@ func (s *OpAMPProxy) GetHealth() map[uuid.UUID]*protobufs.ComponentHealth {
 		toReturn[i] = agent.GetHealth()
 	}
 	return toReturn
+}
+
+// HasUpdates implements Server.
+func (s *OpAMPProxy) HasUpdates() <-chan struct{} {
+	return s.updatesChan
 }
 
 func getInstanceId(msg *protobufs.AgentToServer) (uuid.UUID, error) {
