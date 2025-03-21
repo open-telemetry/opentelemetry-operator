@@ -5,7 +5,7 @@ change_type: breaking
 component: operator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: remove the deprecated label `flag`
+note: Remove the deprecated `--label` command-line option
 
 # One or more tracking issues related to the change
 issues: [3236]
@@ -13,4 +13,4 @@ issues: [3236]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: Use `--labels-filter` instead.
