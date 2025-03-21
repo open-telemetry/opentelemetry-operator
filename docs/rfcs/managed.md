@@ -13,7 +13,7 @@ that covers the feature set of the OpenTelemetry Helm chart.
 
 ## Summary
 This request for comment aims to establish a new approach to management of resources in Kubernetes clusters,
-specifically in Openshift environments, with the explicit goal of taking over the whole cluster, and making decisions
+with the explicit goal of taking over the whole cluster, and making decisions
 on how to best instrument all resources in the cluster on behalf of the administrator based on best practices,
 OpenTelemetry standards and semantic conventions.
 
