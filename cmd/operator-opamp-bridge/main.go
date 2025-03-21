@@ -4,14 +4,16 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/signal"
 
 	"github.com/spf13/pflag"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/agent"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/agent"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/proxy"
 )
 
 func main() {
@@ -38,10 +40,15 @@ func main() {
 	operatorClient := operator.NewClient(cfg.Name, l.WithName("operator-client"), kubeClient, cfg.GetComponentsAllowed())
 
 	opampClient := cfg.CreateClient()
-	opampAgent := agent.NewAgent(l.WithName("agent"), operatorClient, cfg, opampClient)
+	opampProxy := proxy.NewOpAMPProxy(l.WithName("server"), cfg.ListenAddr)
+	opampAgent := agent.NewAgent(l.WithName("agent"), operatorClient, cfg, opampClient, opampProxy)
 
 	if err := opampAgent.Start(); err != nil {
 		l.Error(err, "Cannot start OpAMP client")
+		os.Exit(1)
+	}
+	if err := opampProxy.Start(); err != nil {
+		l.Error(err, "failed to start OpAMP Server")
 		os.Exit(1)
 	}
 
@@ -49,4 +56,8 @@ func main() {
 	signal.Notify(interrupt, os.Interrupt)
 	<-interrupt
 	opampAgent.Shutdown()
+	proxyStopErr := opampProxy.Stop(context.Background())
+	if proxyStopErr != nil {
+		l.Error(proxyStopErr, "failed to shutdown proxy server")
+	}
 }
