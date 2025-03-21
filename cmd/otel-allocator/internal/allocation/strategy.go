@@ -91,7 +91,7 @@ func GetRegisteredAllocatorNames() []string {
 type Allocator interface {
 	SetCollectors(collectors map[string]*Collector)
 	SetTargets(targets []*target.Item)
-	TargetItems() map[string]*target.Item
+	TargetItems() map[target.ItemHash]*target.Item
 	Collectors() map[string]*Collector
 	GetTargetsForCollectorAndJob(collector string, job string) []*target.Item
 	SetFilter(filter Filter)

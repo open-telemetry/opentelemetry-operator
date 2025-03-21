@@ -30,26 +30,28 @@ import (
 )
 
 const (
-	DefaultResyncTime                        = 5 * time.Minute
-	DefaultConfigFilePath     string         = "/conf/targetallocator.yaml"
-	DefaultCRScrapeInterval   model.Duration = model.Duration(time.Second * 30)
-	DefaultAllocationStrategy                = "consistent-hashing"
-	DefaultFilterStrategy                    = "relabel-config"
+	DefaultResyncTime                                  = 5 * time.Minute
+	DefaultConfigFilePath               string         = "/conf/targetallocator.yaml"
+	DefaultCRScrapeInterval             model.Duration = model.Duration(time.Second * 30)
+	DefaultAllocationStrategy                          = "consistent-hashing"
+	DefaultFilterStrategy                              = "relabel-config"
+	DefaultCollectorNotReadyGracePeriod                = 0 * time.Second
 )
 
 type Config struct {
-	ListenAddr                 string                `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath         string                `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig              *rest.Config          `yaml:"-"`
-	RootLogger                 logr.Logger           `yaml:"-"`
-	CollectorSelector          *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	CollectorNamespace         string                `yaml:"collector_namespace,omitempty"`
-	PromConfig                 *promconfig.Config    `yaml:"config"`
-	AllocationStrategy         string                `yaml:"allocation_strategy,omitempty"`
-	AllocationFallbackStrategy string                `yaml:"allocation_fallback_strategy,omitempty"`
-	FilterStrategy             string                `yaml:"filter_strategy,omitempty"`
-	PrometheusCR               PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
-	HTTPS                      HTTPSServerConfig     `yaml:"https,omitempty"`
+	ListenAddr                   string                `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath           string                `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig                *rest.Config          `yaml:"-"`
+	RootLogger                   logr.Logger           `yaml:"-"`
+	CollectorSelector            *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
+	CollectorNamespace           string                `yaml:"collector_namespace,omitempty"`
+	PromConfig                   *promconfig.Config    `yaml:"config"`
+	AllocationStrategy           string                `yaml:"allocation_strategy,omitempty"`
+	AllocationFallbackStrategy   string                `yaml:"allocation_fallback_strategy,omitempty"`
+	FilterStrategy               string                `yaml:"filter_strategy,omitempty"`
+	PrometheusCR                 PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
+	HTTPS                        HTTPSServerConfig     `yaml:"https,omitempty"`
+	CollectorNotReadyGracePeriod time.Duration         `yaml:"collector_not_ready_grace_period,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -299,6 +301,7 @@ func CreateDefaultConfig() Config {
 			ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 			ProbeNamespaceSelector:          &metav1.LabelSelector{},
 		},
+		CollectorNotReadyGracePeriod: DefaultCollectorNotReadyGracePeriod,
 	}
 }
 

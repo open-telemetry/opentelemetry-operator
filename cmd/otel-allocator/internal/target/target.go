@@ -4,8 +4,6 @@
 package target
 
 import (
-	"strconv"
-
 	"github.com/prometheus/prometheus/model/labels"
 )
 
@@ -23,17 +21,19 @@ var (
 	relevantLabelNames           = append(nodeLabels, endpointSliceTargetKindLabel, endpointSliceTargetNameLabel)
 )
 
+type ItemHash uint64
+
 type Item struct {
 	JobName       string
 	TargetURL     string
 	Labels        labels.Labels
 	CollectorName string
-	hash          string
+	hash          ItemHash
 }
 
-func (t *Item) Hash() string {
-	if t.hash == "" {
-		t.hash = t.JobName + t.TargetURL + strconv.FormatUint(t.Labels.Hash(), 10)
+func (t *Item) Hash() ItemHash {
+	if t.hash == 0 {
+		t.hash = ItemHash(t.Labels.Hash())
 	}
 	return t.hash
 }

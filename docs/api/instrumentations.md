@@ -131,6 +131,15 @@ Failure to set this value causes instrumentation injection to abort, leaving the
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>imagePullPolicy</b></td>
+        <td>string</td>
+        <td>
+          ImagePullPolicy
+One of Always, Never, IfNotPresent.
+Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#instrumentationspecjava">java</a></b></td>
         <td>object</td>
         <td>
