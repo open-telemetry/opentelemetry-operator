@@ -979,7 +979,8 @@ func Test_CanUpdateIdentity(t *testing.T) {
 	loadErr := config.LoadFromFile(conf, agentTestFileName)
 	require.NoError(t, loadErr, "should be able to load config")
 	applier := getFakeApplier(t, conf)
-	agent := NewAgent(l, applier, conf, mockClient, nil)
+	mp := &mockProxy{}
+	agent := NewAgent(l, applier, conf, mockClient, mp)
 	err = agent.Start()
 	defer agent.Shutdown()
 	require.NoError(t, err, "should be able to start agent")
