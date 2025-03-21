@@ -21,9 +21,10 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/metrics"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/metrics"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/proxy"
 )
 
 type Agent struct {
@@ -39,6 +40,7 @@ type Agent struct {
 	remoteConfigStatus *protobufs.RemoteConfigStatus
 
 	opampClient         client.OpAMPClient
+	proxy               proxy.Server
 	metricReporter      *metrics.MetricReporter
 	config              *config.Config
 	applier             operator.ConfigApplier
@@ -48,19 +50,20 @@ type Agent struct {
 	ticker *time.Ticker
 }
 
-func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config.Config, opampClient client.OpAMPClient) *Agent {
+func NewAgent(logger logr.Logger, applier operator.ConfigApplier, cfg *config.Config, opampClient client.OpAMPClient, p proxy.Server) *Agent {
 	var t *time.Ticker
-	if config.HeartbeatInterval > 0 {
-		t = time.NewTicker(config.HeartbeatInterval)
+	if cfg.HeartbeatInterval > 0 {
+		t = time.NewTicker(cfg.HeartbeatInterval)
 	}
 	agent := &Agent{
-		config:              config,
+		config:              cfg,
 		applier:             applier,
+		proxy:               p,
 		logger:              logger,
 		appliedKeys:         map[kubeResourceKey]bool{},
-		instanceId:          config.GetInstanceId(),
-		agentDescription:    config.GetDescription(),
-		remoteConfigEnabled: config.RemoteConfigEnabled(),
+		instanceId:          cfg.GetInstanceId(),
+		agentDescription:    cfg.GetDescription(),
+		remoteConfigEnabled: cfg.RemoteConfigEnabled(),
 		opampClient:         opampClient,
 		clock:               clock.RealClock{},
 		done:                make(chan struct{}, 1),
@@ -69,8 +72,8 @@ func NewAgent(logger logr.Logger, applier operator.ConfigApplier, config *config
 
 	agent.logger.V(3).Info("Agent created",
 		"instanceId", agent.instanceId.String(),
-		"agentType", config.GetAgentType(),
-		"agentVersion", config.GetAgentVersion())
+		"agentType", cfg.GetAgentType(),
+		"agentVersion", cfg.GetAgentVersion())
 
 	return agent
 }
@@ -137,6 +140,10 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 			ComponentHealthMap: podMap,
 			Healthy:            isPoolHealthy,
 		}
+	}
+	// TODO: Figure out how to tie this to the agent health from the proxy.
+	for instance, health := range agent.proxy.GetHealth() {
+		healthMap[instance.String()] = health
 	}
 	return healthMap, nil
 }
@@ -318,6 +325,11 @@ func (agent *Agent) getEffectiveConfig(ctx context.Context) (*protobufs.Effectiv
 		instanceMap[mapKey.String()] = &protobufs.AgentConfigFile{
 			Body:        marshaled,
 			ContentType: "yaml",
+		}
+	}
+	for id, instance := range agent.proxy.GetConfigurations() {
+		if cfg, ok := instance.GetConfigMap().GetConfigMap()[""]; ok {
+			instanceMap[id.String()] = cfg
 		}
 	}
 	return &protobufs.EffectiveConfig{

@@ -28,8 +28,9 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/proxy"
 )
 
 const (
@@ -129,6 +130,20 @@ func getConfigHash(key, file string) string {
 }
 
 var _ client.OpAMPClient = &mockOpampClient{}
+var _ proxy.Server = &mockProxy{}
+
+type mockProxy struct {
+	configs map[uuid.UUID]*protobufs.EffectiveConfig
+	healths map[uuid.UUID]*protobufs.ComponentHealth
+}
+
+func (m *mockProxy) GetConfigurations() map[uuid.UUID]*protobufs.EffectiveConfig {
+	return m.configs
+}
+
+func (m *mockProxy) GetHealth() map[uuid.UUID]*protobufs.ComponentHealth {
+	return m.healths
+}
 
 type mockOpampClient struct {
 	lastStatus          *protobufs.RemoteConfigStatus
@@ -204,6 +219,7 @@ func getFakeApplier(t *testing.T, conf *config.Config, lists ...runtimeClient.Ob
 
 func TestAgent_getHealth(t *testing.T) {
 	fakeClock := testingclock.NewFakeClock(time.Now())
+	mockInstanceId := uuid.New()
 	startTime, err := timeToUnixNanoUnsigned(fakeClock.Now())
 	require.NoError(t, err)
 	type fields struct {
@@ -213,6 +229,7 @@ func TestAgent_getHealth(t *testing.T) {
 		ctx context.Context
 		// List of mappings from namespace/name to a config file, tests are run in order of list
 		configs []map[string]string
+		healths map[uuid.UUID]*protobufs.ComponentHealth
 		podList *v1.PodList
 	}
 	tests := []struct {
@@ -231,6 +248,7 @@ func TestAgent_getHealth(t *testing.T) {
 				ctx:     context.Background(),
 				configs: nil,
 				podList: mockPodList,
+				healths: map[uuid.UUID]*protobufs.ComponentHealth{},
 			},
 			want: []*protobufs.ComponentHealth{
 				{
@@ -256,6 +274,13 @@ func TestAgent_getHealth(t *testing.T) {
 					},
 				},
 				podList: mockPodList,
+				healths: map[uuid.UUID]*protobufs.ComponentHealth{
+					mockInstanceId: {
+						Healthy:            true,
+						StartTimeUnixNano:  startTime,
+						StatusTimeUnixNano: startTime,
+					},
+				},
 			},
 			want: []*protobufs.ComponentHealth{
 				{
@@ -263,6 +288,11 @@ func TestAgent_getHealth(t *testing.T) {
 					StartTimeUnixNano:  startTime,
 					StatusTimeUnixNano: startTime,
 					ComponentHealthMap: map[string]*protobufs.ComponentHealth{
+						mockInstanceId.String(): {
+							Healthy:            true,
+							StartTimeUnixNano:  startTime,
+							StatusTimeUnixNano: startTime,
+						},
 						"testnamespace/collector": {
 							Healthy:            true,
 							StartTimeUnixNano:  collectorStartTime,
@@ -289,6 +319,7 @@ func TestAgent_getHealth(t *testing.T) {
 					},
 				},
 				podList: mockPodList,
+				healths: map[uuid.UUID]*protobufs.ComponentHealth{},
 			},
 			want: []*protobufs.ComponentHealth{
 				{
@@ -329,6 +360,7 @@ func TestAgent_getHealth(t *testing.T) {
 					},
 				},
 				podList: mockPodList,
+				healths: map[uuid.UUID]*protobufs.ComponentHealth{},
 			},
 			want: []*protobufs.ComponentHealth{
 				{
@@ -368,6 +400,7 @@ func TestAgent_getHealth(t *testing.T) {
 					},
 				},
 				podList: mockPodListUnhealthy,
+				healths: map[uuid.UUID]*protobufs.ComponentHealth{},
 			},
 			want: []*protobufs.ComponentHealth{
 				{
@@ -402,7 +435,8 @@ func TestAgent_getHealth(t *testing.T) {
 			loadErr := config.LoadFromFile(conf, tt.fields.configFile)
 			require.NoError(t, loadErr, "should be able to load config")
 			applier := getFakeApplier(t, conf, tt.args.podList)
-			agent := NewAgent(l, applier, conf, mockClient)
+			mp := &mockProxy{healths: tt.args.healths}
+			agent := NewAgent(l, applier, conf, mockClient, mp)
 			agent.clock = fakeClock
 			err := agent.Start()
 			defer agent.Shutdown()
@@ -432,6 +466,7 @@ func TestAgent_getHealth(t *testing.T) {
 }
 
 func TestAgent_onMessage(t *testing.T) {
+	mockInstanceId := uuid.New()
 	type fields struct {
 		configFile string
 	}
@@ -441,6 +476,8 @@ func TestAgent_onMessage(t *testing.T) {
 		configFile map[string]string
 		// Mapping from namespace/name to a config in testdata (for testing updates)
 		nextConfigFile map[string]string
+		// Mapping from instance id to an effective config
+		configs map[uuid.UUID]*protobufs.EffectiveConfig
 	}
 	type want struct {
 		// Mapping from namespace/name to a list of expected contents
@@ -493,6 +530,77 @@ func TestAgent_onMessage(t *testing.T) {
 						"receivers:",
 						"- otlp",
 						"status:",
+					},
+				},
+				status: &protobufs.RemoteConfigStatus{
+					LastRemoteConfigHash: []byte(basicYamlConfigHash),
+					Status:               protobufs.RemoteConfigStatuses_RemoteConfigStatuses_APPLIED,
+				},
+			},
+		},
+		{
+			name: "base case with proxy",
+			fields: fields{
+				configFile: agentTestFileName,
+			},
+			args: args{
+				ctx: context.Background(),
+				configFile: map[string]string{
+					testCollectorKey: collectorBasicFile,
+				},
+				configs: map[uuid.UUID]*protobufs.EffectiveConfig{
+					mockInstanceId: {
+						ConfigMap: &protobufs.AgentConfigMap{
+							ConfigMap: map[string]*protobufs.AgentConfigFile{
+								"": {
+									Body: []byte(`
+										receivers:
+									      otlp:
+									        protocols:
+									          grpc:
+									          http:
+									    processors:
+									      memory_limiter:
+									        check_interval: 1s
+									        limit_percentage: 75
+									        spike_limit_percentage: 15
+									      batch:
+									        send_batch_size: 10000
+									        timeout: 10s
+
+									    exporters:
+									      debug:
+
+									    service:
+									      pipelines:
+									        traces:
+									          receivers: [otlp]
+									          exporters: [debug]
+										`),
+									ContentType: "yaml",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				contents: map[string][]string{
+					testCollectorKey: {
+						"kind: OpenTelemetryCollector",
+						"name: " + testCollectorName,
+						"namespace: " + testNamespace,
+						"send_batch_size: 10000",
+						"receivers:",
+						"- otlp",
+						"status:",
+					},
+					mockInstanceId.String(): {
+						"receivers:",
+						"otlp:",
+						"service:",
+						"pipelines:",
+						"traces:",
 					},
 				},
 				status: &protobufs.RemoteConfigStatus{
@@ -802,13 +910,14 @@ func TestAgent_onMessage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &mockOpampClient{}
+			mp := &mockProxy{configs: tt.args.configs}
 
 			conf := config.NewConfig(logr.Discard())
 			loadErr := config.LoadFromFile(conf, tt.fields.configFile)
 			require.NoError(t, loadErr, "should be able to load config")
 
 			applier := getFakeApplier(t, conf)
-			agent := NewAgent(l, applier, conf, mockClient)
+			agent := NewAgent(l, applier, conf, mockClient, mp)
 			err := agent.Start()
 			defer agent.Shutdown()
 			require.NoError(t, err, "should be able to start agent")
@@ -823,6 +932,7 @@ func TestAgent_onMessage(t *testing.T) {
 				assert.Equal(t, effectiveConfig, mockClient.lastEffectiveConfig, "client's config should be updated")
 			}
 			assert.NotNilf(t, effectiveConfig.ConfigMap.GetConfigMap(), "configmap should have data")
+			assert.Len(t, effectiveConfig.ConfigMap.ConfigMap, len(tt.want.contents))
 			for colNameNamespace, expectedContents := range tt.want.contents {
 				configFileMap := effectiveConfig.ConfigMap.GetConfigMap()
 				require.Contains(t, configFileMap, colNameNamespace)
@@ -869,7 +979,7 @@ func Test_CanUpdateIdentity(t *testing.T) {
 	loadErr := config.LoadFromFile(conf, agentTestFileName)
 	require.NoError(t, loadErr, "should be able to load config")
 	applier := getFakeApplier(t, conf)
-	agent := NewAgent(l, applier, conf, mockClient)
+	agent := NewAgent(l, applier, conf, mockClient, nil)
 	err = agent.Start()
 	defer agent.Shutdown()
 	require.NoError(t, err, "should be able to start agent")
