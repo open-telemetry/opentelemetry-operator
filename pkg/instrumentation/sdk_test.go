@@ -961,7 +961,7 @@ func TestInjectJava(t *testing.T) {
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      javaVolumeName,
-							MountPath: javaInstrMountPath,
+							MountPath: "/otel-auto-instrumentation-java-app",
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -983,7 +983,7 @@ func TestInjectJava(t *testing.T) {
 						},
 						{
 							Name:  "JAVA_TOOL_OPTIONS",
-							Value: javaAgent,
+							Value: " -javaagent:/otel-auto-instrumentation-java-app/javaagent.jar",
 						},
 						{
 							Name:  "OTEL_SERVICE_NAME",

@@ -27,7 +27,9 @@ func TestInjectJavaagent(t *testing.T) {
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						{},
+						{
+							Name: "test-container",
+						},
 					},
 				},
 			},
@@ -56,16 +58,17 @@ func TestInjectJavaagent(t *testing.T) {
 					},
 					Containers: []corev1.Container{
 						{
+							Name: "test-container",
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "opentelemetry-auto-instrumentation-java",
-									MountPath: "/otel-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-test-container",
 								},
 							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaAgent,
+									Value: " -javaagent:/otel-auto-instrumentation-java-test-container/javaagent.jar",
 								},
 							},
 						},
@@ -83,7 +86,9 @@ func TestInjectJavaagent(t *testing.T) {
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						{},
+						{
+							Name: "test-container",
+						},
 					},
 				},
 			},
@@ -130,16 +135,17 @@ func TestInjectJavaagent(t *testing.T) {
 					},
 					Containers: []corev1.Container{
 						{
+							Name: "test-container",
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "opentelemetry-auto-instrumentation-java",
-									MountPath: "/otel-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-test-container",
 								},
 							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaAgent + " -Dotel.javaagent.extensions=/otel-auto-instrumentation-java/extensions",
+									Value: " -javaagent:/otel-auto-instrumentation-java-test-container/javaagent.jar -Dotel.javaagent.extensions=/otel-auto-instrumentation-java-test-container/extensions",
 								},
 							},
 						},
@@ -320,7 +326,11 @@ func TestInjectJavaagent(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectJavaagent(test.Java, test.pod, 0)
+			pod := test.pod
+			var err error
+			for i := range pod.Spec.Containers {
+				pod, err = injectJavaagent(test.Java, pod, i)
+			}
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})
