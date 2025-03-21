@@ -118,8 +118,8 @@ func (s *OpAMPProxy) onMessage(ctx context.Context, conn types.Connection, msg *
 	}
 	s.logger.V(5).Info("received message", "instance ID", instanceId)
 
+	agentUpdated := false
 	s.mux.Lock()
-	defer s.mux.Unlock()
 	if _, ok := s.agentsById[instanceId]; !ok {
 		s.agentsById[instanceId] = NewAgent(s.logger.WithValues("instanceId", instanceId.String()), instanceId, conn)
 		// Ensure the Agent's instance id is associated with the connection.
@@ -127,9 +127,13 @@ func (s *OpAMPProxy) onMessage(ctx context.Context, conn types.Connection, msg *
 			s.connections[conn] = map[uuid.UUID]bool{}
 		}
 		s.connections[conn][instanceId] = true
+		agentUpdated = true
+	}
+	agentUpdated = s.agentsById[instanceId].UpdateStatus(msg, response) || agentUpdated
+	s.mux.Unlock()
+	if agentUpdated {
 		s.updatesChan <- struct{}{}
 	}
-	s.agentsById[instanceId].UpdateStatus(msg, response)
 	// Send the response back to the Agent.
 	return response
 }

@@ -94,7 +94,7 @@ func (a *Agent) updateStatusField(newStatus *protobufs.AgentToServer) (agentDesc
 	return a.updateAgentDescription(newStatus) || agentDescrChanged
 }
 
-func (a *Agent) UpdateStatus(newStatus *protobufs.AgentToServer, response *protobufs.ServerToAgent) {
+func (a *Agent) UpdateStatus(newStatus *protobufs.AgentToServer, response *protobufs.ServerToAgent) bool {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 	// We don't have any status for this Agent, or we lost the previous status update from the Agent, so our
@@ -137,6 +137,7 @@ func (a *Agent) UpdateStatus(newStatus *protobufs.AgentToServer, response *proto
 	if newStatus.CustomMessage != nil {
 		a.logger.V(5).Info("received custom message, not implemented")
 	}
+	return agentDescrChanged
 }
 
 func (a *Agent) calcConnectionSettings(response *protobufs.ServerToAgent) {
