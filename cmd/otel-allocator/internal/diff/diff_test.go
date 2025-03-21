@@ -16,29 +16,29 @@ func (s HasherString) Hash() string {
 
 func TestDiffMaps(t *testing.T) {
 	type args struct {
-		current map[string]Hasher
-		new     map[string]Hasher
+		current map[string]Hasher[string]
+		new     map[string]Hasher[string]
 	}
 	tests := []struct {
 		name string
 		args args
-		want Changes[Hasher]
+		want Changes[string, Hasher[string]]
 	}{
 		{
 			name: "basic replacement",
 			args: args{
-				current: map[string]Hasher{
+				current: map[string]Hasher[string]{
 					"current": HasherString("one"),
 				},
-				new: map[string]Hasher{
+				new: map[string]Hasher[string]{
 					"new": HasherString("another"),
 				},
 			},
-			want: Changes[Hasher]{
-				additions: map[string]Hasher{
+			want: Changes[string, Hasher[string]]{
+				additions: map[string]Hasher[string]{
 					"new": HasherString("another"),
 				},
-				removals: map[string]Hasher{
+				removals: map[string]Hasher[string]{
 					"current": HasherString("one"),
 				},
 			},
@@ -46,41 +46,41 @@ func TestDiffMaps(t *testing.T) {
 		{
 			name: "single addition",
 			args: args{
-				current: map[string]Hasher{
+				current: map[string]Hasher[string]{
 					"current": HasherString("one"),
 				},
-				new: map[string]Hasher{
+				new: map[string]Hasher[string]{
 					"current": HasherString("one"),
 					"new":     HasherString("another"),
 				},
 			},
-			want: Changes[Hasher]{
-				additions: map[string]Hasher{
+			want: Changes[string, Hasher[string]]{
+				additions: map[string]Hasher[string]{
 					"new": HasherString("another"),
 				},
-				removals: map[string]Hasher{},
+				removals: map[string]Hasher[string]{},
 			},
 		},
 		{
 			name: "value change",
 			args: args{
-				current: map[string]Hasher{
+				current: map[string]Hasher[string]{
 					"k1":     HasherString("v1"),
 					"k2":     HasherString("v2"),
 					"change": HasherString("before"),
 				},
-				new: map[string]Hasher{
+				new: map[string]Hasher[string]{
 					"k1":     HasherString("v1"),
 					"k3":     HasherString("v3"),
 					"change": HasherString("after"),
 				},
 			},
-			want: Changes[Hasher]{
-				additions: map[string]Hasher{
+			want: Changes[string, Hasher[string]]{
+				additions: map[string]Hasher[string]{
 					"k3":     HasherString("v3"),
 					"change": HasherString("after"),
 				},
-				removals: map[string]Hasher{
+				removals: map[string]Hasher[string]{
 					"k2":     HasherString("v2"),
 					"change": HasherString("before"),
 				},

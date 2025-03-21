@@ -29,8 +29,8 @@ func newAllocator(log logr.Logger, strategy Strategy, opts ...Option) Allocator 
 	chAllocator := &allocator{
 		strategy:                      strategy,
 		collectors:                    make(map[string]*Collector),
-		targetItems:                   make(map[string]*target.Item),
-		targetItemsPerJobPerCollector: make(map[string]map[string]map[string]bool),
+		targetItems:                   make(map[target.ItemHash]*target.Item),
+		targetItemsPerJobPerCollector: make(map[string]map[string]map[target.ItemHash]bool),
 		log:                           log,
 	}
 	for _, opt := range opts {
@@ -49,10 +49,10 @@ type allocator struct {
 
 	// targetItems is a map from a target item's hash to the target items allocated state
 	// targetItem hash -> target item pointer
-	targetItems map[string]*target.Item
+	targetItems map[target.ItemHash]*target.Item
 
 	// collectorKey -> job -> target item hash -> true
-	targetItemsPerJobPerCollector map[string]map[string]map[string]bool
+	targetItemsPerJobPerCollector map[string]map[string]map[target.ItemHash]bool
 
 	// m protects collectors, targetItems and targetItemsPerJobPerCollector for concurrent use.
 	m sync.RWMutex
@@ -137,10 +137,10 @@ func (a *allocator) GetTargetsForCollectorAndJob(collector string, job string) [
 }
 
 // TargetItems returns a shallow copy of the targetItems map.
-func (a *allocator) TargetItems() map[string]*target.Item {
+func (a *allocator) TargetItems() map[target.ItemHash]*target.Item {
 	a.m.RLock()
 	defer a.m.RUnlock()
-	targetItemsCopy := make(map[string]*target.Item)
+	targetItemsCopy := make(map[target.ItemHash]*target.Item)
 	for k, v := range a.targetItems {
 		targetItemsCopy[k] = v
 	}
@@ -161,7 +161,7 @@ func (a *allocator) Collectors() map[string]*Collector {
 // handleTargets receives the new and removed targets and reconciles the current state.
 // Any removals are removed from the allocator's targetItems and unassigned from the corresponding collector.
 // Any net-new additions are assigned to the collector on the same node as the target.
-func (a *allocator) handleTargets(diff diff.Changes[*target.Item]) {
+func (a *allocator) handleTargets(diff diff.Changes[target.ItemHash, *target.Item]) {
 	// Check for removals
 	for k, item := range a.targetItems {
 		// if the current item is in the removals list
@@ -265,10 +265,10 @@ func (a *allocator) removeCollector(collector *Collector) {
 // has to acquire a lock.
 func (a *allocator) addCollectorTargetItemMapping(tg *target.Item) {
 	if a.targetItemsPerJobPerCollector[tg.CollectorName] == nil {
-		a.targetItemsPerJobPerCollector[tg.CollectorName] = make(map[string]map[string]bool)
+		a.targetItemsPerJobPerCollector[tg.CollectorName] = make(map[string]map[target.ItemHash]bool)
 	}
 	if a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName] == nil {
-		a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName] = make(map[string]bool)
+		a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName] = make(map[target.ItemHash]bool)
 	}
 	a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName][tg.Hash()] = true
 }
@@ -276,7 +276,7 @@ func (a *allocator) addCollectorTargetItemMapping(tg *target.Item) {
 // handleCollectors receives the new and removed collectors and reconciles the current state.
 // Any removals are removed from the allocator's collectors. New collectors are added to the allocator's collector map.
 // Finally, update all targets' collector assignments.
-func (a *allocator) handleCollectors(diff diff.Changes[*Collector]) {
+func (a *allocator) handleCollectors(diff diff.Changes[string, *Collector]) {
 	// Clear removed collectors
 	for _, k := range diff.Removals() {
 		a.removeCollector(k)
@@ -312,9 +312,9 @@ const minChunkSize = 100 // for small target counts, it's not worth it to spawn 
 // buildTargetMap builds a map of targets, using their hashes as keys. It does this concurrently, and the concurrency
 // is configurable via the concurrency parameter. We do this in parallel because target hashing is surprisingly
 // expensive.
-func buildTargetMap(targets []*target.Item, concurrency int) map[string]*target.Item {
+func buildTargetMap(targets []*target.Item, concurrency int) map[target.ItemHash]*target.Item {
 	// technically there may be duplicates, so this may overallocate, but in the majority of cases it will be exact
-	result := make(map[string]*target.Item, len(targets))
+	result := make(map[target.ItemHash]*target.Item, len(targets))
 	chunkSize := len(targets) / concurrency
 	chunkSize = max(chunkSize, minChunkSize)
 	wg := sync.WaitGroup{}
