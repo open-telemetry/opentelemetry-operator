@@ -144,9 +144,10 @@ type Sampler struct {
 // Defaults defines default values for the instrumentation.
 type Defaults struct {
 	// UseLabelsForResourceAttributes defines whether to use common labels for resource attributes:
+	// Note: first entry wins:
+	//   - `app.kubernetes.io/instance` becomes `service.name`
 	//   - `app.kubernetes.io/name` becomes `service.name`
 	//   - `app.kubernetes.io/version` becomes `service.version`
-	//   - `app.kubernetes.io/part-of` becomes `service.namespace`
 	UseLabelsForResourceAttributes bool `json:"useLabelsForResourceAttributes,omitempty"`
 }
 
