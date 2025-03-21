@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"sync"
 	"testing"
 	"time"
 
@@ -130,38 +131,46 @@ func getConfigHash(key, file string) string {
 }
 
 var _ client.OpAMPClient = &mockOpampClient{}
-var _ proxy.Server = &mockProxy{}
+var _ proxy.Server = newMockProxy(nil, nil)
+
+func newMockProxy(configs map[uuid.UUID]*protobufs.EffectiveConfig, healths map[uuid.UUID]*protobufs.ComponentHealth) *mockProxy {
+	return &mockProxy{
+		configs:     configs,
+		healths:     healths,
+		updatesChan: make(chan struct{}, 1),
+	}
+}
 
 type mockProxy struct {
+	mu          sync.Mutex
 	configs     map[uuid.UUID]*protobufs.EffectiveConfig
 	healths     map[uuid.UUID]*protobufs.ComponentHealth
 	updatesChan chan struct{}
 }
 
 func (m *mockProxy) sendUpdate() {
-	if m.updatesChan == nil {
-		m.updatesChan = make(chan struct{}, 1)
-	}
 	m.updatesChan <- struct{}{}
 }
 
 // HasUpdates implements proxy.Server.
 func (m *mockProxy) HasUpdates() <-chan struct{} {
-	if m.updatesChan == nil {
-		m.updatesChan = make(chan struct{}, 1)
-	}
 	return m.updatesChan
 }
 
 func (m *mockProxy) GetConfigurations() map[uuid.UUID]*protobufs.EffectiveConfig {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	return m.configs
 }
 
 func (m *mockProxy) GetHealth() map[uuid.UUID]*protobufs.ComponentHealth {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	return m.healths
 }
 
 type mockOpampClient struct {
+	mu                  sync.Mutex
 	lastStatus          *protobufs.RemoteConfigStatus
 	lastHealth          *protobufs.ComponentHealth
 	lastEffectiveConfig *protobufs.EffectiveConfig
@@ -181,6 +190,8 @@ func (m *mockOpampClient) RequestConnectionSettings(_ *protobufs.ConnectionSetti
 }
 
 func (m *mockOpampClient) Start(_ context.Context, settings types.StartSettings) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.settings = settings
 	return nil
 }
@@ -198,11 +209,15 @@ func (m *mockOpampClient) AgentDescription() *protobufs.AgentDescription {
 }
 
 func (m *mockOpampClient) SetHealth(ch *protobufs.ComponentHealth) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.lastHealth = ch
 	return nil
 }
 
 func (m *mockOpampClient) UpdateEffectiveConfig(ctx context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	effectiveConfig, err := m.settings.Callbacks.GetEffectiveConfig(ctx)
 	if err != nil {
 		return err
@@ -212,6 +227,8 @@ func (m *mockOpampClient) UpdateEffectiveConfig(ctx context.Context) error {
 }
 
 func (m *mockOpampClient) SetRemoteConfigStatus(status *protobufs.RemoteConfigStatus) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.lastStatus = status
 	return nil
 }
@@ -453,7 +470,7 @@ func TestAgent_getHealth(t *testing.T) {
 			loadErr := config.LoadFromFile(conf, tt.fields.configFile)
 			require.NoError(t, loadErr, "should be able to load config")
 			applier := getFakeApplier(t, conf, tt.args.podList)
-			mp := &mockProxy{healths: tt.args.healths}
+			mp := newMockProxy(nil, tt.args.healths)
 			agent := NewAgent(l, applier, conf, mockClient, mp)
 			agent.clock = fakeClock
 			err := agent.Start()
@@ -928,7 +945,7 @@ func TestAgent_onMessage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &mockOpampClient{}
-			mp := &mockProxy{configs: tt.args.configs}
+			mp := newMockProxy(tt.args.configs, nil)
 
 			conf := config.NewConfig(logr.Discard())
 			loadErr := config.LoadFromFile(conf, tt.fields.configFile)
@@ -997,7 +1014,7 @@ func Test_CanUpdateIdentity(t *testing.T) {
 	loadErr := config.LoadFromFile(conf, agentTestFileName)
 	require.NoError(t, loadErr, "should be able to load config")
 	applier := getFakeApplier(t, conf)
-	mp := &mockProxy{}
+	mp := newMockProxy(nil, nil)
 	agent := NewAgent(l, applier, conf, mockClient, mp)
 	err = agent.Start()
 	defer agent.Shutdown()
@@ -1021,7 +1038,7 @@ func Test_CanUpdateIdentity(t *testing.T) {
 
 func TestAgent_ListensForUpdates(t *testing.T) {
 	mockClient := &mockOpampClient{}
-	mockProxy := &mockProxy{}
+	mockProxy := newMockProxy(nil, nil)
 	conf := config.NewConfig(logr.Discard())
 	applier := getFakeApplier(t, conf)
 
@@ -1029,9 +1046,12 @@ func TestAgent_ListensForUpdates(t *testing.T) {
 	err := agent.Start()
 	require.NoError(t, err, "should be able to start agent")
 	defer agent.Shutdown()
+	mockClient.mu.Lock()
 	assert.Len(t, mockClient.lastHealth.ComponentHealthMap, 0)
 	assert.Nil(t, mockClient.lastEffectiveConfig, 0)
+	mockClient.mu.Unlock()
 	mockInstanceId := uuid.New()
+	mockProxy.mu.Lock()
 	mockProxy.healths = map[uuid.UUID]*protobufs.ComponentHealth{
 		mockInstanceId: {
 			Healthy:            true,
@@ -1051,8 +1071,12 @@ func TestAgent_ListensForUpdates(t *testing.T) {
 			},
 		},
 	}
+	mockProxy.mu.Unlock()
+
+	mockClient.mu.Lock()
 	assert.Len(t, mockClient.lastHealth.ComponentHealthMap, 0)
 	assert.Nil(t, mockClient.lastEffectiveConfig, 0)
+	mockClient.mu.Unlock()
 
 	// Simulate an update from the proxy
 	go func() {
@@ -1060,6 +1084,8 @@ func TestAgent_ListensForUpdates(t *testing.T) {
 	}()
 
 	assert.Eventually(t, func() bool {
+		mockClient.mu.Lock()
+		defer mockClient.mu.Unlock()
 		return len(mockClient.lastHealth.ComponentHealthMap) == 1 &&
 			len(mockClient.lastEffectiveConfig.ConfigMap.ConfigMap) == 1
 	}, 3*time.Second, 1*time.Second)
