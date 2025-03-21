@@ -23,6 +23,7 @@ const (
 func Build(params manifests.Params) ([]client.Object, error) {
 	var resourceManifests []client.Object
 	var manifestFactories []manifests.K8sManifestFactory[manifests.Params]
+	var manifestSliceFactories []manifests.K8sManifestSliceFactory[manifests.Params]
 	switch params.OtelCol.Spec.Mode {
 	case v1beta1.ModeDeployment:
 		manifestFactories = append(manifestFactories, manifests.Factory(Deployment))
@@ -74,6 +75,21 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		}
 	}
 
+	manifestSliceFactories = append(
+		manifestSliceFactories,
+		manifests.FactorySlice(Role),
+		manifests.FactorySlice(RoleBinding),
+		manifests.FactorySlice(Routes),
+	)
+
+	for _, factory := range manifestSliceFactories {
+		objs, err := factory(params)
+		if err != nil {
+			return nil, err
+		}
+		resourceManifests = append(resourceManifests, objs...)
+	}
+
 	if needsCheckSaPermissions(params) {
 		warnings, err := CheckRbacRules(params, params.OtelCol.Spec.ServiceAccount)
 		if err != nil {
@@ -87,14 +103,6 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		return nil, errors.Join(w...)
 	}
 
-	routes, err := Routes(params)
-	if err != nil {
-		return nil, err
-	}
-	// NOTE: we cannot just unpack the slice, the type checker doesn't coerce the type correctly.
-	for _, route := range routes {
-		resourceManifests = append(resourceManifests, route)
-	}
 	return resourceManifests, nil
 }
 
