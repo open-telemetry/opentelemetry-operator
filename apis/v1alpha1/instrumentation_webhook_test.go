@@ -7,9 +7,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -18,24 +20,525 @@ import (
 var defaultVolumeSize = resource.MustParse("200Mi")
 
 func TestInstrumentationDefaultingWebhook(t *testing.T) {
-	inst := &Instrumentation{}
-	err := InstrumentationWebhook{
-		cfg: config.New(
-			config.WithAutoInstrumentationJavaImage("java-img:1"),
-			config.WithAutoInstrumentationNodeJSImage("nodejs-img:1"),
-			config.WithAutoInstrumentationPythonImage("python-img:1"),
-			config.WithAutoInstrumentationDotNetImage("dotnet-img:1"),
-			config.WithAutoInstrumentationApacheHttpdImage("apache-httpd-img:1"),
-			config.WithAutoInstrumentationNginxImage("nginx-img:1"),
-		),
-	}.Default(context.Background(), inst)
-	assert.NoError(t, err)
-	assert.Equal(t, "java-img:1", inst.Spec.Java.Image)
-	assert.Equal(t, "nodejs-img:1", inst.Spec.NodeJS.Image)
-	assert.Equal(t, "python-img:1", inst.Spec.Python.Image)
-	assert.Equal(t, "dotnet-img:1", inst.Spec.DotNet.Image)
-	assert.Equal(t, "apache-httpd-img:1", inst.Spec.ApacheHttpd.Image)
-	assert.Equal(t, "nginx-img:1", inst.Spec.Nginx.Image)
+	tests := []struct {
+		name     string
+		config   []config.Option
+		input    Instrumentation
+		expected Instrumentation
+	}{
+		{
+			name: "default images",
+			config: []config.Option{
+				config.WithAutoInstrumentationJavaImage("java-img:1"),
+				config.WithAutoInstrumentationNodeJSImage("nodejs-img:1"),
+				config.WithAutoInstrumentationPythonImage("python-img:1"),
+				config.WithAutoInstrumentationDotNetImage("dotnet-img:1"),
+				config.WithAutoInstrumentationGoImage("go-img:1"),
+				config.WithAutoInstrumentationNginxImage("nginx-img:1"),
+				config.WithAutoInstrumentationApacheHttpdImage("apache-httpd-img:1"),
+			},
+			input: Instrumentation{},
+			expected: Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{},
+					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-java-image":         "java-img:1",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image":       "nodejs-img:1",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-python-image":       "python-img:1",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image":       "dotnet-img:1",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-go-image":           "go-img:1",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-nginx-image":        "nginx-img:1",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-apache-httpd-image": "apache-httpd-img:1",
+					},
+				},
+				Spec: InstrumentationSpec{
+					Java: Java{
+						Image: "java-img:1",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+						},
+					},
+					NodeJS: NodeJS{
+						Image: "nodejs-img:1",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+					Python: Python{
+						Image: "python-img:1",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+						},
+					},
+					DotNet: DotNet{
+						Image: "dotnet-img:1",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+					Go: Go{
+						Image: "go-img:1",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+						},
+					},
+					ApacheHttpd: ApacheHttpd{
+						Image:      "apache-httpd-img:1",
+						Version:    "2.4",
+						ConfigPath: "/usr/local/apache2/conf",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("1m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+					Nginx: Nginx{
+						Image:      "nginx-img:1",
+						ConfigFile: "/etc/nginx/nginx.conf",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("1m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "do not override java image",
+			config: []config.Option{
+				config.WithAutoInstrumentationJavaImage("java-img:1"),
+			},
+			input: Instrumentation{
+				Spec: InstrumentationSpec{
+					Java: Java{
+						Image: "custom-java-img:2",
+					},
+				},
+			},
+			expected: Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{},
+					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-java-image":         "java-img:1",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image":       "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-python-image":       "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image":       "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-go-image":           "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-nginx-image":        "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-apache-httpd-image": "",
+					},
+				},
+				Spec: InstrumentationSpec{
+					Java: Java{
+						Image: "custom-java-img:2",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+						},
+					},
+					NodeJS: NodeJS{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+					Python: Python{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+						},
+					},
+					DotNet: DotNet{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+					Go: Go{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+						},
+					},
+					ApacheHttpd: ApacheHttpd{
+						Version:    "2.4",
+						ConfigPath: "/usr/local/apache2/conf",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("1m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+					Nginx: Nginx{
+						ConfigFile: "/etc/nginx/nginx.conf",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("1m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "preserve java env vars",
+			config: []config.Option{
+				config.WithAutoInstrumentationJavaImage("java-img:1"),
+			},
+			input: Instrumentation{
+				Spec: InstrumentationSpec{
+					Java: Java{
+						Env: []corev1.EnvVar{
+							{
+								Name:  "JAVA_TOOL_OPTIONS",
+								Value: "-javaagent:/agent/opentelemetry-javaagent.jar",
+							},
+						},
+					},
+				},
+			},
+			expected: Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{},
+					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-java-image":         "java-img:1",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image":       "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-python-image":       "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image":       "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-go-image":           "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-nginx-image":        "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-apache-httpd-image": "",
+					},
+				},
+				Spec: InstrumentationSpec{
+					Java: Java{
+						Image: "java-img:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "JAVA_TOOL_OPTIONS",
+								Value: "-javaagent:/agent/opentelemetry-javaagent.jar",
+							},
+						},
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+						},
+					},
+					NodeJS: NodeJS{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+					Python: Python{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+						},
+					},
+					DotNet: DotNet{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+					Go: Go{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+						},
+					},
+					ApacheHttpd: ApacheHttpd{
+						Version:    "2.4",
+						ConfigPath: "/usr/local/apache2/conf",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("1m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+					Nginx: Nginx{
+						ConfigFile: "/etc/nginx/nginx.conf",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("1m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "preserve resource requirements",
+			config: []config.Option{
+				config.WithAutoInstrumentationJavaImage("java-img:1"),
+			},
+			input: Instrumentation{
+				Spec: InstrumentationSpec{
+					Java: Java{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("100m"),
+								corev1.ResourceMemory: resource.MustParse("32Mi"),
+							},
+						},
+					},
+				},
+			},
+			expected: Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{},
+					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-java-image":         "java-img:1",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image":       "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-python-image":       "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image":       "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-go-image":           "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-nginx-image":        "",
+						"instrumentation.opentelemetry.io/default-auto-instrumentation-apache-httpd-image": "",
+					},
+				},
+				Spec: InstrumentationSpec{
+					Java: Java{
+						Image: "java-img:1",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("100m"),
+								corev1.ResourceMemory: resource.MustParse("32Mi"),
+							},
+						},
+					},
+					NodeJS: NodeJS{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+					Python: Python{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+						},
+					},
+					DotNet: DotNet{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+					Go: Go{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+								corev1.ResourceMemory: resource.MustParse("64Mi"),
+							},
+						},
+					},
+					ApacheHttpd: ApacheHttpd{
+						Version:    "2.4",
+						ConfigPath: "/usr/local/apache2/conf",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("1m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+					Nginx: Nginx{
+						ConfigFile: "/etc/nginx/nginx.conf",
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("500m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("1m"),
+								corev1.ResourceMemory: resource.MustParse("128Mi"),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Create a copy of the input to avoid modifications between test cases
+			input := test.input.DeepCopy()
+
+			webhook := InstrumentationWebhook{
+				cfg: config.New(test.config...),
+			}
+
+			err := webhook.Default(context.Background(), input)
+			assert.NoError(t, err)
+
+			if diff := cmp.Diff(test.expected, *input); diff != "" {
+				t.Errorf("Default() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
 }
 
 func TestInstrumentationValidatingWebhook(t *testing.T) {
@@ -105,23 +608,6 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-		},
-		{
-			name: "with volume and volumeSizeLimit",
-			err:  "spec.nodejs.volumeClaimTemplate and spec.nodejs.volumeSizeLimit cannot both be defined",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					NodeJS: NodeJS{
-						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
-							Spec: corev1.PersistentVolumeClaimSpec{
-								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-							},
-						},
-						VolumeSizeLimit: &defaultVolumeSize,
-					},
-				},
-			},
-			warnings: []string{"sampler type not set"},
 		},
 		{
 			name: "exporter: tls cert set but missing key",
@@ -211,6 +697,136 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "sampler type is invalid",
+			err:  "spec.sampler.type is not valid",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Sampler: Sampler{
+						Type: "InvalidSamplerType",
+					},
+				},
+			},
+		},
+		{
+			name: "NodeJS with volume and volumeSizeLimit",
+			err:  "spec.nodejs.volumeClaimTemplate and spec.nodejs.volumeSizeLimit cannot both be defined",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					NodeJS: NodeJS{
+						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
+						VolumeSizeLimit: &defaultVolumeSize,
+					},
+				},
+			},
+			warnings: []string{"sampler type not set"},
+		},
+		{
+			name: "Java with volume and volumeSizeLimit",
+			err:  "spec.java.volumeClaimTemplate and spec.java.volumeSizeLimit cannot both be defined",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Java: Java{
+						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
+						VolumeSizeLimit: &defaultVolumeSize,
+					},
+				},
+			},
+			warnings: []string{"sampler type not set"},
+		},
+		{
+			name: "Python with volume and volumeSizeLimit",
+			err:  "spec.python.volumeClaimTemplate and spec.python.volumeSizeLimit cannot both be defined",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Python: Python{
+						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
+						VolumeSizeLimit: &defaultVolumeSize,
+					},
+				},
+			},
+			warnings: []string{"sampler type not set"},
+		},
+		{
+			name: "Go with volume and volumeSizeLimit",
+			err:  "spec.go.volumeClaimTemplate and spec.go.volumeSizeLimit cannot both be defined",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Go: Go{
+						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
+						VolumeSizeLimit: &defaultVolumeSize,
+					},
+				},
+			},
+			warnings: []string{"sampler type not set"},
+		},
+		{
+			name: "DotNet with volume and volumeSizeLimit",
+			err:  "spec.dotnet.volumeClaimTemplate and spec.dotnet.volumeSizeLimit cannot both be defined",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					DotNet: DotNet{
+						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
+						VolumeSizeLimit: &defaultVolumeSize,
+					},
+				},
+			},
+			warnings: []string{"sampler type not set"},
+		},
+		{
+			name: "ApacheHttpd with volume and volumeSizeLimit",
+			err:  "spec.apachehttpd.volumeClaimTemplate and spec.apachehttpd.volumeSizeLimit cannot both be defined",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					ApacheHttpd: ApacheHttpd{
+						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
+						VolumeSizeLimit: &defaultVolumeSize,
+					},
+				},
+			},
+			warnings: []string{"sampler type not set"},
+		},
+		{
+			name: "Nginx with volume and volumeSizeLimit",
+			err:  "spec.nginx.volumeClaimTemplate and spec.nginx.volumeSizeLimit cannot both be defined",
+			inst: Instrumentation{
+				Spec: InstrumentationSpec{
+					Nginx: Nginx{
+						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
+						VolumeSizeLimit: &defaultVolumeSize,
+					},
+				},
+			},
+			warnings: []string{"sampler type not set"},
+		},
 	}
 
 	for _, test := range tests {
@@ -224,11 +840,17 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 				warnings, err = InstrumentationWebhook{}.ValidateUpdate(ctx, nil, &test.inst)
 				assert.Equal(t, test.warnings, warnings)
 				assert.Nil(t, err)
+				warnings, err = InstrumentationWebhook{}.ValidateDelete(ctx, &test.inst)
+				assert.Equal(t, test.warnings, warnings)
+				assert.Nil(t, err)
 			} else {
 				warnings, err := InstrumentationWebhook{}.ValidateCreate(ctx, &test.inst)
 				assert.Equal(t, test.warnings, warnings)
 				assert.Contains(t, err.Error(), test.err)
 				warnings, err = InstrumentationWebhook{}.ValidateUpdate(ctx, nil, &test.inst)
+				assert.Equal(t, test.warnings, warnings)
+				assert.Contains(t, err.Error(), test.err)
+				warnings, err = InstrumentationWebhook{}.ValidateDelete(ctx, &test.inst)
 				assert.Equal(t, test.warnings, warnings)
 				assert.Contains(t, err.Error(), test.err)
 			}
@@ -243,12 +865,27 @@ func TestInstrumentationJaegerRemote(t *testing.T) {
 		arg  string
 	}{
 		{
+			name: "invalid format - missing equal sign",
+			err:  "invalid argument",
+			arg:  "endpoint http://jaeger-collector:14250/",
+		},
+		{
 			name: "pollingIntervalMs is not a number",
 			err:  "invalid pollingIntervalMs: abc",
 			arg:  "pollingIntervalMs=abc",
 		},
 		{
-			name: "initialSamplingRate is out of range",
+			name: "initialSamplingRate is not a number",
+			err:  "invalid initialSamplingRate",
+			arg:  "initialSamplingRate=abc",
+		},
+		{
+			name: "initialSamplingRate is negative",
+			err:  "initialSamplingRate should be in rage [0..1]",
+			arg:  "initialSamplingRate=-0.5",
+		},
+		{
+			name: "initialSamplingRate is above 1",
 			err:  "initialSamplingRate should be in rage [0..1]",
 			arg:  "initialSamplingRate=1.99",
 		},
@@ -256,6 +893,18 @@ func TestInstrumentationJaegerRemote(t *testing.T) {
 			name: "endpoint is missing",
 			err:  "endpoint cannot be empty",
 			arg:  "endpoint=",
+		},
+		{
+			name: "minimal valid configuration with endpoint only",
+			arg:  "endpoint=http://jaeger-collector:14250/",
+		},
+		{
+			name: "with pollingIntervalMs only",
+			arg:  "endpoint=http://jaeger-collector:14250/,pollingIntervalMs=2000",
+		},
+		{
+			name: "with initialSamplingRate only",
+			arg:  "endpoint=http://jaeger-collector:14250/,initialSamplingRate=0.5",
 		},
 		{
 			name: "correct jaeger remote sampler configuration",
@@ -284,11 +933,17 @@ func TestInstrumentationJaegerRemote(t *testing.T) {
 					warnings, err = InstrumentationWebhook{}.ValidateUpdate(ctx, nil, &inst)
 					assert.Nil(t, warnings)
 					assert.Nil(t, err)
+					warnings, err = InstrumentationWebhook{}.ValidateDelete(ctx, &inst)
+					assert.Nil(t, warnings)
+					assert.Nil(t, err)
 				} else {
 					warnings, err := InstrumentationWebhook{}.ValidateCreate(ctx, &inst)
 					assert.Nil(t, warnings)
 					assert.Contains(t, err.Error(), test.err)
 					warnings, err = InstrumentationWebhook{}.ValidateUpdate(ctx, nil, &inst)
+					assert.Nil(t, warnings)
+					assert.Contains(t, err.Error(), test.err)
+					warnings, err = InstrumentationWebhook{}.ValidateDelete(ctx, &inst)
 					assert.Nil(t, warnings)
 					assert.Contains(t, err.Error(), test.err)
 				}
