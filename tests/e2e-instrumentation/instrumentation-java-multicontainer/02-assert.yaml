@@ -36,7 +36,7 @@ spec:
     - name: SPLUNK_PROFILER_ENABLED
       value: "false"
     - name: JAVA_TOOL_OPTIONS
-      value: ' -javaagent:/otel-auto-instrumentation-java/javaagent.jar'
+      value: ' -javaagent:/otel-auto-instrumentation-java-myapp/javaagent.jar'
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -68,7 +68,7 @@ spec:
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
-    - mountPath: /otel-auto-instrumentation-java
+    - mountPath: /otel-auto-instrumentation-java-myapp
       name: opentelemetry-auto-instrumentation-java
   - image: rabbitmq:3
     name: myrabbit

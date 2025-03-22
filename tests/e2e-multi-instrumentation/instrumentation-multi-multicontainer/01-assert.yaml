@@ -89,7 +89,7 @@ spec:
     - name: OTEL_SERVICE_NAME
       value: javaapp
     - name: JAVA_TOOL_OPTIONS
-      value: ' -javaagent:/otel-auto-instrumentation-java/javaagent.jar'
+      value: ' -javaagent:/otel-auto-instrumentation-java-javaapp/javaagent.jar'
     - name: OTEL_TRACES_SAMPLER
       value: parentbased_traceidratio
     - name: OTEL_TRACES_SAMPLER_ARG
@@ -113,7 +113,7 @@ spec:
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
-    - mountPath: /otel-auto-instrumentation-java
+    - mountPath: /otel-auto-instrumentation-java-javaapp
       name: opentelemetry-auto-instrumentation-java
   - env:
     - name: OTEL_NODE_IP
