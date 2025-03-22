@@ -1,7 +1,7 @@
 change_type: enhancement
 component: auto-instrumentation
 note: "Enhanced Java auto-instrumentation with improved volume mount paths and configuration options"
-issues: []
+issues: [3843]
 subtext: |
   - Added support for unique volume mount paths for Java instrumentation
   - Improved configuration options for Java auto-instrumentation
