@@ -24,6 +24,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 			config.WithAutoInstrumentationJavaImage("java-img:1"),
 			config.WithAutoInstrumentationNodeJSImage("nodejs-img:1"),
 			config.WithAutoInstrumentationPythonImage("python-img:1"),
+			config.WithAutoInstrumentationRubyImage("ruby-img:1"),
 			config.WithAutoInstrumentationDotNetImage("dotnet-img:1"),
 			config.WithAutoInstrumentationApacheHttpdImage("apache-httpd-img:1"),
 			config.WithAutoInstrumentationNginxImage("nginx-img:1"),
@@ -33,6 +34,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	assert.Equal(t, "java-img:1", inst.Spec.Java.Image)
 	assert.Equal(t, "nodejs-img:1", inst.Spec.NodeJS.Image)
 	assert.Equal(t, "python-img:1", inst.Spec.Python.Image)
+	assert.Equal(t, "ruby-img:1", inst.Spec.Ruby.Image)
 	assert.Equal(t, "dotnet-img:1", inst.Spec.DotNet.Image)
 	assert.Equal(t, "apache-httpd-img:1", inst.Spec.ApacheHttpd.Image)
 	assert.Equal(t, "nginx-img:1", inst.Spec.Nginx.Image)

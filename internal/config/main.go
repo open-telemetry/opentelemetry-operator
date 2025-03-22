@@ -32,6 +32,7 @@ type Config struct {
 	targetAllocatorImage                string
 	operatorOpAMPBridgeImage            string
 	autoInstrumentationPythonImage      string
+	autoInstrumentationRubyImage        string
 	collectorImage                      string
 	collectorConfigMapEntry             string
 	createRBACPermissions               autoRBAC.Availability
@@ -41,6 +42,7 @@ type Config struct {
 	enableGoInstrumentation             bool
 	enableNginxInstrumentation          bool
 	enablePythonInstrumentation         bool
+	enableRubyInstrumentation           bool
 	enableNodeJSInstrumentation         bool
 	enableJavaInstrumentation           bool
 	autoInstrumentationDotNetImage      string
@@ -92,6 +94,7 @@ func New(opts ...Option) Config {
 		enableGoInstrumentation:             o.enableGoInstrumentation,
 		enableNginxInstrumentation:          o.enableNginxInstrumentation,
 		enablePythonInstrumentation:         o.enablePythonInstrumentation,
+		enableRubyInstrumentation:           o.enableRubyInstrumentation,
 		enableNodeJSInstrumentation:         o.enableNodeJSInstrumentation,
 		enableJavaInstrumentation:           o.enableJavaInstrumentation,
 		targetAllocatorImage:                o.targetAllocatorImage,
@@ -106,6 +109,7 @@ func New(opts ...Option) Config {
 		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
+		autoInstrumentationRubyImage:        o.autoInstrumentationRubyImage,
 		autoInstrumentationDotNetImage:      o.autoInstrumentationDotNetImage,
 		autoInstrumentationGoImage:          o.autoInstrumentationGoImage,
 		autoInstrumentationApacheHttpdImage: o.autoInstrumentationApacheHttpdImage,
@@ -198,6 +202,11 @@ func (c *Config) EnablePythonAutoInstrumentation() bool {
 	return c.enablePythonInstrumentation
 }
 
+// EnableRubyAutoInstrumentation is true when the operator supports Ruby auto instrumentation.
+func (c *Config) EnableRubyAutoInstrumentation() bool {
+	return c.enableRubyInstrumentation
+}
+
 // EnableNodeJSAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
 func (c *Config) EnableNodeJSAutoInstrumentation() bool {
 	return c.enableNodeJSInstrumentation
@@ -266,6 +275,11 @@ func (c *Config) AutoInstrumentationNodeJSImage() string {
 // AutoInstrumentationPythonImage returns OpenTelemetry Python auto-instrumentation container image.
 func (c *Config) AutoInstrumentationPythonImage() string {
 	return c.autoInstrumentationPythonImage
+}
+
+// AutoInstrumentationRubyImage returns OpenTelemetry Ruby auto-instrumentation container image.
+func (c *Config) AutoInstrumentationRubyImage() string {
+	return c.autoInstrumentationRubyImage
 }
 
 // AutoInstrumentationDotNetImage returns OpenTelemetry DotNet auto-instrumentation container image.
