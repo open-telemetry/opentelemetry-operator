@@ -361,7 +361,7 @@ func (s *Server) TargetsHTMLHandler(c *gin.Context) {
 
 func targetAnchorLink(t *target.Item) Cell {
 	return Cell{
-		Link: fmt.Sprintf("/target?target_hash=%s", t.Hash()),
+		Link: fmt.Sprintf("/target?target_hash=%v", t.Hash()),
 		Text: t.TargetURL,
 	}
 }
@@ -372,8 +372,8 @@ func (s *Server) TargetHTMLHandler(c *gin.Context) {
 	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
 	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	targetHash := c.Request.URL.Query().Get("target_hash")
-	if targetHash == "" {
+	targetHashStr := c.Request.URL.Query().Get("target_hash")
+	if targetHashStr == "" || targetHashStr == "0" {
 		c.Status(http.StatusBadRequest)
 		_, err := c.Writer.WriteString(`<html>
 <body>
@@ -388,7 +388,23 @@ func (s *Server) TargetHTMLHandler(c *gin.Context) {
 		return
 	}
 
-	target, found := s.allocator.TargetItems()[targetHash]
+	// Convert string to uint64
+	targetHash, err := strconv.ParseUint(targetHashStr, 10, 64)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		_, err := c.Writer.WriteString(`<html>
+<body>
+<h1>Bad Request</h1>
+<p>Expected target_hash to be a number</p>
+<p>Example: /target?target_hash=42</p>
+</body>
+</html>`)
+		if err != nil {
+			s.logger.Error(err, "failed to write response")
+			return
+		}
+	}
+	target, found := s.allocator.TargetItems()[target.ItemHash(targetHash)]
 	if !found {
 		c.Status(http.StatusNotFound)
 		t, err := template.New("unknown_target").Parse(`<html>
@@ -399,7 +415,7 @@ func (s *Server) TargetHTMLHandler(c *gin.Context) {
 		if err != nil {
 			s.logger.Error(err, "failed to parse template")
 		}
-		err = t.Execute(c.Writer, targetHash)
+		err = t.Execute(c.Writer, targetHashStr)
 		if err != nil {
 			s.logger.Error(err, "failed to write response")
 		}
@@ -502,7 +518,7 @@ func (s *Server) JobHTMLHandler(c *gin.Context) {
 		Headers: []string{"Collector", "Target Count"},
 		Rows: func() [][]Cell {
 			var rows [][]Cell
-			targets := map[string]*target.Item{}
+			targets := map[target.ItemHash]*target.Item{}
 			for k, v := range s.allocator.TargetItems() {
 				if v.JobName == jobId {
 					targets[k] = v
