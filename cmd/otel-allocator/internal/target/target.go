@@ -4,6 +4,8 @@
 package target
 
 import (
+	"strconv"
+
 	"github.com/prometheus/prometheus/model/labels"
 )
 
@@ -23,6 +25,10 @@ var (
 )
 
 type ItemHash uint64
+
+func (h ItemHash) String() string {
+	return strconv.FormatUint(uint64(h), 10)
+}
 
 // Item represents a target to be scraped.
 type Item struct {
