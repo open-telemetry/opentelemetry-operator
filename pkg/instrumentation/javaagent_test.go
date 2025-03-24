@@ -161,6 +161,7 @@ func TestInjectJavaagent(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
+							Name: "test-container",
 							Env: []corev1.EnvVar{
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
@@ -197,16 +198,17 @@ func TestInjectJavaagent(t *testing.T) {
 					},
 					Containers: []corev1.Container{
 						{
+							Name: "test-container",
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "opentelemetry-auto-instrumentation-java",
-									MountPath: "/otel-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-test-container",
 								},
 							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: "-Dbaz=bar" + javaAgent,
+									Value: "-Dbaz=bar -javaagent:/otel-auto-instrumentation-java-test-container/javaagent.jar",
 								},
 							},
 						},

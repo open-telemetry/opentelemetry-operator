@@ -437,7 +437,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaAgent,
+									Value: " -javaagent:/otel-auto-instrumentation-java-app1/javaagent.jar",
 								},
 								{
 									Name:  "OTEL_TRACES_EXPORTER",
@@ -491,7 +491,7 @@ func TestMutatePod(t *testing.T) {
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      javaVolumeName,
-									MountPath: javaInstrMountPath,
+									MountPath: "/otel-auto-instrumentation-java-app1",
 								},
 							},
 						},
@@ -528,7 +528,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaAgent,
+									Value: " -javaagent:/otel-auto-instrumentation-java-app2/javaagent.jar",
 								},
 								{
 									Name:  "OTEL_TRACES_EXPORTER",
@@ -582,7 +582,7 @@ func TestMutatePod(t *testing.T) {
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      javaVolumeName,
-									MountPath: javaInstrMountPath,
+									MountPath: "/otel-auto-instrumentation-java-app2",
 								},
 							},
 						},
