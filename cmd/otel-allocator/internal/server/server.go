@@ -88,10 +88,13 @@ func (s *Server) setRouter(router *gin.Engine) {
 	router.Use(s.PrometheusMiddleware)
 
 	router.GET("/", s.IndexHandler)
-	router.GET("/collector", s.CollectorHTMLHandler)
-	router.GET("/job", s.JobHTMLHandler)
-	router.GET("/target", s.TargetHTMLHandler)
-	router.GET("/targets", s.TargetsHTMLHandler)
+	router.GET("/debug/collector", s.CollectorHTMLHandler)
+	router.GET("/debug/job", s.JobHTMLHandler)
+	router.GET("/debug/target", s.TargetHTMLHandler)
+	router.GET("/debug/targets", s.TargetsHTMLHandler)
+	router.GET("/debug/scrape_configs", s.ScrapeConfigsHTMLHandler)
+	router.GET("/debug/jobs", s.JobsHTMLHandler)
+
 	router.GET("/scrape_configs", s.ScrapeConfigsHandler)
 	router.GET("/jobs", s.JobsHandler)
 	router.GET("/jobs/:job_id/targets", s.TargetsHandler)
@@ -325,7 +328,7 @@ func (s *Server) IndexHandler(c *gin.Context) {
 
 func targetsAnchorLink() Cell {
 	return Cell{
-		Link: "/targets",
+		Link: "/debug/targets",
 		Text: "Targets",
 	}
 }
@@ -361,7 +364,7 @@ func (s *Server) TargetsHTMLHandler(c *gin.Context) {
 
 func targetAnchorLink(t *target.Item) Cell {
 	return Cell{
-		Link: fmt.Sprintf("/target?target_hash=%v", t.Hash()),
+		Link: fmt.Sprintf("/debug/target?target_hash=%v", t.Hash()),
 		Text: t.TargetURL,
 	}
 }
@@ -379,7 +382,7 @@ func (s *Server) TargetHTMLHandler(c *gin.Context) {
 <body>
 <h1>Bad Request</h1>
 <p>Expected target_hash in the query string</p>
-<p>Example: /target?target_hash=my-target-42</p>
+<p>Example: /debug/target?target_hash=my-target-42</p>
 </body>
 </html>`)
 		if err != nil {
@@ -396,7 +399,7 @@ func (s *Server) TargetHTMLHandler(c *gin.Context) {
 <body>
 <h1>Bad Request</h1>
 <p>Expected target_hash to be a number</p>
-<p>Example: /target?target_hash=42</p>
+<p>Example: /debug/target?target_hash=42</p>
 </body>
 </html>`)
 		if err != nil {
@@ -455,7 +458,7 @@ func (s *Server) TargetHTMLHandler(c *gin.Context) {
 
 func jobsAnchorLink() Cell {
 	return Cell{
-		Link: "/jobs",
+		Link: "/debug/jobs",
 		Text: "Jobs",
 	}
 }
@@ -496,7 +499,7 @@ func (s *Server) JobsHTMLHandler(c *gin.Context) {
 
 func jobAnchorLink(jobId string) Cell {
 	return Cell{
-		Link: fmt.Sprintf("/job?job_id=%s", url.QueryEscape(jobId)),
+		Link: fmt.Sprintf("/debug/job?job_id=%s", url.QueryEscape(jobId)),
 		Text: jobId,
 	}
 }
@@ -546,7 +549,7 @@ func (s *Server) JobHTMLHandler(c *gin.Context) {
 
 func collectorAnchorLink(collectorId string) Cell {
 	return Cell{
-		Link: fmt.Sprintf("/collector?collector_id=%s", url.QueryEscape(collectorId)),
+		Link: fmt.Sprintf("/debug/collector?collector_id=%s", url.QueryEscape(collectorId)),
 		Text: collectorId,
 	}
 }
@@ -755,7 +758,7 @@ func GetAllTargetsByJob(allocator allocation.Allocator, job string) map[string]c
 	for _, col := range allocator.Collectors() {
 		targets := GetAllTargetsByCollectorAndJob(allocator, col.Name, job)
 		displayData[col.Name] = collectorJSON{
-			Link: fmt.Sprintf("/jobs/%s/targets?collector_id=%s", url.QueryEscape(job), col.Name),
+			Link: fmt.Sprintf("/debug/jobs/%s/targets?collector_id=%s", url.QueryEscape(job), col.Name),
 			Jobs: targets,
 		}
 	}
