@@ -657,7 +657,7 @@ func TestServer_JobsHandler_HTML(t *testing.T) {
 				"test-collector":  {Name: "test-collector"},
 				"test-collector2": {Name: "test-collector2"},
 			})
-			request := httptest.NewRequest("GET", "/jobs", nil)
+			request := httptest.NewRequest("GET", "/debug/jobs", nil)
 			request.Header.Set("Accept", "text/html")
 			w := httptest.NewRecorder()
 
@@ -727,7 +727,7 @@ func TestServer_JobHandler_HTML(t *testing.T) {
 				"test-collector2": {Name: "test-collector2"},
 			})
 			tt.args.allocator.SetTargets(tt.args.cMap)
-			request := httptest.NewRequest("GET", fmt.Sprintf("/job?job_id=%s", tt.args.job), nil)
+			request := httptest.NewRequest("GET", fmt.Sprintf("/debug/job?job_id=%s", tt.args.job), nil)
 			request.Header.Set("Accept", "text/html")
 			w := httptest.NewRecorder()
 
@@ -842,7 +842,7 @@ func TestServer_TargetsHTMLHandler(t *testing.T) {
 				"test-collector2": {Name: "test-collector2"},
 			})
 			tc.allocator.SetTargets(tc.targetItems)
-			request := httptest.NewRequest("GET", "/targets", nil)
+			request := httptest.NewRequest("GET", "/debug/targets", nil)
 			request.Header.Set("Accept", "text/html")
 			w := httptest.NewRecorder()
 
@@ -929,7 +929,7 @@ func TestServer_CollectorHandler(t *testing.T) {
 				"test-collector2": {Name: "test-collector2"},
 			})
 			tc.allocator.SetTargets(tc.targetItems)
-			request := httptest.NewRequest("GET", "/collector", nil)
+			request := httptest.NewRequest("GET", "/debug/collector", nil)
 			request.Header.Set("Accept", "text/html")
 			request.URL.RawQuery = "collector_id=" + tc.collectorId
 			w := httptest.NewRecorder()
@@ -995,7 +995,7 @@ func TestServer_TargetHTMLHandler(t *testing.T) {
 				"test-collector2": {Name: "test-collector2"},
 			})
 			tc.allocator.SetTargets(tc.targetItems)
-			request := httptest.NewRequest("GET", "/target", nil)
+			request := httptest.NewRequest("GET", "/debug/target", nil)
 			request.Header.Set("Accept", "text/html")
 			request.URL.RawQuery = "target_hash=" + tc.targetHash.String()
 			w := httptest.NewRecorder()
