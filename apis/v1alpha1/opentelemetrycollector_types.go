@@ -361,6 +361,11 @@ type OpenTelemetryTargetAllocator struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
 	Observability ObservabilitySpec `json:"observability,omitempty"`
+	// CollectorNotReadyGracePeriod defines the grace period of a TargetAllocator stops considering a collector is target assignable.
+	// The default is 0s.
+	//
+	// +optional
+	CollectorNotReadyGracePeriod *metav1.Duration `json:"collectorNotReadyGracePeriod,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
 	// for the target allocator workload.
 	//
