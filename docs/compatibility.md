@@ -4,7 +4,7 @@ This document details compatibility guarantees the OpenTelemetry Operator offers
 
 ## Go
 
-When productised as a go libary or custom distribution the OpenTelemetry Operator project attempts to follow the supported go versions as [defined by the Go team](https://go.dev/doc/devel/release#policy).
+When productised as a go library or custom distribution the OpenTelemetry Operator project attempts to follow the supported go versions as [defined by the Go team](https://go.dev/doc/devel/release#policy).
 
 Similar to the [opentelemetry collector](https://github.com/open-telemetry/opentelemetry-collector?tab=readme-ov-file#compatibility), removing support for an unsupported Go version is not considered a breaking change.
 
