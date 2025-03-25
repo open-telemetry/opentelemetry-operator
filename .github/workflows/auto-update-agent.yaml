@@ -25,34 +25,34 @@ jobs:
             java)
               current_version=$(grep -Po "[0-9]+.[0-9]+.[0-9]+" autoinstrumentation/java/version.txt)
               latest_version=$(gh release view \
-                                   --repo open-telemetry/opentelemetry-java-instrumentation \
-                                   --json tagName \
-                                   --jq .tagName \
-                                 | sed 's/^v//')
+                                  --repo open-telemetry/opentelemetry-java-instrumentation \
+                                  --json tagName \
+                                  --jq .tagName \
+                                | sed 's/^v//')
               ;;
             dotnet)
               current_version=$(grep -Po "[0-9]+.[0-9]+.[0-9]+" autoinstrumentation/dotnet/version.txt)
               latest_version=$(gh release view \
-                                   --repo open-telemetry/opentelemetry-dotnet-instrumentation \
-                                   --json tagName \
-                                   --jq .tagName \
-                                 | sed 's/^v//')
+                                  --repo open-telemetry/opentelemetry-dotnet-instrumentation \
+                                  --json tagName \
+                                  --jq .tagName \
+                                | sed 's/^v//')
               ;;
             nodejs)
               current_version=$(grep -Po "[0-9]+.[0-9]+.[0-9]+" autoinstrumentation/nodejs/package.json)
               latest_version=$(gh release view \
-                                   --repo open-telemetry/opentelemetry-js \
-                                   --json tagName \
-                                   --jq .tagName \
-                                 | sed 's/^v//')
+                                  --repo open-telemetry/opentelemetry-js \
+                                  --json tagName \
+                                  --jq .tagName \
+                                | sed 's/^v//')
               ;;
             python)
               current_version=$(head -n 1 autoinstrumentation/python/requirements.txt | cut -d '=' -f3)
               latest_version=$(gh release view \
-                                   --repo open-telemetry/opentelemetry-python \
-                                   --json tagName \
-                                   --jq .tagName \
-                                 | sed 's/^v//')
+                                  --repo open-telemetry/opentelemetry-python \
+                                  --json tagName \
+                                  --jq .tagName \
+                                | sed 's/^v//')
               ;;
           esac
 
@@ -65,9 +65,10 @@ jobs:
             already_opened=true
           fi
 
-          echo "current-version=$current_version" >> $GITHUB_OUTPUT
-          echo "latest-version=$latest_version" >> $GITHUB_OUTPUT
-          echo "already-opened=$already_opened" >> $GITHUB_OUTPUT
+          # Ensure proper format and remove any unintended characters
+          echo "current-version=${current_version}" >> $GITHUB_OUTPUT
+          echo "latest-version=${latest_version}" >> $GITHUB_OUTPUT
+          echo "already-opened=${already_opened}" >> $GITHUB_OUTPUT
 
       - name: Update version
         if: |
