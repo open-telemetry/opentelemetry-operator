@@ -112,7 +112,12 @@ jobs:
 
           git checkout -b $branch
           git commit -a -m "$message"
-          git push --set-upstream origin $branch
-          gh pr create --title "$message" \
-                       --body "$body" \
-                       --base main
+          # Only push and create PR when not triggered by a pull_request event
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            git push --set-upstream origin $branch
+            gh pr create --title "$message" \
+            --body "$body" \
+            --base main
+          else
+            git show HEAD
+          fi
