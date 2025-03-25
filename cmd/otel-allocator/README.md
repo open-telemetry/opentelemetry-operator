@@ -98,7 +98,7 @@ The easiest way to do this is to grab a copy of the individual [`PodMonitor`](ht
 
 # Usage
 
-The `spec.targetAllocator:` controls the TargetAllocator general properties. Full API spec can be found here: [api.md#opentelemetrycollectorspectargetallocator](../../docs/api.md#opentelemetrycollectorspectargetallocator)
+The `spec.targetAllocator:` controls the TargetAllocator general properties. Full API spec can be found here: [api/opentelemetrycollectors.md#opentelemetrycollectorspectargetallocator](../../docs/api/opentelemetrycollectors.md#opentelemetrycollectorspectargetallocator)
 
 A basic example that deploys.
 ```yaml
