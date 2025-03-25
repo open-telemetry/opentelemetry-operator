@@ -39,7 +39,7 @@ jobs:
                                 | sed 's/^v//')
               ;;
             nodejs)
-              current_version=$(grep -Po "[0-9]+.[0-9]+.[0-9]+" autoinstrumentation/nodejs/package.json)
+              current_version=$(grep -Po '"@opentelemetry/auto-instrumentations-node": "\K[0-9]+\.[0-9]+\.[0-9]+"' autoinstrumentation/nodejs/package.json | tr -d '"')
               latest_version=$(gh release view \
                                   --repo open-telemetry/opentelemetry-js \
                                   --json tagName \
@@ -47,7 +47,7 @@ jobs:
                                 | sed 's/^v//')
               ;;
             python)
-              current_version=$(head -n 1 autoinstrumentation/python/requirements.txt | cut -d '=' -f3)
+              current_version=$(grep -Po "^opentelemetry-distro==\K[0-9]+\.[0-9]+\.[0-9]+" autoinstrumentation/python/requirements.txt)
               latest_version=$(gh release view \
                                   --repo open-telemetry/opentelemetry-python \
                                   --json tagName \
