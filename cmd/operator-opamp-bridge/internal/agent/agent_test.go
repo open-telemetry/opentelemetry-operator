@@ -148,6 +148,11 @@ type mockProxy struct {
 	updatesChan chan struct{}
 }
 
+// GetAgentsByHostname implements proxy.Server.
+func (m *mockProxy) GetAgentsByHostname() map[string]uuid.UUID {
+	panic("unimplemented")
+}
+
 func (m *mockProxy) sendUpdate() {
 	m.updatesChan <- struct{}{}
 }

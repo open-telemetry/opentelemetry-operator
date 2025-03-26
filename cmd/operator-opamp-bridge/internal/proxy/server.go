@@ -6,6 +6,7 @@ package proxy
 import (
 	"context"
 	"errors"
+	"maps"
 	"net/http"
 	"sync"
 
@@ -16,11 +17,13 @@ import (
 	"github.com/open-telemetry/opamp-go/server"
 	"github.com/open-telemetry/opamp-go/server/types"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/logger"
 )
 
 type Server interface {
+	GetAgentsByHostname() map[string]uuid.UUID
 	GetConfigurations() map[uuid.UUID]*protobufs.EffectiveConfig
 	GetHealth() map[uuid.UUID]*protobufs.ComponentHealth
 	HasUpdates() <-chan struct{}
@@ -42,18 +45,22 @@ type OpAMPProxy struct {
 	// internal state
 	mux        sync.RWMutex
 	agentsById map[uuid.UUID]*Agent
+	// agentsByHostName allows a lookup for an agent instance ID based on its hostname.
+	// Canonically, host.name is set to the kubernetes pod name.
+	agentsByHostName map[string]uuid.UUID
 	// connections map is required because that's the only way we know to remove an agent.
 	connections map[types.Connection]map[uuid.UUID]bool
 }
 
 func NewOpAMPProxy(l logr.Logger, endpoint string) *OpAMPProxy {
 	return &OpAMPProxy{
-		logger:      l,
-		OpAMPServer: server.New(logger.NewLogger(l)),
-		endpoint:    endpoint,
-		agentsById:  map[uuid.UUID]*Agent{},
-		connections: map[types.Connection]map[uuid.UUID]bool{},
-		updatesChan: make(chan struct{}, 1),
+		logger:           l,
+		OpAMPServer:      server.New(logger.NewLogger(l)),
+		endpoint:         endpoint,
+		agentsById:       map[uuid.UUID]*Agent{},
+		agentsByHostName: map[string]uuid.UUID{},
+		connections:      map[types.Connection]map[uuid.UUID]bool{},
+		updatesChan:      make(chan struct{}, 1),
 	}
 }
 
@@ -127,6 +134,17 @@ func (s *OpAMPProxy) onMessage(ctx context.Context, conn types.Connection, msg *
 			s.connections[conn] = map[uuid.UUID]bool{}
 		}
 		s.connections[conn][instanceId] = true
+		hostName := ""
+		if msg.AgentDescription != nil {
+			for _, kv := range msg.AgentDescription.GetNonIdentifyingAttributes() {
+				if kv.Key == string(semconv.HostNameKey) {
+					hostName = kv.Value.GetStringValue()
+				}
+			}
+		}
+		if len(hostName) > 0 {
+			s.agentsByHostName[hostName] = instanceId
+		}
 		agentUpdated = true
 	}
 	agentUpdated = s.agentsById[instanceId].UpdateStatus(msg, response) || agentUpdated
@@ -157,6 +175,15 @@ func (s *OpAMPProxy) GetHealth() map[uuid.UUID]*protobufs.ComponentHealth {
 	for i, agent := range s.agentsById {
 		toReturn[i] = agent.GetHealth()
 	}
+	return toReturn
+}
+
+// GetAgentsByHostname implements Server.
+func (s *OpAMPProxy) GetAgentsByHostname() map[string]uuid.UUID {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+	toReturn := make(map[string]uuid.UUID, len(s.agentsByHostName))
+	maps.Copy(toReturn, s.agentsByHostName)
 	return toReturn
 }
 

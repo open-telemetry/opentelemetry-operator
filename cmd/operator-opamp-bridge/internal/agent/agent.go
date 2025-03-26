@@ -113,7 +113,10 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 	if err != nil {
 		return nil, err
 	}
+	proxyHealth := agent.proxy.GetHealth()
+	agentsByHostName := agent.proxy.GetAgentsByHostname()
 	healthMap := map[string]*protobufs.ComponentHealth{}
+	proxiesUsed := make(map[uuid.UUID]struct{}, len(agentsByHostName))
 	for _, col := range cols {
 		key := newKubeResourceKey(col.GetNamespace(), col.GetName())
 		podMap, err := agent.generateCollectorHealth(agent.getCollectorSelector(col), col.GetNamespace())
@@ -122,8 +125,12 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 		}
 
 		isPoolHealthy := true
-		for _, pod := range podMap {
+		for podName, pod := range podMap {
 			isPoolHealthy = isPoolHealthy && pod.Healthy
+			if uid, ok := agentsByHostName[podName]; ok {
+				podMap[podName].ComponentHealthMap[uid.String()] = proxyHealth[uid]
+				proxiesUsed[uid] = struct{}{}
+			}
 		}
 		podStartTime, err := timeToUnixNanoUnsigned(col.ObjectMeta.GetCreationTimestamp().Time)
 		if err != nil {
@@ -141,8 +148,10 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 			Healthy:            isPoolHealthy,
 		}
 	}
-	// TODO: Figure out how to tie this to the agent health from the proxy.
-	for instance, health := range agent.proxy.GetHealth() {
+	for instance, health := range proxyHealth {
+		if _, ok := proxiesUsed[instance]; ok {
+			continue
+		}
 		healthMap[instance.String()] = health
 	}
 	return healthMap, nil
@@ -200,6 +209,7 @@ func (agent *Agent) generateCollectorHealth(selectorLabels map[string]string, na
 			StatusTimeUnixNano: statusTime,
 			Status:             string(item.Status.Phase),
 			Healthy:            healthy,
+			ComponentHealthMap: map[string]*protobufs.ComponentHealth{},
 		}
 	}
 	return healthMap, nil
