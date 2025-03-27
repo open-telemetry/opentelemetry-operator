@@ -191,7 +191,7 @@ Upstream documentation here: [PrometheusReceiver](https://github.com/open-teleme
 
 ### Pod/Service Monitor Selectors
 
-As of `v1beta1` of the OpenTelemetryOperator, a serviceMonitorSelector and podMonitorSelector must be included, even if you don’t intend to use it, like this:
+As of `v1beta1` of the OpenTelemetryOperator, a `serviceMonitorSelector` and `podMonitorSelector` must be included, even if you don’t intend to use it, like this:
 
 ```yaml
 prometheusCR:
@@ -200,7 +200,7 @@ prometheusCR:
   serviceMonitorSelector: {}
 ```
 
-This will make the TargetAllocator scrap all the Service and Pod Monitors inside the cluster. If you need something more specific, you can also filter by labels:
+This will make the TargetAllocator scrap all the Service and Pod Monitors inside of the cluster. If you need something more specific, you can also add a label filter:
 
 ```yaml
 prometheusCR:
