@@ -1,0 +1,31 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: breaking
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: auto-instrumentation
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Update recommended resource attributes to match the [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/k8s-attributes.md)
+
+# One or more tracking issues related to the change
+issues: [ 3797 ]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  This change updates the recommended resource attributes to match the [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/k8s-attributes.md).
+  The following attributes have been updated:
+  - `service.version` now uses the docker image digest in addition to the tag
+  - the well-known label `app.kubernetes.io/part-of` for `service.namespace` has been removed
+  - the well-known label `app.kubernetes.io/instance` has been added (translates to `service.name`)
+  - `service.namespace` now also uses the Kubernetes namespace name (if `resource.opentelemetry.io/service.namespace` is not set)
+
+  **You can do the following to avoid breaking changes**:
+  - `service.version`: Set the version explicitly using `resource.opentelemetry.io/service.version` 
+    (not recommended, the version has only been made more specific)
+  - `service.namespace`: Set the namespace explicitly using `resource.opentelemetry.io/service.namespace` - 
+    or just rely on the Kubernetes namespace name, which is now the default
+  - `service.name`: If you have enabled `useLabelsForResourceAttributes`:
+    Set the name explicitly using `resource.opentelemetry.io/service.name` if `app.kubernetes.io/instance` is used for another purpose 
+

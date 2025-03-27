@@ -729,6 +729,9 @@ EOF
 
 ## Configure resource attributes
 
+The OpenTelemetry Operator can automatically set resource attributes as defined in the 
+[OpenTelemetry Semantic Conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/k8s-attributes.md).
+
 ### Configure resource attributes with annotations
 
 This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. 
@@ -752,12 +755,12 @@ spec:
 
 ### Configure resource attributes with labels
 
-You can also use common labels to set resource attributes.
+You can also use common labels to set resource attributes (first entry wins).
 
 The following labels are supported:
+- `app.kubernetes.io/instance` becomes `service.name`
 - `app.kubernetes.io/name` becomes `service.name`
 - `app.kubernetes.io/version` becomes `service.version`
-- `app.kubernetes.io/part-of` becomes `service.namespace`
 
 ```yaml
 apiVersion: v1
@@ -830,9 +833,16 @@ Choose the first value found:
 #### How `service.instance.id` is calculated
 
 Choose the first value found:
-                                   
+
 - `pod.annotation[resource.opentelemetry.io/service.instance.id]`
 - `concat([k8s.namespace.name, k8s.pod.name, k8s.container.name], '.')`
+
+#### How `service.namespace` is calculated
+
+Choose the first value found:
+
+- `pod.annotation[resource.opentelemetry.io/service.namespace]`
+- `k8s.namespace.name`
 
 ## Contributing and Developing
 

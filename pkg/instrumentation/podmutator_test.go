@@ -270,7 +270,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.namespace.name=javaagent,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=javaagent.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app",
+									Value: "k8s.container.name=app,k8s.namespace.name=javaagent,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=javaagent.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=javaagent",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -485,7 +485,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app1,k8s.namespace.name=javaagent-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=javaagent-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app1",
+									Value: "k8s.container.name=app1,k8s.namespace.name=javaagent-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=javaagent-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app1,service.namespace=javaagent-multiple-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -576,7 +576,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app2,k8s.namespace.name=javaagent-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=javaagent-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app2",
+									Value: "k8s.container.name=app2,k8s.namespace.name=javaagent-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=javaagent-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app2,service.namespace=javaagent-multiple-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -850,7 +850,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.namespace.name=nodejs,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=nodejs.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app",
+									Value: "k8s.container.name=app,k8s.namespace.name=nodejs,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=nodejs.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=nodejs",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -1039,7 +1039,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app1,k8s.namespace.name=nodejs-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=nodejs-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app1",
+									Value: "k8s.container.name=app1,k8s.namespace.name=nodejs-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=nodejs-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app1,service.namespace=nodejs-multiple-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -1122,7 +1122,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app2,k8s.namespace.name=nodejs-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=nodejs-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app2",
+									Value: "k8s.container.name=app2,k8s.namespace.name=nodejs-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=nodejs-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app2,service.namespace=nodejs-multiple-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -1408,7 +1408,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.namespace.name=python,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=python.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app",
+									Value: "k8s.container.name=app,k8s.namespace.name=python,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=python.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=python",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -1617,7 +1617,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app1,k8s.namespace.name=python-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=python-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app1",
+									Value: "k8s.container.name=app1,k8s.namespace.name=python-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=python-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app1,service.namespace=python-multiple-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -1712,7 +1712,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app2,k8s.namespace.name=python-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=python-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app2",
+									Value: "k8s.container.name=app2,k8s.namespace.name=python-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=python-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app2,service.namespace=python-multiple-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -2004,7 +2004,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.namespace.name=dotnet,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=dotnet.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app",
+									Value: "k8s.container.name=app,k8s.namespace.name=dotnet,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=dotnet.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=dotnet",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -2200,7 +2200,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.namespace.name=dotnet-by-namespace-annotation,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=dotnet-by-namespace-annotation.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app",
+									Value: "k8s.container.name=app,k8s.namespace.name=dotnet-by-namespace-annotation,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=dotnet-by-namespace-annotation.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=dotnet-by-namespace-annotation",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -2405,7 +2405,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app1,k8s.namespace.name=dotnet-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=dotnet-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app1",
+									Value: "k8s.container.name=app1,k8s.namespace.name=dotnet-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=dotnet-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app1,service.namespace=dotnet-multiple-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -2508,7 +2508,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app2,k8s.namespace.name=dotnet-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=dotnet-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app2",
+									Value: "k8s.container.name=app2,k8s.namespace.name=dotnet-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=dotnet-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app2,service.namespace=dotnet-multiple-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -2759,7 +2759,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.namespace.name=go,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=go.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app",
+									Value: "k8s.container.name=app,k8s.namespace.name=go,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=go.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=go",
 								},
 							},
 						},
@@ -3019,7 +3019,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.namespace.name=apache-httpd,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=apache-httpd.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app",
+									Value: "k8s.container.name=app,k8s.namespace.name=apache-httpd,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=apache-httpd.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=apache-httpd",
 								},
 							},
 						},
@@ -3272,7 +3272,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=nginx,k8s.namespace.name=req-namespace,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=req-namespace.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).nginx",
+									Value: "k8s.container.name=nginx,k8s.namespace.name=req-namespace,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=req-namespace.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).nginx,service.namespace=req-namespace",
 								},
 							},
 						},
@@ -3750,7 +3750,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=dotnet1,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).dotnet1",
+									Value: "k8s.container.name=dotnet1,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).dotnet1,service.namespace=multi-instrumentation-multi-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -3837,7 +3837,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=dotnet2,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).dotnet2",
+									Value: "k8s.container.name=dotnet2,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).dotnet2,service.namespace=multi-instrumentation-multi-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -3900,7 +3900,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=java1,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).java1",
+									Value: "k8s.container.name=java1,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).java1,service.namespace=multi-instrumentation-multi-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -3963,7 +3963,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=java2,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).java2",
+									Value: "k8s.container.name=java2,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).java2,service.namespace=multi-instrumentation-multi-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -4026,7 +4026,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=nodejs1,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).nodejs1",
+									Value: "k8s.container.name=nodejs1,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).nodejs1,service.namespace=multi-instrumentation-multi-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -4089,7 +4089,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=nodejs2,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).nodejs2",
+									Value: "k8s.container.name=nodejs2,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).nodejs2,service.namespace=multi-instrumentation-multi-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -4168,7 +4168,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=python1,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).python1",
+									Value: "k8s.container.name=python1,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).python1,service.namespace=multi-instrumentation-multi-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -4247,7 +4247,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=python2,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).python2",
+									Value: "k8s.container.name=python2,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).python2,service.namespace=multi-instrumentation-multi-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -4742,7 +4742,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=dotnet1,k8s.namespace.name=multi-instrumentation-single-container-no-cont,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-single-container-no-cont.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).dotnet1",
+									Value: "k8s.container.name=dotnet1,k8s.namespace.name=multi-instrumentation-single-container-no-cont,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-single-container-no-cont.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).dotnet1,service.namespace=multi-instrumentation-single-container-no-cont",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
