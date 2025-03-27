@@ -200,7 +200,7 @@ prometheusCR:
   serviceMonitorSelector: {}
 ```
 
-This will make the TargetAllocator scrap all the Service and Pod Monitors inside of the cluster. If you need something more specific, you can also add a label filter:
+This will make the TargetAllocator scrape all the Service and Pod Monitors inside of the cluster. If you need something more specific, you can also add a label filter:
 
 ```yaml
 prometheusCR:
