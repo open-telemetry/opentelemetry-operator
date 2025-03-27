@@ -14,7 +14,7 @@ import (
 // SelfSignedIssuer returns a self-signed issuer for the given instance.
 func SelfSignedIssuer(params Params) *cmv1.Issuer {
 	name := naming.SelfSignedIssuer(params.TargetAllocator.Name)
-	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator)
 
 	return &cmv1.Issuer{
 		ObjectMeta: metav1.ObjectMeta{
@@ -33,7 +33,7 @@ func SelfSignedIssuer(params Params) *cmv1.Issuer {
 // CAIssuer returns a CA issuer for the given instance.
 func CAIssuer(params Params) *cmv1.Issuer {
 	name := naming.CAIssuer(params.TargetAllocator.Name)
-	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator)
 
 	return &cmv1.Issuer{
 		ObjectMeta: metav1.ObjectMeta{

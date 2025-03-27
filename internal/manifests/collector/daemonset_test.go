@@ -159,8 +159,47 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 
 	// verify
 	assert.Equal(t, "my-instance-collector", ds.Name)
-	assert.Len(t, ds.Spec.Template.Annotations, 5)
 	assert.Equal(t, expectedAnnotations, ds.Spec.Template.Annotations)
+}
+
+func TestDaemonsetPodLabels(t *testing.T) {
+	// prepare
+	testPodLabelValues := map[string]string{"label-key": "label-value"}
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PodLabels: testPodLabelValues,
+			},
+		},
+	}
+	cfg := config.New()
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     logger,
+	}
+
+	// test
+	ds, err := DaemonSet(params)
+	require.NoError(t, err)
+
+	expectedLabels := map[string]string{
+		"label-key":                    "label-value",
+		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/instance":   "my-instance",
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/name":       "my-instance-collector",
+		"app.kubernetes.io/part-of":    "opentelemetry",
+		"app.kubernetes.io/version":    "latest",
+	}
+
+	// verify
+	assert.Equal(t, "my-instance-collector", ds.Name)
+	assert.Equal(t, expectedLabels, ds.Spec.Template.Labels)
 }
 
 func TestDaemonstPodSecurityContext(t *testing.T) {
