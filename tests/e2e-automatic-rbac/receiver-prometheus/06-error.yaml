@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: simplest-test-prometheus-prometheus-role-binding
+  namespace: chainsaw-prometheus-workload
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: simplest-test-prometheus-prometheus-role
+  namespace: chainsaw-prometheus-workload
