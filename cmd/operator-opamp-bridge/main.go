@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/signal"
 
@@ -11,6 +12,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/agent"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/leader"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/operator"
 )
 
@@ -35,11 +37,17 @@ func main() {
 		l.Error(kubeErr, "Couldn't create kubernetes client")
 		os.Exit(1)
 	}
+	leaderClient, leaderErr := leader.NewElector(l.WithName("elector"), cfg.ClusterConfig, cfg.GetNamespace())
+	if leaderErr != nil {
+		l.Error(leaderErr, "Couldn't create leader elector")
+		os.Exit(1)
+	}
 	operatorClient := operator.NewClient(cfg.Name, l.WithName("operator-client"), kubeClient, cfg.GetComponentsAllowed())
 
 	opampClient := cfg.CreateClient()
 	opampAgent := agent.NewAgent(l.WithName("agent"), operatorClient, cfg, opampClient)
 
+	go leaderClient.Start(context.Background())
 	if err := opampAgent.Start(); err != nil {
 		l.Error(err, "Cannot start OpAMP client")
 		os.Exit(1)
@@ -48,5 +56,6 @@ func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 	<-interrupt
+	leaderClient.Stop()
 	opampAgent.Shutdown()
 }

@@ -44,3 +44,4 @@ config/rbac/certmanager-permissions/
 build
 node_modules
 package-lock.json
+.tool-versions
