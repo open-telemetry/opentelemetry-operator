@@ -10880,6 +10880,14 @@ WARNING: The per-node strategy currently ignores targets without a Node, like co
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>collectorNotReadyGracePeriod</b></td>
+        <td>string</td>
+        <td>
+          CollectorNotReadyGracePeriod defines the grace period of a TargetAllocator stops considering a collector is target assignable.
+The default is 0s.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
@@ -30712,6 +30720,14 @@ WARNING: The per-node strategy currently ignores targets without a Node, like co
           <br/>
             <i>Enum</i>: least-weighted, consistent-hashing, per-node<br/>
             <i>Default</i>: consistent-hashing<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>collectorNotReadyGracePeriod</b></td>
+        <td>string</td>
+        <td>
+          CollectorNotReadyGracePeriod defines the grace period of a TargetAllocator stops considering a collector is target assignable.
+The default is 0s.<br/>
         </td>
         <td>false</td>
       </tr><tr>
