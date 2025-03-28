@@ -189,6 +189,29 @@ The CRs can be filtered by labels as documented here: [api/opentelemetrycollecto
 
 Upstream documentation here: [PrometheusReceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver#opentelemetry-operator)
 
+### Pod/Service Monitor Selectors
+
+As of `v1beta1` of the OpenTelemetryOperator, a `serviceMonitorSelector` and `podMonitorSelector` must be included, even if you don’t intend to use it, like this:
+
+```yaml
+prometheusCR:
+  enabled: true
+  podMonitorSelector: {}
+  serviceMonitorSelector: {}
+```
+
+This will make the TargetAllocator scrape all the Service and Pod Monitors inside of the cluster. If you need something more specific, you can also add a label filter:
+
+```yaml
+prometheusCR:
+  enabled: true
+  serviceMonitorSelector:
+    matchLabels:
+      app: my-app
+```
+
+By setting the value of `spec.targetAllocator.prometheusCR.serviceMonitorSelector.matchLabels` to `app: my-app`, it means that your ServiceMonitor resource must in turn have that same value in `metadata.labels`.
+
 ### RBAC
 
 Before the TargetAllocator can start scraping, you need to set up Kubernetes RBAC (role-based access controls) resources. This means that you need to have a `ServiceAccount` and corresponding ClusterRoles/Roles so that the TargetAllocator has access to all the necessary resources to pull metrics from.
@@ -496,3 +519,7 @@ Shards the received targets based on the discovered Collector instances
 
 ### Collector
 Client to watch for deployed Collector instances which will then provided to the Allocator. 
+
+# Troubleshooting
+
+For troubleshooting tips, please visit: [https://opentelemetry.io/docs/platforms/kubernetes/operator/troubleshooting/target-allocator/](https://opentelemetry.io/docs/platforms/kubernetes/operator/troubleshooting/target-allocator/)
