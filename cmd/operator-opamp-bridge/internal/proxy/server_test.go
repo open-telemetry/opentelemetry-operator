@@ -88,6 +88,21 @@ func TestOpAMPProxy_GetHealth(t *testing.T) {
 	assert.Contains(t, healths, instanceId, "healths should contain the instance ID")
 }
 
+func TestOpAMPProxy_GetAgentsByHostname(t *testing.T) {
+	logger := logr.Discard()
+	endpoint := "localhost:4321"
+	proxyServer := NewOpAMPProxy(logger, endpoint)
+
+	instanceId := uuid.New()
+	proxyServer.agentsByHostName["example"] = instanceId
+
+	byHostname := proxyServer.GetAgentsByHostname()
+	require.NotNil(t, byHostname, "byHostname should not be nil")
+	id, ok := byHostname["example"]
+	assert.True(t, ok, "map should contain example key")
+	assert.Equal(t, instanceId, id)
+}
+
 func TestGetInstanceId(t *testing.T) {
 	tests := []struct {
 		name        string

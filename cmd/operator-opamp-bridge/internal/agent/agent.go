@@ -123,11 +123,12 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 		if err != nil {
 			return nil, err
 		}
-
 		isPoolHealthy := true
 		for podName, pod := range podMap {
+			// we need to remove the prefix here as we don't have the namespace from the hostname.
+			podNameWithoutNamespace := strings.TrimPrefix(podName, col.GetNamespace()+"/")
 			isPoolHealthy = isPoolHealthy && pod.Healthy
-			if uid, ok := agentsByHostName[podName]; ok {
+			if uid, ok := agentsByHostName[podNameWithoutNamespace]; ok {
 				podMap[podName].ComponentHealthMap[uid.String()] = proxyHealth[uid]
 				proxiesUsed[uid] = struct{}{}
 			}
