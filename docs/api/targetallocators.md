@@ -138,6 +138,14 @@ WARNING: The per-node strategy currently ignores targets without a Node, like co
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>collectorNotReadyGracePeriod</b></td>
+        <td>string</td>
+        <td>
+          CollectorNotReadyGracePeriod defines the grace period of a TargetAllocator stops considering a collector is target assignable.
+The default is 0s.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#targetallocatorspecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>

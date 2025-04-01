@@ -3033,6 +3033,8 @@ spec:
                     - consistent-hashing
                     - per-node
                     type: string
+                  collectorNotReadyGracePeriod:
+                    type: string
                   enabled:
                     type: boolean
                   env:
@@ -7690,6 +7692,8 @@ spec:
                     - least-weighted
                     - consistent-hashing
                     - per-node
+                    type: string
+                  collectorNotReadyGracePeriod:
                     type: string
                   enabled:
                     type: boolean
