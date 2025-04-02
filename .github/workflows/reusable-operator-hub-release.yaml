@@ -16,8 +16,13 @@ on:
       OPENTELEMETRYBOT_GITHUB_TOKEN:
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   create-operator-pull-request:
+    permissions:
+      contents: write  # for Git to git push
     runs-on: ubuntu-latest
     steps:
       - name: Set version as env variable
@@ -40,13 +45,13 @@ jobs:
               --force
 
       - name: Checkout operatorhub repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           repository: opentelemetrybot/${{ inputs.repo }}
           token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
 
       - name: Checkout opentelemetry-operator to tmp/ directory
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           repository: open-telemetry/opentelemetry-operator
           token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
