@@ -59,7 +59,7 @@ to use it with a collector running as a DaemonSet.
 [consistent_hashing]: https://blog.research.google/2017/04/consistent-hashing-with-bounded-loads.html
 ## Discovery of Prometheus Custom Resources
 
-The Target Allocator also provides for the discovery of [Prometheus Operator CRs](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md), namely the [ServiceMonitor and PodMonitor](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#target-allocator). The ServiceMonitors and the PodMonitors purpose is to inform the Target Allocator (or PrometheusOperator) to add a new job to their scrape configuration. The Target Allocator then provides the jobs to the OTel Collector [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md). 
+The Target Allocator also provides for the discovery of [Prometheus Operator CRs](https://prometheus-operator.dev/docs/getting-started/design/), namely the [ServiceMonitor and PodMonitor](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#target-allocator). The ServiceMonitors and the PodMonitors purpose is to inform the Target Allocator (or PrometheusOperator) to add a new job to their scrape configuration. The Target Allocator then provides the jobs to the OTel Collector [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md). 
 
 ```mermaid
 flowchart RL
@@ -94,11 +94,11 @@ Even though Prometheus is not required to be installed in your Kubernetes cluste
 
 The easiest way to do this is to grab a copy of the individual [`PodMonitor`](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/charts/crds/crds/crd-podmonitors.yaml) YAML and [`ServiceMonitor`](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/charts/crds/crds/crd-servicemonitors.yaml) YAML custom resource definitions (CRDs) from the [Kube Prometheus Operator’s Helm chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/charts).
 
-> ✨ For more information on configuring the `PodMonitor` and `ServiceMonitor`, check out the [PodMonitor API](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.PodMonitor) and the [ServiceMonitor API](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.ServiceMonitor).
+> ✨ For more information on configuring the `PodMonitor` and `ServiceMonitor`, check out the [PodMonitor API](https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.PodMonitor) and the [ServiceMonitor API](https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ServiceMonitor).
 
 # Usage
 
-The `spec.targetAllocator:` controls the TargetAllocator general properties. Full API spec can be found here: [api.md#opentelemetrycollectorspectargetallocator](../../docs/api.md#opentelemetrycollectorspectargetallocator)
+The `spec.targetAllocator:` controls the TargetAllocator general properties. Full API spec can be found here: [api/opentelemetrycollectors.md#opentelemetrycollectorspectargetallocator](../../docs/api/opentelemetrycollectors.md#opentelemetrycollectorspectargetallocator)
 
 A basic example that deploys.
 ```yaml
@@ -185,15 +185,40 @@ TargetAllocator discovery of PrometheusCRs can be turned on by setting
 `.spec.targetAllocator.prometheusCR.enabled` to `true`, which it presents as scrape configs
 and jobs on the `/scrape_configs` and `/jobs` endpoints respectively.
 
-The CRs can be filtered by labels as documented here: [api.md#opentelemetrycollectorspectargetallocatorprometheuscr](../../docs/api.md#opentelemetrycollectorspectargetallocatorprometheuscr)
+The CRs can be filtered by labels as documented here: [api/opentelemetrycollectors.md#opentelemetrycollectorspectargetallocatorprometheuscr](../../docs/api/opentelemetrycollectors.md#opentelemetrycollectorspectargetallocatorprometheuscr)
 
 Upstream documentation here: [PrometheusReceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver#opentelemetry-operator)
 
+### Pod/Service Monitor Selectors
+
+As of `v1beta1` of the OpenTelemetryOperator, a `serviceMonitorSelector` and `podMonitorSelector` must be included, even if you don’t intend to use it, like this:
+
+```yaml
+prometheusCR:
+  enabled: true
+  podMonitorSelector: {}
+  serviceMonitorSelector: {}
+```
+
+This will make the TargetAllocator scrape all the Service and Pod Monitors inside of the cluster. If you need something more specific, you can also add a label filter:
+
+```yaml
+prometheusCR:
+  enabled: true
+  serviceMonitorSelector:
+    matchLabels:
+      app: my-app
+```
+
+By setting the value of `spec.targetAllocator.prometheusCR.serviceMonitorSelector.matchLabels` to `app: my-app`, it means that your ServiceMonitor resource must in turn have that same value in `metadata.labels`.
+
 ### RBAC
 
-Before the TargetAllocator can start scraping, you need to set up Kubernetes RBAC (role-based access controls) resources. This means that you need to have a `ServiceAccount` and corresponding cluster roles so that the TargetAllocator has access to all of the necessary resources to pull metrics from.
+Before the TargetAllocator can start scraping, you need to set up Kubernetes RBAC (role-based access controls) resources. This means that you need to have a `ServiceAccount` and corresponding ClusterRoles/Roles so that the TargetAllocator has access to all the necessary resources to pull metrics from.
 
-You can create your own `ServiceAccount`, and reference it in `spec.targetAllocator.serviceAccount` in your `OpenTelemetryCollector` CR. You’ll then need to configure the `ClusterRole` and `ClusterRoleBinding` for this `ServiceAccount`, as per below.
+You can create your own `ServiceAccount`, and reference it in `spec.targetAllocator.serviceAccount` in your `OpenTelemetryCollector` CR. You’ll then need to configure the `ClusterRole` and `ClusterRoleBinding` or `Role` and `RoleBinding` for this `ServiceAccount`, as per below.
+
+#### Cluster-scoped RBAC
 
 ```yaml
   targetAllocator:
@@ -204,11 +229,11 @@ You can create your own `ServiceAccount`, and reference it in `spec.targetAlloca
 ```
 
 > 🚨 **Note**: The Collector part of this same CR *also* has a serviceAccount key which only affects the collector and *not*
-the TargetAllocator.
+> the TargetAllocator.
 
-If you omit the `ServiceAccount` name, the TargetAllocator creates a `ServiceAccount` for you. The `ServiceAccount`’s default name is a concatenation of the Collector name and the `-targetallocator` suffix. By default, this `ServiceAccount` has no defined policy, so you’ll need to create your own `ClusterRole` and `ClusterRoleBinding` for it, as per below.
+If you omit the `ServiceAccount` name, the TargetAllocator creates a `ServiceAccount` for you. The `ServiceAccount`’s default name is a concatenation of the Collector name and the `-targetallocator` suffix. By default, this `ServiceAccount` has no defined policy, so you’ll need to create your own `ClusterRole` and `ClusterRoleBinding` or `Role` and `RoleBinding` for it, as per below.
 
-The role below will provide the minimum access required for the Target Allocator to query all the targets it needs based on any Prometheus configurations:
+The ClusterRole below will provide the minimum access required for the Target Allocator to query all the targets it needs based on any Prometheus configurations:
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -242,7 +267,7 @@ rules:
   verbs: ["get"]
 ```
 
-If you enable the the `prometheusCR` (set `spec.targetAllocator.prometheusCR.enabled` to `true`) in the `OpenTelemetryCollector` CR, you will also need to define the following roles. These give the TargetAllocator access to the `PodMonitor` and `ServiceMonitor` CRs. It also gives namespace access to the `PodMonitor` and `ServiceMonitor`.
+If you enable the `prometheusCR` (set `spec.targetAllocator.prometheusCR.enabled` to `true`) in the `OpenTelemetryCollector` CR, you will also need to define the following ClusterRoles. These give the TargetAllocator access to the `PodMonitor` and `ServiceMonitor` CRs. It also gives namespace access to the `PodMonitor` and `ServiceMonitor`.
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -263,8 +288,82 @@ rules:
   verbs: ["get", "list", "watch"]
 ```
 
-> ✨ The above roles can be combined into a single role.
+> ✨ The above ClusterRoles can be combined into a single ClusterRole.
+ 
+#### Namespace-scoped RBAC
 
+If you want to have the TargetAllocator watch a specific namespace, you can set the allowNamespaces field 
+in the TargetAllocator's prometheusCR configuration. This is useful if you want to restrict the TargetAllocator to only watch Prometheus
+CRs in a specific namespace, and not have cluster-wide access.
+
+```yaml
+  targetAllocator:
+    enabled: true
+    serviceAccount: opentelemetry-targetallocator-sa
+    prometheusCR:
+      enabled: true
+      allowNamespaces: 
+      - foo
+```
+
+In this case, you will need to create a Role and RoleBinding instead of a ClusterRole and ClusterRoleBinding. The Role
+and RoleBinding should be created in the namespace specified by the allowNamespaces field.
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: opentelemetry-targetallocator-role
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - services
+      - endpoints
+      - configmaps
+      - secrets
+      - namespaces
+    verbs:
+      - get
+      - watch
+      - list
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets
+    verbs:
+      - get
+      - watch
+      - list
+  - apiGroups:
+      - discovery.k8s.io
+    resources:
+      - endpointslices
+    verbs:
+      - get
+      - watch
+      - list
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - watch
+      - list
+  - apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - servicemonitors
+      - podmonitors
+      - scrapeconfigs
+      - probes
+    verbs:
+      - get
+      - watch
+      - list
+```
 
 ### Service / Pod monitor endpoint credentials
 
@@ -421,3 +520,6 @@ Shards the received targets based on the discovered Collector instances
 ### Collector
 Client to watch for deployed Collector instances which will then provided to the Allocator. 
 
+# Troubleshooting
+
+For troubleshooting tips, please visit: [https://opentelemetry.io/docs/platforms/kubernetes/operator/troubleshooting/target-allocator/](https://opentelemetry.io/docs/platforms/kubernetes/operator/troubleshooting/target-allocator/)

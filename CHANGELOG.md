@@ -2,6 +2,46 @@
 
 <!-- next version -->
 
+## 0.121.0
+
+### 🛑 Breaking changes 🛑
+
+- `all`: Move feature gate `operator.observability.prometheus` to stable (#3669)
+- `operator`: Remove the deprecated `--label` command-line option (#3236)
+  Use `--labels-filter` instead.
+
+### 💡 Enhancements 💡
+
+- `opamp`: Allows specifying non-identifying attributes for the Bridge, also follows OpAMP guidelines for reporting instance.service.id (#2301)
+- `target allocator`: Allow setting the collector namespace via the config file (#3782)
+- `auto-instrumentation`: Add support to set image pull policy for agent images (#3575)
+- `auto-instrumentation`: Enhanced Java auto-instrumentation with improved volume mount paths and configuration options (#3843)
+  - Added support for unique volume mount paths for Java instrumentation
+  - Improved configuration options for Java auto-instrumentation
+  - Enhanced stability and reliability of Java instrumentation process 
+- `target allocator`: Add support for setting the allowNamespaces and denyNamespaces in the target allocator.
+ (#3086)
+  allowNamespaces can be set to an empty list to watch all namespaces (default) or to list of namespaces to watch.
+  denyNamespaces can be set to an empty list to deny watching any namespaces (default) or to a list of namespaces to deny watching.
+  
+- `target allocator`: Do not assign targets to a collector pod that is not Ready for longer than a non-zero grace period (#3781)
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Add nil check for Extensions in GetLivenessProbe and GetReadinessProbe functions (#3747)
+
+### Components
+
+* [OpenTelemetry Collector - v0.121.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.121.0)
+* [OpenTelemetry Contrib - v0.121.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.121.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.53.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.53.0)
+* [Python - v0.51b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.51b0)
+* [Go - v0.19.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.19.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.120.0
 No changes.
 

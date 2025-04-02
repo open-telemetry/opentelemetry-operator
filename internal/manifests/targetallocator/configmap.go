@@ -94,6 +94,14 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			prometheusCRConfig["scrape_interval"] = taSpec.PrometheusCR.ScrapeInterval.Duration
 		}
 
+		if taSpec.PrometheusCR.AllowNamespaces != nil {
+			prometheusCRConfig["allow_namespaces"] = taSpec.PrometheusCR.AllowNamespaces
+		}
+
+		if taSpec.PrometheusCR.DenyNamespaces != nil {
+			prometheusCRConfig["deny_namespaces"] = taSpec.PrometheusCR.DenyNamespaces
+		}
+
 		prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
 
 		prometheusCRConfig["pod_monitor_selector"] = taSpec.PrometheusCR.PodMonitorSelector

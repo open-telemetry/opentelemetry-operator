@@ -4,8 +4,6 @@
 package target
 
 import (
-	"strconv"
-
 	"github.com/prometheus/prometheus/model/labels"
 )
 
@@ -23,15 +21,20 @@ var (
 	relevantLabelNames           = append(nodeLabels, endpointSliceTargetKindLabel, endpointSliceTargetNameLabel)
 )
 
+type ItemHash uint64
+
 type Item struct {
 	JobName       string
 	TargetURL     string
 	Labels        labels.Labels
 	CollectorName string
-	hash          string
+	hash          ItemHash
 }
 
-func (t *Item) Hash() string {
+func (t *Item) Hash() ItemHash {
+	if t.hash == 0 {
+		t.hash = ItemHash(t.Labels.Hash())
+	}
 	return t.hash
 }
 
@@ -53,11 +56,9 @@ func (t *Item) GetNodeName() string {
 // NewItem Creates a new target item.
 // INVARIANTS:
 // * Item fields must not be modified after creation.
-// * Item should only be made via its constructor, never directly.
 func NewItem(jobName string, targetURL string, labels labels.Labels, collectorName string) *Item {
 	return &Item{
 		JobName:       jobName,
-		hash:          jobName + targetURL + strconv.FormatUint(labels.Hash(), 10),
 		TargetURL:     targetURL,
 		Labels:        labels,
 		CollectorName: collectorName,

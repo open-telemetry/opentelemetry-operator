@@ -68,6 +68,12 @@ type InstrumentationSpec struct {
 	// Nginx defines configuration for Nginx auto-instrumentation.
 	// +optional
 	Nginx Nginx `json:"nginx,omitempty"`
+
+	// ImagePullPolicy
+	// One of Always, Never, IfNotPresent.
+	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.

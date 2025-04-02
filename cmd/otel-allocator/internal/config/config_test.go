@@ -16,6 +16,7 @@ import (
 	"github.com/prometheus/prometheus/discovery/file"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -51,8 +52,12 @@ func TestLoad(t *testing.T) {
 				},
 				FilterStrategy: DefaultFilterStrategy,
 				PrometheusCR: PrometheusCRConfig{
-					Enabled:        true,
-					ScrapeInterval: model.Duration(time.Second * 60),
+					Enabled:                         true,
+					ScrapeInterval:                  model.Duration(time.Second * 60),
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 				},
 				HTTPS: HTTPSServerConfig{
 					Enabled:         true,
@@ -142,7 +147,11 @@ func TestLoad(t *testing.T) {
 							"release": "test",
 						},
 					},
-					ScrapeInterval: DefaultCRScrapeInterval,
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
@@ -213,7 +222,11 @@ func TestLoad(t *testing.T) {
 							"release": "test",
 						},
 					},
-					ScrapeInterval: DefaultCRScrapeInterval,
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
@@ -308,7 +321,11 @@ func TestLoad(t *testing.T) {
 							},
 						},
 					},
-					ScrapeInterval: DefaultCRScrapeInterval,
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
@@ -403,7 +420,11 @@ func TestLoad(t *testing.T) {
 							},
 						},
 					},
-					ScrapeInterval: DefaultCRScrapeInterval,
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
@@ -518,6 +539,18 @@ func TestValidateConfig(t *testing.T) {
 			},
 			expectedErr: nil,
 		},
+		{
+			name: "both allowNamespaces and denyNamespaces set",
+			fileConfig: Config{
+				PrometheusCR: PrometheusCRConfig{
+					Enabled:         true,
+					AllowNamespaces: []string{"ns1"},
+					DenyNamespaces:  []string{"ns2"},
+				},
+				CollectorNamespace: "default",
+			},
+			expectedErr: fmt.Errorf("only one of allowNamespaces or denyNamespaces can be set"),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -525,6 +558,49 @@ func TestValidateConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			err := ValidateConfig(&tc.fileConfig)
 			assert.Equal(t, tc.expectedErr, err)
+		})
+	}
+}
+
+func TestGetAllowDenyLists(t *testing.T) {
+	testCases := []struct {
+		name              string
+		promCRConfig      PrometheusCRConfig
+		expectedAllowList map[string]struct{}
+		expectedDenyList  map[string]struct{}
+	}{
+		{
+			name:              "no allow or deny namespaces",
+			promCRConfig:      PrometheusCRConfig{Enabled: true},
+			expectedAllowList: map[string]struct{}{v1.NamespaceAll: {}},
+			expectedDenyList:  map[string]struct{}{},
+		},
+		{
+			name:              "allow namespaces",
+			promCRConfig:      PrometheusCRConfig{Enabled: true, AllowNamespaces: []string{"ns1"}},
+			expectedAllowList: map[string]struct{}{"ns1": {}},
+			expectedDenyList:  map[string]struct{}{},
+		},
+		{
+			name:              "deny namespaces",
+			promCRConfig:      PrometheusCRConfig{Enabled: true, DenyNamespaces: []string{"ns2"}},
+			expectedAllowList: map[string]struct{}{v1.NamespaceAll: {}},
+			expectedDenyList:  map[string]struct{}{"ns2": {}},
+		},
+		{
+			name:              "both allow and deny namespaces",
+			promCRConfig:      PrometheusCRConfig{Enabled: true, AllowNamespaces: []string{"ns1"}, DenyNamespaces: []string{"ns2"}},
+			expectedAllowList: map[string]struct{}{"ns1": {}},
+			expectedDenyList:  map[string]struct{}{"ns2": {}},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			allowList, denyList := tc.promCRConfig.GetAllowDenyLists()
+			assert.Equal(t, tc.expectedAllowList, allowList)
+			assert.Equal(t, tc.expectedDenyList, denyList)
 		})
 	}
 }

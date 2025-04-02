@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -128,7 +129,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	for index := range targets {
 		shouldDelete := rand.Intn(toDelete) //nolint:gosec
 		if counter < shouldDelete {
-			delete(targets, index)
+			targets = slices.Delete(targets, index, index)
 		}
 		counter++
 	}
@@ -144,9 +145,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
 	}
 	// adding targets at 'random'
-	for _, item := range MakeNNewTargets(13, 3, 100) {
-		targets[item.Hash()] = item
-	}
+	targets = append(targets, MakeNNewTargets(13, 3, 100)...)
 	s.SetTargets(targets)
 
 	targetItemLen = len(s.TargetItems())

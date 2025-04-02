@@ -17,7 +17,7 @@ spec:
         fieldRef:
           fieldPath: status.podIP
     - name: JAVA_TOOL_OPTIONS
-      value: ' -javaagent:/otel-auto-instrumentation-java/javaagent.jar'
+      value: ' -javaagent:/otel-auto-instrumentation-java-myapp/javaagent.jar'
     - name: OTEL_SERVICE_NAME
       value: my-java
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -49,7 +49,7 @@ spec:
     volumeMounts:
       - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
         readOnly: true
-      - mountPath: /otel-auto-instrumentation-java
+      - mountPath: /otel-auto-instrumentation-java-myapp
         name: opentelemetry-auto-instrumentation-java
       - mountPath: /otel-auto-instrumentation-secret-client-certs
         name: otel-auto-secret-client-certs

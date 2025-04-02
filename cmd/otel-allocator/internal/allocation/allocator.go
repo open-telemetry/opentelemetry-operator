@@ -5,6 +5,8 @@ package allocation
 
 import (
 	"errors"
+	"runtime"
+	"slices"
 	"sync"
 
 	"github.com/go-logr/logr"
@@ -27,8 +29,8 @@ func newAllocator(log logr.Logger, strategy Strategy, opts ...Option) Allocator 
 	chAllocator := &allocator{
 		strategy:                      strategy,
 		collectors:                    make(map[string]*Collector),
-		targetItems:                   make(map[string]*target.Item),
-		targetItemsPerJobPerCollector: make(map[string]map[string]map[string]bool),
+		targetItems:                   make(map[target.ItemHash]*target.Item),
+		targetItemsPerJobPerCollector: make(map[string]map[string]map[target.ItemHash]bool),
 		log:                           log,
 	}
 	for _, opt := range opts {
@@ -47,10 +49,10 @@ type allocator struct {
 
 	// targetItems is a map from a target item's hash to the target items allocated state
 	// targetItem hash -> target item pointer
-	targetItems map[string]*target.Item
+	targetItems map[target.ItemHash]*target.Item
 
 	// collectorKey -> job -> target item hash -> true
-	targetItemsPerJobPerCollector map[string]map[string]map[string]bool
+	targetItemsPerJobPerCollector map[string]map[string]map[target.ItemHash]bool
 
 	// m protects collectors, targetItems and targetItemsPerJobPerCollector for concurrent use.
 	m sync.RWMutex
@@ -73,7 +75,7 @@ func (a *allocator) SetFallbackStrategy(strategy Strategy) {
 // SetTargets accepts a list of targets that will be used to make
 // load balancing decisions. This method should be called when there are
 // new targets discovered or existing targets are shutdown.
-func (a *allocator) SetTargets(targets map[string]*target.Item) {
+func (a *allocator) SetTargets(targets []*target.Item) {
 	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetTargets", a.strategy.GetName()))
 	defer timer.ObserveDuration()
 
@@ -81,12 +83,14 @@ func (a *allocator) SetTargets(targets map[string]*target.Item) {
 		targets = a.filter.Apply(targets)
 	}
 	RecordTargetsKept(targets)
+	concurrency := runtime.NumCPU() * 2 // determined experimentally
+	targetMap := buildTargetMap(targets, concurrency)
 
 	a.m.Lock()
 	defer a.m.Unlock()
 
 	// Check for target changes
-	targetsDiff := diff.Maps(a.targetItems, targets)
+	targetsDiff := diff.Maps(a.targetItems, targetMap)
 	// If there are any additions or removals
 	if len(targetsDiff.Additions()) != 0 || len(targetsDiff.Removals()) != 0 {
 		a.handleTargets(targetsDiff)
@@ -133,10 +137,10 @@ func (a *allocator) GetTargetsForCollectorAndJob(collector string, job string) [
 }
 
 // TargetItems returns a shallow copy of the targetItems map.
-func (a *allocator) TargetItems() map[string]*target.Item {
+func (a *allocator) TargetItems() map[target.ItemHash]*target.Item {
 	a.m.RLock()
 	defer a.m.RUnlock()
-	targetItemsCopy := make(map[string]*target.Item)
+	targetItemsCopy := make(map[target.ItemHash]*target.Item)
 	for k, v := range a.targetItems {
 		targetItemsCopy[k] = v
 	}
@@ -157,7 +161,7 @@ func (a *allocator) Collectors() map[string]*Collector {
 // handleTargets receives the new and removed targets and reconciles the current state.
 // Any removals are removed from the allocator's targetItems and unassigned from the corresponding collector.
 // Any net-new additions are assigned to the collector on the same node as the target.
-func (a *allocator) handleTargets(diff diff.Changes[*target.Item]) {
+func (a *allocator) handleTargets(diff diff.Changes[target.ItemHash, *target.Item]) {
 	// Check for removals
 	for k, item := range a.targetItems {
 		// if the current item is in the removals list
@@ -261,10 +265,10 @@ func (a *allocator) removeCollector(collector *Collector) {
 // has to acquire a lock.
 func (a *allocator) addCollectorTargetItemMapping(tg *target.Item) {
 	if a.targetItemsPerJobPerCollector[tg.CollectorName] == nil {
-		a.targetItemsPerJobPerCollector[tg.CollectorName] = make(map[string]map[string]bool)
+		a.targetItemsPerJobPerCollector[tg.CollectorName] = make(map[string]map[target.ItemHash]bool)
 	}
 	if a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName] == nil {
-		a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName] = make(map[string]bool)
+		a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName] = make(map[target.ItemHash]bool)
 	}
 	a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName][tg.Hash()] = true
 }
@@ -272,7 +276,7 @@ func (a *allocator) addCollectorTargetItemMapping(tg *target.Item) {
 // handleCollectors receives the new and removed collectors and reconciles the current state.
 // Any removals are removed from the allocator's collectors. New collectors are added to the allocator's collector map.
 // Finally, update all targets' collector assignments.
-func (a *allocator) handleCollectors(diff diff.Changes[*Collector]) {
+func (a *allocator) handleCollectors(diff diff.Changes[string, *Collector]) {
 	// Clear removed collectors
 	for _, k := range diff.Removals() {
 		a.removeCollector(k)
@@ -301,4 +305,31 @@ func (a *allocator) handleCollectors(diff diff.Changes[*Collector]) {
 		a.log.Info("Could not assign targets for some jobs", "targets", unassignedTargets, "error", err)
 		TargetsUnassigned.Set(float64(unassignedTargets))
 	}
+}
+
+const minChunkSize = 100 // for small target counts, it's not worth it to spawn a lot of goroutines
+
+// buildTargetMap builds a map of targets, using their hashes as keys. It does this concurrently, and the concurrency
+// is configurable via the concurrency parameter. We do this in parallel because target hashing is surprisingly
+// expensive.
+func buildTargetMap(targets []*target.Item, concurrency int) map[target.ItemHash]*target.Item {
+	// technically there may be duplicates, so this may overallocate, but in the majority of cases it will be exact
+	result := make(map[target.ItemHash]*target.Item, len(targets))
+	chunkSize := len(targets) / concurrency
+	chunkSize = max(chunkSize, minChunkSize)
+	wg := sync.WaitGroup{}
+	for chunk := range slices.Chunk(targets, chunkSize) {
+		wg.Add(1)
+		go func(ch []*target.Item) {
+			defer wg.Done()
+			for _, item := range ch {
+				item.Hash()
+			}
+		}(chunk)
+	}
+	wg.Wait()
+	for _, item := range targets {
+		result[item.Hash()] = item
+	}
+	return result
 }

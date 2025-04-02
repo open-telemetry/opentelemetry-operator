@@ -167,9 +167,9 @@ func colIndex(index, numCols int) int {
 	return index % numCols
 }
 
-func makeNNewTargets(rCfgs []relabelConfigObj, n int, numCollectors int, startingIndex int) (map[string]*target.Item, int, map[string]*target.Item, map[string][]*relabel.Config) {
-	toReturn := map[string]*target.Item{}
-	expectedMap := make(map[string]*target.Item)
+func makeNNewTargets(rCfgs []relabelConfigObj, n int, numCollectors int, startingIndex int) ([]*target.Item, int, []*target.Item, map[string][]*relabel.Config) {
+	toReturn := []*target.Item{}
+	expected := []*target.Item{}
 	numItemsRemaining := n
 	relabelConfig := make(map[string][]*relabel.Config)
 	for i := startingIndex; i < n+startingIndex; i++ {
@@ -189,15 +189,14 @@ func makeNNewTargets(rCfgs []relabelConfigObj, n int, numCollectors int, startin
 
 		relabelConfig[jobName] = rCfgs[index].cfg
 
-		targetKey := newTarget.Hash()
 		if relabelConfigs[index].isDrop {
 			numItemsRemaining--
 		} else {
-			expectedMap[targetKey] = newTarget
+			expected = append(expected, newTarget)
 		}
-		toReturn[targetKey] = newTarget
+		toReturn = append(toReturn, newTarget)
 	}
-	return toReturn, numItemsRemaining, expectedMap, relabelConfig
+	return toReturn, numItemsRemaining, expected, relabelConfig
 }
 
 func TestApply(t *testing.T) {

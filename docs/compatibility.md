@@ -4,7 +4,7 @@ This document details compatibility guarantees the OpenTelemetry Operator offers
 
 ## Go
 
-When productised as a go libary or custom distribution the OpenTelemetry Operator project attempts to follow the supported go versions as [defined by the Go team](https://go.dev/doc/devel/release#policy).
+When productised as a go library or custom distribution the OpenTelemetry Operator project attempts to follow the supported go versions as [defined by the Go team](https://go.dev/doc/devel/release#policy).
 
 Similar to the [opentelemetry collector](https://github.com/open-telemetry/opentelemetry-collector?tab=readme-ov-file#compatibility), removing support for an unsupported Go version is not considered a breaking change.
 
@@ -46,6 +46,7 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes     | Cert-Manager | Prometheus-Operator |
 |------------------------|----------------|--------------|---------------------|
+| v0.121.0               | v1.23 to v1.32 | v1           | v0.78.2             |
 | v0.120.0               | v1.23 to v1.32 | v1           | v0.76.2             |
 | v0.119.0               | v1.23 to v1.32 | v1           | v0.76.2             |
 | v0.118.0               | v1.23 to v1.32 | v1           | v0.76.2             |
@@ -70,7 +71,6 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 | v0.99.0                | v1.23 to v1.29 | v1           | v0.71.2             |
 | v0.98.0                | v1.23 to v1.29 | v1           | v0.71.2             |
 | v0.97.0                | v1.23 to v1.29 | v1           | v0.71.2             |
-| v0.96.0                | v1.23 to v1.29 | v1           | v0.71.2             |
 
 [kubernetes_releases]: https://kubernetes.io/releases/
 [openshift_support]: https://access.redhat.com/support/policy/updates/openshift

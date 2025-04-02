@@ -17,7 +17,7 @@ const (
 	nodejsInstrMountPath    = "/otel-auto-instrumentation-nodejs"
 )
 
-func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (corev1.Pod, error) {
+func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
 	volume := instrVolume(nodeJSSpec.VolumeClaimTemplate, nodejsVolumeName, nodeJSSpec.VolumeSizeLimit)
 
 	// caller checks if there is at least one container.
@@ -58,6 +58,7 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int) (cor
 				Name:      volume.Name,
 				MountPath: nodejsInstrMountPath,
 			}},
+			ImagePullPolicy: instSpec.ImagePullPolicy,
 		})
 	}
 	return pod, nil
