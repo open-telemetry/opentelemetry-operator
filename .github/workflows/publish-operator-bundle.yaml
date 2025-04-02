@@ -3,17 +3,19 @@ name: "Publish operator bundle"
 on:
   push:
     paths:
-      - '.github/workflows/publish-operator-bundle.yaml'
-      - 'bundle/**'
+      - ".github/workflows/publish-operator-bundle.yaml"
+      - "bundle/**"
     branches:
       - main
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 permissions:
   contents: read
   packages: write
+  attestations: write
+  id-token: write
 
 jobs:
   publish:
@@ -34,7 +36,6 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{raw}}
             type=ref,event=branch
-
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0

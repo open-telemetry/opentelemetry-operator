@@ -3,12 +3,12 @@ name: "Publish target allocator"
 on:
   push:
     paths:
-      - 'cmd/otel-allocator/**'
-      - '.github/workflows/publish-target-allocator.yaml'
+      - "cmd/otel-allocator/**"
+      - ".github/workflows/publish-target-allocator.yaml"
     branches:
       - main
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 env:
@@ -16,6 +16,9 @@ env:
 
 permissions:
   contents: read
+  packages: write
+  attestations: write
+  id-token: write
 
 jobs:
   publish:
@@ -26,7 +29,7 @@ jobs:
 
       - uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
         with:
-          go-version: '~1.24.2'
+          go-version: "~1.24.2"
 
       # TODO: We're currently not using this. Should we?
       - name: Read version
