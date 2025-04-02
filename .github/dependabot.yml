@@ -53,3 +53,108 @@ updates:
     directory: /cmd/operator-opamp-bridge
     schedule:
       interval: weekly
+
+  - package-ecosystem: docker
+    directory: /autoinstrumentation/apache-httpd
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /autoinstrumentation/dotnet
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /autoinstrumentation/java
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /autoinstrumentation/nodejs
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /autoinstrumentation/nodejs
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /autoinstrumentation/php
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /autoinstrumentation/python
+    schedule:
+      interval: daily
+
+  - package-ecosystem: pip
+    directory: /autoinstrumentation/python
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /cmd/gather
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /tests/e2e-openshift
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /tests/test-e2e-apps/apache-httpd
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /tests/test-e2e-apps/bridge-server
+    schedule:
+      interval: daily
+
+  - package-ecosystem: gomod
+    directory: /tests/test-e2e-apps/bridge-server
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /tests/test-e2e-apps/dotnet
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /tests/test-e2e-apps/golang
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /tests/test-e2e-apps/java
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /tests/test-e2e-apps/metrics-basic-auth
+    schedule:
+      interval: daily
+
+  - package-ecosystem: pip
+    directory: /tests/test-e2e-apps/metrics-basic-auth
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /tests/test-e2e-apps/nodejs
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /tests/test-e2e-apps/python
+    schedule:
+      interval: daily
+
+  - package-ecosystem: pip
+    directory: /tests/test-e2e-apps/python
+    schedule:
+      interval: daily
