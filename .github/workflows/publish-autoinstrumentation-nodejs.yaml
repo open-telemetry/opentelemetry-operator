@@ -3,23 +3,25 @@ name: "Publish NodeJS Auto-Instrumentation"
 on:
   push:
     paths:
-      - 'autoinstrumentation/nodejs/**'
-      - '.github/workflows/publish-autoinstrumentation-nodejs.yaml'
+      - "autoinstrumentation/nodejs/**"
+      - ".github/workflows/publish-autoinstrumentation-nodejs.yaml"
     branches:
       - main
   pull_request:
     paths:
-      - 'autoinstrumentation/nodejs/**'
-      - '.github/workflows/publish-autoinstrumentation-nodejs.yaml'
+      - "autoinstrumentation/nodejs/**"
+      - ".github/workflows/publish-autoinstrumentation-nodejs.yaml"
   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
-
 permissions:
   contents: read
+  packages: write
+  attestations: write
+  id-token: write
 
 jobs:
   publish:

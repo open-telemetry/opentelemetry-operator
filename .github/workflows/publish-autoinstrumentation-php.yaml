@@ -3,14 +3,14 @@ name: "Publish PHP Auto-Instrumentation"
 on:
   push:
     paths:
-      - 'autoinstrumentation/php/**'
-      - '.github/workflows/publish-autoinstrumentation-php.yaml'
+      - "autoinstrumentation/php/**"
+      - ".github/workflows/publish-autoinstrumentation-php.yaml"
     branches:
       - main
   pull_request:
     paths:
-      - 'autoinstrumentation/php/**'
-      - '.github/workflows/publish-autoinstrumentation-php.yaml'
+      - "autoinstrumentation/php/**"
+      - ".github/workflows/publish-autoinstrumentation-php.yaml"
   workflow_dispatch:
 
 concurrency:
@@ -19,6 +19,9 @@ concurrency:
 
 permissions:
   contents: read
+  packages: write
+  attestations: write
+  id-token: write
 
 jobs:
   publish:

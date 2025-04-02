@@ -3,14 +3,14 @@ name: "Publish DotNet Auto-Instrumentation"
 on:
   push:
     paths:
-      - 'autoinstrumentation/dotnet/**'
-      - '.github/workflows/publish-autoinstrumentation-dotnet.yaml'
+      - "autoinstrumentation/dotnet/**"
+      - ".github/workflows/publish-autoinstrumentation-dotnet.yaml"
     branches:
       - main
   pull_request:
     paths:
-      - 'autoinstrumentation/dotnet/**'
-      - '.github/workflows/publish-autoinstrumentation-dotnet.yaml'
+      - "autoinstrumentation/dotnet/**"
+      - ".github/workflows/publish-autoinstrumentation-dotnet.yaml"
   workflow_dispatch:
 
 concurrency:
@@ -19,6 +19,9 @@ concurrency:
 
 permissions:
   contents: read
+  packages: write
+  attestations: write
+  id-token: write
 
 jobs:
   publish:

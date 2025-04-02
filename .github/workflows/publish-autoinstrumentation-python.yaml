@@ -3,23 +3,25 @@ name: "Publish Python Auto-Instrumentation"
 on:
   push:
     paths:
-      - 'autoinstrumentation/python/**'
-      - '.github/workflows/publish-autoinstrumentation-python.yaml'
+      - "autoinstrumentation/python/**"
+      - ".github/workflows/publish-autoinstrumentation-python.yaml"
     branches:
       - main
   pull_request:
     paths:
-      - 'autoinstrumentation/python/**'
-      - '.github/workflows/publish-autoinstrumentation-python.yaml'
+      - "autoinstrumentation/python/**"
+      - ".github/workflows/publish-autoinstrumentation-python.yaml"
   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
-
 permissions:
   contents: read
+  packages: write
+  attestations: write
+  id-token: write
 
 jobs:
   publish:
