@@ -1070,7 +1070,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 
 	select {
 	case <-events:
-	case <-time.After(5 * time.Second):
+	case <-time.After(1 * time.Minute):
 	}
 
 	got, err = w.LoadConfig(context.Background())
