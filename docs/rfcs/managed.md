@@ -17,7 +17,7 @@ with the explicit goal of taking over the whole cluster, and making decisions
 on how to best instrument all resources in the cluster on behalf of the administrator based on best practices,
 OpenTelemetry standards and semantic conventions.
 
-The operator project offers custom resources (CR) to allow Kubernetes operators to define OpenTelemetry components
+The operator project offers custom resources (CR) to allow Kubernetes users/administrators to define OpenTelemetry components
 in their Kubernetes environments. Customers however do not want to manage components themselves, especially if they need
 to think about component versioning and upgrade patterns, and would rather have an out-of-the-box experience that 
 requires little insight and gets them to a working state effortlessly.
