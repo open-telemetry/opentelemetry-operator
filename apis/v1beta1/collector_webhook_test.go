@@ -162,6 +162,16 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317"},"http":{"endpoint":"0.0.0.0:4318"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"0.0.0.0","port":8888}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
 						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
+
+						r := cfg.Service.Telemetry.Object["metrics"].(map[string]interface{})["readers"]
+						readers := r.([]interface{})
+						firstReader := readers[0].(map[string]interface{})
+						exporter := firstReader["pull"].(map[string]interface{})["exporter"].(map[string]interface{})
+						// Convert port to float64 to avoid type mismatch because how go-yaml unmarshals
+						exporter["prometheus"].(map[string]interface{})["port"] = float64(8888)
+
+						// This is a workaround to avoid the type mismatch
+						exporter["AdditionalProperties"] = nil
 						return cfg
 					}(),
 				},
@@ -194,6 +204,16 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317","headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"localhost","port":9999}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
 						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
+
+						r := cfg.Service.Telemetry.Object["metrics"].(map[string]interface{})["readers"]
+						readers := r.([]interface{})
+						firstReader := readers[0].(map[string]interface{})
+						exporter := firstReader["pull"].(map[string]interface{})["exporter"].(map[string]interface{})
+						// Convert port to float64 to avoid type mismatch because how go-yaml unmarshals
+						exporter["prometheus"].(map[string]interface{})["port"] = float64(9999)
+
+						// This is a workaround to avoid the type mismatch
+						exporter["AdditionalProperties"] = nil
 						return cfg
 					}(),
 				},
@@ -585,7 +605,18 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			Telemetry: &v1beta1.AnyConfig{
 				Object: map[string]interface{}{
 					"metrics": map[string]interface{}{
-						"address": "${env:POD_ID}:8888",
+						"readers": []map[string]interface{}{
+							{
+								"pull": map[string]interface{}{
+									"exporter": map[string]interface{}{
+										"prometheus": map[string]interface{}{
+											"host": "${env:POD_ID}",
+											"port": int32(8888),
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},

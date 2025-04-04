@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"regexp"
 	"sort"
@@ -16,6 +17,7 @@ import (
 
 	"dario.cat/mergo"
 	"github.com/go-logr/logr"
+	otelConfig "go.opentelemetry.io/contrib/otelconf/v0.3.0"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -441,123 +443,136 @@ const (
 // because the port is used to generate Service objects and mappings.
 func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
 	telemetry := s.GetTelemetry()
-	if telemetry == nil || telemetry.Metrics.Address == "" {
+	if telemetry == nil {
 		return defaultServiceHost, defaultServicePort, nil
 	}
 
-	// The regex below matches on strings that end with a colon followed by the environment variable expansion syntax.
-	// So it should match on strings ending with: ":${env:POD_IP}" or ":${POD_IP}".
-	const portEnvVarRegex = `:\${[env:]?.*}$`
-	isPortEnvVar := regexp.MustCompile(portEnvVarRegex).MatchString(telemetry.Metrics.Address)
-	if isPortEnvVar {
-		errMsg := fmt.Sprintf("couldn't determine metrics port from configuration: %s",
-			telemetry.Metrics.Address)
-		logger.Info(errMsg)
-		return "", 0, errors.New(errMsg)
+	if telemetry.Metrics.Address != "" && len(telemetry.Metrics.Readers) == 0 {
+		// The regex below matches on strings that end with a colon followed by the environment variable expansion syntax.
+		// So it should match on strings ending with: ":${env:POD_IP}" or ":${POD_IP}".
+		const portEnvVarRegex = `:\${[env:]?.*}$`
+		isPortEnvVar := regexp.MustCompile(portEnvVarRegex).MatchString(telemetry.Metrics.Address)
+		if isPortEnvVar {
+			errMsg := fmt.Sprintf("couldn't determine metrics port from configuration: %s",
+				telemetry.Metrics.Address)
+			logger.Info(errMsg)
+			return "", 0, errors.New(errMsg)
+		}
+
+		// The regex below matches on strings that end with a colon followed by 1 or more numbers (representing the port).
+		const explicitPortRegex = `:(\d+$)`
+		explicitPortMatches := regexp.MustCompile(explicitPortRegex).FindStringSubmatch(telemetry.Metrics.Address)
+		if len(explicitPortMatches) <= 1 {
+			return telemetry.Metrics.Address, defaultServicePort, nil
+		}
+
+		port, err := strconv.ParseInt(explicitPortMatches[1], 10, 32)
+		if err != nil {
+			errMsg := fmt.Sprintf("couldn't determine metrics port from configuration: %s",
+				telemetry.Metrics.Address)
+			logger.Info(errMsg, "error", err)
+			return "", 0, err
+		}
+
+		host, _, _ := strings.Cut(telemetry.Metrics.Address, explicitPortMatches[0])
+		return host, intToInt32Safe(int(port)), nil
 	}
 
-	// The regex below matches on strings that end with a colon followed by 1 or more numbers (representing the port).
-	const explicitPortRegex = `:(\d+$)`
-	explicitPortMatches := regexp.MustCompile(explicitPortRegex).FindStringSubmatch(telemetry.Metrics.Address)
-	if len(explicitPortMatches) <= 1 {
-		return telemetry.Metrics.Address, defaultServicePort, nil
+	port := defaultServicePort
+	host := defaultServiceHost
+	for _, reader := range telemetry.Metrics.Readers {
+		if reader.Pull != nil {
+			if reader.Pull.Exporter.Prometheus != nil {
+				if reader.Pull.Exporter.Prometheus.Host != nil && *reader.Pull.Exporter.Prometheus.Host != "" {
+					host = *reader.Pull.Exporter.Prometheus.Host
+				}
+				if reader.Pull.Exporter.Prometheus.Port != nil && *reader.Pull.Exporter.Prometheus.Port != 0 {
+					port = intToInt32Safe(int(*reader.Pull.Exporter.Prometheus.Port))
+				}
+				break
+			}
+		}
 	}
-
-	port, err := strconv.ParseInt(explicitPortMatches[1], 10, 32)
-	if err != nil {
-		errMsg := fmt.Sprintf("couldn't determine metrics port from configuration: %s",
-			telemetry.Metrics.Address)
-		logger.Info(errMsg, "error", err)
-		return "", 0, err
-	}
-
-	host, _, _ := strings.Cut(telemetry.Metrics.Address, explicitPortMatches[0])
-	return host, int32(port), nil
+	return host, port, nil
 }
 
 // ApplyDefaults inserts configuration defaults if it has not been set.
 func (s *Service) ApplyDefaults(logger logr.Logger) error {
-	telemetryAddr, telemetryPort, err := s.MetricsEndpoint(logger)
+	tel := s.GetTelemetry()
+
+	if tel == nil {
+		tel = &Telemetry{}
+	}
+	s.configureMetricReaders(logger, tel)
+
+	// This field is deprecated and should not be used anymore.
+	if tel.Metrics.Address != "" {
+		// Setting the "address" field to an empty string explicitly removes the value
+		// during Kubernetes serialization. Directly deleting the field from the map using
+		// delete(metrics, "address") does not work because Kubernetes treats missing fields
+		// differently from explicitly empty ones. By assigning "", we ensure the configuration
+		// is updated correctly when the resource is persisted.
+		tel.Metrics.Address = ""
+	}
+
+	// Convert to AnyConfig
+	data, err := json.Marshal(tel)
 	if err != nil {
 		return err
 	}
-
-	if s.Telemetry == nil {
-		s.Telemetry = &AnyConfig{
-			Object: map[string]any{},
-		}
+	var result map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return err
 	}
 
-	metrics, ok := s.Telemetry.Object["metrics"]
-	if !ok {
-		metrics = map[string]any{}
-		s.Telemetry.Object["metrics"] = metrics
-	}
-	metricsMap, ok := metrics.(map[string]any)
-	if !ok {
-		logger.Info("metrics field is not a map")
-		return nil
-	}
-
-	readers, ok := metricsMap["readers"]
-	if !ok {
-		readers = []any{}
-		metricsMap["readers"] = readers
-	}
-	readersSlice, ok := readers.([]any)
-	if !ok {
-		logger.Info("readers field is not a slice")
-		return nil
-	}
-
-	var found bool
-	for _, reader := range readersSlice {
-		readerMap, ok := reader.(map[string]any)
-		if !ok {
-			logger.Info("reader field is not a map")
-			return nil
-		}
-
-		pull, ok := readerMap["pull"]
-		if !ok {
-			continue
-		}
-		pullMap, ok := pull.(map[string]any)
-		if !ok {
-			logger.Info("pull field is not a map")
-			return nil
-		}
-
-		exporter, ok := pullMap["exporter"]
-		if !ok {
-			continue
-		}
-		exporterMap, ok := exporter.(map[string]any)
-		if !ok {
-			logger.Info("exporter field is not a map")
-			return nil
-		}
-
-		if _, ok := exporterMap["prometheus"]; ok {
-			found = true
-			break
-		}
-	}
-	if !found {
-		readersSlice = append(readersSlice, map[string]any{
-			"pull": map[string]any{
-				"exporter": map[string]any{
-					"prometheus": map[string]any{
-						"host": telemetryAddr,
-						"port": int(telemetryPort),
-					},
-				},
-			},
-		})
-		metricsMap["readers"] = readersSlice
+	s.Telemetry = &AnyConfig{
+		Object: result,
 	}
 
 	return nil
+}
+
+func (s *Service) configureMetricReaders(logger logr.Logger, tel *Telemetry) {
+	port := defaultServicePort
+	host := defaultServiceHost
+	telemetryAddr, telemetryPort, err := s.MetricsEndpoint(logger)
+	if err != nil {
+		logger.Error(err, "couldn't determine metrics endpoint")
+	} else {
+		port = telemetryPort
+		host = telemetryAddr
+	}
+	// Port is an int32, but the MetricReader expects an int.
+	portInt := int(port)
+
+	if tel.Metrics.Readers == nil {
+		tel.Metrics.Readers = []otelConfig.MetricReader{
+			{
+				Pull: &otelConfig.PullMetricReader{
+					Exporter: otelConfig.PullMetricExporter{
+						Prometheus: &otelConfig.Prometheus{
+							Host: &host,
+							Port: &portInt,
+						},
+					},
+				},
+			},
+		}
+		return
+	}
+
+	for _, reader := range tel.Metrics.Readers {
+		if reader.Pull != nil {
+			if reader.Pull.Exporter.Prometheus != nil {
+				if reader.Pull.Exporter.Prometheus.Host == nil {
+					reader.Pull.Exporter.Prometheus.Host = &host
+				}
+				if reader.Pull.Exporter.Prometheus.Port == nil {
+					reader.Pull.Exporter.Prometheus.Port = &portInt
+				}
+			}
+		}
+	}
 }
 
 // MetricsConfig comes from the collector.
@@ -571,6 +586,23 @@ type MetricsConfig struct {
 
 	// Address is the [address]:port that metrics exposition should be bound to.
 	Address string `json:"address,omitempty" yaml:"address,omitempty"`
+
+	otelConfig.MeterProvider `mapstructure:",squash"`
+}
+
+func (in *MetricsConfig) DeepCopyInto(out *MetricsConfig) {
+	*out = *in
+	out.MeterProvider = in.MeterProvider
+}
+
+// DeepCopy creates a new deepcopy of MetricsConfig.
+func (in *MetricsConfig) DeepCopy() *MetricsConfig {
+	if in == nil {
+		return nil
+	}
+	out := new(MetricsConfig)
+	in.DeepCopyInto(out)
+	return out
 }
 
 // Telemetry is an intermediary type that allows for easy access to the collector's telemetry settings.
@@ -630,4 +662,14 @@ func addPrefix(prefix string, arr []string) []string {
 		prefixed = append(prefixed, fmt.Sprintf("%s%s", prefix, v))
 	}
 	return prefixed
+}
+
+func intToInt32Safe(v int) int32 {
+	if v > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if v < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int32(v)
 }

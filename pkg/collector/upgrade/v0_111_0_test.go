@@ -40,9 +40,10 @@ func Test0_111_0Upgrade(t *testing.T) {
 					map[string]any{
 						"pull": map[string]any{
 							"exporter": map[string]any{
+								"AdditionalProperties": nil,
 								"prometheus": map[string]any{
 									"host": "1.2.3.4",
-									"port": 8888,
+									"port": float64(8888),
 								},
 							},
 						},
@@ -74,9 +75,10 @@ func Test0_111_0Upgrade(t *testing.T) {
 								map[string]any{
 									"pull": map[string]any{
 										"exporter": map[string]any{
+											"AdditionalProperties": nil,
 											"prometheus": map[string]any{
 												"host": "0.0.0.0",
-												"port": 8888,
+												"port": float64(8888),
 											},
 										},
 									},
