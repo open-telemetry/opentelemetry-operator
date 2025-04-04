@@ -14,6 +14,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
+const DefaultRecAddress = "0.0.0.0"
+
 var (
 	_ Parser = &GenericParser[*SingleEndpointConfig]{}
 )
@@ -73,11 +75,11 @@ func internalParseSingleEndpoint(logger logr.Logger, name string, failSilently b
 }
 
 func NewSinglePortParserBuilder(name string, port int32) Builder[*SingleEndpointConfig] {
-	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpoint).WithDefaultsApplier(AddressDefaulter).WithDefaultRecAddress("0.0.0.0")
+	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpoint).WithDefaultsApplier(AddressDefaulter).WithDefaultRecAddress(DefaultRecAddress)
 }
 
 func NewSilentSinglePortParserBuilder(name string, port int32) Builder[*SingleEndpointConfig] {
-	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpointSilent).WithDefaultsApplier(AddressDefaulter).WithDefaultRecAddress("0.0.0.0")
+	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpointSilent).WithDefaultsApplier(AddressDefaulter).WithDefaultRecAddress(DefaultRecAddress)
 }
 
 func AddressDefaulter(logger logr.Logger, defaultRecAddr string, port int32, config *SingleEndpointConfig) (map[string]interface{}, error) {
