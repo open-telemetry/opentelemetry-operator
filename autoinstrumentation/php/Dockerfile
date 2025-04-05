@@ -6,7 +6,7 @@
 #       PHP_INI_SCAN_DIR=:/otel-auto-instrumentation-php/php_ini_scan_dir
 #       OTEL_PHP_AUTOLOAD_ENABLED=true
 #  - For auto-instrumentation by container injection, the Linux command cp is
-#    used and must be availabe in the image.
+#    used and must be available in the image.
 
 FROM busybox
 
