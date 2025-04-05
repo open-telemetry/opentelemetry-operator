@@ -1391,9 +1391,10 @@ Defaults defines default values for the instrumentation.
         <td>boolean</td>
         <td>
           UseLabelsForResourceAttributes defines whether to use common labels for resource attributes:
+Note: first entry wins:
+  - `app.kubernetes.io/instance` becomes `service.name`
   - `app.kubernetes.io/name` becomes `service.name`
-  - `app.kubernetes.io/version` becomes `service.version`
-  - `app.kubernetes.io/part-of` becomes `service.namespace`<br/>
+  - `app.kubernetes.io/version` becomes `service.version`<br/>
         </td>
         <td>false</td>
       </tr></tbody>
