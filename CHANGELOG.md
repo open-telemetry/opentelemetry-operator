@@ -399,11 +399,11 @@ This release fixes an important bug that caused the operator to crash when prome
 
 - `collector`: Add native sidecar injection behind a feature gate which is disabled by default. (#2376)
 
-  Native sidecars are supported since Kubernetes version `1.28` and are availabe by default since `1.29`.
+  Native sidecars are supported since Kubernetes version `1.28` and are available by default since `1.29`.
   To use native sidecars on Kubernetes v1.28 make sure the "SidecarContainers" feature gate on kubernetes is enabled.
   If native sidecars are available, the operator can be advised to use them by adding
   the `--feature-gates=operator.sidecarcontainers.native` to the Operator args.
-  In the future this may will become availabe as deployment mode on the Collector CR. See [#3356](https://github.com/open-telemetry/opentelemetry-operator/issues/3356)
+  In the future this may will become available as deployment mode on the Collector CR. See [#3356](https://github.com/open-telemetry/opentelemetry-operator/issues/3356)
 
 - `target allocator, collector`: Enable mTLS between the TA and collector for passing secrets in the scrape_config securely (#1669)
 
