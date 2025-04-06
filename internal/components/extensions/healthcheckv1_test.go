@@ -249,6 +249,19 @@ func TestHealthCheckV1AddressDefaulter(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
+			name: "IPv6 address",
+			args: args{
+				config: map[string]interface{}{
+					"endpoint": "[::1]:8080",
+				},
+			},
+			want: map[string]interface{}{
+				"endpoint": "[::1]:8080",
+				"path":     defaultHealthcheckV1Path,
+			},
+			wantErr: assert.NoError,
+		},
+		{
 			name: "Invalid endpoint type",
 			args: args{
 				config: map[string]interface{}{

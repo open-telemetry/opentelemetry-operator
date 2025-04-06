@@ -5,7 +5,7 @@ package extensions
 
 import (
 	"fmt"
-	"strings"
+	"net"
 
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/mapstructure"
@@ -29,9 +29,9 @@ func healthCheckV1AddressDefaulter(logger logr.Logger, defaultRecAddr string, po
 	if config.Endpoint == "" {
 		config.Endpoint = fmt.Sprintf("%s:%d", defaultRecAddr, port)
 	} else {
-		v := strings.Split(config.Endpoint, ":")
-		if len(v) < 2 || v[0] == "" {
-			config.Endpoint = fmt.Sprintf("%s:%s", defaultRecAddr, v[len(v)-1])
+		h, p, err := net.SplitHostPort(config.Endpoint)
+		if err == nil && h == "" && p != "" {
+			config.Endpoint = fmt.Sprintf("%s:%s", defaultRecAddr, p)
 		}
 	}
 
