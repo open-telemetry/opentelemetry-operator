@@ -1,0 +1,25 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: health-check
+spec:
+  config:
+    extensions:
+      health_check: {}
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors: {}
+
+    exporters:
+      debug: {}
+
+    service:
+      extensions:
+        - health_check
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
