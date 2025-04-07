@@ -34,21 +34,9 @@ func Test0_111_0Upgrade(t *testing.T) {
 	defaultCollectorWithConfig := defaultCollector.DeepCopy()
 
 	defaultCollectorWithConfig.Spec.Config.Service.Telemetry = &v1beta1.AnyConfig{
-		Object: map[string]any{
-			"metrics": map[string]any{
-				"readers": []any{
-					map[string]any{
-						"pull": map[string]any{
-							"exporter": map[string]any{
-								"AdditionalProperties": nil,
-								"prometheus": map[string]any{
-									"host": "1.2.3.4",
-									"port": float64(8888),
-								},
-							},
-						},
-					},
-				},
+		Object: map[string]interface{}{
+			"metrics": map[string]interface{}{
+				"address": "1.2.3.4:8888",
 			},
 		},
 	}
@@ -71,19 +59,7 @@ func Test0_111_0Upgrade(t *testing.T) {
 				col.Spec.Config.Service.Telemetry = &v1beta1.AnyConfig{
 					Object: map[string]interface{}{
 						"metrics": map[string]interface{}{
-							"readers": []any{
-								map[string]any{
-									"pull": map[string]any{
-										"exporter": map[string]any{
-											"AdditionalProperties": nil,
-											"prometheus": map[string]any{
-												"host": "0.0.0.0",
-												"port": float64(8888),
-											},
-										},
-									},
-								},
-							},
+							"address": "0.0.0.0:8888",
 						},
 					},
 				}

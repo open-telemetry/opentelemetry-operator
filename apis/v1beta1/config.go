@@ -6,14 +6,7 @@ package v1beta1
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
-	"math"
-	"reflect"
-	"regexp"
 	"sort"
-	"strconv"
-	"strings"
 
 	"dario.cat/mergo"
 	"github.com/go-logr/logr"
@@ -400,24 +393,24 @@ func (c *Config) Yaml() (string, error) {
 // Returns null objects in the config.
 func (c *Config) nullObjects() []string {
 	var nullKeys []string
-	if nulls := hasNullValue(c.Receivers.Object); len(nulls) > 0 {
+	if nulls := getNullValuedKeys(c.Receivers.Object); len(nulls) > 0 {
 		nullKeys = append(nullKeys, addPrefix("receivers.", nulls)...)
 	}
-	if nulls := hasNullValue(c.Exporters.Object); len(nulls) > 0 {
+	if nulls := getNullValuedKeys(c.Exporters.Object); len(nulls) > 0 {
 		nullKeys = append(nullKeys, addPrefix("exporters.", nulls)...)
 	}
 	if c.Processors != nil {
-		if nulls := hasNullValue(c.Processors.Object); len(nulls) > 0 {
+		if nulls := getNullValuedKeys(c.Processors.Object); len(nulls) > 0 {
 			nullKeys = append(nullKeys, addPrefix("processors.", nulls)...)
 		}
 	}
 	if c.Extensions != nil {
-		if nulls := hasNullValue(c.Extensions.Object); len(nulls) > 0 {
+		if nulls := getNullValuedKeys(c.Extensions.Object); len(nulls) > 0 {
 			nullKeys = append(nullKeys, addPrefix("extensions.", nulls)...)
 		}
 	}
 	if c.Connectors != nil {
-		if nulls := hasNullValue(c.Connectors.Object); len(nulls) > 0 {
+		if nulls := getNullValuedKeys(c.Connectors.Object); len(nulls) > 0 {
 			nullKeys = append(nullKeys, addPrefix("connectors.", nulls)...)
 		}
 	}
@@ -452,52 +445,15 @@ func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
 	}
 
 	if telemetry.Metrics.Address != "" && len(telemetry.Metrics.Readers) == 0 {
-		// The regex below matches on strings that end with a colon followed by the environment variable expansion syntax.
-		// So it should match on strings ending with: ":${env:POD_IP}" or ":${POD_IP}".
-		const portEnvVarRegex = `:\${[env:]?.*}$`
-		isPortEnvVar := regexp.MustCompile(portEnvVarRegex).MatchString(telemetry.Metrics.Address)
-		if isPortEnvVar {
-			errMsg := fmt.Sprintf("couldn't determine metrics port from configuration: %s",
-				telemetry.Metrics.Address)
-			logger.Info(errMsg)
-			return "", 0, errors.New(errMsg)
-		}
-
-		// The regex below matches on strings that end with a colon followed by 1 or more numbers (representing the port).
-		const explicitPortRegex = `:(\d+$)`
-		explicitPortMatches := regexp.MustCompile(explicitPortRegex).FindStringSubmatch(telemetry.Metrics.Address)
-		if len(explicitPortMatches) <= 1 {
-			return telemetry.Metrics.Address, defaultServicePort, nil
-		}
-
-		port, err := strconv.ParseInt(explicitPortMatches[1], 10, 32)
+		host, port, err := parseAddressEndpoint(telemetry.Metrics.Address)
 		if err != nil {
-			errMsg := fmt.Sprintf("couldn't determine metrics port from configuration: %s",
-				telemetry.Metrics.Address)
-			logger.Info(errMsg, "error", err)
 			return "", 0, err
 		}
 
-		host, _, _ := strings.Cut(telemetry.Metrics.Address, explicitPortMatches[0])
-		return host, intToInt32Safe(int(port)), nil
+		return host, port, nil
 	}
 
-	port := defaultServicePort
-	host := defaultServiceHost
-	for _, reader := range telemetry.Metrics.Readers {
-		if reader.Pull != nil {
-			if reader.Pull.Exporter.Prometheus != nil {
-				if reader.Pull.Exporter.Prometheus.Host != nil && *reader.Pull.Exporter.Prometheus.Host != "" {
-					host = *reader.Pull.Exporter.Prometheus.Host
-				}
-				if reader.Pull.Exporter.Prometheus.Port != nil && *reader.Pull.Exporter.Prometheus.Port != 0 {
-					port = intToInt32Safe(int(*reader.Pull.Exporter.Prometheus.Port))
-				}
-				break
-			}
-		}
-	}
-	return host, port, nil
+	return defaultServiceHost, defaultServicePort, nil
 }
 
 // ApplyDefaults inserts configuration defaults if it has not been set.
@@ -507,76 +463,26 @@ func (s *Service) ApplyDefaults(logger logr.Logger) error {
 	if tel == nil {
 		tel = &Telemetry{}
 	}
-	s.configureMetricReaders(logger, tel)
 
-	// This field is deprecated and should not be used anymore.
-	if tel.Metrics.Address != "" {
-		// Setting the "address" field to an empty string explicitly removes the value
-		// during Kubernetes serialization. Directly deleting the field from the map using
-		// delete(metrics, "address") does not work because Kubernetes treats missing fields
-		// differently from explicitly empty ones. By assigning "", we ensure the configuration
-		// is updated correctly when the resource is persisted.
-		tel.Metrics.Address = ""
+	if tel.Metrics.Address != "" || len(tel.Metrics.Readers) != 0 {
+		// The user already set the address or the readers, so we don't need to do anything
+		return nil
 	}
 
-	// Convert to AnyConfig
-	data, err := json.Marshal(tel)
+	host, port, err := s.MetricsEndpoint(logger)
 	if err != nil {
 		return err
 	}
-	var result map[string]interface{}
-	if err := json.Unmarshal(data, &result); err != nil {
-		return err
-	}
 
-	s.Telemetry = &AnyConfig{
-		Object: result,
+	reader := AddPrometheusMetricsEndpoint(host, port)
+	tel.Metrics.Readers = append(tel.Metrics.Readers, reader)
+
+	s.Telemetry, err = tel.ToAnyConfig()
+	if err != nil {
+		return err
 	}
 
 	return nil
-}
-
-func (s *Service) configureMetricReaders(logger logr.Logger, tel *Telemetry) {
-	port := defaultServicePort
-	host := defaultServiceHost
-	telemetryAddr, telemetryPort, err := s.MetricsEndpoint(logger)
-	if err != nil {
-		logger.Error(err, "couldn't determine metrics endpoint")
-	} else {
-		port = telemetryPort
-		host = telemetryAddr
-	}
-	// Port is an int32, but the MetricReader expects an int.
-	portInt := int(port)
-
-	if tel.Metrics.Readers == nil {
-		tel.Metrics.Readers = []otelConfig.MetricReader{
-			{
-				Pull: &otelConfig.PullMetricReader{
-					Exporter: otelConfig.PullMetricExporter{
-						Prometheus: &otelConfig.Prometheus{
-							Host: &host,
-							Port: &portInt,
-						},
-					},
-				},
-			},
-		}
-		return
-	}
-
-	for _, reader := range tel.Metrics.Readers {
-		if reader.Pull != nil {
-			if reader.Pull.Exporter.Prometheus != nil {
-				if reader.Pull.Exporter.Prometheus.Host == nil {
-					reader.Pull.Exporter.Prometheus.Host = &host
-				}
-				if reader.Pull.Exporter.Prometheus.Port == nil {
-					reader.Pull.Exporter.Prometheus.Port = &portInt
-				}
-			}
-		}
-	}
 }
 
 // MetricsConfig comes from the collector.
@@ -620,6 +526,38 @@ type Telemetry struct {
 	Resource map[string]*string `json:"resource,omitempty" yaml:"resource,omitempty"`
 }
 
+// ToAnyConfig converts the Telemetry struct to an AnyConfig struct.
+func (t *Telemetry) ToAnyConfig() (*AnyConfig, error) {
+	data, err := json.Marshal(t)
+	if err != nil {
+		return nil, err
+	}
+	var result map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+
+	normalizeConfig(result)
+
+	return &AnyConfig{
+		Object: result,
+	}, nil
+}
+
+func AddPrometheusMetricsEndpoint(host string, port int32) otelConfig.MetricReader {
+	portInt := int(port)
+	return otelConfig.MetricReader{
+		Pull: &otelConfig.PullMetricReader{
+			Exporter: otelConfig.PullMetricExporter{
+				Prometheus: &otelConfig.Prometheus{
+					Host: &host,
+					Port: &portInt,
+				},
+			},
+		},
+	}
+}
+
 // GetTelemetry serves as a helper function to access the fields we care about in the underlying telemetry struct.
 // This exists to avoid needing to worry extra fields in the telemetry struct.
 func (s *Service) GetTelemetry() *Telemetry {
@@ -637,43 +575,4 @@ func (s *Service) GetTelemetry() *Telemetry {
 		return nil
 	}
 	return t
-}
-
-func hasNullValue(cfg map[string]interface{}) []string {
-	var nullKeys []string
-	for k, v := range cfg {
-		if v == nil {
-			nullKeys = append(nullKeys, fmt.Sprintf("%s:", k))
-		}
-		if reflect.ValueOf(v).Kind() == reflect.Map {
-			var nulls []string
-			val, ok := v.(map[string]interface{})
-			if ok {
-				nulls = hasNullValue(val)
-			}
-			if len(nulls) > 0 {
-				prefixed := addPrefix(k+".", nulls)
-				nullKeys = append(nullKeys, prefixed...)
-			}
-		}
-	}
-	return nullKeys
-}
-
-func addPrefix(prefix string, arr []string) []string {
-	var prefixed []string
-	for _, v := range arr {
-		prefixed = append(prefixed, fmt.Sprintf("%s%s", prefix, v))
-	}
-	return prefixed
-}
-
-func intToInt32Safe(v int) int32 {
-	if v > math.MaxInt32 {
-		return math.MaxInt32
-	}
-	if v < math.MinInt32 {
-		return math.MinInt32
-	}
-	return int32(v)
 }
