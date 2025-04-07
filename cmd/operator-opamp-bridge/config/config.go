@@ -204,7 +204,7 @@ func keyValuePair(key string, value string) *protobufs.KeyValue {
 func mustGetInstanceId() uuid.UUID {
 	u, err := uuid.NewV7()
 	if err != nil {
-		// This really should never happen and if it does we should fail.
+		// This really should never happen and if it does, we should fail.
 		panic(err)
 	}
 	return u

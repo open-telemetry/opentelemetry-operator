@@ -141,7 +141,7 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 	return healthMap, nil
 }
 
-// getCollectorSelector destructures the collectors scale selector if present, if uses the labelmap from the operator.
+// getCollectorSelector destructures the collectors scale selector if present, it uses the labelmap from the operator.
 func (agent *Agent) getCollectorSelector(col v1beta1.OpenTelemetryCollector) map[string]string {
 	if len(col.Status.Scale.Selector) > 0 {
 		selMap := map[string]string{}
@@ -289,7 +289,7 @@ func (agent *Agent) runHeartbeat() {
 	}
 }
 
-// updateAgentIdentity receives a new instanced Id from the remote server and updates the agent's instanceID field.
+// updateAgentIdentity receives a new instancedId from the remote server and updates the agent's instanceID field.
 // The meter will be reinitialized by the onMessage function.
 func (agent *Agent) updateAgentIdentity(instanceId uuid.UUID) {
 	agent.logger.V(3).Info("Agent identity is being changed",

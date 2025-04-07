@@ -230,7 +230,7 @@ func (i *sdkInjector) setInitContainerSecurityContext(pod corev1.Pod, securityCo
 
 func getContainerIndex(containerName string, pod corev1.Pod) int {
 	// We search for specific container to inject variables and if no one is found
-	// We fallback to first container
+	// We fall back to first container
 	var index = 0
 	for idx, ctnair := range pod.Spec.Containers {
 		if ctnair.Name == containerName {
@@ -279,7 +279,7 @@ func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod 
 
 // injectCommonSDKConfig adds common SDK configuration environment variables to the necessary pod
 // agentIndex represents the index of the pod the needs the env vars to instrument the application.
-// appIndex represents the index of the pod the will produce the telemetry.
+// appIndex represents the index of the pod that will produce the telemetry.
 // When the pod handling the instrumentation is the same as the pod producing the telemetry agentIndex
 // and appIndex should be the same value.  This is true for dotnet, java, nodejs, and python instrumentations.
 // Go requires the agent to be a different container in the pod, so the agentIndex should represent this new sidecar

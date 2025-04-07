@@ -31,7 +31,7 @@ import (
 var targetCounts = []int{1000, 10000, 100000, 800000}
 
 // BenchmarkProcessTargets benchmarks the whole target allocation pipeline. It starts with data the prometheus
-// discovery manager would normally output, and pushes it all the way into the allocator. It notably doe *not* check
+// discovery manager would normally output, and pushes it all the way into the allocator. It notably does *not* check
 // the HTTP server afterward. Test data is chosen to be reasonably representative of what the Prometheus service discovery
 // outputs in the real world.
 func BenchmarkProcessTargets(b *testing.B) {

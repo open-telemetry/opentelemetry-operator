@@ -261,7 +261,7 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td><b><a href="#instrumentationspecapachehttpdvolumeclaimtemplate">volumeClaimTemplate</a></b></td>
         <td>object</td>
         <td>
-          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+          VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
@@ -911,7 +911,7 @@ only the result of this request.<br/>
 
 
 
-VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 If omitted, an emptyDir is used with size limit VolumeSizeLimit
 
 <table>
@@ -1444,7 +1444,7 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td><b><a href="#instrumentationspecdotnetvolumeclaimtemplate">volumeClaimTemplate</a></b></td>
         <td>object</td>
         <td>
-          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+          VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
@@ -1824,7 +1824,7 @@ only the result of this request.<br/>
 
 
 
-VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 If omitted, an emptyDir is used with size limit VolumeSizeLimit
 
 <table>
@@ -2699,7 +2699,7 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td><b><a href="#instrumentationspecgovolumeclaimtemplate">volumeClaimTemplate</a></b></td>
         <td>object</td>
         <td>
-          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+          VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
@@ -3079,7 +3079,7 @@ only the result of this request.<br/>
 
 
 
-VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 If omitted, an emptyDir is used with size limit VolumeSizeLimit
 
 <table>
@@ -3589,7 +3589,7 @@ All extensions are copied to a single directory; if a JAR with the same name exi
         <td><b><a href="#instrumentationspecjavavolumeclaimtemplate">volumeClaimTemplate</a></b></td>
         <td>object</td>
         <td>
-          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+          VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
@@ -4003,7 +4003,7 @@ only the result of this request.<br/>
 
 
 
-VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 If omitted, an emptyDir is used with size limit VolumeSizeLimit
 
 <table>
@@ -4522,7 +4522,7 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td><b><a href="#instrumentationspecnginxvolumeclaimtemplate">volumeClaimTemplate</a></b></td>
         <td>object</td>
         <td>
-          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+          VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
@@ -5172,7 +5172,7 @@ only the result of this request.<br/>
 
 
 
-VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 If omitted, an emptyDir is used with size limit VolumeSizeLimit
 
 <table>
@@ -5674,7 +5674,7 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td><b><a href="#instrumentationspecnodejsvolumeclaimtemplate">volumeClaimTemplate</a></b></td>
         <td>object</td>
         <td>
-          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+          VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
@@ -6054,7 +6054,7 @@ only the result of this request.<br/>
 
 
 
-VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 If omitted, an emptyDir is used with size limit VolumeSizeLimit
 
 <table>
@@ -6556,7 +6556,7 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         <td><b><a href="#instrumentationspecpythonvolumeclaimtemplate">volumeClaimTemplate</a></b></td>
         <td>object</td>
         <td>
-          VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+          VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
@@ -6936,7 +6936,7 @@ only the result of this request.<br/>
 
 
 
-VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 If omitted, an emptyDir is used with size limit VolumeSizeLimit
 
 <table>
