@@ -90,10 +90,10 @@ type HTTPSServerConfig struct {
 	TLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
 }
 
-// StringToModelDurationHookFunc returns a DecodeHookFuncType
-// that converts string to time.Duration, which can be used
+// StringToModelOrTimeDurationHookFunc returns a DecodeHookFuncType
+// that converts string to time.Duration, which can also be used
 // as model.Duration.
-func StringToModelDurationHookFunc() mapstructure.DecodeHookFuncType {
+func StringToModelOrTimeDurationHookFunc() mapstructure.DecodeHookFuncType {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
@@ -103,7 +103,7 @@ func StringToModelDurationHookFunc() mapstructure.DecodeHookFuncType {
 			return data, nil
 		}
 
-		if t != reflect.TypeOf(model.Duration(5)) {
+		if t != reflect.TypeOf(model.Duration(5)) && t != reflect.TypeOf(time.Duration(5)) {
 			return data, nil
 		}
 
@@ -316,7 +316,7 @@ func unmarshal(cfg *Config, configFile string) error {
 		TagName: "yaml",
 		Result:  cfg,
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			StringToModelDurationHookFunc(),
+			StringToModelOrTimeDurationHookFunc(),
 			MapToPromConfig(),
 			MapToLabelSelector(),
 		),

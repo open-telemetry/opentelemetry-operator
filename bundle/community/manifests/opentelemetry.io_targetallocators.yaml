@@ -1170,6 +1170,8 @@ spec:
                 additionalProperties:
                   type: string
                 type: object
+              collectorNotReadyGracePeriod:
+                type: string
               env:
                 items:
                   properties:

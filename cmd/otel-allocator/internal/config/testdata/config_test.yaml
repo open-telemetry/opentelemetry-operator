@@ -6,6 +6,7 @@ collector_selector:
 prometheus_cr:
   enabled: true
   scrape_interval: 60s
+collector_not_ready_grace_period: 30s
 https:
   enabled: true
   listen_addr: :8443
