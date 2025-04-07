@@ -116,37 +116,37 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 			config: []config.Option{},
 			verify: func(t *testing.T, inst *Instrumentation) {
 				assert.Equal(t, resource.MustParse("500m"), inst.Spec.Java.Resources.Limits[corev1.ResourceCPU])
-				assert.Equal(t, resource.MustParse("64Mi"), inst.Spec.Java.Resources.Limits[corev1.ResourceMemory])
+				assert.Equal(t, resource.MustParse("256Mi"), inst.Spec.Java.Resources.Limits[corev1.ResourceMemory])
 				assert.Equal(t, resource.MustParse("50m"), inst.Spec.Java.Resources.Requests[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("64Mi"), inst.Spec.Java.Resources.Requests[corev1.ResourceMemory])
 
 				assert.Equal(t, resource.MustParse("500m"), inst.Spec.NodeJS.Resources.Limits[corev1.ResourceCPU])
-				assert.Equal(t, resource.MustParse("128Mi"), inst.Spec.NodeJS.Resources.Limits[corev1.ResourceMemory])
+				assert.Equal(t, resource.MustParse("256Mi"), inst.Spec.NodeJS.Resources.Limits[corev1.ResourceMemory])
 				assert.Equal(t, resource.MustParse("50m"), inst.Spec.NodeJS.Resources.Requests[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("128Mi"), inst.Spec.NodeJS.Resources.Requests[corev1.ResourceMemory])
 
 				assert.Equal(t, resource.MustParse("500m"), inst.Spec.Python.Resources.Limits[corev1.ResourceCPU])
-				assert.Equal(t, resource.MustParse("64Mi"), inst.Spec.Python.Resources.Limits[corev1.ResourceMemory])
+				assert.Equal(t, resource.MustParse("256Mi"), inst.Spec.Python.Resources.Limits[corev1.ResourceMemory])
 				assert.Equal(t, resource.MustParse("50m"), inst.Spec.Python.Resources.Requests[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("64Mi"), inst.Spec.Python.Resources.Requests[corev1.ResourceMemory])
 
 				assert.Equal(t, resource.MustParse("500m"), inst.Spec.DotNet.Resources.Limits[corev1.ResourceCPU])
-				assert.Equal(t, resource.MustParse("128Mi"), inst.Spec.DotNet.Resources.Limits[corev1.ResourceMemory])
+				assert.Equal(t, resource.MustParse("256Mi"), inst.Spec.DotNet.Resources.Limits[corev1.ResourceMemory])
 				assert.Equal(t, resource.MustParse("50m"), inst.Spec.DotNet.Resources.Requests[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("128Mi"), inst.Spec.DotNet.Resources.Requests[corev1.ResourceMemory])
 
 				assert.Equal(t, resource.MustParse("500m"), inst.Spec.Go.Resources.Limits[corev1.ResourceCPU])
-				assert.Equal(t, resource.MustParse("64Mi"), inst.Spec.Go.Resources.Limits[corev1.ResourceMemory])
+				assert.Equal(t, resource.MustParse("256Mi"), inst.Spec.Go.Resources.Limits[corev1.ResourceMemory])
 				assert.Equal(t, resource.MustParse("50m"), inst.Spec.Go.Resources.Requests[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("64Mi"), inst.Spec.Go.Resources.Requests[corev1.ResourceMemory])
 
 				assert.Equal(t, resource.MustParse("500m"), inst.Spec.Nginx.Resources.Limits[corev1.ResourceCPU])
-				assert.Equal(t, resource.MustParse("128Mi"), inst.Spec.Nginx.Resources.Limits[corev1.ResourceMemory])
+				assert.Equal(t, resource.MustParse("256Mi"), inst.Spec.Nginx.Resources.Limits[corev1.ResourceMemory])
 				assert.Equal(t, resource.MustParse("1m"), inst.Spec.Nginx.Resources.Requests[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("128Mi"), inst.Spec.Nginx.Resources.Requests[corev1.ResourceMemory])
 
 				assert.Equal(t, resource.MustParse("500m"), inst.Spec.ApacheHttpd.Resources.Limits[corev1.ResourceCPU])
-				assert.Equal(t, resource.MustParse("128Mi"), inst.Spec.ApacheHttpd.Resources.Limits[corev1.ResourceMemory])
+				assert.Equal(t, resource.MustParse("256Mi"), inst.Spec.ApacheHttpd.Resources.Limits[corev1.ResourceMemory])
 				assert.Equal(t, resource.MustParse("1m"), inst.Spec.ApacheHttpd.Resources.Requests[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("128Mi"), inst.Spec.ApacheHttpd.Resources.Requests[corev1.ResourceMemory])
 
