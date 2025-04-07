@@ -275,7 +275,11 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 		case KindProcessor:
 			continue
 		case KindExtension:
-			continue
+			if c.Extensions == nil {
+				continue
+			}
+			retriever = extensions.ParserFor
+			cfg = *c.Extensions
 		}
 		for componentName := range enabledComponents[componentKind] {
 			parser := retriever(componentName)
@@ -337,7 +341,7 @@ func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error
 }
 
 func (c *Config) ApplyDefaults(logger logr.Logger) error {
-	return c.applyDefaultForComponentKinds(logger, KindReceiver)
+	return c.applyDefaultForComponentKinds(logger, KindReceiver, KindExtension)
 }
 
 // GetLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled
