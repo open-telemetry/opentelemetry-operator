@@ -233,7 +233,7 @@ func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
-			// These settings can be get from env vars
+			// These settings can be gotten from env vars
 			t.Setenv(autodetectutils.NAMESPACE_ENV_VAR, tt.namespace)
 			t.Setenv(autodetectutils.SA_ENV_VAR, tt.serviceAccount)
 
