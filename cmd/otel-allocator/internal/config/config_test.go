@@ -53,6 +53,7 @@ func TestLoad(t *testing.T) {
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 				},
+				CollectorNotReadyGracePeriod: 30 * time.Second,
 				HTTPS: HTTPSServerConfig{
 					Enabled:         true,
 					ListenAddr:      ":8443",
