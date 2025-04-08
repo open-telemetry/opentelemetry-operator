@@ -45,42 +45,28 @@ func (a *Agent) hasCapability(capability protobufs.AgentCapabilities) bool {
 	return a.Status.Capabilities&uint64(capability) != 0
 }
 
+// updateAgentDescription assumes that the status is already non-nil.
 func (a *Agent) updateAgentDescription(newStatus *protobufs.AgentToServer) (agentDescrChanged bool) {
 	prevStatus := a.Status
 
-	if a.Status == nil {
-		// First time this Agent reports a status, remember it.
-		a.Status = newStatus
-		agentDescrChanged = true
-	} else {
-		// Not a new Agent. Update the Status.
-		a.Status.SequenceNum = newStatus.SequenceNum
-
-		// Check what's changed in the AgentDescription.
-		if newStatus.AgentDescription != nil {
-			// If the AgentDescription field is set it means the Agent tells us
-			// something is changed in the field since the last status report
-			// (or this is the first report).
-			// Make full comparison of previous and new descriptions to see if it
-			// really is different.
-			if prevStatus != nil && proto.Equal(prevStatus.AgentDescription, newStatus.AgentDescription) {
-				// Agent description didn't change.
-				agentDescrChanged = false
-			} else {
-				// Yes, the description is different, update it.
-				a.Status.AgentDescription = newStatus.AgentDescription
-				agentDescrChanged = true
-			}
-		} else {
-			// AgentDescription field is not set, which means description didn't change.
+	// Check what's changed in the AgentDescription.
+	if newStatus.AgentDescription != nil {
+		// If the AgentDescription field is set it means the Agent tells us
+		// something is changed in the field since the last status report
+		// (or this is the first report).
+		// Make full comparison of previous and new descriptions to see if it
+		// really is different.
+		if prevStatus != nil && proto.Equal(prevStatus.AgentDescription, newStatus.AgentDescription) {
+			// Agent description didn't change.
 			agentDescrChanged = false
+		} else {
+			// Yes, the description is different, update it.
+			a.Status.AgentDescription = newStatus.AgentDescription
+			agentDescrChanged = true
 		}
-
-		// Update remote config status if it is included and is different from what we have.
-		if newStatus.RemoteConfigStatus != nil &&
-			!proto.Equal(a.Status.RemoteConfigStatus, newStatus.RemoteConfigStatus) {
-			a.Status.RemoteConfigStatus = newStatus.RemoteConfigStatus
-		}
+	} else {
+		// AgentDescription field is not set, which means description didn't change.
+		agentDescrChanged = false
 	}
 	return agentDescrChanged
 }
@@ -91,7 +77,8 @@ func (a *Agent) updateStatusField(newStatus *protobufs.AgentToServer) (agentDesc
 		a.Status = newStatus
 		agentDescrChanged = true
 	}
-	return a.updateAgentDescription(newStatus) || agentDescrChanged
+	a.Status.SequenceNum = newStatus.SequenceNum
+	return agentDescrChanged || a.updateAgentDescription(newStatus)
 }
 
 func (a *Agent) UpdateStatus(newStatus *protobufs.AgentToServer, response *protobufs.ServerToAgent) bool {

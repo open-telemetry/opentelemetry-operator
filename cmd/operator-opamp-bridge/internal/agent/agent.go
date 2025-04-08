@@ -278,7 +278,7 @@ func (agent *Agent) checkForProxyUpdates() {
 	for {
 		select {
 		case <-agent.proxy.HasUpdates():
-			agent.logger.Info("new agent connected to proxy")
+			agent.logger.Info("new update from agent proxy")
 			err := agent.opampClient.SetHealth(agent.getHealth())
 			if err != nil {
 				agent.logger.Error(err, "failed to update from proxy")

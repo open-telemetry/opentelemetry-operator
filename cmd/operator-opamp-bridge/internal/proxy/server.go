@@ -102,6 +102,8 @@ func (s *OpAMPProxy) onDisconnect(conn types.Connection) {
 		delete(s.agentsById, instanceId)
 	}
 	delete(s.connections, conn)
+	// Tell listeners to get updates.
+	s.updatesChan <- struct{}{}
 }
 
 func (s *OpAMPProxy) onMessage(ctx context.Context, conn types.Connection, msg *protobufs.AgentToServer) *protobufs.ServerToAgent {
