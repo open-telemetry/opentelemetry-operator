@@ -50,11 +50,14 @@ endif
 # by default, do not run the manager with webhooks enabled. This only affects local runs, not the build or in-cluster deployments.
 ENABLE_WEBHOOKS ?= false
 
+# Additional flags for go test command
+GOTEST_EXTRA_OPTS ?=
+
 # If we are running in CI, run go test in verbose mode
 ifeq (,$(CI))
-GOTEST_OPTS=-race
+GOTEST_OPTS=-race $(if $(GOTEST_EXTRA_OPTS),$(GOTEST_EXTRA_OPTS))
 else
-GOTEST_OPTS=-race -v
+GOTEST_OPTS=-race -v $(if $(GOTEST_EXTRA_OPTS),$(GOTEST_EXTRA_OPTS))
 endif
 
 START_KIND_CLUSTER ?= true
@@ -110,7 +113,7 @@ MANIFEST_DIR ?= config/crd/bases
 # kubectl apply does not work on large CRDs.
 CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=0"
 
-# Choose wich version to generate
+# Choose which version to generate
 BUNDLE_VARIANT ?= community
 BUNDLE_DIR = ./bundle/$(BUNDLE_VARIANT)
 MANIFESTS_DIR = config/manifests/$(BUNDLE_VARIANT)

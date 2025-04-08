@@ -14,7 +14,9 @@ import (
 var registry = map[string]components.Parser{
 	"health_check": components.NewBuilder[healthcheckV1Config]().
 		WithName("health_check").
-		WithPort(13133).
+		WithPort(defaultHealthcheckV1Port).
+		WithDefaultsApplier(healthCheckV1AddressDefaulter).
+		WithDefaultRecAddress(components.DefaultRecAddress).
 		WithReadinessGen(healthCheckV1Probe).
 		WithLivenessGen(healthCheckV1Probe).
 		WithPortParser(func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config healthcheckV1Config) ([]corev1.ServicePort, error) {

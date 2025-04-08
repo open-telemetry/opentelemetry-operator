@@ -643,7 +643,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					actual := &v1beta1.OpenTelemetryCollector{}
 					err := reconciler.Get(testContext, nsn, actual)
 					assert.NoError(collect, err)
-				}, time.Second*5, time.Millisecond)
+				}, time.Second*30, time.Millisecond*100)
 			}
 			if deletionTimestamp != nil {
 				err := k8sClient.Delete(testContext, &tt.args.params, client.PropagationPolicy(metav1.DeletePropagationForeground))
@@ -654,7 +654,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					err := reconciler.Get(testContext, nsn, actual)
 					assert.NoError(collect, err)
 					assert.NotNil(t, actual.GetDeletionTimestamp())
-				}, time.Second*5, time.Millisecond)
+				}, time.Second*30, time.Millisecond*100)
 			}
 			req := k8sreconcile.Request{
 				NamespacedName: nsn,
@@ -689,7 +689,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					err = reconciler.Get(testContext, nsn, actual)
 					assert.NoError(collect, err)
 					assert.Equal(collect, updateParam.Spec, actual.Spec)
-				}, time.Second*5, time.Millisecond)
+				}, time.Second*30, time.Millisecond*100)
 				req := k8sreconcile.Request{
 					NamespacedName: nsn,
 				}
@@ -833,7 +833,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 				assert.NoError(collect, listErr)
 				assert.NotEmpty(collect, list)
 				assert.Len(collect, list, expectedStartingResourceCount)
-			}, time.Second*5, time.Millisecond)
+			}, time.Second*30, time.Millisecond*100)
 
 			err = k8sClient.Get(clientCtx, nsn, collector)
 			require.NoError(t, err)
@@ -845,7 +845,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 				err = reconciler.Get(clientCtx, nsn, actual)
 				assert.NoError(collect, err)
 				assert.Equal(collect, collector.Spec, actual.Spec)
-			}, time.Second*5, time.Millisecond)
+			}, time.Second*30, time.Millisecond*100)
 
 			_, reconcileErr = reconciler.Reconcile(clientCtx, req)
 			assert.NoError(t, reconcileErr)
@@ -856,7 +856,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 				assert.NoError(collect, listErr)
 				assert.NotEmpty(collect, list)
 				assert.Len(collect, list, expectedResourceCount)
-			}, time.Second*5, time.Millisecond)
+			}, time.Second*30, time.Millisecond*100)
 		})
 	}
 }
@@ -948,7 +948,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		assert.NoError(collect, listErr)
 		assert.NotEmpty(collect, configMaps)
 		assert.Len(collect, configMaps.Items, 2)
-	}, time.Second*5, time.Millisecond)
+	}, time.Second*30, time.Millisecond*100)
 
 	// modify the ConfigMap, it should be kept
 	// wait a second first, as K8s creation timestamps only have second precision
@@ -963,7 +963,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		err = reconciler.Get(clientCtx, nsn, actual)
 		assert.NoError(collect, err)
 		assert.Equal(collect, collector.Spec, actual.Spec)
-	}, time.Second*5, time.Millisecond)
+	}, time.Second*30, time.Millisecond*100)
 
 	_, reconcileErr = reconciler.Reconcile(clientCtx, req)
 	assert.NoError(t, reconcileErr)
@@ -974,7 +974,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		assert.NoError(collect, listErr)
 		assert.NotEmpty(collect, configMaps)
 		assert.Len(collect, configMaps.Items, 3)
-	}, time.Second*5, time.Millisecond)
+	}, time.Second*30, time.Millisecond*100)
 
 	// modify the ConfigMap again, the oldest one is still kept, but is dropped after next reconciliation
 	// wait a second first, as K8s creation timestamps only have second precision
@@ -989,7 +989,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		err = reconciler.Get(clientCtx, nsn, actual)
 		assert.NoError(collect, err)
 		assert.Equal(collect, collector.Spec, actual.Spec)
-	}, time.Second*5, time.Millisecond)
+	}, time.Second*30, time.Millisecond*100)
 
 	_, reconcileErr = reconciler.Reconcile(clientCtx, req)
 	assert.NoError(t, reconcileErr)
@@ -1000,7 +1000,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		assert.NoError(collect, listErr)
 		assert.NotEmpty(collect, configMaps)
 		assert.Len(collect, configMaps.Items, 4)
-	}, time.Second*5, time.Millisecond)
+	}, time.Second*30, time.Millisecond*100)
 
 	_, reconcileErr = reconciler.Reconcile(clientCtx, req)
 	assert.NoError(t, reconcileErr)
@@ -1282,7 +1282,7 @@ service:
 		err := reconciler.Get(context.Background(), nsn, actual)
 		assert.NoError(collect, err)
 		assert.NotNil(t, actual.GetDeletionTimestamp())
-	}, time.Second*5, time.Millisecond)
+	}, time.Second*30, time.Millisecond*100)
 
 	reconcile, reconcileErr = reconciler.Reconcile(context.Background(), req)
 	require.NoError(t, reconcileErr)

@@ -210,6 +210,11 @@ type TargetAllocatorEmbedded struct {
 	//
 	// +optional
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	// CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
+	// The default is 0s, which means that all collectors can be assigned targets irrespective of their readiness.
+	//
+	// +optional
+	CollectorNotReadyGracePeriod *metav1.Duration `json:"collectorNotReadyGracePeriod,omitempty"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config.

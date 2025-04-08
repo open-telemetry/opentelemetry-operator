@@ -26,7 +26,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config, instSpec
 		return pod, fmt.Errorf("shared process namespace has been explicitly disabled")
 	}
 
-	// skip instrumentation when more than one containers provided
+	// skip instrumentation when more than one container is provided
 	containerNames := ""
 	ok := false
 	if cfg.EnableMultiInstrumentation() {

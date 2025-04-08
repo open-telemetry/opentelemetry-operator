@@ -33,9 +33,12 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int, instSpec
 	// inject Java instrumentation spec env vars.
 	container.Env = appendIfNotSet(container.Env, javaSpec.Env...)
 
-	javaJVMArgument := javaAgent
+	// Create unique mount path for this container
+	containerMountPath := fmt.Sprintf("%s-%s", javaInstrMountPath, container.Name)
+
+	javaJVMArgument := fmt.Sprintf(" -javaagent:%s/javaagent.jar", containerMountPath)
 	if len(javaSpec.Extensions) > 0 {
-		javaJVMArgument = javaAgent + fmt.Sprintf(" -Dotel.javaagent.extensions=%s/extensions", javaInstrMountPath)
+		javaJVMArgument = javaJVMArgument + fmt.Sprintf(" -Dotel.javaagent.extensions=%s/extensions", containerMountPath)
 	}
 
 	idx := getIndexOfEnv(container.Env, envJavaToolsOptions)
@@ -50,7 +53,7 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int, instSpec
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
-		MountPath: javaInstrMountPath,
+		MountPath: containerMountPath,
 	})
 
 	// We just inject Volumes and init containers for the first processed container.
@@ -80,7 +83,6 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int, instSpec
 				}},
 			})
 		}
-
 	}
 	return pod, err
 }

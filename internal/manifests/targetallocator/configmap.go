@@ -123,6 +123,10 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		}
 	}
 
+	if taSpec.CollectorNotReadyGracePeriod.Size() > 0 {
+		taConfig["collector_not_ready_grace_period"] = taSpec.CollectorNotReadyGracePeriod.Duration
+	}
+
 	taConfigYAML, err := yaml.Marshal(taConfig)
 	if err != nil {
 		return &corev1.ConfigMap{}, err

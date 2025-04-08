@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	gokitlog "github.com/go-kit/log"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
@@ -23,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/prehook"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/server"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
@@ -31,7 +31,7 @@ import (
 var targetCounts = []int{1000, 10000, 100000, 800000}
 
 // BenchmarkProcessTargets benchmarks the whole target allocation pipeline. It starts with data the prometheus
-// discovery manager would normally output, and pushes it all the way into the allocator. It notably doe *not* check
+// discovery manager would normally output, and pushes it all the way into the allocator. It notably does *not* check
 // the HTTP server afterward. Test data is chosen to be reasonably representative of what the Prometheus service discovery
 // outputs in the real world.
 func BenchmarkProcessTargets(b *testing.B) {
@@ -181,7 +181,7 @@ func createTestDiscoverer(allocationStrategy string, prehookConfig map[string][]
 	}
 	registry := prometheus.NewRegistry()
 	sdMetrics, _ := discovery.CreateAndRegisterSDMetrics(registry)
-	discoveryManager := discovery.NewManager(ctx, gokitlog.NewNopLogger(), registry, sdMetrics)
+	discoveryManager := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
 	targetDiscoverer := target.NewDiscoverer(logger, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
 	return targetDiscoverer
 }

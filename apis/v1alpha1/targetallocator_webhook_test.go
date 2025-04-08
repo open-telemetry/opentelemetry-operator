@@ -253,7 +253,7 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 						Ports: []v1beta1.PortsSpec{
 							{
 								ServicePort: v1.ServicePort{
-									// this port name contains a non alphanumeric character, which is invalid.
+									// this port name contains a non-alphanumeric character, which is invalid.
 									Name:     "-test🦄port",
 									Port:     12345,
 									Protocol: v1.ProtocolTCP,

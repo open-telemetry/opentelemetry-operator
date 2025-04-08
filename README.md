@@ -12,12 +12,12 @@ The operator manages:
 ## Documentation
 
 - [Compatibility & Support docs](./docs/compatibility.md)
-- [API docs](./docs/api.md)
-- [Offical Telemetry Operator page](https://opentelemetry.io/docs/kubernetes/operator/)
+- [API docs](./docs/api/README.md)
+- [Official OpenTelemetry Operator page](https://opentelemetry.io/docs/kubernetes/operator/)
 
 ## Helm Charts
 
-You can install Opentelemetry Operator via [Helm Chart](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-operator) from the opentelemetry-helm-charts repository. More information is available in [here](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-operator).
+You can install OpenTelemetry Operator via [Helm Chart](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-operator) from the opentelemetry-helm-charts repository. More information is available in [here](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-operator).
 
 ## Getting started
 
@@ -224,7 +224,7 @@ kubectl patch serviceaccount <service-account-name> -p '{"imagePullSecrets": [{"
 
 ### OpenTelemetry auto-instrumentation injection
 
-The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS and Python are supported.
+The operator can inject and configure OpenTelemetry auto-instrumentation libraries. Currently, Apache HTTPD, DotNet, Go, Java, Nginx, NodeJS and Python are supported.
 
 To use auto-instrumentation, configure an `Instrumentation` resource with the configuration for the SDK and instrumentation.
 
@@ -281,7 +281,7 @@ The above CR can be queried by `kubectl get otelinst`.
 
 Then add an annotation to a pod to enable injection. The annotation can be added to a namespace, so that all pods within
 that namespace will get instrumentation, or by adding the annotation to individual PodSpec objects, available as part of
-Deployment, Statefulset, and other resources.
+Deployment, StatefulSet, and other resources.
 
 Java:
 
@@ -360,7 +360,7 @@ The possible values for the annotation can be
 - `"my-other-namespace/my-instrumentation"` - name and namespace of `Instrumentation` CR instance in another namespace.
 - `"false"` - do not inject
 
-> **Note:** For `DotNet` auto-instrumentation, by default, operator sets the `OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS` environment variable which specifies the list of traces source instrumentations you want to enable. The value that is set by default by the operator is all available instrumentations supported by the `openTelemery-dotnet-instrumentation` release consumed in the image, i.e. `AspNet,HttpClient,SqlClient`. This value can be overriden by configuring the environment variable explicitly.
+> **Note:** For `DotNet` auto-instrumentation, by default, operator sets the `OTEL_DOTNET_AUTO_TRACES_ENABLED_INSTRUMENTATIONS` environment variable which specifies the list of traces source instrumentations you want to enable. The value that is set by default by the operator is all available instrumentations supported by the `openTelemery-dotnet-instrumentation` release consumed in the image, i.e. `AspNet,HttpClient,SqlClient`. This value can be overridden by configuring the environment variable explicitly.
 
 #### Multi-container pods with single instrumentation
 
@@ -729,6 +729,9 @@ EOF
 
 ## Configure resource attributes
 
+The OpenTelemetry Operator can automatically set resource attributes as defined in the 
+[OpenTelemetry Semantic Conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/k8s-attributes.md).
+
 ### Configure resource attributes with annotations
 
 This example shows a pod configuration with OpenTelemetry annotations using the `resource.opentelemetry.io/` prefix. 
@@ -752,12 +755,12 @@ spec:
 
 ### Configure resource attributes with labels
 
-You can also use common labels to set resource attributes.
+You can also use common labels to set resource attributes (first entry wins).
 
 The following labels are supported:
+- `app.kubernetes.io/instance` becomes `service.name`
 - `app.kubernetes.io/name` becomes `service.name`
 - `app.kubernetes.io/version` becomes `service.version`
-- `app.kubernetes.io/part-of` becomes `service.namespace`
 
 ```yaml
 apiVersion: v1
@@ -830,9 +833,16 @@ Choose the first value found:
 #### How `service.instance.id` is calculated
 
 Choose the first value found:
-                                   
+
 - `pod.annotation[resource.opentelemetry.io/service.instance.id]`
 - `concat([k8s.namespace.name, k8s.pod.name, k8s.container.name], '.')`
+
+#### How `service.namespace` is calculated
+
+Choose the first value found:
+
+- `pod.annotation[resource.opentelemetry.io/service.namespace]`
+- `k8s.namespace.name`
 
 ## Contributing and Developing
 

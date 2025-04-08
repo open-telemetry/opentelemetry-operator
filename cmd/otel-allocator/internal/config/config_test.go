@@ -20,12 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var defaultScrapeProtocols = []promconfig.ScrapeProtocol{
-	promconfig.OpenMetricsText1_0_0,
-	promconfig.OpenMetricsText0_0_1,
-	promconfig.PrometheusText0_0_4,
-}
-
 func TestLoad(t *testing.T) {
 	type args struct {
 		file string
@@ -59,6 +53,7 @@ func TestLoad(t *testing.T) {
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 				},
+				CollectorNotReadyGracePeriod: 30 * time.Second,
 				HTTPS: HTTPSServerConfig{
 					Enabled:         true,
 					ListenAddr:      ":8443",
@@ -69,7 +64,7 @@ func TestLoad(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
-						ScrapeProtocols:    defaultScrapeProtocols,
+						ScrapeProtocols:    DefaultScrapeProtocols,
 						ScrapeTimeout:      model.Duration(10 * time.Second),
 						EvaluationInterval: model.Duration(60 * time.Second),
 					},
@@ -80,7 +75,7 @@ func TestLoad(t *testing.T) {
 							EnableCompression: true,
 							HonorTimestamps:   true,
 							ScrapeInterval:    model.Duration(60 * time.Second),
-							ScrapeProtocols:   defaultScrapeProtocols,
+							ScrapeProtocols:   DefaultScrapeProtocols,
 							ScrapeTimeout:     model.Duration(10 * time.Second),
 							MetricsPath:       "/metrics",
 							Scheme:            "http",
@@ -156,7 +151,7 @@ func TestLoad(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
-						ScrapeProtocols:    defaultScrapeProtocols,
+						ScrapeProtocols:    DefaultScrapeProtocols,
 						ScrapeTimeout:      model.Duration(10 * time.Second),
 						EvaluationInterval: model.Duration(60 * time.Second),
 					},
@@ -167,7 +162,7 @@ func TestLoad(t *testing.T) {
 							EnableCompression: true,
 							HonorTimestamps:   true,
 							ScrapeInterval:    model.Duration(60 * time.Second),
-							ScrapeProtocols:   defaultScrapeProtocols,
+							ScrapeProtocols:   DefaultScrapeProtocols,
 							ScrapeTimeout:     model.Duration(10 * time.Second),
 							MetricsPath:       "/metrics",
 							Scheme:            "http",
@@ -231,7 +226,7 @@ func TestLoad(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
-						ScrapeProtocols:    defaultScrapeProtocols,
+						ScrapeProtocols:    DefaultScrapeProtocols,
 						ScrapeTimeout:      model.Duration(10 * time.Second),
 						EvaluationInterval: model.Duration(60 * time.Second),
 					},
@@ -242,7 +237,7 @@ func TestLoad(t *testing.T) {
 							EnableCompression: true,
 							HonorTimestamps:   true,
 							ScrapeInterval:    model.Duration(60 * time.Second),
-							ScrapeProtocols:   defaultScrapeProtocols,
+							ScrapeProtocols:   DefaultScrapeProtocols,
 							ScrapeTimeout:     model.Duration(10 * time.Second),
 							MetricsPath:       "/metrics",
 							Scheme:            "http",
@@ -330,7 +325,7 @@ func TestLoad(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
-						ScrapeProtocols:    defaultScrapeProtocols,
+						ScrapeProtocols:    DefaultScrapeProtocols,
 						ScrapeTimeout:      model.Duration(10 * time.Second),
 						EvaluationInterval: model.Duration(60 * time.Second),
 					},
@@ -341,7 +336,7 @@ func TestLoad(t *testing.T) {
 							EnableCompression: true,
 							HonorTimestamps:   true,
 							ScrapeInterval:    model.Duration(60 * time.Second),
-							ScrapeProtocols:   defaultScrapeProtocols,
+							ScrapeProtocols:   DefaultScrapeProtocols,
 							ScrapeTimeout:     model.Duration(10 * time.Second),
 							MetricsPath:       "/metrics",
 							Scheme:            "http",
@@ -429,7 +424,7 @@ func TestLoad(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
-						ScrapeProtocols:    defaultScrapeProtocols,
+						ScrapeProtocols:    DefaultScrapeProtocols,
 						ScrapeTimeout:      model.Duration(10 * time.Second),
 						EvaluationInterval: model.Duration(60 * time.Second),
 					},
@@ -440,7 +435,7 @@ func TestLoad(t *testing.T) {
 							EnableCompression: true,
 							HonorTimestamps:   true,
 							ScrapeInterval:    model.Duration(60 * time.Second),
-							ScrapeProtocols:   defaultScrapeProtocols,
+							ScrapeProtocols:   DefaultScrapeProtocols,
 							ScrapeTimeout:     model.Duration(10 * time.Second),
 							MetricsPath:       "/metrics",
 							Scheme:            "http",

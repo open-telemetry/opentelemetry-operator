@@ -59,7 +59,7 @@ to use it with a collector running as a DaemonSet.
 [consistent_hashing]: https://blog.research.google/2017/04/consistent-hashing-with-bounded-loads.html
 ## Discovery of Prometheus Custom Resources
 
-The Target Allocator also provides for the discovery of [Prometheus Operator CRs](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md), namely the [ServiceMonitor and PodMonitor](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#target-allocator). The ServiceMonitors and the PodMonitors purpose is to inform the Target Allocator (or PrometheusOperator) to add a new job to their scrape configuration. The Target Allocator then provides the jobs to the OTel Collector [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md). 
+The Target Allocator also provides for the discovery of [Prometheus Operator CRs](https://prometheus-operator.dev/docs/getting-started/design/), namely the [ServiceMonitor and PodMonitor](https://github.com/open-telemetry/opentelemetry-operator/tree/main/cmd/otel-allocator#target-allocator). The ServiceMonitors and the PodMonitors purpose is to inform the Target Allocator (or PrometheusOperator) to add a new job to their scrape configuration. The Target Allocator then provides the jobs to the OTel Collector [Prometheus Receiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md). 
 
 ```mermaid
 flowchart RL
@@ -94,11 +94,11 @@ Even though Prometheus is not required to be installed in your Kubernetes cluste
 
 The easiest way to do this is to grab a copy of the individual [`PodMonitor`](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/charts/crds/crds/crd-podmonitors.yaml) YAML and [`ServiceMonitor`](https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/charts/crds/crds/crd-servicemonitors.yaml) YAML custom resource definitions (CRDs) from the [Kube Prometheus Operator’s Helm chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/charts).
 
-> ✨ For more information on configuring the `PodMonitor` and `ServiceMonitor`, check out the [PodMonitor API](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.PodMonitor) and the [ServiceMonitor API](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#monitoring.coreos.com/v1.ServiceMonitor).
+> ✨ For more information on configuring the `PodMonitor` and `ServiceMonitor`, check out the [PodMonitor API](https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.PodMonitor) and the [ServiceMonitor API](https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ServiceMonitor).
 
 # Usage
 
-The `spec.targetAllocator:` controls the TargetAllocator general properties. Full API spec can be found here: [api.md#opentelemetrycollectorspectargetallocator](../../docs/api.md#opentelemetrycollectorspectargetallocator)
+The `spec.targetAllocator:` controls the TargetAllocator general properties. Full API spec can be found here: [api/opentelemetrycollectors.md#opentelemetrycollectorspectargetallocator](../../docs/api/opentelemetrycollectors.md#opentelemetrycollectorspectargetallocator)
 
 A basic example that deploys.
 ```yaml
@@ -185,9 +185,32 @@ TargetAllocator discovery of PrometheusCRs can be turned on by setting
 `.spec.targetAllocator.prometheusCR.enabled` to `true`, which it presents as scrape configs
 and jobs on the `/scrape_configs` and `/jobs` endpoints respectively.
 
-The CRs can be filtered by labels as documented here: [api.md#opentelemetrycollectorspectargetallocatorprometheuscr](../../docs/api.md#opentelemetrycollectorspectargetallocatorprometheuscr)
+The CRs can be filtered by labels as documented here: [api/opentelemetrycollectors.md#opentelemetrycollectorspectargetallocatorprometheuscr](../../docs/api/opentelemetrycollectors.md#opentelemetrycollectorspectargetallocatorprometheuscr)
 
 Upstream documentation here: [PrometheusReceiver](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/prometheusreceiver#opentelemetry-operator)
+
+### Pod/Service Monitor Selectors
+
+As of `v1beta1` of the OpenTelemetryOperator, a `serviceMonitorSelector` and `podMonitorSelector` must be included, even if you don’t intend to use it, like this:
+
+```yaml
+prometheusCR:
+  enabled: true
+  podMonitorSelector: {}
+  serviceMonitorSelector: {}
+```
+
+This will make the TargetAllocator scrape all the Service and Pod Monitors inside of the cluster. If you need something more specific, you can also add a label filter:
+
+```yaml
+prometheusCR:
+  enabled: true
+  serviceMonitorSelector:
+    matchLabels:
+      app: my-app
+```
+
+By setting the value of `spec.targetAllocator.prometheusCR.serviceMonitorSelector.matchLabels` to `app: my-app`, it means that your ServiceMonitor resource must in turn have that same value in `metadata.labels`.
 
 ### RBAC
 
@@ -496,3 +519,7 @@ Shards the received targets based on the discovered Collector instances
 
 ### Collector
 Client to watch for deployed Collector instances which will then provided to the Allocator. 
+
+# Troubleshooting
+
+For troubleshooting tips, please visit: [https://opentelemetry.io/docs/platforms/kubernetes/operator/troubleshooting/target-allocator/](https://opentelemetry.io/docs/platforms/kubernetes/operator/troubleshooting/target-allocator/)

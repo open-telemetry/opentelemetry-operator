@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
+	"math"
 	"os"
 	"reflect"
 	"time"
@@ -30,26 +32,39 @@ import (
 )
 
 const (
-	DefaultResyncTime                        = 5 * time.Minute
-	DefaultConfigFilePath     string         = "/conf/targetallocator.yaml"
-	DefaultCRScrapeInterval   model.Duration = model.Duration(time.Second * 30)
-	DefaultAllocationStrategy                = "consistent-hashing"
-	DefaultFilterStrategy                    = "relabel-config"
+	DefaultResyncTime                                  = 5 * time.Minute
+	DefaultConfigFilePath               string         = "/conf/targetallocator.yaml"
+	DefaultCRScrapeInterval             model.Duration = model.Duration(time.Second * 30)
+	DefaultAllocationStrategy                          = "consistent-hashing"
+	DefaultFilterStrategy                              = "relabel-config"
+	DefaultCollectorNotReadyGracePeriod                = 0 * time.Second
 )
 
+// By default, scrape protocols include PrometheusText1_0_0, which only Prometheus >=3.0 supports.
+// Manually exclude this protocol until several versions of the Otel Collector support it.
+var DefaultScrapeProtocols = []promconfig.ScrapeProtocol{
+	promconfig.OpenMetricsText1_0_0,
+	promconfig.OpenMetricsText0_0_1,
+	promconfig.PrometheusText0_0_4,
+}
+
+// logger which discards all messages written to it. Replace this with slog.DiscardHandler after we require Go 1.24.
+var NopLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(math.MaxInt)}))
+
 type Config struct {
-	ListenAddr                 string                `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath         string                `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig              *rest.Config          `yaml:"-"`
-	RootLogger                 logr.Logger           `yaml:"-"`
-	CollectorSelector          *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	CollectorNamespace         string                `yaml:"collector_namespace,omitempty"`
-	PromConfig                 *promconfig.Config    `yaml:"config"`
-	AllocationStrategy         string                `yaml:"allocation_strategy,omitempty"`
-	AllocationFallbackStrategy string                `yaml:"allocation_fallback_strategy,omitempty"`
-	FilterStrategy             string                `yaml:"filter_strategy,omitempty"`
-	PrometheusCR               PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
-	HTTPS                      HTTPSServerConfig     `yaml:"https,omitempty"`
+	ListenAddr                   string                `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath           string                `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig                *rest.Config          `yaml:"-"`
+	RootLogger                   logr.Logger           `yaml:"-"`
+	CollectorSelector            *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
+	CollectorNamespace           string                `yaml:"collector_namespace,omitempty"`
+	PromConfig                   *promconfig.Config    `yaml:"config"`
+	AllocationStrategy           string                `yaml:"allocation_strategy,omitempty"`
+	AllocationFallbackStrategy   string                `yaml:"allocation_fallback_strategy,omitempty"`
+	FilterStrategy               string                `yaml:"filter_strategy,omitempty"`
+	PrometheusCR                 PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
+	HTTPS                        HTTPSServerConfig     `yaml:"https,omitempty"`
+	CollectorNotReadyGracePeriod time.Duration         `yaml:"collector_not_ready_grace_period,omitempty"`
 }
 
 type PrometheusCRConfig struct {
@@ -75,10 +90,10 @@ type HTTPSServerConfig struct {
 	TLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
 }
 
-// StringToModelDurationHookFunc returns a DecodeHookFuncType
-// that converts string to time.Duration, which can be used
+// StringToModelOrTimeDurationHookFunc returns a DecodeHookFuncType
+// that converts string to time.Duration, which can also be used
 // as model.Duration.
-func StringToModelDurationHookFunc() mapstructure.DecodeHookFuncType {
+func StringToModelOrTimeDurationHookFunc() mapstructure.DecodeHookFuncType {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
@@ -88,7 +103,7 @@ func StringToModelDurationHookFunc() mapstructure.DecodeHookFuncType {
 			return data, nil
 		}
 
-		if t != reflect.TypeOf(model.Duration(5)) {
+		if t != reflect.TypeOf(model.Duration(5)) && t != reflect.TypeOf(time.Duration(5)) {
 			return data, nil
 		}
 
@@ -114,7 +129,12 @@ func MapToPromConfig() mapstructure.DecodeHookFuncType {
 
 		pConfig := &promconfig.Config{}
 
-		mb, err := yaml.Marshal(data.(map[any]any))
+		dataMap := data.(map[any]any)
+		err := ApplyPromConfigDefaults(dataMap)
+		if err != nil {
+			return nil, err
+		}
+		mb, err := yaml.Marshal(dataMap)
 		if err != nil {
 			return nil, err
 		}
@@ -125,6 +145,32 @@ func MapToPromConfig() mapstructure.DecodeHookFuncType {
 		}
 		return pConfig, nil
 	}
+}
+
+// applyPromConfigDefaults applies our own defaults to the Prometheus configuration. The unmarshalling process for
+// Prometheus config is quite involved, and as a result, we need to apply our own defaults before it happens.
+func ApplyPromConfigDefaults(promcCfgMap map[any]any) error {
+	// use our own struct definition here because we don't want Prometheus unmarshalling logic to apply here
+	promCfg := struct {
+		GlobalConfig struct {
+			ScrapeProtocols []promconfig.ScrapeProtocol `mapstructure:"scrape_protocols"`
+			Rest            map[any]any                 `mapstructure:",remain"`
+		} `mapstructure:"global"`
+		Rest map[any]any `mapstructure:",remain"`
+	}{}
+	err := mapstructure.Decode(promcCfgMap, &promCfg)
+	if err != nil {
+		return err
+	}
+	// apply defaults here
+	promCfg.GlobalConfig.ScrapeProtocols = DefaultScrapeProtocols
+
+	// decode back into the map
+	err = mapstructure.Decode(promCfg, &promcCfgMap)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // MapToLabelSelector returns a DecodeHookFuncType that
@@ -270,7 +316,7 @@ func unmarshal(cfg *Config, configFile string) error {
 		TagName: "yaml",
 		Result:  cfg,
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			StringToModelDurationHookFunc(),
+			StringToModelOrTimeDurationHookFunc(),
 			MapToPromConfig(),
 			MapToLabelSelector(),
 		),
@@ -299,6 +345,7 @@ func CreateDefaultConfig() Config {
 			ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 			ProbeNamespaceSelector:          &metav1.LabelSelector{},
 		},
+		CollectorNotReadyGracePeriod: DefaultCollectorNotReadyGracePeriod,
 	}
 }
 

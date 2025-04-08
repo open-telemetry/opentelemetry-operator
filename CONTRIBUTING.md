@@ -159,7 +159,7 @@ Before starting the development of a new feature, please create an issue and dis
 
 ### Bug fixes
 
-Every bug fix should be accompanied with a unit test, so that we can prevent regressions.
+Every bug fix should be accompanied by a unit test, so that we can prevent regressions.
 
 ### Documentation, typos, ...
 

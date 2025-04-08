@@ -7705,6 +7705,8 @@ spec:
                     - consistent-hashing
                     - per-node
                     type: string
+                  collectorNotReadyGracePeriod:
+                    type: string
                   enabled:
                     type: boolean
                   env:

@@ -3,46 +3,52 @@ name: "Publish Apache HTTPD Auto-Instrumentation"
 on:
   push:
     paths:
-      - 'autoinstrumentation/apache-httpd/**'
-      - '.github/workflows/publish-autoinstrumentation-apache-httpd.yaml'
+      - "autoinstrumentation/apache-httpd/**"
+      - ".github/workflows/publish-autoinstrumentation-apache-httpd.yaml"
     branches:
       - main
   pull_request:
     paths:
-      - 'autoinstrumentation/apache-httpd/**'
-      - '.github/workflows/publish-autoinstrumentation-apache-httpd.yaml'
+      - "autoinstrumentation/apache-httpd/**"
+      - ".github/workflows/publish-autoinstrumentation-apache-httpd.yaml"
   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
 jobs:
   publish:
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Read version
         run: echo "VERSION=$(cat autoinstrumentation/apache-httpd/version.txt)" >> $GITHUB_ENV
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
         with:
           images: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd
           tags: |
             type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
 
       - name: Cache Docker layers
-        uses: actions/cache@v4
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -50,14 +56,14 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Login to GitHub Package Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: autoinstrumentation/apache-httpd
           platforms: linux/amd64

@@ -14,7 +14,7 @@ jobs:
       current_version: ${{ steps.get-versions.outputs.current_version }}
       desired_version: ${{ steps.get-versions.outputs.desired_version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: "Get versions from versions.txt"
@@ -31,12 +31,12 @@ jobs:
       CURRENT_VERSION: ${{ needs.get-versions.outputs.current_version }}
       DESIRED_VERSION: ${{ needs.get-versions.outputs.desired_version }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
       with:
-        go-version: "~1.24.1"
+        go-version: "~1.24.2"
 
     - name: "generate release resources"
       run: make release-artifacts IMG_PREFIX="ghcr.io/open-telemetry/opentelemetry-operator" VERSION=${DESIRED_VERSION}
