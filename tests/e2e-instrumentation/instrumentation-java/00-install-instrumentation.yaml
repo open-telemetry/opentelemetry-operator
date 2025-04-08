@@ -9,11 +9,9 @@ spec:
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
-      value: "20"
+      value: "20000"
     - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
+      value: always_on
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
   exporter:
@@ -21,9 +19,6 @@ spec:
   propagators:
     - jaeger
     - b3
-  sampler:
-    type: parentbased_traceidratio
-    argument: "0.25"
   java:
     env:
     - name: OTEL_JAVAAGENT_DEBUG
