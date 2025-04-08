@@ -46,6 +46,9 @@ spec:
       value: "1"
     - name: OTEL_RESOURCE_ATTRIBUTES
     name: myapp
+    ports:
+    - containerPort: 8080
+      protocol: TCP
     volumeMounts:
       - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
         readOnly: true

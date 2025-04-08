@@ -1,22 +1,33 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: sidecar
 spec:
   mode: sidecar
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
-    processors:
+          grpc: {}
+          http: {}
+
+    processors: {}
 
     exporters:
       debug:
+        verbosity: detailed
+      file:
+        path: /otlp/otel.json
+        flush_interval: 1s
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
-          exporters: [debug]
+          exporters: [file,debug]
+        metrics:
+          receivers: [otlp]
+          exporters: [file,debug]
+  volumeMounts:
+  - name: otlp-data-volume
+    mountPath: /otlp

@@ -15,14 +15,31 @@ spec:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-java: "true"
     spec:
+      volumes:
+      - name: otlp-data-volume
+        emptyDir: {}
       securityContext:
         runAsUser: 1000
         runAsGroup: 3000
         fsGroup: 3000
       containers:
       - name: myapp
+        ports:
+        - containerPort: 8080
         image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 3
+        volumeMounts:
+        - name: otlp-data-volume
+          mountPath: /otlp

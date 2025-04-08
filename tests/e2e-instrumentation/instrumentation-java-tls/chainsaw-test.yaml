@@ -2,9 +2,11 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  creationTimestamp: null
   name: instrumentation-java-tls
 spec:
+  bindings:
+    - name: otlpFilePath
+      value: /tmp/instrumentation-java-tls.json
   steps:
   - name: step-00
     try:
@@ -44,3 +46,97 @@ spec:
     catch:
       - podLogs:
           selector: app=my-java
+  - name: Make a request to the app
+    try:
+      - command:
+          entrypoint: kubectl
+          args:
+            - get
+            - pod
+            - -n
+            - ${NAMESPACE}
+            - -l
+            - app=my-java
+            - -o
+            - jsonpath={.items[0].metadata.name}
+          outputs:
+          - name: podName
+            value: ($stdout)
+      - proxy:
+          apiVersion: v1
+          kind: Pod
+          name: ($podName)
+          namespace: ${NAMESPACE}
+          port: "8080"
+  - name: Wait for telemetry data to be collected
+    try:
+    - script:
+        env:
+          - name: LABEL_SELECTOR
+            value: "app.kubernetes.io/name=simplest-collector"
+          - name: CONTAINER_NAME
+            value: "otc-container" 
+          - name: RETRY_TIMEOUT
+            value: "120"
+          - name: RETRY_SLEEP
+            value: "5"
+          - name: SEARCH_STRINGS_ENV
+            value: |
+              AggregationTemporality: Cumulative
+              Name: process.runtime.jvm.memory.usage
+              Description: Measure of memory used
+        timeout: 2m
+        content: ../../test-e2e-apps/scripts/check_pod_logs.sh
+  - name: Fetch the telemetry data exported by file exporter
+    try:
+    - command:
+        entrypoint: kubectl
+        args:
+          - get
+          - pod
+          - -n
+          - ${NAMESPACE}
+          - -l
+          - app.kubernetes.io/name=simplest-collector
+          - -o
+          - jsonpath={.items[0].metadata.name}
+        outputs:
+        - name: podName
+          value: ($stdout)
+    - command:
+        env:
+          - name: POD_NAME
+            value: ($podName)
+          - name: OTLP_FILE_PATH
+            value: ($otlpFilePath)
+          - name: CONTAINER_NAME
+            value: "alpine"
+        entrypoint: /bin/bash
+        check:
+          ($error == null): true
+        args:
+        - -c
+        - |
+          echo "Copying logs from pod ${POD_NAME} in namespace ${NAMESPACE}..."
+          kubectl cp "${NAMESPACE}/${POD_NAME}:/otlp/otel.json" ${OTLP_FILE_PATH} -c ${CONTAINER_NAME}
+    catch:
+      - podLogs:
+          namespace: ${NAMESPACE}
+          selector: app=my-java
+          container: otc-container
+          tail: 100
+  - name: Validate telemetry data
+    try:
+    - command:
+        timeout: 1m
+        env:
+          - name: TELEMETRY_CHECK
+            value: "traces,metrics"
+          - name: OTLP_FILE_PATH
+            value: ($otlpFilePath)
+        entrypoint: go
+        args:
+          - test
+          - ../../test-e2e-apps/otel-telemetry-validator/otel_telemetry_validator_test.go
+        check:
+          ($error == null): true

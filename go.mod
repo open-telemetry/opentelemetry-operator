@@ -226,7 +226,10 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.5.0 // indirect
 )
 
-require go.opentelemetry.io/contrib/otelconf v0.15.0
+require (
+	go.opentelemetry.io/collector/pdata v1.22.0
+	go.opentelemetry.io/contrib/otelconf v0.15.0
+)
 
 require (
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4 // indirect
