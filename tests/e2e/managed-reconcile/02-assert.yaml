@@ -52,7 +52,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: simplest-collector-aec5aa11
+  name: simplest-collector-d5e146a9
 data:
   collector.yaml: |
     receivers:
@@ -67,7 +67,12 @@ data:
     service:
       telemetry:
         metrics:
-          address: 0.0.0.0:8888
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
       pipelines:
         traces:
           exporters:

@@ -42,7 +42,15 @@ data:
                     - prometheus
         telemetry:
             metrics:
-                address: 0.0.0.0:8888
+                readers:
+                    - pull:
+                        exporter:
+                            prometheus:
+                                host: 0.0.0.0
+                                port: 8888
 kind: ConfigMap
 metadata:
-  name: prometheus-cr-collector-19c94a81
+  labels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/name: prometheus-cr-collector
