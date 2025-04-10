@@ -40,11 +40,12 @@ jobs:
               ;;
             nodejs)
               current_version=$(grep -Po '"@opentelemetry/auto-instrumentations-node": "\K[0-9]+\.[0-9]+\.[0-9]+"' autoinstrumentation/nodejs/package.json | tr -d '"')
-              latest_version=$(gh release view \
-                                  --repo open-telemetry/opentelemetry-js \
+              latest_version=$(gh release list \
+                                  --repo open-telemetry/opentelemetry-js-contrib \
                                   --json tagName \
-                                  --jq .tagName \
-                                | sed 's/^v//')
+                                  --jq '.[] | select(.tagName | startswith("auto-instrumentations-node-v")) | .tagName' \
+                                  | head -1 \
+                                  | sed 's/auto-instrumentations-node-v//'
               ;;
             python)
               current_version=$(grep -Po "^opentelemetry-distro==\K[0-9]+\.[0-9]+(b[0-9]+)?" autoinstrumentation/python/requirements.txt)
