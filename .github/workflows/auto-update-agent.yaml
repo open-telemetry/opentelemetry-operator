@@ -47,12 +47,13 @@ jobs:
                                 | sed 's/^v//')
               ;;
             python)
-              current_version=$(grep -Po "^opentelemetry-distro==\K[0-9]+\.[0-9]+\.[0-9]+(b[0-9]+)?" autoinstrumentation/python/requirements.txt)
+              current_version=$(grep -Po "^opentelemetry-distro==\K[0-9]+\.[0-9]+(b[0-9]+)?" autoinstrumentation/python/requirements.txt)
+              # Python releases are not tagged with the same version published on PyPI. Instead, we extract the PyPI version from the release name.
               latest_version=$(gh release view \
                                   --repo open-telemetry/opentelemetry-python \
-                                  --json tagName \
-                                  --jq .tagName \
-                                | sed 's/^v//')
+                                  --json name \
+                                  --jq .name \
+                                | sed -E 's/.*\/([0-9]+\.[0-9]+(b[0-9]+)?).*/\1/')
               ;;
           esac
 
