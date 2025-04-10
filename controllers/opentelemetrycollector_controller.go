@@ -39,6 +39,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	internalRbac "github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -261,6 +263,26 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		log.Info("Skipping reconciliation for unmanaged OpenTelemetryCollector resource", "name", req.String())
 		// Stop requeueing for unmanaged OpenTelemetryCollector custom resources
 		return ctrl.Result{}, nil
+	}
+
+	// Perform an upgrade of this CR if required.
+	// CRs with an empty version are ignored, as they're already up-to-date and
+	// the version will be set when the status field is refreshed.
+	if instance.Status.Version != "" && instance.Status.Version != version.OpenTelemetryCollector() &&
+		instance.Spec.UpgradeStrategy != v1beta1.UpgradeStrategyNone {
+		up := &upgrade.VersionUpgrade{
+			Log:      log.WithName("collector-upgrade"),
+			Version:  version.Get(),
+			Client:   r,
+			Recorder: r.recorder,
+		}
+
+		var upgraded v1beta1.OpenTelemetryCollector
+		upgraded, err = up.Upgrade(ctx, instance)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		instance = upgraded
 	}
 
 	// Add finalizer for this CR

@@ -47,7 +47,7 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 			require.NoError(t, err)
 
 			// sanity check
-			persisted := &v1alpha1.OpenTelemetryCollector{}
+			persisted := &v1beta1.OpenTelemetryCollector{}
 			err = k8sClient.Get(context.Background(), nsn, persisted)
 			require.NoError(t, err)
 			require.Equal(t, beginV, persisted.Status.Version)
@@ -59,7 +59,7 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 			}
 
 			// test
-			err = up.ManagedInstances(context.Background())
+			_, err = up.Upgrade(context.Background(), *persisted)
 			assert.NoError(t, err)
 
 			// verify
@@ -139,7 +139,7 @@ func TestEnvVarUpdates(t *testing.T) {
 	}
 
 	// test
-	err = up.ManagedInstances(context.Background())
+	_, err = up.Upgrade(context.Background(), *persisted)
 	assert.NoError(t, err)
 
 	// verify
