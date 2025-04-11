@@ -39,6 +39,15 @@ func (u VersionUpgrade) semVer() *semver.Version {
 	}
 }
 
+// NeedsUpgrade checks if this CR needs to be upgraded.
+func NeedsUpgrade(instance v1beta1.OpenTelemetryCollector) bool {
+	// CRs with an empty version are ignored, as they're already up-to-date and
+	// the version will be set when the status field is refreshed.
+	return instance.Status.Version != "" &&
+		instance.Status.Version != version.OpenTelemetryCollector() &&
+		instance.Spec.UpgradeStrategy != v1beta1.UpgradeStrategyNone
+}
+
 // Upgrade performs an upgrade of an OpenTelemetryCollector CR in the cluster.
 func (u VersionUpgrade) Upgrade(ctx context.Context, original v1beta1.OpenTelemetryCollector) error {
 	itemLogger := u.Log.WithValues("name", original.Name, "namespace", original.Namespace)

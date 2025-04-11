@@ -187,14 +187,6 @@ func (r *OpenTelemetryCollectorReconciler) getTargetAllocator(ctx context.Contex
 	return collector.TargetAllocator(params)
 }
 
-// needsUpgrade checks if this CR needs to be upgraded.
-func needsUpgrade(instance v1beta1.OpenTelemetryCollector) bool {
-	// CRs with an empty version are ignored, as they're already up-to-date and the version will be set when the status field is refreshed.
-	return instance.Status.Version != "" &&
-		instance.Status.Version != version.OpenTelemetryCollector() &&
-		instance.Spec.UpgradeStrategy != v1beta1.UpgradeStrategyNone
-}
-
 // upgrade runs the upgrade procedure for this CR.
 func (r *OpenTelemetryCollectorReconciler) upgrade(ctx context.Context, instance v1beta1.OpenTelemetryCollector) error {
 	up := &upgrade.VersionUpgrade{
@@ -203,9 +195,7 @@ func (r *OpenTelemetryCollectorReconciler) upgrade(ctx context.Context, instance
 		Client:   r,
 		Recorder: r.recorder,
 	}
-
-	err := up.Upgrade(ctx, instance)
-	return err
+	return up.Upgrade(ctx, instance)
 }
 
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
@@ -286,7 +276,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, nil
 	}
 
-	if needsUpgrade(instance) {
+	if upgrade.NeedsUpgrade(instance) {
 		err = r.upgrade(ctx, instance)
 		if err != nil {
 			return ctrl.Result{}, err
