@@ -13,4 +13,6 @@ issues: [3515]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: |
+  The upgrade process runs now in the reconcile loop.
+  In case of an error, the operator re-tries the upgrade with exponential backoff.
