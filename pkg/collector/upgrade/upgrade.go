@@ -40,7 +40,7 @@ func (u VersionUpgrade) semVer() *semver.Version {
 }
 
 // Upgrade performs an upgrade of an OpenTelemetryCollector CR in the cluster.
-func (u VersionUpgrade) Upgrade(ctx context.Context, original v1beta1.OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
+func (u VersionUpgrade) Upgrade(ctx context.Context, original v1beta1.OpenTelemetryCollector) error {
 	itemLogger := u.Log.WithValues("name", original.Name, "namespace", original.Namespace)
 
 	upgraded, err := u.ManagedInstance(ctx, original)
@@ -48,7 +48,7 @@ func (u VersionUpgrade) Upgrade(ctx context.Context, original v1beta1.OpenTeleme
 		const msg = "automated update not possible. Configuration must be corrected manually and CR instance must be re-created."
 		itemLogger.Info(msg)
 		u.Recorder.Event(&original, corev1.EventTypeWarning, "Upgrade", msg)
-		return original, err
+		return err
 	}
 	if !reflect.DeepEqual(upgraded, original) {
 		// the resource update overrides the status, so, keep it so that we can reset it later
@@ -56,19 +56,19 @@ func (u VersionUpgrade) Upgrade(ctx context.Context, original v1beta1.OpenTeleme
 		patch := client.MergeFrom(&original)
 		if err := u.Client.Patch(ctx, &upgraded, patch); err != nil {
 			itemLogger.Error(err, "failed to apply changes to instance")
-			return original, err
+			return err
 		}
 
 		// the status object requires its own update
 		upgraded.Status = st
 		if err := u.Client.Status().Patch(ctx, &upgraded, patch); err != nil {
 			itemLogger.Error(err, "failed to apply changes to instance's status object")
-			return original, err
+			return err
 		}
 		itemLogger.Info("instance upgraded", "version", upgraded.Status.Version)
 	}
 
-	return upgraded, nil
+	return nil
 }
 
 // ManagedInstance performs the necessary changes to bring the given otelcol instance to the current version.

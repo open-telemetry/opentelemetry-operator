@@ -187,6 +187,27 @@ func (r *OpenTelemetryCollectorReconciler) getTargetAllocator(ctx context.Contex
 	return collector.TargetAllocator(params)
 }
 
+// needsUpgrade checks if this CR needs to be upgraded.
+func needsUpgrade(instance v1beta1.OpenTelemetryCollector) bool {
+	// CRs with an empty version are ignored, as they're already up-to-date and the version will be set when the status field is refreshed.
+	return instance.Status.Version != "" &&
+		instance.Status.Version != version.OpenTelemetryCollector() &&
+		instance.Spec.UpgradeStrategy != v1beta1.UpgradeStrategyNone
+}
+
+// upgrade runs the upgrade procedure for this CR.
+func (r *OpenTelemetryCollectorReconciler) upgrade(ctx context.Context, instance v1beta1.OpenTelemetryCollector) error {
+	up := &upgrade.VersionUpgrade{
+		Log:      r.log.WithName("collector-upgrade"),
+		Version:  version.Get(),
+		Client:   r,
+		Recorder: r.recorder,
+	}
+
+	err := up.Upgrade(ctx, instance)
+	return err
+}
+
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
 func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	r := &OpenTelemetryCollectorReconciler{
@@ -265,24 +286,13 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, nil
 	}
 
-	// Perform an upgrade of this CR if required.
-	// CRs with an empty version are ignored, as they're already up-to-date and
-	// the version will be set when the status field is refreshed.
-	if instance.Status.Version != "" && instance.Status.Version != version.OpenTelemetryCollector() &&
-		instance.Spec.UpgradeStrategy != v1beta1.UpgradeStrategyNone {
-		up := &upgrade.VersionUpgrade{
-			Log:      log.WithName("collector-upgrade"),
-			Version:  version.Get(),
-			Client:   r,
-			Recorder: r.recorder,
-		}
-
-		var upgraded v1beta1.OpenTelemetryCollector
-		upgraded, err = up.Upgrade(ctx, instance)
+	if needsUpgrade(instance) {
+		err = r.upgrade(ctx, instance)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		instance = upgraded
+		// if the OpenTelemetryCollector CR was upgraded (modified), return here and re-queue the reconcile event.
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	// Add finalizer for this CR

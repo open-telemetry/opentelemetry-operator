@@ -59,7 +59,7 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 			}
 
 			// test
-			_, err = up.Upgrade(context.Background(), *persisted)
+			err = up.Upgrade(context.Background(), *persisted)
 			assert.NoError(t, err)
 
 			// verify
@@ -139,7 +139,7 @@ func TestEnvVarUpdates(t *testing.T) {
 	}
 
 	// test
-	_, err = up.Upgrade(context.Background(), *persisted)
+	err = up.Upgrade(context.Background(), *persisted)
 	assert.NoError(t, err)
 
 	// verify
