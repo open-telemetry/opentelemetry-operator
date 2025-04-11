@@ -45,12 +45,23 @@ func NeedsUpgrade(instance v1beta1.OpenTelemetryCollector) bool {
 	// the version will be set when the status field is refreshed.
 	return instance.Status.Version != "" &&
 		instance.Status.Version != version.OpenTelemetryCollector() &&
+		instance.Spec.ManagementState != v1beta1.ManagementStateUnmanaged &&
 		instance.Spec.UpgradeStrategy != v1beta1.UpgradeStrategyNone
 }
 
 // Upgrade performs an upgrade of an OpenTelemetryCollector CR in the cluster.
 func (u VersionUpgrade) Upgrade(ctx context.Context, original v1beta1.OpenTelemetryCollector) error {
 	itemLogger := u.Log.WithValues("name", original.Name, "namespace", original.Namespace)
+
+	if original.Spec.ManagementState == v1beta1.ManagementStateUnmanaged {
+		itemLogger.Info("skipping upgrade because instance is not managed")
+		return nil
+	}
+
+	if original.Spec.UpgradeStrategy == v1beta1.UpgradeStrategyNone {
+		itemLogger.Info("skipping instance upgrade due to UpgradeStrategy")
+		return nil
+	}
 
 	upgraded, err := u.ManagedInstance(ctx, original)
 	if err != nil {
