@@ -30,7 +30,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/logger"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/logger"
 )
 
 const (
