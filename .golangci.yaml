@@ -1,82 +1,90 @@
+version: "2"
 run:
   concurrency: 3
   timeout: 5m
   issues-exit-code: 1
   tests: true
 
-# all available settings of specific linters
-linters-settings:
-  goheader:
-    template: |-
-      Copyright The OpenTelemetry Authors
-      SPDX-License-Identifier: Apache-2.0
-  goimports:
-    local-prefixes: github.com/open-telemetry/opentelemetry-operator
-  gci:
-    sections:
-    - standard
-    - default
-    - prefix(github.com/open-telemetry/opentelemetry-operator)
-  misspell:
-    locale: US
-    ignore-words:
-      - cancelled
-      - metre
-      - meter
-      - metres
-      - kilometre
-      - kilometres
-  govet:
-    # settings per analyzer
-    settings:
-      printf: # analyzer name, run `go tool vet help` to see all analyzers
-        funcs: # run `go tool vet help printf` to see available settings for `printf` analyzer
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
-          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
-
-    enable-all: true
-    # TODO: Enable this and fix the alignment issues.
-    disable:
-      - fieldalignment
-  gofmt:
-    simplify: true
-  revive:
-    confidence: 0.8
-  
-  depguard:
-    rules:
-      main:
-        deny:
-          - pkg: sync/atomic
-            desc: "Use go.uber.org/atomic instead of sync/atomic"
-          - pkg: github.com/pkg/errors
-            desc: "Use 'errors' or 'fmt' instead of github.com/pkg/errors"
-
-issues:
-  exclude-rules:
-    - linters:
-        - gci
-      source: "// \\+kubebuilder"
-
 linters:
+  # all available settings of specific linters
+  settings:
+    depguard:
+      rules:
+        main:
+          deny:
+            - pkg: sync/atomic
+              desc: Use go.uber.org/atomic instead of sync/atomic
+            - pkg: github.com/pkg/errors
+              desc: Use 'errors' or 'fmt' instead of github.com/pkg/errors
+    goheader:
+      template: |-
+        Copyright The OpenTelemetry Authors
+        SPDX-License-Identifier: Apache-2.0
+    govet:
+      # TODO: Enable this and fix the alignment issues.
+      disable:
+        - fieldalignment
+      enable-all: true
+      # settings per analyzer
+      settings:
+        printf: # analyzer name, run `go tool vet help` to see all analyzers
+          funcs: # run `go tool vet help printf` to see available settings for `printf` analyzer
+            - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Infof
+            - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Warnf
+            - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Errorf
+            - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Fatalf
+    misspell:
+      locale: US
+      ignore-rules:
+        - cancelled
+    revive:
+      confidence: 0.8
+    staticcheck:
+      checks:
+        - all
+        - -QF1001 # FIXME Apply De Morgan’s law
+        - -QF1003 # FIXME Convert if/else-if chain to tagged switch
+        - -QF1004 # FIXME Use strings.ReplaceAll instead of strings.Replace with n == -1
+        - -QF1008 # FIXME Omit embedded fields from selector expression
+        - -QF1011 # FIXME Omit redundant type from variable declaration
+        - -ST1003 # FIXME Poorly chosen identifier
+        - -ST1005 # FIXME Incorrectly formatted error string
+        - -ST1012 # FIXME Poorly chosen name for error variable
+        - -ST1016 # FIXME Use consistent method receiver names
+        - -ST1019 # FIXME Importing the same package multiple times
+        - -ST1023 # FIXME Redundant type in variable declaration
   enable:
-    - goheader
-    - goimports
-    - misspell
-    - gosec
-    - govet
-    - exhaustive
-    - godot
-    - unparam
-    - gosimple
-    - unused
-    - staticcheck
-    - ineffassign
-    - typecheck
-    - unparam
     - depguard
     - errcheck
     - errorlint
+    - exhaustive
+    - godot
+    - goheader
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
+    - staticcheck
+    - unparam
+    - unused
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+formatters:
+  enable:
     - gci
+    - gofmt
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/open-telemetry/opentelemetry-operator)
+    gofmt:
+      simplify: true
+  exclusions:
+    generated: lax

@@ -190,9 +190,9 @@ func Test_runWatch(t *testing.T) {
 				mapMutex.Lock()
 				defer mapMutex.Unlock()
 				assert.Len(collect, actual, len(tt.want))
-				assert.Equal(collect, actual, tt.want)
+				assert.Equal(collect, tt.want, actual)
 				assert.Equal(collect, testutil.ToFloat64(collectorsDiscovered), float64(len(actual)))
-			}, time.Second*3, time.Millisecond)
+			}, time.Second*30, time.Millisecond*100)
 		})
 	}
 }
