@@ -39,6 +39,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	internalRbac "github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -185,6 +187,17 @@ func (r *OpenTelemetryCollectorReconciler) getTargetAllocator(ctx context.Contex
 	return collector.TargetAllocator(params)
 }
 
+// upgrade runs the upgrade procedure for this CR.
+func (r *OpenTelemetryCollectorReconciler) upgrade(ctx context.Context, instance v1beta1.OpenTelemetryCollector) error {
+	up := &upgrade.VersionUpgrade{
+		Log:      r.log.WithName("collector-upgrade"),
+		Version:  version.Get(),
+		Client:   r,
+		Recorder: r.recorder,
+	}
+	return up.Upgrade(ctx, instance)
+}
+
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
 func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 	r := &OpenTelemetryCollectorReconciler{
@@ -261,6 +274,15 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		log.Info("Skipping reconciliation for unmanaged OpenTelemetryCollector resource", "name", req.String())
 		// Stop requeueing for unmanaged OpenTelemetryCollector custom resources
 		return ctrl.Result{}, nil
+	}
+
+	if upgrade.NeedsUpgrade(instance) {
+		err = r.upgrade(ctx, instance)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		// if the OpenTelemetryCollector CR was upgraded (modified), return here and re-queue the reconcile event.
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	// Add finalizer for this CR

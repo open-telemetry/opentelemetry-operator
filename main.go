@@ -52,7 +52,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
-	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
@@ -367,7 +366,7 @@ func main() {
 		}
 	}
 
-	err = addDependencies(ctx, mgr, cfg, v)
+	err = addDependencies(ctx, mgr, cfg)
 	if err != nil {
 		setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
 		os.Exit(1)
@@ -509,23 +508,9 @@ func main() {
 	}
 }
 
-func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v version.Version) error {
+func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config) error {
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err := mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		up := &collectorupgrade.VersionUpgrade{
-			Log:      ctrl.Log.WithName("collector-upgrade"),
-			Version:  v,
-			Client:   mgr.GetClient(),
-			Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
-		}
-		return up.ManagedInstances(c)
-	}))
-	if err != nil {
-		return fmt.Errorf("failed to upgrade OpenTelemetryCollector instances: %w", err)
-	}
-
-	// adds the upgrade mechanism to be executed once the manager is ready
-	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
 		u := instrumentationupgrade.NewInstrumentationUpgrade(
 			mgr.GetClient(),
 			ctrl.Log.WithName("instrumentation-upgrade"),
