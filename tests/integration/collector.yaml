@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: collector
+  template:
+    metadata:
+      name: collector
+      labels:
+        app: collector
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - image: otel/opentelemetry-collector-contrib:latest
+          name: collector
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/otelcol-contrib/config.yaml
+              subPath: config.yaml
+          ports:
+            - containerPort: 4317
+              name: otlp
+            - containerPort: 4318
+              name: otlphttp
+      volumes:
+        - name: config-volume
+          configMap:
+            name: collector-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collector
+  namespace: default
+spec:
+  ports:
+    - port: 4317
+      protocol: TCP
+      targetPort: otlp
+      name: otlp
+    - port: 4318
+      protocol: TCP
+      targetPort: otlphttp
+      name: otlphttp
+  selector:
+    app: collector
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: collector-config
+  namespace: default
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: "0.0.0.0:4317"
+          http:
+            endpoint: "0.0.0.0:4318"
+    exporters:
+      debug:
+        verbosity: detailed
+    service:
+      pipelines:
+       metrics:
+         receivers: [otlp]
+         exporters: [debug]
+       traces:
+         receivers: [otlp]
+         exporters: [debug]
+       logs:
+         receivers: [otlp]
+         exporters: [debug]
