@@ -2,6 +2,49 @@
 
 <!-- next version -->
 
+## 0.122.0
+
+### 🛑 Breaking changes 🛑
+
+- `auto-instrumentation`: Update recommended resource attributes to match the [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/k8s-attributes.md) (#3797)
+  This change updates the recommended resource attributes to match the [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/k8s-attributes.md).
+  The following attributes have been updated:
+  - `service.version` now uses the docker image digest in addition to the tag
+  - the well-known label `app.kubernetes.io/part-of` for `service.namespace` has been removed
+  - the well-known label `app.kubernetes.io/instance` has been added (translates to `service.name`)
+  - `service.namespace` now also uses the Kubernetes namespace name (if `resource.opentelemetry.io/service.namespace` is not set)
+  
+  **You can do the following to avoid breaking changes**:
+  - `service.version`: Set the version explicitly using `resource.opentelemetry.io/service.version` 
+    (not recommended, the version has only been made more specific)
+  - `service.namespace`: Set the namespace explicitly using `resource.opentelemetry.io/service.namespace` - 
+    or just rely on the Kubernetes namespace name, which is now the default
+  - `service.name`: If you have enabled `useLabelsForResourceAttributes`:
+    Set the name explicitly using `resource.opentelemetry.io/service.name` if `app.kubernetes.io/instance` is used for another purpose 
+  
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Specific changes on CRD, Manifest, Controller, etc to allow specifying value for collector grace period (#3781)
+- `auto-instrumentation`: Increase default instrumentation memory limit to 256Mi (#3479)
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fix the default configuration for the internal metrics endpoint (#3730)
+- `collector`: Set the default endpoint to 0.0.0.0:13133 for the collector health check extension (#3825, #3688)
+
+### Components
+
+* [OpenTelemetry Collector - v0.122.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.122.1)
+* [OpenTelemetry Contrib - v0.122.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.122.1)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.56.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.56.0)
+* [Python - v0.51b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.51b0)
+* [Go - v0.19.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.19.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.121.0
 
 ### 🛑 Breaking changes 🛑
