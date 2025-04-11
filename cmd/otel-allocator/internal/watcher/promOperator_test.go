@@ -1068,16 +1068,13 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		},
 	}})
 
-	select {
-	case <-events:
-	case <-time.After(1 * time.Minute):
-	}
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		got, err = w.LoadConfig(context.Background())
+		assert.NoError(t, err)
 
-	got, err = w.LoadConfig(context.Background())
-	assert.NoError(t, err)
-
-	sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
-	assert.Equal(t, want_after.ScrapeConfigs, got.ScrapeConfigs)
+		sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
+		assert.Equal(t, want_after.ScrapeConfigs, got.ScrapeConfigs)
+	}, time.Second*30, time.Millisecond*100)
 }
 
 func TestRateLimit(t *testing.T) {
