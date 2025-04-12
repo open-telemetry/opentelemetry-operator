@@ -90,6 +90,7 @@ type Config struct {
 	Capabilities      map[Capability]bool `yaml:"capabilities"`
 	HeartbeatInterval time.Duration       `yaml:"heartbeatInterval,omitempty"`
 	Name              string              `yaml:"name,omitempty"`
+	Namespace         string              `yaml:"namespace,omitempty"`
 	AgentDescription  AgentDescription    `yaml:"description,omitempty"`
 }
 
@@ -163,6 +164,13 @@ func (c *Config) GetAgentVersion() string {
 
 func (c *Config) GetInstanceId() uuid.UUID {
 	return c.instanceId
+}
+
+func (c *Config) GetNamespace() string {
+	if len(c.Namespace) > 0 {
+		return c.Namespace
+	}
+	return "default"
 }
 
 func (c *Config) GetDescription() *protobufs.AgentDescription {
