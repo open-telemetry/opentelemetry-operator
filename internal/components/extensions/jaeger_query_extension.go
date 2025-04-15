@@ -27,6 +27,7 @@ var (
 type JaegerQueryExtensionConfig struct {
 	HTTP jaegerHTTPAddress `mapstructure:"http,omitempty" yaml:"http,omitempty"`
 }
+
 type jaegerHTTPAddress struct {
 	Endpoint string `mapstructure:"endpoint,omitempty" yaml:"endpoint,omitempty"`
 }
