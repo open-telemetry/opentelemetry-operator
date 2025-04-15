@@ -27,6 +27,11 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/proxy"
 )
 
+const (
+	// proxyPrefix is included to make clear if a collector configuration is proxied.
+	proxyPrefix = "proxy:"
+)
+
 type Agent struct {
 	logger logr.Logger
 
@@ -352,7 +357,7 @@ func (agent *Agent) getEffectiveConfig(ctx context.Context) (*protobufs.Effectiv
 	}
 	for id, instance := range agent.proxy.GetConfigurations() {
 		if cfg, ok := instance.GetConfigMap().GetConfigMap()[""]; ok {
-			instanceMap[id.String()] = cfg
+			instanceMap[proxyPrefix+id.String()] = cfg
 		}
 	}
 	return &protobufs.EffectiveConfig{

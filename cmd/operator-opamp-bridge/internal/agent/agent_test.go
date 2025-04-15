@@ -630,7 +630,7 @@ func TestAgent_onMessage(t *testing.T) {
 						"- otlp",
 						"status:",
 					},
-					mockInstanceId.String(): {
+					proxyPrefix + mockInstanceId.String(): {
 						"receivers:",
 						"otlp:",
 						"service:",
