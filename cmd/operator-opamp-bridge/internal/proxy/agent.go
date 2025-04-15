@@ -131,7 +131,7 @@ func (a *Agent) calcConnectionSettings(response *protobufs.ServerToAgent) {
 	// Here we can use Agent's description to send the appropriate connection
 	// settings to the Agent.
 	// In this simple example the connection settings do not depend on the
-	// Agent description, so we jst set them directly.
+	// Agent description, so we just set them directly.
 
 	response.ConnectionSettings = &protobufs.ConnectionSettingsOffers{
 		Hash:  nil, // TODO: calc has from settings.
