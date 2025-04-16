@@ -56,8 +56,6 @@ spec:
     - containerPort: 8080
       protocol: TCP
     volumeMounts:
-    - mountPath: /otlp
-      name: otlp-data-volume
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
     - mountPath: /otel-auto-instrumentation-java-myapp
@@ -71,8 +69,6 @@ spec:
     - --config=env:OTEL_CONFIG
     name: otc-container
     volumeMounts:
-    - mountPath: /otlp
-      name: otlp-data-volume
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
   initContainers:

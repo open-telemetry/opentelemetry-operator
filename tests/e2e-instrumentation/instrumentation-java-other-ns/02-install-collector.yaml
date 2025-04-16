@@ -15,19 +15,13 @@ spec:
     exporters:
       debug:
         verbosity: detailed
-      file:
-        path: /otlp/otel.json
-        flush_interval: 1s
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
-          exporters: [file,debug]
+          exporters: [debug]
         metrics:
           receivers: [otlp]
-          exporters: [file,debug]
+          exporters: [debug]
   mode: sidecar
-  volumeMounts:
-  - name: otlp-data-volume
-    mountPath: /otlp

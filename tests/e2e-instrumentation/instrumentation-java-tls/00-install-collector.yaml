@@ -3,23 +3,11 @@ kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
-  additionalContainers:
-  - command:
-    - sleep
-    - infinity
-    image: alpine
-    name: alpine
-    resources: {}
-    volumeMounts:
-      - name: otlp-data-volume
-        mountPath: /otlp
   volumeMounts:
     - name: certs
       mountPath: /certs
     - name: certs-ca
       mountPath: /certs-ca
-    - name: otlp-data-volume
-      mountPath: /otlp
   volumes:
     - name: certs
       secret:
@@ -27,8 +15,6 @@ spec:
     - name: certs-ca
       configMap:
         name: ca
-    - name: otlp-data-volume
-      emptyDir: {}
   config:
     receivers:
       otlp:
@@ -51,16 +37,13 @@ spec:
     exporters:
       debug:
         verbosity: detailed
-      file:
-        path: /otlp/otel.json
-        flush_interval: 1s
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
-          exporters: [file,debug]
+          exporters: [debug]
         metrics:
           receivers: [otlp]
-          exporters: [file,debug]
+          exporters: [debug]
  

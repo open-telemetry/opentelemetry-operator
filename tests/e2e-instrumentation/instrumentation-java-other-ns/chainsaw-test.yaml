@@ -4,9 +4,6 @@ kind: Test
 metadata:
   name: instrumentation-java-other-ns
 spec:
-  bindings:
-    - name: otlpFilePath
-      value: /tmp/instrumentation-java-other-ns.json
   steps:
   - name: step-01
     try:
@@ -91,56 +88,42 @@ spec:
               Description: Measure of memory used
         timeout: 2m
         content: ../../test-e2e-apps/scripts/check_pod_logs.sh
-  - name: Fetch the telemetry data exported by file exporter
+  - name: Check the instrumented app has sent the telemetry data successfully
     try:
-    - command:
-        entrypoint: kubectl
-        args:
-          - get
-          - pod
-          - -n
-          - ${NAMESPACE}
-          - -l
-          - app=my-java-other-ns
-          - -o
-          - jsonpath={.items[0].metadata.name}
-        outputs:
-        - name: podName
-          value: ($stdout)
-    - command:
-        env:
-          - name: POD_NAME
+      - command:
+          entrypoint: kubectl
+          args:
+            - get
+            - pod
+            - -n
+            - ${NAMESPACE}
+            - -l
+            - app=my-java-other-ns
+            - -o
+            - jsonpath={.items[0].metadata.name}
+          outputs:
+          - name: podName
+            value: ($stdout)
+      - script:
+          env:
+          - name: podName
             value: ($podName)
-          - name: OTLP_FILE_PATH
-            value: ($otlpFilePath)
-          - name: CONTAINER_NAME
-            value: myapp
-        entrypoint: /bin/bash
-        check:
-          ($error == null): true
-        args:
-        - -c
-        - |
-          echo "Copying logs from pod ${POD_NAME} in namespace ${NAMESPACE}..."
-          kubectl cp "${NAMESPACE}/${POD_NAME}:/otlp/otel.json" ${OTLP_FILE_PATH} -c ${CONTAINER_NAME}
+          content: |
+            #!/bin/bash
+            # set -ex
+            kubectl get --raw /api/v1/namespaces/$NAMESPACE/pods/${podName}:8888/proxy/metrics
+          outputs:
+          - name: metrics
+            value: (x_metrics_decode($stdout))
+          check:
+            ($error == null): true
+      - assert:
+          resource:
+            ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] > `1`): true
+            ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] > `1`): true
+            ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_metric_points_total'].value | [0] > `1`): true
+            ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_metric_points_total'].value | [0] > `1`): true
     catch:
       - podLogs:
-          namespace: ${NAMESPACE}
-          selector: app=my-java
+          selector: app=my-java-other-ns
           container: otc-container
-          tail: 100
-  - name: Validate telemetry data
-    try:
-    - command:
-        timeout: 1m
-        env:
-          - name: TELEMETRY_CHECK
-            value: "traces,metrics"
-          - name: OTLP_FILE_PATH
-            value: ($otlpFilePath)
-        entrypoint: go
-        args:
-          - test
-          - ../../test-e2e-apps/otel-telemetry-validator/otel_telemetry_validator_test.go
-        check:
-          ($error == null): true

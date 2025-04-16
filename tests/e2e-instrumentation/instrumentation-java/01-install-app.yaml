@@ -15,9 +15,6 @@ spec:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-java: "true"
     spec:
-      volumes:
-      - name: otlp-data-volume
-        emptyDir: {}
       securityContext:
         runAsUser: 1000
         runAsGroup: 3000
@@ -40,6 +37,3 @@ spec:
           periodSeconds: 15
           timeoutSeconds: 2
           failureThreshold: 3
-        volumeMounts:
-        - name: otlp-data-volume
-          mountPath: /otlp
