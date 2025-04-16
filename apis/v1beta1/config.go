@@ -462,6 +462,9 @@ func (s *Service) ApplyDefaults(logger logr.Logger) error {
 
 	if tel == nil {
 		tel = &Telemetry{}
+		s.Telemetry = &AnyConfig{
+			Object: map[string]interface{}{},
+		}
 	}
 
 	if tel.Metrics.Address != "" || len(tel.Metrics.Readers) != 0 {
@@ -477,11 +480,14 @@ func (s *Service) ApplyDefaults(logger logr.Logger) error {
 	reader := AddPrometheusMetricsEndpoint(host, port)
 	tel.Metrics.Readers = append(tel.Metrics.Readers, reader)
 
-	s.Telemetry, err = tel.ToAnyConfig()
+	telConfig, err := tel.ToAnyConfig()
 	if err != nil {
 		return err
 	}
 
+	if err := mergo.Merge(&s.Telemetry.Object, telConfig.Object); err != nil {
+		return err
+	}
 	return nil
 }
 

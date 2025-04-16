@@ -1097,3 +1097,51 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 		})
 	}
 }
+
+func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
+	// Test case where logs configuration exists and metrics is added
+	cfg := &Config{
+		Service: Service{
+			Telemetry: &AnyConfig{
+				Object: map[string]interface{}{
+					"logs": map[string]interface{}{
+						"level": "debug",
+					},
+				},
+			},
+		},
+	}
+
+	expected := &Config{
+		Service: Service{
+			Telemetry: &AnyConfig{
+				Object: map[string]interface{}{
+					"logs": map[string]interface{}{
+						"level": "debug",
+					},
+					"metrics": map[string]interface{}{
+						"readers": []interface{}{
+							map[string]interface{}{
+								"pull": map[string]interface{}{
+									"exporter": map[string]interface{}{
+										"prometheus": map[string]interface{}{
+											"host": "0.0.0.0",
+											"port": int32(8888),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := cfg.Service.ApplyDefaults(logr.Discard())
+	require.NoError(t, err)
+
+	telemetry := cfg.Service.GetTelemetry()
+	require.NotNil(t, telemetry)
+	require.Equal(t, expected, cfg)
+}
