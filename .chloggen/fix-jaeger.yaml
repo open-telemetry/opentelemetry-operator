@@ -1,0 +1,18 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: bug_fix
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: collector
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Fix Jaeger query extension default endpoint
+
+# One or more tracking issues related to the change
+issues: [3906]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  The operator 0.122.0 introduced a fix to add a default endpoint. However, for Jaeger query extension the endpoint
+  was put in the wrong place, causing collector to fail to start due to an incorrect config.

@@ -1,29 +1,26 @@
-apiVersion: v1
-items:
-- apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    name: jaeger-inmemory-collector
-  spec:
-    template:
-      spec:
-        containers:
-        - ports:
-          - containerPort: 16686
-            name: jaeger-query
-            protocol: TCP
-          - containerPort: 8888
-            name: metrics
-            protocol: TCP
-          - containerPort: 4317
-            name: otlp-grpc
-            protocol: TCP
-          - containerPort: 4318
-            name: otlp-http
-            protocol: TCP
-kind: List
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  resourceVersion: ""
+  name: jaeger-inmemory-collector
+spec:
+  template:
+    spec:
+      containers:
+      - ports:
+        - containerPort: 16686
+          name: jaeger-query
+          protocol: TCP
+        - containerPort: 8888
+          name: metrics
+          protocol: TCP
+        - containerPort: 4317
+          name: otlp-grpc
+          protocol: TCP
+        - containerPort: 4318
+          name: otlp-http
+          protocol: TCP
+status:
+  readyReplicas: 1
 ---
 apiVersion: v1
 kind: Service
