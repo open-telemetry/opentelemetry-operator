@@ -2,6 +2,32 @@
 
 <!-- next version -->
 
+## 0.123.0
+
+### 💡 Enhancements 💡
+
+- `opamp`: Enables the OpAMP Bridge to act as a read-only proxy for effective configuration and health reporting. (#3823)
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fix the telemetry config to not override the user-defined config. (#3913)
+- `collector`: Fix Jaeger query extension default endpoint (#3906)
+  The operator 0.122.0 introduced a fix to add a default endpoint. However, for Jaeger query extension the endpoint
+  was put in the wrong place, causing collector to fail to start due to an incorrect config.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.123.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.123.1)
+* [OpenTelemetry Contrib - v0.123.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.123.1)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.57.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.57.1)
+* [Python - v0.51b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.51b0)
+* [Go - v0.19.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.19.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.122.0
 
 ### 🛑 Breaking changes 🛑
