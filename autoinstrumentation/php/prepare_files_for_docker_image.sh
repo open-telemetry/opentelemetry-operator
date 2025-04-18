@@ -100,6 +100,7 @@ build_native_binaries_for_PHP_version_libc_variant() {
         mkdir -p /app && cd /app \
         ${install_compiler_command} \
         && pecl install opentelemetry-${opentelemetry_extension_version} \
+        && docker-php-ext-enable opentelemetry \
         && cp "$(php-config --extension-dir)/opentelemetry.so" /dest_dir/ \
         && chown -R ${current_user_id}:${current_user_group_id} /dest_dir/"
 
