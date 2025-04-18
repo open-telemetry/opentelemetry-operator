@@ -9,7 +9,7 @@ permissions: {}
 jobs:
   shellcheck:
     name: shellcheck
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     env:
       # renovate: datasource=github-releases depName=https://github.com/koalaman/shellcheck
       SHELLCHECK_VERSION: v0.10.0

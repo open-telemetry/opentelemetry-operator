@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   e2e-tests:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -96,7 +96,7 @@ jobs:
         make e2e-log-operator KUBE_VERSION=$KUBE_VERSION
 
   e2e-tests-check:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: always()
     needs: [e2e-tests]
     steps:
