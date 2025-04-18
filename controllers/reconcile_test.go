@@ -1304,10 +1304,14 @@ func TestUpgrade(t *testing.T) {
 	testCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	reconciler := createTestReconciler(t, testCtx, config.New(
-		config.WithCollectorImage("default-collector"),
-		config.WithTargetAllocatorImage("default-ta-allocator"),
-	))
+	reconciler := createTestReconcilerWithVersion(
+		t, testCtx,
+		config.New(
+			config.WithCollectorImage("default-collector"),
+			config.WithTargetAllocatorImage("default-ta-allocator"),
+		),
+		version.Version{OpenTelemetryCollector: upgrade.Latest.String()},
+	)
 
 	for _, tt := range []struct {
 		name          string
@@ -1526,7 +1530,7 @@ func IsOwnedBy(obj metav1.Object, owner *v1beta1.OpenTelemetryCollector) bool {
 	return isOwner
 }
 
-func createTestReconciler(t *testing.T, ctx context.Context, cfg config.Config) *controllers.OpenTelemetryCollectorReconciler {
+func createTestReconcilerWithVersion(t *testing.T, ctx context.Context, cfg config.Config, v version.Version) *controllers.OpenTelemetryCollectorReconciler {
 	t.Helper()
 	// we need to set up caches for our reconciler
 	runtimeCluster, err := runtimecluster.New(restCfg, func(options *runtimecluster.Options) {
@@ -1545,13 +1549,18 @@ func createTestReconciler(t *testing.T, ctx context.Context, cfg config.Config) 
 		Scheme:   testScheme,
 		Recorder: record.NewFakeRecorder(20),
 		Config:   cfg,
-		Version:  version.Version{OpenTelemetryCollector: upgrade.Latest.String()},
+		Version:  v,
 	})
 	err = reconciler.SetupCaches(runtimeCluster)
 	require.NoError(t, err)
 	synced := runtimeCluster.GetCache().WaitForCacheSync(ctx)
 	require.True(t, synced, "caches didn't sync successfully")
 	return reconciler
+}
+
+func createTestReconciler(t *testing.T, ctx context.Context, cfg config.Config) *controllers.OpenTelemetryCollectorReconciler {
+	t.Helper()
+	return createTestReconcilerWithVersion(t, ctx, cfg, version.Get())
 }
 
 func sanitizeResourceName(name string) string {
