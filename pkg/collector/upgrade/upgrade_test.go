@@ -22,6 +22,72 @@ import (
 
 var logger = logf.Log.WithName("unit-tests")
 
+func TestNeedsUpgrade(t *testing.T) {
+	up := &upgrade.VersionUpgrade{
+		Version: version.Version{OpenTelemetryCollector: "0.10.0"},
+	}
+
+	for _, tt := range []struct {
+		desc      string
+		collector v1beta1.OpenTelemetryCollector
+		expected  bool
+	}{
+		{
+			desc: "needs upgrade",
+			collector: v1beta1.OpenTelemetryCollector{
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.1.0",
+				},
+			},
+			expected: true,
+		},
+		{
+			desc: "already up-to-date",
+			collector: v1beta1.OpenTelemetryCollector{
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.10.0",
+				},
+			},
+			expected: false,
+		},
+		{
+			desc:      "empty version, already up-to-date",
+			collector: v1beta1.OpenTelemetryCollector{},
+			expected:  false,
+		},
+		{
+			desc: "needs upgrade, but is ManagementState = Unmanaged",
+			collector: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						ManagementState: v1beta1.ManagementStateUnmanaged,
+					},
+				},
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.1.0",
+				},
+			},
+			expected: false,
+		},
+		{
+			desc: "needs upgrade, but UpgradeStrategy = None",
+			collector: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					UpgradeStrategy: v1beta1.UpgradeStrategyNone,
+				},
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.1.0",
+				},
+			},
+			expected: false,
+		},
+	} {
+		t.Run(tt.desc, func(t *testing.T) {
+			assert.Equal(t, tt.expected, up.NeedsUpgrade(tt.collector))
+		})
+	}
+}
+
 func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 	const beginV = "0.0.1" // this is the first version we have an upgrade function
 

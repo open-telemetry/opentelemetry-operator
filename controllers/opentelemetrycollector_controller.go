@@ -7,6 +7,7 @@ package controllers
 import (
 	"context"
 	"sort"
+	"time"
 
 	"github.com/go-logr/logr"
 	routev1 "github.com/openshift/api/route/v1"
@@ -62,6 +63,7 @@ type OpenTelemetryCollectorReconciler struct {
 	log      logr.Logger
 	config   config.Config
 	reviewer *internalRbac.Reviewer
+	upgrade  *upgrade.VersionUpgrade
 }
 
 // Params is the set of options to build a new OpenTelemetryCollectorReconciler.
@@ -72,6 +74,7 @@ type Params struct {
 	Log      logr.Logger
 	Config   config.Config
 	Reviewer *internalRbac.Reviewer
+	Version  version.Version
 }
 
 func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
@@ -187,19 +190,15 @@ func (r *OpenTelemetryCollectorReconciler) getTargetAllocator(ctx context.Contex
 	return collector.TargetAllocator(params)
 }
 
-// upgrade runs the upgrade procedure for this CR.
-func (r *OpenTelemetryCollectorReconciler) upgrade(ctx context.Context, instance v1beta1.OpenTelemetryCollector) error {
-	up := &upgrade.VersionUpgrade{
-		Log:      r.log.WithName("collector-upgrade"),
-		Version:  version.Get(),
-		Client:   r,
-		Recorder: r.recorder,
-	}
-	return up.Upgrade(ctx, instance)
-}
-
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
 func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
+	up := &upgrade.VersionUpgrade{
+		Client:   p.Client,
+		Log:      p.Log.WithName("collector-upgrade"),
+		Recorder: p.Recorder,
+		Version:  p.Version,
+	}
+
 	r := &OpenTelemetryCollectorReconciler{
 		Client:   p.Client,
 		log:      p.Log,
@@ -207,6 +206,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 		config:   p.Config,
 		recorder: p.Recorder,
 		reviewer: p.Reviewer,
+		upgrade:  up,
 	}
 	return r
 }
@@ -276,13 +276,13 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, nil
 	}
 
-	if upgrade.NeedsUpgrade(instance) {
-		err = r.upgrade(ctx, instance)
+	if r.upgrade.NeedsUpgrade(instance) {
+		err = r.upgrade.Upgrade(ctx, instance)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 		// if the OpenTelemetryCollector CR was upgraded (modified), return here and re-queue the reconcile event.
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Second}, nil
 	}
 
 	// Add finalizer for this CR
