@@ -18,33 +18,33 @@ show_help() {
 parse_args() {
     while [[ "$#" -gt 0 ]]; do
         case $1 in
-            --ext-ver)
-                opentelemetry_extension_version="$2"
-                shift
-                ;;
-            --dest-dir)
-                destination_directory="$2"
-                shift
-                ;;
-            --help)
-                show_help
-                exit 0
-                ;;
-            *)
-                echo "Unknown parameter passed: $1"
-                show_help
-                exit 1
-                ;;
+        --ext-ver)
+            opentelemetry_extension_version="$2"
+            shift
+            ;;
+        --dest-dir)
+            destination_directory="$2"
+            shift
+            ;;
+        --help)
+            show_help
+            exit 0
+            ;;
+        *)
+            echo "Unknown parameter passed: $1"
+            show_help
+            exit 1
+            ;;
         esac
         shift
     done
 
-    if [ -z "${opentelemetry_extension_version}" ] ; then
+    if [ -z "${opentelemetry_extension_version}" ]; then
         echo "<opentelemetry extension version> argument is missing"
         show_help
         exit 1
     fi
-    if [ -z "${destination_directory}" ] ; then
+    if [ -z "${destination_directory}" ]; then
         echo "<destination directory> argument is missing"
         show_help
         exit 1
@@ -62,7 +62,7 @@ ensure_dir_exists_and_empty() {
             exit 1
         fi
     else
-        mkdir -p "${dir_to_clean}"        
+        mkdir -p "${dir_to_clean}"
     fi
 }
 
@@ -79,16 +79,15 @@ build_native_binaries_for_PHP_version_libc_variant() {
     local PHP_docker_image="php:${PHP_version}-cli"
     local install_compiler_command=""
     case "${libc_variant}" in
-        glibc)
-            ;;
-        musl)
-            PHP_docker_image="${PHP_docker_image}-alpine"
-            install_compiler_command="&& apk update && apk add autoconf build-base"
-            ;;
-        *)
-            echo "Unexpected libc variant: ${libc_variant}"
-            exit 1
-            ;;
+    glibc) ;;
+    musl)
+        PHP_docker_image="${PHP_docker_image}-alpine"
+        install_compiler_command="&& apk update && apk add autoconf build-base"
+        ;;
+    *)
+        echo "Unexpected libc variant: ${libc_variant}"
+        exit 1
+        ;;
     esac
 
     local current_user_id
@@ -101,7 +100,7 @@ build_native_binaries_for_PHP_version_libc_variant() {
         mkdir -p /app && cd /app \
         ${install_compiler_command} \
         && pecl install opentelemetry-${opentelemetry_extension_version} \
-        && cp /usr/local/lib/php/extensions/no-debug-non-zts-*/opentelemetry.so /dest_dir/ \
+        && cp "$(php-config --extension-dir)/opentelemetry.so" /dest_dir/ \
         && chown -R ${current_user_id}:${current_user_group_id} /dest_dir/"
 
     echo "Built extension binaries for PHP version: ${PHP_version} and libc variant: ${libc_variant}"
@@ -110,8 +109,8 @@ build_native_binaries_for_PHP_version_libc_variant() {
 build_native_binaries() {
     echo "Building extension binaries..."
 
-    for PHP_version in "${PHP_versions[@]}" ; do
-        for libc_variant in "${libc_variants[@]}" ; do
+    for PHP_version in "${PHP_versions[@]}"; do
+        for libc_variant in "${libc_variants[@]}"; do
             build_native_binaries_for_PHP_version_libc_variant "${PHP_version}" "${libc_variant}"
         done
     done
@@ -195,7 +194,7 @@ download_PHP_packages_for_PHP_version() {
 download_PHP_packages() {
     echo "Downloading PHP packages..."
 
-    for PHP_version in "${PHP_versions[@]}" ; do
+    for PHP_version in "${PHP_versions[@]}"; do
         download_PHP_packages_for_PHP_version "${PHP_version}"
     done
 
