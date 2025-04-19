@@ -2,7 +2,6 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
-  creationTimestamp: null
   name: instrumentation-java-other-ns
 spec:
   steps:
@@ -45,10 +44,86 @@ spec:
     catch:
       - podLogs:
           selector: app=my-java-other-ns
-  - name: step-04
+  - name: Make a request to the app
     try:
-    - delete:
-        ref:
+      - command:
+          env:
+          - name: appnamespace
+            value: ($namespace)
+          entrypoint: kubectl
+          args:
+            - get
+            - pod
+            - -n
+            - $appnamespace
+            - -l
+            - app=my-java-other-ns
+            - -o
+            - jsonpath={.items[0].metadata.name}
+          outputs:
+          - name: podName
+            value: ($stdout)
+      - proxy:
           apiVersion: v1
-          kind: Namespace
-          name: my-other-ns
+          kind: Pod
+          name: ($podName)
+          namespace: ($namespace)
+          port: "8080"
+  - name: Wait for telemetry data to be collected
+    try:
+    - script:
+        env:
+          - name: LABEL_SELECTOR
+            value: "app=my-java-other-ns"
+          - name: CONTAINER_NAME
+            value: "otc-container" 
+          - name: RETRY_TIMEOUT
+            value: "120"
+          - name: RETRY_SLEEP
+            value: "5"
+          - name: SEARCH_STRINGS_ENV
+            value: |
+              AggregationTemporality: Cumulative
+              Name: process.runtime.jvm.memory.usage
+              Description: Measure of memory used
+        timeout: 2m
+        content: ../../test-e2e-apps/scripts/check_pod_logs.sh
+  - name: Check the instrumented app has sent the telemetry data successfully
+    try:
+      - command:
+          entrypoint: kubectl
+          args:
+            - get
+            - pod
+            - -n
+            - ${NAMESPACE}
+            - -l
+            - app=my-java-other-ns
+            - -o
+            - jsonpath={.items[0].metadata.name}
+          outputs:
+          - name: podName
+            value: ($stdout)
+      - script:
+          env:
+          - name: podName
+            value: ($podName)
+          content: |
+            #!/bin/bash
+            # set -ex
+            kubectl get --raw /api/v1/namespaces/$NAMESPACE/pods/${podName}:8888/proxy/metrics
+          outputs:
+          - name: metrics
+            value: (x_metrics_decode($stdout))
+          check:
+            ($error == null): true
+      - assert:
+          resource:
+            ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] > `1`): true
+            ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] > `1`): true
+            ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_metric_points_total'].value | [0] > `1`): true
+            ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_metric_points_total'].value | [0] > `1`): true
+    catch:
+      - podLogs:
+          selector: app=my-java-other-ns
+          container: otc-container
