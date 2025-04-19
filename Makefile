@@ -370,7 +370,7 @@ e2e-upgrade: undeploy chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade
 
 .PHONY: prepare-e2e
-prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge container-bridge-test-server start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
@@ -438,7 +438,13 @@ install-targetallocator-prometheus-crds:
 	./hack/install-targetallocator-prometheus-crds.sh
 
 .PHONY: load-image-all
-load-image-all: load-image-operator load-image-target-allocator load-image-operator-opamp-bridge load-image-bridge-test-server
+load-image-all:
+ifeq ($(IMAGE_ARCHIVE),)
+	@make container container-target-allocator container-operator-opamp-bridge container-bridge-test-server load-image-operator load-image-target-allocator load-image-operator-opamp-bridge load-image-bridge-test-server
+else
+	$(KIND) load --name $(KIND_CLUSTER_NAME) image-archive $(IMAGE_ARCHIVE)
+endif
+
 
 .PHONY: load-image-operator
 load-image-operator: container kind
@@ -718,3 +724,15 @@ catalog-build: opm bundle-build bundle-push ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	docker push $(CATALOG_IMG)
+
+container-image-archive: IMAGE_LIST_FILE = images-$(VERSION).txt
+container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server
+ifeq ($(IMAGE_ARCHIVE),)
+	$(error "Use make container-image-archive IMAGE_ARCHIVE=<filename>")
+endif
+	@rm -f $(IMAGE_LIST_FILE)
+	@echo "$(IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(TARGETALLOCATOR_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(OPERATOROPAMPBRIDGE_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(BRIDGETESTSERVER_IMG)" >>$(IMAGE_LIST_FILE)
+	xargs -x -n 50 docker save -o "$(IMAGE_ARCHIVE)" <$(IMAGE_LIST_FILE)
