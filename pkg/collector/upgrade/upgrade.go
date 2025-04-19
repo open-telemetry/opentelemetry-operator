@@ -6,11 +6,11 @@ package upgrade
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	semver "github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -39,55 +39,46 @@ func (u VersionUpgrade) semVer() *semver.Version {
 	}
 }
 
-// ManagedInstances finds all the otelcol instances for the current operator and upgrades them, if necessary.
-func (u VersionUpgrade) ManagedInstances(ctx context.Context) error {
-	u.Log.Info("looking for managed instances to upgrade")
-	list := &v1beta1.OpenTelemetryCollectorList{}
-	if err := u.Client.List(ctx, list); err != nil {
-		return fmt.Errorf("failed to list: %w", err)
+// NeedsUpgrade checks if this CR needs to be upgraded.
+func (u VersionUpgrade) NeedsUpgrade(instance v1beta1.OpenTelemetryCollector) bool {
+	// CRs with an empty version are ignored, as they're already up-to-date and
+	// the version will be set when the status field is refreshed.
+	return instance.Status.Version != "" &&
+		instance.Status.Version != u.Version.OpenTelemetryCollector &&
+		instance.Spec.ManagementState != v1beta1.ManagementStateUnmanaged &&
+		instance.Spec.UpgradeStrategy != v1beta1.UpgradeStrategyNone
+}
+
+// Upgrade performs an upgrade of an OpenTelemetryCollector CR in the cluster.
+func (u VersionUpgrade) Upgrade(ctx context.Context, original v1beta1.OpenTelemetryCollector) error {
+	if !u.NeedsUpgrade(original) {
+		return nil
 	}
 
-	for i := range list.Items {
-		original := list.Items[i]
-		itemLogger := u.Log.WithValues("name", original.Name, "namespace", original.Namespace)
-
-		if original.Spec.ManagementState == v1beta1.ManagementStateUnmanaged {
-			itemLogger.Info("skipping upgrade because instance is not managed")
-			continue
-		}
-
-		if original.Spec.UpgradeStrategy == v1beta1.UpgradeStrategyNone {
-			itemLogger.Info("skipping instance upgrade due to UpgradeStrategy")
-			continue
-		}
-		upgraded, err := u.ManagedInstance(ctx, original)
-		if err != nil {
-			const msg = "automated update not possible. Configuration must be corrected manually and CR instance must be re-created."
-			itemLogger.Info(msg)
-			u.Recorder.Event(&original, "Error", "Upgrade", msg)
-			continue
-		}
-		if !reflect.DeepEqual(upgraded, list.Items[i]) {
-			// the resource update overrides the status, so, keep it so that we can reset it later
-			st := upgraded.Status
-			patch := client.MergeFrom(&original)
-			if err := u.Client.Patch(ctx, &upgraded, patch); err != nil {
-				itemLogger.Error(err, "failed to apply changes to instance")
-				continue
-			}
-
-			// the status object requires its own update
-			upgraded.Status = st
-			if err := u.Client.Status().Patch(ctx, &upgraded, patch); err != nil {
-				itemLogger.Error(err, "failed to apply changes to instance's status object")
-				continue
-			}
-			itemLogger.Info("instance upgraded", "version", upgraded.Status.Version)
-		}
+	itemLogger := u.Log.WithValues("name", original.Name, "namespace", original.Namespace)
+	upgraded, err := u.ManagedInstance(ctx, original)
+	if err != nil {
+		const msg = "automated update not possible. Configuration must be corrected manually and CR instance must be re-created."
+		itemLogger.Info(msg)
+		u.Recorder.Event(&original, corev1.EventTypeWarning, "Upgrade", msg)
+		return err
 	}
+	if !reflect.DeepEqual(upgraded, original) {
+		// the resource update overrides the status, so, keep it so that we can reset it later
+		st := upgraded.Status
+		patch := client.MergeFrom(&original)
+		if err := u.Client.Patch(ctx, &upgraded, patch); err != nil {
+			itemLogger.Error(err, "failed to apply changes to instance")
+			return err
+		}
 
-	if len(list.Items) == 0 {
-		u.Log.Info("no instances to upgrade")
+		// the status object requires its own update
+		upgraded.Status = st
+		if err := u.Client.Status().Patch(ctx, &upgraded, patch); err != nil {
+			itemLogger.Error(err, "failed to apply changes to instance's status object")
+			return err
+		}
+		itemLogger.Info("instance upgraded", "version", upgraded.Status.Version)
 	}
 
 	return nil
@@ -140,7 +131,7 @@ func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenT
 
 				upgradedV1alpha1, err := available.upgrade(u, otelcolV1alpha1)
 				if err != nil {
-					u.Log.Error(err, "failed to upgrade managed otelcol instances", "name", updated.Name, "namespace", updated.Namespace)
+					u.Log.Error(err, "failed to upgrade managed otelcol instance", "name", updated.Name, "namespace", updated.Namespace)
 					return updated, err
 				}
 				upgradedV1alpha1.Status.Version = available.String()
@@ -153,7 +144,7 @@ func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenT
 
 				upgraded, err := available.upgradeV1beta1(u, &updated) //available.upgrade(params., &updated)
 				if err != nil {
-					u.Log.Error(err, "failed to upgrade managed otelcol instances", "name", updated.Name, "namespace", updated.Namespace)
+					u.Log.Error(err, "failed to upgrade managed otelcol instance", "name", updated.Name, "namespace", updated.Namespace)
 					return updated, err
 				}
 
