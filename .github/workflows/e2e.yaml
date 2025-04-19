@@ -13,9 +13,45 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  IMAGE_ARCHIVE_FILENAME: images.tar
+  VERSION: e2e
+
 jobs:
+  build-test-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up Go
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+        id: setup-go
+        with:
+          go-version: "~1.24.2"
+
+      - name: Cache tools
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: bin
+          key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
+
+      - name: Install tools
+        run: make install-tools
+
+      - name: Build test image archive
+        run: make container-image-archive IMAGE_ARCHIVE=${IMAGE_ARCHIVE_FILENAME} VERSION=${VERSION}
+
+      - name: Upload test image archive
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Test image archive
+          path: ${{ env.IMAGE_ARCHIVE_FILENAME }}
+          if-no-files-found: 'error'
+          retention-days: 1
+
   e2e-tests:
     runs-on: ubuntu-latest
+    needs: [build-test-images]
     strategy:
       fail-fast: false
       matrix:
@@ -75,12 +111,17 @@ jobs:
     - name: Install tools
       run: make install-tools
 
+    - name: Download test image archive
+      uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
+      with:
+        name: Test image archive
+
     - name: Prepare e2e tests
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
       run: |
         set -e
-        make ${{ matrix.setup != '' && matrix.setup || 'prepare-e2e' }} KUBE_VERSION=$KUBE_VERSION VERSION=e2e
+        make ${{ matrix.setup != '' && matrix.setup || 'prepare-e2e' }} KUBE_VERSION=$KUBE_VERSION VERSION=$VERSION IMAGE_ARCHIVE=$IMAGE_ARCHIVE_FILENAME
     - name: Run e2e tests
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
