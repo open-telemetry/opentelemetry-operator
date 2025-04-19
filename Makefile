@@ -14,6 +14,13 @@ DEFAULT_INSTRUMENTATION_GO_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-go
 DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-apache-httpd=/ {print $$2}' versions.txt)"
 DEFAULT_INSTRUMENTATION_NGINX_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-nginx=/ {print $$2}' versions.txt)"
 
+# Actual versions used for publishing instrumentation images
+INSTRUMENTATION_JAVA_VERSION ?= "$(shell cat autoinstrumentation/java/version.txt)"
+INSTRUMENTATION_NODEJS_VERSION ?= "$(shell grep -o '"@opentelemetry/auto-instrumentations-node": "[^"]*' autoinstrumentation/nodejs/package.json | cut -d'"' -f4)"
+INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -o '^opentelemetry-instrumentation==[^ ]*' autoinstrumentation/python/requirements.txt | cut -d'=' -f3)"
+INSTRUMENTATION_DOTNET_VERSION ?= "$(shell cat autoinstrumentation/dotnet/version.txt)"
+INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell cat autoinstrumentation/apache-httpd/version.txt)"
+
 COMMON_LDFLAGS ?= -s -w
 OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION}\
 	-X ${VERSION_PKG}.buildDate=${VERSION_DATE}\
@@ -49,6 +56,21 @@ OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addpr
 
 BRIDGETESTSERVER_IMG_REPO ?= e2e-test-app-bridge-server
 BRIDGETESTSERVER_IMG ?= ${IMG_PREFIX}/${BRIDGETESTSERVER_IMG_REPO}:ve2e
+
+INSTRUMENTATION_JAVA_IMG_REPO ?= autoinstrumentation-java
+INSTRUMENTATION_JAVA_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_JAVA_IMG_REPO}:${INSTRUMENTATION_JAVA_VERSION}
+
+INSTRUMENTATION_NODEJS_IMG_REPO ?= autoinstrumentation-nodejs
+INSTRUMENTATION_NODEJS_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_NODEJS_IMG_REPO}:${INSTRUMENTATION_NODEJS_VERSION}
+
+INSTRUMENTATION_PYTHON_IMG_REPO ?= autoinstrumentation-python
+INSTRUMENTATION_PYTHON_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_PYTHON_IMG_REPO}:${INSTRUMENTATION_PYTHON_VERSION}
+
+INSTRUMENTATION_DOTNET_IMG_REPO ?= autoinstrumentation-dotnet
+INSTRUMENTATION_DOTNET_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_DOTNET_IMG_REPO}:${INSTRUMENTATION_DOTNET_VERSION}
+
+INSTRUMENTATION_APACHE_HTTPD_IMG_REPO ?= autoinstrumentation-apache-httpd
+INSTRUMENTATION_APACHE_HTTPD_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_APACHE_HTTPD_IMG_REPO}:${INSTRUMENTATION_APACHE_HTTPD_VERSION}
 
 MUSTGATHER_IMG ?= ${IMG_PREFIX}/must-gather
 
@@ -433,6 +455,34 @@ container-must-gather: must-gather
 .PHONY: container-must-gather-push
 container-must-gather-push:
 	docker push ${MUSTGATHER_IMG}
+
+.PHONY: container-instrumentation-java
+container-instrumentation-java:
+	docker build --load -t ${INSTRUMENTATION_JAVA_IMG} autoinstrumentation/java \
+		--build-arg version=${INSTRUMENTATION_JAVA_VERSION}
+
+.PHONY: container-instrumentation-nodejs
+container-instrumentation-nodejs:
+	docker build --load -t ${INSTRUMENTATION_NODEJS_IMG} autoinstrumentation/nodejs \
+		--build-arg version=${INSTRUMENTATION_NODEJS_VERSION}
+
+.PHONY: container-instrumentation-python
+container-instrumentation-python:
+	docker build --load -t ${INSTRUMENTATION_PYTHON_IMG} autoinstrumentation/python \
+		--build-arg version=${INSTRUMENTATION_PYTHON_VERSION}
+
+.PHONY: container-instrumentation-dotnet
+container-instrumentation-dotnet:
+	docker build --load -t ${INSTRUMENTATION_DOTNET_IMG} autoinstrumentation/dotnet \
+		--build-arg version=${INSTRUMENTATION_DOTNET_VERSION}
+
+.PHONY: container-instrumentation-apache-httpd
+container-instrumentation-apache-httpd:
+	docker build --load -t ${INSTRUMENTATION_APACHE_HTTPD_IMG} autoinstrumentation/apache-httpd \
+		--build-arg version=${INSTRUMENTATION_APACHE_HTTPD_VERSION}
+
+.PHONY: container-instrumentation-all
+container-instrumentation-all: container-instrumentation-java container-instrumentation-nodejs container-instrumentation-python container-instrumentation-dotnet container-instrumentation-apache-httpd
 
 .PHONY: start-kind
 start-kind: kind
