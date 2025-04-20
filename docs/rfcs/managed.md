@@ -40,6 +40,12 @@ follow the traditional route of setting up collectors, target allocators, instru
 The solution exports data to a single endpoint using the OTLP gRPC protocol. Customers may choose to deploy a gateway
 to transform, filter, redact data before sending it to storage.
 
+### Context-aware
+
+Best practices differ between platforms, cloud providers, available endpoints, node operating system and so on.
+
+The solution will enable features based on those parameters. For example, it will deploy Openshift-specific features when deployed on the Openshift Cloud Platform.
+
 ## Use cases for proposal
 
 ### Initial installation
