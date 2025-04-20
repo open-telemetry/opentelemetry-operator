@@ -35,6 +35,11 @@ We don't allow to toggle features in and out specifically because we want to avo
 If customers want to increase their level of control of the feature set, they can remove the managed custom resource and instead
 follow the traditional route of setting up collectors, target allocators, instrumentation custom resources as is possible today.
 
+### OTLP, single endpoint support
+
+The solution exports data to a single endpoint using the OTLP gRPC protocol. Customers may choose to deploy a gateway
+to transform, filter, redact data before sending it to storage.
+
 ## Use cases for proposal
 
 ### Initial installation
@@ -53,31 +58,25 @@ and are guaranteed to work through functional test coverage.
 The customer can cleanly delete the custom resource, which triggers the deletion of all OpenTelemetry assets under
 management by the operator. No stragglers are left.
 
-### Kubernetes metrics
+### Infrastructure monitoring
 
-The customer upon installation of the custom resource can see Kubernetes cluster metrics as reported by the k8sclusterreceiver with default configuration.
+The customer upon installation of the custom resource can see Kubernetes cluster metrics, and kubeletstats metrics.
 
-### Kubeletstats metrics
+The customer can follow events and receive Kubernetes entity data.
 
-The customer upon installation receives metrics from all Kubeletstats metrics from the default configuration of the kubeletstats receiver.
+The customer upon installation receives metrics from hostmetrics receiver with its default configuration.  Note the metrics map to the host, meaning the collector will have access to host volumes to scrape their utilization.
 
-### Automatic instrumentation
+### Workload monitoring
 
 All standard CRDs for instrumentations are all enabled by default for all namespaces.
-
-### Node host metrics
-
-The customer upon installation receives metrics from hostmetrics receiver with its default configuration.
-
-Note the metrics map to the host, meaning the collector will have access to host volumes to scrape their utilization.
 
 ### Node logs
 
 The customer upon installation will receive all logs from Kubernetes, scraped with the filelog receiver from the file system.
 
-### Kubernetes entities
+## configuration
 
-When entities become viable, the customer will receive Kubernetes entities as reported by the k8sclusterreceiver.
+The customer can enable exporting signals individually: metrics, logs, traces and profiles.
 
 ## Struct Design
 
@@ -85,6 +84,9 @@ When entities become viable, the customer will receive Kubernetes entities as re
 import "go.opentelemetry.io/collector/exporter/otlpexporter"
 
 type ManagedCustomResource struct {
+	# List of signals supported: `logs`, `metrics`, `traces`, `profiles`
+	Signals        []string `yaml:"signals"`
+	# OTLP exporter configuration
 	ExporterConfig otlpexporter.Config `yaml:"exporter"`
 }
 ```
