@@ -12,7 +12,7 @@ spec:
   - name: step-00
     try:
     - apply:
-        file: 00-install-jaeger.yaml
+        file: 00-install-tempo.yaml
     - assert:
         file: 00-assert.yaml
   - name: step-01
@@ -35,9 +35,10 @@ spec:
         file: 03-assert.yaml
   - name: step-04
     try:
-    - script:
-        timeout: 5m
-        content: ./check_traces.sh
+    - apply:
+        file: verify-traces.yaml
+    - assert:
+        file: assert-verify-traces.yaml
   - name: step-05
     try:
     - script:
