@@ -30,11 +30,9 @@ spec:
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
-      value: "20"
+      value: "20000"
     - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
+      value: always_on
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
     - name: OTEL_SERVICE_NAME
@@ -53,6 +51,9 @@ spec:
       value: jaeger,b3
     - name: OTEL_RESOURCE_ATTRIBUTES
     name: myapp
+    ports:
+    - containerPort: 8080
+      protocol: TCP
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
@@ -61,6 +62,9 @@ spec:
   - args:
     - --config=env:OTEL_CONFIG
     name: otc-container
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
   initContainers:
   - name: opentelemetry-auto-instrumentation-java
 status:
