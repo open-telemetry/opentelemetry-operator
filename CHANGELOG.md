@@ -2,6 +2,27 @@
 
 <!-- next version -->
 
+## 0.124.0
+
+### 💡 Enhancements 💡
+
+- `collector`: Re-try failed upgrades (#3515)
+  The upgrade process runs now in the reconcile loop.
+  In case of an error, the operator re-tries the upgrade with exponential backoff.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.124.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.124.0)
+* [OpenTelemetry Contrib - v0.124.1](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.124.1)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.58.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.58.0)
+* [Python - v0.53b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.53b1)
+* [Go - v0.19.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.19.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.123.0
 
 ### 💡 Enhancements 💡
