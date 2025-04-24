@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
         - name: telemetrygen-traces
-          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.92.0
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.124.1
           command: ["./telemetrygen"]
           args:
             - "--otlp-endpoint=cluster-collector-collector-headless:4317"
@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
         - name: telemetrygen-traces
-          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.92.0
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.124.1
           command: ["./telemetrygen"]
           args:
             - "--otlp-endpoint=cluster-collector-collector-headless:4317"
@@ -69,7 +69,7 @@ spec:
     spec:
       containers:
         - name: telemetrygen-traces
-          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.92.0
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.124.1
           command: ["./telemetrygen"]
           args:
             - "--otlp-endpoint=cluster-collector-collector-headless:4317"
