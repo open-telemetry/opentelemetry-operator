@@ -45,6 +45,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
@@ -1298,6 +1300,181 @@ service:
 	require.Error(t, clientErr)
 }
 
+func TestUpgrade(t *testing.T) {
+	testCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	reconciler := createTestReconcilerWithVersion(
+		t, testCtx,
+		config.New(
+			config.WithCollectorImage("default-collector"),
+			config.WithTargetAllocatorImage("default-ta-allocator"),
+		),
+		version.Version{OpenTelemetryCollector: upgrade.Latest.String()},
+	)
+
+	for _, tt := range []struct {
+		name          string
+		input         v1beta1.OpenTelemetryCollector
+		expectRequeue bool
+		expected      check[v1beta1.OpenTelemetryCollector]
+	}{
+		{
+			name: "needs-upgrade",
+			input: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Args: map[string]string{
+							// this feature gate will be removed in the 0.110.0 upgrade step
+							"feature-gates": "-component.UseLocalHostAsDefaultHost",
+						},
+					},
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]any{
+								"nop": map[string]any{},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]any{
+								"nop": map[string]any{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Exporters: []string{"nop"},
+									Receivers: []string{"nop"},
+								},
+							},
+						},
+					},
+				},
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.109.0",
+				},
+			},
+			expectRequeue: true,
+			expected: func(t *testing.T, otelcol v1beta1.OpenTelemetryCollector) {
+				assert.Equal(t, upgrade.Latest.String(), otelcol.Status.Version)
+				// The '-component.UseLocalHostAsDefaultHost' feature gate was removed in the 0.110.0 upgrade step
+				assert.Equal(t, "", otelcol.Spec.OpenTelemetryCommonFields.Args["feature-gates"])
+			},
+		},
+		{
+			name: "up-to-date",
+			input: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]any{
+								"nop": map[string]any{},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]any{
+								"nop": map[string]any{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Exporters: []string{"nop"},
+									Receivers: []string{"nop"},
+								},
+							},
+						},
+					},
+				},
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: upgrade.Latest.String(),
+				},
+			},
+			expectRequeue: false,
+			expected: func(t *testing.T, otelcol v1beta1.OpenTelemetryCollector) {
+				assert.Equal(t, upgrade.Latest.String(), otelcol.Status.Version)
+			},
+		},
+		{
+			name: "empty-version",
+			input: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]any{
+								"nop": map[string]any{},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]any{
+								"nop": map[string]any{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Exporters: []string{"nop"},
+									Receivers: []string{"nop"},
+								},
+							},
+						},
+					},
+				},
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "",
+				},
+			},
+			expectRequeue: false,
+			expected: func(t *testing.T, otelcol v1beta1.OpenTelemetryCollector) {
+				// updateCollectorStatus() sets version.OpenTelemetryCollector(), which is 0.0.0 in unit tests
+				assert.Equal(t, "0.0.0", otelcol.Status.Version)
+			},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			otelcol := tt.input.DeepCopy()
+			otelcol.Namespace = "default"
+			otelcol.Name = tt.name
+			nsn := types.NamespacedName{Name: otelcol.Name, Namespace: otelcol.Namespace}
+
+			// Create otelcol CR
+			err := k8sClient.Create(testCtx, otelcol)
+			require.NoError(t, err)
+
+			// The status subresource must be updated separately
+			otelcol.Status = tt.input.Status
+			err = k8sClient.Status().Update(testCtx, otelcol)
+			require.NoError(t, err)
+
+			// Update cache.
+			// Otherwise, adding the finalizer in opentelemetrycollector_controller intermittently fails with:
+			// Operation cannot be fulfilled on opentelemetrycollectors.opentelemetry.io "...": the object has been modified; please apply your changes to the latest version and try again
+			_ = k8sClient.Get(ctx, nsn, otelcol)
+
+			// First reconcile
+			req := k8sreconcile.Request{NamespacedName: nsn}
+			reconcile, err := reconciler.Reconcile(testCtx, req)
+			require.NoError(t, err)
+			require.Equal(t, tt.expectRequeue, reconcile.Requeue)
+
+			// Second reconcile (if upgrade was run)
+			if reconcile.Requeue {
+				time.Sleep(reconcile.RequeueAfter)
+
+				reconcile, err = reconciler.Reconcile(testCtx, req)
+				require.NoError(t, err)
+				require.False(t, reconcile.Requeue)
+			}
+
+			// Compare upgraded CR with expected
+			upgraded := v1beta1.OpenTelemetryCollector{}
+			err = k8sClient.Get(ctx, nsn, &upgraded)
+			require.NoError(t, err)
+			tt.expected(t, upgraded)
+		})
+	}
+}
+
 func namespacedObjectName(name string, namespace string) types.NamespacedName {
 	return types.NamespacedName{
 		Namespace: namespace,
@@ -1353,7 +1530,7 @@ func IsOwnedBy(obj metav1.Object, owner *v1beta1.OpenTelemetryCollector) bool {
 	return isOwner
 }
 
-func createTestReconciler(t *testing.T, ctx context.Context, cfg config.Config) *controllers.OpenTelemetryCollectorReconciler {
+func createTestReconcilerWithVersion(t *testing.T, ctx context.Context, cfg config.Config, v version.Version) *controllers.OpenTelemetryCollectorReconciler {
 	t.Helper()
 	// we need to set up caches for our reconciler
 	runtimeCluster, err := runtimecluster.New(restCfg, func(options *runtimecluster.Options) {
@@ -1372,12 +1549,18 @@ func createTestReconciler(t *testing.T, ctx context.Context, cfg config.Config) 
 		Scheme:   testScheme,
 		Recorder: record.NewFakeRecorder(20),
 		Config:   cfg,
+		Version:  v,
 	})
 	err = reconciler.SetupCaches(runtimeCluster)
 	require.NoError(t, err)
 	synced := runtimeCluster.GetCache().WaitForCacheSync(ctx)
 	require.True(t, synced, "caches didn't sync successfully")
 	return reconciler
+}
+
+func createTestReconciler(t *testing.T, ctx context.Context, cfg config.Config) *controllers.OpenTelemetryCollectorReconciler {
+	t.Helper()
+	return createTestReconcilerWithVersion(t, ctx, cfg, version.Get())
 }
 
 func sanitizeResourceName(name string) string {

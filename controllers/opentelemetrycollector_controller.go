@@ -7,6 +7,7 @@ package controllers
 import (
 	"context"
 	"sort"
+	"time"
 
 	"github.com/go-logr/logr"
 	routev1 "github.com/openshift/api/route/v1"
@@ -39,6 +40,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	internalRbac "github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	collectorStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -60,6 +63,7 @@ type OpenTelemetryCollectorReconciler struct {
 	log      logr.Logger
 	config   config.Config
 	reviewer *internalRbac.Reviewer
+	upgrade  *upgrade.VersionUpgrade
 }
 
 // Params is the set of options to build a new OpenTelemetryCollectorReconciler.
@@ -70,6 +74,7 @@ type Params struct {
 	Log      logr.Logger
 	Config   config.Config
 	Reviewer *internalRbac.Reviewer
+	Version  version.Version
 }
 
 func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Context, params manifests.Params) (map[types.UID]client.Object, error) {
@@ -187,6 +192,13 @@ func (r *OpenTelemetryCollectorReconciler) getTargetAllocator(ctx context.Contex
 
 // NewReconciler creates a new reconciler for OpenTelemetryCollector objects.
 func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
+	up := &upgrade.VersionUpgrade{
+		Client:   p.Client,
+		Log:      p.Log.WithName("collector-upgrade"),
+		Recorder: p.Recorder,
+		Version:  p.Version,
+	}
+
 	r := &OpenTelemetryCollectorReconciler{
 		Client:   p.Client,
 		log:      p.Log,
@@ -194,6 +206,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 		config:   p.Config,
 		recorder: p.Recorder,
 		reviewer: p.Reviewer,
+		upgrade:  up,
 	}
 	return r
 }
@@ -261,6 +274,15 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		log.Info("Skipping reconciliation for unmanaged OpenTelemetryCollector resource", "name", req.String())
 		// Stop requeueing for unmanaged OpenTelemetryCollector custom resources
 		return ctrl.Result{}, nil
+	}
+
+	if r.upgrade.NeedsUpgrade(instance) {
+		err = r.upgrade.Upgrade(ctx, instance)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		// if the OpenTelemetryCollector CR was upgraded (modified), return here and re-queue the reconcile event.
+		return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Second}, nil
 	}
 
 	// Add finalizer for this CR
