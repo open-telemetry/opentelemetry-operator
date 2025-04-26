@@ -5,7 +5,10 @@ package config
 
 import (
 	"fmt"
+	"github.com/spf13/pflag"
+	"k8s.io/client-go/util/homedir"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -17,6 +20,123 @@ import (
 )
 
 func TestLoad(t *testing.T) {
+	instanceId := uuid.New()
+	tests := []struct {
+		name    string
+		flagSet *pflag.FlagSet
+		want    *Config
+	}{
+		{
+			name: "base case",
+			flagSet: func() *pflag.FlagSet {
+				flagSet := GetFlagSet(pflag.ExitOnError)
+				err := flagSet.Set(configFilePathFlagName, "./testdata/agent.yaml")
+				assert.NoError(t, err)
+				return flagSet
+			}(),
+			want: &Config{
+				instanceId:         instanceId,
+				Name:               opampBridgeName,
+				ListenAddr:         defaultServerListenAddr,
+				KubeConfigFilePath: filepath.Join(homedir.HomeDir(), ".kube", "config"),
+				RootLogger:         logr.Discard(),
+				HeartbeatInterval:  defaultHeartbeatInterval,
+				Endpoint:           "ws://127.0.0.1:4320/v1/opamp",
+				Capabilities: map[Capability]bool{
+					AcceptsRemoteConfig:            true,
+					ReportsEffectiveConfig:         true,
+					ReportsOwnTraces:               true,
+					ReportsOwnMetrics:              true,
+					ReportsOwnLogs:                 true,
+					AcceptsOpAMPConnectionSettings: true,
+					AcceptsOtherConnectionSettings: true,
+					AcceptsRestartCommand:          true,
+					ReportsHealth:                  true,
+					ReportsRemoteConfig:            true,
+					AcceptsPackages:                false,
+					ReportsPackageStatuses:         false,
+				},
+			},
+		},
+		{
+			name: "with http basic",
+			flagSet: func() *pflag.FlagSet {
+				flagSet := GetFlagSet(pflag.ExitOnError)
+				err := flagSet.Set(configFilePathFlagName, "./testdata/agenthttpbasic.yaml")
+				assert.NoError(t, err)
+				return flagSet
+			}(),
+			want: &Config{
+				instanceId:         instanceId,
+				Name:               "http-test-bridge",
+				ListenAddr:         defaultServerListenAddr,
+				KubeConfigFilePath: filepath.Join(homedir.HomeDir(), ".kube", "config"),
+				RootLogger:         logr.Discard(),
+				HeartbeatInterval:  45 * time.Second,
+				Endpoint:           "ws://127.0.0.1:4320/v1/opamp",
+				Capabilities: map[Capability]bool{
+					AcceptsRemoteConfig:            true,
+					ReportsEffectiveConfig:         true,
+					ReportsOwnTraces:               true,
+					ReportsOwnMetrics:              true,
+					ReportsOwnLogs:                 true,
+					AcceptsOpAMPConnectionSettings: true,
+					AcceptsOtherConnectionSettings: true,
+					AcceptsRestartCommand:          true,
+					ReportsHealth:                  true,
+					ReportsRemoteConfig:            true,
+					AcceptsPackages:                false,
+					ReportsPackageStatuses:         false,
+				},
+			},
+		},
+		{
+			name: "with http basic and cli overridden",
+			flagSet: func() *pflag.FlagSet {
+				flagSet := GetFlagSet(pflag.ExitOnError)
+				err := flagSet.Set(configFilePathFlagName, "./testdata/agenthttpbasic.yaml")
+				assert.NoError(t, err)
+				err = flagSet.Set(heartbeatIntervalFlagName, "10s")
+				return flagSet
+			}(),
+			want: &Config{
+				instanceId:         instanceId,
+				Name:               "http-test-bridge",
+				ListenAddr:         defaultServerListenAddr,
+				KubeConfigFilePath: filepath.Join(homedir.HomeDir(), ".kube", "config"),
+				RootLogger:         logr.Discard(),
+				HeartbeatInterval:  10 * time.Second,
+				Endpoint:           "ws://127.0.0.1:4320/v1/opamp",
+				Capabilities: map[Capability]bool{
+					AcceptsRemoteConfig:            true,
+					ReportsEffectiveConfig:         true,
+					ReportsOwnTraces:               true,
+					ReportsOwnMetrics:              true,
+					ReportsOwnLogs:                 true,
+					AcceptsOpAMPConnectionSettings: true,
+					AcceptsOtherConnectionSettings: true,
+					AcceptsRestartCommand:          true,
+					ReportsHealth:                  true,
+					ReportsRemoteConfig:            true,
+					AcceptsPackages:                false,
+					ReportsPackageStatuses:         false,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Load(GetLogger(), tt.flagSet)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want.HeartbeatInterval, got.HeartbeatInterval)
+			assert.Equal(t, tt.want.ListenAddr, got.ListenAddr)
+			assert.Equal(t, tt.want.KubeConfigFilePath, got.KubeConfigFilePath)
+			assert.Equal(t, tt.want.Name, got.Name)
+		})
+	}
+}
+
+func TestLoadFromFile(t *testing.T) {
 	type args struct {
 		file         string
 		envVariables map[string]string

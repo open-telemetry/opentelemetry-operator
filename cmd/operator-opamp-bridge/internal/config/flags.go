@@ -16,6 +16,7 @@ import (
 // Flag names.
 const (
 	opampBridgeName           = "opamp-bridge"
+	defaultServerListenAddr   = ":8080"
 	defaultConfigFilePath     = "/conf/remoteconfiguration.yaml"
 	configFilePathFlagName    = "config-file"
 	listenAddrFlagName        = "listen-addr"
@@ -31,7 +32,7 @@ var zapCmdLineOpts zap.Options
 func GetFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet := pflag.NewFlagSet(opampBridgeName, errorHandling)
 	flagSet.String(configFilePathFlagName, defaultConfigFilePath, "The path to the config file.")
-	flagSet.String(listenAddrFlagName, ":8080", "The address where this service serves.")
+	flagSet.String(listenAddrFlagName, defaultServerListenAddr, "The address where this service serves.")
 	flagSet.String(kubeConfigPathFlagName, filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file.")
 	flagSet.Duration(heartbeatIntervalFlagName, defaultHeartbeatInterval, "The interval to use for sending a heartbeat. Setting it to 0 disables the heartbeat.")
 	flagSet.String(nameFlagName, opampBridgeName, "The name of the bridge to use for querying managed collectors.")
