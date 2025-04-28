@@ -5,8 +5,9 @@ package config
 
 import (
 	"crypto/tls"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestApplyTLSConfig(t *testing.T) {
