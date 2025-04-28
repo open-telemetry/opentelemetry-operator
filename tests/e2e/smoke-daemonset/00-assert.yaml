@@ -19,4 +19,6 @@ metadata:
 status:
   (starts_with(image, 'ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector')): true
   (version != ''): true
-  # TODO: Check replicas here after resolving https://github.com/open-telemetry/opentelemetry-operator/issues/3930
+  scale:
+    replicas: 1
+    statusReplicas: "1/1"
