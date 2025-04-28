@@ -41,7 +41,7 @@ func TestApplyTLSConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.tlsConfig.ApplyTLSConfig(&tls.Config{})
+			err := test.tlsConfig.ApplyTLSConfig(&tls.Config{MinVersion: tls.VersionTLS12})
 			if test.errWanted == "" {
 				require.NoError(t, err)
 			} else {
