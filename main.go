@@ -26,7 +26,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	k8sapiflag "k8s.io/component-base/cli/flag"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -63,11 +62,6 @@ var (
 	scheme   = k8sruntime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 )
-
-type tlsConfig struct {
-	minVersion   string
-	cipherSuites []string
-}
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
@@ -128,7 +122,7 @@ func main() {
 		labelsFilter                     []string
 		annotationsFilter                []string
 		webhookPort                      int
-		tlsOpt                           tlsConfig
+		tlsOpt                           config.TLSConfig
 		encodeMessageKey                 string
 		encodeLevelKey                   string
 		encodeTimeKey                    string
@@ -167,8 +161,8 @@ func main() {
 	stringFlagOrEnv(&autoInstrumentationNginx, "auto-instrumentation-nginx-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_NGINX", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationNginx), "The default OpenTelemetry Nginx instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringArrayVar(&labelsFilter, "labels-filter", []string{}, "Labels to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --labels-filter=.*filter.out will filter out labels that looks like: label.filter.out: true")
 	pflag.StringArrayVar(&annotationsFilter, "annotations-filter", []string{}, "Annotations to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --annotations-filter=.*filter.out will filter out annotations that looks like: annotation.filter.out: true")
-	pflag.StringVar(&tlsOpt.minVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
-	pflag.StringSliceVar(&tlsOpt.cipherSuites, "tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
+	pflag.StringVar(&tlsOpt.MinVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
+	pflag.StringSliceVar(&tlsOpt.CipherSuites, "tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
 	pflag.StringVar(&encodeMessageKey, "zap-message-key", "message", "The message key to be used in the customized Log Encoder")
 	pflag.StringVar(&encodeLevelKey, "zap-level-key", "level", "The level key to be used in the customized Log Encoder")
 	pflag.StringVar(&encodeTimeKey, "zap-time-key", "timestamp", "The time key to be used in the customized Log Encoder")
@@ -242,7 +236,12 @@ func main() {
 	retryPeriod := time.Second * 26
 
 	optionsTlSOptsFuncs := []func(*tls.Config){
-		func(config *tls.Config) { tlsConfigSetting(config, tlsOpt) },
+		func(config *tls.Config) {
+			err := tlsOpt.ApplyTLSConfig(config)
+			if err != nil {
+				setupLog.Error(err, "error setting up TLS")
+			}
+		},
 	}
 
 	mgrOptions := ctrl.Options{
@@ -524,25 +523,6 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config) err
 		return fmt.Errorf("failed to upgrade Instrumentation instances: %w", err)
 	}
 	return nil
-}
-
-// This function get the option from command argument (tlsConfig), check the validity through k8sapiflag
-// and set the config for webhook server.
-// refer to https://pkg.go.dev/k8s.io/component-base/cli/flag
-func tlsConfigSetting(cfg *tls.Config, tlsOpt tlsConfig) {
-	// TLSVersion helper function returns the TLS Version ID for the version name passed.
-	tlsVersion, err := k8sapiflag.TLSVersion(tlsOpt.minVersion)
-	if err != nil {
-		setupLog.Error(err, "TLS version invalid")
-	}
-	cfg.MinVersion = tlsVersion
-
-	// TLSCipherSuites helper function returns a list of cipher suite IDs from the cipher suite names passed.
-	cipherSuiteIDs, err := k8sapiflag.TLSCipherSuites(tlsOpt.cipherSuites)
-	if err != nil {
-		setupLog.Error(err, "Failed to convert TLS cipher suite name to ID")
-	}
-	cfg.CipherSuites = cipherSuiteIDs
 }
 
 func parseFipsFlag(fipsFlag string) ([]string, []string, []string, []string) {
