@@ -11,3 +11,12 @@ spec:
 status:
   numberMisscheduled: 0
   (desiredNumberScheduled == numberReady): true
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: daemonset-test
+status:
+  (starts_with(image, 'ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector')): true
+  (version != ''): true
+  # TODO: Check replicas here after resolving https://github.com/open-telemetry/opentelemetry-operator/issues/3930
