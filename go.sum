@@ -413,8 +413,8 @@ github.com/openshift/api v0.0.0-20240124164020-e2ce40831f2e h1:cxgCNo/R769CO23AK
 github.com/openshift/api v0.0.0-20240124164020-e2ce40831f2e/go.mod h1:CxgbWAlvu2iQB0UmKTtRu1YfepRg1/vJ64n2DlIEVz4=
 github.com/opentracing/opentracing-go v1.2.0 h1:uEJPy/1a5RIPAJ0Ov+OIO8OxWu77jEv+1B0VhjKrZUs=
 github.com/opentracing/opentracing-go v1.2.0/go.mod h1:GxEUsuufX4nBwe+T+Wl9TAgYrxe9dPLANfrWvHYVTgc=
-github.com/operator-framework/api v0.30.0 h1:44hCmGnEnZk/Miol5o44dhSldNH0EToQUG7vZTl29kk=
-github.com/operator-framework/api v0.30.0/go.mod h1:FYxAPhjtlXSAty/fbn5YJnFagt6SpJZJgFNNbvDe5W0=
+github.com/operator-framework/api v0.31.0 h1:tRsFTuZ51xD8U5QgiPo3+mZgVipHZVgRXYrI6RRXOh8=
+github.com/operator-framework/api v0.31.0/go.mod h1:57oCiHNeWcxmzu1Se8qlnwEKr/GGXnuHvspIYFCcXmY=
 github.com/operator-framework/operator-lib v0.17.0 h1:cbz51wZ9+GpWR1ZYP4CSKSSBxDlWxmmnseaHVZZjZt4=
 github.com/operator-framework/operator-lib v0.17.0/go.mod h1:TGopBxIE8L6E/Cojzo26R3NFp1eNlqhQNmzqhOblaLw=
 github.com/ovh/go-ovh v1.6.0 h1:ixLOwxQdzYDx296sXcgS35TOPEahJkpjMGtzPadCjQI=
