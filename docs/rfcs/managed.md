@@ -37,7 +37,7 @@ follow the traditional route of setting up collectors, target allocators, instru
 
 ### OTLP, single endpoint support
 
-The solution exports data to a single endpoint using the OTLP gRPC protocol. Customers may choose to deploy a gateway
+The solution exports data to a single endpoint using the OTLP protocol. Customers may choose to deploy a gateway
 to transform, filter, redact data before sending it to storage.
 
 ### Context-aware
