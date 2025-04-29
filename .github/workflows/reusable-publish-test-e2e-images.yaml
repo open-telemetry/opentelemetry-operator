@@ -12,6 +12,9 @@ on:
 
 permissions:
   contents: read
+  packages: write
+  attestations: write
+  id-token: write
 
 jobs:
   publish-e2e-image:
