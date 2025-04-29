@@ -80,7 +80,7 @@ All standard CRDs for instrumentations are all enabled by default for all namesp
 
 The customer upon installation will receive all logs from Kubernetes, scraped with the filelog receiver from the file system.
 
-## configuration
+## Configuration
 
 The customer can enable exporting signals individually: metrics, logs, traces and profiles.
 
