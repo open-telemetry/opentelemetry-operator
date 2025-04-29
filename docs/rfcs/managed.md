@@ -9,7 +9,7 @@
 ## Objective
 
 Condense all best practices and deployment patterns of OpenTelemetry components into a single custom resource
-that covers the feature set of the OpenTelemetry Helm chart.
+that covers the use cases fulfilled by the OpenTelemetry helm charts.
 
 ## Summary
 This request for comment aims to establish a new approach to management of resources in Kubernetes clusters,
