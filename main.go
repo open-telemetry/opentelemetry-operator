@@ -316,28 +316,27 @@ func main() {
 		config.WithAutoInstrumentationGoImage(autoInstrumentationGo),
 		config.WithAutoInstrumentationApacheHttpdImage(autoInstrumentationApacheHttpd),
 		config.WithAutoInstrumentationNginxImage(autoInstrumentationNginx),
-		config.WithAutoDetect(ad),
 		config.WithLabelFilters(labelsFilter),
 		config.WithAnnotationFilters(annotationsFilter),
 	)
-	err = cfg.AutoDetect()
+	err = autodetect.ApplyAutoDetect(ad, &cfg, ctrl.Log.WithName("autodetect"))
 	if err != nil {
 		setupLog.Error(err, "failed to autodetect config variables")
 	}
 	// Only add these to the scheme if they are available
-	if cfg.PrometheusCRAvailability() == prometheus.Available {
+	if cfg.PrometheusCRAvailability == prometheus.Available {
 		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
 		utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	} else {
 		setupLog.Info("Prometheus CRDs are not installed, skipping adding to scheme.")
 	}
-	if cfg.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
+	if cfg.OpenshiftRoutesAvailability == openshift.RoutesAvailable {
 		setupLog.Info("Openshift CRDs are installed, adding to scheme.")
 		utilruntime.Must(routev1.Install(scheme))
 	} else {
 		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
 	}
-	if cfg.CertManagerAvailability() == certmanager.Available {
+	if cfg.CertManagerAvailability == certmanager.Available {
 		setupLog.Info("Cert-Manager is available to the operator, adding to scheme.")
 		utilruntime.Must(cmv1.AddToScheme(scheme))
 
@@ -386,7 +385,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if cfg.TargetAllocatorAvailability() == targetallocator.Available {
+	if cfg.TargetAllocatorAvailability == targetallocator.Available {
 		if err = controllers.NewTargetAllocatorReconciler(
 			mgr.GetClient(),
 			mgr.GetScheme(),
@@ -410,7 +409,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if cfg.PrometheusCRAvailability() == prometheus.Available && createSMOperatorMetrics {
+	if cfg.PrometheusCRAvailability == prometheus.Available && createSMOperatorMetrics {
 		operatorMetrics, opError := operatormetrics.NewOperatorMetrics(mgr.GetConfig(), scheme, ctrl.Log.WithName("operator-metrics-sm"))
 		if opError != nil {
 			setupLog.Error(opError, "Failed to create the operator metrics SM")
@@ -463,7 +462,7 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 			os.Exit(1)
 		}
-		if cfg.TargetAllocatorAvailability() == targetallocator.Available {
+		if cfg.TargetAllocatorAvailability == targetallocator.Available {
 			if err = otelv1alpha1.SetupTargetAllocatorWebhook(mgr, cfg, reviewer); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "TargetAllocator")
 				os.Exit(1)
