@@ -14,6 +14,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/fips"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -31,6 +32,7 @@ type AutoDetect interface {
 	RBACPermissions(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailability(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailability() (targetallocator.Availability, error)
+	CollectorAvailability() (collector.Availability, error)
 	FIPSEnabled(ctx context.Context) bool
 }
 
@@ -180,6 +182,38 @@ func (a *autoDetect) TargetAllocatorAvailability() (targetallocator.Availability
 	}
 
 	return targetallocator.NotAvailable, nil
+}
+
+// CollectorAvailability checks if OpenTelemetryCollector CR are available.
+func (a *autoDetect) CollectorAvailability() (collector.Availability, error) {
+	apiList, err := a.dcl.ServerGroups()
+	if err != nil {
+		return collector.NotAvailable, err
+	}
+
+	apiGroups := apiList.Groups
+	otelGroupIndex := slices.IndexFunc(apiGroups, func(group metav1.APIGroup) bool {
+		return group.Name == "opentelemetry.io"
+	})
+	if otelGroupIndex == -1 {
+		return collector.NotAvailable, nil
+	}
+
+	otelGroup := apiGroups[otelGroupIndex]
+	for _, groupVersion := range otelGroup.Versions {
+		resourceList, err := a.dcl.ServerResourcesForGroupVersion(groupVersion.GroupVersion)
+		if err != nil {
+			return collector.NotAvailable, err
+		}
+		collectorIndex := slices.IndexFunc(resourceList.APIResources, func(group metav1.APIResource) bool {
+			return group.Kind == "OpenTelemetryCollector"
+		})
+		if collectorIndex >= 0 {
+			return collector.Available, nil
+		}
+	}
+
+	return collector.NotAvailable, nil
 }
 
 func (a *autoDetect) FIPSEnabled(_ context.Context) bool {

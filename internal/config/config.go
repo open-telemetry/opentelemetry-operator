@@ -12,6 +12,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -56,6 +57,7 @@ type Config struct {
 	prometheusCRAvailability    prometheus.Availability
 	certManagerAvailability     certmanager.Availability
 	targetAllocatorAvailability targetallocator.Availability
+	collectorAvailability       collector.Availability
 	labelsFilter                []string
 	annotationsFilter           []string
 }
@@ -69,6 +71,7 @@ func New(opts ...Option) Config {
 		createRBACPermissions:             autoRBAC.NotAvailable,
 		certManagerAvailability:           certmanager.NotAvailable,
 		targetAllocatorAvailability:       targetallocator.NotAvailable,
+		collectorAvailability:             collector.NotAvailable,
 		collectorConfigMapEntry:           defaultCollectorConfigMapEntry,
 		targetAllocatorConfigMapEntry:     defaultTargetAllocatorConfigMapEntry,
 		operatorOpAMPBridgeConfigMapEntry: defaultOperatorOpAMPBridgeConfigMapEntry,
@@ -103,6 +106,7 @@ func New(opts ...Option) Config {
 		prometheusCRAvailability:            o.prometheusCRAvailability,
 		certManagerAvailability:             o.certManagerAvailability,
 		targetAllocatorAvailability:         o.targetAllocatorAvailability,
+		collectorAvailability:               o.collectorAvailability,
 		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
@@ -154,6 +158,13 @@ func (c *Config) AutoDetect() error {
 	}
 	c.targetAllocatorAvailability = taAvl
 	c.logger.V(2).Info("determined TargetAllocator CRD availability", "availability", cmAvl)
+
+	coAvl, err := c.autoDetect.CollectorAvailability()
+	if err != nil {
+		return err
+	}
+	c.collectorAvailability = coAvl
+	c.logger.V(2).Info("determined Collector CRD availability", "availability", coAvl)
 
 	return nil
 }
@@ -251,6 +262,11 @@ func (c *Config) CertManagerAvailability() certmanager.Availability {
 // TargetAllocatorAvailability represents the availability of the TargetAllocator CRD.
 func (c *Config) TargetAllocatorAvailability() targetallocator.Availability {
 	return c.targetAllocatorAvailability
+}
+
+// CollectorAvailability represents the availability of the OpenTelemetryCollector CRD.
+func (c *Config) CollectorAvailability() collector.Availability {
+	return c.collectorAvailability
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.

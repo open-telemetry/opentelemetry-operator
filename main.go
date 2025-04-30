@@ -39,6 +39,7 @@ import (
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
@@ -371,19 +372,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	collectorReconciler := controllers.NewReconciler(controllers.Params{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
-		Scheme:   mgr.GetScheme(),
-		Config:   cfg,
-		Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
-		Reviewer: reviewer,
-		Version:  v,
-	})
+	var collectorReconciler *controllers.OpenTelemetryCollectorReconciler
+	if cfg.CollectorAvailability() == collector.Available {
+		collectorReconciler = controllers.NewReconciler(controllers.Params{
+			Client:   mgr.GetClient(),
+			Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
+			Scheme:   mgr.GetScheme(),
+			Config:   cfg,
+			Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
+			Reviewer: reviewer,
+			Version:  v,
+		})
 
-	if err = collectorReconciler.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
-		os.Exit(1)
+		if err = collectorReconciler.SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
+			os.Exit(1)
+		}
 	}
 
 	if cfg.TargetAllocatorAvailability() == targetallocator.Available {
@@ -436,32 +440,34 @@ func main() {
 			}
 		}
 
-		bv := func(ctx context.Context, collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
-			var warnings admission.Warnings
-			params, newErr := collectorReconciler.GetParams(ctx, collector)
-			if err != nil {
-				warnings = append(warnings, newErr.Error())
+		if cfg.CollectorAvailability() == collector.Available {
+			bv := func(ctx context.Context, collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
+				var warnings admission.Warnings
+				params, newErr := collectorReconciler.GetParams(ctx, collector)
+				if err != nil {
+					warnings = append(warnings, newErr.Error())
+					return warnings
+				}
+
+				params.ErrorAsWarning = true
+				_, newErr = collectorManifests.Build(params)
+				if newErr != nil {
+					warnings = append(warnings, newErr.Error())
+					return warnings
+				}
 				return warnings
 			}
 
-			params.ErrorAsWarning = true
-			_, newErr = collectorManifests.Build(params)
-			if newErr != nil {
-				warnings = append(warnings, newErr.Error())
-				return warnings
+			var fipsCheck fips.FIPSCheck
+			if ad.FIPSEnabled(ctx) {
+				receivers, exporters, processors, extensions := parseFipsFlag(fipsDisabledComponents)
+				logger.Info("Fips disabled components", "receivers", receivers, "exporters", exporters, "processors", processors, "extensions", extensions)
+				fipsCheck = fips.NewFipsCheck(receivers, exporters, processors, extensions)
 			}
-			return warnings
-		}
-
-		var fipsCheck fips.FIPSCheck
-		if ad.FIPSEnabled(ctx) {
-			receivers, exporters, processors, extensions := parseFipsFlag(fipsDisabledComponents)
-			logger.Info("Fips disabled components", "receivers", receivers, "exporters", exporters, "processors", processors, "extensions", extensions)
-			fipsCheck = fips.NewFipsCheck(receivers, exporters, processors, extensions)
-		}
-		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
-			os.Exit(1)
+			if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck); err != nil {
+				setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
+				os.Exit(1)
+			}
 		}
 		if cfg.TargetAllocatorAvailability() == targetallocator.Available {
 			if err = otelv1alpha1.SetupTargetAllocatorWebhook(mgr, cfg, reviewer); err != nil {
