@@ -15,6 +15,7 @@ metadata:
   annotations:
     instrumentation.opentelemetry.io/container-names: myapp
     instrumentation.opentelemetry.io/inject-python: "true"
+    instrumentation.opentelemetry.io/otel-python-platform: musl
     sidecar.opentelemetry.io/inject: "true"
   labels:
     app: my-python-multi
@@ -24,29 +25,31 @@ spec:
     - name: OTEL_NODE_IP
       valueFrom:
         fieldRef:
+          apiVersion: v1
           fieldPath: status.hostIP
     - name: OTEL_POD_IP
       valueFrom:
         fieldRef:
+          apiVersion: v1
           fieldPath: status.podIP
+    - name: OTEL_LOG_LEVEL
+      value: debug
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4318
     - name: PYTHONPATH
       value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
     - name: OTEL_EXPORTER_OTLP_PROTOCOL
       value: http/protobuf
-    - name: OTEL_TRACES_EXPORTER
-      value: otlp
     - name: OTEL_METRICS_EXPORTER
       value: otlp
     - name: OTEL_LOGS_EXPORTER
       value: otlp
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4317
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
-      value: "20"
+      value: "20000"
     - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
+      value: always_on
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
     - name: OTEL_SERVICE_NAME
@@ -65,6 +68,9 @@ spec:
       value: jaeger,b3
     - name: OTEL_RESOURCE_ATTRIBUTES
     name: myapp
+    ports:
+    - containerPort: 8080
+      protocol: TCP
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
