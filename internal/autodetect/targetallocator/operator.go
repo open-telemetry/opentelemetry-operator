@@ -7,7 +7,7 @@ package targetallocator
 type Availability int
 
 const (
-	// NotAvailable TargetAllocator CR is available in the cluster.
+	// NotAvailable TargetAllocator CR is not available in the cluster.
 	NotAvailable Availability = iota
 
 	// Available TargetAllocator CR is available in the cluster.
