@@ -78,7 +78,7 @@ All standard CRDs for instrumentations are all enabled by default for all namesp
 
 ### Node logs
 
-The customer upon installation will receive all logs from Kubernetes, scraped with the filelog receiver from the file system.
+The customer upon installation will receive logs from the node operating system, as well as pod logs from Kubernetes, scraped with the filelog receiver from the file system.
 
 ## Configuration
 
