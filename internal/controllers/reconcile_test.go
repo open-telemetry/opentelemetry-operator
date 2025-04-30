@@ -6,6 +6,9 @@ package controllers_test
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"regexp"
 	"slices"
 	"strings"
@@ -38,7 +41,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -796,15 +798,17 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 
 	testCtx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
-	reconciler := createTestReconciler(t, testCtx, config.New(
-		config.WithAutoDetect(&mockAutoDetect{CollectorCRDAvailabilityFunc: func() (collector.Availability, error) {
-			return collector.Available, nil
-		}}),
+	cfg := config.New(
 		config.WithCollectorImage("default-collector"),
 		config.WithTargetAllocatorImage("default-ta-allocator"),
 		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
 		config.WithPrometheusCRAvailability(prometheus.Available),
-	))
+	)
+	require.NoError(t, autodetect.ApplyAutoDetect(&mockAutoDetect{CollectorCRDAvailabilityFunc: func() (collector.Availability, error) {
+		return collector.Available, nil
+	}}, &cfg, logr.Discard()))
+
+	reconciler := createTestReconciler(t, testCtx, cfg)
 
 	// the base query for the underlying objects
 	opts := []client.ListOption{
