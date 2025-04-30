@@ -14,7 +14,7 @@ spec:
       annotations:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-go: "true"
-        instrumentation.opentelemetry.io/otel-go-auto-target-exe: /usr/src/app/productcatalogservice
+        instrumentation.opentelemetry.io/otel-go-auto-target-exe: /rolldice
     spec:
       serviceAccountName: otel-instrumentation-go
       securityContext:
@@ -22,5 +22,16 @@ spec:
         runAsGroup: 3000
         fsGroup: 3000
       containers:
-      - name: productcatalogservice
+      - name: myapp
+        ports:
+        - containerPort: 8095
         image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-golang:main
+        readinessProbe:
+          httpGet:
+            path: /rolldice
+            port: 8095
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 3
