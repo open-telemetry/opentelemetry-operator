@@ -297,7 +297,6 @@ func main() {
 
 	cfg := config.New(
 		config.WithLogger(ctrl.Log.WithName("config")),
-		config.WithVersion(v),
 		config.WithCollectorImage(collectorImage),
 		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
 		config.WithEnableApacheHttpdInstrumentation(enableApacheHttpdInstrumentation),

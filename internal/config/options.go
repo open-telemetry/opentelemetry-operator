@@ -13,7 +13,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
-	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
 // Option represents one specific configuration option.
@@ -21,7 +20,6 @@ type Option func(c *options)
 
 type options struct {
 	autoDetect                          autodetect.AutoDetect
-	version                             version.Version
 	logger                              logr.Logger
 	autoInstrumentationDotNetImage      string
 	autoInstrumentationGoImage          string
@@ -131,11 +129,6 @@ func WithOperatorOpAMPBridgeConfigMapEntry(s string) Option {
 func WithLogger(logger logr.Logger) Option {
 	return func(o *options) {
 		o.logger = logger
-	}
-}
-func WithVersion(v version.Version) Option {
-	return func(o *options) {
-		o.version = v
 	}
 }
 
