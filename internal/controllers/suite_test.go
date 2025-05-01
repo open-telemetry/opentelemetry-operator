@@ -93,7 +93,7 @@ type mockAutoDetect struct {
 	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
-	CollectorAvailabilityFunc       func() (collector.Availability, error)
+	CollectorCRDAvailabilityFunc    func() (collector.Availability, error)
 }
 
 func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
@@ -136,8 +136,8 @@ func (m *mockAutoDetect) TargetAllocatorAvailability() (targetallocator.Availabi
 }
 
 func (m *mockAutoDetect) CollectorAvailability() (collector.Availability, error) {
-	if m.CollectorAvailabilityFunc != nil {
-		return m.CollectorAvailabilityFunc()
+	if m.CollectorCRDAvailabilityFunc != nil {
+		return m.CollectorCRDAvailabilityFunc()
 	}
 	return collector.Available, nil
 }

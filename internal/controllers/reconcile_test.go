@@ -795,7 +795,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 	testCtx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	reconciler := createTestReconciler(t, testCtx, config.New(
-		config.WithAutoDetect(&mockAutoDetect{CollectorAvailabilityFunc: func() (collector.Availability, error) {
+		config.WithAutoDetect(&mockAutoDetect{CollectorCRDAvailabilityFunc: func() (collector.Availability, error) {
 			return collector.Available, nil
 		}}),
 		config.WithCollectorImage("default-collector"),
