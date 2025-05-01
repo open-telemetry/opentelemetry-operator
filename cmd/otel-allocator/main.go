@@ -52,7 +52,7 @@ func main() {
 		interrupts      = make(chan os.Signal, 1)
 		errChan         = make(chan error)
 	)
-	cfg, err := config.Load()
+	cfg, err := config.Load(os.Args)
 	if err != nil {
 		fmt.Printf("Failed to load config: %v", err)
 		os.Exit(1)
