@@ -77,9 +77,13 @@ func TestLoadFromFile(t *testing.T) {
 				file: "./testdata/agent.yaml",
 			},
 			want: &Config{
-				instanceId: instanceId,
-				RootLogger: logr.Discard(),
-				Endpoint:   "ws://127.0.0.1:4320/v1/opamp",
+				instanceId:         instanceId,
+				RootLogger:         logr.Discard(),
+				ListenAddr:         defaultServerListenAddr,
+				KubeConfigFilePath: defaultKubeConfigPath,
+				Endpoint:           "ws://127.0.0.1:4320/v1/opamp",
+				HeartbeatInterval:  defaultHeartbeatInterval,
+				Name:               opampBridgeName,
 				Capabilities: map[Capability]bool{
 					AcceptsRemoteConfig:            true,
 					ReportsEffectiveConfig:         true,
@@ -103,11 +107,13 @@ func TestLoadFromFile(t *testing.T) {
 				file: "./testdata/agenthttpbasic.yaml",
 			},
 			want: &Config{
-				instanceId:        instanceId,
-				RootLogger:        logr.Discard(),
-				Endpoint:          "http://127.0.0.1:4320/v1/opamp",
-				HeartbeatInterval: 45 * time.Second,
-				Name:              "http-test-bridge",
+				instanceId:         instanceId,
+				RootLogger:         logr.Discard(),
+				Endpoint:           "http://127.0.0.1:4320/v1/opamp",
+				ListenAddr:         defaultServerListenAddr,
+				KubeConfigFilePath: defaultKubeConfigPath,
+				HeartbeatInterval:  45 * time.Second,
+				Name:               "http-test-bridge",
 				Capabilities: map[Capability]bool{
 					AcceptsRemoteConfig:            true,
 					ReportsEffectiveConfig:         true,
@@ -131,9 +137,13 @@ func TestLoadFromFile(t *testing.T) {
 				file: "./testdata/agentbasiccomponentsallowed.yaml",
 			},
 			want: &Config{
-				instanceId: instanceId,
-				RootLogger: logr.Discard(),
-				Endpoint:   "ws://127.0.0.1:4320/v1/opamp",
+				instanceId:         instanceId,
+				RootLogger:         logr.Discard(),
+				Endpoint:           "ws://127.0.0.1:4320/v1/opamp",
+				ListenAddr:         defaultServerListenAddr,
+				KubeConfigFilePath: defaultKubeConfigPath,
+				HeartbeatInterval:  defaultHeartbeatInterval,
+				Name:               opampBridgeName,
 				Capabilities: map[Capability]bool{
 					AcceptsRemoteConfig:            true,
 					ReportsEffectiveConfig:         true,
@@ -192,6 +202,10 @@ func TestLoadFromFile(t *testing.T) {
 					"my-env-variable-1": "my-env-variable-1-value",
 					"my-env-variable-2": "my-env-variable-2-value",
 				},
+				ListenAddr:         defaultServerListenAddr,
+				KubeConfigFilePath: defaultKubeConfigPath,
+				HeartbeatInterval:  defaultHeartbeatInterval,
+				Name:               opampBridgeName,
 				Capabilities: map[Capability]bool{
 					AcceptsRemoteConfig:            true,
 					ReportsEffectiveConfig:         true,
@@ -227,6 +241,10 @@ func TestLoadFromFile(t *testing.T) {
 						"custom.attribute": "custom-value",
 					},
 				},
+				ListenAddr:         defaultServerListenAddr,
+				KubeConfigFilePath: defaultKubeConfigPath,
+				HeartbeatInterval:  defaultHeartbeatInterval,
+				Name:               opampBridgeName,
 				Capabilities: map[Capability]bool{
 					AcceptsRemoteConfig:            true,
 					ReportsEffectiveConfig:         true,
@@ -255,10 +273,9 @@ func TestLoadFromFile(t *testing.T) {
 			}
 			got := NewConfig(logr.Discard())
 			err := LoadFromFile(got, tt.args.file)
-			if !tt.wantErr(t, err, fmt.Sprintf("Load(%v)", tt.args.file)) {
+			if err != nil && tt.wantErr(t, err, fmt.Sprintf("Load(%v)", tt.args.file)) {
 				return
 			}
-			// there are some fields we don't care about, so we ignore them.
 			got.instanceId = tt.want.instanceId
 			got.ClusterConfig = tt.want.ClusterConfig
 			got.RootLogger = tt.want.RootLogger
