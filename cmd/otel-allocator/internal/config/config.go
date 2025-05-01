@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"math"
 	"os"
+	"path/filepath"
 	"reflect"
 	"time"
 
@@ -26,18 +27,25 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 const (
+	DefaultListenAddr                                  = ":8080"
+	DefaultHttpsListenAddr                             = ":8443"
 	DefaultResyncTime                                  = 5 * time.Minute
 	DefaultConfigFilePath               string         = "/conf/targetallocator.yaml"
 	DefaultCRScrapeInterval             model.Duration = model.Duration(time.Second * 30)
 	DefaultAllocationStrategy                          = "consistent-hashing"
 	DefaultFilterStrategy                              = "relabel-config"
 	DefaultCollectorNotReadyGracePeriod                = 0 * time.Second
+)
+
+var (
+	DefaultKubeConfigFilePath string = filepath.Join(homedir.HomeDir(), ".kube", "config")
 )
 
 // By default, scrape protocols include PrometheusText1_0_0, which only Prometheus >=3.0 supports.
@@ -227,9 +235,10 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	klog.SetLogger(target.RootLogger)
 	ctrl.SetLogger(target.RootLogger)
 
-	target.KubeConfigFilePath, err = getKubeConfigFilePath(flagSet)
-	if err != nil {
-		return err
+	if kubeConfigFilePath, changed, flagErr := getKubeConfigFilePath(flagSet); flagErr != nil {
+		return flagErr
+	} else if changed {
+		target.KubeConfigFilePath = kubeConfigFilePath
 	}
 	clusterConfig, err := clientcmd.BuildConfigFromFlags("", target.KubeConfigFilePath)
 	if err != nil {
@@ -245,9 +254,10 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	}
 	target.ClusterConfig = clusterConfig
 
-	target.ListenAddr, err = getListenAddr(flagSet)
-	if err != nil {
-		return err
+	if listenAddr, changed, flagErr := getListenAddr(flagSet); flagErr != nil {
+		return flagErr
+	} else if changed {
+		target.ListenAddr = listenAddr
 	}
 
 	if prometheusCREnabled, changed, flagErr := getPrometheusCREnabled(flagSet); flagErr != nil {
@@ -335,6 +345,11 @@ func unmarshal(cfg *Config, configFile string) error {
 
 func CreateDefaultConfig() Config {
 	return Config{
+		ListenAddr:         DefaultListenAddr,
+		KubeConfigFilePath: DefaultKubeConfigFilePath,
+		HTTPS: HTTPSServerConfig{
+			ListenAddr: DefaultHttpsListenAddr,
+		},
 		AllocationStrategy:         DefaultAllocationStrategy,
 		AllocationFallbackStrategy: "",
 		FilterStrategy:             DefaultFilterStrategy,
@@ -349,11 +364,11 @@ func CreateDefaultConfig() Config {
 	}
 }
 
-func Load() (*Config, error) {
+func Load(args []string) (*Config, error) {
 	var err error
 
 	flagSet := getFlagSet(pflag.ExitOnError)
-	err = flagSet.Parse(os.Args)
+	err = flagSet.Parse(args)
 	if err != nil {
 		return nil, err
 	}

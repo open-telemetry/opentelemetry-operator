@@ -2,13 +2,14 @@ resources:
 - ../../default
 
 patches:
- - target:
-      group: apps
-      version: v1
-      kind: Deployment
-      name: controller-manager
-   path: manager-patch.yaml
+- path: manager-patch.yaml
+  target:
+    group: apps
+    kind: Deployment
+    name: controller-manager
+    version: v1
+- path: metrics_service_tls_patch.yaml
+- path: manager_auth_proxy_tls_patch.yaml
 
-patchesStrategicMerge:
-- metrics_service_tls_patch.yaml
-- manager_auth_proxy_tls_patch.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization

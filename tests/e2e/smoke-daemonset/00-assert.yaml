@@ -11,3 +11,14 @@ spec:
 status:
   numberMisscheduled: 0
   (desiredNumberScheduled == numberReady): true
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: daemonset-test
+status:
+  (starts_with(image, 'ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector')): true
+  (version != ''): true
+  scale:
+    replicas: 1
+    statusReplicas: "1/1"
