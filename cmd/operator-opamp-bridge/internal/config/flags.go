@@ -5,6 +5,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -26,6 +27,10 @@ const (
 	defaultHeartbeatInterval  = 30 * time.Second
 )
 
+var (
+	defaultKubeConfigPath = filepath.Join(homedir.HomeDir(), ".kube", "config")
+)
+
 // We can't bind this flag to our FlagSet, so we need to handle it separately.
 var zapCmdLineOpts zap.Options
 
@@ -33,7 +38,7 @@ func GetFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet := pflag.NewFlagSet(opampBridgeName, errorHandling)
 	flagSet.String(configFilePathFlagName, defaultConfigFilePath, "The path to the config file.")
 	flagSet.String(listenAddrFlagName, defaultServerListenAddr, "The address where this service serves.")
-	flagSet.String(kubeConfigPathFlagName, filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file.")
+	flagSet.String(kubeConfigPathFlagName, defaultKubeConfigPath, "absolute path to the KubeconfigPath file.")
 	flagSet.Duration(heartbeatIntervalFlagName, defaultHeartbeatInterval, "The interval to use for sending a heartbeat. Setting it to 0 disables the heartbeat.")
 	flagSet.String(nameFlagName, opampBridgeName, "The name of the bridge to use for querying managed collectors.")
 	zapFlagSet := flag.NewFlagSet("", flag.ErrorHandling(errorHandling))
@@ -42,22 +47,43 @@ func GetFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	return flagSet
 }
 
-func getHeartbeatInterval(flagset *pflag.FlagSet) (time.Duration, error) {
-	return flagset.GetDuration(heartbeatIntervalFlagName)
+func getHeartbeatInterval(flagSet *pflag.FlagSet) (value time.Duration, changed bool, err error) {
+	return getFlagValueAndChanged[time.Duration](flagSet, heartbeatIntervalFlagName)
 }
 
-func getConfigFilePath(flagSet *pflag.FlagSet) (string, error) {
-	return flagSet.GetString(configFilePathFlagName)
+func getConfigFilePath(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	return getFlagValueAndChanged[string](flagSet, configFilePathFlagName)
 }
 
-func getName(flagSet *pflag.FlagSet) (string, error) {
-	return flagSet.GetString(nameFlagName)
+func getName(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	return getFlagValueAndChanged[string](flagSet, nameFlagName)
 }
 
-func getKubeConfigFilePath(flagSet *pflag.FlagSet) (string, error) {
-	return flagSet.GetString(kubeConfigPathFlagName)
+func getKubeConfigFilePath(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	return getFlagValueAndChanged[string](flagSet, kubeConfigPathFlagName)
 }
 
-func getListenAddr(flagSet *pflag.FlagSet) (string, error) {
-	return flagSet.GetString(listenAddrFlagName)
+func getListenAddr(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	return getFlagValueAndChanged[string](flagSet, listenAddrFlagName)
+}
+
+func getFlagValueAndChanged[T any](flagSet *pflag.FlagSet, flagName string) (value T, changed bool, err error) {
+	var zero T
+	if changed = flagSet.Changed(flagName); !changed {
+		value, err = zero, nil
+		return
+	}
+	switch any(zero).(type) {
+	case string:
+		val, e := flagSet.GetString(flagName)
+		value = any(val).(T)
+		err = e
+	case time.Duration:
+		val, e := flagSet.GetDuration(flagName)
+		value = any(val).(T)
+		err = e
+	default:
+		err = fmt.Errorf("unsupported flag type %T", zero)
+	}
+	return
 }

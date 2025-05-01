@@ -5,10 +5,7 @@ package config
 
 import (
 	"fmt"
-	"github.com/spf13/pflag"
-	"k8s.io/client-go/util/homedir"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -19,121 +16,47 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLoad(t *testing.T) {
-	instanceId := uuid.New()
-	tests := []struct {
-		name    string
-		flagSet *pflag.FlagSet
-		want    *Config
-	}{
-		{
-			name: "base case",
-			flagSet: func() *pflag.FlagSet {
-				flagSet := GetFlagSet(pflag.ExitOnError)
-				err := flagSet.Set(configFilePathFlagName, "./testdata/agent.yaml")
-				assert.NoError(t, err)
-				return flagSet
-			}(),
-			want: &Config{
-				instanceId:         instanceId,
-				Name:               opampBridgeName,
-				ListenAddr:         defaultServerListenAddr,
-				KubeConfigFilePath: filepath.Join(homedir.HomeDir(), ".kube", "config"),
-				RootLogger:         logr.Discard(),
-				HeartbeatInterval:  defaultHeartbeatInterval,
-				Endpoint:           "ws://127.0.0.1:4320/v1/opamp",
-				Capabilities: map[Capability]bool{
-					AcceptsRemoteConfig:            true,
-					ReportsEffectiveConfig:         true,
-					ReportsOwnTraces:               true,
-					ReportsOwnMetrics:              true,
-					ReportsOwnLogs:                 true,
-					AcceptsOpAMPConnectionSettings: true,
-					AcceptsOtherConnectionSettings: true,
-					AcceptsRestartCommand:          true,
-					ReportsHealth:                  true,
-					ReportsRemoteConfig:            true,
-					AcceptsPackages:                false,
-					ReportsPackageStatuses:         false,
-				},
-			},
-		},
-		{
-			name: "with http basic",
-			flagSet: func() *pflag.FlagSet {
-				flagSet := GetFlagSet(pflag.ExitOnError)
-				err := flagSet.Set(configFilePathFlagName, "./testdata/agenthttpbasic.yaml")
-				assert.NoError(t, err)
-				return flagSet
-			}(),
-			want: &Config{
-				instanceId:         instanceId,
-				Name:               "http-test-bridge",
-				ListenAddr:         defaultServerListenAddr,
-				KubeConfigFilePath: filepath.Join(homedir.HomeDir(), ".kube", "config"),
-				RootLogger:         logr.Discard(),
-				HeartbeatInterval:  45 * time.Second,
-				Endpoint:           "ws://127.0.0.1:4320/v1/opamp",
-				Capabilities: map[Capability]bool{
-					AcceptsRemoteConfig:            true,
-					ReportsEffectiveConfig:         true,
-					ReportsOwnTraces:               true,
-					ReportsOwnMetrics:              true,
-					ReportsOwnLogs:                 true,
-					AcceptsOpAMPConnectionSettings: true,
-					AcceptsOtherConnectionSettings: true,
-					AcceptsRestartCommand:          true,
-					ReportsHealth:                  true,
-					ReportsRemoteConfig:            true,
-					AcceptsPackages:                false,
-					ReportsPackageStatuses:         false,
-				},
-			},
-		},
-		{
-			name: "with http basic and cli overridden",
-			flagSet: func() *pflag.FlagSet {
-				flagSet := GetFlagSet(pflag.ExitOnError)
-				err := flagSet.Set(configFilePathFlagName, "./testdata/agenthttpbasic.yaml")
-				assert.NoError(t, err)
-				err = flagSet.Set(heartbeatIntervalFlagName, "10s")
-				return flagSet
-			}(),
-			want: &Config{
-				instanceId:         instanceId,
-				Name:               "http-test-bridge",
-				ListenAddr:         defaultServerListenAddr,
-				KubeConfigFilePath: filepath.Join(homedir.HomeDir(), ".kube", "config"),
-				RootLogger:         logr.Discard(),
-				HeartbeatInterval:  10 * time.Second,
-				Endpoint:           "ws://127.0.0.1:4320/v1/opamp",
-				Capabilities: map[Capability]bool{
-					AcceptsRemoteConfig:            true,
-					ReportsEffectiveConfig:         true,
-					ReportsOwnTraces:               true,
-					ReportsOwnMetrics:              true,
-					ReportsOwnLogs:                 true,
-					AcceptsOpAMPConnectionSettings: true,
-					AcceptsOtherConnectionSettings: true,
-					AcceptsRestartCommand:          true,
-					ReportsHealth:                  true,
-					ReportsRemoteConfig:            true,
-					AcceptsPackages:                false,
-					ReportsPackageStatuses:         false,
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := Load(GetLogger(), tt.flagSet)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want.HeartbeatInterval, got.HeartbeatInterval)
-			assert.Equal(t, tt.want.ListenAddr, got.ListenAddr)
-			assert.Equal(t, tt.want.KubeConfigFilePath, got.KubeConfigFilePath)
-			assert.Equal(t, tt.want.Name, got.Name)
-		})
-	}
+func TestConfigLoadPriority(t *testing.T) {
+	t.Run("default values when nothing is set except config yaml", func(t *testing.T) {
+		args := []string{
+			"--" + configFilePathFlagName + "=./testdata/agent.yaml",
+			"--" + kubeConfigPathFlagName + "=./testdata/kubeconfig.yaml",
+		}
+		cfg, err := Load(GetLogger(), args)
+
+		assert.NoError(t, err)
+		assert.Equal(t, defaultServerListenAddr, cfg.ListenAddr, "use default value")
+		assert.Equal(t, defaultHeartbeatInterval, cfg.HeartbeatInterval, "use default value")
+		assert.Equal(t, opampBridgeName, cfg.Name, "use default value")
+	})
+	t.Run("command-line has priority over config file for time.Duration values", func(t *testing.T) {
+		args := []string{
+			"--" + configFilePathFlagName + "=./testdata/agenthttpbasic.yaml",
+			"--" + kubeConfigPathFlagName + "=./testdata/kubeconfig.yaml",
+			"--" + heartbeatIntervalFlagName + "=10s",
+		}
+		cfg, err := Load(GetLogger(), args)
+
+		assert.NoError(t, err)
+		assert.Equal(t, defaultServerListenAddr, cfg.ListenAddr, "use default value")
+		assert.Equal(t, 10*time.Second, cfg.HeartbeatInterval, "command-line priority is higher than config, overwrite time.Duration value")
+		assert.Equal(t, "http-test-bridge", cfg.Name, "config file priority is higher than default string value")
+	})
+
+	t.Run("command-line has priority over config file for string values", func(t *testing.T) {
+		testOpAMPBridgeName := "opamp-bridge-name-test"
+		args := []string{
+			"--" + configFilePathFlagName + "=./testdata/agenthttpbasic.yaml",
+			"--" + kubeConfigPathFlagName + "=./testdata/kubeconfig.yaml",
+			"--" + nameFlagName + "=" + testOpAMPBridgeName,
+		}
+		cfg, err := Load(GetLogger(), args)
+
+		assert.NoError(t, err)
+		assert.Equal(t, defaultServerListenAddr, cfg.ListenAddr, "use default value")
+		assert.Equal(t, 45*time.Second, cfg.HeartbeatInterval, "config file priority is higher than default time.Duration value")
+		assert.Equal(t, testOpAMPBridgeName, cfg.Name, "command-line priority is higher than config, overwrite string value")
+	})
 }
 
 func TestLoadFromFile(t *testing.T) {

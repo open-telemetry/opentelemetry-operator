@@ -8,8 +8,6 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/spf13/pflag"
-
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/agent"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"
@@ -19,13 +17,7 @@ import (
 func main() {
 	l := config.GetLogger()
 
-	flagSet := config.GetFlagSet(pflag.ExitOnError)
-	err := flagSet.Parse(os.Args)
-	if err != nil {
-		l.Error(err, "Unable to load flags")
-		os.Exit(1)
-	}
-	cfg, configLoadErr := config.Load(l, flagSet)
+	cfg, configLoadErr := config.Load(l, os.Args)
 	if configLoadErr != nil {
 		l.Error(configLoadErr, "Unable to load configuration")
 		os.Exit(1)

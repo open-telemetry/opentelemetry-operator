@@ -103,8 +103,12 @@ type AgentDescription struct {
 
 func NewConfig(logger logr.Logger) *Config {
 	return &Config{
-		instanceId: mustGetInstanceId(),
-		RootLogger: logger,
+		instanceId:         mustGetInstanceId(),
+		Name:               opampBridgeName,
+		ListenAddr:         defaultServerListenAddr,
+		HeartbeatInterval:  defaultHeartbeatInterval,
+		KubeConfigFilePath: defaultKubeConfigPath,
+		RootLogger:         logger,
 	}
 }
 
@@ -230,13 +234,21 @@ func (c *Config) GetKubernetesClient() (client.Client, error) {
 	})
 }
 
-func Load(logger logr.Logger, flagSet *pflag.FlagSet) (*Config, error) {
-	cfg := NewConfig(logger)
-
-	// load the config from the config file
-	configFilePath, err := getConfigFilePath(flagSet)
+func Load(logger logr.Logger, args []string) (*Config, error) {
+	flagSet := GetFlagSet(pflag.ExitOnError)
+	err := flagSet.Parse(args)
 	if err != nil {
 		return nil, err
+	}
+	cfg := NewConfig(logger)
+	configFilePath := defaultConfigFilePath
+	// load the config from the config file
+	configFilePathByFlag, changed, err := getConfigFilePath(flagSet)
+	if err != nil {
+		return nil, err
+	}
+	if changed {
+		configFilePath = configFilePathByFlag
 	}
 	err = LoadFromFile(cfg, configFilePath)
 	if err != nil {
@@ -256,10 +268,10 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	klog.SetLogger(target.RootLogger)
 	ctrl.SetLogger(target.RootLogger)
 
-	if !isLoadedFromFile(target.KubeConfigFilePath) || flagSet.Changed(kubeConfigPathFlagName) {
-		if target.KubeConfigFilePath, err = getKubeConfigFilePath(flagSet); err != nil {
-			return err
-		}
+	if kubeConfigFilePath, changed, err := getKubeConfigFilePath(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.KubeConfigFilePath = kubeConfigFilePath
 	}
 	clusterConfig, err := clientcmd.BuildConfigFromFlags("", target.KubeConfigFilePath)
 	if err != nil {
@@ -274,20 +286,20 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	}
 	target.ClusterConfig = clusterConfig
 
-	if !isLoadedFromFile(target.ListenAddr) || flagSet.Changed(listenAddrFlagName) {
-		if target.ListenAddr, err = getListenAddr(flagSet); err != nil {
-			return err
-		}
+	if listenAddr, changed, err := getListenAddr(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.ListenAddr = listenAddr
 	}
-	if !isLoadedFromFile(target.HeartbeatInterval) || flagSet.Changed(heartbeatIntervalFlagName) {
-		if target.HeartbeatInterval, err = getHeartbeatInterval(flagSet); err != nil {
-			return err
-		}
+	if heartbeatInterval, changed, err := getHeartbeatInterval(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.HeartbeatInterval = heartbeatInterval
 	}
-	if !isLoadedFromFile(target.Name) || flagSet.Changed(nameFlagName) {
-		if target.Name, err = getName(flagSet); err != nil {
-			return err
-		}
+	if name, changed, err := getName(flagSet); err != nil {
+		return err
+	} else if changed {
+		target.Name = name
 	}
 	return nil
 }
@@ -302,14 +314,4 @@ func LoadFromFile(cfg *Config, configFile string) error {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
 	}
 	return nil
-}
-
-func isLoadedFromFile(value any) bool {
-	switch typedValue := value.(type) {
-	case time.Duration:
-		return typedValue != 0
-	case string:
-		return typedValue != ""
-	}
-	return false
 }
