@@ -264,7 +264,6 @@ func Load(logger logr.Logger, args []string) (*Config, error) {
 }
 
 func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
-	var err error
 	klog.SetLogger(target.RootLogger)
 	ctrl.SetLogger(target.RootLogger)
 
@@ -273,15 +272,15 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	} else if changed {
 		target.KubeConfigFilePath = kubeConfigFilePath
 	}
-	clusterConfig, err := clientcmd.BuildConfigFromFlags("", target.KubeConfigFilePath)
-	if err != nil {
+	clusterConfig, errBuildFromConfig := clientcmd.BuildConfigFromFlags("", target.KubeConfigFilePath)
+	if errBuildFromConfig != nil {
 		pathError := &fs.PathError{}
-		if ok := errors.As(err, &pathError); !ok {
-			return err
+		if ok := errors.As(errBuildFromConfig, &pathError); !ok {
+			return errBuildFromConfig
 		}
-		clusterConfig, err = rest.InClusterConfig()
-		if err != nil {
-			return err
+		clusterConfig, errBuildFromConfig = rest.InClusterConfig()
+		if errBuildFromConfig != nil {
+			return errBuildFromConfig
 		}
 	}
 	target.ClusterConfig = clusterConfig
