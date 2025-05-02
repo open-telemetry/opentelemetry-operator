@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -110,6 +111,7 @@ func main() {
 		enableJavaInstrumentation        bool
 		enableCRMetrics                  bool
 		createSMOperatorMetrics          bool
+		ignoreMissingCollectorCRDs       bool
 		collectorImage                   string
 		targetAllocatorImage             string
 		operatorOpAMPBridgeImage         string
@@ -149,6 +151,7 @@ func main() {
 	pflag.BoolVar(&enableJavaInstrumentation, constants.FlagJava, true, "Controls whether the operator supports java auto-instrumentation")
 	pflag.BoolVar(&enableCRMetrics, constants.FlagCRMetrics, false, "Controls whether exposing the CR metrics is enabled")
 	pflag.BoolVar(&createSMOperatorMetrics, "create-sm-operator-metrics", false, "Create a ServiceMonitor for the operator metrics")
+	pflag.BoolVar(&ignoreMissingCollectorCRDs, "ignore-missing-collector-crds", false, "Ignore missing OpenTelemetryCollector CRDs presence in the cluster")
 
 	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
@@ -187,6 +190,7 @@ func main() {
 		"opentelemetry-collector", collectorImage,
 		"opentelemetry-targetallocator", targetAllocatorImage,
 		"operator-opamp-bridge", operatorOpAMPBridgeImage,
+		"ignore-missing-collector-crds", ignoreMissingCollectorCRDs,
 		"auto-instrumentation-java", autoInstrumentationJava,
 		"auto-instrumentation-nodejs", autoInstrumentationNodeJS,
 		"auto-instrumentation-python", autoInstrumentationPython,
@@ -320,6 +324,7 @@ func main() {
 		config.WithAutoDetect(ad),
 		config.WithLabelFilters(labelsFilter),
 		config.WithAnnotationFilters(annotationsFilter),
+		config.WithIgnoreMissingCollectorCRDs(ignoreMissingCollectorCRDs),
 	)
 	err = cfg.AutoDetect()
 	if err != nil {
@@ -347,6 +352,15 @@ func main() {
 		}
 	} else {
 		setupLog.Info("Cert-Manager is not available to the operator, skipping adding to scheme.")
+	}
+	if cfg.CollectorAvailability() == collector.Available {
+		setupLog.Info("OpenTelemetryCollectorCRDSs is available to the operator")
+	} else {
+		setupLog.Info("OpenTelemetryCollectorCRDSs are not available to the operator")
+		if !cfg.IgnoreMissingCollectorCRDs() {
+			setupLog.Error(errors.New("missing OpenTelemetryCRDs"), "The OpenTelemetryCollector CRDs are not present in the cluster. Set ignore_missing_collector_crds to true or install the CRDs in the cluster.")
+			os.Exit(1)
+		}
 	}
 	if cfg.AnnotationsFilter() != nil {
 		for _, basePattern := range cfg.AnnotationsFilter() {

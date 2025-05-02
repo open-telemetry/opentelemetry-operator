@@ -58,6 +58,7 @@ type Config struct {
 	certManagerAvailability     certmanager.Availability
 	targetAllocatorAvailability targetallocator.Availability
 	collectorAvailability       collector.Availability
+	ignoreMissingCollectorCRDs  bool
 	labelsFilter                []string
 	annotationsFilter           []string
 }
@@ -107,6 +108,7 @@ func New(opts ...Option) Config {
 		certManagerAvailability:             o.certManagerAvailability,
 		targetAllocatorAvailability:         o.targetAllocatorAvailability,
 		collectorAvailability:               o.collectorAvailability,
+		ignoreMissingCollectorCRDs:          o.ignoreMissingCollectorCRDs,
 		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
 		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
 		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
@@ -267,6 +269,11 @@ func (c *Config) TargetAllocatorAvailability() targetallocator.Availability {
 // CollectorAvailability represents the availability of the OpenTelemetryCollector CRD.
 func (c *Config) CollectorAvailability() collector.Availability {
 	return c.collectorAvailability
+}
+
+// IgnoreMissingCollectorCRDs is true if the operator can ignore missing OpenTelemetryCollector CRDs.
+func (c *Config) IgnoreMissingCollectorCRDs() bool {
+	return c.ignoreMissingCollectorCRDs
 }
 
 // AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.

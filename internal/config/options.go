@@ -51,6 +51,7 @@ type options struct {
 	certManagerAvailability             certmanager.Availability
 	targetAllocatorAvailability         targetallocator.Availability
 	collectorAvailability               collector.Availability
+	ignoreMissingCollectorCRDs          bool
 	labelsFilter                        []string
 	annotationsFilter                   []string
 }
@@ -227,5 +228,11 @@ func WithEncodeLevelFormat(s string) zapcore.LevelEncoder {
 		return zapcore.LowercaseLevelEncoder
 	} else {
 		return zapcore.CapitalLevelEncoder
+	}
+}
+
+func WithIgnoreMissingCollectorCRDs(b bool) Option {
+	return func(o *options) {
+		o.ignoreMissingCollectorCRDs = b
 	}
 }
