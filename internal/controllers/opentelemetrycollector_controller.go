@@ -378,6 +378,10 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 		ownedResources = append(ownedResources, &routev1.Route{})
 	}
 
+	if featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() {
+		ownedResources = append(ownedResources, &v1alpha1.TargetAllocator{})
+	}
+
 	return ownedResources
 }
 

@@ -15,7 +15,6 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
@@ -38,7 +37,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -48,7 +46,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
@@ -75,18 +72,6 @@ var (
 type check[T any] func(t *testing.T, params T)
 
 func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
-	// enable the collector CR feature flag, as these tests assume it
-	// TODO: drop this after the flag is enabled by default
-	registry := colfeaturegate.GlobalRegistry()
-	current := featuregate.CollectorUsesTargetAllocatorCR.IsEnabled()
-	require.False(t, current, "don't set gates which are enabled by default")
-	regErr := registry.Set(featuregate.CollectorUsesTargetAllocatorCR.ID(), true)
-	require.NoError(t, regErr)
-	t.Cleanup(func() {
-		err := registry.Set(featuregate.CollectorUsesTargetAllocatorCR.ID(), current)
-		require.NoError(t, err)
-	})
-
 	addedMetadataDeployment := testCollectorWithMode("test-deployment", v1alpha1.ModeDeployment)
 	addedMetadataDeployment.Labels = map[string]string{
 		labelName: labelVal,
@@ -720,7 +705,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 // TestOpenTelemetryCollectorReconciler_RemoveDisabled starts off with optional resources enabled, and then disables
 // them one by one to ensure they're actually deleted.
 func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
-	expectedStartingResourceCount := 11
+	expectedStartingResourceCount := 7
 	startingCollector := &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "placeholder",
@@ -776,7 +761,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 			mutateCollector: func(obj *v1beta1.OpenTelemetryCollector) {
 				obj.Spec.TargetAllocator.Enabled = false
 			},
-			expectedResourcesDeletedCount: 5,
+			expectedResourcesDeletedCount: 1,
 		},
 		{
 			name: "disable metrics",
@@ -797,9 +782,6 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 	testCtx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	reconciler := createTestReconciler(t, testCtx, config.New(
-		config.WithAutoDetect(&mockAutoDetect{CollectorCRDAvailabilityFunc: func() (collector.Availability, error) {
-			return collector.Available, nil
-		}}),
 		config.WithCollectorImage("default-collector"),
 		config.WithTargetAllocatorImage("default-ta-allocator"),
 		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
@@ -881,21 +863,10 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 				PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{},
 			},
 			ConfigVersions: 1,
-			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
-				Enabled: true,
-				PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
-					Enabled: true,
-				},
-			},
-			Mode: v1beta1.ModeStatefulSet,
+			Mode:           v1beta1.ModeStatefulSet,
 			Config: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
 					Object: map[string]interface{}{
-						"prometheus": map[string]interface{}{
-							"config": map[string]interface{}{
-								"scrape_configs": []interface{}{},
-							},
-						},
 						"nop": map[string]interface{}{},
 					},
 				},
@@ -922,7 +893,6 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		config.WithCollectorImage("default-collector"),
 		config.WithTargetAllocatorImage("default-ta-allocator"),
 		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
-		config.WithPrometheusCRAvailability(prometheus.Available),
 	))
 
 	nsn := types.NamespacedName{Name: collector.Name, Namespace: collector.Namespace}
@@ -955,7 +925,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		listErr := k8sClient.List(clientCtx, configMaps, opts...)
 		assert.NoError(collect, listErr)
 		assert.NotEmpty(collect, configMaps)
-		assert.Len(collect, configMaps.Items, 2)
+		assert.Len(collect, configMaps.Items, 1)
 	}, time.Second*30, time.Millisecond*100)
 
 	// modify the ConfigMap, it should be kept
@@ -981,7 +951,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		listErr := k8sClient.List(clientCtx, configMaps, opts...)
 		assert.NoError(collect, listErr)
 		assert.NotEmpty(collect, configMaps)
-		assert.Len(collect, configMaps.Items, 3)
+		assert.Len(collect, configMaps.Items, 2)
 	}, time.Second*30, time.Millisecond*100)
 
 	// modify the ConfigMap again, the oldest one is still kept, but is dropped after next reconciliation
@@ -1007,7 +977,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		listErr := k8sClient.List(clientCtx, configMaps, opts...)
 		assert.NoError(collect, listErr)
 		assert.NotEmpty(collect, configMaps)
-		assert.Len(collect, configMaps.Items, 4)
+		assert.Len(collect, configMaps.Items, 3)
 	}, time.Second*30, time.Millisecond*100)
 
 	_, reconcileErr = reconciler.Reconcile(clientCtx, req)
@@ -1018,7 +988,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		listErr := k8sClient.List(clientCtx, configMaps, opts...)
 		assert.NoError(collect, listErr)
 		assert.NotEmpty(collect, configMaps)
-		assert.Len(collect, configMaps.Items, 3)
+		assert.Len(collect, configMaps.Items, 2)
 	}, time.Second*5, time.Second)
 }
 
