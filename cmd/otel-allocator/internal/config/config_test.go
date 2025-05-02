@@ -6,6 +6,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -20,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestLoad(t *testing.T) {
+func TestLoadFromFile(t *testing.T) {
 	type args struct {
 		file string
 	}
@@ -36,6 +37,8 @@ func TestLoad(t *testing.T) {
 				file: "./testdata/config_test.yaml",
 			},
 			want: Config{
+				ListenAddr:         DefaultListenAddr,
+				KubeConfigFilePath: DefaultKubeConfigFilePath,
 				AllocationStrategy: DefaultAllocationStrategy,
 				CollectorNamespace: "default",
 				CollectorSelector: &metav1.LabelSelector{
@@ -122,6 +125,8 @@ func TestLoad(t *testing.T) {
 				file: "./testdata/pod_service_selector_test.yaml",
 			},
 			want: Config{
+				ListenAddr:         DefaultListenAddr,
+				KubeConfigFilePath: DefaultKubeConfigFilePath,
 				AllocationStrategy: DefaultAllocationStrategy,
 				CollectorNamespace: "default",
 				CollectorSelector: &metav1.LabelSelector{
@@ -147,6 +152,9 @@ func TestLoad(t *testing.T) {
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 					ScrapeInterval:                  DefaultCRScrapeInterval,
+				},
+				HTTPS: HTTPSServerConfig{
+					ListenAddr: ":8443",
 				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
@@ -197,6 +205,8 @@ func TestLoad(t *testing.T) {
 				file: "./testdata/pod_service_selector_camelcase_test.yaml",
 			},
 			want: Config{
+				ListenAddr:         DefaultListenAddr,
+				KubeConfigFilePath: DefaultKubeConfigFilePath,
 				AllocationStrategy: DefaultAllocationStrategy,
 				CollectorNamespace: "default",
 				CollectorSelector: &metav1.LabelSelector{
@@ -222,6 +232,9 @@ func TestLoad(t *testing.T) {
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 					ScrapeInterval:                  DefaultCRScrapeInterval,
+				},
+				HTTPS: HTTPSServerConfig{
+					ListenAddr: ":8443",
 				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
@@ -272,6 +285,8 @@ func TestLoad(t *testing.T) {
 				file: "./testdata/pod_service_selector_expressions_test.yaml",
 			},
 			want: Config{
+				ListenAddr:         DefaultListenAddr,
+				KubeConfigFilePath: DefaultKubeConfigFilePath,
 				AllocationStrategy: DefaultAllocationStrategy,
 				CollectorNamespace: "default",
 				CollectorSelector: &metav1.LabelSelector{
@@ -321,6 +336,9 @@ func TestLoad(t *testing.T) {
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 					ScrapeInterval:                  DefaultCRScrapeInterval,
+				},
+				HTTPS: HTTPSServerConfig{
+					ListenAddr: ":8443",
 				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
@@ -371,6 +389,8 @@ func TestLoad(t *testing.T) {
 				file: "./testdata/pod_service_selector_camelcase_expressions_test.yaml",
 			},
 			want: Config{
+				ListenAddr:         DefaultListenAddr,
+				KubeConfigFilePath: DefaultKubeConfigFilePath,
 				AllocationStrategy: DefaultAllocationStrategy,
 				CollectorNamespace: "default",
 				CollectorSelector: &metav1.LabelSelector{
@@ -420,6 +440,9 @@ func TestLoad(t *testing.T) {
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 					ScrapeInterval:                  DefaultCRScrapeInterval,
+				},
+				HTTPS: HTTPSServerConfig{
+					ListenAddr: ":8443",
 				},
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
@@ -598,4 +621,260 @@ func TestGetAllowDenyLists(t *testing.T) {
 			assert.Equal(t, tc.expectedDenyList, denyList)
 		})
 	}
+}
+
+func TestConfigLoadPriority(t *testing.T) {
+	// Helper function to create a dummy kube config for tests
+	createDummyKubeConfig := func(t *testing.T, dir string) string {
+		kubeConfigPath := filepath.Join(dir, "kube.config")
+		kubeConfigContent := `
+apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    server: https://example.com
+  name: test-cluster
+contexts:
+- context:
+    cluster: test-cluster
+    user: test-user
+  name: test-context
+current-context: test-context
+users:
+- name: test-user
+  user:
+    token: dummy-token
+`
+		err := os.WriteFile(kubeConfigPath, []byte(kubeConfigContent), 0600)
+		require.NoError(t, err)
+		return kubeConfigPath
+	}
+
+	t.Run("default values when nothing is set", func(t *testing.T) {
+		// Setup: create empty config file and dummy kube config
+		tempDir := t.TempDir()
+		emptyConfigPath := filepath.Join(tempDir, "empty.yaml")
+		err := os.WriteFile(emptyConfigPath, []byte("{}"), 0600)
+		require.NoError(t, err)
+
+		kubeConfigPath := createDummyKubeConfig(t, tempDir)
+
+		// Prepare args for Load function
+		args := []string{
+			"--" + configFilePathFlagName + "=" + emptyConfigPath,
+			"--" + kubeConfigPathFlagName + "=" + kubeConfigPath,
+		}
+
+		// Load config using the full Load function
+		config, err := Load(args)
+		require.NoError(t, err)
+
+		// Assert defaults are used
+		assert.Equal(t, DefaultListenAddr, config.ListenAddr)
+		assert.Equal(t, kubeConfigPath, config.KubeConfigFilePath)
+		assert.Equal(t, DefaultHttpsListenAddr, config.HTTPS.ListenAddr)
+		assert.Equal(t, DefaultAllocationStrategy, config.AllocationStrategy)
+		assert.Equal(t, DefaultFilterStrategy, config.FilterStrategy)
+		assert.False(t, config.PrometheusCR.Enabled)
+		assert.False(t, config.HTTPS.Enabled)
+	})
+
+	t.Run("command-line has priority over config file for boolean values", func(t *testing.T) {
+		// Setup: create config file with values and dummy kube config
+		tempDir := t.TempDir()
+		configContent := `
+prometheus_cr:
+  enabled: false
+https:
+  enabled: false
+`
+		configPath := filepath.Join(tempDir, "config.yaml")
+		err := os.WriteFile(configPath, []byte(configContent), 0600)
+		require.NoError(t, err)
+
+		kubeConfigPath := createDummyKubeConfig(t, tempDir)
+
+		// Prepare args for Load function that override config file
+		args := []string{
+			"--" + configFilePathFlagName + "=" + configPath,
+			"--" + prometheusCREnabledFlagName + "=true",
+			"--" + httpsEnabledFlagName + "=true",
+			"--" + kubeConfigPathFlagName + "=" + kubeConfigPath,
+		}
+
+		// Load config using the full Load function
+		config, err := Load(args)
+		require.NoError(t, err)
+
+		// Assert CLI values override config file
+		assert.True(t, config.PrometheusCR.Enabled, "CLI should override config file for prometheus CR enabled")
+		assert.True(t, config.HTTPS.Enabled, "CLI should override config file for HTTPS enabled")
+	})
+
+	t.Run("command-line has priority over config file for string values", func(t *testing.T) {
+		// Setup: create config file with values and dummy kube config
+		tempDir := t.TempDir()
+		configContent := `
+listen_addr: ":9090"
+https:
+  listen_addr: ":9443"
+  ca_file_path: "/config/ca.pem"
+  tls_cert_file_path: "/config/cert.pem"
+  tls_key_file_path: "/config/key.pem"
+kube_config_file_path: "/config/kube.config"
+`
+		configPath := filepath.Join(tempDir, "config.yaml")
+		err := os.WriteFile(configPath, []byte(configContent), 0600)
+		require.NoError(t, err)
+
+		kubeConfigPath := createDummyKubeConfig(t, tempDir)
+
+		// CLI values different from config file
+		cliListenAddr := ":8888"
+		cliHttpsListenAddr := ":8443"
+		cliCAPath := "/cli/ca.pem"
+		cliCertPath := "/cli/cert.pem"
+		cliKeyPath := "/cli/key.pem"
+
+		// Prepare args for Load function that override config file
+		args := []string{
+			"--" + configFilePathFlagName + "=" + configPath,
+			"--" + listenAddrFlagName + "=" + cliListenAddr,
+			"--" + listenAddrHttpsFlagName + "=" + cliHttpsListenAddr,
+			"--" + httpsCAFilePathFlagName + "=" + cliCAPath,
+			"--" + httpsTLSCertFilePathFlagName + "=" + cliCertPath,
+			"--" + httpsTLSKeyFilePathFlagName + "=" + cliKeyPath,
+			"--" + kubeConfigPathFlagName + "=" + kubeConfigPath,
+		}
+
+		// Load config using the full Load function
+		config, err := Load(args)
+		require.NoError(t, err)
+
+		// Assert CLI values override config file
+		assert.Equal(t, cliListenAddr, config.ListenAddr, "CLI should override config file for listen address")
+		assert.Equal(t, cliHttpsListenAddr, config.HTTPS.ListenAddr, "CLI should override config file for HTTPS listen address")
+		assert.Equal(t, cliCAPath, config.HTTPS.CAFilePath, "CLI should override config file for CA file path")
+		assert.Equal(t, cliCertPath, config.HTTPS.TLSCertFilePath, "CLI should override config file for TLS cert file path")
+		assert.Equal(t, cliKeyPath, config.HTTPS.TLSKeyFilePath, "CLI should override config file for TLS key file path")
+		assert.Equal(t, kubeConfigPath, config.KubeConfigFilePath, "CLI should override config file for kube config path")
+	})
+
+	t.Run("config file overrides defaults when CLI not specified", func(t *testing.T) {
+		// Setup: create config file with values and dummy kube config
+		tempDir := t.TempDir()
+		configListenAddr := ":7070"
+		kubeConfigPath := createDummyKubeConfig(t, tempDir)
+
+		configContent := `
+listen_addr: "` + configListenAddr + `"
+prometheus_cr:
+  enabled: true
+https:
+  enabled: true
+  listen_addr: ":7443"
+kube_config_file_path: "` + kubeConfigPath + `"
+`
+		configPath := filepath.Join(tempDir, "config.yaml")
+		err := os.WriteFile(configPath, []byte(configContent), 0600)
+		require.NoError(t, err)
+
+		// Prepare args for Load function with only config file path
+		args := []string{
+			"--" + configFilePathFlagName + "=" + configPath,
+		}
+
+		// Load config using the full Load function
+		config, err := Load(args)
+		require.NoError(t, err)
+
+		// Assert config file values override defaults
+		assert.Equal(t, configListenAddr, config.ListenAddr, "Config file should override defaults for listen address")
+		assert.True(t, config.PrometheusCR.Enabled, "Config file should override defaults for prometheus CR enabled")
+		assert.True(t, config.HTTPS.Enabled, "Config file should override defaults for HTTPS enabled")
+		assert.Equal(t, ":7443", config.HTTPS.ListenAddr, "Config file should override defaults for HTTPS listen address")
+		assert.Equal(t, kubeConfigPath, config.KubeConfigFilePath, "Config file should set kube config path")
+	})
+
+	t.Run("environment variables are applied", func(t *testing.T) {
+		// Setup: create empty config file and dummy kube config
+		tempDir := t.TempDir()
+		emptyConfigPath := filepath.Join(tempDir, "empty.yaml")
+		err := os.WriteFile(emptyConfigPath, []byte("{}"), 0600)
+		require.NoError(t, err)
+
+		kubeConfigPath := createDummyKubeConfig(t, tempDir)
+
+		// Save original env var value and restore after test
+		originalNamespace := os.Getenv("OTELCOL_NAMESPACE")
+		defer func() {
+			envErr := os.Setenv("OTELCOL_NAMESPACE", originalNamespace)
+			assert.NoError(t, envErr)
+		}()
+
+		// Set environment variable
+		testNamespace := "test-namespace"
+		err = os.Setenv("OTELCOL_NAMESPACE", testNamespace)
+		require.NoError(t, err)
+
+		// Prepare args for Load function
+		args := []string{
+			"--" + configFilePathFlagName + "=" + emptyConfigPath,
+			"--" + kubeConfigPathFlagName + "=" + kubeConfigPath,
+		}
+
+		// Load config using the full Load function
+		config, err := Load(args)
+		require.NoError(t, err)
+
+		// Assert environment variable is applied
+		assert.Equal(t, testNamespace, config.CollectorNamespace, "Environment variable should be applied")
+	})
+
+	t.Run("loading priority order: defaults <- config file <- env vars <- CLI", func(t *testing.T) {
+		// Setup: create config file with values and dummy kube config
+		tempDir := t.TempDir()
+		kubeConfigPath := createDummyKubeConfig(t, tempDir)
+
+		// Config file sets values
+		configContent := `
+collector_namespace: "config-file-namespace"
+listen_addr: ":9090"
+prometheus_cr:
+  enabled: false
+kube_config_file_path: "` + kubeConfigPath + `"
+`
+		configPath := filepath.Join(tempDir, "config.yaml")
+		err := os.WriteFile(configPath, []byte(configContent), 0600)
+		require.NoError(t, err)
+
+		// Save original env var value and restore after test
+		originalNamespace := os.Getenv("OTELCOL_NAMESPACE")
+		defer func() {
+			envErr := os.Setenv("OTELCOL_NAMESPACE", originalNamespace)
+			assert.NoError(t, envErr)
+		}()
+
+		// Environment variable sets value
+		testNamespace := "env-var-namespace"
+		err = os.Setenv("OTELCOL_NAMESPACE", testNamespace)
+		require.NoError(t, err)
+
+		// Prepare args for Load function with CLI values
+		cliListenAddr := ":8888"
+		args := []string{
+			"--" + configFilePathFlagName + "=" + configPath,
+			"--" + listenAddrFlagName + "=" + cliListenAddr,
+			"--" + prometheusCREnabledFlagName + "=true",
+		}
+
+		// Load config using the full Load function
+		config, err := Load(args)
+		require.NoError(t, err)
+
+		// Assert correct priority: CLI over env vars over config file over defaults
+		assert.Equal(t, testNamespace, config.CollectorNamespace, "Env var should override config file for namespace")
+		assert.Equal(t, cliListenAddr, config.ListenAddr, "CLI should override config file for listen address")
+		assert.True(t, config.PrometheusCR.Enabled, "CLI should override config file for prometheus CR enabled")
+	})
 }
