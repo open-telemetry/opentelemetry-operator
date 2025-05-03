@@ -20,10 +20,18 @@ spec:
         fieldRef:
           apiVersion: v1
           fieldPath: status.podIP
-    - name: OTEL_SERVICE_NAME
-      value: my-apache-multi
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
+    - name: OTEL_EXPORTER_OTLP_TIMEOUT
+      value: "20000"
+    - name: OTEL_TRACES_SAMPLER
+      value: always_on
+    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
+      value: "true"
+    - name: OTEL_SERVICE_NAME
+      value: my-apache-multi
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
       valueFrom:
         fieldRef:
@@ -36,12 +44,21 @@ spec:
           fieldPath: spec.nodeName
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
-    - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.25"
     - name: OTEL_RESOURCE_ATTRIBUTES
     name: myapp
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+    readinessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /
+        port: 8080
+        scheme: HTTP
+      initialDelaySeconds: 5
+      periodSeconds: 15
+      successThreshold: 1
+      timeoutSeconds: 2
   - env:
     - name: OTEL_NODE_IP
       valueFrom:
@@ -53,10 +70,18 @@ spec:
         fieldRef:
           apiVersion: v1
           fieldPath: status.podIP
-    - name: OTEL_SERVICE_NAME
-      value: my-apache-multi
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://localhost:4317
+    - name: OTEL_EXPORTER_OTLP_TIMEOUT
+      value: "20000"
+    - name: OTEL_TRACES_SAMPLER
+      value: always_on
+    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
+      value: "true"
+    - name: OTEL_SERVICE_NAME
+      value: my-apache-multi
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
       valueFrom:
         fieldRef:
@@ -69,10 +94,6 @@ spec:
           fieldPath: spec.nodeName
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
-    - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.25"
     - name: OTEL_RESOURCE_ATTRIBUTES
     name: myrabbit
   - args:
