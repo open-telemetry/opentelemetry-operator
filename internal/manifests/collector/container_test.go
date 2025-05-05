@@ -178,10 +178,6 @@ service:
 				},
 			},
 			expectedPorts: []corev1.ContainerPort{
-				{
-					Name:          "examplereceiver",
-					ContainerPort: 12345,
-				},
 				metricContainerPort,
 				{
 					Name:          "testport1",
@@ -213,13 +209,13 @@ service:
 			},
 			expectedPorts: []corev1.ContainerPort{
 				{
-					Name:          "examplereceiver",
-					ContainerPort: 12345,
+					Name:          "port-11111",
+					ContainerPort: 11111,
 				},
 				metricContainerPort,
 				{
 					Name:          "testport1",
-					ContainerPort: 11111,
+					ContainerPort: 12345,
 				},
 			},
 		},

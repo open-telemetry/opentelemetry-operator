@@ -5,22 +5,21 @@ metadata:
 spec:
   mode: daemonset
   ports:
-  - appProtocol: grpc
-    name: otlp-grpc
-    port: 4317
+  - appProtocol: http
+    name: custom-port
+    port: 9090
     protocol: TCP
-    targetPort: 4317
-    hostPort: 4317
+    targetPort: 9090
+    hostPort: 9090
   config:
     receivers:
-      jaeger:
-        protocols:
-          grpc: {}
+      nop: {}
     processors:
     exporters:
-      debug: {}
+      prometheus:
+        endpoint: "0.0.0.0:9090"
     service:
       pipelines:
         traces:
-          receivers: [jaeger]
-          exporters: [debug]
+          receivers: [nop]
+          exporters: [prometheus]
