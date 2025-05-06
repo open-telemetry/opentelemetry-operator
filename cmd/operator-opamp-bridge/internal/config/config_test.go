@@ -69,6 +69,7 @@ func TestLoadFromFile(t *testing.T) {
 		name    string
 		args    args
 		want    *Config
+		needErr bool
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
@@ -99,6 +100,7 @@ func TestLoadFromFile(t *testing.T) {
 					ReportsPackageStatuses:         false,
 				},
 			},
+			needErr: false,
 			wantErr: assert.NoError,
 		},
 		{
@@ -129,6 +131,7 @@ func TestLoadFromFile(t *testing.T) {
 					ReportsPackageStatuses:         false,
 				},
 			},
+			needErr: false,
 			wantErr: assert.NoError,
 		},
 		{
@@ -171,6 +174,7 @@ func TestLoadFromFile(t *testing.T) {
 					},
 				},
 			},
+			needErr: false,
 			wantErr: assert.NoError,
 		},
 		{
@@ -178,7 +182,8 @@ func TestLoadFromFile(t *testing.T) {
 			args: args{
 				file: "./testdata/agentbadconf.yaml",
 			},
-			want: &Config{},
+			want:    &Config{},
+			needErr: true,
 			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
 				return assert.ErrorContains(t, err, "error unmarshaling YAML", i...)
 			},
@@ -221,6 +226,7 @@ func TestLoadFromFile(t *testing.T) {
 					ReportsPackageStatuses:         false,
 				},
 			},
+			needErr: false,
 			wantErr: assert.NoError,
 		},
 		{
@@ -260,6 +266,7 @@ func TestLoadFromFile(t *testing.T) {
 					ReportsPackageStatuses:         false,
 				},
 			},
+			needErr: false,
 			wantErr: assert.NoError,
 		},
 	}
@@ -273,7 +280,8 @@ func TestLoadFromFile(t *testing.T) {
 			}
 			got := NewConfig(logr.Discard())
 			err := LoadFromFile(got, tt.args.file)
-			if err != nil && tt.wantErr(t, err, fmt.Sprintf("Load(%v)", tt.args.file)) {
+			if tt.needErr {
+				_ = tt.wantErr(t, err, fmt.Sprintf("Load(%v)", tt.args.file))
 				return
 			}
 			got.instanceId = tt.want.instanceId
