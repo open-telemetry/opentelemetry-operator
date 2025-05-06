@@ -4,3 +4,19 @@ metadata:
   name: telemetrygen-traces
 status:
   active: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: telemetrygen-metrics
+status:
+  active: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: telemetrygen-logs
+status:
+  active: 1

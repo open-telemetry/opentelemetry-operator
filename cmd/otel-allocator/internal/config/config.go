@@ -9,7 +9,10 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
+	"math"
 	"os"
+	"path/filepath"
 	"reflect"
 	"time"
 
@@ -20,38 +23,62 @@ import (
 	_ "github.com/prometheus/prometheus/discovery/install"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 const (
-	DefaultResyncTime                        = 5 * time.Minute
-	DefaultConfigFilePath     string         = "/conf/targetallocator.yaml"
-	DefaultCRScrapeInterval   model.Duration = model.Duration(time.Second * 30)
-	DefaultAllocationStrategy                = "consistent-hashing"
-	DefaultFilterStrategy                    = "relabel-config"
+	DefaultListenAddr                                  = ":8080"
+	DefaultHttpsListenAddr                             = ":8443"
+	DefaultResyncTime                                  = 5 * time.Minute
+	DefaultConfigFilePath               string         = "/conf/targetallocator.yaml"
+	DefaultCRScrapeInterval             model.Duration = model.Duration(time.Second * 30)
+	DefaultAllocationStrategy                          = "consistent-hashing"
+	DefaultFilterStrategy                              = "relabel-config"
+	DefaultCollectorNotReadyGracePeriod                = 0 * time.Second
 )
 
+var (
+	DefaultKubeConfigFilePath string = filepath.Join(homedir.HomeDir(), ".kube", "config")
+)
+
+// By default, scrape protocols include PrometheusText1_0_0, which only Prometheus >=3.0 supports.
+// Manually exclude this protocol until several versions of the Otel Collector support it.
+var DefaultScrapeProtocols = []promconfig.ScrapeProtocol{
+	promconfig.OpenMetricsText1_0_0,
+	promconfig.OpenMetricsText0_0_1,
+	promconfig.PrometheusText0_0_4,
+}
+
+// logger which discards all messages written to it. Replace this with slog.DiscardHandler after we require Go 1.24.
+var NopLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(math.MaxInt)}))
+
 type Config struct {
-	ListenAddr                 string                `yaml:"listen_addr,omitempty"`
-	KubeConfigFilePath         string                `yaml:"kube_config_file_path,omitempty"`
-	ClusterConfig              *rest.Config          `yaml:"-"`
-	RootLogger                 logr.Logger           `yaml:"-"`
-	CollectorSelector          *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
-	PromConfig                 *promconfig.Config    `yaml:"config"`
-	AllocationStrategy         string                `yaml:"allocation_strategy,omitempty"`
-	AllocationFallbackStrategy string                `yaml:"allocation_fallback_strategy,omitempty"`
-	FilterStrategy             string                `yaml:"filter_strategy,omitempty"`
-	PrometheusCR               PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
-	HTTPS                      HTTPSServerConfig     `yaml:"https,omitempty"`
+	ListenAddr                   string                `yaml:"listen_addr,omitempty"`
+	KubeConfigFilePath           string                `yaml:"kube_config_file_path,omitempty"`
+	ClusterConfig                *rest.Config          `yaml:"-"`
+	RootLogger                   logr.Logger           `yaml:"-"`
+	CollectorSelector            *metav1.LabelSelector `yaml:"collector_selector,omitempty"`
+	CollectorNamespace           string                `yaml:"collector_namespace,omitempty"`
+	PromConfig                   *promconfig.Config    `yaml:"config"`
+	AllocationStrategy           string                `yaml:"allocation_strategy,omitempty"`
+	AllocationFallbackStrategy   string                `yaml:"allocation_fallback_strategy,omitempty"`
+	FilterStrategy               string                `yaml:"filter_strategy,omitempty"`
+	PrometheusCR                 PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
+	HTTPS                        HTTPSServerConfig     `yaml:"https,omitempty"`
+	CollectorNotReadyGracePeriod time.Duration         `yaml:"collector_not_ready_grace_period,omitempty"`
 }
 
 type PrometheusCRConfig struct {
 	Enabled                         bool                  `yaml:"enabled,omitempty"`
+	AllowNamespaces                 []string              `yaml:"allow_namespaces,omitempty"`
+	DenyNamespaces                  []string              `yaml:"deny_namespaces,omitempty"`
 	PodMonitorSelector              *metav1.LabelSelector `yaml:"pod_monitor_selector,omitempty"`
 	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
 	ServiceMonitorSelector          *metav1.LabelSelector `yaml:"service_monitor_selector,omitempty"`
@@ -71,10 +98,10 @@ type HTTPSServerConfig struct {
 	TLSKeyFilePath  string `yaml:"tls_key_file_path,omitempty"`
 }
 
-// StringToModelDurationHookFunc returns a DecodeHookFuncType
-// that converts string to time.Duration, which can be used
+// StringToModelOrTimeDurationHookFunc returns a DecodeHookFuncType
+// that converts string to time.Duration, which can also be used
 // as model.Duration.
-func StringToModelDurationHookFunc() mapstructure.DecodeHookFuncType {
+func StringToModelOrTimeDurationHookFunc() mapstructure.DecodeHookFuncType {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
@@ -84,7 +111,7 @@ func StringToModelDurationHookFunc() mapstructure.DecodeHookFuncType {
 			return data, nil
 		}
 
-		if t != reflect.TypeOf(model.Duration(5)) {
+		if t != reflect.TypeOf(model.Duration(5)) && t != reflect.TypeOf(time.Duration(5)) {
 			return data, nil
 		}
 
@@ -110,7 +137,12 @@ func MapToPromConfig() mapstructure.DecodeHookFuncType {
 
 		pConfig := &promconfig.Config{}
 
-		mb, err := yaml.Marshal(data.(map[any]any))
+		dataMap := data.(map[any]any)
+		err := ApplyPromConfigDefaults(dataMap)
+		if err != nil {
+			return nil, err
+		}
+		mb, err := yaml.Marshal(dataMap)
 		if err != nil {
 			return nil, err
 		}
@@ -121,6 +153,32 @@ func MapToPromConfig() mapstructure.DecodeHookFuncType {
 		}
 		return pConfig, nil
 	}
+}
+
+// applyPromConfigDefaults applies our own defaults to the Prometheus configuration. The unmarshalling process for
+// Prometheus config is quite involved, and as a result, we need to apply our own defaults before it happens.
+func ApplyPromConfigDefaults(promcCfgMap map[any]any) error {
+	// use our own struct definition here because we don't want Prometheus unmarshalling logic to apply here
+	promCfg := struct {
+		GlobalConfig struct {
+			ScrapeProtocols []promconfig.ScrapeProtocol `mapstructure:"scrape_protocols"`
+			Rest            map[any]any                 `mapstructure:",remain"`
+		} `mapstructure:"global"`
+		Rest map[any]any `mapstructure:",remain"`
+	}{}
+	err := mapstructure.Decode(promcCfgMap, &promCfg)
+	if err != nil {
+		return err
+	}
+	// apply defaults here
+	promCfg.GlobalConfig.ScrapeProtocols = DefaultScrapeProtocols
+
+	// decode back into the map
+	err = mapstructure.Decode(promCfg, &promcCfgMap)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // MapToLabelSelector returns a DecodeHookFuncType that
@@ -177,9 +235,10 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	klog.SetLogger(target.RootLogger)
 	ctrl.SetLogger(target.RootLogger)
 
-	target.KubeConfigFilePath, err = getKubeConfigFilePath(flagSet)
-	if err != nil {
-		return err
+	if kubeConfigFilePath, changed, flagErr := getKubeConfigFilePath(flagSet); flagErr != nil {
+		return flagErr
+	} else if changed {
+		target.KubeConfigFilePath = kubeConfigFilePath
 	}
 	clusterConfig, err := clientcmd.BuildConfigFromFlags("", target.KubeConfigFilePath)
 	if err != nil {
@@ -195,9 +254,10 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	}
 	target.ClusterConfig = clusterConfig
 
-	target.ListenAddr, err = getListenAddr(flagSet)
-	if err != nil {
-		return err
+	if listenAddr, changed, flagErr := getListenAddr(flagSet); flagErr != nil {
+		return flagErr
+	} else if changed {
+		target.ListenAddr = listenAddr
 	}
 
 	if prometheusCREnabled, changed, flagErr := getPrometheusCREnabled(flagSet); flagErr != nil {
@@ -239,6 +299,12 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 	return nil
 }
 
+// LoadFromEnv loads configuration from environment variables.
+func LoadFromEnv(target *Config) error {
+	target.CollectorNamespace = os.Getenv("OTELCOL_NAMESPACE")
+	return nil
+}
+
 // unmarshal decodes the contents of the configFile into the cfg argument, using a
 // mapstructure decoder with the following notable behaviors.
 // Decodes time.Duration from strings (see StringToModelDurationHookFunc).
@@ -260,7 +326,7 @@ func unmarshal(cfg *Config, configFile string) error {
 		TagName: "yaml",
 		Result:  cfg,
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			StringToModelDurationHookFunc(),
+			StringToModelOrTimeDurationHookFunc(),
 			MapToPromConfig(),
 			MapToLabelSelector(),
 		),
@@ -279,20 +345,30 @@ func unmarshal(cfg *Config, configFile string) error {
 
 func CreateDefaultConfig() Config {
 	return Config{
+		ListenAddr:         DefaultListenAddr,
+		KubeConfigFilePath: DefaultKubeConfigFilePath,
+		HTTPS: HTTPSServerConfig{
+			ListenAddr: DefaultHttpsListenAddr,
+		},
 		AllocationStrategy:         DefaultAllocationStrategy,
 		AllocationFallbackStrategy: "",
 		FilterStrategy:             DefaultFilterStrategy,
 		PrometheusCR: PrometheusCRConfig{
-			ScrapeInterval: DefaultCRScrapeInterval,
+			ScrapeInterval:                  DefaultCRScrapeInterval,
+			ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+			PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+			ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+			ProbeNamespaceSelector:          &metav1.LabelSelector{},
 		},
+		CollectorNotReadyGracePeriod: DefaultCollectorNotReadyGracePeriod,
 	}
 }
 
-func Load() (*Config, error) {
+func Load(args []string) (*Config, error) {
 	var err error
 
 	flagSet := getFlagSet(pflag.ExitOnError)
-	err = flagSet.Parse(os.Args)
+	err = flagSet.Parse(args)
 	if err != nil {
 		return nil, err
 	}
@@ -305,6 +381,11 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 	err = LoadFromFile(configFilePath, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	err = LoadFromEnv(&config)
 	if err != nil {
 		return nil, err
 	}
@@ -322,6 +403,12 @@ func ValidateConfig(config *Config) error {
 	scrapeConfigsPresent := (config.PromConfig != nil && len(config.PromConfig.ScrapeConfigs) > 0)
 	if !(config.PrometheusCR.Enabled || scrapeConfigsPresent) {
 		return fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
+	}
+	if config.CollectorNamespace == "" {
+		return fmt.Errorf("collector namespace must be set")
+	}
+	if len(config.PrometheusCR.AllowNamespaces) != 0 && len(config.PrometheusCR.DenyNamespaces) != 0 {
+		return fmt.Errorf("only one of allowNamespaces or denyNamespaces can be set")
 	}
 	return nil
 }
@@ -347,4 +434,26 @@ func (c HTTPSServerConfig) NewTLSConfig() (*tls.Config, error) {
 		MinVersion:   tls.VersionTLS12,
 	}
 	return tlsConfig, nil
+}
+
+// GetAllowDenyLists returns the allow and deny lists as maps. If the allow list is empty, it defaults to all namespaces.
+// If the deny list is empty, it defaults to an empty map.
+func (c PrometheusCRConfig) GetAllowDenyLists() (map[string]struct{}, map[string]struct{}) {
+	allowList := map[string]struct{}{}
+	if len(c.AllowNamespaces) != 0 {
+		for _, ns := range c.AllowNamespaces {
+			allowList[ns] = struct{}{}
+		}
+	} else {
+		allowList = map[string]struct{}{v1.NamespaceAll: {}}
+	}
+
+	denyList := map[string]struct{}{}
+	if len(c.DenyNamespaces) != 0 {
+		for _, ns := range c.DenyNamespaces {
+			denyList[ns] = struct{}{}
+		}
+	}
+
+	return allowList, denyList
 }

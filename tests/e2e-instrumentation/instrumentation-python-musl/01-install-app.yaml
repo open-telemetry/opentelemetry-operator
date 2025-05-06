@@ -22,8 +22,19 @@ spec:
         fsGroup: 3000
       containers:
       - name: myapp
+        ports:
+        - containerPort: 8080
         image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 3

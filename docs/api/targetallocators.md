@@ -138,6 +138,14 @@ WARNING: The per-node strategy currently ignores targets without a Node, like co
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>collectorNotReadyGracePeriod</b></td>
+        <td>string</td>
+        <td>
+          CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
+The default is 0s, which means that all collectors can be assigned targets irrespective of their readiness.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#targetallocatorspecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>
@@ -9480,6 +9488,20 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>allowNamespaces</b></td>
+        <td>[]string</td>
+        <td>
+          AllowNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (allow list). This is mutually exclusive with DenyNamespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>denyNamespaces</b></td>
+        <td>[]string</td>
+        <td>
+          DenyNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (deny list). This is mutually exclusive with AllowNamespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>

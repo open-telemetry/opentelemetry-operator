@@ -7,8 +7,16 @@ metadata:
 spec:
   steps:
     - name: step-00
+      description: jaeger extension
       try:
         - apply:
-            file: 00-install.yaml
+            file: 00-install-jaeger-extension.yaml
         - assert:
-            file: 00-assert.yaml
+            file: 00-assert-jaeger-extension.yaml
+    - name: step-01
+      description: health check extension
+      try:
+        - apply:
+            file: 01-install-health-check-extension.yaml
+        - assert:
+            file: 01-assert-health-check-extension.yaml

@@ -3735,7 +3735,7 @@ spec:
                       type: array
                     minReplicas:
                       description: MinReplicas sets a lower bound to the autoscaling
-                        feature.  Set this if your are using autoscaling. It must be
+                        feature.  Set this if you are using autoscaling. It must be
                         at least 1
                       format: int32
                       type: integer
@@ -5554,7 +5554,7 @@ spec:
                   type: string
                 replicas:
                   description: Replicas is the number of pod instances for the underlying
-                    OpenTelemetry Collector. Set this if your are not using autoscaling
+                    OpenTelemetry Collector. Set this if you are not using autoscaling
                   format: int32
                   type: integer
                 resources:

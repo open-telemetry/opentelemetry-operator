@@ -60,7 +60,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 	type args struct {
 		collector string
 		job       string
-		cMap      map[string]*target.Item
+		cMap      map[target.ItemHash]*target.Item
 		allocator allocation.Allocator
 	}
 	type want struct {
@@ -77,7 +77,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap:      map[string]*target.Item{},
+				cMap:      map[target.ItemHash]*target.Item{},
 				allocator: leastWeighted,
 			},
 			want: want{
@@ -89,7 +89,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap: map[string]*target.Item{
+				cMap: map[target.ItemHash]*target.Item{
 					baseTargetItem.Hash(): baseTargetItem,
 				},
 				allocator: leastWeighted,
@@ -110,7 +110,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap: map[string]*target.Item{
+				cMap: map[target.ItemHash]*target.Item{
 					baseTargetItem.Hash():   baseTargetItem,
 					secondTargetItem.Hash(): secondTargetItem,
 				},
@@ -132,7 +132,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap: map[string]*target.Item{
+				cMap: map[target.ItemHash]*target.Item{
 					baseTargetItem.Hash():       baseTargetItem,
 					testJobTargetItemTwo.Hash(): testJobTargetItemTwo,
 				},
@@ -160,8 +160,12 @@ func TestServer_TargetsHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			listenAddr := ":8080"
 			s := NewServer(logger, tt.args.allocator, listenAddr)
+			targets := []*target.Item{}
+			for _, item := range tt.args.cMap {
+				targets = append(targets, item)
+			}
 			tt.args.allocator.SetCollectors(map[string]*allocation.Collector{"test-collector": {Name: "test-collector"}})
-			tt.args.allocator.SetTargets(tt.args.cMap)
+			tt.args.allocator.SetTargets(targets)
 			request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/%s/targets?collector_id=%s", tt.args.job, tt.args.collector), nil)
 			w := httptest.NewRecorder()
 
@@ -543,7 +547,7 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 func TestServer_JobHandler(t *testing.T) {
 	tests := []struct {
 		description  string
-		targetItems  map[string]*target.Item
+		targetItems  map[target.ItemHash]*target.Item
 		expectedCode int
 		expectedJobs map[string]linkJSON
 	}{
@@ -555,14 +559,14 @@ func TestServer_JobHandler(t *testing.T) {
 		},
 		{
 			description:  "empty jobs",
-			targetItems:  map[string]*target.Item{},
+			targetItems:  map[target.ItemHash]*target.Item{},
 			expectedCode: http.StatusOK,
 			expectedJobs: make(map[string]linkJSON),
 		},
 		{
 			description: "one job",
-			targetItems: map[string]*target.Item{
-				"targetitem": target.NewItem("job1", "", labels.Labels{}, ""),
+			targetItems: map[target.ItemHash]*target.Item{
+				0: target.NewItem("job1", "", labels.Labels{}, ""),
 			},
 			expectedCode: http.StatusOK,
 			expectedJobs: map[string]linkJSON{
@@ -571,12 +575,12 @@ func TestServer_JobHandler(t *testing.T) {
 		},
 		{
 			description: "multiple jobs",
-			targetItems: map[string]*target.Item{
-				"a": target.NewItem("job1", "", labels.Labels{}, ""),
-				"b": target.NewItem("job2", "", labels.Labels{}, ""),
-				"c": target.NewItem("job3", "", labels.Labels{}, ""),
-				"d": target.NewItem("job3", "", labels.Labels{}, ""),
-				"e": target.NewItem("job3", "", labels.Labels{}, "")},
+			targetItems: map[target.ItemHash]*target.Item{
+				0: target.NewItem("job1", "", labels.Labels{}, ""),
+				1: target.NewItem("job2", "", labels.Labels{}, ""),
+				2: target.NewItem("job3", "", labels.Labels{}, ""),
+				3: target.NewItem("job3", "", labels.Labels{}, ""),
+				4: target.NewItem("job3", "", labels.Labels{}, "")},
 			expectedCode: http.StatusOK,
 			expectedJobs: map[string]linkJSON{
 				"job1": newLink("job1"),

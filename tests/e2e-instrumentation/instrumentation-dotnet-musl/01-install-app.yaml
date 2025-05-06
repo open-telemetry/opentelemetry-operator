@@ -22,6 +22,8 @@ spec:
         fsGroup: 3000
       containers:
       - name: myapp
+        ports:
+        - containerPort: 8080
         image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-dotnet:main
         securityContext:
           allowPrivilegeEscalation: false
@@ -30,3 +32,12 @@ spec:
         env:
         - name: ASPNETCORE_URLS
           value: "http://+:8080"
+        readinessProbe:
+          httpGet:
+            path: /rolldice
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 3

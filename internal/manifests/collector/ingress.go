@@ -26,7 +26,7 @@ func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 
 	ports, err := servicePortsFromCfg(params.Log, params.OtelCol)
 
-	// if we have no ports, we don't need a ingress entry
+	// if we have no ports, we don't need an ingress entry
 	if len(ports) == 0 || err != nil {
 		params.Log.V(1).Info(
 			"the instance's configuration didn't yield any ports to open, skipping ingress",

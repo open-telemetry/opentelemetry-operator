@@ -152,6 +152,10 @@ func createMockKubernetesClientDaemonset() client.Client {
 				},
 			},
 		},
+		Status: appsv1.DaemonSetStatus{
+			DesiredNumberScheduled: 1,
+			NumberReady:            1,
+		},
 	}
 	return fake.NewClientBuilder().WithObjects(daemonset).Build()
 }
@@ -176,6 +180,8 @@ func TestUpdateCollectorStatusDaemonsetMode(t *testing.T) {
 	err := updateCollectorStatus(ctx, cli, changed)
 	assert.NoError(t, err)
 
+	assert.Equal(t, int32(1), changed.Status.Scale.Replicas, "expected replicas to be 1")
+	assert.Equal(t, "1/1", changed.Status.Scale.StatusReplicas, "expected status replicas to be 1/1")
 	assert.Contains(t, changed.Status.Scale.Selector, "customLabel=customValue", "expected selector to contain customlabel=customValue")
 	assert.Equal(t, "app:latest", changed.Status.Image, "expected image to be app:latest")
 }

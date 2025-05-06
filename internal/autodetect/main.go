@@ -150,7 +150,7 @@ func (a *autoDetect) CertManagerAvailability(ctx context.Context) (certmanager.A
 	return certmanager.Available, nil
 }
 
-// TargetAllocatorAvailability checks if OpenShift Route are available.
+// TargetAllocatorAvailability checks if TargetAllocator CR are available.
 func (a *autoDetect) TargetAllocatorAvailability() (targetallocator.Availability, error) {
 	apiList, err := a.dcl.ServerGroups()
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -158,9 +159,11 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            v1beta1.ModeDeployment,
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
 					Config: func() v1beta1.Config {
-						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317"},"http":{"endpoint":"0.0.0.0:4318"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"address":"0.0.0.0:8888"}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
+						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317"},"http":{"endpoint":"0.0.0.0:4318"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"0.0.0.0","port":8888}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
 						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
+						// This is a workaround to avoid the type mismatch because how go-yaml unmarshals
+						cfg.Service.Telemetry.Object["metrics"].(map[string]interface{})["readers"].([]interface{})[0].(map[string]interface{})["pull"].(map[string]interface{})["exporter"].(map[string]interface{})["prometheus"].(map[string]interface{})["port"] = int32(8888)
 						return cfg
 					}(),
 				},
@@ -171,7 +174,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: func() v1beta1.Config {
-						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"address":"1.2.3.4:7654"}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
+						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"localhost","port":9999}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
 						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
 						return cfg
@@ -190,7 +193,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            v1beta1.ModeDeployment,
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
 					Config: func() v1beta1.Config {
-						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317","headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"address":"1.2.3.4:7654"}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
+						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317","headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"localhost","port":9999}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
 						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
 						return cfg
@@ -547,7 +550,9 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				assert.NoError(t, test.expected.Spec.Config.Service.ApplyDefaults(logr.Discard()), "could not apply defaults")
 			}
 			assert.NoError(t, err)
-			assert.Equal(t, test.expected, test.otelcol)
+			if diff := cmp.Diff(test.expected, test.otelcol); diff != "" {
+				t.Errorf("v1beta1.OpenTelemetryCollector mismatch (-want +got):\n%s", diff)
+			}
 		})
 	}
 }
@@ -582,7 +587,18 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			Telemetry: &v1beta1.AnyConfig{
 				Object: map[string]interface{}{
 					"metrics": map[string]interface{}{
-						"address": "${env:POD_ID}:8888",
+						"readers": []map[string]interface{}{
+							{
+								"pull": map[string]interface{}{
+									"exporter": map[string]interface{}{
+										"prometheus": map[string]interface{}{
+											"host": "${env:POD_ID}",
+											"port": int32(8888),
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -838,7 +854,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 						Ports: []v1beta1.PortsSpec{
 							{
 								ServicePort: v1.ServicePort{
-									// this port name contains a non alphanumeric character, which is invalid.
+									// this port name contains a non-alphanumeric character, which is invalid.
 									Name:     "-test🦄port",
 									Port:     12345,
 									Protocol: v1.ProtocolTCP,

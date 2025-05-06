@@ -14,7 +14,7 @@ type (
 const (
 	// IngressTypeIngress specifies that an ingress should be created.
 	IngressTypeIngress IngressType = "ingress"
-	// IngressTypeRoute IngressTypeOpenshiftRoute specifies that an route should be created.
+	// IngressTypeRoute IngressTypeOpenshiftRoute specifies that a route should be created.
 	IngressTypeRoute IngressType = "route"
 )
 
@@ -30,10 +30,10 @@ const (
 	// TLSRouteTerminationTypeEdge indicates that encryption should be terminated
 	// at the edge router.
 	TLSRouteTerminationTypeEdge TLSRouteTerminationType = "edge"
-	// TLSTerminationPassthrough indicates that the destination service is
+	// TLSRouteTerminationTypePassthrough indicates that the destination service is
 	// responsible for decrypting traffic.
 	TLSRouteTerminationTypePassthrough TLSRouteTerminationType = "passthrough"
-	// TLSTerminationReencrypt indicates that traffic will be decrypted on the edge
+	// TLSRouteTerminationTypeReencrypt indicates that traffic will be decrypted on the edge
 	// and re-encrypt using a new certificate.
 	TLSRouteTerminationTypeReencrypt TLSRouteTerminationType = "reencrypt"
 )

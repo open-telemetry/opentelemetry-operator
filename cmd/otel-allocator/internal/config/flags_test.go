@@ -39,20 +39,26 @@ func TestFlagGetters(t *testing.T) {
 			name:          "GetKubeConfigFilePath",
 			flagArgs:      []string{"--" + kubeConfigPathFlagName, filepath.Join("~", ".kube", "config")},
 			expectedValue: filepath.Join("~", ".kube", "config"),
-			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getKubeConfigFilePath(fs) },
+			getterFunc: func(fs *pflag.FlagSet) (interface{}, error) {
+				value, _, err := getKubeConfigFilePath(fs)
+				return value, err
+			},
 		},
 		{
 			name:          "GetListenAddr",
 			flagArgs:      []string{"--" + listenAddrFlagName, ":8081"},
 			expectedValue: ":8081",
-			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getListenAddr(fs) },
+			getterFunc: func(fs *pflag.FlagSet) (interface{}, error) {
+				value, _, err := getListenAddr(fs)
+				return value, err
+			},
 		},
 		{
 			name:          "GetPrometheusCREnabled",
 			flagArgs:      []string{"--" + prometheusCREnabledFlagName, "true"},
 			expectedValue: true,
 			getterFunc: func(fs *pflag.FlagSet) (interface{}, error) {
-				_, value, err := getPrometheusCREnabled(fs)
+				value, _, err := getPrometheusCREnabled(fs)
 				return value, err
 			},
 		},

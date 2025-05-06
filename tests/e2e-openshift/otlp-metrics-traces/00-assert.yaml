@@ -1,9 +1,8 @@
----
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
+  name: tempo-otlpmetrics
   namespace: chainsaw-otlp-metrics
-  name: jaeger-allinone
 status:
   availableReplicas: 1
   readyReplicas: 1

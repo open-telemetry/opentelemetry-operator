@@ -1,15 +1,14 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: stateful
 spec:
   mode: statefulset
-  config: |
+  config:
     receivers:
       jaeger:
         protocols:
           grpc:
-    processors:
     exporters:
       debug:
     service:

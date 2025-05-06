@@ -46,6 +46,9 @@ componentsAllowed:
   - memory_limiter
   receivers:
   - otlp
+description:
+  non_identifying_attributes:
+    hello: world
 endpoint: ws://opamp-server:4320/v1/opamp
 headers:
   authorization: access-12345-token
@@ -85,6 +88,11 @@ headers:
 					Image:    tc.image,
 					Endpoint: "ws://opamp-server:4320/v1/opamp",
 					Headers:  map[string]string{"authorization": "access-12345-token"},
+					Description: &v1alpha1.AgentDescription{
+						NonIdentifyingAttributes: map[string]string{
+							"hello": "world",
+						},
+					},
 					Capabilities: map[v1alpha1.OpAMPBridgeCapability]bool{
 						v1alpha1.OpAMPBridgeCapabilityReportsStatus:                  true,
 						v1alpha1.OpAMPBridgeCapabilityAcceptsRemoteConfig:            true,

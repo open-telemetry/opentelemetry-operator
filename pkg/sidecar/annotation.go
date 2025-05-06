@@ -26,7 +26,7 @@ func annotationValue(ns corev1.Namespace, pod corev1.Pod) string {
 		return podAnnValue
 	}
 
-	// if the pod value is empty, the annotation annotation should be used (true, false, instance)
+	// if the pod value is empty, the namespace annotation should be used (true, false, instance)
 	if len(podAnnValue) == 0 {
 		return nsAnnValue
 	}

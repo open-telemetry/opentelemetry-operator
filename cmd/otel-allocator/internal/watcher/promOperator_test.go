@@ -43,7 +43,8 @@ var defaultScrapeProtocols = []promconfig.ScrapeProtocol{
 }
 
 func TestLoadConfig(t *testing.T) {
-
+	namespace := "test"
+	portName := "web"
 	tests := []struct {
 		name            string
 		serviceMonitors []*monitoringv1.ServiceMonitor
@@ -60,13 +61,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -76,13 +77,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.PodMonitorSpec{
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -109,7 +110,7 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "endpointslice",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
@@ -131,7 +132,7 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "pod",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
@@ -149,13 +150,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "auth",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
 						JobLabel: "auth",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 								BasicAuth: &monitoringv1.BasicAuth{
 									Username: v1.SecretKeySelector{
 										LocalObjectReference: v1.LocalObjectReference{
@@ -202,7 +203,7 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "endpointslice",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
@@ -227,13 +228,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "bearer",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.PodMonitorSpec{
 						JobLabel: "bearer",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 								Authorization: &monitoringv1.SafeAuthorization{
 									Type: "Bearer",
 									Credentials: &v1.SecretKeySelector{
@@ -270,7 +271,7 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "pod",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
@@ -295,13 +296,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "valid-sm",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -311,13 +312,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "valid-pm",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.PodMonitorSpec{
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -325,13 +326,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "invalid-pm",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.PodMonitorSpec{
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 								RelabelConfigs: []monitoringv1.RelabelConfig{
 									{
 										Action:      "keep",
@@ -366,7 +367,7 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "endpointslice",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
@@ -388,7 +389,7 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "pod",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
@@ -406,13 +407,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "valid-sm",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -420,13 +421,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "invalid-sm",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 								RelabelConfigs: []monitoringv1.RelabelConfig{
 									{
 										Action:      "keep",
@@ -444,13 +445,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "valid-pm",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.PodMonitorSpec{
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -477,7 +478,7 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "endpointslice",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
@@ -499,7 +500,7 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "pod",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
@@ -517,7 +518,7 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "sm-1",
-						Namespace: "test",
+						Namespace: namespace,
 						Labels: map[string]string{
 							"testsvc": "testsvc",
 						},
@@ -526,7 +527,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -537,10 +538,10 @@ func TestLoadConfig(t *testing.T) {
 						Namespace: "test",
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
-						JobLabel: "test",
+						JobLabel: namespace,
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -570,7 +571,7 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "endpointslice",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
@@ -588,7 +589,7 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "pm-1",
-						Namespace: "test",
+						Namespace: namespace,
 						Labels: map[string]string{
 							"testpod": "testpod",
 						},
@@ -597,7 +598,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -605,13 +606,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "pm-2",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.PodMonitorSpec{
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -641,7 +642,7 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "pod",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
@@ -659,7 +660,7 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "scrapeconfig-test-1",
-						Namespace: "test",
+						Namespace: namespace,
 						Labels: map[string]string{
 							"testpod": "testpod",
 						},
@@ -723,7 +724,7 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "probe-test-1",
-						Namespace: "test",
+						Namespace: namespace,
 						Labels: map[string]string{
 							"testpod": "testpod",
 						},
@@ -771,7 +772,7 @@ func TestLoadConfig(t *testing.T) {
 										},
 									},
 									Labels: map[model.LabelName]model.LabelValue{
-										"namespace": "test",
+										"namespace": model.LabelValue(namespace),
 									},
 									Source: "0",
 								},
@@ -795,7 +796,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -803,13 +804,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "sm-2",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -865,7 +866,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -873,13 +874,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "pm-2",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.PodMonitorSpec{
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -926,7 +927,7 @@ func TestLoadConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w, _ := getTestPrometheusCRWatcher(t, tt.serviceMonitors, tt.podMonitors, tt.probes, tt.scrapeConfigs, tt.cfg)
+			w, _ := getTestPrometheusCRWatcher(t, namespace, tt.serviceMonitors, tt.podMonitors, tt.probes, tt.scrapeConfigs, tt.cfg)
 
 			// Start namespace informers in order to populate cache.
 			go w.nsInformer.Run(w.stopChannel)
@@ -957,6 +958,8 @@ func TestLoadConfig(t *testing.T) {
 
 func TestNamespaceLabelUpdate(t *testing.T) {
 	var err error
+	namespace := "test"
+	portName := "web"
 	podMonitors := []*monitoringv1.PodMonitor{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -967,7 +970,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 				JobLabel: "test",
 				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 					{
-						Port: "web",
+						Port: &portName,
 					},
 				},
 			},
@@ -975,13 +978,13 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "pm-2",
-				Namespace: "test",
+				Namespace: namespace,
 			},
 			Spec: monitoringv1.PodMonitorSpec{
 				JobLabel: "test",
 				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 					{
-						Port: "web",
+						Port: &portName,
 					},
 				},
 			},
@@ -1031,7 +1034,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		ScrapeConfigs: []*promconfig.ScrapeConfig{},
 	}
 
-	w, source := getTestPrometheusCRWatcher(t, nil, podMonitors, nil, nil, cfg)
+	w, source := getTestPrometheusCRWatcher(t, namespace, nil, podMonitors, nil, nil, cfg)
 	events := make(chan Event, 1)
 	eventInterval := 5 * time.Millisecond
 
@@ -1065,24 +1068,22 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		},
 	}})
 
-	select {
-	case <-events:
-	case <-time.After(5 * time.Second):
-	}
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		got, err = w.LoadConfig(context.Background())
+		assert.NoError(t, err)
 
-	got, err = w.LoadConfig(context.Background())
-	assert.NoError(t, err)
-
-	sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
-	assert.Equal(t, want_after.ScrapeConfigs, got.ScrapeConfigs)
+		sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
+		assert.Equal(t, want_after.ScrapeConfigs, got.ScrapeConfigs)
+	}, time.Second*30, time.Millisecond*100)
 }
 
 func TestRateLimit(t *testing.T) {
 	var err error
+	namespace := "test"
 	serviceMonitor := &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
-			Namespace: "test",
+			Namespace: namespace,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			JobLabel: "test",
@@ -1097,7 +1098,7 @@ func TestRateLimit(t *testing.T) {
 	eventInterval := 500 * time.Millisecond
 	cfg := allocatorconfig.Config{}
 
-	w, _ := getTestPrometheusCRWatcher(t, nil, nil, nil, nil, cfg)
+	w, _ := getTestPrometheusCRWatcher(t, namespace, nil, nil, nil, nil, cfg)
 	defer w.Close()
 	w.eventInterval = eventInterval
 
@@ -1158,7 +1159,15 @@ func TestRateLimit(t *testing.T) {
 
 // getTestPrometheusCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
 // and test secrets.
-func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.ServiceMonitor, podMonitors []*monitoringv1.PodMonitor, probes []*monitoringv1.Probe, scrapeConfigs []*promv1alpha1.ScrapeConfig, cfg allocatorconfig.Config) (*PrometheusCRWatcher, *fcache.FakeControllerSource) {
+func getTestPrometheusCRWatcher(
+	t *testing.T,
+	namespace string,
+	svcMonitors []*monitoringv1.ServiceMonitor,
+	podMonitors []*monitoringv1.PodMonitor,
+	probes []*monitoringv1.Probe,
+	scrapeConfigs []*promv1alpha1.ScrapeConfig,
+	cfg allocatorconfig.Config,
+) (*PrometheusCRWatcher, *fcache.FakeControllerSource) {
 	mClient := fakemonitoringclient.NewSimpleClientset()
 	for _, sm := range svcMonitors {
 		if sm != nil {
@@ -1225,6 +1234,9 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 	serviceDiscoveryRole := monitoringv1.ServiceDiscoveryRole("EndpointSlice")
 
 	prom := &monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
 				ScrapeInterval:                  monitoringv1.Duration("30s"),
@@ -1237,7 +1249,9 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 				ScrapeConfigSelector:            cfg.PrometheusCR.ScrapeConfigSelector,
 				ScrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
 				ServiceDiscoveryRole:            &serviceDiscoveryRole,
+				Version:                         "2.55.1",
 			},
+			EvaluationInterval: monitoringv1.Duration("30s"),
 		},
 	}
 
@@ -1282,6 +1296,7 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 		scrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
 		resourceSelector:                resourceSelector,
 		store:                           store,
+		prometheusCR:                    prom,
 	}, source
 
 }

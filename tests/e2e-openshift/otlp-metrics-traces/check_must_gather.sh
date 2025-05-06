@@ -18,7 +18,7 @@ REQUIRED_ITEMS=(
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/deployment-cluster-collector-collector.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/service-cluster-collector-collector-monitoring.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/opentelemetrycollector-cluster-collector.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/configmap-cluster-collector-collector-57b76c99.yaml
+  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/configmap-cluster-collector-collector-*.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/serviceaccount-cluster-collector-collector.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/service-cluster-collector-collector.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/poddisruptionbudget-cluster-collector-collector.yaml

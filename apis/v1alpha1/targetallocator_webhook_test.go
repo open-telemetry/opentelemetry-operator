@@ -253,7 +253,7 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 						Ports: []v1beta1.PortsSpec{
 							{
 								ServicePort: v1.ServicePort{
-									// this port name contains a non alphanumeric character, which is invalid.
+									// this port name contains a non-alphanumeric character, which is invalid.
 									Name:     "-test🦄port",
 									Port:     12345,
 									Protocol: v1.ProtocolTCP,
@@ -300,6 +300,19 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "the OpenTelemetry Spec Ports configuration is incorrect",
+		},
+		{
+			name: "allowNamespaces and denyNamespaces can't both be set",
+			targetallocator: TargetAllocator{
+				Spec: TargetAllocatorSpec{
+					PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
+						Enabled:         true,
+						AllowNamespaces: []string{"ns1"},
+						DenyNamespaces:  []string{"ns2"},
+					},
+				},
+			},
+			expectedErr: "allowNamespaces and denyNamespaces are mutually exclusive",
 		},
 	}
 

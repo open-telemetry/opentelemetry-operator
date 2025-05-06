@@ -41,6 +41,19 @@ spec:
         content: kubectl get --namespace openshift-logging lokistacks logging-loki -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
   - name: Enable Logging UI. Not needed by test but can be used for debugging
     try:
+    - command:
+        entrypoint: oc
+        args:
+        - get
+        - pods
+        - -A
+        - -l app.kubernetes.io/component=operator
+        - -l app.kubernetes.io/name=observability-operator
+        - -o 
+        - jsonpath={.items[0].metadata.namespace}
+        outputs:
+        - name: COO_NAMESPACE
+          value: ($stdout)
     - apply:
         file: logging-uiplugin.yaml
     - assert:

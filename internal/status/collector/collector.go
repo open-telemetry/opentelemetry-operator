@@ -80,6 +80,9 @@ func updateCollectorStatus(ctx context.Context, cli client.Client, changed *v1be
 		if err := cli.Get(ctx, objKey, obj); err != nil {
 			return fmt.Errorf("failed to get daemonSet status.replicas: %w", err)
 		}
+		replicas = obj.Status.DesiredNumberScheduled
+		readyReplicas = obj.Status.NumberReady
+		statusReplicas = strconv.Itoa(int(readyReplicas)) + "/" + strconv.Itoa(int(replicas))
 		statusImage = obj.Spec.Template.Spec.Containers[0].Image
 	}
 

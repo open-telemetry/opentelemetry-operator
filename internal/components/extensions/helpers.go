@@ -14,15 +14,16 @@ import (
 var registry = map[string]components.Parser{
 	"health_check": components.NewBuilder[healthcheckV1Config]().
 		WithName("health_check").
-		WithPort(13133).
+		WithPort(defaultHealthcheckV1Port).
+		WithDefaultsApplier(healthCheckV1AddressDefaulter).
+		WithDefaultRecAddress(components.DefaultRecAddress).
 		WithReadinessGen(healthCheckV1Probe).
 		WithLivenessGen(healthCheckV1Probe).
 		WithPortParser(func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config healthcheckV1Config) ([]corev1.ServicePort, error) {
 			return components.ParseSingleEndpointSilent(logger, name, defaultPort, &config.SingleEndpointConfig)
 		}).
 		MustBuild(),
-	"jaeger_query": components.NewSinglePortParserBuilder("jaeger_query", 16686).
-		WithTargetPort(16686).
+	"jaeger_query": NewJaegerQueryExtensionParserBuilder().
 		MustBuild(),
 }
 

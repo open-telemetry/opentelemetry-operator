@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   annotations:
     instrumentation.opentelemetry.io/inject-dotnet: "true"
-    sidecar.opentelemetry.io/inject: "true"
+    instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: linux-musl-x64
   labels:
     app: my-dotnet-musl
 spec:
@@ -12,10 +12,12 @@ spec:
     - name: OTEL_NODE_IP
       valueFrom:
         fieldRef:
+          apiVersion: v1
           fieldPath: status.hostIP
     - name: OTEL_POD_IP
       valueFrom:
         fieldRef:
+          apiVersion: v1
           fieldPath: status.podIP
     - name: ASPNETCORE_URLS
       value: http://+:8080
@@ -36,13 +38,11 @@ spec:
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4317
+      value: http://localhost:4318
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
-      value: "20"
+      value: "20000"
     - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
+      value: always_on
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
     - name: OTEL_SERVICE_NAME
@@ -61,6 +61,9 @@ spec:
       value: jaeger,b3multi
     - name: OTEL_RESOURCE_ATTRIBUTES
     name: myapp
+    ports:
+    - containerPort: 8080
+      protocol: TCP
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true

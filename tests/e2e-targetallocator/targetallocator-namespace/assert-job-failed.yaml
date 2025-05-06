@@ -1,0 +1,7 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-metrics
+  namespace: ($namespace)
+status:
+  failed: 1

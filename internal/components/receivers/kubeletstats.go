@@ -42,7 +42,7 @@ func generateKubeletStatsEnvVars(_ logr.Logger, config kubeletStatsConfig) ([]co
 }
 
 func generateKubeletStatsRbacRules(_ logr.Logger, config kubeletStatsConfig) ([]rbacv1.PolicyRule, error) {
-	// The Kubelet Stats Receiver needs get permissions on the nodes/stats resources always.
+	// The Kubelet Stats Receiver needs the get permissions on the nodes/stats resources always.
 	prs := []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},
@@ -52,7 +52,7 @@ func generateKubeletStatsRbacRules(_ logr.Logger, config kubeletStatsConfig) ([]
 	}
 
 	// Additionally, when using extra_metadata_labels or any of the {request|limit}_utilization metrics
-	// the processor also needs get permissions for nodes/proxy resources.
+	// the processor also needs the get permissions for nodes/proxy resources.
 	nodesProxyPr := rbacv1.PolicyRule{
 		APIGroups: []string{""},
 		Resources: []string{"nodes/proxy"},

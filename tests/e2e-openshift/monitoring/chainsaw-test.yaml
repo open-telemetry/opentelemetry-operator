@@ -47,7 +47,7 @@ spec:
   - name: step-02
     try:
     - apply:
-        file: 02-generate-traces.yaml
+        file: 02-generate-telemetry.yaml
     - assert:
         file: 02-assert.yaml
   - name: step-03

@@ -17,7 +17,9 @@
 
 ## Goals and non-goals
 
-[comment]: # (Describe the objective for this proposal)
+[comment]: # (Describe a set of specific, measurable, achievable, relevant, and time-bound goals for this proposal)
+
+[comment]: # (Describe an explicit set of exclusions for this proposal)
 
 ## Use cases for proposal
 

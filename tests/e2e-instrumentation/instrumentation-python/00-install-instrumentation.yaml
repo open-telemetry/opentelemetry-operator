@@ -5,11 +5,9 @@ metadata:
 spec:
   env:
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
-      value: "20"
+      value: "20000"
     - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
+      value: always_on
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
   exporter:
@@ -28,3 +26,7 @@ spec:
         value: otlp
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: http://localhost:4318
+      # Disabling system_metrics instrumenation as the test app is built using Alpine
+      # Instrumentation with metrics is tested in test instrumenation-python-musl
+      - name: OTEL_PYTHON_DISABLED_INSTRUMENTATIONS
+        value: "system_metrics"

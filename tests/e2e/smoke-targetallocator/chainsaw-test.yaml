@@ -55,5 +55,5 @@ spec:
     try:
     - apply:
         file: 01-change-ta-config.yaml
-    - assert:
-        file: 01-assert.yaml
+    - error:
+        file: 01-error.yaml

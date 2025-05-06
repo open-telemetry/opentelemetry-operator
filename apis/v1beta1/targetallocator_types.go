@@ -12,6 +12,12 @@ type TargetAllocatorPrometheusCR struct {
 	// Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
+	// AllowNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (allow list). This is mutually exclusive with DenyNamespaces.
+	// +optional
+	AllowNamespaces []string `json:"allowNamespaces,omitempty"`
+	// DenyNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (deny list). This is mutually exclusive with AllowNamespaces.
+	// +optional
+	DenyNamespaces []string `json:"denyNamespaces,omitempty"`
 	// Default interval between consecutive scrapes. Intervals set in ServiceMonitors and PodMonitors override it.
 	//Equivalent to the same setting on the Prometheus CR.
 	//

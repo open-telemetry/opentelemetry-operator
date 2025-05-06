@@ -5,10 +5,8 @@ package config
 
 import (
 	"flag"
-	"path/filepath"
 
 	"github.com/spf13/pflag"
-	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
@@ -32,11 +30,11 @@ var zapCmdLineOpts zap.Options
 func getFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	flagSet := pflag.NewFlagSet(targetAllocatorName, errorHandling)
 	flagSet.String(configFilePathFlagName, DefaultConfigFilePath, "The path to the config file.")
-	flagSet.String(listenAddrFlagName, ":8080", "The address where this service serves.")
+	flagSet.String(listenAddrFlagName, DefaultListenAddr, "The address where this service serves.")
 	flagSet.Bool(prometheusCREnabledFlagName, false, "Enable Prometheus CRs as target sources")
-	flagSet.String(kubeConfigPathFlagName, filepath.Join(homedir.HomeDir(), ".kube", "config"), "absolute path to the KubeconfigPath file")
+	flagSet.String(kubeConfigPathFlagName, DefaultKubeConfigFilePath, "absolute path to the KubeconfigPath file")
 	flagSet.Bool(httpsEnabledFlagName, false, "Enable HTTPS additional server")
-	flagSet.String(listenAddrHttpsFlagName, ":8443", "The address where this service serves over HTTPS.")
+	flagSet.String(listenAddrHttpsFlagName, DefaultHttpsListenAddr, "The address where this service serves over HTTPS.")
 	flagSet.String(httpsCAFilePathFlagName, "", "The path to the HTTPS server TLS CA file.")
 	flagSet.String(httpsTLSCertFilePathFlagName, "", "The path to the HTTPS server TLS certificate file.")
 	flagSet.String(httpsTLSKeyFilePathFlagName, "", "The path to the HTTPS server TLS key file.")
@@ -50,64 +48,54 @@ func getConfigFilePath(flagSet *pflag.FlagSet) (string, error) {
 	return flagSet.GetString(configFilePathFlagName)
 }
 
-func getKubeConfigFilePath(flagSet *pflag.FlagSet) (string, error) {
-	return flagSet.GetString(kubeConfigPathFlagName)
+func getKubeConfigFilePath(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	return getFlagValueAndChangedString(flagSet, kubeConfigPathFlagName)
 }
 
-func getListenAddr(flagSet *pflag.FlagSet) (string, error) {
-	return flagSet.GetString(listenAddrFlagName)
+func getListenAddr(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
+	return getFlagValueAndChangedString(flagSet, listenAddrFlagName)
 }
 
 func getPrometheusCREnabled(flagSet *pflag.FlagSet) (value bool, changed bool, err error) {
-	if changed = flagSet.Changed(prometheusCREnabledFlagName); !changed {
-		value, err = false, nil
-		return
-	}
-	value, err = flagSet.GetBool(prometheusCREnabledFlagName)
-	return
+	return getFlagValueAndChangedBool(flagSet, prometheusCREnabledFlagName)
 }
 
 func getHttpsListenAddr(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
-	if changed = flagSet.Changed(listenAddrHttpsFlagName); !changed {
-		value, err = ":8443", nil
-		return
-	}
-	value, err = flagSet.GetString(listenAddrHttpsFlagName)
-	return
+	return getFlagValueAndChangedString(flagSet, listenAddrHttpsFlagName)
 }
 
 func getHttpsEnabled(flagSet *pflag.FlagSet) (value bool, changed bool, err error) {
-	if changed = flagSet.Changed(httpsEnabledFlagName); !changed {
-		value, err = false, nil
-		return
-	}
-	value, err = flagSet.GetBool(httpsEnabledFlagName)
-	return
+	return getFlagValueAndChangedBool(flagSet, httpsEnabledFlagName)
 }
 
 func getHttpsCAFilePath(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
-	if changed = flagSet.Changed(httpsCAFilePathFlagName); !changed {
-		value, err = "", nil
-		return
-	}
-	value, err = flagSet.GetString(httpsCAFilePathFlagName)
-	return
+	return getFlagValueAndChangedString(flagSet, httpsCAFilePathFlagName)
 }
 
 func getHttpsTLSCertFilePath(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
-	if changed = flagSet.Changed(httpsTLSCertFilePathFlagName); !changed {
-		value, err = "", nil
-		return
-	}
-	value, err = flagSet.GetString(httpsTLSCertFilePathFlagName)
-	return
+	return getFlagValueAndChangedString(flagSet, httpsTLSCertFilePathFlagName)
 }
 
 func getHttpsTLSKeyFilePath(flagSet *pflag.FlagSet) (value string, changed bool, err error) {
-	if changed = flagSet.Changed(httpsTLSKeyFilePathFlagName); !changed {
+	return getFlagValueAndChangedString(flagSet, httpsTLSKeyFilePathFlagName)
+}
+
+// getFlagValueAndChanged returns the given flag's string value and whether it was changed.
+func getFlagValueAndChangedString(flagSet *pflag.FlagSet, flagName string) (value string, changed bool, err error) {
+	if changed = flagSet.Changed(flagName); !changed {
 		value, err = "", nil
 		return
 	}
-	value, err = flagSet.GetString(httpsTLSKeyFilePathFlagName)
+	value, err = flagSet.GetString(flagName)
+	return
+}
+
+// getFlagValueAndChanged returns the given flag's string value and whether it was changed.
+func getFlagValueAndChangedBool(flagSet *pflag.FlagSet, flagName string) (value bool, changed bool, err error) {
+	if changed = flagSet.Changed(flagName); !changed {
+		value, err = false, nil
+		return
+	}
+	value, err = flagSet.GetBool(flagName)
 	return
 }

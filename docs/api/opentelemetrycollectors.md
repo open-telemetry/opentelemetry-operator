@@ -325,7 +325,7 @@ default.<br/>
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
-          Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if your are not using autoscaling<br/>
+          Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if you are not using autoscaling<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -5012,7 +5012,7 @@ Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these 
         <td><b>minReplicas</b></td>
         <td>integer</td>
         <td>
-          MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1<br/>
+          MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -24534,7 +24534,7 @@ Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these 
         <td><b>minReplicas</b></td>
         <td>integer</td>
         <td>
-          MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1<br/>
+          MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -30715,6 +30715,14 @@ WARNING: The per-node strategy currently ignores targets without a Node, like co
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>collectorNotReadyGracePeriod</b></td>
+        <td>string</td>
+        <td>
+          CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
+The default is 0s, which means that all collectors can be assigned targets irrespective of their readiness.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
@@ -33283,6 +33291,20 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>allowNamespaces</b></td>
+        <td>[]string</td>
+        <td>
+          AllowNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (allow list). This is mutually exclusive with DenyNamespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>denyNamespaces</b></td>
+        <td>[]string</td>
+        <td>
+          DenyNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (deny list). This is mutually exclusive with AllowNamespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>

@@ -21,11 +21,22 @@ spec:
         fsGroup: 3000
       containers:
       - name: myapp
+        ports:
+        - containerPort: 3000
         image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-nodejs:main
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
+        readinessProbe:
+          httpGet:
+            path: /rolldice
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 3
         env:
         - name: NODE_PATH
           value: /usr/local/lib/node_modules

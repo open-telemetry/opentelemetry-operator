@@ -4,14 +4,22 @@ kind: Instrumentation
 metadata:
   name: apache
 spec:
+  env:
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4317
+    - name: OTEL_EXPORTER_OTLP_TIMEOUT
+      value: "20000"
+    - name: OTEL_TRACES_SAMPLER
+      value: always_on
+    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
+      value: "true"
   exporter:
     endpoint: http://localhost:4317
   propagators:
     - jaeger
     - b3
-  sampler:
-    type: parentbased_traceidratio
-    argument: "0.25"
   apacheHttpd:
     attrs:
       - name: ApacheModuleOtelMaxQueueSize

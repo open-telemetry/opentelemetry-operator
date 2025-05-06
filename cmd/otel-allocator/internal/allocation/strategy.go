@@ -50,7 +50,7 @@ var (
 type Option func(Allocator)
 
 type Filter interface {
-	Apply(map[string]*target.Item) map[string]*target.Item
+	Apply([]*target.Item) []*target.Item
 }
 
 func WithFilter(filter Filter) Option {
@@ -69,7 +69,7 @@ func WithFallbackStrategy(fallbackStrategy string) Option {
 	}
 }
 
-func RecordTargetsKept(targets map[string]*target.Item) {
+func RecordTargetsKept(targets []*target.Item) {
 	TargetsRemaining.Set(float64(len(targets)))
 }
 
@@ -90,8 +90,8 @@ func GetRegisteredAllocatorNames() []string {
 
 type Allocator interface {
 	SetCollectors(collectors map[string]*Collector)
-	SetTargets(targets map[string]*target.Item)
-	TargetItems() map[string]*target.Item
+	SetTargets(targets []*target.Item)
+	TargetItems() map[target.ItemHash]*target.Item
 	Collectors() map[string]*Collector
 	GetTargetsForCollectorAndJob(collector string, job string) []*target.Item
 	SetFilter(filter Filter)

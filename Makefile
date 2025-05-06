@@ -50,11 +50,14 @@ endif
 # by default, do not run the manager with webhooks enabled. This only affects local runs, not the build or in-cluster deployments.
 ENABLE_WEBHOOKS ?= false
 
+# Additional flags for go test command
+GOTEST_EXTRA_OPTS ?=
+
 # If we are running in CI, run go test in verbose mode
 ifeq (,$(CI))
-GOTEST_OPTS=-race
+GOTEST_OPTS=-race $(if $(GOTEST_EXTRA_OPTS),$(GOTEST_EXTRA_OPTS))
 else
-GOTEST_OPTS=-race -v
+GOTEST_OPTS=-race -v $(if $(GOTEST_EXTRA_OPTS),$(GOTEST_EXTRA_OPTS))
 endif
 
 START_KIND_CLUSTER ?= true
@@ -110,7 +113,7 @@ MANIFEST_DIR ?= config/crd/bases
 # kubectl apply does not work on large CRDs.
 CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=0"
 
-# Choose wich version to generate
+# Choose which version to generate
 BUNDLE_VARIANT ?= community
 BUNDLE_DIR = ./bundle/$(BUNDLE_VARIANT)
 MANIFESTS_DIR = config/manifests/$(BUNDLE_VARIANT)
@@ -367,7 +370,7 @@ e2e-upgrade: undeploy chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade
 
 .PHONY: prepare-e2e
-prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge container-bridge-test-server start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
@@ -435,7 +438,13 @@ install-targetallocator-prometheus-crds:
 	./hack/install-targetallocator-prometheus-crds.sh
 
 .PHONY: load-image-all
-load-image-all: load-image-operator load-image-target-allocator load-image-operator-opamp-bridge load-image-bridge-test-server
+load-image-all:
+ifeq ($(IMAGE_ARCHIVE),)
+	@make container container-target-allocator container-operator-opamp-bridge container-bridge-test-server load-image-operator load-image-target-allocator load-image-operator-opamp-bridge load-image-bridge-test-server
+else
+	$(KIND) load --name $(KIND_CLUSTER_NAME) image-archive $(IMAGE_ARCHIVE)
+endif
+
 
 .PHONY: load-image-operator
 load-image-operator: container kind
@@ -496,10 +505,10 @@ CHAINSAW ?= $(LOCALBIN)/chainsaw
 KUSTOMIZE_VERSION ?= v5.6.0
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
 CONTROLLER_TOOLS_VERSION ?= v0.17.1
-# renovate: datasource=go depName=github.com/golangci/golangci-lint/cmd/golangci-lint
-GOLANGCI_LINT_VERSION ?= v1.63.4
+# renovate: datasource=github-releases depName=golangci/golangci-lint
+GOLANGCI_LINT_VERSION ?= v2.1.6
 # renovate: datasource=go depName=sigs.k8s.io/kind
-KIND_VERSION ?= v0.26.0
+KIND_VERSION ?= v0.27.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
 CHAINSAW_VERSION ?= v0.2.12
 
@@ -512,7 +521,7 @@ kustomize: ## Download kustomize locally if necessary.
 
 .PHONY: golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
-	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 
 .PHONY: kind
 kind: ## Download kind locally if necessary.
@@ -546,7 +555,7 @@ TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 go mod init tmp ;\
 echo "Downloading $(2)" ;\
-go get -d $(2)@$(3) ;\
+go get $(2)@$(3) ;\
 GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
 rm -rf $$TMP_DIR ;\
 }
@@ -715,3 +724,15 @@ catalog-build: opm bundle-build bundle-push ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	docker push $(CATALOG_IMG)
+
+container-image-archive: IMAGE_LIST_FILE = images-$(VERSION).txt
+container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server
+ifeq ($(IMAGE_ARCHIVE),)
+	$(error "Use make container-image-archive IMAGE_ARCHIVE=<filename>")
+endif
+	@rm -f $(IMAGE_LIST_FILE)
+	@echo "$(IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(TARGETALLOCATOR_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(OPERATOROPAMPBRIDGE_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(BRIDGETESTSERVER_IMG)" >>$(IMAGE_LIST_FILE)
+	xargs -x -n 50 docker save -o "$(IMAGE_ARCHIVE)" <$(IMAGE_LIST_FILE)

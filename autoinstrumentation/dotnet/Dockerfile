@@ -12,7 +12,7 @@
 #    DOTNET_STARTUP_HOOKS=%InstallationLocation%/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll 
 #    OTEL_DOTNET_AUTO_HOME=%InstallationLocation%
 #  - For auto-instrumentation by container injection, the Linux command cp is
-#    used and must be availabe in the image.
+#    used and must be available in the image.
 
 FROM busybox as downloader
 

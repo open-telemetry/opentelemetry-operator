@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-metrics
+  namespace: ($namespace)
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: check-metrics
+          image: curlimages/curl
+          env:
+            - name: endpoint
+              value: ($endpoint)
+            - name: pattern
+              value: ($pattern)
+            - name: retries
+              value: ($retries)
+          args:
+            - /bin/sh
+            - -c
+            - |
+              for i in $(seq $retries); do
+                if curl -m 1 -s $endpoint | grep "$pattern"; then
+                  echo "Found $pattern in $endpoint" 
+                  exit 0
+                fi
+                echo "Waiting for $pattern in $endpoint"
+                sleep 5
+              done
+              echo "Failed to find $pattern in $endpoint"
+              exit 1

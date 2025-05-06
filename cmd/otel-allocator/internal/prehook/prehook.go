@@ -11,7 +11,7 @@ import (
 )
 
 type Hook interface {
-	Apply(map[string]*target.Item) map[string]*target.Item
+	Apply([]*target.Item) []*target.Item
 	SetConfig(map[string][]*relabel.Config)
 	GetConfig() map[string][]*relabel.Config
 }

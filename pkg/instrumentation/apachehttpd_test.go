@@ -408,7 +408,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, false, 0, "http://otlp-endpoint:4317", resourceMap)
+			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, false, 0, "http://otlp-endpoint:4317", resourceMap, v1alpha1.InstrumentationSpec{})
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -518,7 +518,7 @@ func TestInjectApacheHttpdagentUnknownNamespace(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, false, 0, "http://otlp-endpoint:4317", resourceMap)
+			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, false, 0, "http://otlp-endpoint:4317", resourceMap, v1alpha1.InstrumentationSpec{})
 			assert.Equal(t, test.expected, pod)
 		})
 	}
