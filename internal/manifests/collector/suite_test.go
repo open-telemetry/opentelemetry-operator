@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	logger      = logf.Log.WithName("unit-tests")
+	testLogger  = logf.Log.WithName("unit-tests")
 	instanceUID = uuid.NewUUID()
 )
 
@@ -86,7 +86,7 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 				Mode:   mode,
 			},
 		},
-		Log:      logger,
+		Log:      testLogger,
 		Recorder: record.NewFakeRecorder(10),
 	}
 }
@@ -156,7 +156,7 @@ func newParams(taContainerImage string, file string, options ...config.Option) (
 				Config: colCfg,
 			},
 		},
-		Log: logger,
+		Log: testLogger,
 	}
 	targetAllocator, err := TargetAllocator(params)
 	if err == nil {
