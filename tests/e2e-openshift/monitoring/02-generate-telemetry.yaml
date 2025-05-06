@@ -1,28 +1,3 @@
-# Add the clusterrole and rolebinding required for fetching metrics from Thanos querier. Refer https://issues.redhat.com/browse/MON-3379
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: chainsaw-otlp-metrics-traces-api
-rules:
-- apiGroups: ["monitoring.coreos.com"]
-  resources: ["prometheuses/api"]
-  verbs: ["get", "list", "watch"]
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: chainsaw-otlp-metrics-traces-api
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: chainsaw-otlp-metrics-traces-api
-subjects:
-- kind: ServiceAccount
-  name: prometheus-user-workload
-  namespace: openshift-user-workload-monitoring
-
----
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -40,12 +15,14 @@ spec:
           image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.124.1
           command: ["./telemetrygen"]
           args:
-            - "--otlp-endpoint=cluster-collector-collector-headless.chainsaw-otlp-metrics.svc:4317"
+            - "--otlp-endpoint=cluster-collector-collector-headless:4317"
             - "--otlp-insecure=true"
             - "--rate=1"
-            - "--duration=30s"
+            - "--duration=3m"
             - "--otlp-attributes=telemetrygen=\"traces\""
             - "--otlp-header=telemetrygen=\"traces\""
+            - "--span-duration=1s"
+            - "--workers=1"
             - "traces"
       restartPolicy: Never
 
@@ -63,15 +40,44 @@ spec:
         app: telemetrygen-metrics
     spec:
       containers:
-        - name: telemetrygen-metrics
+        - name: telemetrygen-traces
           image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.124.1
           command: ["./telemetrygen"]
           args:
-            - "--otlp-endpoint=cluster-collector-collector-headless.chainsaw-otlp-metrics.svc:4317"
+            - "--otlp-endpoint=cluster-collector-collector-headless:4317"
             - "--otlp-insecure=true"
-            - "--duration=30s"
             - "--rate=1"
+            - "--duration=3m"
             - "--otlp-attributes=telemetrygen=\"metrics\""
-            - "--otlp-header=telemetrygen=\"traces\""
+            - "--otlp-header=telemetrygen=\"metrics\""
+            - "--workers=1"
             - "metrics"
+      restartPolicy: Never
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: telemetrygen-logs
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: telemetrygen-logs
+    spec:
+      containers:
+        - name: telemetrygen-traces
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.124.1
+          command: ["./telemetrygen"]
+          args:
+            - "--otlp-endpoint=cluster-collector-collector-headless:4317"
+            - "--otlp-insecure=true"
+            - "--rate=1"
+            - "--duration=3m"
+            - "--otlp-attributes=telemetrygen=\"metrics\""
+            - "--otlp-header=telemetrygen=\"metrics\""
+            - "--workers=1"
+            - "logs"
       restartPolicy: Never

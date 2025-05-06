@@ -83,20 +83,6 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		volumeMounts = append(volumeMounts, otelcol.Spec.VolumeMounts...)
 	}
 
-	var envVars = otelcol.Spec.Env
-	if otelcol.Spec.Env == nil {
-		envVars = []corev1.EnvVar{}
-	}
-
-	envVars = append(envVars, corev1.EnvVar{
-		Name: "POD_NAME",
-		ValueFrom: &corev1.EnvVarSource{
-			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "metadata.name",
-			},
-		},
-	})
-
 	if len(otelcol.Spec.ConfigMaps) > 0 {
 		for keyCfgMap := range otelcol.Spec.ConfigMaps {
 			volumeMounts = append(volumeMounts, corev1.VolumeMount{
@@ -104,18 +90,6 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 				MountPath: path.Join("/var/conf", otelcol.Spec.ConfigMaps[keyCfgMap].MountPath, naming.ConfigMapExtra(otelcol.Spec.ConfigMaps[keyCfgMap].Name)),
 			})
 		}
-	}
-
-	if otelcol.Spec.TargetAllocator.Enabled {
-		// We need to add a SHARD here so the collector is able to keep targets after the hashmod operation which is
-		// added by default by the Prometheus operator's config generator.
-		// All collector instances use SHARD == 0 as they only receive targets
-		// allocated to them and should not use the Prometheus hashmod-based
-		// allocation.
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  "SHARD",
-			Value: "0",
-		})
 	}
 
 	livenessProbe, livenessProbeErr := otelcol.Spec.Config.GetLivenessProbe(logger)
@@ -131,35 +105,6 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		defaultProbeSettings(readinessProbe, otelcol.Spec.ReadinessProbe)
 	}
 
-	if featuregate.SetGolangFlags.IsEnabled() {
-		envVars = append(envVars, corev1.EnvVar{
-			Name: "GOMEMLIMIT",
-			ValueFrom: &corev1.EnvVarSource{
-				ResourceFieldRef: &corev1.ResourceFieldSelector{
-					Resource:      "limits.memory",
-					ContainerName: naming.Container(),
-				},
-			},
-		},
-			corev1.EnvVar{
-				Name: "GOMAXPROCS",
-				ValueFrom: &corev1.EnvVarSource{
-					ResourceFieldRef: &corev1.ResourceFieldSelector{
-						Resource:      "limits.cpu",
-						ContainerName: naming.Container(),
-					},
-				},
-			},
-		)
-	}
-
-	if configEnvVars, err := otelcol.Spec.Config.GetEnvironmentVariables(logger); err != nil {
-		logger.Error(err, "could not get the environment variables from the config")
-	} else {
-		envVars = append(envVars, configEnvVars...)
-	}
-
-	envVars = append(envVars, proxy.ReadProxyVarsFromEnv()...)
 	return corev1.Container{
 		Name:            naming.Container(),
 		Image:           image,
@@ -167,7 +112,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		Ports:           ports,
 		VolumeMounts:    volumeMounts,
 		Args:            args,
-		Env:             envVars,
+		Env:             getContainerEnvVars(otelcol, logger),
 		EnvFrom:         otelcol.Spec.EnvFrom,
 		Resources:       otelcol.Spec.Resources,
 		SecurityContext: otelcol.Spec.SecurityContext,
@@ -341,4 +286,86 @@ func getSpecPorts(ports []v1beta1.PortsSpec, logger logr.Logger) []corev1.Contai
 		specPorts = append(specPorts, port)
 	}
 	return specPorts
+}
+
+// getContainerEnvVars returns the environment variables for the collector container.
+// It combines user-defined environment variables from the OpenTelemetryCollector spec
+// with automatically inferred environment variables, giving precedence to user-defined ones.
+func getContainerEnvVars(otelcol v1beta1.OpenTelemetryCollector, logger logr.Logger) []corev1.EnvVar {
+	inferredEnvVars := getInferredContainerEnvVars(otelcol, logger)
+
+	envVars := []corev1.EnvVar{}
+	envVars = append(envVars, otelcol.Spec.Env...)
+
+	userDefinedEnvVars := make(map[string]bool, len(otelcol.Spec.Env))
+	for _, env := range otelcol.Spec.Env {
+		userDefinedEnvVars[env.Name] = true
+	}
+
+	// We only append the inferred env vars that are not defined by the user.
+	for _, env := range inferredEnvVars {
+		if _, ok := userDefinedEnvVars[env.Name]; !ok {
+			envVars = append(envVars, env)
+		}
+	}
+
+	return envVars
+}
+
+// getInferredContainerEnvVars returns environment variables that are automatically added to the collector container.
+// Those include parsing the collector config and adding the env vars derived from it.
+func getInferredContainerEnvVars(otelcol v1beta1.OpenTelemetryCollector, logger logr.Logger) []corev1.EnvVar {
+	envVars := []corev1.EnvVar{}
+
+	envVars = append(envVars, corev1.EnvVar{
+		Name: "POD_NAME",
+		ValueFrom: &corev1.EnvVarSource{
+			FieldRef: &corev1.ObjectFieldSelector{
+				FieldPath: "metadata.name",
+			},
+		},
+	})
+
+	if otelcol.Spec.TargetAllocator.Enabled {
+		// We need to add a SHARD here so the collector is able to keep targets after the hashmod operation which is
+		// added by default by the Prometheus operator's config generator.
+		// All collector instances use SHARD == 0 as they only receive targets
+		// allocated to them and should not use the Prometheus hashmod-based
+		// allocation.
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "SHARD",
+			Value: "0",
+		})
+	}
+
+	if featuregate.SetGolangFlags.IsEnabled() {
+		envVars = append(envVars,
+			corev1.EnvVar{
+				Name: "GOMEMLIMIT",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.memory",
+						ContainerName: naming.Container(),
+					},
+				},
+			},
+			corev1.EnvVar{
+				Name: "GOMAXPROCS",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.cpu",
+						ContainerName: naming.Container(),
+					},
+				},
+			},
+		)
+	}
+
+	if configEnvVars, err := otelcol.Spec.Config.GetEnvironmentVariables(logger); err != nil {
+		logger.Error(err, "could not get the environment variables from the config")
+	} else {
+		envVars = append(envVars, configEnvVars...)
+	}
+
+	return append(envVars, proxy.ReadProxyVarsFromEnv()...)
 }

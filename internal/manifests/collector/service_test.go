@@ -129,7 +129,7 @@ func TestFilterPort(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual := filterPort(logger, test.candidate, test.portNumbers, test.portNames)
+			actual := filterPort(testLogger, test.candidate, test.portNumbers, test.portNames)
 			if test.expected != (v1.ServicePort{}) {
 				assert.Equal(t, test.expected, *actual)
 				return
@@ -145,7 +145,7 @@ func TestDesiredService(t *testing.T) {
 	t.Run("should return nil service for unknown receiver and protocol", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
-			Log:    logger,
+			Log:    testLogger,
 			OtelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{Config: v1beta1.Config{}},
 			},
@@ -220,7 +220,7 @@ func TestDesiredService(t *testing.T) {
 	t.Run("should return service with OTLP ports", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
-			Log:    logger,
+			Log:    testLogger,
 			OtelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{Config: v1beta1.Config{
 					Receivers: v1beta1.AnyConfig{
@@ -321,7 +321,7 @@ func TestExtensionService(t *testing.T) {
 			name: "when the extension has http endpoint",
 			params: manifests.Params{
 				Config: config.Config{},
-				Log:    logger,
+				Log:    testLogger,
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -358,7 +358,7 @@ func TestExtensionService(t *testing.T) {
 			name: "when the extension has grpc endpoint",
 			params: manifests.Params{
 				Config: config.Config{},
-				Log:    logger,
+				Log:    testLogger,
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -395,7 +395,7 @@ func TestExtensionService(t *testing.T) {
 			name: "when the extension has both http and grpc endpoint",
 			params: manifests.Params{
 				Config: config.Config{},
-				Log:    logger,
+				Log:    testLogger,
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -435,7 +435,7 @@ func TestExtensionService(t *testing.T) {
 			name: "when the extension has no extensions defined",
 			params: manifests.Params{
 				Config: config.Config{},
-				Log:    logger,
+				Log:    testLogger,
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -458,7 +458,7 @@ func TestExtensionService(t *testing.T) {
 			name: "when the extension has no endpoint defined",
 			params: manifests.Params{
 				Config: config.Config{},
-				Log:    logger,
+				Log:    testLogger,
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
