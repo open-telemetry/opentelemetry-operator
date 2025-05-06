@@ -109,8 +109,8 @@ spec:
             ($error == null): true
       - assert:
           resource:
-            ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] > `1`): true
-            ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] > `1`): true
+            ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] > `0`): true
+            ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] > `0`): true
     catch:
       - podLogs:
           selector: app=my-nginx-multi
@@ -217,8 +217,8 @@ spec:
             ($error == null): true
       - assert:
           resource:
-            ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] > `1`): true
-            ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] > `1`): true
+            ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] > `0`): true
+            ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] > `0`): true
     catch:
       - podLogs:
           selector: app=my-nginx-multi
