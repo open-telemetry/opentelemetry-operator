@@ -8,33 +8,37 @@ spec:
   steps:
   - name: step-00
     try:
-    - script:
-        content: kubectl apply -f 00-install-priority-class.yaml
-        check:
-          ($error != null): true
-          ($stderr): >
-            The OpenTelemetryCollector "otel" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'
+    - apply:
+        file: 00-install-priority-class.yaml
+        expect:
+         - check:
+            ($error != null): true
+            ($error): |-
+                OpenTelemetryCollector.opentelemetry.io "otel" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'
   - name: step-01
     try:
-    - script:
-        content: kubectl apply -f 01-install-tolerations.yaml
-        check:
-          ($error != null): true
-          ($stderr): >
-            The OpenTelemetryCollector "otel" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'
+    - apply:
+        file: 01-install-tolerations.yaml
+        expect:
+         - check:
+            ($error != null): true
+            ($error): |-
+                OpenTelemetryCollector.opentelemetry.io "otel" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'
   - name: step-02
     try:
-    - script:
-        content: kubectl apply -f 02-install-affinity.yaml
-        check:
-          ($error != null): true
-          ($stderr): >
-            The OpenTelemetryCollector "otel" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'
+    - apply:
+        file: 02-install-affinity.yaml
+        expect:
+         - check:
+            ($error != null): true
+            ($error): |-
+                  OpenTelemetryCollector.opentelemetry.io "otel" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'
   - name: step-03
     try:
-    - script:
-        content: kubectl apply -f 03-install-additional-containers.yaml
-        check:
-          ($error != null): true
-          ($stderr): >
-            The OpenTelemetryCollector "otel" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'
+    - apply:
+        file: 03-install-additional-containers.yaml
+        expect:
+         - check:
+            ($error != null): true
+            ($error): |-
+                  OpenTelemetryCollector.opentelemetry.io "otel" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'
