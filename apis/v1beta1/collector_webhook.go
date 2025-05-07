@@ -183,6 +183,25 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'persistentVolumeClaimRetentionPolicy'", r.Spec.Mode)
 	}
 
+	// validate tolerations
+	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
+	}
+
+	// validate priorityClassName
+	if r.Spec.Mode == ModeSidecar && r.Spec.PriorityClassName != "" {
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'priorityClassName'", r.Spec.Mode)
+	}
+
+	// validate affinity
+	if r.Spec.Mode == ModeSidecar && r.Spec.Affinity != nil {
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'affinity'", r.Spec.Mode)
+	}
+
+	if r.Spec.Mode == ModeSidecar && len(r.Spec.AdditionalContainers) > 0 {
+		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
+	}
+
 	// validate target allocator configs
 	if r.Spec.TargetAllocator.Enabled {
 		taWarnings, err := c.validateTargetAllocatorConfig(ctx, r)
