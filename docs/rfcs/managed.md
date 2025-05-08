@@ -56,7 +56,7 @@ Upon installation, they install the custom resource with information on an OTLP 
 
 ### Upgrade
 
-The customer wants to upgrade their operator. All assets are upgraded out of the box in concert as part of the upgrade,
+The user wants to upgrade their operator. All assets are upgraded out of the box in concert as part of the upgrade,
 and are guaranteed to work through functional test coverage.
 
 ### Deletion and reinstallation
