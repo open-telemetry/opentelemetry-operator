@@ -3,7 +3,7 @@ apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
   creationTimestamp: null
-  name: statefulset-features
+  name: cel-validations-test
 spec:
   steps:
   - name: step-00
@@ -14,7 +14,7 @@ spec:
          - check:
             ($error != null): true
             ($error): |-
-                OpenTelemetryCollector.opentelemetry.io "otel" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'
+                OpenTelemetryCollector.opentelemetry.io "sidecar-priorityclass" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'
   - name: step-01
     try:
     - apply:
@@ -23,7 +23,7 @@ spec:
          - check:
             ($error != null): true
             ($error): |-
-                OpenTelemetryCollector.opentelemetry.io "otel" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'
+                OpenTelemetryCollector.opentelemetry.io "sidecar-tolerations" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'
   - name: step-02
     try:
     - apply:
@@ -32,7 +32,7 @@ spec:
          - check:
             ($error != null): true
             ($error): |-
-                  OpenTelemetryCollector.opentelemetry.io "otel" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'
+                  OpenTelemetryCollector.opentelemetry.io "sidecar-affinity" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'
   - name: step-03
     try:
     - apply:
@@ -41,4 +41,4 @@ spec:
          - check:
             ($error != null): true
             ($error): |-
-                  OpenTelemetryCollector.opentelemetry.io "otel" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'
+                  OpenTelemetryCollector.opentelemetry.io "sidecar-additional-containers" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'
