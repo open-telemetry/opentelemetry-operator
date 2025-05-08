@@ -70,7 +70,7 @@ The customer upon installation of the custom resource can see Kubernetes cluster
 
 The customer can follow events and receive Kubernetes entity data.
 
-The customer upon installation receives metrics from hostmetrics receiver with its default configuration.  Note the metrics map to the host, meaning the collector will have access to host volumes to scrape their utilization.
+The user upon installation receives metrics from hostmetrics receiver with its default configuration. Note the metrics map to the host, meaning the collector will have access to host volumes to scrape their utilization.
 
 ### Workload monitoring
 
