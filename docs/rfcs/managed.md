@@ -74,7 +74,7 @@ The customer upon installation receives metrics from hostmetrics receiver with i
 
 ### Workload monitoring
 
-All standard CRDs for instrumentations are all enabled by default for all namespaces.
+All standard CRDs for instrumentations are enabled by default for all namespaces.
 
 ### Node logs
 
