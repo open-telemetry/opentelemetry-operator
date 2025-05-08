@@ -25,7 +25,7 @@ requires little insight and gets them to a working state effortlessly.
 ## Goals and non-goals
 
 ### Give a comprehensive, out-of the box experience of OpenTelemetry for a first-time user
-The goal is to delight first-time customers by giving them a complete view of what is possible with OpenTelemetry.
+The goal is to delight first-time users by giving them a complete view of what is possible with OpenTelemetry.
 
 ### Do not offer a way to turn on and off specific features
 We mean to offer a specific functional coverage of a specific use case that offers best practices of OpenTelemetry.
