@@ -50,7 +50,7 @@ The solution will enable features based on those parameters. For example, it wil
 
 ### Initial installation
 
-The customer wants to install the operator and immediately get value from the installation.
+The user wants to install the operator and immediately get value from the installation.
 
 Upon installation, they install the custom resource with information on an OTLP endpoint where they can direct all data.
 
