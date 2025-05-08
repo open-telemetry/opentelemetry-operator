@@ -78,7 +78,7 @@ All standard CRDs for instrumentations are enabled by default for all namespaces
 
 ### Node logs
 
-The customer upon installation will receive logs from the node operating system, as well as pod logs from Kubernetes, scraped with the filelog receiver from the file system.
+The user upon installation will receive logs from the node operating system, as well as pod logs from Kubernetes, scraped with the filelog receiver from the file system.
 
 ## Configuration
 
