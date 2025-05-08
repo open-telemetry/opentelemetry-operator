@@ -30,7 +30,7 @@ The goal is to delight first-time users by giving them a complete view of what i
 ### Do not offer a way to turn on and off specific features
 We mean to offer a specific functional coverage of a specific use case that offers best practices of OpenTelemetry.
 
-We don't allow to toggle features in and out specifically because we want to avoid increasing the need for functional test coverage.
+We don't allow toggling features specifically because we want to avoid increasing the need for functional test coverage.
 
 If customers want to increase their level of control of the feature set, they can remove the managed custom resource and instead
 follow the traditional route of setting up collectors, target allocators, instrumentation custom resources as is possible today.
