@@ -40,6 +40,7 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 				Tolerations:               taSpec.Tolerations,
 				Env:                       taSpec.Env,
 				PodAnnotations:            params.OtelCol.Spec.PodAnnotations,
+				PodLabels:                 params.OtelCol.Spec.PodLabels,
 				PodDisruptionBudget:       taSpec.PodDisruptionBudget,
 			},
 			AllocationStrategy:           taSpec.AllocationStrategy,
