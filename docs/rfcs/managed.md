@@ -82,7 +82,7 @@ The user upon installation will receive logs from the node operating system, as 
 
 ## Configuration
 
-The customer can enable exporting signals individually: metrics, logs, traces and profiles.
+The user can enable exporting signals individually: metrics, logs, traces and profiles.
 
 ## Struct Design
 
