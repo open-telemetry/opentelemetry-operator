@@ -358,7 +358,7 @@ func main() {
 	} else {
 		setupLog.Info("OpenTelemetryCollectorCRDSs are not available to the operator")
 		if !cfg.IgnoreMissingCollectorCRDs() {
-			setupLog.Error(errors.New("missing OpenTelemetryCRDs"), "The OpenTelemetryCollector CRDs are not present in the cluster. Set ignore_missing_collector_crds to true or install the CRDs in the cluster.")
+			setupLog.Error(errors.New("missing OpenTelemetryCollector CRDs"), "The OpenTelemetryCollector CRDs are not present in the cluster. Set ignore_missing_collector_crds to true or install the CRDs in the cluster.")
 			os.Exit(1)
 		}
 	}
