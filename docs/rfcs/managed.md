@@ -89,7 +89,7 @@ The user can enable exporting signals individually: metrics, logs, traces and pr
 ```go
 import "go.opentelemetry.io/collector/exporter/otlpexporter"
 
-type ManagedCustomResource struct {
+type ClusterObservability struct {
 	# List of signals supported: `logs`, `metrics`, `traces`, `profiles`
 	Signals        []string `yaml:"signals"`
 	# OTLP exporter configuration
@@ -100,18 +100,18 @@ type ManagedCustomResource struct {
 ```yaml
 ---
 apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
+kind: ClusterObservability
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.32.0
-  name: managed.opentelemetry.io
+  name: clusterobservability.opentelemetry.io
 spec:
   group: opentelemetry.io
   names:
-    kind: Managed
-    listKind: ManagedList
-    plural: manageds
-    singular: managed
+    kind: ClusterObservability
+    listKind: ClusterObservabilityList
+    plural: co11ys
+    singular: co11y
   scope: Cluster
   versions:
   - additionalPrinterColumns:
