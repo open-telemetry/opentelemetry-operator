@@ -7,7 +7,6 @@ import (
 	"github.com/go-logr/logr"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -20,7 +19,6 @@ import (
 type Option func(c *options)
 
 type options struct {
-	autoDetect                          autodetect.AutoDetect
 	version                             version.Version
 	logger                              logr.Logger
 	autoInstrumentationDotNetImage      string
@@ -53,11 +51,6 @@ type options struct {
 	annotationsFilter                   []string
 }
 
-func WithAutoDetect(a autodetect.AutoDetect) Option {
-	return func(o *options) {
-		o.autoDetect = a
-	}
-}
 func WithTargetAllocatorImage(s string) Option {
 	return func(o *options) {
 		o.targetAllocatorImage = s
