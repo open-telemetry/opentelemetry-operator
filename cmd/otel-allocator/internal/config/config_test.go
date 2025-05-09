@@ -767,6 +767,7 @@ kube_config_file_path: "/config/kube.config"
 		kubeConfigPath := createDummyKubeConfig(t, tempDir)
 
 		configContent := `
+collector_namespace: config-file-namespace
 listen_addr: "` + configListenAddr + `"
 prometheus_cr:
   enabled: true
@@ -794,6 +795,7 @@ kube_config_file_path: "` + kubeConfigPath + `"
 		assert.True(t, config.HTTPS.Enabled, "Config file should override defaults for HTTPS enabled")
 		assert.Equal(t, ":7443", config.HTTPS.ListenAddr, "Config file should override defaults for HTTPS listen address")
 		assert.Equal(t, kubeConfigPath, config.KubeConfigFilePath, "Config file should set kube config path")
+		assert.Equal(t, "config-file-namespace", config.CollectorNamespace, "Config file should set collector namespace")
 	})
 
 	t.Run("environment variables are applied", func(t *testing.T) {
