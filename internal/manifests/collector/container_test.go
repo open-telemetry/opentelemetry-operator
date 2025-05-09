@@ -4,7 +4,6 @@
 package collector
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -529,9 +528,7 @@ func TestContainerDefaultEnvVars(t *testing.T) {
 }
 
 func TestContainerProxyEnvVars(t *testing.T) {
-	err := os.Setenv("NO_PROXY", "localhost")
-	require.NoError(t, err)
-	defer os.Unsetenv("NO_PROXY")
+	t.Setenv("NO_PROXY", "localhost")
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
@@ -1031,12 +1028,8 @@ func TestGetEnvironmentVariables(t *testing.T) {
 				{Name: "no_proxy", Value: "localhost"},
 			},
 			before: func() {
-				require.NoError(t, os.Setenv("HTTP_PROXY", "http://proxy.example.com"))
-				require.NoError(t, os.Setenv("NO_PROXY", "localhost"))
-			},
-			cleanup: func() {
-				require.NoError(t, os.Unsetenv("HTTP_PROXY"))
-				require.NoError(t, os.Unsetenv("NO_PROXY"))
+				t.Setenv("HTTP_PROXY", "http://proxy.example.com")
+				t.Setenv("NO_PROXY", "localhost")
 			},
 		},
 		{
