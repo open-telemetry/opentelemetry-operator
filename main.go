@@ -354,7 +354,7 @@ func main() {
 		setupLog.Info("Cert-Manager is not available to the operator, skipping adding to scheme.")
 	}
 	if cfg.CollectorAvailability() == collector.Available {
-		setupLog.Info("OpenTelemetryCollectorCRDSs is available to the operator")
+		setupLog.Info("OpenTelemetryCollectorCRDSs are available to the operator")
 	} else {
 		setupLog.Info("OpenTelemetryCollectorCRDSs are not available to the operator")
 		if !cfg.IgnoreMissingCollectorCRDs() {
