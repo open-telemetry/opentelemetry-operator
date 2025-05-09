@@ -2,6 +2,36 @@
 
 <!-- next version -->
 
+## 0.125.0
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fixes container port duplication for user-provided and operator inferred ports (#3950)
+  This patch improves container port collisions when the user defines additional ports in the CR.
+  
+  When ports are specified in the CR:
+  - If a port number from the CR matches a port inferred from the config, the inferred port is removed
+  - If a port name from the CR matches an inferred port name, the inferred port is renamed to "port-{number}"
+  
+- `collector`: Prevent the operator from overriding the env vars defined by the user in the OpenTelemetryCollector spec. (#3963)
+  This change ensures that the operator does not override the environment variables defined by the user in the OpenTelemetryCollector spec.
+  It combines user-defined environment variables with automatically inferred ones, giving precedence to user-defined ones.
+  
+- `target allocator`: Fix config loading priority (#3928)
+- `collector`: Set the `statusReplicas` field for the `DaemonSet` (#3930)
+
+### Components
+
+* [OpenTelemetry Collector - v0.125.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.125.0)
+* [OpenTelemetry Contrib - v0.125.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.125.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.58.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.58.0)
+* [Python - v0.53b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.53b1)
+* [Go - v0.19.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.19.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.124.0
 
 ### 💡 Enhancements 💡
