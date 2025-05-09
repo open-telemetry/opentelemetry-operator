@@ -858,7 +858,7 @@ Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-tel
 
 - [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), OllyGarden
-- [Israel Blancas](https://github.com/iblancasa), Red Hat
+- [Israel Blancas](https://github.com/iblancasa), Coralogix
 
 Emeritus Approvers:
 
