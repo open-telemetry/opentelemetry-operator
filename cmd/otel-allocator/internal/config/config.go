@@ -301,7 +301,9 @@ func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
 
 // LoadFromEnv loads configuration from environment variables.
 func LoadFromEnv(target *Config) error {
-	target.CollectorNamespace = os.Getenv("OTELCOL_NAMESPACE")
+	if ns, ok := os.LookupEnv("OTELCOL_NAMESPACE"); ok {
+		target.CollectorNamespace = ns
+	}
 	return nil
 }
 
