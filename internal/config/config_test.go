@@ -12,6 +12,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -53,6 +54,9 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		TargetAllocatorAvailabilityFunc: func() (targetallocator.Availability, error) {
 			return targetallocator.Available, nil
 		},
+		CollectorAvailabilityFunc: func() (collector.Availability, error) {
+			return collector.Available, nil
+		},
 	}
 	cfg := config.New(
 		config.WithAutoDetect(mock),
@@ -64,6 +68,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, rbac.NotAvailable, cfg.CreateRBACPermissions())
 	require.Equal(t, certmanager.NotAvailable, cfg.CertManagerAvailability())
 	require.Equal(t, targetallocator.NotAvailable, cfg.TargetAllocatorAvailability())
+	require.Equal(t, collector.NotAvailable, cfg.CollectorAvailability())
 
 	// test
 	err := cfg.AutoDetect()
@@ -85,6 +90,7 @@ type mockAutoDetect struct {
 	RBACPermissionsFunc             func(ctx context.Context) (rbac.Availability, error)
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
+	CollectorAvailabilityFunc       func() (collector.Availability, error)
 }
 
 func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
@@ -124,4 +130,11 @@ func (m *mockAutoDetect) TargetAllocatorAvailability() (targetallocator.Availabi
 		return m.TargetAllocatorAvailabilityFunc()
 	}
 	return targetallocator.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) CollectorAvailability() (collector.Availability, error) {
+	if m.CollectorAvailabilityFunc != nil {
+		return m.CollectorAvailabilityFunc()
+	}
+	return collector.NotAvailable, nil
 }

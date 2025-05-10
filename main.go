@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -39,6 +40,7 @@ import (
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
@@ -109,6 +111,7 @@ func main() {
 		enableJavaInstrumentation        bool
 		enableCRMetrics                  bool
 		createSMOperatorMetrics          bool
+		ignoreMissingCollectorCRDs       bool
 		collectorImage                   string
 		targetAllocatorImage             string
 		operatorOpAMPBridgeImage         string
@@ -148,6 +151,7 @@ func main() {
 	pflag.BoolVar(&enableJavaInstrumentation, constants.FlagJava, true, "Controls whether the operator supports java auto-instrumentation")
 	pflag.BoolVar(&enableCRMetrics, constants.FlagCRMetrics, false, "Controls whether exposing the CR metrics is enabled")
 	pflag.BoolVar(&createSMOperatorMetrics, "create-sm-operator-metrics", false, "Create a ServiceMonitor for the operator metrics")
+	pflag.BoolVar(&ignoreMissingCollectorCRDs, "ignore-missing-collector-crds", false, "Ignore missing OpenTelemetryCollector CRDs presence in the cluster")
 
 	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
@@ -186,6 +190,7 @@ func main() {
 		"opentelemetry-collector", collectorImage,
 		"opentelemetry-targetallocator", targetAllocatorImage,
 		"operator-opamp-bridge", operatorOpAMPBridgeImage,
+		"ignore-missing-collector-crds", ignoreMissingCollectorCRDs,
 		"auto-instrumentation-java", autoInstrumentationJava,
 		"auto-instrumentation-nodejs", autoInstrumentationNodeJS,
 		"auto-instrumentation-python", autoInstrumentationPython,
@@ -319,6 +324,7 @@ func main() {
 		config.WithAutoDetect(ad),
 		config.WithLabelFilters(labelsFilter),
 		config.WithAnnotationFilters(annotationsFilter),
+		config.WithIgnoreMissingCollectorCRDs(ignoreMissingCollectorCRDs),
 	)
 	err = cfg.AutoDetect()
 	if err != nil {
@@ -347,6 +353,15 @@ func main() {
 	} else {
 		setupLog.Info("Cert-Manager is not available to the operator, skipping adding to scheme.")
 	}
+	if cfg.CollectorAvailability() == collector.Available {
+		setupLog.Info("OpenTelemetryCollectorCRDSs are available to the operator")
+	} else {
+		setupLog.Info("OpenTelemetryCollectorCRDSs are not available to the operator")
+		if !cfg.IgnoreMissingCollectorCRDs() {
+			setupLog.Error(errors.New("missing OpenTelemetryCollector CRDs"), "The OpenTelemetryCollector CRDs are not present in the cluster. Set ignore_missing_collector_crds to true or install the CRDs in the cluster.")
+			os.Exit(1)
+		}
+	}
 	if cfg.AnnotationsFilter() != nil {
 		for _, basePattern := range cfg.AnnotationsFilter() {
 			_, compileErr := regexp.Compile(basePattern)
@@ -371,19 +386,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	collectorReconciler := controllers.NewReconciler(controllers.Params{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
-		Scheme:   mgr.GetScheme(),
-		Config:   cfg,
-		Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
-		Reviewer: reviewer,
-		Version:  v,
-	})
+	var collectorReconciler *controllers.OpenTelemetryCollectorReconciler
+	if cfg.CollectorAvailability() == collector.Available {
+		collectorReconciler = controllers.NewReconciler(controllers.Params{
+			Client:   mgr.GetClient(),
+			Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
+			Scheme:   mgr.GetScheme(),
+			Config:   cfg,
+			Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
+			Reviewer: reviewer,
+			Version:  v,
+		})
 
-	if err = collectorReconciler.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
-		os.Exit(1)
+		if err = collectorReconciler.SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
+			os.Exit(1)
+		}
 	}
 
 	if cfg.TargetAllocatorAvailability() == targetallocator.Available {
@@ -436,32 +454,34 @@ func main() {
 			}
 		}
 
-		bv := func(ctx context.Context, collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
-			var warnings admission.Warnings
-			params, newErr := collectorReconciler.GetParams(ctx, collector)
-			if err != nil {
-				warnings = append(warnings, newErr.Error())
+		if cfg.CollectorAvailability() == collector.Available {
+			bv := func(ctx context.Context, collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
+				var warnings admission.Warnings
+				params, newErr := collectorReconciler.GetParams(ctx, collector)
+				if err != nil {
+					warnings = append(warnings, newErr.Error())
+					return warnings
+				}
+
+				params.ErrorAsWarning = true
+				_, newErr = collectorManifests.Build(params)
+				if newErr != nil {
+					warnings = append(warnings, newErr.Error())
+					return warnings
+				}
 				return warnings
 			}
 
-			params.ErrorAsWarning = true
-			_, newErr = collectorManifests.Build(params)
-			if newErr != nil {
-				warnings = append(warnings, newErr.Error())
-				return warnings
+			var fipsCheck fips.FIPSCheck
+			if ad.FIPSEnabled(ctx) {
+				receivers, exporters, processors, extensions := parseFipsFlag(fipsDisabledComponents)
+				logger.Info("Fips disabled components", "receivers", receivers, "exporters", exporters, "processors", processors, "extensions", extensions)
+				fipsCheck = fips.NewFipsCheck(receivers, exporters, processors, extensions)
 			}
-			return warnings
-		}
-
-		var fipsCheck fips.FIPSCheck
-		if ad.FIPSEnabled(ctx) {
-			receivers, exporters, processors, extensions := parseFipsFlag(fipsDisabledComponents)
-			logger.Info("Fips disabled components", "receivers", receivers, "exporters", exporters, "processors", processors, "extensions", extensions)
-			fipsCheck = fips.NewFipsCheck(receivers, exporters, processors, extensions)
-		}
-		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
-			os.Exit(1)
+			if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck); err != nil {
+				setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
+				os.Exit(1)
+			}
 		}
 		if cfg.TargetAllocatorAvailability() == targetallocator.Available {
 			if err = otelv1alpha1.SetupTargetAllocatorWebhook(mgr, cfg, reviewer); err != nil {
