@@ -4,7 +4,6 @@
 package targetallocator
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -201,9 +200,7 @@ func TestContainerHasEnvVars(t *testing.T) {
 }
 
 func TestContainerHasProxyEnvVars(t *testing.T) {
-	err := os.Setenv("NO_PROXY", "localhost")
-	require.NoError(t, err)
-	defer os.Unsetenv("NO_PROXY")
+	t.Setenv("NO_PROXY", "localhost")
 
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{

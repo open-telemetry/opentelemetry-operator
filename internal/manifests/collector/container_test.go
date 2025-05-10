@@ -4,7 +4,6 @@
 package collector
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -529,9 +528,7 @@ func TestContainerDefaultEnvVars(t *testing.T) {
 }
 
 func TestContainerProxyEnvVars(t *testing.T) {
-	err := os.Setenv("NO_PROXY", "localhost")
-	require.NoError(t, err)
-	defer os.Unsetenv("NO_PROXY")
+	t.Setenv("NO_PROXY", "localhost")
 	otelcol := v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
@@ -894,8 +891,7 @@ func TestGetEnvironmentVariables(t *testing.T) {
 		otelcol              v1beta1.OpenTelemetryCollector
 		enableSetGolangFlags bool
 		expectedEnvVars      []corev1.EnvVar
-		cleanup              func()
-		before               func()
+		before               func(t *testing.T)
 	}{
 		{
 			name: "default environment variables",
@@ -1030,13 +1026,9 @@ func TestGetEnvironmentVariables(t *testing.T) {
 				{Name: "NO_PROXY", Value: "localhost"},
 				{Name: "no_proxy", Value: "localhost"},
 			},
-			before: func() {
-				require.NoError(t, os.Setenv("HTTP_PROXY", "http://proxy.example.com"))
-				require.NoError(t, os.Setenv("NO_PROXY", "localhost"))
-			},
-			cleanup: func() {
-				require.NoError(t, os.Unsetenv("HTTP_PROXY"))
-				require.NoError(t, os.Unsetenv("NO_PROXY"))
+			before: func(t *testing.T) {
+				t.Setenv("HTTP_PROXY", "http://proxy.example.com")
+				t.Setenv("NO_PROXY", "localhost")
 			},
 		},
 		{
@@ -1137,15 +1129,12 @@ service:
 			}
 
 			if test.before != nil {
-				test.before()
+				test.before(t)
 			}
 
 			envVars := getContainerEnvVars(test.otelcol, testLogger)
 			assert.ElementsMatch(t, test.expectedEnvVars, envVars)
 
-			if test.cleanup != nil {
-				t.Cleanup(test.cleanup)
-			}
 		})
 	}
 }
