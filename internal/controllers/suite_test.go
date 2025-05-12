@@ -46,6 +46,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -92,6 +93,7 @@ type mockAutoDetect struct {
 	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
+	CollectorCRDAvailabilityFunc    func() (collector.Availability, error)
 }
 
 func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
@@ -133,6 +135,13 @@ func (m *mockAutoDetect) TargetAllocatorAvailability() (targetallocator.Availabi
 	return targetallocator.NotAvailable, nil
 }
 
+func (m *mockAutoDetect) CollectorAvailability() (collector.Availability, error) {
+	if m.CollectorCRDAvailabilityFunc != nil {
+		return m.CollectorCRDAvailabilityFunc()
+	}
+	return collector.Available, nil
+}
+
 func TestMain(m *testing.M) {
 	var err error
 	ctx, cancel = context.WithCancel(context.TODO())
@@ -149,10 +158,10 @@ func TestMain(m *testing.M) {
 	utilruntime.Must(v1beta1.AddToScheme(testScheme))
 
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "config", "webhook")},
+			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
 		},
 	}
 	restCfg, err = testEnv.Start()

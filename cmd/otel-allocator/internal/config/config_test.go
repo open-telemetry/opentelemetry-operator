@@ -501,13 +501,8 @@ func TestLoadFromFile(t *testing.T) {
 }
 
 func TestLoadFromEnv(t *testing.T) {
-	current := os.Getenv("OTELCOL_NAMESPACE")
-	t.Cleanup(func() {
-		err := os.Setenv("OTELCOL_NAMESPACE", current)
-		assert.NoError(t, err)
-	})
 	namespace := "default"
-	os.Setenv("OTELCOL_NAMESPACE", namespace)
+	t.Setenv("OTELCOL_NAMESPACE", namespace)
 	cfg := &Config{}
 	err := LoadFromEnv(cfg)
 	require.NoError(t, err)
@@ -767,6 +762,7 @@ kube_config_file_path: "/config/kube.config"
 		kubeConfigPath := createDummyKubeConfig(t, tempDir)
 
 		configContent := `
+collector_namespace: config-file-namespace
 listen_addr: "` + configListenAddr + `"
 prometheus_cr:
   enabled: true
@@ -794,6 +790,7 @@ kube_config_file_path: "` + kubeConfigPath + `"
 		assert.True(t, config.HTTPS.Enabled, "Config file should override defaults for HTTPS enabled")
 		assert.Equal(t, ":7443", config.HTTPS.ListenAddr, "Config file should override defaults for HTTPS listen address")
 		assert.Equal(t, kubeConfigPath, config.KubeConfigFilePath, "Config file should set kube config path")
+		assert.Equal(t, "config-file-namespace", config.CollectorNamespace, "Config file should set collector namespace")
 	})
 
 	t.Run("environment variables are applied", func(t *testing.T) {
@@ -805,17 +802,9 @@ kube_config_file_path: "` + kubeConfigPath + `"
 
 		kubeConfigPath := createDummyKubeConfig(t, tempDir)
 
-		// Save original env var value and restore after test
-		originalNamespace := os.Getenv("OTELCOL_NAMESPACE")
-		defer func() {
-			envErr := os.Setenv("OTELCOL_NAMESPACE", originalNamespace)
-			assert.NoError(t, envErr)
-		}()
-
 		// Set environment variable
 		testNamespace := "test-namespace"
-		err = os.Setenv("OTELCOL_NAMESPACE", testNamespace)
-		require.NoError(t, err)
+		t.Setenv("OTELCOL_NAMESPACE", testNamespace)
 
 		// Prepare args for Load function
 		args := []string{
@@ -848,17 +837,9 @@ kube_config_file_path: "` + kubeConfigPath + `"
 		err := os.WriteFile(configPath, []byte(configContent), 0600)
 		require.NoError(t, err)
 
-		// Save original env var value and restore after test
-		originalNamespace := os.Getenv("OTELCOL_NAMESPACE")
-		defer func() {
-			envErr := os.Setenv("OTELCOL_NAMESPACE", originalNamespace)
-			assert.NoError(t, envErr)
-		}()
-
 		// Environment variable sets value
 		testNamespace := "env-var-namespace"
-		err = os.Setenv("OTELCOL_NAMESPACE", testNamespace)
-		require.NoError(t, err)
+		t.Setenv("OTELCOL_NAMESPACE", testNamespace)
 
 		// Prepare args for Load function with CLI values
 		cliListenAddr := ":8888"
