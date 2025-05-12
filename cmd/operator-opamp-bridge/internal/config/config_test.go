@@ -5,7 +5,6 @@ package config
 
 import (
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -274,8 +273,7 @@ func TestLoadFromFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.args.envVariables != nil {
 				for key, value := range tt.args.envVariables {
-					err := os.Setenv(key, value)
-					assert.NoError(t, err)
+					t.Setenv(key, value)
 				}
 			}
 			got := NewConfig(logr.Discard())
