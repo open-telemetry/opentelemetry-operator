@@ -28,7 +28,11 @@ spec:
     spec:
       containers:
       - args:
-        - --enable-leader-election
+        - "--metrics-addr=127.0.0.1:8080"
+        - "--enable-leader-election"
+        - "--zap-log-level=info"
+        - "--zap-time-encoding=rfc3339nano"
+        - "--enable-nginx-instrumentation=true"
         image: controller
         name: manager
         livenessProbe:
@@ -47,5 +51,10 @@ spec:
           requests:
             cpu: 100m
             memory: 64Mi
+        env:
+          - name: SERVICE_ACCOUNT_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.serviceAccountName
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10

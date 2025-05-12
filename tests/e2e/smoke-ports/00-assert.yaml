@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: smoke-ports-collector
+spec:
+  template:
+    spec:
+       containers:
+       - name: otc-container
+         ports:
+         - containerPort: 14250
+           name: jaeger-grpc
+           protocol: TCP
+         - containerPort: 8888
+           name: metrics
+           protocol: TCP
+         - containerPort: 4317
+           name: otlp-grpc
+           protocol: TCP
+           hostPort: 4317
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smoke-ports-collector
+spec:
+  ports:
+  - appProtocol: grpc
+    name: otlp-grpc
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - appProtocol: grpc
+    name: jaeger-grpc
+    port: 14250
+    protocol: TCP
+    targetPort: 14250

@@ -9,12 +9,20 @@ on:
       repo:
         type: string
         required: true
+      folder:
+        type: string
+        required: true
     secrets:
       OPENTELEMETRYBOT_GITHUB_TOKEN:
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   create-operator-pull-request:
+    permissions:
+      contents: write  # for Git to git push
     runs-on: ubuntu-latest
     steps:
       - name: Set version as env variable
@@ -37,13 +45,13 @@ jobs:
               --force
 
       - name: Checkout operatorhub repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           repository: opentelemetrybot/${{ inputs.repo }}
           token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
 
       - name: Checkout opentelemetry-operator to tmp/ directory
-        uses: actions/checkout@v3
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           repository: open-telemetry/opentelemetry-operator
           token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
@@ -53,8 +61,8 @@ jobs:
         env:
           VERSION: ${{ env.version }}
         run: |
-          mkdir operators/opentelemetry-operator/${VERSION} 
-          cp -R ./tmp/bundle/* operators/opentelemetry-operator/${VERSION} 
+          mkdir operators/opentelemetry-operator/${VERSION}
+          cp -R ./tmp/bundle/${{ inputs.folder }}/* operators/opentelemetry-operator/${VERSION}
           rm -rf ./tmp
 
       - name: Use CLA approved github bot
@@ -70,7 +78,7 @@ jobs:
           message="Update the opentelemetry to $VERSION"
           body="Release opentelemetry-operator \`$VERSION\`.
 
-          cc @pavolloffay @frzifus @yuriolisa @jaronoff97 @VineethReddy02 @TylerHelmuth @swiatekm-sumo
+          cc @pavolloffay @frzifus @yuriolisa @jaronoff97 @TylerHelmuth @swiatekm @iblancasa
           "
           branch="update-opentelemetry-operator-to-${VERSION}"
 

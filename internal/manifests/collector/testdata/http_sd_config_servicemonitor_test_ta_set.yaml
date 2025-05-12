@@ -21,11 +21,10 @@ receivers:
         refresh_interval: 60s
 
 exporters:
-  logging:
+  debug:
 
 service:
   pipelines:
     metrics:
       receivers: [prometheus]
-      processors: []
-      exporters: [logging]
+      exporters: [debug]

@@ -1,50 +1,21 @@
-# Build the manager binary
-FROM golang:1.21-alpine as builder
-
-WORKDIR /workspace
+# Get CA certificates from alpine package repo
+FROM alpine:3.21 as certificates
 
 RUN apk --no-cache add ca-certificates
-
-# Copy the Go Modules manifests
-COPY go.mod go.mod
-COPY go.sum go.sum
-# cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
-RUN go mod download
-
-# Copy the go source
-COPY main.go main.go
-COPY apis/ apis/
-COPY controllers/ controllers/
-COPY internal/ internal/
-COPY pkg/ pkg/
-COPY versions.txt versions.txt
-
-ARG VERSION_PKG
-ARG VERSION
-ARG VERSION_DATE
-ARG OTELCOL_VERSION
-ARG TARGETALLOCATOR_VERSION
-ARG OPERATOR_OPAMP_BRIDGE_VERSION
-ARG AUTO_INSTRUMENTATION_JAVA_VERSION
-ARG AUTO_INSTRUMENTATION_NODEJS_VERSION
-ARG AUTO_INSTRUMENTATION_PYTHON_VERSION
-ARG AUTO_INSTRUMENTATION_DOTNET_VERSION
-ARG AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION
-ARG AUTO_INSTRUMENTATION_GO_VERSION
-
-# Build
-RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -ldflags="-X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELCOL_VERSION} -X ${VERSION_PKG}.targetAllocator=${TARGETALLOCATOR_VERSION} -X ${VERSION_PKG}.operatorOpAMPBridge=${OPERATOR_OPAMP_BRIDGE_VERSION} -X ${VERSION_PKG}.autoInstrumentationJava=${AUTO_INSTRUMENTATION_JAVA_VERSION} -X ${VERSION_PKG}.autoInstrumentationNodeJS=${AUTO_INSTRUMENTATION_NODEJS_VERSION} -X ${VERSION_PKG}.autoInstrumentationPython=${AUTO_INSTRUMENTATION_PYTHON_VERSION} -X ${VERSION_PKG}.autoInstrumentationDotNet=${AUTO_INSTRUMENTATION_DOTNET_VERSION} -X ${VERSION_PKG}.autoInstrumentationGo=${AUTO_INSTRUMENTATION_GO_VERSION} -X ${VERSION_PKG}.autoInstrumentationApacheHttpd=${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION}" -a -o manager main.go
 
 ######## Start a new stage from scratch #######
 FROM scratch
 
+ARG TARGETARCH
+
 WORKDIR /
 
-# Copy the certs from the builder
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+# Copy the certs from Alpine
+COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-COPY --from=builder /workspace/manager .
+# Copy binary built on the host
+COPY bin/manager_${TARGETARCH} manager
+
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]

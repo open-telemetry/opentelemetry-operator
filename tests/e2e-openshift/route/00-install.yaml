@@ -7,7 +7,6 @@ spec:
   mode: "deployment"
   ingress:
     type: route
-    hostname: "example.com"
     annotations:
       something.com: "true"
     route:
@@ -18,13 +17,13 @@ spec:
       otlp:
         protocols:
           grpc:
+          http:
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
-          exporters: [logging]
+          exporters: [debug]

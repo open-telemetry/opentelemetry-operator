@@ -1,71 +1,68 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package collector
 
 import (
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
 // Deployment builds the deployment for the given instance.
-func Deployment(cfg config.Config, logger logr.Logger, otelcol v1alpha1.OpenTelemetryCollector) *appsv1.Deployment {
-	name := naming.Collector(otelcol.Name)
-	labels := Labels(otelcol, name, cfg.LabelsFilter())
+func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
+	name := naming.Collector(params.OtelCol.Name)
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	if err != nil {
+		return nil, err
+	}
 
-	annotations := Annotations(otelcol)
-	podAnnotations := PodAnnotations(otelcol)
+	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter())
+	if err != nil {
+		return nil, err
+	}
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   otelcol.Namespace,
+			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
 			Annotations: annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: otelcol.Spec.Replicas,
+			Replicas: params.OtelCol.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: SelectorLabels(otelcol),
+				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			},
+			Strategy: params.OtelCol.Spec.DeploymentUpdateStrategy,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
 					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName:            ServiceAccountName(otelcol),
-					InitContainers:                otelcol.Spec.InitContainers,
-					Containers:                    append(otelcol.Spec.AdditionalContainers, Container(cfg, logger, otelcol, true)),
-					Volumes:                       Volumes(cfg, otelcol),
-					DNSPolicy:                     getDNSPolicy(otelcol),
-					HostNetwork:                   otelcol.Spec.HostNetwork,
-					Tolerations:                   otelcol.Spec.Tolerations,
-					NodeSelector:                  otelcol.Spec.NodeSelector,
-					SecurityContext:               otelcol.Spec.PodSecurityContext,
-					PriorityClassName:             otelcol.Spec.PriorityClassName,
-					Affinity:                      otelcol.Spec.Affinity,
-					TerminationGracePeriodSeconds: otelcol.Spec.TerminationGracePeriodSeconds,
-					TopologySpreadConstraints:     otelcol.Spec.TopologySpreadConstraints,
+					ServiceAccountName:            ServiceAccountName(params.OtelCol),
+					InitContainers:                params.OtelCol.Spec.InitContainers,
+					Containers:                    append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
+					Volumes:                       Volumes(params.Config, params.OtelCol),
+					DNSPolicy:                     manifestutils.GetDNSPolicy(params.OtelCol.Spec.HostNetwork, params.OtelCol.Spec.PodDNSConfig),
+					DNSConfig:                     &params.OtelCol.Spec.PodDNSConfig,
+					HostNetwork:                   params.OtelCol.Spec.HostNetwork,
+					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
+					Tolerations:                   params.OtelCol.Spec.Tolerations,
+					NodeSelector:                  params.OtelCol.Spec.NodeSelector,
+					SecurityContext:               params.OtelCol.Spec.PodSecurityContext,
+					PriorityClassName:             params.OtelCol.Spec.PriorityClassName,
+					Affinity:                      params.OtelCol.Spec.Affinity,
+					TerminationGracePeriodSeconds: params.OtelCol.Spec.TerminationGracePeriodSeconds,
+					TopologySpreadConstraints:     params.OtelCol.Spec.TopologySpreadConstraints,
 				},
 			},
 		},
-	}
+	}, nil
 }

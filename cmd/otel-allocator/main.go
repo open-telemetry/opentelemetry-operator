@@ -1,26 +1,15 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
-	gokitlog "github.com/go-kit/log"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -28,13 +17,13 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/collector"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/prehook"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/server"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
-	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/collector"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/prehook"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/server"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
+	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
 
 var (
@@ -52,8 +41,7 @@ func main() {
 		allocatorPrehook prehook.Hook
 		allocator        allocation.Allocator
 		discoveryManager *discovery.Manager
-		collectorWatcher *collector.Client
-		fileWatcher      allocatorWatcher.Watcher
+		collectorWatcher *collector.Watcher
 		promWatcher      allocatorWatcher.Watcher
 		targetDiscoverer *target.Discoverer
 
@@ -64,52 +52,72 @@ func main() {
 		interrupts      = make(chan os.Signal, 1)
 		errChan         = make(chan error)
 	)
-	cliConf, err := config.ParseCLI()
+	cfg, err := config.Load(os.Args)
 	if err != nil {
-		setupLog.Error(err, "Failed to parse parameters")
+		fmt.Printf("Failed to load config: %v", err)
 		os.Exit(1)
 	}
-	cfg, configLoadErr := config.Load(*cliConf.ConfigFilePath)
-	if configLoadErr != nil {
-		setupLog.Error(configLoadErr, "Unable to load configuration")
-	}
+	ctrl.SetLogger(cfg.RootLogger)
 
-	if validationErr := config.ValidateConfig(&cfg, &cliConf); validationErr != nil {
+	if validationErr := config.ValidateConfig(cfg); validationErr != nil {
 		setupLog.Error(validationErr, "Invalid configuration")
+		os.Exit(1)
 	}
 
-	cliConf.RootLogger.Info("Starting the Target Allocator")
+	cfg.RootLogger.Info("Starting the Target Allocator")
 	ctx := context.Background()
 	log := ctrl.Log.WithName("allocator")
 
-	allocatorPrehook = prehook.New(cfg.GetTargetsFilterStrategy(), log)
-	allocator, err = allocation.New(cfg.GetAllocationStrategy(), log, allocation.WithFilter(allocatorPrehook))
+	allocatorPrehook = prehook.New(cfg.FilterStrategy, log)
+	allocator, err = allocation.New(cfg.AllocationStrategy, log, allocation.WithFilter(allocatorPrehook), allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
 	if err != nil {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)
 	}
-	srv := server.NewServer(log, allocator, cliConf.ListenAddr)
+
+	httpOptions := []server.Option{}
+	if cfg.HTTPS.Enabled {
+		tlsConfig, confErr := cfg.HTTPS.NewTLSConfig()
+		if confErr != nil {
+			setupLog.Error(confErr, "Unable to initialize TLS configuration")
+			os.Exit(1)
+		}
+		httpOptions = append(httpOptions, server.WithTLSConfig(tlsConfig, cfg.HTTPS.ListenAddr))
+	}
+	srv := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
-	discoveryManager = discovery.NewManager(discoveryCtx, gokitlog.NewNopLogger())
-	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv)
-	collectorWatcher, collectorWatcherErr := collector.NewClient(log, cliConf.ClusterConfig)
-	if collectorWatcherErr != nil {
-		setupLog.Error(collectorWatcherErr, "Unable to initialize collector watcher")
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(prometheus.DefaultRegisterer)
+	if err != nil {
+		setupLog.Error(err, "Unable to register metrics for Prometheus service discovery")
 		os.Exit(1)
 	}
-	fileWatcher, err = allocatorWatcher.NewFileWatcher(setupLog.WithName("file-watcher"), cliConf)
-	if err != nil {
-		setupLog.Error(err, "Can't start the file watcher")
+	discoveryManager = discovery.NewManager(discoveryCtx, config.NopLogger, prometheus.DefaultRegisterer, sdMetrics)
+
+	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
+	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, cfg.ClusterConfig, cfg.CollectorNotReadyGracePeriod)
+	if collectorWatcherErr != nil {
+		setupLog.Error(collectorWatcherErr, "Unable to initialize collector watcher")
 		os.Exit(1)
 	}
 	signal.Notify(interrupts, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer close(interrupts)
 
-	if *cliConf.PromCRWatcherConf.Enabled {
-		promWatcher, err = allocatorWatcher.NewPrometheusCRWatcher(setupLog.WithName("prometheus-cr-watcher"), cfg, cliConf)
+	if cfg.PrometheusCR.Enabled {
+		promWatcher, err = allocatorWatcher.NewPrometheusCRWatcher(ctx, setupLog.WithName("prometheus-cr-watcher"), *cfg)
 		if err != nil {
 			setupLog.Error(err, "Can't start the prometheus watcher")
+			os.Exit(1)
+		}
+		// apply the initial configuration
+		promConfig, loadErr := promWatcher.LoadConfig(ctx)
+		if loadErr != nil {
+			setupLog.Error(err, "Can't load initial Prometheus configuration from Prometheus CRs")
+			os.Exit(1)
+		}
+		loadErr = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, promConfig.ScrapeConfigs)
+		if loadErr != nil {
+			setupLog.Error(err, "Can't load initial scrape targets from Prometheus CRs")
 			os.Exit(1)
 		}
 		runGroup.Add(
@@ -128,19 +136,6 @@ func main() {
 	}
 	runGroup.Add(
 		func() error {
-			fileWatcherErr := fileWatcher.Watch(eventChan, errChan)
-			setupLog.Info("File watcher exited")
-			return fileWatcherErr
-		},
-		func(_ error) {
-			setupLog.Info("Closing file watcher")
-			fileWatcherErr := fileWatcher.Close()
-			if fileWatcherErr != nil {
-				setupLog.Error(fileWatcherErr, "file watcher failed to close")
-			}
-		})
-	runGroup.Add(
-		func() error {
 			discoveryManagerErr := discoveryManager.Run()
 			setupLog.Info("Discovery manager exited")
 			return discoveryManagerErr
@@ -152,12 +147,17 @@ func main() {
 	runGroup.Add(
 		func() error {
 			// Initial loading of the config file's scrape config
-			err = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.Config)
-			if err != nil {
-				setupLog.Error(err, "Unable to apply initial configuration")
-				return err
+			if cfg.PromConfig != nil && len(cfg.PromConfig.ScrapeConfigs) > 0 {
+				err = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.PromConfig.ScrapeConfigs)
+				if err != nil {
+					setupLog.Error(err, "Unable to apply initial configuration")
+					return err
+				}
+			} else {
+				setupLog.Info("Prometheus config empty, skipping initial discovery configuration")
 			}
-			err := targetDiscoverer.Watch(allocator.SetTargets)
+
+			err := targetDiscoverer.Run()
 			setupLog.Info("Target discoverer exited")
 			return err
 		},
@@ -167,7 +167,7 @@ func main() {
 		})
 	runGroup.Add(
 		func() error {
-			err := collectorWatcher.Watch(ctx, cfg.LabelSelector, allocator.SetCollectors)
+			err := collectorWatcher.Watch(cfg.CollectorNamespace, cfg.CollectorSelector, allocator.SetCollectors)
 			setupLog.Info("Collector watcher exited")
 			return err
 		},
@@ -187,6 +187,20 @@ func main() {
 				setupLog.Error(shutdownErr, "Error on server shutdown")
 			}
 		})
+	if cfg.HTTPS.Enabled {
+		runGroup.Add(
+			func() error {
+				err := srv.StartHTTPS()
+				setupLog.Info("HTTPS Server failed to start")
+				return err
+			},
+			func(_ error) {
+				setupLog.Info("Closing HTTPS server")
+				if shutdownErr := srv.ShutdownHTTPS(ctx); shutdownErr != nil {
+					setupLog.Error(shutdownErr, "Error on HTTPS server shutdown")
+				}
+			})
+	}
 	runGroup.Add(
 		func() error {
 			for {
@@ -198,7 +212,7 @@ func main() {
 						setupLog.Error(err, "Unable to load configuration")
 						continue
 					}
-					err = targetDiscoverer.ApplyConfig(event.Source, loadConfig)
+					err = targetDiscoverer.ApplyConfig(event.Source, loadConfig.ScrapeConfigs)
 					if err != nil {
 						setupLog.Error(err, "Unable to apply configuration")
 						continue

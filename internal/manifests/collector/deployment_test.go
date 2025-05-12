@@ -1,29 +1,21 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
-package collector_test
+package collector
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
-	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
 var testTolerationValues = []v1.Toleration{
@@ -67,33 +59,39 @@ var testTopologySpreadConstraintValue = []v1.TopologySpreadConstraint{
 
 func TestDeploymentNewDefault(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Tolerations: testTolerationValues,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Tolerations: testTolerationValues,
+			},
 		},
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
 	// test
-	d := Deployment(cfg, logger, otelcol)
+	d, err := Deployment(params)
+	require.NoError(t, err)
 
 	// verify
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
 	assert.Equal(t, testTolerationValues, d.Spec.Template.Spec.Tolerations)
 
 	assert.Len(t, d.Spec.Template.Spec.Containers, 1)
 
 	// verify sha256 podAnnotation
 	expectedAnnotations := map[string]string{
-		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"opentelemetry-operator-config/sha256": "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
 		"prometheus.io/path":                   "/metrics",
 		"prometheus.io/port":                   "8888",
 		"prometheus.io/scrape":                 "true",
@@ -127,25 +125,34 @@ func TestDeploymentNewDefault(t *testing.T) {
 func TestDeploymentPodAnnotations(t *testing.T) {
 	// prepare
 	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PodAnnotations: testPodAnnotationValues,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PodAnnotations: testPodAnnotationValues,
+			},
 		},
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
 	// test
-	d := Deployment(cfg, logger, otelcol)
+	d, err := Deployment(params)
+	require.NoError(t, err)
 
 	// Add sha256 podAnnotation
-	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	testPodAnnotationValues["opentelemetry-operator-config/sha256"] = "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d"
 
 	expectedPodAnnotationValues := map[string]string{
 		"annotation-key":                       "annotation-value",
-		"opentelemetry-operator-config/sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"opentelemetry-operator-config/sha256": "fbcdae6a02b2115cd5ca4f34298202ab041d1dfe62edebfaadb48b1ee178231d",
 		"prometheus.io/path":                   "/metrics",
 		"prometheus.io/port":                   "8888",
 		"prometheus.io/scrape":                 "true",
@@ -162,31 +169,72 @@ func TestDeploymenttPodSecurityContext(t *testing.T) {
 	runAsUser := int64(1337)
 	runasGroup := int64(1338)
 
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PodSecurityContext: &v1.PodSecurityContext{
-				RunAsNonRoot: &runAsNonRoot,
-				RunAsUser:    &runAsUser,
-				RunAsGroup:   &runasGroup,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PodSecurityContext: &v1.PodSecurityContext{
+					RunAsNonRoot: &runAsNonRoot,
+					RunAsUser:    &runAsUser,
+					RunAsGroup:   &runasGroup,
+				},
 			},
 		},
 	}
 
 	cfg := config.New()
 
-	d := Deployment(cfg, logger, otelcol)
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
+	d, err := Deployment(params)
+	require.NoError(t, err)
 
 	assert.Equal(t, &runAsNonRoot, d.Spec.Template.Spec.SecurityContext.RunAsNonRoot)
 	assert.Equal(t, &runAsUser, d.Spec.Template.Spec.SecurityContext.RunAsUser)
 	assert.Equal(t, &runasGroup, d.Spec.Template.Spec.SecurityContext.RunAsGroup)
 }
 
+func TestDeploymentUpdateStrategy(t *testing.T) {
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			DeploymentUpdateStrategy: appsv1.DeploymentStrategy{
+				Type: "RollingUpdate",
+				RollingUpdate: &appsv1.RollingUpdateDeployment{
+					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+					MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: int32(1)},
+				},
+			},
+		},
+	}
+
+	cfg := config.New()
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
+	d, err := Deployment(params)
+	require.NoError(t, err)
+
+	assert.Equal(t, "RollingUpdate", string(d.Spec.Strategy.Type))
+	assert.Equal(t, 1, d.Spec.Strategy.RollingUpdate.MaxSurge.IntValue())
+	assert.Equal(t, 1, d.Spec.Strategy.RollingUpdate.MaxUnavailable.IntValue())
+}
+
 func TestDeploymentHostNetwork(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -194,24 +242,40 @@ func TestDeploymentHostNetwork(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := Deployment(params1)
+	require.NoError(t, err)
 
 	assert.Equal(t, d1.Spec.Template.Spec.HostNetwork, false)
 	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
 
 	// Test hostNetwork=true
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-hostnetwork",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			HostNetwork: true,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				HostNetwork: true,
+			},
 		},
 	}
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := Deployment(params2)
+	require.NoError(t, err)
 	assert.Equal(t, d2.Spec.Template.Spec.HostNetwork, true)
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
@@ -222,17 +286,24 @@ func TestDeploymentFilterLabels(t *testing.T) {
 		"app.foo.bar": "1",
 	}
 
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "my-instance",
 			Labels: excludedLabels,
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
 	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
 
-	d := Deployment(cfg, logger, otelcol)
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
+	d, err := Deployment(params)
+	require.NoError(t, err)
 
 	assert.Len(t, d.ObjectMeta.Labels, 6)
 	for k := range excludedLabels {
@@ -240,9 +311,40 @@ func TestDeploymentFilterLabels(t *testing.T) {
 	}
 }
 
+func TestDeploymentFilterAnnotations(t *testing.T) {
+	excludedAnnotations := map[string]string{
+		"foo":         "1",
+		"app.foo.bar": "1",
+	}
+
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "my-instance",
+			Annotations: excludedAnnotations,
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{},
+	}
+
+	cfg := config.New(config.WithAnnotationFilters([]string{"foo*", "app.*.bar"}))
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
+	d, err := Deployment(params)
+	require.NoError(t, err)
+
+	assert.Len(t, d.ObjectMeta.Annotations, 0)
+	for k := range excludedAnnotations {
+		assert.NotContains(t, d.ObjectMeta.Annotations, k)
+	}
+}
+
 func TestDeploymentNodeSelector(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -250,31 +352,47 @@ func TestDeploymentNodeSelector(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := Deployment(params1)
+	require.NoError(t, err)
 
 	assert.Empty(t, d1.Spec.Template.Spec.NodeSelector)
 
 	// Test nodeSelector
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-nodeselector",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			HostNetwork: true,
-			NodeSelector: map[string]string{
-				"node-key": "node-value",
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				HostNetwork: true,
+				NodeSelector: map[string]string{
+					"node-key": "node-value",
+				},
 			},
 		},
 	}
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := Deployment(params2)
+	require.NoError(t, err)
 	assert.Equal(t, d2.Spec.Template.Spec.NodeSelector, map[string]string{"node-key": "node-value"})
 }
 
 func TestDeploymentPriorityClassName(t *testing.T) {
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -282,28 +400,44 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := Deployment(params1)
+	require.NoError(t, err)
 	assert.Empty(t, d1.Spec.Template.Spec.PriorityClassName)
 
 	priorityClassName := "test-class"
 
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			PriorityClassName: priorityClassName,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PriorityClassName: priorityClassName,
+			},
 		},
 	}
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := Deployment(params2)
+	require.NoError(t, err)
 	assert.Equal(t, priorityClassName, d2.Spec.Template.Spec.PriorityClassName)
 }
 
 func TestDeploymentAffinity(t *testing.T) {
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -311,27 +445,43 @@ func TestDeploymentAffinity(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := Deployment(params1)
+	require.NoError(t, err)
 	assert.Nil(t, d1.Spec.Template.Spec.Affinity)
 
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-priortyClassName",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Affinity: testAffinityValue,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Affinity: testAffinityValue,
+			},
 		},
 	}
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := Deployment(params2)
+	require.NoError(t, err)
 	assert.NotNil(t, d2.Spec.Template.Spec.Affinity)
 	assert.Equal(t, *testAffinityValue, *d2.Spec.Template.Spec.Affinity)
 }
 
 func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
@@ -339,79 +489,120 @@ func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
 
 	cfg := config.New()
 
-	d1 := Deployment(cfg, logger, otelcol1)
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := Deployment(params1)
+	require.NoError(t, err)
 	assert.Nil(t, d1.Spec.Template.Spec.TerminationGracePeriodSeconds)
 
 	gracePeriodSec := int64(60)
 
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-terminationGracePeriodSeconds",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			TerminationGracePeriodSeconds: &gracePeriodSec,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				TerminationGracePeriodSeconds: &gracePeriodSec,
+			},
 		},
 	}
 
 	cfg = config.New()
 
-	d2 := Deployment(cfg, logger, otelcol2)
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := Deployment(params2)
+	require.NoError(t, err)
 	assert.NotNil(t, d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
 	assert.Equal(t, gracePeriodSec, *d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
 }
 
 func TestDeploymentSetInitContainer(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			InitContainers: []v1.Container{
-				{
-					Name: "test",
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				InitContainers: []v1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
 		},
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
 	// test
-	d := Deployment(cfg, logger, otelcol)
+	d, err := Deployment(params)
+	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
+	assert.Equal(t, "true", d.Spec.Template.Annotations["prometheus.io/scrape"])
+	assert.Equal(t, "8888", d.Spec.Template.Annotations["prometheus.io/port"])
+	assert.Equal(t, "/metrics", d.Spec.Template.Annotations["prometheus.io/path"])
 	assert.Len(t, d.Spec.Template.Spec.InitContainers, 1)
 }
 
 func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	// Test default
-	otelcol1 := v1alpha1.OpenTelemetryCollector{
+	otelcol1 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
 	}
 
 	cfg := config.New()
-	d1 := Deployment(cfg, logger, otelcol1)
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+	d1, err := Deployment(params1)
+	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", d1.Name)
 	assert.Empty(t, d1.Spec.Template.Spec.TopologySpreadConstraints)
 
 	// Test TopologySpreadConstraints
-	otelcol2 := v1alpha1.OpenTelemetryCollector{
+	otelcol2 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance-topologyspreadconstraint",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			TopologySpreadConstraints: testTopologySpreadConstraintValue,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				TopologySpreadConstraints: testTopologySpreadConstraintValue,
+			},
 		},
 	}
 
 	cfg = config.New()
-	d2 := Deployment(cfg, logger, otelcol2)
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+	d2, err := Deployment(params2)
+	require.NoError(t, err)
 	assert.Equal(t, "my-instance-topologyspreadconstraint-collector", d2.Name)
 	assert.NotNil(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
 	assert.NotEmpty(t, d2.Spec.Template.Spec.TopologySpreadConstraints)
@@ -420,28 +611,114 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 
 func TestDeploymentAdditionalContainers(t *testing.T) {
 	// prepare
-	otelcol := v1alpha1.OpenTelemetryCollector{
+	otelcol := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-namespace",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			AdditionalContainers: []v1.Container{
-				{
-					Name: "test",
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				AdditionalContainers: []v1.Container{
+					{
+						Name: "test",
+					},
 				},
 			},
 		},
 	}
 	cfg := config.New()
 
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
 	// test
-	d := Deployment(cfg, logger, otelcol)
+	d, err := Deployment(params)
+	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, "my-instance-collector", d.Labels["app.kubernetes.io/name"])
-	assert.Equal(t, "true", d.Annotations["prometheus.io/scrape"])
-	assert.Equal(t, "8888", d.Annotations["prometheus.io/port"])
-	assert.Equal(t, "/metrics", d.Annotations["prometheus.io/path"])
+	assert.Equal(t, "true", d.Spec.Template.Annotations["prometheus.io/scrape"])
+	assert.Equal(t, "8888", d.Spec.Template.Annotations["prometheus.io/port"])
+	assert.Equal(t, "/metrics", d.Spec.Template.Annotations["prometheus.io/path"])
 	assert.Len(t, d.Spec.Template.Spec.Containers, 2)
 	assert.Equal(t, v1.Container{Name: "test"}, d.Spec.Template.Spec.Containers[0])
+}
+
+func TestDeploymentShareProcessNamespace(t *testing.T) {
+	// Test default
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := Deployment(params1)
+	require.NoError(t, err)
+	assert.False(t, *d1.Spec.Template.Spec.ShareProcessNamespace)
+
+	// Test hostNetwork=true
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-with-shareprocessnamespace",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ShareProcessNamespace: true,
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := Deployment(params2)
+	require.NoError(t, err)
+	assert.True(t, *d2.Spec.Template.Spec.ShareProcessNamespace)
+}
+
+func TestDeploymentDNSConfig(t *testing.T) {
+	// prepare
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				PodDNSConfig: v1.PodDNSConfig{
+					Nameservers: []string{"8.8.8.8"},
+					Searches:    []string{"my.dns.search.suffix"},
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
+	// test
+	d, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, v1.DNSPolicy("None"), d.Spec.Template.Spec.DNSPolicy)
+	assert.Equal(t, d.Spec.Template.Spec.DNSConfig.Nameservers, []string{"8.8.8.8"})
 }

@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package upgrade_test
 
@@ -24,7 +13,6 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 )
 
@@ -72,12 +60,13 @@ service:
 	// EXPECTED: drop logging args and configure logging parameters into config from args
 	up := &upgrade.VersionUpgrade{
 		Log:      logger,
-		Version:  version.Get(),
+		Version:  makeVersion("0.38.0"),
 		Client:   nil,
 		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 	}
-	res, err := up.ManagedInstance(context.Background(), existing)
+	resV1beta1, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
 	assert.NoError(t, err)
+	res := convertTov1alpha1(t, resV1beta1)
 
 	// verify
 	assert.Equal(t, map[string]string{
@@ -86,7 +75,7 @@ service:
 	}, res.Spec.Args)
 
 	// verify
-	assert.Equal(t, `exporters:
+	assert.YAMLEq(t, `exporters:
   otlp:
     endpoint: example.com
 receivers:
@@ -140,11 +129,12 @@ service:
 		"--arg1":        "",
 	}
 
-	res, err = up.ManagedInstance(context.Background(), existing)
+	resV1beta1, err = up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
 	assert.NoError(t, err)
+	res = convertTov1alpha1(t, resV1beta1)
 
 	// verify
-	assert.Equal(t, configWithLogging, res.Spec.Config)
+	assert.YAMLEq(t, configWithLogging, res.Spec.Config)
 	assert.Equal(t, map[string]string{
 		"--hii":  "hello",
 		"--arg1": "",

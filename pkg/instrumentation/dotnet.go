@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package instrumentation
 
@@ -33,14 +22,26 @@ const (
 	envDotNetOTelAutoHome               = "OTEL_DOTNET_AUTO_HOME"
 	dotNetCoreClrEnableProfilingEnabled = "1"
 	dotNetCoreClrProfilerID             = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
-	dotNetCoreClrProfilerPath           = "/otel-auto-instrumentation/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so"
-	dotNetAdditionalDepsPath            = "/otel-auto-instrumentation/AdditionalDeps"
-	dotNetOTelAutoHomePath              = "/otel-auto-instrumentation"
-	dotNetSharedStorePath               = "/otel-auto-instrumentation/store"
-	dotNetStartupHookPath               = "/otel-auto-instrumentation/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+	dotNetCoreClrProfilerGlibcPath      = "/otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so"
+	dotNetCoreClrProfilerMuslPath       = "/otel-auto-instrumentation-dotnet/linux-musl-x64/OpenTelemetry.AutoInstrumentation.Native.so"
+	dotNetAdditionalDepsPath            = "/otel-auto-instrumentation-dotnet/AdditionalDeps"
+	dotNetOTelAutoHomePath              = "/otel-auto-instrumentation-dotnet"
+	dotNetSharedStorePath               = "/otel-auto-instrumentation-dotnet/store"
+	dotNetStartupHookPath               = "/otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll"
+	dotnetVolumeName                    = volumeName + "-dotnet"
+	dotnetInitContainerName             = initContainerName + "-dotnet"
+	dotnetInstrMountPath                = "/otel-auto-instrumentation-dotnet"
 )
 
-func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (corev1.Pod, error) {
+// Supported .NET runtime identifiers (https://learn.microsoft.com/en-us/dotnet/core/rid-catalog), can be set by instrumentation.opentelemetry.io/inject-dotnet.
+const (
+	dotNetRuntimeLinuxGlibc = "linux-x64"
+	dotNetRuntimeLinuxMusl  = "linux-musl-x64"
+)
+
+func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runtime string, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
+
+	volume := instrVolume(dotNetSpec.VolumeClaimTemplate, dotnetVolumeName, dotNetSpec.VolumeSizeLimit)
 
 	// caller checks if there is at least one container.
 	container := &pod.Spec.Containers[index]
@@ -56,19 +57,24 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (cor
 		return pod, errors.New("OTEL_DOTNET_AUTO_HOME environment variable is already set in the container")
 	}
 
-	// check if OTEL_DOTNET_AUTO_HOME env var is already set in the .NET instrumentatiom spec
+	// check if OTEL_DOTNET_AUTO_HOME env var is already set in the .NET instrumentation spec
 	// if it is already set, then we assume that .NET Auto-instrumentation is already configured for this container
 	if getIndexOfEnv(dotNetSpec.Env, envDotNetOTelAutoHome) > -1 {
 		return pod, errors.New("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec")
 	}
 
-	// inject .NET instrumentation spec env vars.
-	for _, env := range dotNetSpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
+	coreClrProfilerPath := ""
+	switch runtime {
+	case "", dotNetRuntimeLinuxGlibc:
+		coreClrProfilerPath = dotNetCoreClrProfilerGlibcPath
+	case dotNetRuntimeLinuxMusl:
+		coreClrProfilerPath = dotNetCoreClrProfilerMuslPath
+	default:
+		return pod, fmt.Errorf("provided instrumentation.opentelemetry.io/dotnet-runtime annotation value '%s' is not supported", runtime)
 	}
+
+	// inject .NET instrumentation spec env vars.
+	container.Env = appendIfNotSet(container.Env, dotNetSpec.Env...)
 
 	const (
 		doNotConcatEnvValues = false
@@ -79,7 +85,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (cor
 
 	setDotNetEnvVar(container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerID, doNotConcatEnvValues)
 
-	setDotNetEnvVar(container, envDotNetCoreClrProfilerPath, dotNetCoreClrProfilerPath, doNotConcatEnvValues)
+	setDotNetEnvVar(container, envDotNetCoreClrProfilerPath, coreClrProfilerPath, doNotConcatEnvValues)
 
 	setDotNetEnvVar(container, envDotNetStartupHook, dotNetStartupHookPath, concatEnvValues)
 
@@ -90,27 +96,23 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int) (cor
 	setDotNetEnvVar(container, envDotNetSharedStore, dotNetSharedStorePath, concatEnvValues)
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-		Name:      volumeName,
-		MountPath: "/otel-auto-instrumentation",
+		Name:      volume.Name,
+		MountPath: dotnetInstrMountPath,
 	})
 
 	// We just inject Volumes and init containers for the first processed container.
-	if isInitContainerMissing(pod) {
-		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: volumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			}})
-
+	if isInitContainerMissing(pod, dotnetInitContainerName) {
+		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-			Name:      initContainerName,
+			Name:      dotnetInitContainerName,
 			Image:     dotNetSpec.Image,
-			Command:   []string{"cp", "-a", "/autoinstrumentation/.", "/otel-auto-instrumentation/"},
+			Command:   []string{"cp", "-r", "/autoinstrumentation/.", dotnetInstrMountPath},
 			Resources: dotNetSpec.Resources,
 			VolumeMounts: []corev1.VolumeMount{{
-				Name:      volumeName,
-				MountPath: "/otel-auto-instrumentation",
+				Name:      volume.Name,
+				MountPath: dotnetInstrMountPath,
 			}},
+			ImagePullPolicy: instSpec.ImagePullPolicy,
 		})
 	}
 	return pod, nil

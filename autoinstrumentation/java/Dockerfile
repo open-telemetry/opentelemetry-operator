@@ -3,7 +3,7 @@
 #    one init container will be created to copy the jar to your app's container.
 #  - Grant the necessary access to the jar. `chmod -R go+r /javaagent.jar`
 #  - For auto-instrumentation by container injection, the Linux command cp is
-#    used and must be availabe in the image.
+#    used and must be available in the image.
 FROM busybox
 
 ARG version

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: daemonset-test-collector
+spec:
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+status:
+  numberMisscheduled: 0
+  (desiredNumberScheduled == numberReady): true
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: daemonset-test-collector
+status:
+  containerStatuses:
+  - ready: true
+    started: true
+  phase: Running
+
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: daemonset-test
+status:
+  (starts_with(image, 'ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector')): true
+  scale:
+    (replicas >= `1`): true
+    (statusReplicas != ''): true
+  (version != ''): true

@@ -1,0 +1,34 @@
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/instance: default.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+prometheus_cr:
+  scrape_interval: 60s
+config:
+  scrape_configs:
+  - job_name: job-no-target-relabel
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod
+    metric_relabel_configs:
+      - action: replace
+        source_labels: [city]
+        separator: ","
+        regex: (ci.*)(name$)
+        replacement: "test_newest_1_$1"
+        target_label: city
+  - job_name: job-no-metric-relabel
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: "prometheus-reference-app"
+      - source_labels: [__meta_kubernetes_pod_label_test]
+        action: lowercase
+        target_label: "mytarget"
+  - job_name: job-no-relabel
+    scheme: http
+    kubernetes_sd_configs:
+      - role: pod

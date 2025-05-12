@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: otlp-metrics-traces
+spec:
+  # Avoid running this test case in parallel to prevent the deletion of shared resources used by multiple tests, specifically in the context of OpenShift user workload monitoring.
+  concurrent: false
+  namespace: chainsaw-otlp-metrics
+  steps:
+  - name: step-00
+    try:
+    - apply:
+        file: 00-install-tempo.yaml
+    - assert:
+        file: 00-assert.yaml
+  - name: step-01
+    try:
+    - apply:
+        file: 01-workload-monitoring.yaml
+    - assert:
+        file: 01-assert.yaml
+  - name: step-02
+    try:
+    - apply:
+        file: 02-otel-metrics-collector.yaml
+    - assert:
+        file: 02-assert.yaml
+  - name: step-03
+    try:
+    - apply:
+        file: 03-metrics-traces-gen.yaml
+    - assert:
+        file: 03-assert.yaml
+  - name: step-04
+    try:
+    - apply:
+        file: verify-traces.yaml
+    - assert:
+        file: assert-verify-traces.yaml
+  - name: step-05
+    try:
+    - script:
+        timeout: 5m
+        content: ./check_metrics.sh
+  - name: Run the must-gather and verify the contents
+    try:
+    - command:
+        entrypoint: oc
+        args:
+        - get
+        - pods
+        - -A
+        - -l control-plane=controller-manager
+        - -l app.kubernetes.io/name=opentelemetry-operator
+        - -o 
+        - jsonpath={.items[0].metadata.namespace}
+        outputs:
+        - name: OTEL_NAMESPACE
+          value: ($stdout)
+    - script:
+        env:
+        - name: otelnamespace
+          value: ($OTEL_NAMESPACE)
+        timeout: 5m
+        content: ./check_must_gather.sh

@@ -1,0 +1,9 @@
+apiVersion: batch/v1
+kind: Job 
+metadata: 
+  labels:
+    app: telemetrygen-traces
+    job-name: telemetrygen-traces
+  name: telemetrygen-traces
+status:
+  succeeded: 1

@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-with-sidecar
+  namespace: create-pm-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: pod-with-sidecar
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pod-with-sidecar
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      containers:
+        - name: myapp
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main

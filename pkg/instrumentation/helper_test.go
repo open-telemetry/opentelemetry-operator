@@ -1,24 +1,17 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package instrumentation
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 func TestInitContainerMissing(t *testing.T) {
@@ -36,7 +29,7 @@ func TestInitContainerMissing(t *testing.T) {
 							Name: "istio-init",
 						},
 						{
-							Name: initContainerName,
+							Name: javaInitContainerName,
 						},
 					},
 				},
@@ -67,7 +60,7 @@ func TestInitContainerMissing(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := isInitContainerMissing(test.pod)
+			result := isInitContainerMissing(test.pod, javaInitContainerName)
 			assert.Equal(t, test.expected, result)
 		})
 	}
@@ -88,7 +81,41 @@ func TestAutoInstrumentationInjected(t *testing.T) {
 							Name: "magic-init",
 						},
 						{
-							Name: initContainerName,
+							Name: nodejsInitContainerName,
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "AutoInstrumentation_Already_Inject_go",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{},
+					Containers: []corev1.Container{
+						{
+							Name: sideCarName,
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "AutoInstrumentation_Already_Inject_no_init_containers",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{},
+					Containers: []corev1.Container{
+						{
+							Name: "my-app",
+							Env: []corev1.EnvVar{
+								{
+									Name:  constants.EnvNodeName,
+									Value: "value",
+								},
+							},
 						},
 					},
 				},
@@ -121,6 +148,170 @@ func TestAutoInstrumentationInjected(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result := isAutoInstrumentationInjected(test.pod)
 			assert.Equal(t, test.expected, result)
+		})
+	}
+}
+
+func TestDuplicatedContainers(t *testing.T) {
+	tests := []struct {
+		name               string
+		containers         []string
+		expectedDuplicates error
+	}{
+		{
+			name:               "No duplicates",
+			containers:         []string{"app1", "app2", "app3", "app4", "app5"},
+			expectedDuplicates: nil,
+		},
+		{
+			name:               "Duplicates in containers",
+			containers:         []string{"app1", "app2", "app1", "app1", "app3", "app4", "app4"},
+			expectedDuplicates: fmt.Errorf("duplicated container names detected: [app1 app4]"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ok := findDuplicatedContainers(test.containers)
+			assert.Equal(t, test.expectedDuplicates, ok)
+		})
+	}
+}
+
+func TestInstrVolume(t *testing.T) {
+	tests := []struct {
+		name       string
+		volume     corev1.PersistentVolumeClaimTemplate
+		volumeName string
+		quantity   *resource.Quantity
+		expected   corev1.Volume
+	}{
+		{
+			name: "With volume",
+			volume: corev1.PersistentVolumeClaimTemplate{
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+				},
+			},
+			volumeName: "default-vol",
+			quantity:   nil,
+			expected: corev1.Volume{
+				Name: "default-vol",
+				VolumeSource: corev1.VolumeSource{
+					Ephemeral: &corev1.EphemeralVolumeSource{
+						VolumeClaimTemplate: &corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
+					},
+				}},
+		},
+		{
+			name:       "With volume size limit",
+			volume:     corev1.PersistentVolumeClaimTemplate{},
+			volumeName: "default-vol",
+			quantity:   &defaultVolumeLimitSize,
+			expected: corev1.Volume{
+				Name: "default-vol",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: &defaultVolumeLimitSize,
+					},
+				}},
+		},
+		{
+			name:       "No volume or size limit",
+			volume:     corev1.PersistentVolumeClaimTemplate{},
+			volumeName: "default-vol",
+			quantity:   nil,
+			expected: corev1.Volume{
+				Name: "default-vol",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: &defaultSize,
+					},
+				}},
+		},
+		{
+			name: "With volume and size limit",
+			volume: corev1.PersistentVolumeClaimTemplate{
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+				},
+			},
+			volumeName: "default-vol",
+			quantity:   &defaultVolumeLimitSize,
+			expected: corev1.Volume{
+				Name: "default-vol",
+				VolumeSource: corev1.VolumeSource{
+					Ephemeral: &corev1.EphemeralVolumeSource{
+						VolumeClaimTemplate: &corev1.PersistentVolumeClaimTemplate{
+							Spec: corev1.PersistentVolumeClaimSpec{
+								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							},
+						},
+					},
+				}},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res := instrVolume(test.volume, test.volumeName, test.quantity)
+			assert.Equal(t, test.expected, res)
+		})
+	}
+}
+
+func TestInstrWithContainers(t *testing.T) {
+	tests := []struct {
+		name           string
+		containers     instrumentationWithContainers
+		expectedResult int
+	}{
+		{
+			name:           "No containers",
+			containers:     instrumentationWithContainers{Containers: []string{}},
+			expectedResult: 0,
+		},
+		{
+			name:           "With containers",
+			containers:     instrumentationWithContainers{Containers: []string{"ct1"}},
+			expectedResult: 1,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res := isInstrWithContainers(test.containers)
+			assert.Equal(t, test.expectedResult, res)
+		})
+	}
+}
+
+func TestInstrWithoutContainers(t *testing.T) {
+	tests := []struct {
+		name           string
+		containers     instrumentationWithContainers
+		expectedResult int
+	}{
+		{
+			name:           "No containers",
+			containers:     instrumentationWithContainers{Containers: []string{}},
+			expectedResult: 1,
+		},
+		{
+			name:           "With containers",
+			containers:     instrumentationWithContainers{Containers: []string{"ct1"}},
+			expectedResult: 0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res := isInstrWithoutContainers(test.containers)
+			assert.Equal(t, test.expectedResult, res)
 		})
 	}
 }

@@ -2,9 +2,9 @@
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
-  name: simplest
+  name: otel-simplest
 spec:
-  mode: "deployment"
+  mode: deployment
   ingress:
     type: ingress
     hostname: "example.com"
@@ -18,11 +18,10 @@ spec:
           http:
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
-          exporters: [logging]
+          exporters: [debug]

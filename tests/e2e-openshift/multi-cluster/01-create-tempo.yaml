@@ -1,0 +1,6 @@
+apiVersion: tempo.grafana.com/v1alpha1
+kind: TempoMonolithic
+metadata:
+  name: multicluster
+  namespace: chainsaw-multi-cluster-receive
+spec: {}

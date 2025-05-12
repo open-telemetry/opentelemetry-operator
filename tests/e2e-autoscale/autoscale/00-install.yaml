@@ -37,14 +37,13 @@ spec:
     processors:
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
-          exporters: [logging]
+          exporters: [debug]
 ---
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
@@ -55,6 +54,7 @@ spec:
   maxReplicas: 2
   autoscaler:
     targetCPUUtilization: 99
+    targetMemoryUtilization: 99
     behavior:
       scaleUp:
         stabilizationWindowSeconds: 300
@@ -75,11 +75,10 @@ spec:
     processors:
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
-          exporters: [logging]
+          exporters: [debug]

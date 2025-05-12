@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package upgrade_test
 
@@ -26,11 +15,78 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 )
 
 var logger = logf.Log.WithName("unit-tests")
+
+func TestNeedsUpgrade(t *testing.T) {
+	up := &upgrade.VersionUpgrade{
+		Version: version.Version{OpenTelemetryCollector: "0.10.0"},
+	}
+
+	for _, tt := range []struct {
+		desc      string
+		collector v1beta1.OpenTelemetryCollector
+		expected  bool
+	}{
+		{
+			desc: "needs upgrade",
+			collector: v1beta1.OpenTelemetryCollector{
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.1.0",
+				},
+			},
+			expected: true,
+		},
+		{
+			desc: "already up-to-date",
+			collector: v1beta1.OpenTelemetryCollector{
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.10.0",
+				},
+			},
+			expected: false,
+		},
+		{
+			desc:      "empty version, already up-to-date",
+			collector: v1beta1.OpenTelemetryCollector{},
+			expected:  false,
+		},
+		{
+			desc: "needs upgrade, but is ManagementState = Unmanaged",
+			collector: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						ManagementState: v1beta1.ManagementStateUnmanaged,
+					},
+				},
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.1.0",
+				},
+			},
+			expected: false,
+		},
+		{
+			desc: "needs upgrade, but UpgradeStrategy = None",
+			collector: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					UpgradeStrategy: v1beta1.UpgradeStrategyNone,
+				},
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.1.0",
+				},
+			},
+			expected: false,
+		},
+	} {
+		t.Run(tt.desc, func(t *testing.T) {
+			assert.Equal(t, tt.expected, up.NeedsUpgrade(tt.collector))
+		})
+	}
+}
 
 func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 	const beginV = "0.0.1" // this is the first version we have an upgrade function
@@ -57,7 +113,7 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 			require.NoError(t, err)
 
 			// sanity check
-			persisted := &v1alpha1.OpenTelemetryCollector{}
+			persisted := &v1beta1.OpenTelemetryCollector{}
 			err = k8sClient.Get(context.Background(), nsn, persisted)
 			require.NoError(t, err)
 			require.Equal(t, beginV, persisted.Status.Version)
@@ -69,7 +125,7 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 			}
 
 			// test
-			err = up.ManagedInstances(context.Background())
+			err = up.Upgrade(context.Background(), *persisted)
 			assert.NoError(t, err)
 
 			// verify
@@ -81,6 +137,85 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 			assert.NoError(t, k8sClient.Delete(context.Background(), &existing))
 		})
 	}
+}
+
+func TestEnvVarUpdates(t *testing.T) {
+	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
+	collectorInstance := v1beta1.OpenTelemetryCollector{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "OpenTelemetryCollector",
+			APIVersion: "v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      nsn.Name,
+			Namespace: nsn.Namespace,
+		},
+		Status: v1beta1.OpenTelemetryCollectorStatus{
+			Version: "0.104.0",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Args: map[string]string{
+					"foo":           "bar",
+					"feature-gates": "+baz,-confmap.unifyEnvVarExpansion",
+				},
+			},
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"prometheus": nil,
+					},
+				},
+				Exporters: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"debug": []interface{}{},
+					},
+				},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"metrics": {
+							Exporters:  []string{"debug"},
+							Processors: nil,
+							Receivers:  []string{"prometheus"},
+						},
+					},
+				},
+			},
+		},
+	}
+	err := k8sClient.Create(context.Background(), &collectorInstance)
+	require.NoError(t, err)
+
+	collectorInstance.Status.Version = "0.104.0"
+	err = k8sClient.Status().Update(context.Background(), &collectorInstance)
+	require.NoError(t, err)
+	// sanity check
+	persisted := &v1beta1.OpenTelemetryCollector{}
+	err = k8sClient.Get(context.Background(), nsn, persisted)
+	require.NoError(t, err)
+	require.Equal(t, collectorInstance.Status.Version, persisted.Status.Version)
+
+	currentV := version.Get()
+	currentV.OpenTelemetryCollector = "0.122.0"
+	up := &upgrade.VersionUpgrade{
+		Log:      logger,
+		Version:  currentV,
+		Client:   k8sClient,
+		Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
+	}
+
+	// test
+	err = up.Upgrade(context.Background(), *persisted)
+	assert.NoError(t, err)
+
+	// verify
+	err = k8sClient.Get(context.Background(), nsn, persisted)
+	assert.NoError(t, err)
+	assert.Equal(t, upgrade.Latest.String(), persisted.Status.Version)
+	assert.NotContainsf(t, persisted.Spec.Args["feature-gates"], "-confmap.unifyEnvVarExpansion", "still has env var")
+
+	// cleanup
+	assert.NoError(t, k8sClient.Delete(context.Background(), &collectorInstance))
 }
 
 func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
@@ -107,7 +242,7 @@ func TestUpgradeUpToLatestKnownVersion(t *testing.T) {
 				Recorder: record.NewFakeRecorder(upgrade.RecordBufferSize),
 			}
 			// test
-			res, err := up.ManagedInstance(context.Background(), existing)
+			res, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
 
 			// verify
 			assert.NoError(t, err)
@@ -147,7 +282,7 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 			}
 
 			// test
-			res, err := up.ManagedInstance(context.Background(), existing)
+			res, err := up.ManagedInstance(context.Background(), convertTov1beta1(t, existing))
 			if tt.failureExpected {
 				assert.Error(t, err)
 			} else {
@@ -160,10 +295,28 @@ func TestVersionsShouldNotBeChanged(t *testing.T) {
 	}
 }
 
+const collectorCfg = `---
+receivers:
+  otlp:
+    protocols:
+      grpc: {}
+processors:
+  batch: {}
+exporters:
+  otlp:
+    endpoint: "otlp:4317"
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [otlp]
+`
+
 func makeOtelcol(nsn types.NamespacedName, managementState v1alpha1.ManagementStateType) v1alpha1.OpenTelemetryCollector {
 	return v1alpha1.OpenTelemetryCollector{
 		Spec: v1alpha1.OpenTelemetryCollectorSpec{
 			ManagementState: managementState,
+			Config:          collectorCfg,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nsn.Name,
@@ -173,4 +326,18 @@ func makeOtelcol(nsn types.NamespacedName, managementState v1alpha1.ManagementSt
 			},
 		},
 	}
+}
+
+func convertTov1beta1(t *testing.T, collector v1alpha1.OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
+	betacollector := v1beta1.OpenTelemetryCollector{}
+	err := collector.ConvertTo(&betacollector)
+	require.NoError(t, err)
+	return betacollector
+}
+
+func convertTov1alpha1(t *testing.T, collector v1beta1.OpenTelemetryCollector) v1alpha1.OpenTelemetryCollector {
+	alphacollector := v1alpha1.OpenTelemetryCollector{}
+	err := alphacollector.ConvertFrom(&collector)
+	require.NoError(t, err)
+	return alphacollector
 }

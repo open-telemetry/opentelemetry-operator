@@ -1,0 +1,127 @@
+apiVersion: v1
+automountServiceAccountToken: true
+kind: ServiceAccount
+metadata:
+  name: ta
+  namespace: create-sm-prometheus
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: create-sm-prometheus
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - nodes
+  - services
+  - endpoints
+  - configmaps
+  - secrets
+  - namespaces
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  - services
+  - endpoints
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  - podmonitors
+  verbs:
+  - get
+  - watch
+  - list
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: simplest-targetallocator-create-sm-prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: create-sm-prometheus
+subjects:
+- kind: ServiceAccount
+  name: ta
+  namespace: create-sm-prometheus
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+  namespace: create-sm-prometheus
+spec:
+  config: |
+    receivers:
+      prometheus:
+        config:
+          scrape_configs: []
+
+    processors:
+
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:9090
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          exporters: [prometheus]
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+    observability:
+      metrics:
+        enableMetrics: true
+    prometheusCR:
+      enabled: true
+    serviceAccount: ta
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-metrics
+  namespace: create-sm-prometheus
+spec:
+  template:
+    spec:
+      containers:
+      - args:
+        - /bin/sh
+        - -c
+        - curl -s http://simplest-targetallocator/jobs | grep "targetallocator"
+        image: curlimages/curl
+        name: check-metrics
+      restartPolicy: OnFailure

@@ -1,48 +1,68 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package targetallocator
 
 import (
+	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
-// Build is currently unused, but will be implemented to solve
-// https://github.com/open-telemetry/opentelemetry-operator/issues/1876
-func Build(params manifests.Params) ([]client.Object, error) {
+const (
+	ComponentOpenTelemetryTargetAllocator = "opentelemetry-targetallocator"
+)
+
+// Build creates the manifest for the TargetAllocator resource.
+func Build(params Params) ([]client.Object, error) {
 	var resourceManifests []client.Object
-	if !params.Instance.Spec.TargetAllocator.Enabled {
-		return resourceManifests, nil
-	}
-	resourceFactories := []manifests.K8sManifestFactory{
+	resourceFactories := []manifests.K8sManifestFactory[Params]{
 		manifests.Factory(ConfigMap),
-		manifests.FactoryWithoutError(Deployment),
+		manifests.Factory(Deployment),
 		manifests.FactoryWithoutError(ServiceAccount),
 		manifests.FactoryWithoutError(Service),
+		manifests.Factory(PodDisruptionBudget),
 	}
+
+	if params.TargetAllocator.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServiceMonitor))
+	}
+
+	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+		resourceFactories = append(resourceFactories,
+			manifests.FactoryWithoutError(SelfSignedIssuer),
+			manifests.FactoryWithoutError(CACertificate),
+			manifests.FactoryWithoutError(CAIssuer),
+			manifests.FactoryWithoutError(ServingCertificate),
+			manifests.FactoryWithoutError(ClientCertificate),
+		)
+	}
+
 	for _, factory := range resourceFactories {
-		res, err := factory(params.Config, params.Log, params.Instance)
+		res, err := factory(params)
 		if err != nil {
 			return nil, err
-		} else if res != nil {
-			// because of pointer semantics, res is still nil-able here as this is an interface pointer
-			// read here for details:
-			// https://github.com/open-telemetry/opentelemetry-operator/pull/1965#discussion_r1281705719
+		} else if manifests.ObjectIsNotNil(res) {
 			resourceManifests = append(resourceManifests, res)
 		}
 	}
 	return resourceManifests, nil
+}
+
+type Params struct {
+	Client          client.Client
+	Recorder        record.EventRecorder
+	Scheme          *runtime.Scheme
+	Log             logr.Logger
+	Collector       *v1beta1.OpenTelemetryCollector
+	TargetAllocator v1alpha1.TargetAllocator
+	Config          config.Config
 }

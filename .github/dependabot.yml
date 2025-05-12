@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: gomod
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
     # Create a group of dependencies to be updated together in one pull request
     groups:
       golang-org-x:
@@ -21,63 +21,35 @@ updates:
         patterns:
           - "k8s.io/*"
           - "sigs.k8s.io/*"
-  - package-ecosystem: gomod
-    directory: /cmd/operator-opamp-bridge
-    schedule:
-      interval: daily
-    groups:
-      golang-org-x:
+      otel:
         patterns:
-          - "golang.org/x/*"
-      prometheus:
-        patterns:
-          - "github.com/prometheus-operator/prometheus-operator"
-          - "github.com/prometheus-operator/prometheus-operator/*"
-          - "github.com/prometheus/prometheus"
-          - "github.com/prometheus/prometheus/*"
-          - "github.com/prometheus/client_go"
-          - "github.com/prometheus/client_go/*"
-      kubernetes:
-        patterns:
-          - "k8s.io/*"
-          - "sigs.k8s.io/*"
-  - package-ecosystem: gomod
-    directory: /cmd/otel-allocator
-    schedule:
-      interval: daily
-    groups:
-      golang-org-x:
-        patterns:
-          - "golang.org/x/*"
-      prometheus:
-        patterns:
-          - "github.com/prometheus-operator/prometheus-operator"
-          - "github.com/prometheus-operator/prometheus-operator/*"
-          - "github.com/prometheus/prometheus"
-          - "github.com/prometheus/prometheus/*"
-          - "github.com/prometheus/client_go"
-          - "github.com/prometheus/client_go/*"
-      kubernetes:
-        patterns:
-          - "k8s.io/*"
-          - "sigs.k8s.io/*"
+          - "go.opentelemetry.io/otel"
+          - "go.opentelemetry.io/otel/*"
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
+    groups:
+      gha-docker:
+        patterns:
+          - "docker/*"
 
   - package-ecosystem: docker
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
+    ignore:
+      # Ignore minor version updates for kind node images
+      - dependency-name: "kindest/node*"
+        update-types: [ "version-update:semver-minor" ]
 
   - package-ecosystem: docker
     directory: /cmd/otel-allocator
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: docker
     directory: /cmd/operator-opamp-bridge
     schedule:
-      interval: daily
+      interval: weekly

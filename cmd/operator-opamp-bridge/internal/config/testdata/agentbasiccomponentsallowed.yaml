@@ -1,0 +1,22 @@
+endpoint: ws://127.0.0.1:4320/v1/opamp
+capabilities:
+  AcceptsRemoteConfig: true
+  ReportsEffectiveConfig: true
+  AcceptsPackages: false
+  ReportsPackageStatuses: false
+  ReportsOwnTraces: true
+  ReportsOwnMetrics: true
+  ReportsOwnLogs: true
+  AcceptsOpAMPConnectionSettings: true
+  AcceptsOtherConnectionSettings: true
+  AcceptsRestartCommand: true
+  ReportsHealth: true
+  ReportsRemoteConfig: true
+componentsAllowed:
+  receivers:
+    - otlp
+  processors:
+    - memory_limiter
+    - batch
+  exporters:
+    - debug

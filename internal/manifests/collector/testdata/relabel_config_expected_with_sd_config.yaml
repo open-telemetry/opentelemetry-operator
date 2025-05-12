@@ -1,6 +1,5 @@
-exporters: null
-logging: null
-processors: null
+exporters:
+  debug:
 receivers:
   prometheus:
     config:
@@ -51,7 +50,6 @@ service:
   pipelines:
     metrics:
       exporters:
-      - logging
-      processors: []
+      - debug
       receivers:
       - prometheus

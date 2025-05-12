@@ -1,29 +1,17 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package adapters_test
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
 	"testing"
 
-	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
-
 	"github.com/stretchr/testify/assert"
+
+	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 )
 
 func TestExtractPromConfigFromConfig(t *testing.T) {
@@ -118,7 +106,85 @@ func TestExtractPromConfigFromNullConfig(t *testing.T) {
 }
 
 func TestUnescapeDollarSignsInPromConfig(t *testing.T) {
-	actual := `
+	testCases := []struct {
+		description string
+		input       string
+		expected    string
+	}{
+		{
+			description: "no scrape configs",
+			input: `
+receivers:
+  prometheus:
+    config:
+      scrape_configs: []
+`,
+			expected: `
+receivers:
+  prometheus:
+    config:
+      scrape_configs: []
+`,
+		},
+		{
+			description: "only metric relabellings",
+			input: `
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: 'example'
+        metric_relabel_configs:
+        - source_labels: ['job']
+          target_label: 'job'
+          replacement: '$$1_$2'
+`,
+			expected: `
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: 'example'
+        metric_relabel_configs:
+        - source_labels: ['job']
+          target_label: 'job'
+          replacement: '$1_$2'
+`,
+		},
+		{
+			description: "only target relabellings",
+			input: `
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: 'example'
+        relabel_configs:
+        - source_labels: ['__meta_service_id']
+          target_label: 'job'
+          replacement: 'my_service_$$1'
+        - source_labels: ['__meta_service_name']
+          target_label: 'instance'
+          replacement: '$1'
+`,
+			expected: `
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: 'example'
+        relabel_configs:
+        - source_labels: ['__meta_service_id']
+          target_label: 'job'
+          replacement: 'my_service_$1'
+        - source_labels: ['__meta_service_name']
+          target_label: 'instance'
+          replacement: '$1'
+`,
+		},
+		{
+			description: "full",
+			input: `
 receivers:
   prometheus:
     config:
@@ -135,8 +201,8 @@ receivers:
         - source_labels: ['job']
           target_label: 'job'
           replacement: '$$1_$2'
-`
-	expected := `
+`,
+			expected: `
 receivers:
   prometheus:
     config:
@@ -153,20 +219,26 @@ receivers:
         - source_labels: ['job']
           target_label: 'job'
           replacement: '$1_$2'
-`
-
-	config, err := ta.UnescapeDollarSignsInPromConfig(actual)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
+`,
+		},
 	}
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.description, func(t *testing.T) {
+			config, err := ta.UnescapeDollarSignsInPromConfig(testCase.input)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
 
-	expectedConfig, err := ta.UnescapeDollarSignsInPromConfig(expected)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
+			expectedConfig, err := ta.UnescapeDollarSignsInPromConfig(testCase.expected)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
 
-	if !reflect.DeepEqual(config, expectedConfig) {
-		t.Errorf("unexpected config: got %v, want %v", config, expectedConfig)
+			if !reflect.DeepEqual(config, expectedConfig) {
+				t.Errorf("unexpected config: got %v, want %v", config, expectedConfig)
+			}
+		})
 	}
 }
 
@@ -302,66 +374,53 @@ func TestAddTAConfigToPromConfig(t *testing.T) {
 
 func TestValidatePromConfig(t *testing.T) {
 	testCases := []struct {
-		description                   string
-		config                        map[interface{}]interface{}
-		targetAllocatorEnabled        bool
-		targetAllocatorRewriteEnabled bool
-		expectedError                 error
+		description            string
+		config                 map[interface{}]interface{}
+		targetAllocatorEnabled bool
+		expectedError          error
 	}{
 		{
-			description:                   "target_allocator and rewrite enabled",
-			config:                        map[interface{}]interface{}{},
-			targetAllocatorEnabled:        true,
-			targetAllocatorRewriteEnabled: true,
-			expectedError:                 nil,
+			description:            "target_allocator enabled",
+			config:                 map[interface{}]interface{}{},
+			targetAllocatorEnabled: true,
+			expectedError:          nil,
 		},
 		{
 			description: "target_allocator enabled, target_allocator section present",
 			config: map[interface{}]interface{}{
 				"target_allocator": map[interface{}]interface{}{},
 			},
-			targetAllocatorEnabled:        true,
-			targetAllocatorRewriteEnabled: false,
-			expectedError:                 nil,
+			targetAllocatorEnabled: true,
+			expectedError:          nil,
 		},
 		{
 			description: "target_allocator enabled, config section present",
 			config: map[interface{}]interface{}{
 				"config": map[interface{}]interface{}{},
 			},
-			targetAllocatorEnabled:        true,
-			targetAllocatorRewriteEnabled: false,
-			expectedError:                 nil,
-		},
-		{
-			description:                   "target_allocator enabled, neither section present",
-			config:                        map[interface{}]interface{}{},
-			targetAllocatorEnabled:        true,
-			targetAllocatorRewriteEnabled: false,
-			expectedError:                 errors.New("either target allocator or prometheus config needs to be present"),
+			targetAllocatorEnabled: true,
+			expectedError:          nil,
 		},
 		{
 			description: "target_allocator disabled, config section present",
 			config: map[interface{}]interface{}{
 				"config": map[interface{}]interface{}{},
 			},
-			targetAllocatorEnabled:        false,
-			targetAllocatorRewriteEnabled: false,
-			expectedError:                 nil,
+			targetAllocatorEnabled: false,
+			expectedError:          nil,
 		},
 		{
-			description:                   "target_allocator disabled, config section not present",
-			config:                        map[interface{}]interface{}{},
-			targetAllocatorEnabled:        false,
-			targetAllocatorRewriteEnabled: false,
-			expectedError:                 fmt.Errorf("no %s available as part of the configuration", "prometheusConfig"),
+			description:            "target_allocator disabled, config section not present",
+			config:                 map[interface{}]interface{}{},
+			targetAllocatorEnabled: false,
+			expectedError:          fmt.Errorf("no %s available as part of the configuration", "prometheusConfig"),
 		},
 	}
 
 	for _, testCase := range testCases {
 		testCase := testCase
 		t.Run(testCase.description, func(t *testing.T) {
-			err := ta.ValidatePromConfig(testCase.config, testCase.targetAllocatorEnabled, testCase.targetAllocatorRewriteEnabled)
+			err := ta.ValidatePromConfig(testCase.config, testCase.targetAllocatorEnabled)
 			assert.Equal(t, testCase.expectedError, err)
 		})
 	}
@@ -447,4 +506,46 @@ func TestValidateTargetAllocatorConfig(t *testing.T) {
 			assert.Equal(t, testCase.expectedError, err)
 		})
 	}
+}
+
+func TestAddTAConfigToPromConfigWithTLSConfig(t *testing.T) {
+	t.Run("should return expected prom config map with TA config and TLS config", func(t *testing.T) {
+		cfg := map[interface{}]interface{}{
+			"config": map[interface{}]interface{}{
+				"scrape_configs": []interface{}{
+					map[interface{}]interface{}{
+						"job_name": "test_job",
+						"static_configs": []interface{}{
+							map[interface{}]interface{}{
+								"targets": []interface{}{
+									"localhost:9090",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		taServiceName := "test-targetallocator"
+
+		expectedResult := map[interface{}]interface{}{
+			"config": map[interface{}]interface{}{},
+			"target_allocator": map[interface{}]interface{}{
+				"endpoint":     "https://test-targetallocator:443",
+				"interval":     "30s",
+				"collector_id": "${POD_NAME}",
+				"tls": map[interface{}]interface{}{
+					"ca_file":   "ca.crt",
+					"cert_file": "tls.crt",
+					"key_file":  "tls.key",
+				},
+			},
+		}
+
+		result, err := ta.AddTAConfigToPromConfig(cfg, taServiceName, ta.WithTLSConfig("ca.crt", "tls.crt", "tls.key", taServiceName))
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedResult, result)
+	})
 }

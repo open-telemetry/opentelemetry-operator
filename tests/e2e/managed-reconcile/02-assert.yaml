@@ -52,22 +52,30 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: simplest-collector
+  name: simplest-collector-d5e146a9
 data:
   collector.yaml: |
     receivers:
       otlp:
         protocols:
           grpc:
+            endpoint: 0.0.0.0:4317
           http:
-    processors:
-
+            endpoint: 0.0.0.0:4318
     exporters:
-      logging:
-
+      debug: null
     service:
+      telemetry:
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
       pipelines:
         traces:
-          receivers: [otlp]
-          processors: []
-          exporters: [logging]
+          exporters:
+            - debug
+          receivers:
+            - otlp

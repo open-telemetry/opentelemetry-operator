@@ -10,14 +10,48 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
-  CURRENT_KIND_VERSION: 0.20.0
-  LEGACY_KIND_VERSION: 0.17.0  # for K8s versions latest kind doesn't support anymore  
+  IMAGE_ARCHIVE_FILENAME: images.tar
+  VERSION: e2e
 
 jobs:
+  build-test-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up Go
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+        id: setup-go
+        with:
+          go-version: "~1.24.3"
+
+      - name: Cache tools
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: bin
+          key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
+
+      - name: Install tools
+        run: make install-tools
+
+      - name: Build test image archive
+        run: make container-image-archive IMAGE_ARCHIVE=${IMAGE_ARCHIVE_FILENAME} VERSION=${VERSION}
+
+      - name: Upload test image archive
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Test image archive
+          path: ${{ env.IMAGE_ARCHIVE_FILENAME }}
+          if-no-files-found: 'error'
+          retention-days: 1
+
   e2e-tests:
-    name: End-to-end tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+    needs: [build-test-images]
     strategy:
       fail-fast: false
       matrix:
@@ -25,43 +59,85 @@ jobs:
        # All Kubernetes version in between expose the same APIs, hence the operator
        # should be compatible with them.
        kube-version:
-       - "1.19"
-       - "1.27"
+         - "1.23"
+         - "1.32"
        group:
-         - e2e e2e-upgrade
-         - e2e-prometheuscr
+         - e2e
+         - e2e-automatic-rbac
          - e2e-autoscale
-
+         - e2e-instrumentation
+         - e2e-opampbridge
+         - e2e-pdb
+         - e2e-prometheuscr
+         - e2e-targetallocator
+         - e2e-targetallocator-cr
+         - e2e-upgrade
+         - e2e-multi-instrumentation
+         - e2e-metadata-filters
+         - e2e-ta-collector-mtls
+       include:
+         - group: e2e-instrumentation
+           setup: "add-instrumentation-params prepare-e2e"
+         - group: e2e-multi-instrumentation
+           setup: "add-instrumentation-params prepare-e2e"
+         - group: e2e-metadata-filters
+           setup: "add-operator-arg OPERATOR_ARG='--annotations-filter=.*filter.out --annotations-filter=config.*.gke.io.* --labels-filter=.*filter.out' prepare-e2e"
+         - group: e2e-ta-collector-mtls
+           setup: "add-operator-arg OPERATOR_ARG='--feature-gates=operator.targetallocator.mtls' add-certmanager-permissions prepare-e2e"
+         - group: e2e-automatic-rbac
+           setup: "add-rbac-permissions-to-operator prepare-e2e"
+         - group: e2e-native-sidecar
+           setup: "add-operator-arg OPERATOR_ARG='--feature-gates=operator.sidecarcontainers.native' prepare-e2e"
+           kube-version: "1.29"
+         - group: e2e-targetallocator
+           setup: "enable-targetallocator-cr prepare-e2e"
+         - group: e2e-targetallocator-cr
+           setup: "enable-targetallocator-cr prepare-e2e"
     steps:
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: "1.21"
-
-    - name: Setup kind
-      env:
-        KIND_VERSION: ${{ matrix.kube_version >= 1.21 && env.KIND_VERSION || env.LEGACY_KIND_VERSION }}
-      run: go install sigs.k8s.io/kind@v${KIND_VERSION}
-
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v3
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - name: Set up Go
+      uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+      id: setup-go
+      with:
+        go-version: "~1.24.3"
 
-    - name: "install kuttl"
-      run: ./hack/install-kuttl.sh
+    - name: Cache tools
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      with:
+        path: bin
+        key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
 
-    - name: "run tests"
+    - name: Install tools
+      run: make install-tools
+
+    - name: Download test image archive
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      with:
+        name: Test image archive
+
+    - name: Prepare e2e tests
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
-      run: make prepare-e2e ${{ matrix.group }} KUBE_VERSION=$KUBE_VERSION VERSION=e2e
-
+      run: |
+        set -e
+        make ${{ matrix.setup != '' && matrix.setup || 'prepare-e2e' }} KUBE_VERSION=$KUBE_VERSION VERSION=$VERSION IMAGE_ARCHIVE=$IMAGE_ARCHIVE_FILENAME
+    - name: Run e2e tests
+      env:
+        KUBE_VERSION: ${{ matrix.kube-version }}
+      run: |
+        set -e
+        make ${{ matrix.group }}
     - name: "log operator if failed"
       if: ${{ failure() }}
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
-      run: make e2e-log-operator KUBE_VERSION=$KUBE_VERSION
+      run: |
+        set -e
+        make e2e-log-operator KUBE_VERSION=$KUBE_VERSION
 
   e2e-tests-check:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: always()
     needs: [e2e-tests]
     steps:

@@ -7,7 +7,6 @@ spec:
   mode: statefulset
   targetAllocator:
     enabled: true
-    image: "local/opentelemetry-operator-targetallocator:e2e"
     serviceAccount: ta
     prometheusCR:
       enabled: true
@@ -31,9 +30,10 @@ spec:
     processors:
 
     exporters:
-      logging:
+      debug:
     extensions:
       health_check:
+        endpoint: "0.0.0.0:13133"
     service:
       telemetry:
         metrics:
@@ -43,6 +43,5 @@ spec:
       pipelines:
         traces:
           receivers: [jaeger]
-          processors: []
-          exporters: [logging]
+          exporters: [debug]
 

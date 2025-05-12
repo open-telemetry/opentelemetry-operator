@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: env-vars
+spec:
+  steps:
+    - name: step-00
+      try:
+        - apply:
+            file: 00-install-collector.yaml
+        - apply:
+            file: 00-install-instrumentation.yaml
+    # Deployment
+    - name: step-01
+      try:
+        - apply:
+            file: 01-deployment.yaml
+        - assert:
+            file: 01-assert.yaml
+      catch:
+        - podLogs:
+            selector: app=my-deploy
+    # CronJob
+    - name: step-02
+      try:
+        - apply:
+            file: 02-cronjob.yaml
+        - command:
+            entrypoint: kubectl
+            args:
+              - -n
+              - ${NAMESPACE}
+              - create
+              - job
+              - --from
+              - cronjob/my-cron-job
+              - my-cron-job-exec
+        - assert:
+            file: 02-assert.yaml
+      catch:
+        - podLogs:
+            selector: job-name=my-cron-job-exec
+    # Job
+    - name: step-03
+      try:
+        - apply:
+            file: 03-job.yaml
+        - assert:
+            file: 03-assert.yaml
+      catch:
+        - podLogs:
+            selector: job-name=my-job

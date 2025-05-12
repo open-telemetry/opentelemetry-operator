@@ -1,28 +1,20 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package config
 
 import (
-	"regexp"
-	"strings"
-	"time"
-
 	"github.com/go-logr/logr"
+	"go.uber.org/zap/zapcore"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
+	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/autodetect"
 )
 
 // Option represents one specific configuration option.
@@ -38,26 +30,35 @@ type options struct {
 	autoInstrumentationNodeJSImage      string
 	autoInstrumentationPythonImage      string
 	autoInstrumentationApacheHttpdImage string
+	autoInstrumentationNginxImage       string
 	collectorImage                      string
 	collectorConfigMapEntry             string
+	createRBACPermissions               autoRBAC.Availability
+	enableMultiInstrumentation          bool
+	enableApacheHttpdInstrumentation    bool
+	enableDotNetInstrumentation         bool
+	enableGoInstrumentation             bool
+	enableNginxInstrumentation          bool
+	enablePythonInstrumentation         bool
+	enableNodeJSInstrumentation         bool
+	enableJavaInstrumentation           bool
 	targetAllocatorConfigMapEntry       string
+	operatorOpAMPBridgeConfigMapEntry   string
 	targetAllocatorImage                string
 	operatorOpAMPBridgeImage            string
-	onOpenShiftRoutesChange             changeHandler
+	openshiftRoutesAvailability         openshift.RoutesAvailability
+	prometheusCRAvailability            prometheus.Availability
+	certManagerAvailability             certmanager.Availability
+	targetAllocatorAvailability         targetallocator.Availability
+	collectorAvailability               collector.Availability
+	ignoreMissingCollectorCRDs          bool
 	labelsFilter                        []string
-	openshiftRoutes                     openshiftRoutesStore
-	hpaVersion                          hpaVersionStore
-	autoDetectFrequency                 time.Duration
+	annotationsFilter                   []string
 }
 
 func WithAutoDetect(a autodetect.AutoDetect) Option {
 	return func(o *options) {
 		o.autoDetect = a
-	}
-}
-func WithAutoDetectFrequency(t time.Duration) Option {
-	return func(o *options) {
-		o.autoDetectFrequency = t
 	}
 }
 func WithTargetAllocatorImage(s string) Option {
@@ -80,28 +81,59 @@ func WithCollectorConfigMapEntry(s string) Option {
 		o.collectorConfigMapEntry = s
 	}
 }
+func WithEnableMultiInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableMultiInstrumentation = s
+	}
+}
+func WithEnableApacheHttpdInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableApacheHttpdInstrumentation = s
+	}
+}
+func WithEnableDotNetInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableDotNetInstrumentation = s
+	}
+}
+func WithEnableGoInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableGoInstrumentation = s
+	}
+}
+func WithEnableNginxInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableNginxInstrumentation = s
+	}
+}
+func WithEnableJavaInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableJavaInstrumentation = s
+	}
+}
+func WithEnablePythonInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enablePythonInstrumentation = s
+	}
+}
+func WithEnableNodeJSInstrumentation(s bool) Option {
+	return func(o *options) {
+		o.enableNodeJSInstrumentation = s
+	}
+}
 func WithTargetAllocatorConfigMapEntry(s string) Option {
 	return func(o *options) {
 		o.targetAllocatorConfigMapEntry = s
 	}
 }
+func WithOperatorOpAMPBridgeConfigMapEntry(s string) Option {
+	return func(o *options) {
+		o.operatorOpAMPBridgeConfigMapEntry = s
+	}
+}
 func WithLogger(logger logr.Logger) Option {
 	return func(o *options) {
 		o.logger = logger
-	}
-}
-
-func WithOnOpenShiftRoutesChangeCallback(f func() error) Option {
-	return func(o *options) {
-		if o.onOpenShiftRoutesChange == nil {
-			o.onOpenShiftRoutesChange = newOnChange()
-		}
-		o.onOpenShiftRoutesChange.Register(f)
-	}
-}
-func WithPlatform(ora autodetect.OpenShiftRoutesAvailability) Option {
-	return func(o *options) {
-		o.openshiftRoutes.Set(ora)
 	}
 }
 func WithVersion(v version.Version) Option {
@@ -146,27 +178,61 @@ func WithAutoInstrumentationApacheHttpdImage(s string) Option {
 	}
 }
 
+func WithAutoInstrumentationNginxImage(s string) Option {
+	return func(o *options) {
+		o.autoInstrumentationNginxImage = s
+	}
+}
+
+func WithOpenShiftRoutesAvailability(os openshift.RoutesAvailability) Option {
+	return func(o *options) {
+		o.openshiftRoutesAvailability = os
+	}
+}
+
+func WithPrometheusCRAvailability(pcrd prometheus.Availability) Option {
+	return func(o *options) {
+		o.prometheusCRAvailability = pcrd
+	}
+}
+
+func WithRBACPermissions(rAuto autoRBAC.Availability) Option {
+	return func(o *options) {
+		o.createRBACPermissions = rAuto
+	}
+}
+
+func WithCertManagerAvailability(cmAvl certmanager.Availability) Option {
+	return func(o *options) {
+		o.certManagerAvailability = cmAvl
+	}
+}
+
 func WithLabelFilters(labelFilters []string) Option {
 	return func(o *options) {
+		o.labelsFilter = append(o.labelsFilter, labelFilters...)
+	}
+}
 
-		filters := []string{}
-		for _, pattern := range labelFilters {
-			var result strings.Builder
+// WithAnnotationFilters is additive if called multiple times. It works off of a few default filters
+// to prevent unnecessary rollouts. The defaults include the following:
+// * kubectl.kubernetes.io/last-applied-configuration.
+func WithAnnotationFilters(annotationFilters []string) Option {
+	return func(o *options) {
+		o.annotationsFilter = append(o.annotationsFilter, annotationFilters...)
+	}
+}
 
-			for i, literal := range strings.Split(pattern, "*") {
+func WithEncodeLevelFormat(s string) zapcore.LevelEncoder {
+	if s == "lowercase" {
+		return zapcore.LowercaseLevelEncoder
+	} else {
+		return zapcore.CapitalLevelEncoder
+	}
+}
 
-				// Replace * with .*
-				if i > 0 {
-					result.WriteString(".*")
-				}
-
-				// Quote any regular expression meta characters in the
-				// literal text.
-				result.WriteString(regexp.QuoteMeta(literal))
-			}
-			filters = append(filters, result.String())
-		}
-
-		o.labelsFilter = filters
+func WithIgnoreMissingCollectorCRDs(b bool) Option {
+	return func(o *options) {
+		o.ignoreMissingCollectorCRDs = b
 	}
 }

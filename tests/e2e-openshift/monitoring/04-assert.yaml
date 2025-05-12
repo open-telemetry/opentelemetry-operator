@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: cluster-collector2-collector
+  name: cluster-collector2-collector
+spec:
+  endpoints:
+  - port: prometheus
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      operator.opentelemetry.io/collector-service-type: base

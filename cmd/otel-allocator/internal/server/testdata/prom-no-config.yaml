@@ -1,0 +1,8 @@
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/instance: default.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+prometheus_cr:
+  scrape_interval: 60s
+config:
+  scrape_configs:

@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/inject-go: "true"
+    instrumentation.opentelemetry.io/otel-go-auto-target-exe: /rolldice
+    sidecar.opentelemetry.io/inject: "true"
+  labels:
+    app: my-golang
+spec:
+  containers:
+  - name: myapp
+    ports:
+    - containerPort: 8095
+      protocol: TCP
+    readinessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /rolldice
+        port: 8095
+        scheme: HTTP
+      initialDelaySeconds: 5
+      periodSeconds: 15
+      successThreshold: 1
+      timeoutSeconds: 2
+  - args:
+    - --config=env:OTEL_CONFIG
+    name: otc-container
+  - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: OTEL_GO_AUTO_TARGET_EXE
+      value: /rolldice
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4318
+    - name: OTEL_EXPORTER_OTLP_TIMEOUT
+      value: "20000"
+    - name: OTEL_TRACES_SAMPLER
+      value: always_on
+    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
+      value: "true"
+    - name: OTEL_SERVICE_NAME
+      value: my-golang
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: OTEL_PROPAGATORS
+      value: jaeger,b3
+    - name: OTEL_RESOURCE_ATTRIBUTES
+    name: opentelemetry-auto-instrumentation
+    volumeMounts:
+    - mountPath: /sys/kernel/debug
+      name: kernel-debug
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+status:
+  containerStatuses:
+  - name: myapp
+    ready: true
+    started: true
+  - name: opentelemetry-auto-instrumentation
+    ready: true
+    started: true
+  - name: otc-container
+    ready: true
+    started: true
+  phase: Running

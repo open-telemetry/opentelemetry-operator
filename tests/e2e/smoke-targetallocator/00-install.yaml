@@ -1,35 +1,42 @@
 apiVersion: v1
+automountServiceAccountToken: true
 kind: ServiceAccount
 metadata:
   name: ta
-automountServiceAccountToken: true
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  name: pod-view
+  name: smoke-targetallocator
 rules:
-- apiGroups: [""]
-  resources: [ "pods" ]
-  verbs: [ "get", "list", "watch"]
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
 ---
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-  - command: kubectl -n $NAMESPACE create rolebinding default-view-$NAMESPACE --role=pod-view --serviceaccount=$NAMESPACE:ta
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: (join('-', ['default-view', $namespace]))
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: smoke-targetallocator
+subjects:
+- kind: ServiceAccount
+  name: ta
+  namespace: ($namespace)
 ---
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
   name: stateful
 spec:
-  mode: statefulset
-  targetAllocator:
-    enabled: true
-    serviceAccount: ta
-    image: "local/opentelemetry-operator-targetallocator:e2e"
-    prometheusCR:
-      enabled: true
   config: |
     receivers:
       jaeger:
@@ -39,6 +46,9 @@ spec:
       # Collect own metrics
       prometheus:
         config:
+          global:
+            scrape_interval: 30s
+            scrape_protocols: ['PrometheusProto','OpenMetricsText1.0.0','OpenMetricsText0.0.1','PrometheusText0.0.4']
           scrape_configs:
             - job_name: 'otel-collector'
               scrape_interval: 10s
@@ -48,10 +58,13 @@ spec:
     processors:
 
     exporters:
-      logging:
+      debug:
     service:
       pipelines:
         traces:
           receivers: [jaeger]
-          processors: []
-          exporters: [logging]
+          exporters: [debug]
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+    serviceAccount: ta

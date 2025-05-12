@@ -1,8 +1,0 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-  - script: |
-      #!/bin/bash
-      set -ex
-      # Export empty payload and check of collector accepted it with 2xx status code
-      for i in {1..40}; do curl --fail -ivX POST --resolve 'otlp-http.test.otel:80:127.0.0.1' http://otlp-http.test.otel:80/v1/traces -H "Content-Type: application/json" -d '{}' && break || sleep 1; done

@@ -13,14 +13,13 @@ spec:
     processors:
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: []
-          exporters: [logging]
+          exporters: [debug]
 
 ---
 # change config map in Unmanaged mode and it should not get overridden as reconciliation is disabled
@@ -41,11 +40,10 @@ data:
     processors:
 
     exporters:
-      logging:
+      debug:
 
     service:
       pipelines:
         traces:
           receivers: [jaeger, otlp]
-          processors: []
-          exporters: [logging]
+          exporters: [debug]

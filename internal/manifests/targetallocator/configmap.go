@@ -1,87 +1,130 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package targetallocator
 
 import (
-	"strings"
+	"path/filepath"
 
-	"github.com/go-logr/logr"
+	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
 	targetAllocatorFilename = "targetallocator.yaml"
 )
 
-func ConfigMap(cfg config.Config, logger logr.Logger, instance v1alpha1.OpenTelemetryCollector) (*corev1.ConfigMap, error) {
+func ConfigMap(params Params) (*corev1.ConfigMap, error) {
+	instance := params.TargetAllocator
 	name := naming.TAConfigMap(instance.Name)
-	version := strings.Split(instance.Spec.Image, ":")
-	labels := Labels(instance, name)
-	if len(version) > 1 {
-		labels["app.kubernetes.io/version"] = version[len(version)-1]
-	} else {
-		labels["app.kubernetes.io/version"] = "latest"
-	}
-
-	// Collector supports environment variable substitution, but the TA does not.
-	// TA ConfigMap should have a single "$", as it does not support env var substitution
-	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(instance.Spec.Config)
-	if err != nil {
-		return &corev1.ConfigMap{}, err
-	}
+	labels := manifestutils.Labels(instance.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	taSpec := instance.Spec
 
 	taConfig := make(map[interface{}]interface{})
-	prometheusCRConfig := make(map[interface{}]interface{})
-	taConfig["label_selector"] = collector.SelectorLabels(instance)
-	// We only take the "config" from the returned object, if it's present
-	if prometheusConfig, ok := prometheusReceiverConfig["config"]; ok {
-		taConfig["config"] = prometheusConfig
+	// Set config if global or scrape configs set
+	config := map[string]interface{}{}
+	var (
+		globalConfig      map[string]any
+		scrapeConfigs     []v1beta1.AnyConfig
+		collectorSelector *metav1.LabelSelector
+		err               error
+	)
+	if params.Collector != nil {
+		collectorSelector = &metav1.LabelSelector{
+			MatchLabels: manifestutils.SelectorLabels(params.Collector.ObjectMeta, collector.ComponentOpenTelemetryCollector),
+		}
+
+		globalConfig, err = getGlobalConfig(taSpec.GlobalConfig, params.Collector.Spec.Config)
+		if err != nil {
+			return nil, err
+		}
+
+		scrapeConfigs, err = getScrapeConfigs(taSpec.ScrapeConfigs, params.Collector.Spec.Config)
+		if err != nil {
+			return nil, err
+		}
+	} else { // if there's no collector, just use what's in the TargetAllocator CR
+		collectorSelector = nil
+		globalConfig = taSpec.GlobalConfig.Object
+		scrapeConfigs = taSpec.ScrapeConfigs
 	}
 
-	if len(instance.Spec.TargetAllocator.AllocationStrategy) > 0 {
-		taConfig["allocation_strategy"] = instance.Spec.TargetAllocator.AllocationStrategy
+	if len(globalConfig) > 0 {
+		config["global"] = globalConfig
+	}
+
+	if len(scrapeConfigs) > 0 {
+		config["scrape_configs"] = scrapeConfigs
+	}
+
+	if len(config) != 0 {
+		taConfig["config"] = config
+	}
+
+	taConfig["collector_selector"] = collectorSelector
+
+	if len(taSpec.AllocationStrategy) > 0 {
+		taConfig["allocation_strategy"] = taSpec.AllocationStrategy
 	} else {
-		taConfig["allocation_strategy"] = v1alpha1.OpenTelemetryTargetAllocatorAllocationStrategyLeastWeighted
+		taConfig["allocation_strategy"] = v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
 	}
 
-	if len(instance.Spec.TargetAllocator.FilterStrategy) > 0 {
-		taConfig["filter_strategy"] = instance.Spec.TargetAllocator.FilterStrategy
+	if featuregate.EnableTargetAllocatorFallbackStrategy.IsEnabled() {
+		taConfig["allocation_fallback_strategy"] = v1beta1.TargetAllocatorAllocationStrategyConsistentHashing
 	}
 
-	if instance.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Size() > 0 {
-		prometheusCRConfig["scrape_interval"] = instance.Spec.TargetAllocator.PrometheusCR.ScrapeInterval.Duration
-	}
+	taConfig["filter_strategy"] = taSpec.FilterStrategy
 
-	if instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector != nil {
-		taConfig["service_monitor_selector"] = &instance.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector
-	}
+	if taSpec.PrometheusCR.Enabled {
+		prometheusCRConfig := map[interface{}]interface{}{
+			"enabled": true,
+		}
+		if taSpec.PrometheusCR.ScrapeInterval.Size() > 0 {
+			prometheusCRConfig["scrape_interval"] = taSpec.PrometheusCR.ScrapeInterval.Duration
+		}
 
-	if instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector != nil {
-		taConfig["pod_monitor_selector"] = &instance.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector
-	}
+		if taSpec.PrometheusCR.AllowNamespaces != nil {
+			prometheusCRConfig["allow_namespaces"] = taSpec.PrometheusCR.AllowNamespaces
+		}
 
-	if len(prometheusCRConfig) > 0 {
+		if taSpec.PrometheusCR.DenyNamespaces != nil {
+			prometheusCRConfig["deny_namespaces"] = taSpec.PrometheusCR.DenyNamespaces
+		}
+
+		prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
+
+		prometheusCRConfig["pod_monitor_selector"] = taSpec.PrometheusCR.PodMonitorSelector
+
+		prometheusCRConfig["scrape_config_selector"] = taSpec.PrometheusCR.ScrapeConfigSelector
+
+		prometheusCRConfig["probe_selector"] = taSpec.PrometheusCR.ProbeSelector
+
 		taConfig["prometheus_cr"] = prometheusCRConfig
+	}
+
+	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+		taConfig["https"] = map[string]interface{}{
+			"enabled":            true,
+			"listen_addr":        ":8443",
+			"ca_file_path":       filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorCAFileName),
+			"tls_cert_file_path": filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSCertFileName),
+			"tls_key_file_path":  filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSKeyFileName),
+		}
+	}
+
+	if taSpec.CollectorNotReadyGracePeriod.Size() > 0 {
+		taConfig["collector_not_ready_grace_period"] = taSpec.CollectorNotReadyGracePeriod.Duration
 	}
 
 	taConfigYAML, err := yaml.Marshal(taConfig)
@@ -100,4 +143,78 @@ func ConfigMap(cfg config.Config, logger logr.Logger, instance v1alpha1.OpenTele
 			targetAllocatorFilename: string(taConfigYAML),
 		},
 	}, nil
+}
+
+func getGlobalConfig(taGlobalConfig v1beta1.AnyConfig, collectorConfig v1beta1.Config) (map[string]any, error) {
+	// global config from the target allocator has priority
+	if len(taGlobalConfig.Object) > 0 {
+		return taGlobalConfig.Object, nil
+	}
+
+	collectorGlobalConfig, err := getGlobalConfigFromOtelConfig(collectorConfig)
+	if err != nil {
+		return nil, err
+	}
+	return collectorGlobalConfig.Object, nil
+}
+
+func getScrapeConfigs(taScrapeConfigs []v1beta1.AnyConfig, collectorConfig v1beta1.Config) ([]v1beta1.AnyConfig, error) {
+	scrapeConfigs := []v1beta1.AnyConfig{}
+
+	// we take scrape configs from both the target allocator spec and the collector config
+	if len(taScrapeConfigs) > 0 {
+		scrapeConfigs = append(scrapeConfigs, taScrapeConfigs...)
+	}
+
+	configStr, err := collectorConfig.Yaml()
+	if err != nil {
+		return nil, err
+	}
+
+	collectorScrapeConfigs, err := getScrapeConfigsFromOtelConfig(configStr)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(scrapeConfigs, collectorScrapeConfigs...), nil
+}
+
+func getGlobalConfigFromOtelConfig(otelConfig v1beta1.Config) (v1beta1.AnyConfig, error) {
+	// TODO: Eventually we should figure out a way to pull this in to the main specification for the TA
+	type promReceiverConfig struct {
+		Prometheus struct {
+			Config struct {
+				Global map[string]interface{} `mapstructure:"global"`
+			} `mapstructure:"config"`
+		} `mapstructure:"prometheus"`
+	}
+	decodedConfig := &promReceiverConfig{}
+	if err := mapstructure.Decode(otelConfig.Receivers.Object, decodedConfig); err != nil {
+		return v1beta1.AnyConfig{}, err
+	}
+	return v1beta1.AnyConfig{
+		Object: decodedConfig.Prometheus.Config.Global,
+	}, nil
+}
+
+func getScrapeConfigsFromOtelConfig(otelcolConfig string) ([]v1beta1.AnyConfig, error) {
+	// Collector supports environment variable substitution, but the TA does not.
+	// TA Scrape Configs should have a single "$", as it does not support env var substitution
+	prometheusReceiverConfig, err := adapters.UnescapeDollarSignsInPromConfig(otelcolConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	scrapeConfigs, err := adapters.GetScrapeConfigsFromPromConfig(prometheusReceiverConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	v1beta1scrapeConfigs := make([]v1beta1.AnyConfig, len(scrapeConfigs))
+
+	for i, config := range scrapeConfigs {
+		v1beta1scrapeConfigs[i] = v1beta1.AnyConfig{Object: config}
+	}
+
+	return v1beta1scrapeConfigs, nil
 }

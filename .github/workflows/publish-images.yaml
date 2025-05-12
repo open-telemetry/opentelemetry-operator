@@ -2,22 +2,35 @@ name: "Publish operator"
 
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*' ]
+    branches: [main]
+    tags: ["v*"]
 
   workflow_dispatch:
+
+env:
+  PLATFORMS: linux/amd64,linux/arm64,linux/s390x,linux/ppc64le
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
 
 jobs:
   publish:
     name: Publish container images
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Unshallow 
+      - uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+        with:
+          go-version: "~1.24.3"
+
+      - name: Unshallow
         run: git fetch --prune --unshallow
 
-      - name: Describe the current state 
+      - name: Describe the current state
         run: git describe --tags
 
       - name: Set env vars for the job
@@ -31,12 +44,21 @@ jobs:
           grep -v '\#' versions.txt | grep autoinstrumentation-dotnet | awk -F= '{print "AUTO_INSTRUMENTATION_DOTNET_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-go | awk -F= '{print "AUTO_INSTRUMENTATION_GO_VERSION="$2}' >> $GITHUB_ENV
           grep -v '\#' versions.txt | grep autoinstrumentation-apache-httpd | awk -F= '{print "AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION="$2}' >> $GITHUB_ENV
+          grep -v '\#' versions.txt | grep autoinstrumentation-nginx | awk -F= '{print "AUTO_INSTRUMENTATION_NGINX_VERSION="$2}' >> $GITHUB_ENV
           echo "VERSION_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
           echo "VERSION=$(git describe --tags | sed 's/^v//')" >> $GITHUB_ENV
 
+      - name: Build the binary for each supported architecture
+        run: |
+          for platform in $(echo $PLATFORMS | tr "," "\n"); do
+            arch=${platform#*/}
+            echo "Building manager for $arch"
+            make manager ARCH=$arch
+          done
+
       - name: Docker meta
         id: docker_meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
         with:
           images: |
             otel/opentelemetry-operator
@@ -48,13 +70,13 @@ jobs:
             type=ref,event=branch
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
 
       - name: Cache Docker layers
-        uses: actions/cache@v3
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -62,14 +84,14 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Log into Docker.io
-        uses: docker/login-action@v2
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         if: ${{ github.event_name == 'push' }}
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login to GitHub Package Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         if: ${{ github.event_name == 'push' }}
         with:
           registry: ghcr.io
@@ -77,26 +99,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Operator image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@14487ce63c7a62a4a324b0bfb37086795e31c6c1 # v6.16.0
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ env.PLATFORMS }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
-          build-args: |
-            VERSION_PKG=github.com/open-telemetry/opentelemetry-operator/internal/version
-            VERSION=${{ env.VERSION }}
-            VERSION_DATE=${{ env.VERSION_DATE }}
-            OTELCOL_VERSION=${{ env.OTELCOL_VERSION }}
-            TARGETALLOCATOR_VERSION=${{ env.TARGETALLOCATOR_VERSION }}
-            OPERATOR_OPAMP_BRIDGE_VERSION=${{ env.OPERATOR_OPAMP_BRIDGE_VERSION }}
-            AUTO_INSTRUMENTATION_JAVA_VERSION=${{ env.AUTO_INSTRUMENTATION_JAVA_VERSION }}
-            AUTO_INSTRUMENTATION_NODEJS_VERSION=${{ env.AUTO_INSTRUMENTATION_NODEJS_VERSION }}
-            AUTO_INSTRUMENTATION_PYTHON_VERSION=${{ env.AUTO_INSTRUMENTATION_PYTHON_VERSION }}
-            AUTO_INSTRUMENTATION_DOTNET_VERSION=${{ env.AUTO_INSTRUMENTATION_DOTNET_VERSION }}
-            AUTO_INSTRUMENTATION_GO_VERSION=${{ env.AUTO_INSTRUMENTATION_GO_VERSION }}
-            AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION=${{ env.AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache

@@ -4,4 +4,4 @@ metadata:
   name: simplest-set-utilization
 status:
   scale:
-    replicas: 2
+    replicas: 1

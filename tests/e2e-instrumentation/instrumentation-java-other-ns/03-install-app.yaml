@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-java-other-ns
+spec:
+  selector:
+    matchLabels:
+      app: my-java-other-ns
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-java-other-ns
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+        instrumentation.opentelemetry.io/inject-java: "my-other-ns/java"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 3000
+      containers:
+      - name: myapp
+        ports:
+        - containerPort: 8080
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 3

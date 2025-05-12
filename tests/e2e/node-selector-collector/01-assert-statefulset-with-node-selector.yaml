@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: statefulset-collector
+    app.kubernetes.io/part-of: opentelemetry
+    node-selector-mode: with
+spec:
+  nodeSelector:
+    kubernetes.io/os: linux

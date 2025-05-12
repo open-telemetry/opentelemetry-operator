@@ -1,0 +1,29 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest-ipfamily
+spec:
+  upgradeStrategy: automatic
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  config:
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+
+    exporters:
+      debug:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger, otlp]
+          processors: []
+          exporters: [debug]

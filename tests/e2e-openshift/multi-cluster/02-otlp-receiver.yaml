@@ -1,0 +1,42 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: otlp-receiver
+  namespace: chainsaw-multi-cluster-receive
+spec:
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          http:
+            tls:
+              cert_file: /certs/server.crt
+              key_file: /certs/server.key
+              client_ca_file: /certs/ca.crt
+          grpc:
+            tls:
+              cert_file: /certs/server.crt
+              key_file: /certs/server.key
+              client_ca_file: /certs/ca.crt
+    exporters:
+      otlp:
+        endpoint: "tempo-multicluster.chainsaw-multi-cluster-receive.svc:4317"
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [otlp]
+  ingress:
+    route:
+      termination: passthrough
+    type: route
+  mode: deployment
+  volumeMounts:
+  - mountPath: /certs
+    name: chainsaw-certs
+  volumes:
+  - configMap:
+      name: chainsaw-certs
+    name: chainsaw-certs

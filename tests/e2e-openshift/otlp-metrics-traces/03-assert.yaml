@@ -1,25 +1,51 @@
----
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
-  name: otel-collector
-  namespace: kuttl-otlp-metrics
-spec:
-  podMetricsEndpoints:
-  - port: metrics
-  - metricRelabelings:
-    - action: labeldrop
-      regex: instance
-    - action: labeldrop
-      regex: job
-    port: promexporter
-    relabelings:
-    - action: labeldrop
-      regex: pod
-    - action: labeldrop
-      regex: container
-    - action: labeldrop
-      regex: endpoint
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: cluster-collector-collector
+  name: chainsaw-otlp-metrics-traces-api
+rules:
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - prometheuses/api
+  verbs:
+  - get
+  - list
+  - watch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: chainsaw-otlp-metrics-traces-api
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: chainsaw-otlp-metrics-traces-api
+subjects:
+- kind: ServiceAccount
+  name: prometheus-user-workload
+  namespace: openshift-user-workload-monitoring
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: telemetrygen-traces
+status:
+  active: 1
+  ready: 1
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: telemetrygen-metrics
+status:
+  active: 1
+  ready: 1
+
+---
+apiVersion: v1
+kind: Pod
+status:
+  phase: Running

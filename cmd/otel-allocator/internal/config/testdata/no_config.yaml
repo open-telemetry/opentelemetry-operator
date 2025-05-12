@@ -1,0 +1,2 @@
+# this is some random data to check if we skip unknown fields instead of rejecting them
+some_key: some_value

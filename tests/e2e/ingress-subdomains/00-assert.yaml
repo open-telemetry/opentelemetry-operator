@@ -16,7 +16,7 @@ metadata:
     app.kubernetes.io/name: simplest-ingress
   name: simplest-ingress
   ownerReferences:
-  - apiVersion: opentelemetry.io/v1alpha1
+  - apiVersion: opentelemetry.io/v1beta1
     blockOwnerDeletion: true
     controller: true
     kind: OpenTelemetryCollector

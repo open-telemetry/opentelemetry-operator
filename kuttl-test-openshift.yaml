@@ -1,6 +1,0 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestSuite
-startKIND: false
-testDirs:
-  - ./tests/e2e-openshift/
-timeout: 150

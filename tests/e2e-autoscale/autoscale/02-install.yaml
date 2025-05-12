@@ -1,44 +1,22 @@
-# This updates an existing deployment with a new Spec.
-# Target memory utilization is now added. 
-# scaleDown and scaleUp behavior is now added.
-apiVersion: opentelemetry.io/v1alpha1
-kind: OpenTelemetryCollector
+apiVersion: batch/v1
+kind: Job
 metadata:
-  name: simplest-set-utilization
+  name: telemetrygen-set-utilization
 spec:
-  minReplicas: 1
-  maxReplicas: 2
-  autoscaler:
-    targetCPUUtilization: 60
-    # Without this behavior the HPA will default to a scaledown stabilization
-    # window of 300 seconds. Tests should fail if this update is not successful.
-    behavior:
-      scaleDown:
-        stabilizationWindowSeconds: 15
-      scaleUp:
-        stabilizationWindowSeconds: 1
-  resources:
-    limits:
-      cpu: 100m
-      memory: 128Mi
-    requests:
-      cpu: 5m
-      memory: 64Mi
-
-  config: |
-    receivers:
-      otlp:
-        protocols:
-          grpc:
-          http:
-    processors:
-
-    exporters:
-      logging:
-
-    service:
-      pipelines:
-        traces:
-          receivers: [otlp]
-          processors: []
-          exporters: [logging]
+  template:
+    spec:
+      containers:
+        - name: telemetrygen
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.92.0
+          command:
+            - "./telemetrygen"
+          args:
+            - --otlp-endpoint=simplest-set-utilization-collector-headless:4317
+            - --otlp-insecure
+            # High duration to ensure the trace creation doesn't stop.
+            # It'll be stopped in step 4
+            - --duration=6m
+            - --workers=20
+            - traces
+      restartPolicy: Never
+  backoffLimit: 4

@@ -1,21 +1,11 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,6 +28,9 @@ type InstrumentationSpec struct {
 	// Sampler defines sampling configuration.
 	// +optional
 	Sampler `json:"sampler,omitempty"`
+
+	// Defaults defines default values for the instrumentation.
+	Defaults Defaults `json:"defaults,omitempty"`
 
 	// Env defines common env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
@@ -62,7 +55,7 @@ type InstrumentationSpec struct {
 	DotNet DotNet `json:"dotnet,omitempty"`
 
 	// Go defines configuration for Go auto-instrumentation.
-	// When using Go auto-instrumenetation you must provide a value for the OTEL_GO_AUTO_TARGET_EXE env var via the
+	// When using Go auto-instrumentation you must provide a value for the OTEL_GO_AUTO_TARGET_EXE env var via the
 	// Instrumentation env vars or via the instrumentation.opentelemetry.io/otel-go-auto-target-exe pod annotation.
 	// Failure to set this value causes instrumentation injection to abort, leaving the original pod unchanged.
 	// +optional
@@ -75,6 +68,12 @@ type InstrumentationSpec struct {
 	// Nginx defines configuration for Nginx auto-instrumentation.
 	// +optional
 	Nginx Nginx `json:"nginx,omitempty"`
+
+	// ImagePullPolicy
+	// One of Always, Never, IfNotPresent.
+	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
@@ -93,8 +92,37 @@ type Resource struct {
 // Exporter defines OTLP exporter configuration.
 type Exporter struct {
 	// Endpoint is address of the collector with OTLP endpoint.
+	// If the endpoint defines https:// scheme TLS has to be specified.
 	// +optional
 	Endpoint string `json:"endpoint,omitempty"`
+
+	// TLS defines certificates for TLS.
+	// TLS needs to be enabled by specifying https:// scheme in the Endpoint.
+	TLS *TLS `json:"tls,omitempty"`
+}
+
+// TLS defines TLS configuration for exporter.
+type TLS struct {
+	// SecretName defines secret name that will be used to configure TLS on the exporter.
+	// It is user responsibility to create the secret in the namespace of the workload.
+	// The secret must contain client certificate (Cert) and private key (Key).
+	// The CA certificate might be defined in the secret or in the config map.
+	SecretName string `json:"secretName,omitempty"`
+
+	// ConfigMapName defines configmap name with CA certificate. If it is not defined CA certificate will be
+	// used from the secret defined in SecretName.
+	ConfigMapName string `json:"configMapName,omitempty"`
+
+	// CA defines the key of certificate (e.g. ca.crt) in the configmap map, secret or absolute path to a certificate.
+	// The absolute path can be used when certificate is already present on the workload filesystem e.g.
+	// /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+	CA string `json:"ca_file,omitempty"`
+	// Cert defines the key (e.g. tls.crt) of the client certificate in the secret or absolute path to a certificate.
+	// The absolute path can be used when certificate is already present on the workload filesystem.
+	Cert string `json:"cert_file,omitempty"`
+	// Key defines a key (e.g. tls.key) of the private key in the secret or absolute path to a certificate.
+	// The absolute path can be used when certificate is already present on the workload filesystem.
+	Key string `json:"key_file,omitempty"`
 }
 
 // Sampler defines sampling configuration.
@@ -113,11 +141,29 @@ type Sampler struct {
 	Argument string `json:"argument,omitempty"`
 }
 
+// Defaults defines default values for the instrumentation.
+type Defaults struct {
+	// UseLabelsForResourceAttributes defines whether to use common labels for resource attributes:
+	// Note: first entry wins:
+	//   - `app.kubernetes.io/instance` becomes `service.name`
+	//   - `app.kubernetes.io/name` becomes `service.name`
+	//   - `app.kubernetes.io/version` becomes `service.version`
+	UseLabelsForResourceAttributes bool `json:"useLabelsForResourceAttributes,omitempty"`
+}
+
 // Java defines Java SDK and instrumentation configuration.
 type Java struct {
 	// Image is a container image with javaagent auto-instrumentation JAR.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
+
+	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
+	// The default size is 200Mi.
+	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines java specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
@@ -128,6 +174,19 @@ type Java struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Extensions defines java specific extensions.
+	// All extensions are copied to a single directory; if a JAR with the same name exists, it will be overwritten.
+	// +optional
+	Extensions []Extensions `json:"extensions,omitempty"`
+}
+
+type Extensions struct {
+	// Image is a container image with extensions auto-instrumentation JAR.
+	Image string `json:"image"`
+
+	// Dir is a directory with extensions auto-instrumentation JAR.
+	Dir string `json:"dir"`
 }
 
 // NodeJS defines NodeJS SDK and instrumentation configuration.
@@ -135,6 +194,14 @@ type NodeJS struct {
 	// Image is a container image with NodeJS SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
+
+	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
+	// The default size is 200Mi.
+	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines nodejs specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
@@ -153,6 +220,14 @@ type Python struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
+
+	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
+	// The default size is 200Mi.
+	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
+
 	// Env defines python specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
@@ -170,6 +245,14 @@ type DotNet struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
+
+	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
+	// The default size is 200Mi.
+	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
+
 	// Env defines DotNet specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
@@ -184,6 +267,14 @@ type Go struct {
 	// Image is a container image with Go SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
+
+	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
+	// The default size is 200Mi.
+	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines Go specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
@@ -201,6 +292,14 @@ type ApacheHttpd struct {
 	// Image is a container image with Apache SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
+
+	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
+	// The default size is 200Mi.
+	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines Apache HTTPD specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
@@ -233,6 +332,14 @@ type Nginx struct {
 	// Image is a container image with Nginx SDK and auto-instrumentation.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
+
+	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
+	// The default size is 200Mi.
+	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines Nginx specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.

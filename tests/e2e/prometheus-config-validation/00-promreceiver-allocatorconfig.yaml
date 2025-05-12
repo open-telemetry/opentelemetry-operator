@@ -1,36 +1,42 @@
 apiVersion: v1
+automountServiceAccountToken: true
 kind: ServiceAccount
 metadata:
   name: ta
-automountServiceAccountToken: true
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  name: pod-view
+  name: promreceiver-allocatorconfig
 rules:
-- apiGroups: [""]
-  resources: [ "pods" ]
-  verbs: [ "get", "list", "watch"]
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
 ---
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-  - command: kubectl -n $NAMESPACE create rolebinding default-view-$NAMESPACE --role=pod-view --serviceaccount=$NAMESPACE:ta
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: (join('-', ['default-view', $namespace]))
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: promreceiver-allocatorconfig
+subjects:
+- kind: ServiceAccount
+  name: ta
+  namespace: ($namespace)
 ---
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
   name: promreceiver-allocatorconfig
 spec:
-  mode: statefulset
-  targetAllocator:
-    enabled: true
-    image: "local/opentelemetry-operator-targetallocator:e2e"
-    serviceAccount: ta
-    prometheusCR:
-      enabled: true
-
   config: |
     receivers:
       jaeger:
@@ -53,9 +59,10 @@ spec:
     processors:
 
     exporters:
-      logging:
+      debug:
     extensions:
       health_check:
+        endpoint: "0.0.0.0:13133"
     service:
       telemetry:
         metrics:
@@ -65,5 +72,8 @@ spec:
       pipelines:
         traces:
           receivers: [jaeger]
-          processors: []
-          exporters: [logging]
+          exporters: [debug]
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+    serviceAccount: ta

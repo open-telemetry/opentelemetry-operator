@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 // Package version contains the operator's version, as well as versions of underlying components.
 package version
@@ -31,6 +20,7 @@ var (
 	autoInstrumentationPython      string
 	autoInstrumentationDotNet      string
 	autoInstrumentationApacheHttpd string
+	autoInstrumentationNginx       string
 	autoInstrumentationGo          string
 )
 
@@ -48,6 +38,7 @@ type Version struct {
 	AutoInstrumentationDotNet      string `json:"auto-instrumentation-dotnet"`
 	AutoInstrumentationGo          string `json:"auto-instrumentation-go"`
 	AutoInstrumentationApacheHttpd string `json:"auto-instrumentation-apache-httpd"`
+	AutoInstrumentationNginx       string `json:"auto-instrumentation-nginx"`
 }
 
 // Get returns the Version object with the relevant information.
@@ -65,12 +56,13 @@ func Get() Version {
 		AutoInstrumentationDotNet:      AutoInstrumentationDotNet(),
 		AutoInstrumentationGo:          AutoInstrumentationGo(),
 		AutoInstrumentationApacheHttpd: AutoInstrumentationApacheHttpd(),
+		AutoInstrumentationNginx:       AutoInstrumentationNginx(),
 	}
 }
 
 func (v Version) String() string {
 	return fmt.Sprintf(
-		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', OperatorOpAMPBridge='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v')",
+		"Version(Operator='%v', BuildDate='%v', OpenTelemetryCollector='%v', Go='%v', TargetAllocator='%v', OperatorOpAMPBridge='%v', AutoInstrumentationJava='%v', AutoInstrumentationNodeJS='%v', AutoInstrumentationPython='%v', AutoInstrumentationDotNet='%v', AutoInstrumentationGo='%v', AutoInstrumentationApacheHttpd='%v', AutoInstrumentationNginx='%v')",
 		v.Operator,
 		v.BuildDate,
 		v.OpenTelemetryCollector,
@@ -83,6 +75,7 @@ func (v Version) String() string {
 		v.AutoInstrumentationDotNet,
 		v.AutoInstrumentationGo,
 		v.AutoInstrumentationApacheHttpd,
+		v.AutoInstrumentationNginx,
 	)
 }
 
@@ -150,6 +143,13 @@ func AutoInstrumentationDotNet() string {
 func AutoInstrumentationApacheHttpd() string {
 	if len(autoInstrumentationApacheHttpd) > 0 {
 		return autoInstrumentationApacheHttpd
+	}
+	return "0.0.0"
+}
+
+func AutoInstrumentationNginx() string {
+	if len(autoInstrumentationNginx) > 0 {
+		return autoInstrumentationNginx
 	}
 	return "0.0.0"
 }

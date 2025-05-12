@@ -15,11 +15,10 @@ receivers:
           - file2.json
 
 exporters:
-  logging:
+  debug:
 
 service:
   pipelines:
     metrics:
       receivers: [prometheus]
-      processors: []
-      exporters: [logging]
+      exporters: [debug]

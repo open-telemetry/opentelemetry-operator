@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: annotation-change-collector
+spec:
+  steps:
+    - name: step-00
+      description: collectors with an extra annotation
+      try:
+        - apply:
+            file: 00-install-collectors-with-extra-annotation.yaml
+        # deployment
+        - assert:
+            file: 00-assert-deployment-with-extra-annotation.yaml
+        # daemonset
+        - assert:
+            file: 00-assert-daemonset-with-extra-annotation.yaml
+        # statefulset
+        - assert:
+            file: 00-assert-statefulset-with-extra-annotation.yaml
+
+    - name: step-01
+      description: collectors with changed extra annotations
+      try:
+        - update:
+            file: 01-install-collectors-with-annotation-change.yaml
+        # deployment
+        - assert:
+            file: 01-assert-deployment-with-annotation-change.yaml
+        # daemonset
+        - assert:
+            file: 01-assert-daemonset-with-annotation-change.yaml
+        # statefulset
+        - assert:
+            file: 01-assert-statefulset-with-annotation-change.yaml
+
+    - name: step-02
+      description: manually annotate resources and delete extra annotation from collector
+      try:
+        - apply:
+            file: 02-manual-annotation-resources.yaml
+        - update:
+            file: 02-install-collectors-without-extra-annotation.yaml
+        # deployment
+        - assert:
+            file: 02-assert-deployment-without-extra-annotation.yaml
+        # daemonset
+        - assert:
+            file: 02-assert-daemonset-without-extra-annotation.yaml
+        # statefulset
+        - assert:
+            file: 02-assert-statefulset-without-extra-annotation.yaml
