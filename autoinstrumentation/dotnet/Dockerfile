@@ -24,3 +24,6 @@ ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/relea
 RUN unzip opentelemetry-dotnet-instrumentation-linux-glibc.zip
 
 RUN chmod -R go+r .
+
+RUN addgroup -g 1000 -S nonroot && adduser -u 1000 -S nonroot -G nonroot
+USER 1000:1000

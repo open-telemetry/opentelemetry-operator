@@ -22,3 +22,6 @@ FROM busybox
 COPY --from=build /operator-build/workspace /autoinstrumentation
 
 RUN chmod -R go+r /autoinstrumentation
+
+RUN addgroup -g 1000 -S nonroot && adduser -u 1000 -S nonroot -G nonroot
+USER 1000:1000
