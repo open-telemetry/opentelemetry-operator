@@ -5,7 +5,7 @@ change_type: bug_fix
 component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Fix OpenShift internal collector metrics dashboards
+note: Fix OpenShift internal collector metrics dashboards to use `_total` suffix
 
 # One or more tracking issues related to the change
 issues: [3994]
@@ -14,9 +14,7 @@ issues: [3994]
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
 subtext: | 
-  OpenTelemetry collector 0.123.0 ignores `service.telemetry.metrics.address` in favor of `service.telemetry.metrics.readers`.
-  The new setting uses newer prometheus exporter that adds `_total` suffix to the metrics.
-  
+  The following settings (or missing metrics configuration) exposes metrics with `_total` suffix:
   ```yaml
      service:
        telemetry:
@@ -28,3 +26,10 @@ subtext: |
                   host: '0.0.0.0'
                   port: 8888
   ```
+  
+  The following settings exposes metrics without `_total` suffix:
+  ```yaml
+     service:
+       telemetry:
+           address: 0.0.0.0:8888
+  ````
