@@ -18,7 +18,7 @@ on how to best instrument all resources in the cluster on behalf of the administ
 OpenTelemetry standards and semantic conventions.
 
 The operator project offers custom resources (CR) to allow Kubernetes users/administrators to define OpenTelemetry components
-in their Kubernetes environments. Customers however do not want to manage components themselves, especially if they need
+in their Kubernetes environments. Users however do not want to manage components themselves, especially if they need
 to think about component versioning and upgrade patterns, and would rather have an out-of-the-box experience that 
 requires little insight and gets them to a working state effortlessly.
 
@@ -32,12 +32,12 @@ We mean to offer a specific functional coverage of a specific use case that offe
 
 We don't allow toggling features specifically because we want to avoid increasing the need for functional test coverage.
 
-If customers want to increase their level of control of the feature set, they can remove the managed custom resource and instead
+If Users want to increase their level of control of the feature set, they can remove the managed custom resource and instead
 follow the traditional route of setting up collectors, target allocators, instrumentation custom resources as is possible today.
 
 ### OTLP, single endpoint support
 
-The solution exports data to a single endpoint using the OTLP protocol. Customers may choose to deploy a gateway
+The solution exports data to a single endpoint using the OTLP protocol. Users may choose to deploy a gateway
 to transform, filter, redact data before sending it to storage.
 
 ### Context-aware
@@ -61,14 +61,14 @@ and are guaranteed to work through functional test coverage.
 
 ### Deletion and reinstallation
 
-The customer can cleanly delete the custom resource, which triggers the deletion of all OpenTelemetry assets under
+The user can cleanly delete the custom resource, which triggers the deletion of all OpenTelemetry assets under
 management by the operator. No stragglers are left.
 
 ### Infrastructure monitoring
 
-The customer upon installation of the custom resource can see Kubernetes cluster metrics, and kubeletstats metrics.
+The user upon installation of the custom resource can see Kubernetes cluster metrics, and kubeletstats metrics.
 
-The customer can follow events and receive Kubernetes entity data.
+The user can follow events and receive Kubernetes entity data.
 
 The user upon installation receives metrics from hostmetrics receiver with its default configuration. Note the metrics map to the host, meaning the collector will have access to host volumes to scrape their utilization.
 
