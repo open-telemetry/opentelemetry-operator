@@ -14,7 +14,7 @@ issues: [3994]
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
 subtext: | 
-  The following settings (or missing metrics configuration) exposes metrics with `_total` suffix:
+  The following settings (or missing metrics configuration since 0.119.0) exposes metrics with `_total` suffix:
   ```yaml
      service:
        telemetry:
