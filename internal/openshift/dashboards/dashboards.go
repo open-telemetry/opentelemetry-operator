@@ -8,6 +8,7 @@ import (
 	_ "embed"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -29,6 +30,8 @@ type dashboardManagement struct {
 	clientset kubernetes.Interface
 }
 
+var _ manager.Runnable = (*dashboardManagement)(nil) // What is this?
+
 func NewDashboardManagement(clientset kubernetes.Interface) manager.Runnable {
 	return dashboardManagement{
 		clientset: clientset,
@@ -49,9 +52,20 @@ func (d dashboardManagement) Start(ctx context.Context) error {
 		},
 	}
 
-	_, err := d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Create(ctx, &cm, metav1.CreateOptions{})
+	_, err := d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Get(ctx, configMapName, metav1.GetOptions{})
 	if err != nil {
-		return nil
+		if errors.IsNotFound(err) {
+			_, err := d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Create(ctx, &cm, metav1.CreateOptions{})
+			if err != nil {
+				return nil
+			}
+		}
+	} else {
+		// config map already exists, update it
+		_, err := d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Update(ctx, &cm, metav1.UpdateOptions{})
+		if err != nil {
+			return nil
+		}
 	}
 
 	<-ctx.Done()
