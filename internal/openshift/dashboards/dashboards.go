@@ -30,7 +30,7 @@ type dashboardManagement struct {
 	clientset kubernetes.Interface
 }
 
-var _ manager.Runnable = (*dashboardManagement)(nil) // What is this?
+var _ manager.Runnable = (*dashboardManagement)(nil)
 
 func NewDashboardManagement(clientset kubernetes.Interface) manager.Runnable {
 	return dashboardManagement{
