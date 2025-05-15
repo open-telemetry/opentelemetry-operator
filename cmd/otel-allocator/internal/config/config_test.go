@@ -55,6 +55,7 @@ func TestLoadFromFile(t *testing.T) {
 					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+					ScrapeProtocols:                 defaultScrapeProtocolsCR,
 				},
 				CollectorNotReadyGracePeriod: 30 * time.Second,
 				HTTPS: HTTPSServerConfig{
@@ -151,6 +152,7 @@ func TestLoadFromFile(t *testing.T) {
 					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+					ScrapeProtocols:                 defaultScrapeProtocolsCR,
 					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				HTTPS: HTTPSServerConfig{
@@ -231,6 +233,7 @@ func TestLoadFromFile(t *testing.T) {
 					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+					ScrapeProtocols:                 defaultScrapeProtocolsCR,
 					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				HTTPS: HTTPSServerConfig{
@@ -335,6 +338,7 @@ func TestLoadFromFile(t *testing.T) {
 					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+					ScrapeProtocols:                 defaultScrapeProtocolsCR,
 					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				HTTPS: HTTPSServerConfig{
@@ -439,6 +443,7 @@ func TestLoadFromFile(t *testing.T) {
 					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
 					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+					ScrapeProtocols:                 defaultScrapeProtocolsCR,
 					ScrapeInterval:                  DefaultCRScrapeInterval,
 				},
 				HTTPS: HTTPSServerConfig{
