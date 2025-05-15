@@ -6,9 +6,9 @@ package collector
 import (
 	"time"
 
+	"github.com/goccy/go-yaml"
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install" // Package install has the side-effect of registering all builtin.
-	"gopkg.in/yaml.v3"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -68,7 +68,7 @@ func ReplaceConfig(otelcol v1beta1.OpenTelemetryCollector, targetAllocator *v1al
 	// type coercion checks are handled in the AddTAConfigToPromConfig method above
 	config["receivers"].(map[interface{}]interface{})["prometheus"] = updPromCfgMap
 
-	out, updCfgMarshalErr := yaml.Marshal(config)
+	out, updCfgMarshalErr := yaml.MarshalWithOptions(config, yaml.Indent(4), yaml.IndentSequence(true))
 	if updCfgMarshalErr != nil {
 		return "", updCfgMarshalErr
 	}
