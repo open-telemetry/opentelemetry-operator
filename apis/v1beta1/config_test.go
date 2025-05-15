@@ -11,14 +11,14 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	"github.com/goccy/go-yaml"
+	go_yaml "github.com/goccy/go-yaml"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	go_yaml "gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/yaml"
 )
 
 func TestConfigFiles(t *testing.T) {

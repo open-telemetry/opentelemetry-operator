@@ -11,10 +11,10 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	"github.com/goccy/go-yaml"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
