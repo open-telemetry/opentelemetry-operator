@@ -648,7 +648,7 @@ api-docs: crdoc kustomize
 .PHONY: chlog-install
 chlog-install: $(CHLOGGEN)
 $(CHLOGGEN): $(LOCALBIN)
-	GOBIN=$(LOCALBIN) go install go.opentelemetry.io/build-tools/chloggen@v0.11.0
+	GOBIN=$(LOCALBIN) go install go.opentelemetry.io/build-tools/chloggen@v0.23.1
 
 FILENAME?=$(shell git branch --show-current)
 .PHONY: chlog-new
