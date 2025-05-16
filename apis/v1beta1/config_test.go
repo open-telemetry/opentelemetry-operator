@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/goccy/go-yaml"
 	go_yaml "github.com/goccy/go-yaml"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -35,7 +34,7 @@ func TestConfigFiles(t *testing.T) {
 			collectorYaml, err := os.ReadFile(testFile)
 			require.NoError(t, err)
 
-			collectorJson, err := yaml.YAMLToJSON(collectorYaml)
+			collectorJson, err := go_yaml.YAMLToJSON(collectorYaml)
 			require.NoError(t, err)
 
 			cfg := &Config{}
@@ -45,7 +44,7 @@ func TestConfigFiles(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.JSONEq(t, string(collectorJson), string(jsonCfg))
-			yamlCfg, err := yaml.JSONToYAML(jsonCfg)
+			yamlCfg, err := go_yaml.JSONToYAML(jsonCfg)
 			require.NoError(t, err)
 			assert.YAMLEq(t, string(collectorYaml), string(yamlCfg))
 		})
@@ -56,7 +55,7 @@ func TestNullObjects(t *testing.T) {
 	collectorYaml, err := os.ReadFile("./testdata/otelcol-null-values.yaml")
 	require.NoError(t, err)
 
-	collectorJson, err := yaml.YAMLToJSON(collectorYaml)
+	collectorJson, err := go_yaml.YAMLToJSON(collectorYaml)
 	require.NoError(t, err)
 
 	cfg := &Config{}
@@ -71,7 +70,7 @@ func TestNullObjects_issue_3445(t *testing.T) {
 	collectorYaml, err := os.ReadFile("./testdata/issue-3452.yaml")
 	require.NoError(t, err)
 
-	collectorJson, err := yaml.YAMLToJSON(collectorYaml)
+	collectorJson, err := go_yaml.YAMLToJSON(collectorYaml)
 	require.NoError(t, err)
 
 	cfg := &Config{}
