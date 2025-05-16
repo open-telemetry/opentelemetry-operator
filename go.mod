@@ -44,7 +44,7 @@ require (
 	go.uber.org/multierr v1.11.0
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v2 v2.4.0
-	gopkg.in/yaml.v3 v3.0.1
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/api v0.32.3
 	k8s.io/apiextensions-apiserver v0.32.3
 	k8s.io/apimachinery v0.32.3
@@ -226,7 +226,10 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.5.0 // indirect
 )
 
-require go.opentelemetry.io/contrib/otelconf v0.15.0
+require (
+	github.com/goccy/go-yaml v1.17.1
+	go.opentelemetry.io/contrib/otelconf v0.15.0
+)
 
 require (
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4 // indirect
