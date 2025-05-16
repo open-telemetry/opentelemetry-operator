@@ -39,12 +39,6 @@ const (
 	minEventInterval = time.Second * 5
 )
 
-var DefaultScrapeProtocols = []monitoringv1.ScrapeProtocol{
-	monitoringv1.OpenMetricsText1_0_0,
-	monitoringv1.OpenMetricsText0_0_1,
-	monitoringv1.PrometheusText0_0_4,
-}
-
 func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
 	promLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	slogger := slog.New(logr.ToSlogHandler(logger))
@@ -89,7 +83,7 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 				ProbeNamespaceSelector:          cfg.PrometheusCR.ProbeNamespaceSelector,
 				ServiceDiscoveryRole:            &serviceDiscoveryRole,
 				Version:                         "2.55.1", // fix Prometheus version 2 to avoid generating incompatible config
-				ScrapeProtocols:                 DefaultScrapeProtocols,
+				ScrapeProtocols:                 cfg.PrometheusCR.ScrapeProtocols,
 			},
 			EvaluationInterval: monitoringv1.Duration("30s"),
 		},
