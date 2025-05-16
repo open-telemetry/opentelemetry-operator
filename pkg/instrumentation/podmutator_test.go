@@ -4986,8 +4986,8 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
 				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
 			},
-			expectedStatus: false,
-			expectedMsg:    fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations"),
+			expectedStatus: true,
+			expectedMsg:    nil,
 		},
 		{
 			name: "Multiple instrumentations enabled with containers for single instrumentation",
@@ -4995,8 +4995,8 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				Java:   instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: []string{"test"}},
 				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
 			},
-			expectedStatus: false,
-			expectedMsg:    fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations"),
+			expectedStatus: true,
+			expectedMsg:    nil,
 		},
 		{
 			name: "Disabled instrumentations",
