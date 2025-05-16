@@ -34,7 +34,7 @@ func TestLoadFromFile(t *testing.T) {
 		{
 			name: "file sd load",
 			args: args{
-				file: "./testdata/config_test.yaml",
+				file: filepath.Join("testdata", "config_test.yaml"),
 			},
 			want: Config{
 				ListenAddr:         DefaultListenAddr,
@@ -67,7 +67,7 @@ func TestLoadFromFile(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
-						ScrapeProtocols:    DefaultScrapeProtocols,
+						ScrapeProtocols:    promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:      model.Duration(10 * time.Second),
 						EvaluationInterval: model.Duration(60 * time.Second),
 					},
@@ -78,7 +78,87 @@ func TestLoadFromFile(t *testing.T) {
 							EnableCompression: true,
 							HonorTimestamps:   true,
 							ScrapeInterval:    model.Duration(60 * time.Second),
-							ScrapeProtocols:   DefaultScrapeProtocols,
+							ScrapeProtocols:   promconfig.DefaultScrapeProtocols,
+							ScrapeTimeout:     model.Duration(10 * time.Second),
+							MetricsPath:       "/metrics",
+							Scheme:            "http",
+							HTTPClientConfig: commonconfig.HTTPClientConfig{
+								FollowRedirects: true,
+								EnableHTTP2:     true,
+							},
+							ServiceDiscoveryConfigs: []discovery.Config{
+								&file.SDConfig{
+									Files:           []string{"./file_sd_test.json"},
+									RefreshInterval: model.Duration(5 * time.Minute),
+								},
+								discovery.StaticConfig{
+									{
+										Targets: []model.LabelSet{
+											{model.AddressLabel: "prom.domain:9001"},
+											{model.AddressLabel: "prom.domain:9002"},
+											{model.AddressLabel: "prom.domain:9003"},
+										},
+										Labels: model.LabelSet{
+											"my": "label",
+										},
+										Source: "0",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "file sd load with global",
+			args: args{
+				file: filepath.Join("testdata", "global_config_test.yaml"),
+			},
+			want: Config{
+				ListenAddr:         DefaultListenAddr,
+				KubeConfigFilePath: DefaultKubeConfigFilePath,
+				AllocationStrategy: DefaultAllocationStrategy,
+				CollectorNamespace: "default",
+				CollectorSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app.kubernetes.io/instance":   "default.test",
+						"app.kubernetes.io/managed-by": "opentelemetry-operator",
+					},
+				},
+				FilterStrategy: DefaultFilterStrategy,
+				PrometheusCR: PrometheusCRConfig{
+					Enabled:                         true,
+					ScrapeInterval:                  model.Duration(time.Second * 60),
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+					ProbeNamespaceSelector:          &metav1.LabelSelector{},
+				},
+				CollectorNotReadyGracePeriod: 30 * time.Second,
+				HTTPS: HTTPSServerConfig{
+					Enabled:         true,
+					ListenAddr:      ":8443",
+					CAFilePath:      "/path/to/ca.pem",
+					TLSCertFilePath: "/path/to/cert.pem",
+					TLSKeyFilePath:  "/path/to/key.pem",
+				},
+				PromConfig: &promconfig.Config{
+					GlobalConfig: promconfig.GlobalConfig{
+						ScrapeInterval:     model.Duration(60 * time.Second),
+						ScrapeProtocols:    []promconfig.ScrapeProtocol{promconfig.PrometheusProto},
+						ScrapeTimeout:      model.Duration(10 * time.Second),
+						EvaluationInterval: model.Duration(60 * time.Second),
+					},
+					Runtime: promconfig.DefaultRuntimeConfig,
+					ScrapeConfigs: []*promconfig.ScrapeConfig{
+						{
+							JobName:           "prometheus",
+							EnableCompression: true,
+							HonorTimestamps:   true,
+							ScrapeInterval:    model.Duration(60 * time.Second),
+							ScrapeProtocols:   []promconfig.ScrapeProtocol{promconfig.PrometheusProto},
 							ScrapeTimeout:     model.Duration(10 * time.Second),
 							MetricsPath:       "/metrics",
 							Scheme:            "http",
@@ -114,7 +194,7 @@ func TestLoadFromFile(t *testing.T) {
 		{
 			name: "no config",
 			args: args{
-				file: "./testdata/no_config.yaml",
+				file: filepath.Join("testdata", "no_config.yaml"),
 			},
 			want:    CreateDefaultConfig(),
 			wantErr: assert.NoError,
@@ -159,7 +239,7 @@ func TestLoadFromFile(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
-						ScrapeProtocols:    DefaultScrapeProtocols,
+						ScrapeProtocols:    promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:      model.Duration(10 * time.Second),
 						EvaluationInterval: model.Duration(60 * time.Second),
 					},
@@ -170,7 +250,7 @@ func TestLoadFromFile(t *testing.T) {
 							EnableCompression: true,
 							HonorTimestamps:   true,
 							ScrapeInterval:    model.Duration(60 * time.Second),
-							ScrapeProtocols:   DefaultScrapeProtocols,
+							ScrapeProtocols:   promconfig.DefaultScrapeProtocols,
 							ScrapeTimeout:     model.Duration(10 * time.Second),
 							MetricsPath:       "/metrics",
 							Scheme:            "http",
@@ -202,7 +282,7 @@ func TestLoadFromFile(t *testing.T) {
 		{
 			name: "service monitor pod monitor selector with camelcase",
 			args: args{
-				file: "./testdata/pod_service_selector_camelcase_test.yaml",
+				file: filepath.Join("testdata", "pod_service_selector_camelcase_test.yaml"),
 			},
 			want: Config{
 				ListenAddr:         DefaultListenAddr,
@@ -239,7 +319,7 @@ func TestLoadFromFile(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
-						ScrapeProtocols:    DefaultScrapeProtocols,
+						ScrapeProtocols:    promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:      model.Duration(10 * time.Second),
 						EvaluationInterval: model.Duration(60 * time.Second),
 					},
@@ -250,7 +330,7 @@ func TestLoadFromFile(t *testing.T) {
 							EnableCompression: true,
 							HonorTimestamps:   true,
 							ScrapeInterval:    model.Duration(60 * time.Second),
-							ScrapeProtocols:   DefaultScrapeProtocols,
+							ScrapeProtocols:   promconfig.DefaultScrapeProtocols,
 							ScrapeTimeout:     model.Duration(10 * time.Second),
 							MetricsPath:       "/metrics",
 							Scheme:            "http",
@@ -282,7 +362,7 @@ func TestLoadFromFile(t *testing.T) {
 		{
 			name: "service monitor pod monitor selector with matchexpressions",
 			args: args{
-				file: "./testdata/pod_service_selector_expressions_test.yaml",
+				file: filepath.Join("testdata", "pod_service_selector_expressions_test.yaml"),
 			},
 			want: Config{
 				ListenAddr:         DefaultListenAddr,
@@ -343,7 +423,7 @@ func TestLoadFromFile(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
-						ScrapeProtocols:    DefaultScrapeProtocols,
+						ScrapeProtocols:    promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:      model.Duration(10 * time.Second),
 						EvaluationInterval: model.Duration(60 * time.Second),
 					},
@@ -354,7 +434,7 @@ func TestLoadFromFile(t *testing.T) {
 							EnableCompression: true,
 							HonorTimestamps:   true,
 							ScrapeInterval:    model.Duration(60 * time.Second),
-							ScrapeProtocols:   DefaultScrapeProtocols,
+							ScrapeProtocols:   promconfig.DefaultScrapeProtocols,
 							ScrapeTimeout:     model.Duration(10 * time.Second),
 							MetricsPath:       "/metrics",
 							Scheme:            "http",
@@ -386,7 +466,7 @@ func TestLoadFromFile(t *testing.T) {
 		{
 			name: "service monitor pod monitor selector with camelcase matchexpressions",
 			args: args{
-				file: "./testdata/pod_service_selector_camelcase_expressions_test.yaml",
+				file: filepath.Join("testdata", "pod_service_selector_camelcase_expressions_test.yaml"),
 			},
 			want: Config{
 				ListenAddr:         DefaultListenAddr,
@@ -447,7 +527,7 @@ func TestLoadFromFile(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:     model.Duration(60 * time.Second),
-						ScrapeProtocols:    DefaultScrapeProtocols,
+						ScrapeProtocols:    promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:      model.Duration(10 * time.Second),
 						EvaluationInterval: model.Duration(60 * time.Second),
 					},
@@ -458,7 +538,7 @@ func TestLoadFromFile(t *testing.T) {
 							EnableCompression: true,
 							HonorTimestamps:   true,
 							ScrapeInterval:    model.Duration(60 * time.Second),
-							ScrapeProtocols:   DefaultScrapeProtocols,
+							ScrapeProtocols:   promconfig.DefaultScrapeProtocols,
 							ScrapeTimeout:     model.Duration(10 * time.Second),
 							MetricsPath:       "/metrics",
 							Scheme:            "http",
