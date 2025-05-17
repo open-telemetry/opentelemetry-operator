@@ -725,3 +725,51 @@ func TestStatefulSetDNSConfig(t *testing.T) {
 	assert.Equal(t, corev1.DNSPolicy("None"), d.Spec.Template.Spec.DNSPolicy)
 	assert.Equal(t, d.Spec.Template.Spec.DNSConfig.Nameservers, []string{"8.8.8.8"})
 }
+
+func TestStatefulSetTerminationGracePeriodSeconds(t *testing.T) {
+	// Test the case where terminationGracePeriodSeconds is not set
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	s1, err := StatefulSet(params1)
+	require.NoError(t, err)
+	assert.Nil(t, s1.Spec.Template.Spec.TerminationGracePeriodSeconds)
+
+	// Test the case where terminationGracePeriodSeconds is set
+	gracePeriodSec := int64(60)
+
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-terminationGracePeriodSeconds",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				TerminationGracePeriodSeconds: &gracePeriodSec,
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	s2, err := StatefulSet(params2)
+	require.NoError(t, err)
+	assert.NotNil(t, s2.Spec.Template.Spec.TerminationGracePeriodSeconds)
+	assert.Equal(t, gracePeriodSec, *s2.Spec.Template.Spec.TerminationGracePeriodSeconds)
+}
