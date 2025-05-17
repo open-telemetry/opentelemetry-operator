@@ -31,3 +31,6 @@ RUN unzip opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip &&\
 FROM busybox
 
 COPY --from=downloader /autoinstrumentation /autoinstrumentation
+
+RUN addgroup -g 1000 -S nonroot && adduser -u 1000 -S nonroot -G nonroot
+USER 1000:1000
