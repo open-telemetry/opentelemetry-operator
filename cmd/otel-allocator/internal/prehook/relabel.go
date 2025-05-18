@@ -4,7 +4,6 @@
 package prehook
 
 import (
-	"github.com/prometheus/common/model"
 	"slices"
 
 	"github.com/go-logr/logr"
@@ -49,14 +48,6 @@ func (tf *relabelConfigTargetFilter) Apply(targets []*target.Item) []*target.Ite
 		}
 
 		if keepTarget {
-			// Only if the key model.AddressLabel remains after relabeling is the value considered valid.
-			// For detail, see https://github.com/prometheus/prometheus/blob/e6cfa720fbe6280153fab13090a483dbd40bece3/scrape/target.go#L457
-			if address := lset.Get(model.AddressLabel); len(address) != 0 {
-				hash := lset.Hash()
-				tItem.HashFunc = func() uint64 {
-					return hash
-				}
-			}
 			targets[writeIndex] = tItem
 			writeIndex++
 		}

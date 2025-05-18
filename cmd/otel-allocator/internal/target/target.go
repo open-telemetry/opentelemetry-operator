@@ -29,18 +29,11 @@ type Item struct {
 	Labels        labels.Labels
 	CollectorName string
 	hash          ItemHash
-	HashFunc      func() uint64
 }
 
 func (t *Item) Hash() ItemHash {
 	if t.hash == 0 {
-		hashFunc := t.Labels.Hash
-		if t.HashFunc != nil {
-			hashFunc = t.HashFunc
-			// Release the reference to avoid unintentionally retaining large objects.
-			t.HashFunc = nil
-		}
-		t.hash = ItemHash(hashFunc())
+		t.hash = ItemHash(t.Labels.Hash())
 	}
 	return t.hash
 }
@@ -62,7 +55,7 @@ func (t *Item) GetNodeName() string {
 
 // NewItem Creates a new target item.
 // INVARIANTS:
-// * Item fields initialized in NewItem must not be modified after creation.
+// * Item fields must not be modified after creation.
 func NewItem(jobName string, targetURL string, labels labels.Labels, collectorName string) *Item {
 	return &Item{
 		JobName:       jobName,
