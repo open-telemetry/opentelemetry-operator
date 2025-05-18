@@ -371,8 +371,8 @@ e2e-upgrade: undeploy chainsaw
 
 # end-to-end tests to test crd validations
 # skip testing for k8s versions < 1.25, as crd validations are still in alpha stage in those versions
-.PHONY: e2e-cel
-e2e-cel: chainsaw
+.PHONY: e2e-crd-validations
+e2e-crd-validations: chainsaw
 	@if [ $$(kubectl version  | grep 'Server Version' | awk '{print $3}' | cut -d. -f2) -gt 24 ];then \
 		$(CHAINSAW) test --test-dir ./tests/e2e-crd-validations ;\
 	fi
