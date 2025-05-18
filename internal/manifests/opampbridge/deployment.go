@@ -16,7 +16,7 @@ import (
 // Deployment builds the deployment for the given instance.
 func Deployment(params manifests.Params) *appsv1.Deployment {
 	name := naming.OpAMPBridge(params.OpAMPBridge.Name)
-	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, manifestutils.WithFilterLabels(params.Config.LabelsFilter()))
 	configMap, err := ConfigMap(params)
 	if err != nil {
 		params.Log.Info("failed to construct OpAMPBridge ConfigMap for annotations")

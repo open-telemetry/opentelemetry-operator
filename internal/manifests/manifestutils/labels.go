@@ -23,14 +23,40 @@ func IsFilteredSet(sourceSet string, filterSet []string) bool {
 	return false
 }
 
+type labelConfig struct {
+	filterLabels     []string
+	additionalLabels map[string]string
+}
+
+type LabelOption func(c *labelConfig)
+
+func WithFilterLabels(filters []string) LabelOption {
+	return func(c *labelConfig) {
+		c.filterLabels = filters
+	}
+}
+
+func WithAdditionalLabels(labels map[string]string) LabelOption {
+	return func(c *labelConfig) {
+		c.additionalLabels = labels
+	}
+}
+
 // Labels return the common labels to all objects that are part of a managed CR.
-func Labels(instance metav1.ObjectMeta, name string, image string, component string, filterLabels []string) map[string]string {
-	var versionLabel string
+func Labels(instance metav1.ObjectMeta, name string, image string, component string, opts ...LabelOption) map[string]string {
+	var config labelConfig
+	for _, opt := range opts {
+		opt(&config)
+	}
+
 	// new map every time, so that we don't touch the instance's label
 	base := map[string]string{}
+	for k, v := range config.additionalLabels {
+		base[k] = v
+	}
 	if instance.Labels != nil {
 		for k, v := range instance.Labels {
-			if !IsFilteredSet(k, filterLabels) {
+			if !IsFilteredSet(k, config.filterLabels) {
 				base[k] = v
 			}
 		}
@@ -41,6 +67,7 @@ func Labels(instance metav1.ObjectMeta, name string, image string, component str
 	}
 
 	version := strings.Split(image, ":")
+	var versionLabel string
 	for _, v := range version {
 		if strings.HasSuffix(v, "@sha256") {
 			versionLabel = strings.TrimSuffix(v, "@sha256")
