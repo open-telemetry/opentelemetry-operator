@@ -80,7 +80,7 @@ func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, use
 		nginxCloneScriptTemplate :=
 			`
 cp -r %[2]s/* %[3]s &&
-export %[4]s=$( { nginx -v ; } 2>&1 ) && echo ${%[4]s##*/} > %[3]s/version.txt
+export %[4]s="$( { nginx -v ; } 2>&1 )" && echo ${%[4]s##*/} > %[3]s/version.txt
 `
 		nginxAgentCommands := prepareCommandFromTemplate(nginxCloneScriptTemplate,
 			nginxConfFile,
