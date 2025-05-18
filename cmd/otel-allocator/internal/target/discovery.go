@@ -103,6 +103,7 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 	// If the hash has changed, updated stored hash and send the new config.
 	// Otherwise, skip updating scrape configs.
 	if m.scrapeConfigsUpdater != nil && m.scrapeConfigsHash != hash {
+		jobToScrapeConfig = m.rewriteRelabelConfigs(jobToScrapeConfig)
 		err := m.scrapeConfigsUpdater.UpdateScrapeConfigResponse(jobToScrapeConfig)
 		if err != nil {
 			return err
@@ -115,6 +116,15 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 		m.hook.SetConfig(relabelCfg)
 	}
 	return m.manager.ApplyConfig(discoveryCfg)
+}
+
+func (m *Discoverer) rewriteRelabelConfigs(jobToScrapeConfig map[string]*promconfig.ScrapeConfig) map[string]*promconfig.ScrapeConfig {
+	newJobToScrapeConfig := make(map[string]*promconfig.ScrapeConfig, len(jobToScrapeConfig))
+	for jobName, cfg := range jobToScrapeConfig {
+		// TODO rewrite relabel configs by prometheus common labels
+		newJobToScrapeConfig[jobName] = cfg
+	}
+	return newJobToScrapeConfig
 }
 
 func (m *Discoverer) Run() error {

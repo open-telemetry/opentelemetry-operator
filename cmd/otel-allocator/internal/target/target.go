@@ -4,6 +4,7 @@
 package target
 
 import (
+	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
 )
 
@@ -21,14 +22,34 @@ var (
 	relevantLabelNames           = append(nodeLabels, endpointSliceTargetKindLabel, endpointSliceTargetNameLabel)
 )
 
+// TODO Add comments for metricResourceLabels
+var (
+	metricResourceLabels = append(nodeLabels, []string{
+		model.SchemeLabel,
+		"__meta_kubernetes_pod_name",
+		"__meta_kubernetes_pod_uid",
+		"__meta_kubernetes_pod_container_name",
+		"__meta_kubernetes_namespace",
+	}...)
+)
+
 type ItemHash uint64
 
 type Item struct {
-	JobName       string
-	TargetURL     string
-	Labels        labels.Labels
-	CollectorName string
-	hash          ItemHash
+	JobName        string
+	TargetURL      string
+	Labels         labels.Labels
+	ReservedLabels labels.Labels
+	CollectorName  string
+	hash           ItemHash
+}
+
+type ItemOption func(*Item)
+
+func WithReservedLabelMatching(labels labels.Labels) ItemOption {
+	return func(i *Item) {
+		i.ReservedLabels = labels.MatchLabels(true, metricResourceLabels...)
+	}
 }
 
 func (t *Item) Hash() ItemHash {
@@ -53,14 +74,24 @@ func (t *Item) GetNodeName() string {
 	return relevantLabels.Get(endpointSliceTargetNameLabel)
 }
 
+func (t *Item) AllLabels() labels.Labels {
+	allLabels := make(labels.Labels, 0, len(t.Labels)+len(t.ReservedLabels))
+	allLabels = append(allLabels, t.ReservedLabels...)
+	return append(allLabels, t.Labels.MatchLabels(false, relevantLabelNames...)...)
+}
+
 // NewItem Creates a new target item.
 // INVARIANTS:
 // * Item fields must not be modified after creation.
-func NewItem(jobName string, targetURL string, labels labels.Labels, collectorName string) *Item {
-	return &Item{
+func NewItem(jobName string, targetURL string, labels labels.Labels, collectorName string, opts ...ItemOption) *Item {
+	item := &Item{
 		JobName:       jobName,
 		TargetURL:     targetURL,
 		Labels:        labels,
 		CollectorName: collectorName,
 	}
+	for _, opt := range opts {
+		opt(item)
+	}
+	return item
 }
