@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: verify-traces
+spec:
+  template:
+    spec:
+      containers:
+      - name: verify-traces
+        image: ghcr.io/grafana/tempo-operator/test-utils:main
+        command: ["/bin/bash", "-eux", "-c"]
+        args:
+        - |
+          curl -sS -G \
+            --data-urlencode 'q={ resource.service.name="telemetrygen" }' \
+            http://tempo-otlpmetrics.chainsaw-otlp-metrics.svc:3200/api/search \
+            | tee /tmp/tempo.out
+
+          num_traces=$(jq ".traces | length" /tmp/tempo.out)
+          if [[ "$num_traces" -le "1" ]]; then
+            echo && echo "The Tempo API returned $num_traces."
+            exit 1
+          fi
+      restartPolicy: Never

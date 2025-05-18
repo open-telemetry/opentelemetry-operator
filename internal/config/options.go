@@ -9,6 +9,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -49,6 +50,8 @@ type options struct {
 	prometheusCRAvailability            prometheus.Availability
 	certManagerAvailability             certmanager.Availability
 	targetAllocatorAvailability         targetallocator.Availability
+	collectorAvailability               collector.Availability
+	ignoreMissingCollectorCRDs          bool
 	labelsFilter                        []string
 	annotationsFilter                   []string
 }
@@ -225,5 +228,11 @@ func WithEncodeLevelFormat(s string) zapcore.LevelEncoder {
 		return zapcore.LowercaseLevelEncoder
 	} else {
 		return zapcore.CapitalLevelEncoder
+	}
+}
+
+func WithIgnoreMissingCollectorCRDs(b bool) Option {
+	return func(o *options) {
+		o.ignoreMissingCollectorCRDs = b
 	}
 }

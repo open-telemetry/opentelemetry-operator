@@ -20,7 +20,7 @@ REQUIRED_ITEMS=(
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/poddisruptionbudget-stateful-targetallocator.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/poddisruptionbudget-stateful-collector.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-targetallocator.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/configmap-stateful-collector-2729987d.yaml
+  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/configmap-stateful-collector-*.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/configmap-stateful-targetallocator.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/statefulset-stateful-collector.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/opentelemetrycollector-stateful.yaml
@@ -28,7 +28,7 @@ REQUIRED_ITEMS=(
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/service-sidecar-collector.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/opentelemetrycollector-sidecar.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/service-sidecar-collector-monitoring.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/configmap-sidecar-collector-3826c0e7.yaml
+  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/configmap-sidecar-collector-*.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/serviceaccount-sidecar-collector.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/service-sidecar-collector-headless.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/chainsaw-must-gather/instrumentation-nodejs.yaml
