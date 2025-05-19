@@ -392,11 +392,6 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 			return nil, err
 		}
 
-		generatedConfig, err = applyPromConfigDefaults(generatedConfig)
-		if err != nil {
-			return nil, err
-		}
-
 		unmarshalErr := yaml.Unmarshal(generatedConfig, promCfg)
 		if unmarshalErr != nil {
 			return nil, unmarshalErr
@@ -455,19 +450,4 @@ func (w *PrometheusCRWatcher) WaitForNamedCacheSync(controllerName string, inf c
 	}
 
 	return ok
-}
-
-// applyPromConfigDefaults applies our own defaults to the Prometheus configuration. The unmarshalling process for
-// Prometheus config is quite involved, and as a result, we need to apply our own defaults before it happens.
-func applyPromConfigDefaults(configBytes []byte) ([]byte, error) {
-	var configMap map[any]any
-	err := yaml.Unmarshal(configBytes, &configMap)
-	if err != nil {
-		return nil, err
-	}
-	err = allocatorconfig.ApplyPromConfigDefaults(configMap)
-	if err != nil {
-		return nil, err
-	}
-	return yaml.Marshal(configMap)
 }

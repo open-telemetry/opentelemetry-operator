@@ -36,12 +36,6 @@ import (
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 )
 
-var defaultScrapeProtocols = []promconfig.ScrapeProtocol{
-	promconfig.OpenMetricsText1_0_0,
-	promconfig.OpenMetricsText0_0_1,
-	promconfig.PrometheusText0_0_4,
-}
-
 func TestLoadConfig(t *testing.T) {
 	namespace := "test"
 	portName := "web"
@@ -100,7 +94,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/simple/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -122,7 +116,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/simple/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -193,7 +187,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/auth/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -261,7 +255,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/bearer/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -357,7 +351,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/valid-sm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -379,7 +373,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -468,7 +462,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/valid-sm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -490,7 +484,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -561,7 +555,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/sm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -632,7 +626,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/pm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -693,7 +687,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "scrapeConfig/test/scrapeconfig-test-1",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -757,7 +751,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "probe/test/probe-test-1",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -832,7 +826,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/labellednamespace/sm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -902,7 +896,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/labellednamespace/pm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -1008,7 +1002,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 			{
 				JobName:         "podMonitor/labellednamespace/pm-1/0",
 				ScrapeInterval:  model.Duration(30 * time.Second),
-				ScrapeProtocols: defaultScrapeProtocols,
+				ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 				ScrapeTimeout:   model.Duration(10 * time.Second),
 				HonorTimestamps: true,
 				HonorLabels:     false,
