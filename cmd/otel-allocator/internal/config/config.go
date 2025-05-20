@@ -48,14 +48,6 @@ var (
 	DefaultKubeConfigFilePath string = filepath.Join(homedir.HomeDir(), ".kube", "config")
 )
 
-// By default, scrape protocols include PrometheusText1_0_0, which only Prometheus >=3.0 supports.
-// Manually exclude this protocol until several versions of the Otel Collector support it.
-var DefaultScrapeProtocols = []promconfig.ScrapeProtocol{
-	promconfig.OpenMetricsText1_0_0,
-	promconfig.OpenMetricsText0_0_1,
-	promconfig.PrometheusText0_0_4,
-}
-
 // logger which discards all messages written to it. Replace this with slog.DiscardHandler after we require Go 1.24.
 var NopLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(math.MaxInt)}))
 
@@ -135,50 +127,19 @@ func MapToPromConfig() mapstructure.DecodeHookFuncType {
 			return data, nil
 		}
 
-		pConfig := &promconfig.Config{}
-
 		dataMap := data.(map[any]any)
-		err := ApplyPromConfigDefaults(dataMap)
-		if err != nil {
-			return nil, err
-		}
 		mb, err := yaml.Marshal(dataMap)
 		if err != nil {
 			return nil, err
 		}
 
+		pConfig := &promconfig.Config{}
 		err = yaml.Unmarshal(mb, pConfig)
 		if err != nil {
 			return nil, err
 		}
 		return pConfig, nil
 	}
-}
-
-// applyPromConfigDefaults applies our own defaults to the Prometheus configuration. The unmarshalling process for
-// Prometheus config is quite involved, and as a result, we need to apply our own defaults before it happens.
-func ApplyPromConfigDefaults(promcCfgMap map[any]any) error {
-	// use our own struct definition here because we don't want Prometheus unmarshalling logic to apply here
-	promCfg := struct {
-		GlobalConfig struct {
-			ScrapeProtocols []promconfig.ScrapeProtocol `mapstructure:"scrape_protocols"`
-			Rest            map[any]any                 `mapstructure:",remain"`
-		} `mapstructure:"global"`
-		Rest map[any]any `mapstructure:",remain"`
-	}{}
-	err := mapstructure.Decode(promcCfgMap, &promCfg)
-	if err != nil {
-		return err
-	}
-	// apply defaults here
-	promCfg.GlobalConfig.ScrapeProtocols = DefaultScrapeProtocols
-
-	// decode back into the map
-	err = mapstructure.Decode(promCfg, &promcCfgMap)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // MapToLabelSelector returns a DecodeHookFuncType that

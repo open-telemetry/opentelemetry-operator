@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    deployment.kubernetes.io/revision: "1"
+    deployment.kubernetes.io/revision: "2"
   labels:
     app.kubernetes.io/component: opentelemetry-targetallocator
     app.kubernetes.io/managed-by: opentelemetry-operator
@@ -29,6 +29,8 @@ spec:
     spec:
       containers:
         - env:
+            - name: TEST_ENV
+              value: test
             - name: OTELCOL_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -61,6 +63,8 @@ spec:
           volumeMounts:
             - mountPath: /conf
               name: ta-internal
+            - mountPath: /usr/share/testvolume
+              name: testvolume
       serviceAccountName: cr-targetallocator
       volumes:
         - configMap:
@@ -70,6 +74,9 @@ spec:
                 path: targetallocator.yaml
             name: cr-targetallocator
           name: ta-internal
+        - name: testvolume
+          emptyDir: {}
+
 status:
   readyReplicas: 1
   replicas: 1
