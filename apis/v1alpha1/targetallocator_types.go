@@ -87,7 +87,7 @@ type TargetAllocatorSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
 	Observability v1beta1.ObservabilitySpec `json:"observability,omitempty"`
 	// CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
-	// The default is 30s, which means collectors will only be assigned targets if they have been ready for at least 30s.
+	// The default is 30s, which means that if a collector becomes not Ready, the target allocator will wait for 30 seconds before reassigning its targets. The assumption is that the state is temporary, and an expensive target reallocation should be avoided if possible.
 	//
 	// +optional
 	CollectorNotReadyGracePeriod *metav1.Duration `json:"collectorNotReadyGracePeriod,omitempty"`
