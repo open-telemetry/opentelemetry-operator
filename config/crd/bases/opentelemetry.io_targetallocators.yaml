@@ -1168,8 +1168,6 @@ spec:
                   type: string
                 type: object
               collectorNotReadyGracePeriod:
-                default: 30s
-                format: duration
                 type: string
               env:
                 items:
