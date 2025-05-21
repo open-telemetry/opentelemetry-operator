@@ -90,5 +90,7 @@ type TargetAllocatorSpec struct {
 	// The default is 30s, which means that if a collector becomes not Ready, the target allocator will wait for 30 seconds before reassigning its targets. The assumption is that the state is temporary, and an expensive target reallocation should be avoided if possible.
 	//
 	// +optional
+	// +kubebuilder:default:="30s"
+	// +kubebuilder:validation:Format:=duration
 	CollectorNotReadyGracePeriod *metav1.Duration `json:"collectorNotReadyGracePeriod,omitempty"`
 }
