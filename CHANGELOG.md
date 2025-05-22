@@ -6,11 +6,11 @@
 
 ### 🛑 Breaking changes 🛑
 
-- `otel-allocator`: Switch to Prometheus 3.0 defaults for ScraperProtocols, requires prometheusreceiver >0.120.0 (#3872)
+- `target-allocator`: Switch to Prometheus 3.0 defaults for ScraperProtocols, requires prometheusreceiver >0.120.0 (#3872)
 
 ### 💡 Enhancements 💡
 
-- `otel-allocator`: Allow to configure ScraperProtocols in prometheus common config (#4000)
+- `target-allocator`: Allow to configure ScraperProtocols in prometheus common config (#4000)
 - `target allocator`: set default target allocator grace period to 30 seconds (#3989)
   The config option collectorNotReadyGracePeriod have been set to 30s by default. The target allocator now waits for 30 seconds before reallocating targets from a collector which isn't Ready.
   Setting this value to 0 will restore previous behaviour.
