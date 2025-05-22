@@ -42,7 +42,7 @@ const (
 	DefaultCRScrapeInterval             model.Duration = model.Duration(time.Second * 30)
 	DefaultAllocationStrategy                          = "consistent-hashing"
 	DefaultFilterStrategy                              = "relabel-config"
-	DefaultCollectorNotReadyGracePeriod                = 0 * time.Second
+	DefaultCollectorNotReadyGracePeriod                = 30 * time.Second
 )
 
 var (

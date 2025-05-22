@@ -7692,6 +7692,8 @@ spec:
                     - per-node
                     type: string
                   collectorNotReadyGracePeriod:
+                    default: 30s
+                    format: duration
                     type: string
                   enabled:
                     type: boolean

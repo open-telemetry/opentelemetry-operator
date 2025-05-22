@@ -30719,7 +30719,10 @@ WARNING: The per-node strategy currently ignores targets without a Node, like co
         <td>string</td>
         <td>
           CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
-The default is 0s, which means that all collectors can be assigned targets irrespective of their readiness.<br/>
+The default is 30s, which means that if a collector becomes not Ready, the target allocator will wait for 30 seconds before reassigning its targets. The assumption is that the state is temporary, and an expensive target reallocation should be avoided if possible.<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+            <i>Default</i>: 30s<br/>
         </td>
         <td>false</td>
       </tr><tr>
