@@ -2,6 +2,37 @@
 
 <!-- next version -->
 
+## 0.126.0
+
+### 🛑 Breaking changes 🛑
+
+- `target-allocator`: Switch to Prometheus 3.0 defaults for ScraperProtocols, requires prometheusreceiver >0.120.0 (#3872)
+
+### 💡 Enhancements 💡
+
+- `target-allocator`: Allow to configure ScraperProtocols in prometheus common config (#4000)
+- `target allocator`: set default target allocator grace period to 30 seconds (#3989)
+  The config option collectorNotReadyGracePeriod have been set to 30s by default. The target allocator now waits for 30 seconds before reallocating targets from a collector which isn't Ready.
+  Setting this value to 0 will restore previous behaviour.
+
+### 🧰 Bug fixes 🧰
+
+- `otel-allocator`: Remove overwrite of global config ScraperProtocols (#3996)
+- `target allocator`: Fix user-defined volumes in the TargetAllocator CR (#3992)
+- `collector`: add terminationGracePeriodSeconds to DaemonSet and StatefulSet specs (#4003)
+
+### Components
+
+* [OpenTelemetry Collector - v0.126.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.126.0)
+* [OpenTelemetry Contrib - v0.126.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.126.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.58.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.58.1)
+* [Python - v0.54b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.54b1)
+* [Go - v0.21.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.21.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.125.0
 
 ### 💡 Enhancements 💡
