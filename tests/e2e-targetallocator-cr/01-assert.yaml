@@ -86,6 +86,7 @@ data:
   # Note: The content of this file must match exactly (careful about the order of keys) the content of the file in the ConfigMap
   targetallocator.yaml: |
     allocation_strategy: consistent-hashing
+    collector_not_ready_grace_period: 30s
     collector_selector: null
     filter_strategy: relabel-config
     prometheus_cr:
