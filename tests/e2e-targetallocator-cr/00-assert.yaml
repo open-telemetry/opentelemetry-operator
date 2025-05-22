@@ -121,10 +121,10 @@ metadata:
       name: cr
 spec:
   ports:
-    - name: targetallocation
-      port: 80
-      protocol: TCP
-      targetPort: http
+  - name: targetallocation
+    port: 80
+    protocol: TCP
+    targetPort: http
 ---
 apiVersion: v1
 kind: ServiceAccount
