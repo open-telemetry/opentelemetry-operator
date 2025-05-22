@@ -18,6 +18,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/go-viper/mapstructure/v2"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install"
@@ -48,6 +49,13 @@ var (
 	DefaultKubeConfigFilePath string = filepath.Join(homedir.HomeDir(), ".kube", "config")
 )
 
+var defaultScrapeProtocolsCR = []monitoringv1.ScrapeProtocol{
+	monitoringv1.OpenMetricsText1_0_0,
+	monitoringv1.OpenMetricsText0_0_1,
+	monitoringv1.PrometheusText1_0_0,
+	monitoringv1.PrometheusText0_0_4,
+}
+
 // logger which discards all messages written to it. Replace this with slog.DiscardHandler after we require Go 1.24.
 var NopLogger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.Level(math.MaxInt)}))
 
@@ -68,18 +76,19 @@ type Config struct {
 }
 
 type PrometheusCRConfig struct {
-	Enabled                         bool                  `yaml:"enabled,omitempty"`
-	AllowNamespaces                 []string              `yaml:"allow_namespaces,omitempty"`
-	DenyNamespaces                  []string              `yaml:"deny_namespaces,omitempty"`
-	PodMonitorSelector              *metav1.LabelSelector `yaml:"pod_monitor_selector,omitempty"`
-	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
-	ServiceMonitorSelector          *metav1.LabelSelector `yaml:"service_monitor_selector,omitempty"`
-	ServiceMonitorNamespaceSelector *metav1.LabelSelector `yaml:"service_monitor_namespace_selector,omitempty"`
-	ScrapeConfigSelector            *metav1.LabelSelector `yaml:"scrape_config_selector,omitempty"`
-	ScrapeConfigNamespaceSelector   *metav1.LabelSelector `yaml:"scrape_config_namespace_selector,omitempty"`
-	ProbeSelector                   *metav1.LabelSelector `yaml:"probe_selector,omitempty"`
-	ProbeNamespaceSelector          *metav1.LabelSelector `yaml:"probe_namespace_selector,omitempty"`
-	ScrapeInterval                  model.Duration        `yaml:"scrape_interval,omitempty"`
+	Enabled                         bool                          `yaml:"enabled,omitempty"`
+	AllowNamespaces                 []string                      `yaml:"allow_namespaces,omitempty"`
+	DenyNamespaces                  []string                      `yaml:"deny_namespaces,omitempty"`
+	PodMonitorSelector              *metav1.LabelSelector         `yaml:"pod_monitor_selector,omitempty"`
+	PodMonitorNamespaceSelector     *metav1.LabelSelector         `yaml:"pod_monitor_namespace_selector,omitempty"`
+	ServiceMonitorSelector          *metav1.LabelSelector         `yaml:"service_monitor_selector,omitempty"`
+	ServiceMonitorNamespaceSelector *metav1.LabelSelector         `yaml:"service_monitor_namespace_selector,omitempty"`
+	ScrapeConfigSelector            *metav1.LabelSelector         `yaml:"scrape_config_selector,omitempty"`
+	ScrapeConfigNamespaceSelector   *metav1.LabelSelector         `yaml:"scrape_config_namespace_selector,omitempty"`
+	ProbeSelector                   *metav1.LabelSelector         `yaml:"probe_selector,omitempty"`
+	ProbeNamespaceSelector          *metav1.LabelSelector         `yaml:"probe_namespace_selector,omitempty"`
+	ScrapeProtocols                 []monitoringv1.ScrapeProtocol `yaml:"scrape_protocols,omitempty"`
+	ScrapeInterval                  model.Duration                `yaml:"scrape_interval,omitempty"`
 }
 
 type HTTPSServerConfig struct {
@@ -322,6 +331,7 @@ func CreateDefaultConfig() Config {
 			PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
 			ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 			ProbeNamespaceSelector:          &metav1.LabelSelector{},
+			ScrapeProtocols:                 defaultScrapeProtocolsCR,
 		},
 		CollectorNotReadyGracePeriod: DefaultCollectorNotReadyGracePeriod,
 	}
