@@ -9,6 +9,8 @@ The OpAMP Bridge is able to:
 
 Further information and design of the OpAMP Bridge can be found in [OpAMP for OpenTelemetry Operator](https://docs.google.com/document/d/1M8VLNe_sv1MIfu5bUR5OV_vrMBnAI7IJN-7-IAr37JY/edit?usp=sharing).
 
+Examples of OpAMP server implementations that the OpAMP Bridge can interact with include [jaronoff97/opamp-elixir](https://github.com/jaronoff97/opamp-elixir) and [jaronoff97/opamp-operator-server](https://github.com/jaronoff97/opamp-operator-server).
+
 ## Usage
 
 ### OpAMPBridge CRD
