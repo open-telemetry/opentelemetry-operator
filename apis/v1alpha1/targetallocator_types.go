@@ -36,7 +36,7 @@ type TargetAllocator struct {
 type TargetAllocatorList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []v1beta1.OpenTelemetryCollector `json:"items"`
+	Items           []TargetAllocator `json:"items"`
 }
 
 // TargetAllocatorStatus defines the observed state of Target Allocator.
