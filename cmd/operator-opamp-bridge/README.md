@@ -11,6 +11,13 @@ Further information and design of the OpAMP Bridge can be found in [OpAMP for Op
 
 Examples of OpAMP server implementations that the OpAMP Bridge can interact with include [jaronoff97/opamp-elixir](https://github.com/jaronoff97/opamp-elixir) and [jaronoff97/opamp-operator-server](https://github.com/jaronoff97/opamp-operator-server).
 
+## Installation
+
+There are two main ways to install the OpAMP Bridge:
+
+1. As part of the OpenTelemetry Operator: The OpAMP Bridge is included with the OpenTelemetry Operator installation and can be deployed by creating an OpAMPBridge custom resource.
+2. Using the [OpenTelemetry Kube Stack Helm Chart](https://github.com/open-telemetry/opentelemetry-helm-charts/tree/main/charts/opentelemetry-kube-stack): The OpAMP Bridge is available as a component in the Helm chart, which serves as a quickstart that installs an OpenTelemetry Operator and a suite of collectors.
+
 ## Usage
 
 ### OpAMPBridge CRD
