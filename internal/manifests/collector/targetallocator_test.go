@@ -29,6 +29,17 @@ func TestTargetAllocator(t *testing.T) {
 			"label_key": "label_value",
 		},
 	}
+	expectedObjectMetadata := metav1.ObjectMeta{
+		Name:      "name",
+		Namespace: "namespace",
+		Annotations: map[string]string{
+			"annotation_key": "annotation_value",
+		},
+		Labels: map[string]string{
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"label_key":                    "label_value",
+		},
+	}
 	replicas := int32(2)
 	runAsNonRoot := true
 	privileged := true
@@ -63,7 +74,7 @@ func TestTargetAllocator(t *testing.T) {
 				},
 			},
 			want: &v1alpha1.TargetAllocator{
-				ObjectMeta: objectMetadata,
+				ObjectMeta: expectedObjectMetadata,
 				Spec: v1alpha1.TargetAllocatorSpec{
 					GlobalConfig: v1beta1.AnyConfig{},
 				},
@@ -172,7 +183,7 @@ func TestTargetAllocator(t *testing.T) {
 				},
 			},
 			want: &v1alpha1.TargetAllocator{
-				ObjectMeta: objectMetadata,
+				ObjectMeta: expectedObjectMetadata,
 				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas:     &replicas,

@@ -3136,7 +3136,9 @@ service:
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
-						Labels:    nil,
+						Labels: map[string]string{
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+						},
 					},
 					Spec: v1alpha1.TargetAllocatorSpec{
 						FilterStrategy:     v1beta1.TargetAllocatorFilterStrategyRelabelConfig,
@@ -3378,7 +3380,9 @@ service:
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test",
 						Namespace: "test",
-						Labels:    nil,
+						Labels: map[string]string{
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+						},
 					},
 					Spec: v1alpha1.TargetAllocatorSpec{
 						FilterStrategy: v1beta1.TargetAllocatorFilterStrategyRelabelConfig,

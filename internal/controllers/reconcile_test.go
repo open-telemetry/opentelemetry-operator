@@ -533,7 +533,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									Name:      params.Name,
 									Namespace: params.Namespace,
-									Labels:    nil,
+									Labels: map[string]string{
+										"app.kubernetes.io/managed-by": "opentelemetry-operator",
+									},
 								},
 								Spec: v1alpha1.TargetAllocatorSpec{
 									OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{},
