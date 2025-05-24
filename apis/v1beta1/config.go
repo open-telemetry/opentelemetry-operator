@@ -10,8 +10,8 @@ import (
 
 	"dario.cat/mergo"
 	"github.com/go-logr/logr"
+	go_yaml "github.com/goccy/go-yaml"
 	otelConfig "go.opentelemetry.io/contrib/otelconf/v0.3.0"
-	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
@@ -382,8 +382,7 @@ func (c *Config) GetReadinessProbe(logger logr.Logger) (*corev1.Probe, error) {
 // Yaml encodes the current object and returns it as a string.
 func (c *Config) Yaml() (string, error) {
 	var buf bytes.Buffer
-	yamlEncoder := yaml.NewEncoder(&buf)
-	yamlEncoder.SetIndent(2)
+	yamlEncoder := go_yaml.NewEncoder(&buf, go_yaml.IndentSequence(true), go_yaml.AutoInt())
 	if err := yamlEncoder.Encode(&c); err != nil {
 		return "", err
 	}

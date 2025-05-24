@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"gopkg.in/yaml.v3"
+	go_yaml "github.com/goccy/go-yaml"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,7 +55,7 @@ func (dst *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
 func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
 	copy := in.DeepCopy()
 	cfg := &v1beta1.Config{}
-	if err := yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
+	if err := go_yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
 		return v1beta1.OpenTelemetryCollector{}, errors.New("could not convert config json to v1beta1.Config")
 	}
 
