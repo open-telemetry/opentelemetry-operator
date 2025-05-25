@@ -20,12 +20,17 @@ ARG version
 
 WORKDIR /autoinstrumentation
 
+ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v$version/opentelemetry-dotnet-instrumentation-linux-glibc-arm64.zip .
 ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v$version/opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip .
+ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v$version/opentelemetry-dotnet-instrumentation-linux-musl-arm64.zip .
 ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v$version/opentelemetry-dotnet-instrumentation-linux-musl-x64.zip .
 
 RUN unzip opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip &&\
+    unzip opentelemetry-dotnet-instrumentation-linux-glibc-arm64.zip "linux-arm64/*" -d .&&\
     unzip opentelemetry-dotnet-instrumentation-linux-musl-x64.zip "linux-musl-x64/*" -d . &&\
-    rm opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip opentelemetry-dotnet-instrumentation-linux-musl-x64.zip &&\
+    unzip opentelemetry-dotnet-instrumentation-linux-musl-arm64.zip "linux-musl-arm64/*" -d . &&\
+    unzip opentelemetry-dotnet-instrumentation-linux-glibc-arm64.zip "store/arm64/*" -d .&&\
+    rm opentelemetry-dotnet-instrumentation-*.zip &&\
     chmod -R go+r .
 
 FROM busybox
