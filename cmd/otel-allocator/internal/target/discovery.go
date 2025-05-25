@@ -6,6 +6,7 @@ package target
 import (
 	"hash"
 	"hash/fnv"
+	"slices"
 	"sync"
 	"time"
 
@@ -43,6 +44,22 @@ var (
 		Help:    "Duration of processing target groups.",
 		Buckets: []float64{1, 5, 10, 30, 60, 120},
 	}, []string{"job_name"})
+)
+
+var (
+	// prometheusDefaultLabels are populated by Prometheus for scrape targets that are missing these values,
+	// before relabeling is applied.
+	//
+	// For details, see:
+	// https://github.com/prometheus/prometheus/blob/e6cfa720fbe6280153fab13090a483dbd40bece3/scrape/target.go#L429
+	//
+	// These labels are typically required for correct scraping behavior and are expected to be retained after relabeling.:
+	//
+	//   - __scrape_interval__
+	//   - __scrape_timeout__
+	//   - __scheme__
+	//   - __metrics_path__
+	prometheusDroppableDefaultLabel = model.JobLabel
 )
 
 type Discoverer struct {
@@ -100,10 +117,15 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 	if err != nil {
 		return err
 	}
+
+	if m.hook != nil {
+		m.hook.SetConfig(relabelCfg)
+		m.rewriteRelabelConfigs(jobToScrapeConfig)
+	}
+
 	// If the hash has changed, updated stored hash and send the new config.
 	// Otherwise, skip updating scrape configs.
 	if m.scrapeConfigsUpdater != nil && m.scrapeConfigsHash != hash {
-		jobToScrapeConfig = m.rewriteRelabelConfigs(jobToScrapeConfig)
 		err := m.scrapeConfigsUpdater.UpdateScrapeConfigResponse(jobToScrapeConfig)
 		if err != nil {
 			return err
@@ -112,19 +134,48 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 		m.scrapeConfigsHash = hash
 	}
 
-	if m.hook != nil {
-		m.hook.SetConfig(relabelCfg)
-	}
 	return m.manager.ApplyConfig(discoveryCfg)
 }
 
-func (m *Discoverer) rewriteRelabelConfigs(jobToScrapeConfig map[string]*promconfig.ScrapeConfig) map[string]*promconfig.ScrapeConfig {
-	newJobToScrapeConfig := make(map[string]*promconfig.ScrapeConfig, len(jobToScrapeConfig))
-	for jobName, cfg := range jobToScrapeConfig {
-		// TODO rewrite relabel configs by prometheus common labels
-		newJobToScrapeConfig[jobName] = cfg
+// rewriteRelabelConfigs rewrites the relabel configurations for all scrape jobs to ensure prometheusDroppableDefaultLabel are properly handled.
+// TODO: Determine how to handle default labels by comparing label sets before and after relabeling.
+func (m *Discoverer) rewriteRelabelConfigs(jobToScrapeConfig map[string]*promconfig.ScrapeConfig) {
+	DropRelabelConfigs := []*relabel.Config{
+		{
+			Regex:  relabel.MustNewRegexp(prometheusDroppableDefaultLabel),
+			Action: relabel.LabelDrop,
+		},
 	}
-	return newJobToScrapeConfig
+
+	for _, cfg := range jobToScrapeConfig {
+		drop := false
+
+	innerLoop:
+		for _, relabelConfig := range cfg.RelabelConfigs {
+			switch relabelConfig.Action {
+			case relabel.LabelDrop:
+				if relabelConfig.Regex.MatchString(prometheusDroppableDefaultLabel) {
+					drop = true
+					break innerLoop
+				}
+			case relabel.LabelKeep:
+				if !relabelConfig.Regex.MatchString(prometheusDroppableDefaultLabel) {
+					drop = true
+					break innerLoop
+				}
+			case relabel.Replace:
+				if len(relabelConfig.Replacement) == 0 && slices.Contains(relabelConfig.SourceLabels, model.LabelName(prometheusDroppableDefaultLabel)) {
+					drop = true
+					break innerLoop
+				}
+			}
+		}
+		if drop {
+			cfg.RelabelConfigs = DropRelabelConfigs
+			continue
+		}
+		cfg.RelabelConfigs = []*relabel.Config{}
+	}
 }
 
 func (m *Discoverer) Run() error {
