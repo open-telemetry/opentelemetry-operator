@@ -2146,6 +2146,10 @@ spec:
                     type: array
                     x-kubernetes-list-type: atomic
                 type: object
+              podLabels:
+                additionalProperties:
+                  type: string
+                type: object
               podSecurityContext:
                 properties:
                   appArmorProfile:

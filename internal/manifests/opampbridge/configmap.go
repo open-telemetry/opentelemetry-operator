@@ -19,7 +19,7 @@ const (
 
 func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.OpAMPBridgeConfigMap(params.OpAMPBridge.Name)
-	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, []string{})
+	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge)
 
 	config := make(map[interface{}]interface{})
 

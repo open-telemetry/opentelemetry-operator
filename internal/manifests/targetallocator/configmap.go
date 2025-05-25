@@ -28,7 +28,7 @@ const (
 func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	instance := params.TargetAllocator
 	name := naming.TAConfigMap(instance.Name)
-	labels := manifestutils.Labels(instance.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	labels := manifestutils.Labels(instance.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator)
 	taSpec := instance.Spec
 
 	taConfig := make(map[interface{}]interface{})

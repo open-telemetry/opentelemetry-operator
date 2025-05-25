@@ -25,7 +25,7 @@ func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
 	}
 
 	name := naming.ClusterRole(params.OtelCol.Name, params.OtelCol.Namespace)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, manifestutils.WithFilterLabels(params.Config.LabelsFilter()))
 
 	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
 	if err != nil {
@@ -51,7 +51,7 @@ func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, er
 	}
 
 	name := naming.ClusterRoleBinding(params.OtelCol.Name, params.OtelCol.Namespace)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, manifestutils.WithFilterLabels(params.Config.LabelsFilter()))
 
 	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
 	if err != nil {

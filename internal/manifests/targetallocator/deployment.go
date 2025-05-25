@@ -15,14 +15,24 @@ import (
 // Deployment builds the deployment for the given instance.
 func Deployment(params Params) (*appsv1.Deployment, error) {
 	name := naming.TargetAllocator(params.TargetAllocator.Name)
-	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, manifestutils.WithFilterLabels(params.Config.LabelsFilter()))
 
 	configMap, err := ConfigMap(params)
 	if err != nil {
 		params.Log.Info("failed to construct target allocator config map for annotations")
 		configMap = nil
 	}
-	annotations := Annotations(params.TargetAllocator, configMap, params.Config.AnnotationsFilter())
+
+	podLabels := manifestutils.Labels(
+		params.TargetAllocator.ObjectMeta,
+		name,
+		params.TargetAllocator.Spec.Image,
+		ComponentOpenTelemetryTargetAllocator,
+		manifestutils.WithFilterLabels(params.Config.LabelsFilter()),
+		manifestutils.WithAdditionalLabels(params.TargetAllocator.Spec.PodLabels),
+	)
+
+	podAnnotations := Annotations(params.TargetAllocator, configMap, params.Config.AnnotationsFilter())
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -37,8 +47,8 @@ func Deployment(params Params) (*appsv1.Deployment, error) {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels,
-					Annotations: annotations,
+					Labels:      podLabels,
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            ServiceAccountName(params.TargetAllocator),
