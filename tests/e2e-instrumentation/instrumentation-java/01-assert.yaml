@@ -21,22 +21,18 @@ spec:
       value: "true"
     - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
       value: "false"
-    - name: SPLUNK_PROFILER_ENABLED
-      value: "false"
     - name: JAVA_TOOL_OPTIONS
       value: ' -javaagent:/otel-auto-instrumentation-java-myapp/javaagent.jar'
-    - name: OTEL_TRACES_EXPORTER
-      value: otlp
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4317
-    - name: OTEL_EXPORTER_OTLP_TIMEOUT
-      value: "20000"
     - name: OTEL_TRACES_SAMPLER
       value: always_on
-    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
-      value: "true"
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_LOGS_EXPORTER
+      value: none
     - name: OTEL_SERVICE_NAME
       value: my-java
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4318
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
       valueFrom:
         fieldRef:
