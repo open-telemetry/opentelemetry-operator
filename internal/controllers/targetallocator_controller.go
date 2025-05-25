@@ -191,7 +191,7 @@ func (r *TargetAllocatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.Deployment{}).
 		Owns(&policyV1.PodDisruptionBudget{})
 
-	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability() == prometheus.Available {
+	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability == prometheus.Available {
 		ctrlBuilder.Owns(&monitoringv1.ServiceMonitor{})
 		ctrlBuilder.Owns(&monitoringv1.PodMonitor{})
 	}

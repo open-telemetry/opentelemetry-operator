@@ -82,7 +82,7 @@ func shouldCreateServiceMonitor(params manifests.Params) bool {
 	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
 		l.V(2).Info("Metrics disabled for this OTEL Collector. ServiceMonitor will not ve created")
 		return false
-	} else if params.Config.PrometheusCRAvailability() == prometheus.NotAvailable {
+	} else if params.Config.PrometheusCRAvailability == prometheus.NotAvailable {
 		l.V(2).Info("Cannot enable ServiceMonitor when prometheus CRDs are unavailable")
 		return false
 	} else if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {

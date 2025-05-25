@@ -404,8 +404,8 @@ func testCollectorWithPDB(minAvailable, maxUnavailable int32) v1alpha1.OpenTelem
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
 
-	configuration := config.New(config.WithAutoDetect(mockAutoDetector), config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
-	err = configuration.AutoDetect()
+	configuration := config.New(config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
+	err = autodetect.ApplyAutoDetect(mockAutoDetector, &configuration, ctrl.Log.WithName("autodetect"))
 	if err != nil {
 		logger.Error(err, "configuration.autodetect failed")
 	}
