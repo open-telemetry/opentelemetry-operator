@@ -168,6 +168,11 @@ func TestDuplicatedContainers(t *testing.T) {
 			containers:         []string{"app1", "app2", "app1", "app1", "app3", "app4", "app4"},
 			expectedDuplicates: fmt.Errorf("duplicated container names detected: [app1 app4]"),
 		},
+		{
+			name:               "No duplicates",
+			containers:         []string{"app1"},
+			expectedDuplicates: nil,
+		},
 	}
 
 	for _, test := range tests {
