@@ -226,6 +226,14 @@ add-operator-arg: manifests kustomize
 add-image-targetallocator:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--target-allocator-image=$(TARGETALLOCATOR_IMG)
 
+.PHONY: add-image-instrumentation
+add-instrumentation-images:
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-java-image=$(INSTRUMENTATION_JAVA_IMG)
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-nodejs-image=$(INSTRUMENTATION_NODEJS_IMG)
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-python-image=$(INSTRUMENTATION_PYTHON_IMG)
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-dotnet-image=$(INSTRUMENTATION_DOTNET_IMG)
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-apache-httpd-image=$(INSTRUMENTATION_APACHE_HTTPD_IMG)
+
 .PHONY: add-instrumentation-params
 add-instrumentation-params:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-go-instrumentation=true
@@ -334,6 +342,11 @@ e2e-automatic-rbac: chainsaw
 e2e-autoscale: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-autoscale
 
+# instrumentation end-to-tests, alias to make matrix tests more convenient
+# the tests are the same, but the setup is different
+.PHONY: e2e-instrumentation-default
+e2e-instrumentation-default: e2e-instrumentation
+
 # instrumentation end-to-tests
 .PHONY: e2e-instrumentation
 e2e-instrumentation: chainsaw
@@ -343,6 +356,11 @@ e2e-instrumentation: chainsaw
 e2e-log-operator:
 	kubectl get pod -n opentelemetry-operator-system | grep "opentelemetry-operator" | awk '{print $$1}' | xargs -I {} kubectl logs -n opentelemetry-operator-system {} manager
 	kubectl get deploy -A
+
+# multi-instrumentation end-to-tests, alias to make matrix tests more convenient
+# the tests are the same, but the setup is different
+.PHONY: e2e-multi-instrumentation-default
+e2e-multi-instrumentation-default: e2e-multi-instrumentation
 
 # end-to-tests for multi-instrumentation
 .PHONY: e2e-multi-instrumentation
@@ -508,7 +526,7 @@ install-targetallocator-prometheus-crds:
 .PHONY: load-image-all
 load-image-all:
 ifeq ($(IMAGE_ARCHIVE),)
-	@make container container-target-allocator container-operator-opamp-bridge container-bridge-test-server load-image-operator load-image-target-allocator load-image-operator-opamp-bridge load-image-bridge-test-server
+	@make container load-image-operator load-image-target-allocator load-image-operator-opamp-bridge load-image-bridge-test-server
 else
 	$(KIND) load --name $(KIND_CLUSTER_NAME) image-archive $(IMAGE_ARCHIVE)
 endif
@@ -537,6 +555,14 @@ load-image-bridge-test-server: container-bridge-test-server kind
 .PHONY: load-image-operator-opamp-bridge
 load-image-operator-opamp-bridge: container-operator-opamp-bridge kind
 	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${OPERATOROPAMPBRIDGE_IMG}
+
+.PHONY: load-images-instrumentation
+load-images-instrumentation: container-instrumentation-all kind
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${INSTRUMENTATION_JAVA_IMG}
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${INSTRUMENTATION_NODEJS_IMG}
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${INSTRUMENTATION_PYTHON_IMG}
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${INSTRUMENTATION_DOTNET_IMG}
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${INSTRUMENTATION_APACHE_HTTPD_IMG}
 
 .PHONY: cert-manager
 cert-manager: cmctl
@@ -801,7 +827,7 @@ catalog-push: ## Push a catalog image.
 	docker push $(CATALOG_IMG)
 
 container-image-archive: IMAGE_LIST_FILE = images-$(VERSION).txt
-container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server
+container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server container-instrumentation-all
 ifeq ($(IMAGE_ARCHIVE),)
 	$(error "Use make container-image-archive IMAGE_ARCHIVE=<filename>")
 endif
@@ -810,4 +836,9 @@ endif
 	@echo "$(TARGETALLOCATOR_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(OPERATOROPAMPBRIDGE_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(BRIDGETESTSERVER_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(INSTRUMENTATION_JAVA_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(INSTRUMENTATION_NODEJS_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(INSTRUMENTATION_PYTHON_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(INSTRUMENTATION_DOTNET_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(INSTRUMENTATION_APACHE_HTTPD_IMG)" >>$(IMAGE_LIST_FILE)
 	xargs -x -n 50 docker save -o "$(IMAGE_ARCHIVE)" <$(IMAGE_LIST_FILE)
