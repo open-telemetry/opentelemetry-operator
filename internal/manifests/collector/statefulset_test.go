@@ -784,19 +784,19 @@ func TestStatefulSetServiceName(t *testing.T) {
 			name: "StatefulSet with default naming",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "my-sts",
+					Name: "my-instance",
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: v1beta1.ModeStatefulSet,
 				},
 			},
-			expectedServiceName: "my-sts-collector-headless",
+			expectedServiceName: "my-instance-collector-headless",
 		},
 		{
 			name: "StatefulSet with custom service name",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "my-collector",
+					Name: "my-instance",
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode:        v1beta1.ModeStatefulSet,
