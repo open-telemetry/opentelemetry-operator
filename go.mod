@@ -25,9 +25,9 @@ require (
 	github.com/openshift/api v0.0.0-20240124164020-e2ce40831f2e
 	github.com/operator-framework/api v0.31.0
 	github.com/operator-framework/operator-lib v0.18.0
-	github.com/prometheus-operator/prometheus-operator v0.80.1
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.80.1
-	github.com/prometheus-operator/prometheus-operator/pkg/client v0.80.1
+	github.com/prometheus-operator/prometheus-operator v0.81.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.81.0
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.81.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/common v0.64.0
 	github.com/prometheus/prometheus v0.301.0
@@ -180,7 +180,7 @@ require (
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus-community/prom-label-proxy v0.11.0 // indirect
-	github.com/prometheus/alertmanager v0.28.0 // indirect
+	github.com/prometheus/alertmanager v0.28.1 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.30 // indirect
@@ -223,7 +223,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20241212222426-2c72e554b1e7 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.5.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 )
 
 require (
