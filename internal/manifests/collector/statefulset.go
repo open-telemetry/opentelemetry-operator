@@ -27,6 +27,12 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 	if err != nil {
 		return nil, err
 	}
+	serviceName := naming.Service(params.OtelCol.Name)
+	if params.OtelCol.Spec.ServiceName != "" {
+		serviceName = params.OtelCol.Spec.ServiceName
+	} else {
+		serviceName = naming.HeadlessService(params.OtelCol.Name)
+	}
 
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -36,7 +42,7 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 			Annotations: annotations,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			ServiceName: naming.Service(params.OtelCol.Name),
+			ServiceName: serviceName,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			},

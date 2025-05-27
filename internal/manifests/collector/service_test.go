@@ -270,6 +270,27 @@ func TestHeadlessService(t *testing.T) {
 	})
 }
 
+func TestHeadlessServiceWithCustomName(t *testing.T) {
+	t.Run("should return headless service with default name", func(t *testing.T) {
+		param := statefulsetParams()
+		actual, err := HeadlessService(param)
+		assert.NoError(t, err)
+		assert.Equal(t, actual.GetAnnotations()["service.beta.openshift.io/serving-cert-secret-name"], "test-collector-headless-tls")
+		assert.Equal(t, actual.Name, "test-collector-headless")
+		assert.Equal(t, actual.Spec.ClusterIP, "None")
+	})
+
+	t.Run("should return headless service with custom name", func(t *testing.T) {
+		param := statefulsetParams()
+		param.OtelCol.Spec.ServiceName = "custom-headless"
+		actual, err := HeadlessService(param)
+		assert.NoError(t, err)
+		assert.Equal(t, actual.GetAnnotations()["service.beta.openshift.io/serving-cert-secret-name"], "custom-headless-tls")
+		assert.Equal(t, actual.Name, "custom-headless")
+		assert.Equal(t, actual.Spec.ClusterIP, "None")
+	})
+}
+
 func TestMonitoringService(t *testing.T) {
 	t.Run("returned service should expose monitoring port in the default port", func(t *testing.T) {
 		expected := []v1.ServicePort{{
