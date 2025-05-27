@@ -27,10 +27,9 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	serviceName := naming.Service(params.OtelCol.Name)
-	if params.OtelCol.Spec.ServiceName != "" {
-		serviceName = params.OtelCol.Spec.ServiceName
-	} else {
+
+	serviceName := params.OtelCol.Spec.ServiceName
+	if serviceName == "" {
 		serviceName = naming.HeadlessService(params.OtelCol.Name)
 	}
 
