@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM eclipse-temurin:17-jdk-focal as builder
+FROM --platform=$BUILDPLATFORM eclipse-temurin:17-jdk-focal AS builder
 
 RUN apt update
 RUN apt install zip unzip -y
