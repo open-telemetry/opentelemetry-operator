@@ -428,6 +428,12 @@ ifeq (true,$(START_KIND_CLUSTER))
 	$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG) || true
 endif
 
+.PHONY: stop-kind
+stop-kind: kind
+ifeq (true,$(START_KIND_CLUSTER))
+	$(KIND) delete cluster --name $(KIND_CLUSTER_NAME)
+endif
+
 .PHONY: install-metrics-server
 install-metrics-server:
 	./hack/install-metrics-server.sh
