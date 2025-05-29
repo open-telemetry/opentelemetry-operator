@@ -22,14 +22,14 @@ func Volumes(cfg config.Config, instance v1alpha1.TargetAllocator) []corev1.Volu
 				LocalObjectReference: corev1.LocalObjectReference{Name: naming.TAConfigMap(instance.Name)},
 				Items: []corev1.KeyToPath{
 					{
-						Key:  cfg.TargetAllocatorConfigMapEntry(),
-						Path: cfg.TargetAllocatorConfigMapEntry(),
+						Key:  cfg.TargetAllocatorConfigMapEntry,
+						Path: cfg.TargetAllocatorConfigMapEntry,
 					}},
 			},
 		},
 	}}
 
-	if cfg.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if cfg.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		volumes = append(volumes, corev1.Volume{
 			Name: naming.TAServerCertificate(instance.Name),
 			VolumeSource: corev1.VolumeSource{

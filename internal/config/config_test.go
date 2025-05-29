@@ -30,10 +30,10 @@ func TestNewConfig(t *testing.T) {
 	)
 
 	// test
-	assert.Equal(t, "some-image", cfg.CollectorImage())
-	assert.Equal(t, "some-config.yaml", cfg.CollectorConfigMapEntry())
-	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability())
-	assert.Equal(t, prometheus.Available, cfg.PrometheusCRAvailability())
+	assert.Equal(t, "some-image", cfg.CollectorImage)
+	assert.Equal(t, "some-config.yaml", cfg.CollectorConfigMapEntry)
+	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability)
+	assert.Equal(t, prometheus.Available, cfg.PrometheusCRAvailability)
 }
 
 func TestConfigChangesOnAutoDetect(t *testing.T) {
@@ -63,23 +63,23 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	)
 
 	// sanity check
-	require.Equal(t, openshift.RoutesNotAvailable, cfg.OpenShiftRoutesAvailability())
-	require.Equal(t, prometheus.NotAvailable, cfg.PrometheusCRAvailability())
-	require.Equal(t, rbac.NotAvailable, cfg.CreateRBACPermissions())
-	require.Equal(t, certmanager.NotAvailable, cfg.CertManagerAvailability())
-	require.Equal(t, targetallocator.NotAvailable, cfg.TargetAllocatorAvailability())
-	require.Equal(t, collector.NotAvailable, cfg.CollectorAvailability())
+	require.Equal(t, openshift.RoutesNotAvailable, cfg.OpenShiftRoutesAvailability)
+	require.Equal(t, prometheus.NotAvailable, cfg.PrometheusCRAvailability)
+	require.Equal(t, rbac.NotAvailable, cfg.CreateRBACPermissions)
+	require.Equal(t, certmanager.NotAvailable, cfg.CertManagerAvailability)
+	require.Equal(t, targetallocator.NotAvailable, cfg.TargetAllocatorAvailability)
+	require.Equal(t, collector.NotAvailable, cfg.CollectorAvailability)
 
 	// test
 	err := cfg.AutoDetect()
 	require.NoError(t, err)
 
 	// verify
-	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability())
-	require.Equal(t, prometheus.Available, cfg.PrometheusCRAvailability())
-	require.Equal(t, rbac.Available, cfg.CreateRBACPermissions())
-	require.Equal(t, certmanager.Available, cfg.CertManagerAvailability())
-	require.Equal(t, targetallocator.Available, cfg.TargetAllocatorAvailability())
+	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability)
+	require.Equal(t, prometheus.Available, cfg.PrometheusCRAvailability)
+	require.Equal(t, rbac.Available, cfg.CreateRBACPermissions)
+	require.Equal(t, certmanager.Available, cfg.CertManagerAvailability)
+	require.Equal(t, targetallocator.Available, cfg.TargetAllocatorAvailability)
 }
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)

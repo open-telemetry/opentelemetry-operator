@@ -364,17 +364,17 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 		&policyV1.PodDisruptionBudget{},
 	}
 
-	if r.config.CreateRBACPermissions() == rbac.Available {
+	if r.config.CreateRBACPermissions == rbac.Available {
 		ownedResources = append(ownedResources, &rbacv1.ClusterRole{})
 		ownedResources = append(ownedResources, &rbacv1.ClusterRoleBinding{})
 	}
 
-	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability() == prometheus.Available {
+	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability == prometheus.Available {
 		ownedResources = append(ownedResources, &monitoringv1.PodMonitor{})
 		ownedResources = append(ownedResources, &monitoringv1.ServiceMonitor{})
 	}
 
-	if r.config.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
+	if r.config.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
 		ownedResources = append(ownedResources, &routev1.Route{})
 	}
 
@@ -385,7 +385,7 @@ const collectorFinalizer = "opentelemetrycollector.opentelemetry.io/finalizer"
 
 func (r *OpenTelemetryCollectorReconciler) finalizeCollector(ctx context.Context, params manifests.Params) error {
 	// The cluster scope objects do not have owner reference. They need to be deleted explicitly
-	if params.Config.CreateRBACPermissions() == rbac.Available {
+	if params.Config.CreateRBACPermissions == rbac.Available {
 		objects, err := r.findClusterRoleObjects(ctx, params)
 		if err != nil {
 			return err

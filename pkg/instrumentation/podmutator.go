@@ -284,7 +284,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if pm.config.EnableJavaAutoInstrumentation() || inst == nil {
+	if pm.config.EnableJavaAutoInstrumentation || inst == nil {
 		insts.Java.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Java auto instrumentation is not enabled")
@@ -296,7 +296,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if pm.config.EnableNodeJSAutoInstrumentation() || inst == nil {
+	if pm.config.EnableNodeJSAutoInstrumentation || inst == nil {
 		insts.NodeJS.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for NodeJS auto instrumentation is not enabled")
@@ -308,7 +308,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if pm.config.EnablePythonAutoInstrumentation() || inst == nil {
+	if pm.config.EnablePythonAutoInstrumentation || inst == nil {
 		insts.Python.Instrumentation = inst
 		insts.Python.AdditionalAnnotations = map[string]string{annotationPythonPlatform: annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationPythonPlatform)}
 	} else {
@@ -321,7 +321,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if pm.config.EnableDotNetAutoInstrumentation() || inst == nil {
+	if pm.config.EnableDotNetInstrumentation || inst == nil {
 		insts.DotNet.Instrumentation = inst
 		insts.DotNet.AdditionalAnnotations = map[string]string{annotationDotNetRuntime: annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationDotNetRuntime)}
 	} else {
@@ -334,7 +334,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if pm.config.EnableGoAutoInstrumentation() || inst == nil {
+	if pm.config.EnableGoAutoInstrumentation || inst == nil {
 		insts.Go.Instrumentation = inst
 	} else {
 		logger.Error(err, "support for Go auto instrumentation is not enabled")
@@ -346,7 +346,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if pm.config.EnableApacheHttpdAutoInstrumentation() || inst == nil {
+	if pm.config.EnableApacheHttpdInstrumentation || inst == nil {
 		insts.ApacheHttpd.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Apache HTTPD auto instrumentation is not enabled")
@@ -358,7 +358,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
-	if pm.config.EnableNginxAutoInstrumentation() || inst == nil {
+	if pm.config.EnableNginxAutoInstrumentation || inst == nil {
 		insts.Nginx.Instrumentation = inst
 	} else {
 		logger.Error(nil, "support for Nginx auto instrumentation is not enabled")
@@ -392,7 +392,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 
 	// We retrieve the annotation for podname
-	if pm.config.EnableMultiInstrumentation() {
+	if pm.config.EnableMultiInstrumentation {
 		err = insts.setLanguageSpecificContainers(ns.ObjectMeta, pod.ObjectMeta)
 		if err != nil {
 			return pod, err

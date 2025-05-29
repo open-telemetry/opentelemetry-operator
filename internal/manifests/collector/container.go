@@ -29,7 +29,7 @@ const maxPortLen = 15
 func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector, addConfig bool) corev1.Container {
 	image := otelcol.Spec.Image
 	if len(image) == 0 {
-		image = cfg.CollectorImage()
+		image = cfg.CollectorImage
 	}
 
 	ports := getContainerPorts(logger, otelcol)
@@ -53,7 +53,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 			logger.Info("the 'config' flag isn't allowed and is being ignored")
 			delete(argsMap, "config")
 		}
-		args = append(args, fmt.Sprintf("--config=/conf/%s", cfg.CollectorConfigMapEntry()))
+		args = append(args, fmt.Sprintf("--config=/conf/%s", cfg.CollectorConfigMapEntry))
 		volumeMounts = append(volumeMounts,
 			corev1.VolumeMount{
 				Name:      naming.ConfigMapVolume(),
@@ -61,7 +61,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 			})
 	}
 
-	if otelcol.Spec.TargetAllocator.Enabled && cfg.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if otelcol.Spec.TargetAllocator.Enabled && cfg.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		volumeMounts = append(volumeMounts,
 			corev1.VolumeMount{
 				Name:      naming.TAClientCertificate(otelcol.Name),

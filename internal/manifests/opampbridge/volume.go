@@ -20,8 +20,8 @@ func Volumes(cfg config.Config, opampBridge v1alpha1.OpAMPBridge) []corev1.Volum
 				LocalObjectReference: corev1.LocalObjectReference{Name: naming.OpAMPBridgeConfigMap(opampBridge.Name)},
 				Items: []corev1.KeyToPath{
 					{
-						Key:  cfg.OperatorOpAMPBridgeConfigMapEntry(),
-						Path: cfg.OperatorOpAMPBridgeConfigMapEntry(),
+						Key:  cfg.OperatorOpAMPBridgeConfigMapEntry,
+						Path: cfg.OperatorOpAMPBridgeConfigMapEntry,
 					},
 				},
 			},

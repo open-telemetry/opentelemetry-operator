@@ -49,7 +49,7 @@ func PodDisruptionBudget(params Params) (*policyV1.PodDisruptionBudget, error) {
 		params.Log.Info("failed to construct target allocator config map for annotations")
 		configMap = nil
 	}
-	annotations := Annotations(params.TargetAllocator, configMap, params.Config.AnnotationsFilter())
+	annotations := Annotations(params.TargetAllocator, configMap, params.Config.AnnotationsFilter)
 
 	objectMeta := metav1.ObjectMeta{
 		Name:        name,
