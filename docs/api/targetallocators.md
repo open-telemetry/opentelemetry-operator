@@ -319,6 +319,7 @@ default.<br/>
           Replicas is the number of pod instances for the underlying replicaset. Set this if you are not using autoscaling.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Default</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
