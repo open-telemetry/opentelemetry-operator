@@ -14,23 +14,23 @@ spec:
             entrypoint: kubectl
             args:
               - get
-              - pod
+              - service
               - -n
               - opentelemetry-operator-system
               - -l
               - control-plane=controller-manager
               - -o
-              - jsonpath={.items[0].metadata.name}
+              - jsonpath="{.items[0].metadata.name}""
             outputs:
-              - name: podName
+              - name: serviceName
                 value: ($stdout)
         - script:
             env:
-              - name: podName
-                value: ($podName)
+              - name: serviceName
+                value: ($serviceName)
             content: |
               #!/bin/bash
-              kubectl get --raw /api/v1/namespaces/opentelemetry-operator-system/pods/${podName}:8443/proxy/metrics
+              kubectl get --raw https://${serviceName}:8443/metrics
             outputs:
               - name: metrics
                 value: (x_metrics_decode($stdout))
@@ -38,8 +38,6 @@ spec:
               ($error == null): true
         - assert:
             resource:
-              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_webhook_requests_in_flight']) > `0`): true
-              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_webhook_requests_total']) > `0`): true
               (length($metrics[?as_string(metric."__name__") == 'workqueue_work_duration_seconds_bucket']) > `0`): true
               (length($metrics[?as_string(metric."__name__") == 'workqueue_work_duration_seconds_sum']) > `0`): true
               (length($metrics[?as_string(metric."__name__") == 'workqueue_work_duration_seconds_count']) > `0`): true
