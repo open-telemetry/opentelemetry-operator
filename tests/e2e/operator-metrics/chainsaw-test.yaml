@@ -6,11 +6,6 @@ spec:
   steps:
     - name: step-00
       try:
-        - apply:
-            template: true
-            file: 00-install-operator.yaml
-        - sleep:
-            duration: 3s
         - assert:
             file: 00-assert-operator.yaml
     - name: proxy request for operator metrics
@@ -23,7 +18,7 @@ spec:
               - -n
               - opentelemetry-operator-system
               - -l
-              - app.kubernetes.io/name=opentelemetry-operator-controller-manager-test
+              - control-plane=controller-manager
               - -o
               - jsonpath={.items[0].metadata.name}
             outputs:
@@ -35,7 +30,7 @@ spec:
                 value: ($podName)
             content: |
               #!/bin/bash
-              kubectl get --raw /api/v1/namespaces/opentelemetry-operator-system/pods/${podName}:8080/proxy/metrics
+              kubectl get --raw /api/v1/namespaces/opentelemetry-operator-system/pods/${podName}:8443/proxy/metrics
             outputs:
               - name: metrics
                 value: (x_metrics_decode($stdout))
@@ -45,3 +40,11 @@ spec:
             resource:
               (length($metrics[?as_string(metric."__name__") == 'controller_runtime_webhook_requests_in_flight']) > `0`): true
               (length($metrics[?as_string(metric."__name__") == 'controller_runtime_webhook_requests_total']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_work_duration_seconds_bucket']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_work_duration_seconds_sum']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_work_duration_seconds_count']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_unfinished_work_seconds']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_queue_duration_seconds_bucket']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_queue_duration_seconds_sum']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_queue_duration_seconds_count']) > `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_longest_running_processor_seconds']) > `0`): true
