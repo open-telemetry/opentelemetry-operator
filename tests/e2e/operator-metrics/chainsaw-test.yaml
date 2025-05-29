@@ -20,7 +20,7 @@ spec:
               - -l
               - control-plane=controller-manager
               - -o
-              - jsonpath="{.items[0].metadata.name}""
+              - jsonpath={.items[0].metadata.name}
             outputs:
               - name: serviceName
                 value: ($stdout)
