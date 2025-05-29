@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: manager
-          image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.126.0-4-g352e2624
+          image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
           args:
             - --metrics-addr=0.0.0.0:8080
           ports:
