@@ -23,7 +23,7 @@ spec:
               - -n
               - opentelemetry-operator-system
               - -l
-              - control-plane=controller-manager
+              - app.kubernetes.io/name=opentelemetry-operator-controller-manager-test
               - -o
               - jsonpath={.items[0].metadata.name}
             outputs:
