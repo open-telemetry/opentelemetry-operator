@@ -5,7 +5,7 @@ change_type: enhancement
 component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Sets default spec.replicas to 1 for all collectors when it is not specified.
+note: Set the default spec.replicas to 1 in the OpenTelemetryCollector CRD.
 
 # One or more tracking issues related to the change
 issues: [4042]
