@@ -62,7 +62,7 @@ spec:
         OpenTelemetryCollector.opentelemetry.io "sidecar-additional-containers" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'
     - name: affinityErrorMessageWebhook
       value: |-
-        admission webhook "vopentelemetrycollectorcreateupdatebeta.kb.io" denied the request: the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'
+        admission webhook "vopentelemetrycollectorcreateupdatebeta.kb.io" denied the request: the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'AdditionalContainers'
     try:
     - apply:
         file: 03-install-additional-containers.yaml
