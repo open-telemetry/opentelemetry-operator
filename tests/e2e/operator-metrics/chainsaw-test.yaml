@@ -9,6 +9,12 @@ spec:
         - apply:
             template: true
             file: 00-install-operator.yaml
+    - name: step-01
+      try:
+      - sleep:
+          duration: 3s
+    - name: step-02
+      try:
         - assert:
             file: 00-assert-operator.yaml
     - name: proxy request for operator metrics
