@@ -300,8 +300,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	configLog := ctrl.Log.WithName("config")
 	cfg := config.New(
-		config.WithLogger(ctrl.Log.WithName("config")),
+		config.WithLogger(configLog),
 		config.WithVersion(v),
 		config.WithCollectorImage(collectorImage),
 		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
@@ -321,12 +322,11 @@ func main() {
 		config.WithAutoInstrumentationGoImage(autoInstrumentationGo),
 		config.WithAutoInstrumentationApacheHttpdImage(autoInstrumentationApacheHttpd),
 		config.WithAutoInstrumentationNginxImage(autoInstrumentationNginx),
-		config.WithAutoDetect(ad),
 		config.WithLabelFilters(labelsFilter),
 		config.WithAnnotationFilters(annotationsFilter),
 		config.WithIgnoreMissingCollectorCRDs(ignoreMissingCollectorCRDs),
 	)
-	err = cfg.AutoDetect()
+	err = autodetect.ApplyAutoDetect(ad, &cfg, configLog)
 	if err != nil {
 		setupLog.Error(err, "failed to autodetect config variables")
 	}
