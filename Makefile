@@ -281,29 +281,29 @@ generate: controller-gen
 # end-to-tests
 .PHONY: e2e
 e2e: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e
+	$(CHAINSAW) test --test-dir ./tests/e2e --report-name e2e
 
 # e2e-native-sidecar
 # NOTE: make sure the k8s featuregate "SidecarContainers" is set to true.
 # NOTE: make sure the operator featuregate "operator.sidecarcontainers.native" is enabled.
 .PHONY: e2e-native-sidecar
 e2e-native-sidecar: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-native-sidecar
+	$(CHAINSAW) test --test-dir ./tests/e2e-native-sidecar --report-name e2e-native-sidecar
 
 # end-to-end-test for testing automatic RBAC creation
 .PHONY: e2e-automatic-rbac
 e2e-automatic-rbac: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-automatic-rbac
+	$(CHAINSAW) test --test-dir ./tests/e2e-automatic-rbac --report-name e2e-automatic-rbac
 
 # end-to-end-test for testing autoscale
 .PHONY: e2e-autoscale
 e2e-autoscale: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-autoscale
+	$(CHAINSAW) test --test-dir ./tests/e2e-autoscale --report-name e2e-autoscale
 
 # instrumentation end-to-tests
 .PHONY: e2e-instrumentation
 e2e-instrumentation: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-instrumentation
+	$(CHAINSAW) test --test-dir ./tests/e2e-instrumentation --report-name e2e-instrumentation
 
 .PHONY: e2e-log-operator
 e2e-log-operator:
@@ -313,32 +313,32 @@ e2e-log-operator:
 # end-to-tests for multi-instrumentation
 .PHONY: e2e-multi-instrumentation
 e2e-multi-instrumentation: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-multi-instrumentation
+	$(CHAINSAW) test --test-dir ./tests/e2e-multi-instrumentation --report-name e2e-multi-instrumentation
 
 # OpAMPBridge CR end-to-tests
 .PHONY: e2e-opampbridge
 e2e-opampbridge: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-opampbridge
+	$(CHAINSAW) test --test-dir ./tests/e2e-opampbridge --report-name e2e-opampbridge
 
 # end-to-end-test for testing pdb support
 .PHONY: e2e-pdb
 e2e-pdb: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-pdb
+	$(CHAINSAW) test --test-dir ./tests/e2e-pdb --report-name e2e-pdb
 
 # end-to-end-test for PrometheusCR E2E tests
 .PHONY: e2e-prometheuscr
 e2e-prometheuscr: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-prometheuscr
+	$(CHAINSAW) test --test-dir ./tests/e2e-prometheuscr --report-name e2e-prometheuscr
 
 # Target allocator end-to-tests
 .PHONY: e2e-targetallocator
 e2e-targetallocator: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator
+	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator --report-name e2e-targetallocator
 
 # Target allocator CR end-to-tests
 .PHONY: e2e-targetallocator-cr
 e2e-targetallocator-cr: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator-cr
+	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator-cr --report-name e2e-targetallocator-cr
 
 .PHONY: add-certmanager-permissions
 add-certmanager-permissions: 
@@ -350,19 +350,19 @@ add-certmanager-permissions:
 # Target allocator collector mTLS end-to-tests
 .PHONY: e2e-ta-collector-mtls
 e2e-ta-collector-mtls: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-ta-collector-mtls
+	$(CHAINSAW) test --test-dir ./tests/e2e-ta-collector-mtls --report-name e2e-ta-collector-mtls
 
 # end-to-end-test for Annotations/Labels Filters
 .PHONY: e2e-metadata-filters
 e2e-metadata-filters: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-metadata-filters
+	$(CHAINSAW) test --test-dir ./tests/e2e-metadata-filters --report-name e2e-metadata-filters
 
 # end-to-end-test for testing upgrading
 .PHONY: e2e-upgrade
 e2e-upgrade: undeploy chainsaw
 	kubectl apply -f ./tests/e2e-upgrade/upgrade-test/opentelemetry-operator-v0.86.0.yaml
 	go run hack/check-operator-ready.go
-	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade
+	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade --report-name e2e-upgrade
 
 # end-to-end tests to test crd validations
 .PHONY: e2e-crd-validations
@@ -371,6 +371,7 @@ e2e-crd-validations: chainsaw
 
 .PHONY: prepare-e2e
 prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+	@mkdir -p ./.testresults/e2e
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
