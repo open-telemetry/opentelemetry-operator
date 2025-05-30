@@ -7,6 +7,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -58,9 +59,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 			return collector.Available, nil
 		},
 	}
-	cfg := config.New(
-		config.WithAutoDetect(mock),
-	)
+	cfg := config.New()
 
 	// sanity check
 	require.Equal(t, openshift.RoutesNotAvailable, cfg.OpenShiftRoutesAvailability)
@@ -71,8 +70,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, collector.NotAvailable, cfg.CollectorAvailability)
 
 	// test
-	err := cfg.AutoDetect()
-	require.NoError(t, err)
+	require.NoError(t, autodetect.ApplyAutoDetect(mock, &cfg, logr.Discard()))
 
 	// verify
 	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability)

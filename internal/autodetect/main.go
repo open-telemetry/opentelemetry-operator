@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -20,6 +21,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
@@ -218,4 +220,53 @@ func (a *autoDetect) CollectorAvailability() (collector.Availability, error) {
 
 func (a *autoDetect) FIPSEnabled(_ context.Context) bool {
 	return fips.IsFipsEnabled()
+}
+
+// ApplyAutoDetect attempts to automatically detect relevant information for this operator.
+func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger) error {
+	logger.V(2).Info("auto-detecting the configuration based on the environment")
+
+	ora, err := autoDetect.OpenShiftRoutesAvailability()
+	if err != nil {
+		return err
+	}
+	c.OpenShiftRoutesAvailability = ora
+	logger.V(2).Info("openshift routes detected", "availability", ora)
+
+	pcrd, err := autoDetect.PrometheusCRsAvailability()
+	if err != nil {
+		return err
+	}
+	c.PrometheusCRAvailability = pcrd
+	logger.V(2).Info("prometheus cr detected", "availability", pcrd)
+
+	rAuto, err := autoDetect.RBACPermissions(context.Background())
+	if err != nil {
+		logger.V(2).Info("the rbac permissions are not set for the operator", "reason", err)
+	}
+	c.CreateRBACPermissions = rAuto
+	logger.V(2).Info("create rbac permissions detected", "availability", rAuto)
+
+	cmAvl, err := autoDetect.CertManagerAvailability(context.Background())
+	if err != nil {
+		logger.V(2).Info("the cert manager crd and permissions are not set for the operator", "reason", err)
+	}
+	c.CertManagerAvailability = cmAvl
+	logger.V(2).Info("the cert manager crd and permissions are set for the operator", "availability", cmAvl)
+
+	taAvl, err := autoDetect.TargetAllocatorAvailability()
+	if err != nil {
+		return err
+	}
+	c.TargetAllocatorAvailability = taAvl
+	logger.V(2).Info("determined TargetAllocator CRD availability", "availability", cmAvl)
+
+	coAvl, err := autoDetect.CollectorAvailability()
+	if err != nil {
+		return err
+	}
+	c.CollectorAvailability = coAvl
+	logger.V(2).Info("determined Collector CRD availability", "availability", coAvl)
+
+	return nil
 }
