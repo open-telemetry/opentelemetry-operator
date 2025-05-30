@@ -18,7 +18,7 @@ import (
 func Container(cfg config.Config, logger logr.Logger, opampBridge v1alpha1.OpAMPBridge) corev1.Container {
 	image := opampBridge.Spec.Image
 	if len(image) == 0 {
-		image = cfg.OperatorOpAMPBridgeImage()
+		image = cfg.OperatorOpAMPBridgeImage
 	}
 
 	volumeMounts := []corev1.VolumeMount{{

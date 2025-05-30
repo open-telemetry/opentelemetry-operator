@@ -38,25 +38,25 @@ type InstrumentationUpgrade struct {
 
 func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorder record.EventRecorder, cfg config.Config) *InstrumentationUpgrade {
 	defaultAnnotationToConfig := map[string]autoInstConfig{
-		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
-		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation()},
-		constants.AnnotationDefaultAutoInstrumentationGo:          {constants.FlagGo, cfg.EnableGoAutoInstrumentation()},
-		constants.AnnotationDefaultAutoInstrumentationNginx:       {constants.FlagNginx, cfg.EnableNginxAutoInstrumentation()},
-		constants.AnnotationDefaultAutoInstrumentationPython:      {constants.FlagPython, cfg.EnablePythonAutoInstrumentation()},
-		constants.AnnotationDefaultAutoInstrumentationNodeJS:      {constants.FlagNodeJS, cfg.EnableNodeJSAutoInstrumentation()},
-		constants.AnnotationDefaultAutoInstrumentationJava:        {constants.FlagJava, cfg.EnableJavaAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationGo:          {constants.FlagGo, cfg.EnableGoAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationNginx:       {constants.FlagNginx, cfg.EnableNginxAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationPython:      {constants.FlagPython, cfg.EnablePythonAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationNodeJS:      {constants.FlagNodeJS, cfg.EnableNodeJSAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationJava:        {constants.FlagJava, cfg.EnableJavaAutoInstrumentation},
 	}
 
 	return &InstrumentationUpgrade{
 		Client:                     client,
 		Logger:                     logger,
-		DefaultAutoInstJava:        cfg.AutoInstrumentationJavaImage(),
-		DefaultAutoInstNodeJS:      cfg.AutoInstrumentationNodeJSImage(),
-		DefaultAutoInstPython:      cfg.AutoInstrumentationPythonImage(),
-		DefaultAutoInstDotNet:      cfg.AutoInstrumentationDotNetImage(),
-		DefaultAutoInstGo:          cfg.AutoInstrumentationGoImage(),
-		DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage(),
-		DefaultAutoInstNginx:       cfg.AutoInstrumentationNginxImage(),
+		DefaultAutoInstJava:        cfg.AutoInstrumentationJavaImage,
+		DefaultAutoInstNodeJS:      cfg.AutoInstrumentationNodeJSImage,
+		DefaultAutoInstPython:      cfg.AutoInstrumentationPythonImage,
+		DefaultAutoInstDotNet:      cfg.AutoInstrumentationDotNetImage,
+		DefaultAutoInstGo:          cfg.AutoInstrumentationGoImage,
+		DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage,
+		DefaultAutoInstNginx:       cfg.AutoInstrumentationNginxImage,
 		Recorder:                   recorder,
 		defaultAnnotationToConfig:  defaultAnnotationToConfig,
 	}

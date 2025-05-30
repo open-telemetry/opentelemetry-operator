@@ -331,19 +331,19 @@ func main() {
 		setupLog.Error(err, "failed to autodetect config variables")
 	}
 	// Only add these to the scheme if they are available
-	if cfg.PrometheusCRAvailability() == prometheus.Available {
+	if cfg.PrometheusCRAvailability == prometheus.Available {
 		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
 		utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	} else {
 		setupLog.Info("Prometheus CRDs are not installed, skipping adding to scheme.")
 	}
-	if cfg.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
+	if cfg.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
 		setupLog.Info("Openshift CRDs are installed, adding to scheme.")
 		utilruntime.Must(routev1.Install(scheme))
 	} else {
 		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
 	}
-	if cfg.CertManagerAvailability() == certmanager.Available {
+	if cfg.CertManagerAvailability == certmanager.Available {
 		setupLog.Info("Cert-Manager is available to the operator, adding to scheme.")
 		utilruntime.Must(cmv1.AddToScheme(scheme))
 
@@ -353,17 +353,17 @@ func main() {
 	} else {
 		setupLog.Info("Cert-Manager is not available to the operator, skipping adding to scheme.")
 	}
-	if cfg.CollectorAvailability() == collector.Available {
+	if cfg.CollectorAvailability == collector.Available {
 		setupLog.Info("OpenTelemetryCollectorCRDSs are available to the operator")
 	} else {
 		setupLog.Info("OpenTelemetryCollectorCRDSs are not available to the operator")
-		if !cfg.IgnoreMissingCollectorCRDs() {
+		if !cfg.IgnoreMissingCollectorCRDs {
 			setupLog.Error(errors.New("missing OpenTelemetryCollector CRDs"), "The OpenTelemetryCollector CRDs are not present in the cluster. Set ignore_missing_collector_crds to true or install the CRDs in the cluster.")
 			os.Exit(1)
 		}
 	}
-	if cfg.AnnotationsFilter() != nil {
-		for _, basePattern := range cfg.AnnotationsFilter() {
+	if cfg.AnnotationsFilter != nil {
+		for _, basePattern := range cfg.AnnotationsFilter {
 			_, compileErr := regexp.Compile(basePattern)
 			if compileErr != nil {
 				setupLog.Error(compileErr, "could not compile the regexp pattern for Annotations filter")
@@ -371,8 +371,8 @@ func main() {
 		}
 	}
 
-	if cfg.LabelsFilter() != nil {
-		for _, basePattern := range cfg.LabelsFilter() {
+	if cfg.LabelsFilter != nil {
+		for _, basePattern := range cfg.LabelsFilter {
 			_, compileErr := regexp.Compile(basePattern)
 			if compileErr != nil {
 				setupLog.Error(compileErr, "could not compile the regexp pattern for Labels filter")
@@ -387,7 +387,7 @@ func main() {
 	}
 
 	var collectorReconciler *controllers.OpenTelemetryCollectorReconciler
-	if cfg.CollectorAvailability() == collector.Available {
+	if cfg.CollectorAvailability == collector.Available {
 		collectorReconciler = controllers.NewReconciler(controllers.Params{
 			Client:   mgr.GetClient(),
 			Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
@@ -404,7 +404,7 @@ func main() {
 		}
 	}
 
-	if cfg.TargetAllocatorAvailability() == targetallocator.Available {
+	if cfg.TargetAllocatorAvailability == targetallocator.Available {
 		if err = controllers.NewTargetAllocatorReconciler(
 			mgr.GetClient(),
 			mgr.GetScheme(),
@@ -428,7 +428,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if cfg.PrometheusCRAvailability() == prometheus.Available && createSMOperatorMetrics {
+	if cfg.PrometheusCRAvailability == prometheus.Available && createSMOperatorMetrics {
 		operatorMetrics, opError := operatormetrics.NewOperatorMetrics(mgr.GetConfig(), scheme, ctrl.Log.WithName("operator-metrics-sm"))
 		if opError != nil {
 			setupLog.Error(opError, "Failed to create the operator metrics SM")
@@ -454,7 +454,7 @@ func main() {
 			}
 		}
 
-		if cfg.CollectorAvailability() == collector.Available {
+		if cfg.CollectorAvailability == collector.Available {
 			bv := func(ctx context.Context, collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
 				var warnings admission.Warnings
 				params, newErr := collectorReconciler.GetParams(ctx, collector)
@@ -483,7 +483,7 @@ func main() {
 				os.Exit(1)
 			}
 		}
-		if cfg.TargetAllocatorAvailability() == targetallocator.Available {
+		if cfg.TargetAllocatorAvailability == targetallocator.Available {
 			if err = otelv1alpha1.SetupTargetAllocatorWebhook(mgr, cfg, reviewer); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "TargetAllocator")
 				os.Exit(1)

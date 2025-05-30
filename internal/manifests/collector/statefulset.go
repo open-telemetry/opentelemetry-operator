@@ -16,14 +16,14 @@ import (
 // StatefulSet builds the statefulset for the given instance.
 func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)
 
-	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {
 		return nil, err
 	}
 
-	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter())
+	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {
 		return nil, err
 	}
