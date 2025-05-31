@@ -2039,7 +2039,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: func() config.Config {
 				cfg := config.New()
-				cfg.EnableDotNetInstrumentation = true
+				cfg.EnableDotNetAutoInstrumentation = true
 				return cfg
 			}(),
 		},
@@ -2239,7 +2239,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: func() config.Config {
 				cfg := config.New()
-				cfg.EnableDotNetInstrumentation = true
+				cfg.EnableDotNetAutoInstrumentation = true
 				return cfg
 			}(),
 		},
@@ -2551,7 +2551,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: func() config.Config {
 				cfg := config.New()
-				cfg.EnableDotNetInstrumentation = true
+				cfg.EnableDotNetAutoInstrumentation = true
 				return cfg
 			}(),
 		},
@@ -2634,7 +2634,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: func() config.Config {
 				cfg := config.New()
-				cfg.EnableDotNetInstrumentation = false
+				cfg.EnableDotNetAutoInstrumentation = false
 				return cfg
 			}(),
 		},
@@ -3418,7 +3418,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: func() config.Config {
 				cfg := config.New()
-				cfg.EnableDotNetInstrumentation = false
+				cfg.EnableDotNetAutoInstrumentation = false
 				return cfg
 			}(),
 		},
@@ -4324,7 +4324,7 @@ func TestMutatePod(t *testing.T) {
 				cfg := config.New()
 				cfg.EnableMultiInstrumentation = true
 				cfg.EnablePythonAutoInstrumentation = true
-				cfg.EnableDotNetInstrumentation = true
+				cfg.EnableDotNetAutoInstrumentation = true
 				cfg.EnableNodeJSAutoInstrumentation = true
 				return cfg
 			}(),
@@ -4487,7 +4487,7 @@ func TestMutatePod(t *testing.T) {
 				cfg.EnableJavaAutoInstrumentation = false
 				cfg.EnableNodeJSAutoInstrumentation = false
 				cfg.EnablePythonAutoInstrumentation = false
-				cfg.EnableDotNetInstrumentation = false
+				cfg.EnableDotNetAutoInstrumentation = false
 				return cfg
 			}(),
 		},
@@ -4836,7 +4836,7 @@ func TestMutatePod(t *testing.T) {
 			config: func() config.Config {
 				cfg := config.New()
 				cfg.EnableMultiInstrumentation = true
-				cfg.EnableDotNetInstrumentation = true
+				cfg.EnableDotNetAutoInstrumentation = true
 				return cfg
 			}(),
 		},
@@ -4941,7 +4941,7 @@ func TestMutatePod(t *testing.T) {
 			config: func() config.Config {
 				cfg := config.New()
 				cfg.EnableMultiInstrumentation = true
-				cfg.EnableDotNetInstrumentation = false
+				cfg.EnableDotNetAutoInstrumentation = false
 				cfg.EnableNodeJSAutoInstrumentation = false
 				return cfg
 			}(),

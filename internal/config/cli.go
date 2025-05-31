@@ -50,7 +50,7 @@ func ApplyCLI(cfg *Config) error {
 			case constants.FlagApacheHttpd:
 				cfg.EnableApacheHttpdInstrumentation, _ = f.GetBool(constants.FlagApacheHttpd)
 			case constants.FlagDotNet:
-				cfg.EnableDotNetInstrumentation, _ = f.GetBool(constants.FlagDotNet)
+				cfg.EnableDotNetAutoInstrumentation, _ = f.GetBool(constants.FlagDotNet)
 			case constants.FlagGo:
 				cfg.EnableGoAutoInstrumentation, _ = f.GetBool(constants.FlagGo)
 			case constants.FlagPython:

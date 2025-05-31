@@ -52,7 +52,7 @@ func TestUpgrade(t *testing.T) {
 	cfg.AutoInstrumentationApacheHttpdImage = "apache-httpd:1"
 	cfg.AutoInstrumentationNginxImage = "nginx:1"
 	cfg.EnableApacheHttpdInstrumentation = true
-	cfg.EnableDotNetInstrumentation = true
+	cfg.EnableDotNetAutoInstrumentation = true
 	cfg.EnableGoAutoInstrumentation = true
 	cfg.EnableNginxAutoInstrumentation = true
 	cfg.EnablePythonAutoInstrumentation = true
@@ -83,7 +83,7 @@ func TestUpgrade(t *testing.T) {
 	cfg.AutoInstrumentationApacheHttpdImage = "apache-httpd:2"
 	cfg.AutoInstrumentationNginxImage = "nginx:2"
 	cfg.EnableApacheHttpdInstrumentation = true
-	cfg.EnableDotNetInstrumentation = true
+	cfg.EnableDotNetAutoInstrumentation = true
 	cfg.EnableGoAutoInstrumentation = true
 	cfg.EnableNginxAutoInstrumentation = true
 	cfg.EnablePythonAutoInstrumentation = true
