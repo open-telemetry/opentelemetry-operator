@@ -44,7 +44,7 @@ func TestDesiredServiceMonitors(t *testing.T) {
 }
 
 func TestDesiredServiceMonitorsWithPrometheus(t *testing.T) {
-	params, err := newParams("", "testdata/prometheus-exporter.yaml")
+	params, err := newParams("", "testdata/prometheus-exporter.yaml", nil)
 	assert.NoError(t, err)
 	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
 	actual, err := ServiceMonitor(params)
@@ -65,7 +65,9 @@ func TestDesiredServiceMonitorsWithPrometheus(t *testing.T) {
 }
 
 func TestDesiredServiceMonitorsPrometheusNotAvailable(t *testing.T) {
-	params, err := newParams("", "testdata/prometheus-exporter.yaml", config.WithPrometheusCRAvailability(prometheus.NotAvailable))
+	params, err := newParams("", "testdata/prometheus-exporter.yaml", func(cfg *config.Config) {
+		cfg.PrometheusCRAvailability = prometheus.NotAvailable
+	})
 	assert.NoError(t, err)
 	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
 	actual, err := ServiceMonitor(params)

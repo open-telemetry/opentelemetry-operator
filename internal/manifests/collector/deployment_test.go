@@ -294,7 +294,8 @@ func TestDeploymentFilterLabels(t *testing.T) {
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
-	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
+	cfg := config.New()
+	cfg.LabelsFilter = []string{"foo*", "app.*.bar"}
 
 	params := manifests.Params{
 		Config:  cfg,
@@ -325,7 +326,8 @@ func TestDeploymentFilterAnnotations(t *testing.T) {
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
-	cfg := config.New(config.WithAnnotationFilters([]string{"foo*", "app.*.bar"}))
+	cfg := config.New()
+	cfg.AnnotationsFilter = []string{"foo*", "app.*.bar"}
 
 	params := manifests.Params{
 		Config:  cfg,
