@@ -353,6 +353,6 @@ func registerPprof(g *gin.RouterGroup) {
 func targetJsonFromTargetItem(item *target.Item) *targetJSON {
 	return &targetJSON{
 		TargetURL: []string{item.TargetURL},
-		Labels:    item.Labels,
+		Labels:    item.AllLabels(),
 	}
 }
