@@ -253,7 +253,8 @@ prometheus_cr:
 		expectedLabels["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
 		expectedLabels["app.kubernetes.io/name"] = "my-instance-targetallocator"
 
-		cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+		cfg := config.New()
+		cfg.CertManagerAvailability = certmanager.Available
 
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
@@ -311,7 +312,8 @@ prometheus_cr:
 		expectedLabels["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
 		expectedLabels["app.kubernetes.io/name"] = "my-instance-targetallocator"
 
-		cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+		cfg := config.New()
+		cfg.CertManagerAvailability = certmanager.Available
 
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.fallbackstrategy"})
