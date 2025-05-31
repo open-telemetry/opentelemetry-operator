@@ -679,7 +679,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableJavaInstrumentation(false)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableJavaAutoInstrumentation = false
+				return cfg
+			}(),
 		},
 		{
 			name: "nodejs injection, true",
@@ -863,7 +867,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableNodeJSInstrumentation(true)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableNodeJSAutoInstrumentation = true
+				return cfg
+			}(),
 		},
 		{
 			name: "nodejs injection multiple containers, true",
@@ -1135,7 +1143,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableNodeJSInstrumentation(true)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableNodeJSAutoInstrumentation = true
+				return cfg
+			}(),
 		},
 		{
 			name: "nodejs injection feature gate disabled",
@@ -1421,7 +1433,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnablePythonInstrumentation(true)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnablePythonAutoInstrumentation = true
+				return cfg
+			}(),
 		},
 		{
 			name: "python injection multiple containers, true",
@@ -1725,7 +1741,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnablePythonInstrumentation(true)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnablePythonAutoInstrumentation = true
+				return cfg
+			}(),
 		},
 		{
 			name: "python injection feature gate disabled",
@@ -2017,7 +2037,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableDotNetInstrumentation(true)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableDotNetInstrumentation = true
+				return cfg
+			}(),
 		},
 		{
 			name: "dotnet injection, by namespace annotations",
@@ -2213,7 +2237,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableDotNetInstrumentation(true)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableDotNetInstrumentation = true
+				return cfg
+			}(),
 		},
 		{
 			name: "dotnet injection multiple containers, true",
@@ -2521,7 +2549,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableDotNetInstrumentation(true)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableDotNetInstrumentation = true
+				return cfg
+			}(),
 		},
 		{
 			name: "dotnet injection feature gate disabled",
@@ -2600,7 +2632,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableDotNetInstrumentation(false)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableDotNetInstrumentation = false
+				return cfg
+			}(),
 		},
 		{
 			name: "go injection, true",
@@ -2776,7 +2812,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableGoInstrumentation(true)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableGoAutoInstrumentation = true
+				return cfg
+			}(),
 		},
 		{
 			name: "go injection feature gate disabled",
@@ -2857,7 +2897,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableGoInstrumentation(false)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableGoAutoInstrumentation = false
+				return cfg
+			}(),
 		},
 		{
 			name: "apache httpd injection, true",
@@ -3026,7 +3070,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableApacheHttpdInstrumentation(true)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableApacheHttpdInstrumentation = true
+				return cfg
+			}(),
 		},
 		{
 			name: "apache httpd injection feature gate disabled",
@@ -3101,7 +3149,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableApacheHttpdInstrumentation(false)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableApacheHttpdInstrumentation = false
+				return cfg
+			}(),
 		},
 
 		{
@@ -3279,7 +3331,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableNginxInstrumentation(true)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableNginxAutoInstrumentation = true
+				return cfg
+			}(),
 		},
 		{
 			name: "nginx injection feature gate disabled",
@@ -3360,7 +3416,11 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableDotNetInstrumentation(false)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableDotNetInstrumentation = false
+				return cfg
+			}(),
 		},
 
 		{
@@ -4260,12 +4320,14 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(
-				config.WithEnableMultiInstrumentation(true),
-				config.WithEnablePythonInstrumentation(true),
-				config.WithEnableDotNetInstrumentation(true),
-				config.WithEnableNodeJSInstrumentation(true),
-			),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableMultiInstrumentation = true
+				cfg.EnablePythonAutoInstrumentation = true
+				cfg.EnableDotNetInstrumentation = true
+				cfg.EnableNodeJSAutoInstrumentation = true
+				return cfg
+			}(),
 		},
 		{
 			name: "multi instrumentation for multiple containers feature gate disabled, multiple instrumentation annotations set",
@@ -4419,7 +4481,15 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableMultiInstrumentation(false), config.WithEnableJavaInstrumentation(false)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableMultiInstrumentation = false
+				cfg.EnableJavaAutoInstrumentation = false
+				cfg.EnableNodeJSAutoInstrumentation = false
+				cfg.EnablePythonAutoInstrumentation = false
+				cfg.EnableDotNetInstrumentation = false
+				return cfg
+			}(),
 		},
 		{
 			name: "multi instrumentation feature gate enabled, multiple instrumentation annotations set, no containers",
@@ -4563,7 +4633,12 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableMultiInstrumentation(true), config.WithEnableJavaInstrumentation(false)),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableMultiInstrumentation = true
+				cfg.EnableJavaAutoInstrumentation = false
+				return cfg
+			}(),
 		},
 		{
 			name: "multi instrumentation feature gate enabled, single instrumentation annotation set, no containers",
@@ -4758,10 +4833,12 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(
-				config.WithEnableMultiInstrumentation(true),
-				config.WithEnableDotNetInstrumentation(true),
-			),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableMultiInstrumentation = true
+				cfg.EnableDotNetInstrumentation = true
+				return cfg
+			}(),
 		},
 		{
 			name: "multi instrumentation feature gate disabled, instrumentation feature gate disabled and annotation set, multiple specific containers set",
@@ -4861,11 +4938,13 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(
-				config.WithEnableMultiInstrumentation(true),
-				config.WithEnableDotNetInstrumentation(false),
-				config.WithEnableNodeJSInstrumentation(false),
-			),
+			config: func() config.Config {
+				cfg := config.New()
+				cfg.EnableMultiInstrumentation = true
+				cfg.EnableDotNetInstrumentation = false
+				cfg.EnableNodeJSAutoInstrumentation = false
+				return cfg
+			}(),
 		},
 		{
 			name: "secret and configmap does not exists",

@@ -81,7 +81,7 @@ func TestDesiredIngresses(t *testing.T) {
 			ingressClassName = "nginx"
 		)
 
-		params, err := newParams("something:tag", testFileIngress)
+		params, err := newParams("something:tag", testFileIngress, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -172,7 +172,7 @@ func TestDesiredIngresses(t *testing.T) {
 			ingressClassName = "nginx"
 		)
 
-		params, err := newParams("something:tag", testFileIngress)
+		params, err := newParams("something:tag", testFileIngress, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
