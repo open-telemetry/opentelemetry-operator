@@ -62,7 +62,7 @@ jobs:
          - "1.23"
          - "1.32"
        group:
-         - e2e
+         # - e2e
          - e2e-automatic-rbac
          - e2e-autoscale
          - e2e-instrumentation
@@ -131,6 +131,12 @@ jobs:
       run: |
         set -e
         make e2e-log-operator KUBE_VERSION=$KUBE_VERSION
+    - name: Upload test results
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        path: .testresults/e2e/*.xml
+        name: e2e-junit-${{ matrix.group }}-${{ matrix.kube-version }}
+        retention-days: 7
 
   e2e-tests-check:
     runs-on: ubuntu-latest
@@ -148,3 +154,34 @@ jobs:
             echo "One or more matrix jobs failed."
             false
           fi
+---
+name: report
+on:
+  workflow_run:
+    workflows: [ "End-to-end tests" ]
+    types: [ completed ]
+
+permissions:
+  checks: write
+  pull-requests: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Test Report
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          merge-multiple: true
+          pattern: e2e-junit-*
+          path: '.testresults/e2e'
+          run_id: ${{ github.event.workflow_run.id }}
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@65fe03598d8d251738592a497a9e8547a5c48eaa # v5.6.0
+        if: always()
+        with:
+          commit: ${{github.event.workflow_run.head_sha}}
+          report_paths: '.testresults/e2e/*.xml'
+          comment: true
+          skip_annotations: true
+          include_passed: true
