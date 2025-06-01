@@ -7,6 +7,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -19,22 +20,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
-
-func TestNewConfig(t *testing.T) {
-	// prepare
-	cfg := config.New(
-		config.WithCollectorImage("some-image"),
-		config.WithCollectorConfigMapEntry("some-config.yaml"),
-		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
-		config.WithPrometheusCRAvailability(prometheus.Available),
-	)
-
-	// test
-	assert.Equal(t, "some-image", cfg.CollectorImage)
-	assert.Equal(t, "some-config.yaml", cfg.CollectorConfigMapEntry)
-	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability)
-	assert.Equal(t, prometheus.Available, cfg.PrometheusCRAvailability)
-}
 
 func TestConfigChangesOnAutoDetect(t *testing.T) {
 	// prepare
@@ -58,9 +43,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 			return collector.Available, nil
 		},
 	}
-	cfg := config.New(
-		config.WithAutoDetect(mock),
-	)
+	cfg := config.New()
 
 	// sanity check
 	require.Equal(t, openshift.RoutesNotAvailable, cfg.OpenShiftRoutesAvailability)
@@ -71,8 +54,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, collector.NotAvailable, cfg.CollectorAvailability)
 
 	// test
-	err := cfg.AutoDetect()
-	require.NoError(t, err)
+	require.NoError(t, autodetect.ApplyAutoDetect(mock, &cfg, logr.Discard()))
 
 	// verify
 	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability)
