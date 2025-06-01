@@ -1,0 +1,48 @@
+targetallocator-image: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.0.0
+operatoropampbridge-image: ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.0.0
+auto-instrumentation-python-image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:0.0.0
+collector-image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:0.0.0
+collector-configmap-entry: collector.yaml
+create-rbac-permissions: 0
+enable-multi-instrumentation: true
+enable-apache-httpd-instrumentation: true
+enable-dot-net-auto-instrumentation: true
+enable-go-auto-instrumentation: false
+enable-nginx-auto-instrumentation: false
+enable-python-auto-instrumentation: true
+enable-node-js-auto-instrumentation: true
+enable-java-auto-instrumentation: true
+auto-instrumentation-dot-net-image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:0.0.0
+auto-instrumentation-go-image: ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:0.0.0
+auto-instrumentation-apache-httpd-image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:0.0.0
+auto-instrumentation-nginx-image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:0.0.0
+target-allocator-configmap-entry: targetallocator.yaml
+operator-op-amp-bridge-configmap-entry: remoteconfiguration.yaml
+auto-instrumentation-node-js-image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:0.0.0
+auto-instrumentation-java-image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:0.0.0
+openshift-create-dashboard: false
+open-shift-routes-availability: 1
+prometheus-cr-availability: 0
+cert-manager-availability: 0
+target-allocator-availability: 0
+collector-availability: 0
+ignore-missing-collector-crds: false
+labels-filter: []
+annotations-filter:
+  - ^kubectl\.kubernetes\.io/last-applied-configuration$
+metrics-addr: :8080
+health-probe-addr: :8081
+pprof-addr: ""
+enable-leader-election: false
+enable-cr-metrics: false
+create-service-monitor-operator-metrics: false
+webhook-port: 9443
+fips-disabled-components: uppercase
+tls:
+  minversion: VersionTLS12
+  ciphersuites: 
+zap:
+  message-key: message
+  time-key: timestamp
+  level-key: level
+  level-format: uppercase

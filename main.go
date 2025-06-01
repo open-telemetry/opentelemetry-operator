@@ -86,6 +86,8 @@ func main() {
 	featureGates := featuregate.Flags(colfeaturegate.GlobalRegistry())
 	cliFlags.AddGoFlagSet(featureGates)
 
+	var configFile string
+	cliFlags.StringVar(&configFile, "config-file", "", "Path to config file")
 	if err := cliFlags.Parse(os.Args[1:]); err != nil {
 		panic(err)
 	}
@@ -105,6 +107,13 @@ func main() {
 	ctrl.SetLogger(logger)
 
 	configLog := ctrl.Log.WithName("config")
+
+	if configFile != "" {
+		if err := config.ApplyConfigFile(configFile, &cfg, configLog); err != nil {
+			panic(err)
+		}
+	}
+
 	config.ApplyEnvVars(&cfg)
 	if err := config.ApplyCLI(&cfg); err != nil {
 		setupLog.Error(err, "failed to apply CLI flags")

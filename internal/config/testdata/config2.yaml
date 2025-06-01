@@ -1,0 +1,3 @@
+auto-instrumentation-dot-net-image: foo:1
+auto-instrumentation-go-image: foobar:1
+auto-instrumentation-apache-httpd-image: bar:1
