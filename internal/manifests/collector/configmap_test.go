@@ -90,7 +90,7 @@ service:
 `,
 		}
 
-		param, err := newParams("test/test-img", "testdata/http_sd_config_servicemonitor_test.yaml")
+		param, err := newParams("test/test-img", "testdata/http_sd_config_servicemonitor_test.yaml", nil)
 		assert.NoError(t, err)
 
 		hash, _ := manifestutils.GetConfigMapSHA(param.OtelCol.Spec.Config)
@@ -141,8 +141,9 @@ service:
       - prometheus
 `,
 		}
-
-		param, err := newParams("test/test-img", "testdata/http_sd_config_servicemonitor_test.yaml", config.WithCertManagerAvailability(certmanager.Available))
+		param, err := newParams("test/test-img", "testdata/http_sd_config_servicemonitor_test.yaml", func(cfg *config.Config) {
+			cfg.CertManagerAvailability = certmanager.Available
+		})
 		require.NoError(t, err)
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err = flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
@@ -197,8 +198,9 @@ service:
       - prometheus
 `,
 		}
-
-		param, err := newParams("test/test-img", "testdata/http_sd_config_servicemonitor_test.yaml", config.WithCertManagerAvailability(certmanager.Available))
+		param, err := newParams("test/test-img", "testdata/http_sd_config_servicemonitor_test.yaml", func(cfg *config.Config) {
+			cfg.CertManagerAvailability = certmanager.Available
+		})
 		require.NoError(t, err)
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err = flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
