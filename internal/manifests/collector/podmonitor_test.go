@@ -43,7 +43,7 @@ func TestDesiredPodMonitors(t *testing.T) {
 }
 
 func TestDesiredPodMonitorsWithPrometheus(t *testing.T) {
-	params, err := newParams("", "testdata/prometheus-exporter.yaml")
+	params, err := newParams("", "testdata/prometheus-exporter.yaml", nil)
 	assert.NoError(t, err)
 	params.OtelCol.Spec.Mode = v1beta1.ModeSidecar
 	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
@@ -65,7 +65,9 @@ func TestDesiredPodMonitorsWithPrometheus(t *testing.T) {
 }
 
 func TestDesiredPodMonitorsPrometheusNotAvailable(t *testing.T) {
-	params, err := newParams("", "testdata/prometheus-exporter.yaml", config.WithPrometheusCRAvailability(prometheus.NotAvailable))
+	params, err := newParams("", "testdata/prometheus-exporter.yaml", func(cfg *config.Config) {
+		cfg.PrometheusCRAvailability = prometheus.NotAvailable
+	})
 	assert.NoError(t, err)
 	params.OtelCol.Spec.Mode = v1beta1.ModeSidecar
 	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
