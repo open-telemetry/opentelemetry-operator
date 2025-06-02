@@ -28,7 +28,7 @@ func GetTargetsWithNodeName(targets []*target.Item) (targetsWithNodeName []*targ
 // target that lacks node labels.
 func TestAllocationPerNode(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	s, _ := New("per-node", noopMeter, loggerPerNode)
+	s, _ := New("per-node", loggerPerNode)
 
 	cols := MakeNCollectors(4, 0)
 	s.SetCollectors(cols)
@@ -95,7 +95,7 @@ func TestAllocationPerNode(t *testing.T) {
 // Tests that four targets, with one of them missing node labels, are all assigned.
 func TestAllocationPerNodeUsingFallback(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	s, _ := New("per-node", noopMeter, loggerPerNode, WithFallbackStrategy(consistentHashingStrategyName))
+	s, _ := New("per-node", loggerPerNode, WithFallbackStrategy(consistentHashingStrategyName))
 
 	cols := MakeNCollectors(4, 0)
 	s.SetCollectors(cols)
@@ -165,7 +165,7 @@ func TestAllocationPerNodeUsingFallback(t *testing.T) {
 
 func TestTargetsWithNoCollectorsPerNode(t *testing.T) {
 	// prepare allocator with initial targets and collectors
-	c, _ := New("per-node", noopMeter, loggerPerNode)
+	c, _ := New("per-node", loggerPerNode)
 
 	// Adding 10 new targets
 	numItems := 10

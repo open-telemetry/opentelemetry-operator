@@ -13,6 +13,7 @@ import (
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/prometheus/discovery"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
@@ -71,10 +72,10 @@ func main() {
 		panic(promErr)
 	}
 	meterProvider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(metricExporter))
-	meter := meterProvider.Meter("otelallocator")
+	otel.SetMeterProvider(meterProvider)
 
 	allocatorPrehook = prehook.New(cfg.FilterStrategy, log)
-	allocator, allocErr := allocation.New(cfg.AllocationStrategy, meter, log, allocation.WithFilter(allocatorPrehook), allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
+	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log, allocation.WithFilter(allocatorPrehook), allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
 	if allocErr != nil {
 		setupLog.Error(allocErr, "Unable to initialize allocation strategy")
 		os.Exit(1)
@@ -89,7 +90,7 @@ func main() {
 		}
 		httpOptions = append(httpOptions, server.WithTLSConfig(tlsConfig, cfg.HTTPS.ListenAddr))
 	}
-	srv, serverErr := server.NewServer(log, meter, allocator, cfg.ListenAddr, httpOptions...)
+	srv, serverErr := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
 	if serverErr != nil {
 		panic(serverErr)
 	}
@@ -102,11 +103,11 @@ func main() {
 	}
 	discoveryManager = discovery.NewManager(discoveryCtx, config.NopLogger, prometheus.DefaultRegisterer, sdMetrics)
 
-	targetDiscoverer, targetErr := target.NewDiscoverer(log, meter, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
+	targetDiscoverer, targetErr := target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
 	if targetErr != nil {
 		panic(targetErr)
 	}
-	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, meter, cfg.ClusterConfig, cfg.CollectorNotReadyGracePeriod)
+	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, cfg.ClusterConfig, cfg.CollectorNotReadyGracePeriod)
 	if collectorWatcherErr != nil {
 		setupLog.Error(collectorWatcherErr, "Unable to initialize collector watcher")
 		os.Exit(1)
@@ -212,6 +213,7 @@ func main() {
 				}
 			})
 	}
+	meter := otel.GetMeterProvider().Meter("targetallocator")
 	eventsMetric, err := meter.Int64Counter("opentelemetry_allocator_events", metric.WithDescription("Number of events in the channel."))
 	if err != nil {
 		panic(err)

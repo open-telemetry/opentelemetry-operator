@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,12 +33,13 @@ type Watcher struct {
 	collectorsDiscovered         metric.Int64Gauge
 }
 
-func NewCollectorWatcher(logger logr.Logger, meter metric.Meter, kubeConfig *rest.Config, collectorNotReadyGracePeriod time.Duration) (*Watcher, error) {
+func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config, collectorNotReadyGracePeriod time.Duration) (*Watcher, error) {
 	clientset, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
 		return &Watcher{}, err
 	}
 
+	meter := otel.GetMeterProvider().Meter("targetallocator")
 	collectorsDiscovered, err := meter.Int64Gauge("opentelemetry_allocator_collectors_discovered", metric.WithDescription("Number of collectors discovered."))
 	if err != nil {
 		return &Watcher{}, err

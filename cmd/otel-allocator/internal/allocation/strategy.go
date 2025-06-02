@@ -8,7 +8,6 @@ import (
 
 	"github.com/buraksezer/consistent"
 	"github.com/go-logr/logr"
-	"go.opentelemetry.io/otel/metric"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
@@ -45,9 +44,9 @@ func WithFallbackStrategy(fallbackStrategy string) Option {
 	}
 }
 
-func New(name string, meter metric.Meter, log logr.Logger, opts ...Option) (Allocator, error) {
+func New(name string, log logr.Logger, opts ...Option) (Allocator, error) {
 	if strategy, ok := strategies[name]; ok {
-		return newAllocator(log.WithValues("allocator", name), meter, strategy, opts...)
+		return newAllocator(log.WithValues("allocator", name), strategy, opts...)
 	}
 	return nil, fmt.Errorf("unregistered strategy: %s", name)
 }

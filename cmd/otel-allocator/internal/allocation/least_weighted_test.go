@@ -17,7 +17,7 @@ import (
 var logger = logf.Log.WithName("unit-tests")
 
 func TestNoCollectorReassignment(t *testing.T) {
-	s, _ := New("least-weighted", noopMeter, logger)
+	s, _ := New("least-weighted", logger)
 
 	cols := MakeNCollectors(3, 0)
 	s.SetCollectors(cols)
@@ -49,7 +49,7 @@ func TestNoCollectorReassignment(t *testing.T) {
 
 // Tests that the newly added collector instance does not get assigned any target when the targets remain the same.
 func TestNoAssignmentToNewCollector(t *testing.T) {
-	s, _ := New("least-weighted", noopMeter, logger)
+	s, _ := New("least-weighted", logger)
 
 	// instantiate only 1 collector
 	cols := MakeNCollectors(1, 0)
@@ -101,7 +101,7 @@ func TestNoAssignmentToNewCollector(t *testing.T) {
 func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 
 	// prepare allocator with 3 collectors and 'random' amount of targets
-	s, _ := New("least-weighted", noopMeter, logger)
+	s, _ := New("least-weighted", logger)
 
 	cols := MakeNCollectors(3, 0)
 	s.SetCollectors(cols)
@@ -160,7 +160,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 }
 
 func TestTargetsWithNoCollectorsLeastWeighted(t *testing.T) {
-	s, _ := New("least-weighted", noopMeter, logger)
+	s, _ := New("least-weighted", logger)
 
 	// Adding 10 new targets
 	numItems := 10

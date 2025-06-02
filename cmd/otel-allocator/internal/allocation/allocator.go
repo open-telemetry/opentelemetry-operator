@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
@@ -28,7 +29,8 @@ import (
 
 var _ Allocator = &allocator{}
 
-func newAllocator(log logr.Logger, meter metric.Meter, strategy Strategy, opts ...Option) (Allocator, error) {
+func newAllocator(log logr.Logger, strategy Strategy, opts ...Option) (Allocator, error) {
+	meter := otel.GetMeterProvider().Meter("targetallocator")
 	// targetsPerCollector records how many targets have been assigned to each collector.
 	// It is currently the responsibility of the strategy to track this information.
 	targetsPerCollector, err := meter.Int64Gauge("opentelemetry_allocator_targets_per_collector", metric.WithDescription("The number of targets for each collector."))
