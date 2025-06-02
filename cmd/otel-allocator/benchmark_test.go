@@ -18,7 +18,6 @@ import (
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/require"
-	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -170,24 +169,23 @@ func prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob int) map[str
 
 func createTestDiscoverer(allocationStrategy string, prehookConfig map[string][]*relabel.Config) *target.Discoverer {
 	ctx := context.Background()
-	noopMeter := sdkmetric.NewMeterProvider().Meter("noop")
 	logger := ctrl.Log.WithName(fmt.Sprintf("bench-%s", allocationStrategy))
 	ctrl.SetLogger(logr.New(log.NullLogSink{}))
 	allocatorPrehook := prehook.New("relabel-config", logger)
 	allocatorPrehook.SetConfig(prehookConfig)
-	allocator, err := allocation.New(allocationStrategy, noopMeter, logger, allocation.WithFilter(allocatorPrehook))
+	allocator, err := allocation.New(allocationStrategy, logger, allocation.WithFilter(allocatorPrehook))
 	if err != nil {
 		setupLog.Error(err, "Unable to initialize allocation strategy")
 		os.Exit(1)
 	}
-	srv, err := server.NewServer(logger, noopMeter, allocator, "localhost:0")
+	srv, err := server.NewServer(logger, allocator, "localhost:0")
 	if err != nil {
 		panic(err)
 	}
 	registry := prometheus.NewRegistry()
 	sdMetrics, _ := discovery.CreateAndRegisterSDMetrics(registry)
 	discoveryManager := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	targetDiscoverer, err := target.NewDiscoverer(logger, noopMeter, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
+	targetDiscoverer, err := target.NewDiscoverer(logger, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
 	if err != nil {
 		panic(err)
 	}

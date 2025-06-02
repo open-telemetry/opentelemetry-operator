@@ -24,6 +24,7 @@ import (
 	promcommconfig "github.com/prometheus/common/config"
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/model/labels"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"gopkg.in/yaml.v2"
@@ -97,7 +98,8 @@ func (s *Server) setRouter(router *gin.Engine) {
 	registerPprof(router.Group("/debug/pprof/"))
 }
 
-func NewServer(log logr.Logger, meter metric.Meter, allocator allocation.Allocator, listenAddr string, options ...Option) (*Server, error) {
+func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr string, options ...Option) (*Server, error) {
+	meter := otel.GetMeterProvider().Meter("targetallocator")
 	httpDuration, err := meter.Float64Histogram("opentelemetry_allocator_http_duration_seconds", metric.WithDescription("Duration of received HTTP requests."))
 	if err != nil {
 		return nil, err
