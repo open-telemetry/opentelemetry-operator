@@ -109,4 +109,7 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("IGNORE_MISSING_COLLECTOR_CRDS"); ok {
 		cfg.IgnoreMissingCollectorCRDs, _ = strconv.ParseBool(v)
 	}
+	if v, ok := os.LookupEnv("ENABLE_WEBHOOKS"); ok {
+		cfg.EnableWebhooks, _ = strconv.ParseBool(v)
+	}
 }

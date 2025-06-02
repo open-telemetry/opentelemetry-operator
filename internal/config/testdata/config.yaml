@@ -46,3 +46,4 @@ zap:
   time-key: timestamp
   level-key: level
   level-format: uppercase
+enable-webhooks: true
