@@ -12,6 +12,7 @@ import (
 
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/sdk/metric"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
@@ -66,11 +67,12 @@ func MakeNNewTargetsWithEmptyCollectors(n int, startingIndex int) []*target.Item
 }
 
 func RunForAllStrategies(t *testing.T, f func(t *testing.T, allocator Allocator)) {
+	noopMeter := metric.NewMeterProvider().Meter("noop")
 	allocatorNames := GetRegisteredAllocatorNames()
 	logger := logf.Log.WithName("unit-tests")
 	for _, allocatorName := range allocatorNames {
 		t.Run(allocatorName, func(t *testing.T) {
-			allocator, err := New(allocatorName, logger)
+			allocator, err := New(allocatorName, noopMeter, logger)
 			require.NoError(t, err)
 			f(t, allocator)
 		})

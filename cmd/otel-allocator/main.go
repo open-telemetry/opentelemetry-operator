@@ -12,8 +12,11 @@ import (
 
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/prometheus/discovery"
+	"go.opentelemetry.io/otel/attribute"
+	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/metric"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -27,11 +30,7 @@ import (
 )
 
 var (
-	setupLog     = ctrl.Log.WithName("setup")
-	eventsMetric = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "opentelemetry_allocator_events",
-		Help: "Number of events in the channel.",
-	}, []string{"source"})
+	setupLog = ctrl.Log.WithName("setup")
 )
 
 func main() {
@@ -42,7 +41,6 @@ func main() {
 		allocator        allocation.Allocator
 		discoveryManager *discovery.Manager
 		collectorWatcher *collector.Watcher
-		promWatcher      allocatorWatcher.Watcher
 		targetDiscoverer *target.Discoverer
 
 		discoveryCancel context.CancelFunc
@@ -52,9 +50,9 @@ func main() {
 		interrupts      = make(chan os.Signal, 1)
 		errChan         = make(chan error)
 	)
-	cfg, err := config.Load(os.Args)
-	if err != nil {
-		fmt.Printf("Failed to load config: %v", err)
+	cfg, loadErr := config.Load(os.Args)
+	if loadErr != nil {
+		fmt.Printf("Failed to load config: %v", loadErr)
 		os.Exit(1)
 	}
 	ctrl.SetLogger(cfg.RootLogger)
@@ -68,10 +66,17 @@ func main() {
 	ctx := context.Background()
 	log := ctrl.Log.WithName("allocator")
 
+	metricExporter, promErr := otelprom.New()
+	if promErr != nil {
+		panic(promErr)
+	}
+	meterProvider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(metricExporter))
+	meter := meterProvider.Meter("otelallocator")
+
 	allocatorPrehook = prehook.New(cfg.FilterStrategy, log)
-	allocator, err = allocation.New(cfg.AllocationStrategy, log, allocation.WithFilter(allocatorPrehook), allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
-	if err != nil {
-		setupLog.Error(err, "Unable to initialize allocation strategy")
+	allocator, allocErr := allocation.New(cfg.AllocationStrategy, meter, log, allocation.WithFilter(allocatorPrehook), allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
+	if allocErr != nil {
+		setupLog.Error(allocErr, "Unable to initialize allocation strategy")
 		os.Exit(1)
 	}
 
@@ -84,18 +89,24 @@ func main() {
 		}
 		httpOptions = append(httpOptions, server.WithTLSConfig(tlsConfig, cfg.HTTPS.ListenAddr))
 	}
-	srv := server.NewServer(log, allocator, cfg.ListenAddr, httpOptions...)
+	srv, serverErr := server.NewServer(log, meter, allocator, cfg.ListenAddr, httpOptions...)
+	if serverErr != nil {
+		panic(serverErr)
+	}
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
-	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(prometheus.DefaultRegisterer)
-	if err != nil {
-		setupLog.Error(err, "Unable to register metrics for Prometheus service discovery")
+	sdMetrics, discErr := discovery.CreateAndRegisterSDMetrics(prometheus.DefaultRegisterer)
+	if discErr != nil {
+		setupLog.Error(discErr, "Unable to register metrics for Prometheus service discovery")
 		os.Exit(1)
 	}
 	discoveryManager = discovery.NewManager(discoveryCtx, config.NopLogger, prometheus.DefaultRegisterer, sdMetrics)
 
-	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
-	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, cfg.ClusterConfig, cfg.CollectorNotReadyGracePeriod)
+	targetDiscoverer, targetErr := target.NewDiscoverer(log, meter, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
+	if targetErr != nil {
+		panic(targetErr)
+	}
+	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, meter, cfg.ClusterConfig, cfg.CollectorNotReadyGracePeriod)
 	if collectorWatcherErr != nil {
 		setupLog.Error(collectorWatcherErr, "Unable to initialize collector watcher")
 		os.Exit(1)
@@ -104,20 +115,20 @@ func main() {
 	defer close(interrupts)
 
 	if cfg.PrometheusCR.Enabled {
-		promWatcher, err = allocatorWatcher.NewPrometheusCRWatcher(ctx, setupLog.WithName("prometheus-cr-watcher"), *cfg)
-		if err != nil {
-			setupLog.Error(err, "Can't start the prometheus watcher")
+		promWatcher, allocErr := allocatorWatcher.NewPrometheusCRWatcher(ctx, setupLog.WithName("prometheus-cr-watcher"), *cfg)
+		if allocErr != nil {
+			setupLog.Error(allocErr, "Can't start the prometheus watcher")
 			os.Exit(1)
 		}
 		// apply the initial configuration
 		promConfig, loadErr := promWatcher.LoadConfig(ctx)
 		if loadErr != nil {
-			setupLog.Error(err, "Can't load initial Prometheus configuration from Prometheus CRs")
+			setupLog.Error(loadErr, "Can't load initial Prometheus configuration from Prometheus CRs")
 			os.Exit(1)
 		}
 		loadErr = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, promConfig.ScrapeConfigs)
 		if loadErr != nil {
-			setupLog.Error(err, "Can't load initial scrape targets from Prometheus CRs")
+			setupLog.Error(loadErr, "Can't load initial scrape targets from Prometheus CRs")
 			os.Exit(1)
 		}
 		runGroup.Add(
@@ -148,7 +159,7 @@ func main() {
 		func() error {
 			// Initial loading of the config file's scrape config
 			if cfg.PromConfig != nil && len(cfg.PromConfig.ScrapeConfigs) > 0 {
-				err = targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.PromConfig.ScrapeConfigs)
+				err := targetDiscoverer.ApplyConfig(allocatorWatcher.EventSourceConfigMap, cfg.PromConfig.ScrapeConfigs)
 				if err != nil {
 					setupLog.Error(err, "Unable to apply initial configuration")
 					return err
@@ -201,12 +212,16 @@ func main() {
 				}
 			})
 	}
+	eventsMetric, err := meter.Int64Counter("opentelemetry_allocator_events", metric.WithDescription("Number of events in the channel."))
+	if err != nil {
+		panic(err)
+	}
 	runGroup.Add(
 		func() error {
 			for {
 				select {
 				case event := <-eventChan:
-					eventsMetric.WithLabelValues(event.Source.String()).Inc()
+					eventsMetric.Add(context.Background(), 1, metric.WithAttributes(attribute.String("source", event.Source.String())))
 					loadConfig, err := event.Watcher.LoadConfig(ctx)
 					if err != nil {
 						setupLog.Error(err, "Unable to load configuration")
