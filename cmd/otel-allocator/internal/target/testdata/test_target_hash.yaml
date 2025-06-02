@@ -1,0 +1,14 @@
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/instance: default.test
+    app.kubernetes.io/managed-by: opentelemetry-operator
+config:
+  scrape_configs:
+  - job_name: prometheus
+    metrics_path: /metrics
+    static_configs:
+    - targets: ["prom.domain:9001", "prom.domain:9002", "prom.domain:9003"]
+  - job_name: prometheus2
+    metrics_path: /metrics2
+    static_configs:
+    - targets: ["prom.domain:9001", "prom.domain:9002"]

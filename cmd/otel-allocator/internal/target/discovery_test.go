@@ -54,6 +54,13 @@ func TestDiscovery(t *testing.T) {
 			},
 			want: []string{"prom.domain:9004", "prom.domain:9005", "promfile.domain:1001", "promfile.domain:3000"},
 		},
+		{
+			name: "same targets in two different jobs",
+			args: args{
+				file: "./testdata/test_target_hash.yaml",
+			},
+			want: []string{"prom.domain:9001", "prom.domain:9001", "prom.domain:9002", "prom.domain:9002", "prom.domain:9003"},
+		},
 	}
 	scu := &mockScrapeConfigUpdater{}
 	ctx, cancelFunc := context.WithCancel(context.Background())
