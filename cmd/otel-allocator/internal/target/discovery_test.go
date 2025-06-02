@@ -20,6 +20,7 @@ import (
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/sdk/metric"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
@@ -63,13 +64,15 @@ func TestDiscovery(t *testing.T) {
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
 	results := make(chan []string)
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, func(targets []*Item) {
+	noopMeter := metric.NewMeterProvider().Meter("noop")
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), noopMeter, d, nil, scu, func(targets []*Item) {
 		var result []string
 		for _, t := range targets {
 			result = append(result, t.TargetURL)
 		}
 		results <- result
 	})
+	require.NoError(t, err)
 
 	defer func() { manager.Close() }()
 	defer cancelFunc()
@@ -310,7 +313,9 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
+	noopMeter := metric.NewMeterProvider().Meter("noop")
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), noopMeter, d, nil, scu, nil)
+	require.NoError(t, err)
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
@@ -449,7 +454,9 @@ func TestDiscovery_NoConfig(t *testing.T) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
+	noopMeter := metric.NewMeterProvider().Meter("noop")
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), noopMeter, d, nil, scu, nil)
+	require.NoError(t, err)
 	defer close(manager.close)
 	defer cancelFunc()
 
@@ -534,7 +541,9 @@ func BenchmarkApplyScrapeConfig(b *testing.B) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(b, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
+	noopMeter := metric.NewMeterProvider().Meter("noop")
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), noopMeter, d, nil, scu, nil)
+	require.NoError(b, err)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

@@ -15,12 +15,15 @@ import (
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
 func BenchmarkServerTargetsHandler(b *testing.B) {
+	noopMeter := sdkmetric.NewMeterProvider().Meter("noop")
 	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
 	var table = []struct {
 		numCollectors int
@@ -38,13 +41,14 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 
 	for _, allocatorName := range allocation.GetRegisteredAllocatorNames() {
 		for _, v := range table {
-			a, _ := allocation.New(allocatorName, logger)
+			a, _ := allocation.New(allocatorName, noopMeter, logger)
 			cols := allocation.MakeNCollectors(v.numCollectors, 0)
 			targets := allocation.MakeNNewTargets(v.numJobs, v.numCollectors, 0)
 			listenAddr := ":8080"
 			a.SetCollectors(cols)
 			a.SetTargets(targets)
-			s := NewServer(logger, a, listenAddr)
+			s, err := NewServer(logger, noopMeter, a, listenAddr)
+			require.NoError(b, err)
 			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", allocatorName, v.numCollectors, v.numJobs), func(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
