@@ -18,7 +18,7 @@ var (
 	// TargetAllocator CRs instead of generating the manifests for its resources directly.
 	CollectorUsesTargetAllocatorCR = featuregate.GlobalRegistry().MustRegister(
 		"operator.collector.targetallocatorcr",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("causes collector reconciliation to create a target allocator CR instead of creating resources directly"),
 		featuregate.WithRegisterFromVersion("v0.112.0"),
 	)
