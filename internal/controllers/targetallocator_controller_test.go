@@ -29,9 +29,8 @@ var testLogger = logf.Log.WithName("opamp-bridge-controller-unit-tests")
 
 func TestNewObjectsOnReconciliation_TargetAllocator(t *testing.T) {
 	// prepare
-	cfg := config.New(
-		config.WithTargetAllocatorImage("default-ta"),
-	)
+	cfg := config.New()
+	cfg.TargetAllocatorImage = "default-ta"
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewTargetAllocatorReconciler(
 		k8sClient,
@@ -138,9 +137,8 @@ func TestSkipWhenInstanceDoesNotExist_TargetAllocator(t *testing.T) {
 
 func TestUnmanaged_TargetAllocator(t *testing.T) {
 	// prepare
-	cfg := config.New(
-		config.WithTargetAllocatorImage("default-ta"),
-	)
+	cfg := config.New()
+	cfg.TargetAllocatorImage = "default-ta"
 	nsn := types.NamespacedName{Name: "my-instance-unmanaged", Namespace: "default"}
 	reconciler := controllers.NewTargetAllocatorReconciler(
 		k8sClient,
@@ -194,9 +192,8 @@ func TestUnmanaged_TargetAllocator(t *testing.T) {
 
 func TestBuildError_TargetAllocator(t *testing.T) {
 	// prepare
-	cfg := config.New(
-		config.WithTargetAllocatorImage("default-ta"),
-	)
+	cfg := config.New()
+	cfg.TargetAllocatorImage = "default-ta"
 	nsn := types.NamespacedName{Name: "my-instance-builderror", Namespace: "default"}
 	reconciler := controllers.NewTargetAllocatorReconciler(
 		k8sClient,
