@@ -119,6 +119,8 @@ type Config struct {
 	TLS TLSConfig `yaml:"tls"`
 	// ZapConfig holds the advanced Zap logging config
 	Zap ZapConfig `yaml:"zap"`
+	// EnableWebhooks enables the webhooks used by controllers.
+	EnableWebhooks bool `yaml:"enable-webhooks"`
 }
 
 // New constructs a new configuration.
@@ -170,6 +172,7 @@ func New() Config {
 			LevelKey:    "level",
 			LevelFormat: "uppercase",
 		},
+		EnableWebhooks: true,
 	}
 }
 

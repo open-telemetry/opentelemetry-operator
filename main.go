@@ -318,7 +318,7 @@ func main() {
 		}
 	}
 
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+	if cfg.EnableWebhooks {
 		var crdMetrics *otelv1beta1.Metrics
 
 		if cfg.EnableCRMetrics {
