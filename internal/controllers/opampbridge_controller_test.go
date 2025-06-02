@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -23,6 +24,7 @@ import (
 	k8sreconcile "sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -47,7 +49,6 @@ func TestNewObjectsOnReconciliation_OpAMPBridge(t *testing.T) {
 	// prepare
 	cfg := config.New(
 		config.WithOperatorOpAMPBridgeImage("default-opamp-bridge"),
-		config.WithAutoDetect(opampBridgeMockAutoDetector),
 	)
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
@@ -57,7 +58,7 @@ func TestNewObjectsOnReconciliation_OpAMPBridge(t *testing.T) {
 		Recorder: record.NewFakeRecorder(10),
 		Config:   cfg,
 	})
-	require.NoError(t, cfg.AutoDetect())
+	require.NoError(t, autodetect.ApplyAutoDetect(opampBridgeMockAutoDetector, &cfg, logr.Discard()))
 	created := &v1alpha1.OpAMPBridge{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nsn.Name,

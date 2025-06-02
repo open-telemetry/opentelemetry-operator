@@ -5,12 +5,9 @@
 package config
 
 import (
-	"context"
-
 	"github.com/go-logr/logr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
@@ -28,8 +25,7 @@ const (
 
 // Config holds the static configuration for this operator.
 type Config struct {
-	autoDetect autodetect.AutoDetect
-	logger     logr.Logger
+	logger logr.Logger
 	// TargetAllocatorImage represents the flag to override the OpenTelemetry TargetAllocator container image.
 	TargetAllocatorImage string
 	// OperatorOpAMPBridgeImage represents the flag to override the OpAMPBridge container image.
@@ -117,7 +113,6 @@ func New(opts ...Option) Config {
 	}
 
 	return Config{
-		autoDetect:                          o.autoDetect,
 		CollectorImage:                      o.collectorImage,
 		CollectorConfigMapEntry:             o.collectorConfigMapEntry,
 		EnableMultiInstrumentation:          o.enableMultiInstrumentation,
@@ -150,53 +145,4 @@ func New(opts ...Option) Config {
 		AnnotationsFilter:                   o.annotationsFilter,
 		CreateRBACPermissions:               o.createRBACPermissions,
 	}
-}
-
-// AutoDetect attempts to automatically detect relevant information for this operator.
-func (c *Config) AutoDetect() error {
-	c.logger.V(2).Info("auto-detecting the configuration based on the environment")
-
-	ora, err := c.autoDetect.OpenShiftRoutesAvailability()
-	if err != nil {
-		return err
-	}
-	c.OpenShiftRoutesAvailability = ora
-	c.logger.V(2).Info("openshift routes detected", "availability", ora)
-
-	pcrd, err := c.autoDetect.PrometheusCRsAvailability()
-	if err != nil {
-		return err
-	}
-	c.PrometheusCRAvailability = pcrd
-	c.logger.V(2).Info("prometheus cr detected", "availability", pcrd)
-
-	rAuto, err := c.autoDetect.RBACPermissions(context.Background())
-	if err != nil {
-		c.logger.V(2).Info("the rbac permissions are not set for the operator", "reason", err)
-	}
-	c.CreateRBACPermissions = rAuto
-	c.logger.V(2).Info("create rbac permissions detected", "availability", rAuto)
-
-	cmAvl, err := c.autoDetect.CertManagerAvailability(context.Background())
-	if err != nil {
-		c.logger.V(2).Info("the cert manager crd and permissions are not set for the operator", "reason", err)
-	}
-	c.CertManagerAvailability = cmAvl
-	c.logger.V(2).Info("the cert manager crd and permissions are set for the operator", "availability", cmAvl)
-
-	taAvl, err := c.autoDetect.TargetAllocatorAvailability()
-	if err != nil {
-		return err
-	}
-	c.TargetAllocatorAvailability = taAvl
-	c.logger.V(2).Info("determined TargetAllocator CRD availability", "availability", cmAvl)
-
-	coAvl, err := c.autoDetect.CollectorAvailability()
-	if err != nil {
-		return err
-	}
-	c.CollectorAvailability = coAvl
-	c.logger.V(2).Info("determined Collector CRD availability", "availability", coAvl)
-
-	return nil
 }
