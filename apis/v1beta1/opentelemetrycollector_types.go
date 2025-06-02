@@ -65,6 +65,11 @@ type OpenTelemetryCollectorStatus struct {
 	Image string `json:"image,omitempty"`
 }
 
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && size(self.tolerations) > 0) || !has(self.tolerations)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'"
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && self.priorityClassName != '') || !has(self.priorityClassName)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'"
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && self.affinity != null) || !has(self.affinity)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'"
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && size(self.additionalContainers) > 0) || !has(self.additionalContainers)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'"
+
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
 type OpenTelemetryCollectorSpec struct {
 	// OpenTelemetryCommonFields are fields that are on all OpenTelemetry CRD workloads.
