@@ -6,7 +6,6 @@ package target
 import (
 	"context"
 	"errors"
-	"fmt"
 	"hash"
 	"sort"
 	"testing"
@@ -401,10 +400,6 @@ func TestDiscoveryTargetHashing(t *testing.T) {
 			assert.NoError(t, err)
 
 			gotTargets := <-results
-			fmt.Printf("got %d targets\n", len(gotTargets))
-			for i, target := range gotTargets {
-				fmt.Printf("target %d: %s %s %s %d\n", i, target.JobName, target.TargetURL, target.Labels, target.Hash())
-			}
 
 			// Verify that all targets have different hashes
 			targetHashes := make(map[ItemHash]bool)
