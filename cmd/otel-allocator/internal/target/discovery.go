@@ -5,8 +5,6 @@ package target
 
 import (
 	"context"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"hash"
 	"hash/fnv"
 	"sync"
@@ -27,27 +25,6 @@ import (
 
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
-
-var (
-	targetsDiscovered = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "opentelemetry_allocator_targets",
-		Help: "Number of targets discovered.",
-	}, []string{"job_name"})
-
-	processTargetsDuration = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name:    "opentelemetry_allocator_process_targets_duration_seconds",
-		Help:    "Duration of processing targets.",
-		Buckets: []float64{1, 5, 10, 30, 60, 120},
-	})
-
-	processTargetGroupsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "opentelemetry_allocator_process_target_groups_duration_seconds",
-		Help:    "Duration of processing target groups.",
-		Buckets: []float64{1, 5, 10, 30, 60, 120},
-	}, []string{"job_name"})
-)
-
-const labelBuilderPreallocSize = 100
 
 type Discoverer struct {
 	log                         logr.Logger

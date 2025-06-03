@@ -403,11 +403,12 @@ func TestDiscoveryTargetHashing(t *testing.T) {
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
 	results := make(chan []*Item)
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, func(targets []*Item) {
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, func(targets []*Item) {
 		var result []*Item
 		result = append(result, targets...)
 		results <- result
 	})
+	require.NoError(t, err)
 
 	defer manager.Close()
 	defer cancelFunc()
@@ -490,7 +491,14 @@ func TestProcessTargetGroups_StableLabelIterationOrder(t *testing.T) {
 	}
 
 	results := make([]*Item, 1)
-	var d *Discoverer
+	scu := &mockScrapeConfigUpdater{}
+	ctx := context.Background()
+	registry := prometheus.NewRegistry()
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
+	require.NoError(t, err)
+	manager := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
+	d, err := NewDiscoverer(ctrl.Log.WithName("test"), manager, nil, scu, nil)
+	require.NoError(t, err)
 	d.processTargetGroups("test", groups, results)
 
 	for i, l := range results[0].Labels {
