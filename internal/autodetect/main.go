@@ -17,6 +17,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/fips"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -35,6 +36,7 @@ type AutoDetect interface {
 	CertManagerAvailability(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailability() (targetallocator.Availability, error)
 	CollectorAvailability() (collector.Availability, error)
+	OpAmpBridgeAvailablity() (opampbridge.Availability, error)
 	FIPSEnabled(ctx context.Context) bool
 }
 
@@ -218,6 +220,38 @@ func (a *autoDetect) CollectorAvailability() (collector.Availability, error) {
 	return collector.NotAvailable, nil
 }
 
+// OpAmpBridgeAvailablity checks if OpAMPBridge CR are available.
+func (a *autoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, error) {
+	apiList, err := a.dcl.ServerGroups()
+	if err != nil {
+		return opampbridge.NotAvailable, err
+	}
+
+	apiGroups := apiList.Groups
+	otelGroupIndex := slices.IndexFunc(apiGroups, func(group metav1.APIGroup) bool {
+		return group.Name == "opentelemetry.io"
+	})
+	if otelGroupIndex == -1 {
+		return opampbridge.NotAvailable, nil
+	}
+
+	otelGroup := apiGroups[otelGroupIndex]
+	for _, groupVersion := range otelGroup.Versions {
+		resourceList, err := a.dcl.ServerResourcesForGroupVersion(groupVersion.GroupVersion)
+		if err != nil {
+			return opampbridge.NotAvailable, err
+		}
+		index := slices.IndexFunc(resourceList.APIResources, func(group metav1.APIResource) bool {
+			return group.Kind == "OpAMPBridge"
+		})
+		if index >= 0 {
+			return opampbridge.Available, nil
+		}
+	}
+
+	return opampbridge.NotAvailable, nil
+}
+
 func (a *autoDetect) FIPSEnabled(_ context.Context) bool {
 	return fips.IsFipsEnabled()
 }
@@ -267,6 +301,13 @@ func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger
 	}
 	c.CollectorAvailability = coAvl
 	logger.V(2).Info("determined Collector CRD availability", "availability", coAvl)
+
+	opAvl, err := autoDetect.OpAmpBridgeAvailablity()
+	if err != nil {
+		return err
+	}
+	c.OpAmpBridgeAvailability = opAvl
+	logger.V(2).Info("determined OpAmpBridge CRD availability", "availability", coAvl)
 
 	return nil
 }
