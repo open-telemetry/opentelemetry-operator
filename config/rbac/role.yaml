@@ -136,6 +136,7 @@ rules:
   resources:
   - opampbridges
   - targetallocators
+  - targetallocators/finalizers
   verbs:
   - create
   - delete
