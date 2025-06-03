@@ -4,19 +4,33 @@ metadata:
   name: operator-metrics
 spec:
   steps:
-    - name: step-00
-      try:
-        - assert:
-            file: 00-assert-operator.yaml
-    - name: proxy request for operator metrics
+    - name: Assert operator metrics.
       try:
         - command:
+            entrypoint: kubectl
+            args:
+            - get
+            - pods
+            - -A
+            - -l control-plane=controller-manager
+            - -l app.kubernetes.io/name=opentelemetry-operator
+            - -o 
+            - jsonpath={.items[0].metadata.namespace}
+            outputs:
+            - name: otelnamespace
+              value: ($stdout)
+        - assert:
+            file: assert-operator.yaml
+        - command:
+            env:
+              - name: otelnamespace
+                value: ($otelnamespace)
             entrypoint: kubectl
             args:
               - get
               - service
               - -n
-              - opentelemetry-operator-system
+              - $otelnamespace
               - -l
               - control-plane=controller-manager
               - -o
