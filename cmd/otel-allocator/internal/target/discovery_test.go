@@ -349,18 +349,54 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 }
 
 func TestDiscoveryTargetHashing(t *testing.T) {
-	type args struct {
-		file string
-	}
 	tests := []struct {
-		name string
-		args args
-		want []string
+		description string
+		cfg         *promconfig.Config
 	}{
 		{
-			name: "same targets in two different jobs",
-			args: args{
-				file: "./testdata/test_target_hash.yaml",
+			description: "same targets in two different jobs",
+			cfg: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:         "prometheus",
+						HonorTimestamps: true,
+						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeTimeout:   model.Duration(30 * time.Second),
+						MetricsPath:     "/metrics",
+						Scheme:          "http",
+						ServiceDiscoveryConfigs: discovery.Configs{
+							discovery.StaticConfig{
+								{
+									Targets: []model.LabelSet{
+										{"__address__": "prom.domain:9001"},
+										{"__address__": "prom.domain:9002"},
+										{"__address__": "prom.domain:9003"},
+									},
+								},
+							},
+						},
+					},
+					{
+						JobName:         "prometheus2",
+						HonorTimestamps: true,
+						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeTimeout:   model.Duration(30 * time.Second),
+						MetricsPath:     "/metrics2",
+						Scheme:          "http",
+						ServiceDiscoveryConfigs: discovery.Configs{
+							discovery.StaticConfig{
+								{
+									Targets: []model.LabelSet{
+										{"__address__": "prom.domain:9001"},
+										{"__address__": "prom.domain:9002"},
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -373,13 +409,11 @@ func TestDiscoveryTargetHashing(t *testing.T) {
 	results := make(chan []*Item)
 	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, func(targets []*Item) {
 		var result []*Item
-		for _, t := range targets {
-			result = append(result, t)
-		}
+		result = append(result, targets...)
 		results <- result
 	})
 
-	defer func() { manager.Close() }()
+	defer manager.Close()
 	defer cancelFunc()
 
 	go func() {
@@ -390,13 +424,12 @@ func TestDiscoveryTargetHashing(t *testing.T) {
 		err := manager.Run()
 		assert.NoError(t, err)
 	}()
+
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg := config.CreateDefaultConfig()
-			err := config.LoadFromFile(tt.args.file, &cfg)
+		t.Run(tt.description, func(t *testing.T) {
 			assert.NoError(t, err)
-			assert.True(t, len(cfg.PromConfig.ScrapeConfigs) > 0)
-			err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, cfg.PromConfig.ScrapeConfigs)
+			assert.True(t, len(tt.cfg.ScrapeConfigs) > 0)
+			err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, tt.cfg.ScrapeConfigs)
 			assert.NoError(t, err)
 
 			gotTargets := <-results

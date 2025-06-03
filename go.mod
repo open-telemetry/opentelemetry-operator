@@ -227,7 +227,6 @@ require (
 )
 
 require (
-	github.com/cespare/xxhash v1.1.0
 	github.com/goccy/go-yaml v1.17.1
 	go.opentelemetry.io/contrib/otelconf v0.15.0
 )
