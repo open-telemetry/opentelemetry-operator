@@ -1,22 +1,12 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package main
 
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -37,7 +27,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	k8sapiflag "k8s.io/component-base/cli/flag"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -49,13 +38,14 @@ import (
 
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	openshiftDashboards "github.com/open-telemetry/opentelemetry-operator/internal/openshift/dashboards"
@@ -63,7 +53,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
-	collectorupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
@@ -75,11 +64,6 @@ var (
 	scheme   = k8sruntime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 )
-
-type tlsConfig struct {
-	minVersion   string
-	cipherSuites []string
-}
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
@@ -126,6 +110,8 @@ func main() {
 		enableNodeJSInstrumentation      bool
 		enableJavaInstrumentation        bool
 		enableCRMetrics                  bool
+		createSMOperatorMetrics          bool
+		ignoreMissingCollectorCRDs       bool
 		collectorImage                   string
 		targetAllocatorImage             string
 		operatorOpAMPBridgeImage         string
@@ -137,10 +123,9 @@ func main() {
 		autoInstrumentationNginx         string
 		autoInstrumentationGo            string
 		labelsFilter                     []string
-		tmplabelsFilter                  []string
 		annotationsFilter                []string
 		webhookPort                      int
-		tlsOpt                           tlsConfig
+		tlsOpt                           config.TLSConfig
 		encodeMessageKey                 string
 		encodeLevelKey                   string
 		encodeTimeKey                    string
@@ -165,6 +150,8 @@ func main() {
 	pflag.BoolVar(&enableNodeJSInstrumentation, constants.FlagNodeJS, true, "Controls whether the operator supports nodejs auto-instrumentation")
 	pflag.BoolVar(&enableJavaInstrumentation, constants.FlagJava, true, "Controls whether the operator supports java auto-instrumentation")
 	pflag.BoolVar(&enableCRMetrics, constants.FlagCRMetrics, false, "Controls whether exposing the CR metrics is enabled")
+	pflag.BoolVar(&createSMOperatorMetrics, "create-sm-operator-metrics", false, "Create a ServiceMonitor for the operator metrics")
+	pflag.BoolVar(&ignoreMissingCollectorCRDs, "ignore-missing-collector-crds", false, "Ignore missing OpenTelemetryCollector CRDs presence in the cluster")
 
 	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
@@ -177,10 +164,9 @@ func main() {
 	stringFlagOrEnv(&autoInstrumentationApacheHttpd, "auto-instrumentation-apache-httpd-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_APACHE_HTTPD", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationApacheHttpd), "The default OpenTelemetry Apache HTTPD instrumentation image. This image is used when no image is specified in the CustomResource.")
 	stringFlagOrEnv(&autoInstrumentationNginx, "auto-instrumentation-nginx-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_NGINX", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationNginx), "The default OpenTelemetry Nginx instrumentation image. This image is used when no image is specified in the CustomResource.")
 	pflag.StringArrayVar(&labelsFilter, "labels-filter", []string{}, "Labels to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --labels-filter=.*filter.out will filter out labels that looks like: label.filter.out: true")
-	pflag.StringArrayVar(&tmplabelsFilter, "label", []string{}, "(Deprecated, please use the labels-filter flag) Labels to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --label=.*filter.out will filter out labels that looks like: label.filter.out: true")
 	pflag.StringArrayVar(&annotationsFilter, "annotations-filter", []string{}, "Annotations to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --annotations-filter=.*filter.out will filter out annotations that looks like: annotation.filter.out: true")
-	pflag.StringVar(&tlsOpt.minVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
-	pflag.StringSliceVar(&tlsOpt.cipherSuites, "tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
+	pflag.StringVar(&tlsOpt.MinVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
+	pflag.StringSliceVar(&tlsOpt.CipherSuites, "tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
 	pflag.StringVar(&encodeMessageKey, "zap-message-key", "message", "The message key to be used in the customized Log Encoder")
 	pflag.StringVar(&encodeLevelKey, "zap-level-key", "level", "The level key to be used in the customized Log Encoder")
 	pflag.StringVar(&encodeTimeKey, "zap-time-key", "timestamp", "The time key to be used in the customized Log Encoder")
@@ -188,9 +174,6 @@ func main() {
 	pflag.StringVar(&fipsDisabledComponents, "fips-disabled-components", "uppercase", "Disabled collector components when operator runs on FIPS enabled platform. Example flag value =receiver.foo,receiver.bar,exporter.baz")
 	pflag.IntVar(&webhookPort, "webhook-port", 9443, "The port the webhook endpoint binds to.")
 	pflag.Parse()
-
-	// Using labelfilters both from label and labels-filter flags, until label flag is removed
-	labelsFilter = append(labelsFilter, tmplabelsFilter...)
 
 	opts.EncoderConfigOptions = append(opts.EncoderConfigOptions, func(ec *zapcore.EncoderConfig) {
 		ec.MessageKey = encodeMessageKey
@@ -207,6 +190,7 @@ func main() {
 		"opentelemetry-collector", collectorImage,
 		"opentelemetry-targetallocator", targetAllocatorImage,
 		"operator-opamp-bridge", operatorOpAMPBridgeImage,
+		"ignore-missing-collector-crds", ignoreMissingCollectorCRDs,
 		"auto-instrumentation-java", autoInstrumentationJava,
 		"auto-instrumentation-nodejs", autoInstrumentationNodeJS,
 		"auto-instrumentation-python", autoInstrumentationPython,
@@ -230,6 +214,7 @@ func main() {
 		"enable-nodejs-instrumentation", enableNodeJSInstrumentation,
 		"enable-java-instrumentation", enableJavaInstrumentation,
 		"create-openshift-dashboard", createOpenShiftDashboard,
+		"create-sm-operator-metrics", createSMOperatorMetrics,
 		"zap-message-key", encodeMessageKey,
 		"zap-level-key", encodeLevelKey,
 		"zap-time-key", encodeTimeKey,
@@ -256,7 +241,12 @@ func main() {
 	retryPeriod := time.Second * 26
 
 	optionsTlSOptsFuncs := []func(*tls.Config){
-		func(config *tls.Config) { tlsConfigSetting(config, tlsOpt) },
+		func(config *tls.Config) {
+			err := tlsOpt.ApplyTLSConfig(config)
+			if err != nil {
+				setupLog.Error(err, "error setting up TLS")
+			}
+		},
 	}
 
 	mgrOptions := ctrl.Options{
@@ -310,8 +300,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	configLog := ctrl.Log.WithName("config")
 	cfg := config.New(
-		config.WithLogger(ctrl.Log.WithName("config")),
+		config.WithLogger(configLog),
 		config.WithVersion(v),
 		config.WithCollectorImage(collectorImage),
 		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
@@ -331,28 +322,28 @@ func main() {
 		config.WithAutoInstrumentationGoImage(autoInstrumentationGo),
 		config.WithAutoInstrumentationApacheHttpdImage(autoInstrumentationApacheHttpd),
 		config.WithAutoInstrumentationNginxImage(autoInstrumentationNginx),
-		config.WithAutoDetect(ad),
 		config.WithLabelFilters(labelsFilter),
 		config.WithAnnotationFilters(annotationsFilter),
+		config.WithIgnoreMissingCollectorCRDs(ignoreMissingCollectorCRDs),
 	)
-	err = cfg.AutoDetect()
+	err = autodetect.ApplyAutoDetect(ad, &cfg, configLog)
 	if err != nil {
 		setupLog.Error(err, "failed to autodetect config variables")
 	}
 	// Only add these to the scheme if they are available
-	if cfg.PrometheusCRAvailability() == prometheus.Available {
+	if cfg.PrometheusCRAvailability == prometheus.Available {
 		setupLog.Info("Prometheus CRDs are installed, adding to scheme.")
 		utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	} else {
 		setupLog.Info("Prometheus CRDs are not installed, skipping adding to scheme.")
 	}
-	if cfg.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
+	if cfg.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
 		setupLog.Info("Openshift CRDs are installed, adding to scheme.")
 		utilruntime.Must(routev1.Install(scheme))
 	} else {
 		setupLog.Info("Openshift CRDs are not installed, skipping adding to scheme.")
 	}
-	if cfg.CertManagerAvailability() == certmanager.Available {
+	if cfg.CertManagerAvailability == certmanager.Available {
 		setupLog.Info("Cert-Manager is available to the operator, adding to scheme.")
 		utilruntime.Must(cmv1.AddToScheme(scheme))
 
@@ -362,8 +353,17 @@ func main() {
 	} else {
 		setupLog.Info("Cert-Manager is not available to the operator, skipping adding to scheme.")
 	}
-	if cfg.AnnotationsFilter() != nil {
-		for _, basePattern := range cfg.AnnotationsFilter() {
+	if cfg.CollectorAvailability == collector.Available {
+		setupLog.Info("OpenTelemetryCollectorCRDSs are available to the operator")
+	} else {
+		setupLog.Info("OpenTelemetryCollectorCRDSs are not available to the operator")
+		if !cfg.IgnoreMissingCollectorCRDs {
+			setupLog.Error(errors.New("missing OpenTelemetryCollector CRDs"), "The OpenTelemetryCollector CRDs are not present in the cluster. Set ignore_missing_collector_crds to true or install the CRDs in the cluster.")
+			os.Exit(1)
+		}
+	}
+	if cfg.AnnotationsFilter != nil {
+		for _, basePattern := range cfg.AnnotationsFilter {
 			_, compileErr := regexp.Compile(basePattern)
 			if compileErr != nil {
 				setupLog.Error(compileErr, "could not compile the regexp pattern for Annotations filter")
@@ -371,8 +371,8 @@ func main() {
 		}
 	}
 
-	if cfg.LabelsFilter() != nil {
-		for _, basePattern := range cfg.LabelsFilter() {
+	if cfg.LabelsFilter != nil {
+		for _, basePattern := range cfg.LabelsFilter {
 			_, compileErr := regexp.Compile(basePattern)
 			if compileErr != nil {
 				setupLog.Error(compileErr, "could not compile the regexp pattern for Labels filter")
@@ -380,27 +380,31 @@ func main() {
 		}
 	}
 
-	err = addDependencies(ctx, mgr, cfg, v)
+	err = addDependencies(ctx, mgr, cfg)
 	if err != nil {
 		setupLog.Error(err, "failed to add/run bootstrap dependencies to the controller manager")
 		os.Exit(1)
 	}
 
-	collectorReconciler := controllers.NewReconciler(controllers.Params{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
-		Scheme:   mgr.GetScheme(),
-		Config:   cfg,
-		Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
-		Reviewer: reviewer,
-	})
+	var collectorReconciler *controllers.OpenTelemetryCollectorReconciler
+	if cfg.CollectorAvailability == collector.Available {
+		collectorReconciler = controllers.NewReconciler(controllers.Params{
+			Client:   mgr.GetClient(),
+			Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
+			Scheme:   mgr.GetScheme(),
+			Config:   cfg,
+			Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
+			Reviewer: reviewer,
+			Version:  v,
+		})
 
-	if err = collectorReconciler.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
-		os.Exit(1)
+		if err = collectorReconciler.SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "OpenTelemetryCollector")
+			os.Exit(1)
+		}
 	}
 
-	if cfg.TargetAllocatorAvailability() == targetallocator.Available {
+	if cfg.TargetAllocatorAvailability == targetallocator.Available {
 		if err = controllers.NewTargetAllocatorReconciler(
 			mgr.GetClient(),
 			mgr.GetScheme(),
@@ -424,7 +428,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if cfg.PrometheusCRAvailability() == prometheus.Available {
+	if cfg.PrometheusCRAvailability == prometheus.Available && createSMOperatorMetrics {
 		operatorMetrics, opError := operatormetrics.NewOperatorMetrics(mgr.GetConfig(), scheme, ctrl.Log.WithName("operator-metrics-sm"))
 		if opError != nil {
 			setupLog.Error(opError, "Failed to create the operator metrics SM")
@@ -450,34 +454,36 @@ func main() {
 			}
 		}
 
-		bv := func(ctx context.Context, collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
-			var warnings admission.Warnings
-			params, newErr := collectorReconciler.GetParams(ctx, collector)
-			if err != nil {
-				warnings = append(warnings, newErr.Error())
+		if cfg.CollectorAvailability == collector.Available {
+			bv := func(ctx context.Context, collector otelv1beta1.OpenTelemetryCollector) admission.Warnings {
+				var warnings admission.Warnings
+				params, newErr := collectorReconciler.GetParams(ctx, collector)
+				if err != nil {
+					warnings = append(warnings, newErr.Error())
+					return warnings
+				}
+
+				params.ErrorAsWarning = true
+				_, newErr = collectorManifests.Build(params)
+				if newErr != nil {
+					warnings = append(warnings, newErr.Error())
+					return warnings
+				}
 				return warnings
 			}
 
-			params.ErrorAsWarning = true
-			_, newErr = collectorManifests.Build(params)
-			if newErr != nil {
-				warnings = append(warnings, newErr.Error())
-				return warnings
+			var fipsCheck fips.FIPSCheck
+			if ad.FIPSEnabled(ctx) {
+				receivers, exporters, processors, extensions := parseFipsFlag(fipsDisabledComponents)
+				logger.Info("Fips disabled components", "receivers", receivers, "exporters", exporters, "processors", processors, "extensions", extensions)
+				fipsCheck = fips.NewFipsCheck(receivers, exporters, processors, extensions)
 			}
-			return warnings
+			if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck); err != nil {
+				setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
+				os.Exit(1)
+			}
 		}
-
-		var fipsCheck fips.FIPSCheck
-		if ad.FIPSEnabled(ctx) {
-			receivers, exporters, processors, extensions := parseFipsFlag(fipsDisabledComponents)
-			logger.Info("Fips disabled components", "receivers", receivers, "exporters", exporters, "processors", processors, "extensions", extensions)
-			fipsCheck = fips.NewFipsCheck(receivers, exporters, processors, extensions)
-		}
-		if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
-			os.Exit(1)
-		}
-		if cfg.TargetAllocatorAvailability() == targetallocator.Available {
+		if cfg.TargetAllocatorAvailability == targetallocator.Available {
 			if err = otelv1alpha1.SetupTargetAllocatorWebhook(mgr, cfg, reviewer); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "TargetAllocator")
 				os.Exit(1)
@@ -522,23 +528,9 @@ func main() {
 	}
 }
 
-func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v version.Version) error {
+func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config) error {
 	// adds the upgrade mechanism to be executed once the manager is ready
 	err := mgr.Add(manager.RunnableFunc(func(c context.Context) error {
-		up := &collectorupgrade.VersionUpgrade{
-			Log:      ctrl.Log.WithName("collector-upgrade"),
-			Version:  v,
-			Client:   mgr.GetClient(),
-			Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
-		}
-		return up.ManagedInstances(c)
-	}))
-	if err != nil {
-		return fmt.Errorf("failed to upgrade OpenTelemetryCollector instances: %w", err)
-	}
-
-	// adds the upgrade mechanism to be executed once the manager is ready
-	err = mgr.Add(manager.RunnableFunc(func(c context.Context) error {
 		u := instrumentationupgrade.NewInstrumentationUpgrade(
 			mgr.GetClient(),
 			ctrl.Log.WithName("instrumentation-upgrade"),
@@ -551,25 +543,6 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config, v v
 		return fmt.Errorf("failed to upgrade Instrumentation instances: %w", err)
 	}
 	return nil
-}
-
-// This function get the option from command argument (tlsConfig), check the validity through k8sapiflag
-// and set the config for webhook server.
-// refer to https://pkg.go.dev/k8s.io/component-base/cli/flag
-func tlsConfigSetting(cfg *tls.Config, tlsOpt tlsConfig) {
-	// TLSVersion helper function returns the TLS Version ID for the version name passed.
-	tlsVersion, err := k8sapiflag.TLSVersion(tlsOpt.minVersion)
-	if err != nil {
-		setupLog.Error(err, "TLS version invalid")
-	}
-	cfg.MinVersion = tlsVersion
-
-	// TLSCipherSuites helper function returns a list of cipher suite IDs from the cipher suite names passed.
-	cipherSuiteIDs, err := k8sapiflag.TLSCipherSuites(tlsOpt.cipherSuites)
-	if err != nil {
-		setupLog.Error(err, "Failed to convert TLS cipher suite name to ID")
-	}
-	cfg.CipherSuites = cipherSuiteIDs
 }
 
 func parseFipsFlag(fipsFlag string) ([]string, []string, []string, []string) {

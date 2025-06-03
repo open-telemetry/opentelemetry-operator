@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package v1alpha1
 
@@ -79,6 +68,12 @@ type InstrumentationSpec struct {
 	// Nginx defines configuration for Nginx auto-instrumentation.
 	// +optional
 	Nginx Nginx `json:"nginx,omitempty"`
+
+	// ImagePullPolicy
+	// One of Always, Never, IfNotPresent.
+	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
@@ -149,9 +144,10 @@ type Sampler struct {
 // Defaults defines default values for the instrumentation.
 type Defaults struct {
 	// UseLabelsForResourceAttributes defines whether to use common labels for resource attributes:
+	// Note: first entry wins:
+	//   - `app.kubernetes.io/instance` becomes `service.name`
 	//   - `app.kubernetes.io/name` becomes `service.name`
 	//   - `app.kubernetes.io/version` becomes `service.version`
-	//   - `app.kubernetes.io/part-of` becomes `service.namespace`
 	UseLabelsForResourceAttributes bool `json:"useLabelsForResourceAttributes,omitempty"`
 }
 
@@ -161,7 +157,7 @@ type Java struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
@@ -199,7 +195,7 @@ type NodeJS struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
@@ -224,7 +220,7 @@ type Python struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
@@ -249,7 +245,7 @@ type DotNet struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
@@ -272,7 +268,7 @@ type Go struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
@@ -297,7 +293,7 @@ type ApacheHttpd struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
@@ -337,7 +333,7 @@ type Nginx struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 

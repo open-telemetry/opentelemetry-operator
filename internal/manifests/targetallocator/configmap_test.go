@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package targetallocator
 
@@ -738,4 +727,47 @@ func TestGetGlobalConfig(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestGetCollectorNotReadyGracePeriod(t *testing.T) {
+	collector := collectorInstance()
+	targetAllocator := targetAllocatorInstanceWithCollectorNotReadyGracePeriod()
+	cfg := config.New()
+	params := Params{
+		Collector:       collector,
+		TargetAllocator: targetAllocator,
+		Config:          cfg,
+		Log:             logr.Discard(),
+	}
+
+	t.Run("should return expected target allocator config map with collector_not_ready_grace_period", func(t *testing.T) {
+		expectedData := map[string]string{
+			targetAllocatorFilename: `allocation_fallback_strategy: consistent-hashing
+allocation_strategy: consistent-hashing
+collector_not_ready_grace_period: 30s
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+filter_strategy: relabel-config
+`,
+		}
+
+		actual, err := ConfigMap(params)
+		require.NoError(t, err)
+
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
+	})
 }

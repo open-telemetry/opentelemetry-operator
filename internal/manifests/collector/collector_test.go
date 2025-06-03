@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package collector
 
@@ -22,7 +11,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	otelColFeatureGate "go.opentelemetry.io/collector/featuregate"
 	v1 "k8s.io/api/authorization/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
@@ -32,7 +20,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	irbac "github.com/open-telemetry/opentelemetry-operator/internal/rbac"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestNeedsCheckSaPermissions(t *testing.T) {
@@ -150,7 +137,6 @@ func TestBuild(t *testing.T) {
 		params          manifests.Params
 		expectedObjects int
 		wantErr         bool
-		featureGate     *otelColFeatureGate.Gate
 	}{
 		{
 			name: "deployment mode builds expected manifests",
@@ -240,7 +226,6 @@ func TestBuild(t *testing.T) {
 			},
 			expectedObjects: 6,
 			wantErr:         false,
-			featureGate:     featuregate.PrometheusOperatorIsAvailable,
 		},
 		{
 			name: "metrics enabled adds service monitors",
@@ -276,7 +261,6 @@ func TestBuild(t *testing.T) {
 			},
 			expectedObjects: 9,
 			wantErr:         false,
-			featureGate:     featuregate.PrometheusOperatorIsAvailable,
 		},
 		{
 			name: "check sa permissions",
@@ -315,20 +299,11 @@ func TestBuild(t *testing.T) {
 			},
 			expectedObjects: 9,
 			wantErr:         true,
-			featureGate:     featuregate.PrometheusOperatorIsAvailable,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.featureGate != nil {
-				err := otelColFeatureGate.GlobalRegistry().Set(tt.featureGate.ID(), true)
-				require.NoError(t, err)
-				defer func() {
-					err := otelColFeatureGate.GlobalRegistry().Set(tt.featureGate.ID(), false)
-					require.NoError(t, err)
-				}()
-			}
 
 			objects, err := Build(tt.params)
 			if tt.wantErr {

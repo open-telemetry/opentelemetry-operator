@@ -44,10 +44,10 @@ The operator should be released within a week after the [OpenTelemetry collector
 
 | Version  | Release manager |
 |----------|-----------------|
-| v0.118.0 | @iblancasa      |
-| v0.119.0 | @frzifus        |
-| v0.120.0 | @yuriolisa      |
-| v0.121.0 | @pavolloffay    |
-| v0.122.0 | @TylerHelmuth   |
-| v0.123.0 | @jaronoff97     |
-| v0.124.0 | @swiatekm       |
+| v0.127.0 | @yuriolisa      |
+| v0.128.0 | @pavolloffay    |
+| v0.129.0 | @TylerHelmuth   |
+| v0.130.0 | @jaronoff97     |
+| v0.131.0 | @swiatekm       |
+| v0.132.0 | @iblancasa      |
+| v0.133.0 | @frzifus        |

@@ -16,6 +16,6 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: cabundle
-  namespce: chainsaw-scrape-in-cluster-monitoring
+  namespace: chainsaw-scrape-in-cluster-monitoring
   annotations:
     service.beta.openshift.io/inject-cabundle: "true"

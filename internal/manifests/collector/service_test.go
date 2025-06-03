@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package collector
 
@@ -140,7 +129,7 @@ func TestFilterPort(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual := filterPort(logger, test.candidate, test.portNumbers, test.portNames)
+			actual := filterPort(testLogger, test.candidate, test.portNumbers, test.portNames)
 			if test.expected != (v1.ServicePort{}) {
 				assert.Equal(t, test.expected, *actual)
 				return
@@ -156,7 +145,7 @@ func TestDesiredService(t *testing.T) {
 	t.Run("should return nil service for unknown receiver and protocol", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
-			Log:    logger,
+			Log:    testLogger,
 			OtelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{Config: v1beta1.Config{}},
 			},
@@ -231,7 +220,7 @@ func TestDesiredService(t *testing.T) {
 	t.Run("should return service with OTLP ports", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
-			Log:    logger,
+			Log:    testLogger,
 			OtelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{Config: v1beta1.Config{
 					Receivers: v1beta1.AnyConfig{
@@ -332,7 +321,7 @@ func TestExtensionService(t *testing.T) {
 			name: "when the extension has http endpoint",
 			params: manifests.Params{
 				Config: config.Config{},
-				Log:    logger,
+				Log:    testLogger,
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -369,7 +358,7 @@ func TestExtensionService(t *testing.T) {
 			name: "when the extension has grpc endpoint",
 			params: manifests.Params{
 				Config: config.Config{},
-				Log:    logger,
+				Log:    testLogger,
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -406,7 +395,7 @@ func TestExtensionService(t *testing.T) {
 			name: "when the extension has both http and grpc endpoint",
 			params: manifests.Params{
 				Config: config.Config{},
-				Log:    logger,
+				Log:    testLogger,
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -446,7 +435,7 @@ func TestExtensionService(t *testing.T) {
 			name: "when the extension has no extensions defined",
 			params: manifests.Params{
 				Config: config.Config{},
-				Log:    logger,
+				Log:    testLogger,
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -469,7 +458,7 @@ func TestExtensionService(t *testing.T) {
 			name: "when the extension has no endpoint defined",
 			params: manifests.Params{
 				Config: config.Config{},
-				Log:    logger,
+				Log:    testLogger,
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -531,7 +520,7 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, in
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[serviceTypeLabel] = BaseServiceType.String()
 
-	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {
 		return v1.Service{}
 	}

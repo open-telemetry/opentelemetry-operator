@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package upgrade_test
 
@@ -32,6 +21,72 @@ import (
 )
 
 var logger = logf.Log.WithName("unit-tests")
+
+func TestNeedsUpgrade(t *testing.T) {
+	up := &upgrade.VersionUpgrade{
+		Version: version.Version{OpenTelemetryCollector: "0.10.0"},
+	}
+
+	for _, tt := range []struct {
+		desc      string
+		collector v1beta1.OpenTelemetryCollector
+		expected  bool
+	}{
+		{
+			desc: "needs upgrade",
+			collector: v1beta1.OpenTelemetryCollector{
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.1.0",
+				},
+			},
+			expected: true,
+		},
+		{
+			desc: "already up-to-date",
+			collector: v1beta1.OpenTelemetryCollector{
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.10.0",
+				},
+			},
+			expected: false,
+		},
+		{
+			desc:      "empty version, already up-to-date",
+			collector: v1beta1.OpenTelemetryCollector{},
+			expected:  false,
+		},
+		{
+			desc: "needs upgrade, but is ManagementState = Unmanaged",
+			collector: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						ManagementState: v1beta1.ManagementStateUnmanaged,
+					},
+				},
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.1.0",
+				},
+			},
+			expected: false,
+		},
+		{
+			desc: "needs upgrade, but UpgradeStrategy = None",
+			collector: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					UpgradeStrategy: v1beta1.UpgradeStrategyNone,
+				},
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.1.0",
+				},
+			},
+			expected: false,
+		},
+	} {
+		t.Run(tt.desc, func(t *testing.T) {
+			assert.Equal(t, tt.expected, up.NeedsUpgrade(tt.collector))
+		})
+	}
+}
 
 func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 	const beginV = "0.0.1" // this is the first version we have an upgrade function
@@ -58,7 +113,7 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 			require.NoError(t, err)
 
 			// sanity check
-			persisted := &v1alpha1.OpenTelemetryCollector{}
+			persisted := &v1beta1.OpenTelemetryCollector{}
 			err = k8sClient.Get(context.Background(), nsn, persisted)
 			require.NoError(t, err)
 			require.Equal(t, beginV, persisted.Status.Version)
@@ -70,7 +125,7 @@ func TestShouldUpgradeAllToLatestBasedOnUpgradeStrategy(t *testing.T) {
 			}
 
 			// test
-			err = up.ManagedInstances(context.Background())
+			err = up.Upgrade(context.Background(), *persisted)
 			assert.NoError(t, err)
 
 			// verify
@@ -141,7 +196,7 @@ func TestEnvVarUpdates(t *testing.T) {
 	require.Equal(t, collectorInstance.Status.Version, persisted.Status.Version)
 
 	currentV := version.Get()
-	currentV.OpenTelemetryCollector = "0.111.0"
+	currentV.OpenTelemetryCollector = "0.122.0"
 	up := &upgrade.VersionUpgrade{
 		Log:      logger,
 		Version:  currentV,
@@ -150,7 +205,7 @@ func TestEnvVarUpdates(t *testing.T) {
 	}
 
 	// test
-	err = up.ManagedInstances(context.Background())
+	err = up.Upgrade(context.Background(), *persisted)
 	assert.NoError(t, err)
 
 	// verify

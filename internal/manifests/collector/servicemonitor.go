@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package collector
 
@@ -93,7 +82,7 @@ func shouldCreateServiceMonitor(params manifests.Params) bool {
 	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
 		l.V(2).Info("Metrics disabled for this OTEL Collector. ServiceMonitor will not ve created")
 		return false
-	} else if params.Config.PrometheusCRAvailability() == prometheus.NotAvailable {
+	} else if params.Config.PrometheusCRAvailability == prometheus.NotAvailable {
 		l.V(2).Info("Cannot enable ServiceMonitor when prometheus CRDs are unavailable")
 		return false
 	} else if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {

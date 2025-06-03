@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package openshift
 
@@ -19,6 +8,7 @@ import (
 	_ "embed"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -40,6 +30,8 @@ type dashboardManagement struct {
 	clientset kubernetes.Interface
 }
 
+var _ manager.Runnable = (*dashboardManagement)(nil)
+
 func NewDashboardManagement(clientset kubernetes.Interface) manager.Runnable {
 	return dashboardManagement{
 		clientset: clientset,
@@ -60,9 +52,20 @@ func (d dashboardManagement) Start(ctx context.Context) error {
 		},
 	}
 
-	_, err := d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Create(ctx, &cm, metav1.CreateOptions{})
+	_, err := d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Get(ctx, configMapName, metav1.GetOptions{})
 	if err != nil {
-		return nil
+		if errors.IsNotFound(err) {
+			_, err := d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Create(ctx, &cm, metav1.CreateOptions{})
+			if err != nil {
+				return nil
+			}
+		}
+	} else {
+		// config map already exists, update it
+		_, err := d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Update(ctx, &cm, metav1.UpdateOptions{})
+		if err != nil {
+			return nil
+		}
 	}
 
 	<-ctx.Done()

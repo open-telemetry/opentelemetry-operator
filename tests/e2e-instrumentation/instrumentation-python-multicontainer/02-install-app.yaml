@@ -15,6 +15,7 @@ spec:
         sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-python: "true"
         instrumentation.opentelemetry.io/container-names: "myapp"
+        instrumentation.opentelemetry.io/otel-python-platform: "musl"
     spec:
       securityContext:
         runAsUser: 1000
@@ -22,11 +23,22 @@ spec:
         fsGroup: 3000
       containers:
       - name: myapp
+        ports:
+        - containerPort: 8080
         image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 3
       - name: myrabbit
         image: rabbitmq:3
         securityContext:

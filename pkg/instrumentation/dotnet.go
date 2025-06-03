@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package instrumentation
 
@@ -50,7 +39,7 @@ const (
 	dotNetRuntimeLinuxMusl  = "linux-musl-x64"
 )
 
-func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runtime string) (corev1.Pod, error) {
+func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runtime string, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
 
 	volume := instrVolume(dotNetSpec.VolumeClaimTemplate, dotnetVolumeName, dotNetSpec.VolumeSizeLimit)
 
@@ -85,12 +74,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 	}
 
 	// inject .NET instrumentation spec env vars.
-	for _, env := range dotNetSpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
-	}
+	container.Env = appendIfNotSet(container.Env, dotNetSpec.Env...)
 
 	const (
 		doNotConcatEnvValues = false
@@ -128,6 +112,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 				Name:      volume.Name,
 				MountPath: dotnetInstrMountPath,
 			}},
+			ImagePullPolicy: instSpec.ImagePullPolicy,
 		})
 	}
 	return pod, nil

@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package v1alpha1
 
@@ -109,8 +98,9 @@ type OpenTelemetryCollectorSpec struct {
 	// Args is the set of arguments to pass to the OpenTelemetry Collector binary
 	// +optional
 	Args map[string]string `json:"args,omitempty"`
-	// Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if your are not using autoscaling
+	// Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if you are not using autoscaling
 	// +optional
+	// +kubebuilder:default:=1
 	Replicas *int32 `json:"replicas,omitempty"`
 	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
 	// +optional
@@ -485,7 +475,7 @@ type OpenTelemetryCollectorList struct {
 
 // AutoscalerSpec defines the OpenTelemetryCollector's pod autoscaling specification.
 type AutoscalerSpec struct {
-	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
+	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
 	// +optional
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.

@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package main
 
@@ -21,7 +10,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	gokitlog "github.com/go-kit/log"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -29,13 +17,13 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/allocation"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/collector"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/config"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/prehook"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/server"
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/target"
-	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/watcher"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/collector"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/prehook"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/server"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
+	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
 
 var (
@@ -64,7 +52,7 @@ func main() {
 		interrupts      = make(chan os.Signal, 1)
 		errChan         = make(chan error)
 	)
-	cfg, err := config.Load()
+	cfg, err := config.Load(os.Args)
 	if err != nil {
 		fmt.Printf("Failed to load config: %v", err)
 		os.Exit(1)
@@ -104,10 +92,10 @@ func main() {
 		setupLog.Error(err, "Unable to register metrics for Prometheus service discovery")
 		os.Exit(1)
 	}
-	discoveryManager = discovery.NewManager(discoveryCtx, gokitlog.NewNopLogger(), prometheus.DefaultRegisterer, sdMetrics)
+	discoveryManager = discovery.NewManager(discoveryCtx, config.NopLogger, prometheus.DefaultRegisterer, sdMetrics)
 
 	targetDiscoverer = target.NewDiscoverer(log, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
-	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, cfg.ClusterConfig)
+	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, cfg.ClusterConfig, cfg.CollectorNotReadyGracePeriod)
 	if collectorWatcherErr != nil {
 		setupLog.Error(collectorWatcherErr, "Unable to initialize collector watcher")
 		os.Exit(1)
@@ -179,7 +167,7 @@ func main() {
 		})
 	runGroup.Add(
 		func() error {
-			err := collectorWatcher.Watch(cfg.CollectorSelector, allocator.SetCollectors)
+			err := collectorWatcher.Watch(cfg.CollectorNamespace, cfg.CollectorSelector, allocator.SetCollectors)
 			setupLog.Info("Collector watcher exited")
 			return err
 		},

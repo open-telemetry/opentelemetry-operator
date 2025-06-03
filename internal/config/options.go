@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package config
 
@@ -18,8 +7,8 @@ import (
 	"github.com/go-logr/logr"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -31,7 +20,6 @@ import (
 type Option func(c *options)
 
 type options struct {
-	autoDetect                          autodetect.AutoDetect
 	version                             version.Version
 	logger                              logr.Logger
 	autoInstrumentationDotNetImage      string
@@ -60,15 +48,12 @@ type options struct {
 	prometheusCRAvailability            prometheus.Availability
 	certManagerAvailability             certmanager.Availability
 	targetAllocatorAvailability         targetallocator.Availability
+	collectorAvailability               collector.Availability
+	ignoreMissingCollectorCRDs          bool
 	labelsFilter                        []string
 	annotationsFilter                   []string
 }
 
-func WithAutoDetect(a autodetect.AutoDetect) Option {
-	return func(o *options) {
-		o.autoDetect = a
-	}
-}
 func WithTargetAllocatorImage(s string) Option {
 	return func(o *options) {
 		o.targetAllocatorImage = s
@@ -236,5 +221,11 @@ func WithEncodeLevelFormat(s string) zapcore.LevelEncoder {
 		return zapcore.LowercaseLevelEncoder
 	} else {
 		return zapcore.CapitalLevelEncoder
+	}
+}
+
+func WithIgnoreMissingCollectorCRDs(b bool) Option {
+	return func(o *options) {
+		o.ignoreMissingCollectorCRDs = b
 	}
 }

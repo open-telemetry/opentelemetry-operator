@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package instrumentation
 
@@ -38,7 +27,9 @@ func TestInjectJavaagent(t *testing.T) {
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						{},
+						{
+							Name: "test-container",
+						},
 					},
 				},
 			},
@@ -67,16 +58,17 @@ func TestInjectJavaagent(t *testing.T) {
 					},
 					Containers: []corev1.Container{
 						{
+							Name: "test-container",
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "opentelemetry-auto-instrumentation-java",
-									MountPath: "/otel-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-test-container",
 								},
 							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaAgent,
+									Value: " -javaagent:/otel-auto-instrumentation-java-test-container/javaagent.jar",
 								},
 							},
 						},
@@ -94,7 +86,9 @@ func TestInjectJavaagent(t *testing.T) {
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						{},
+						{
+							Name: "test-container",
+						},
 					},
 				},
 			},
@@ -141,16 +135,17 @@ func TestInjectJavaagent(t *testing.T) {
 					},
 					Containers: []corev1.Container{
 						{
+							Name: "test-container",
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "opentelemetry-auto-instrumentation-java",
-									MountPath: "/otel-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-test-container",
 								},
 							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: javaAgent + " -Dotel.javaagent.extensions=/otel-auto-instrumentation-java/extensions",
+									Value: " -javaagent:/otel-auto-instrumentation-java-test-container/javaagent.jar -Dotel.javaagent.extensions=/otel-auto-instrumentation-java-test-container/extensions",
 								},
 							},
 						},
@@ -166,6 +161,7 @@ func TestInjectJavaagent(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
+							Name: "test-container",
 							Env: []corev1.EnvVar{
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
@@ -202,16 +198,17 @@ func TestInjectJavaagent(t *testing.T) {
 					},
 					Containers: []corev1.Container{
 						{
+							Name: "test-container",
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "opentelemetry-auto-instrumentation-java",
-									MountPath: "/otel-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-test-container",
 								},
 							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "JAVA_TOOL_OPTIONS",
-									Value: "-Dbaz=bar" + javaAgent,
+									Value: "-Dbaz=bar -javaagent:/otel-auto-instrumentation-java-test-container/javaagent.jar",
 								},
 							},
 						},
@@ -253,11 +250,89 @@ func TestInjectJavaagent(t *testing.T) {
 			},
 			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envJavaToolsOptions),
 		},
+		{
+			name: "multiple containers with unique volume mount paths",
+			Java: v1alpha1.Java{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app1",
+						},
+						{
+							Name: "app2",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-java",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-java",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation-java/javaagent.jar"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app1",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-app1",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "JAVA_TOOL_OPTIONS",
+									Value: " -javaagent:/otel-auto-instrumentation-java-app1/javaagent.jar",
+								},
+							},
+						},
+						{
+							Name: "app2",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-app2",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "JAVA_TOOL_OPTIONS",
+									Value: " -javaagent:/otel-auto-instrumentation-java-app2/javaagent.jar",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectJavaagent(test.Java, test.pod, 0)
+			pod := test.pod
+			var err error
+			for i := range pod.Spec.Containers {
+				pod, err = injectJavaagent(test.Java, pod, i, v1alpha1.InstrumentationSpec{})
+			}
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})

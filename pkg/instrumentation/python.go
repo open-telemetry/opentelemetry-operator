@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package instrumentation
 
@@ -39,7 +28,7 @@ const (
 	muslLinux                        = "musl"
 )
 
-func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, platform string) (corev1.Pod, error) {
+func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, platform string, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
 	volume := instrVolume(pythonSpec.VolumeClaimTemplate, pythonVolumeName, pythonSpec.VolumeSizeLimit)
 
 	// caller checks if there is at least one container.
@@ -61,12 +50,7 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, plat
 	}
 
 	// inject Python instrumentation spec env vars.
-	for _, env := range pythonSpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
-	}
+	container.Env = appendIfNotSet(container.Env, pythonSpec.Env...)
 
 	idx := getIndexOfEnv(container.Env, envPythonPath)
 	if idx == -1 {
@@ -78,41 +62,28 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, plat
 		container.Env[idx].Value = fmt.Sprintf("%s:%s:%s", pythonPathPrefix, container.Env[idx].Value, pythonPathSuffix)
 	}
 
-	// Set OTEL_EXPORTER_OTLP_PROTOCOL to http/protobuf if not set by user because it is what our autoinstrumentation supports.
-	idx = getIndexOfEnv(container.Env, envOtelExporterOTLPProtocol)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
+	container.Env = appendIfNotSet(container.Env,
+		// Set OTEL_EXPORTER_OTLP_PROTOCOL to http/protobuf if not set by user because it is what our autoinstrumentation supports.
+		corev1.EnvVar{
 			Name:  envOtelExporterOTLPProtocol,
 			Value: "http/protobuf",
-		})
-	}
-
-	// Set OTEL_TRACES_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
-	idx = getIndexOfEnv(container.Env, envOtelTracesExporter)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
+		},
+		// Set OTEL_TRACES_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
+		corev1.EnvVar{
 			Name:  envOtelTracesExporter,
 			Value: "otlp",
-		})
-	}
-
-	// Set OTEL_METRICS_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
-	idx = getIndexOfEnv(container.Env, envOtelMetricsExporter)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
+		},
+		// Set OTEL_METRICS_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
+		corev1.EnvVar{
 			Name:  envOtelMetricsExporter,
 			Value: "otlp",
-		})
-	}
-
-	// Set OTEL_LOGS_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
-	idx = getIndexOfEnv(container.Env, envOtelLogsExporter)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
+		},
+		// Set OTEL_LOGS_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
+		corev1.EnvVar{
 			Name:  envOtelLogsExporter,
 			Value: "otlp",
-		})
-	}
+		},
+	)
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
@@ -131,6 +102,7 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, plat
 				Name:      volume.Name,
 				MountPath: pythonInstrMountPath,
 			}},
+			ImagePullPolicy: instSpec.ImagePullPolicy,
 		})
 	}
 	return pod, nil

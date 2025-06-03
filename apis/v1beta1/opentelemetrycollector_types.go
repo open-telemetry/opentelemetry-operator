@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package v1beta1
 
@@ -75,6 +64,11 @@ type OpenTelemetryCollectorStatus struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 }
+
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && size(self.tolerations) > 0) || !has(self.tolerations)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'"
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && self.priorityClassName != '') || !has(self.priorityClassName)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'"
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && self.affinity != null) || !has(self.affinity)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'"
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && size(self.additionalContainers) > 0) || !has(self.additionalContainers)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'"
 
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
 type OpenTelemetryCollectorSpec struct {
@@ -221,6 +215,13 @@ type TargetAllocatorEmbedded struct {
 	//
 	// +optional
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	// CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
+	// The default is 30s, which means that if a collector becomes not Ready, the target allocator will wait for 30 seconds before reassigning its targets. The assumption is that the state is temporary, and an expensive target reallocation should be avoided if possible.
+	//
+	// +optional
+	// +kubebuilder:default:="30s"
+	// +kubebuilder:validation:Format:=duration
+	CollectorNotReadyGracePeriod *metav1.Duration `json:"collectorNotReadyGracePeriod,omitempty"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config.

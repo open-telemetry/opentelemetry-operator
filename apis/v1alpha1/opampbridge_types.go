@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package v1alpha1
 
@@ -34,6 +23,9 @@ type OpAMPBridgeSpec struct {
 	// ComponentsAllowed is a list of allowed OpenTelemetry components for each pipeline type (receiver, processor, etc.)
 	// +optional
 	ComponentsAllowed map[string][]string `json:"componentsAllowed,omitempty"`
+	// Description allows the customization of the non identifying attributes for the OpAMP Bridge.
+	// +optional
+	Description *AgentDescription `json:"description,omitempty"`
 	// Resources to set on the OpAMPBridge pods.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
@@ -120,6 +112,12 @@ type OpAMPBridgeStatus struct {
 	// Version of the managed OpAMP Bridge (operand)
 	// +optional
 	Version string `json:"version,omitempty"`
+}
+
+type AgentDescription struct {
+	// NonIdentifyingAttributes are a map of key-value pairs that may be specified to provide
+	// extra information about the agent to the OpAMP server.
+	NonIdentifyingAttributes map[string]string `json:"non_identifying_attributes"`
 }
 
 // +kubebuilder:object:root=true

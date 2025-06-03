@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package targetallocator
 
@@ -35,7 +24,7 @@ import (
 func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAllocator) corev1.Container {
 	image := instance.Spec.Image
 	if len(image) == 0 {
-		image = cfg.TargetAllocatorImage()
+		image = cfg.TargetAllocatorImage
 	}
 
 	ports := make([]corev1.ContainerPort, 0)
@@ -130,7 +119,7 @@ func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAl
 		},
 	}
 
-	if cfg.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if cfg.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		ports = append(ports, corev1.ContainerPort{
 			Name:          "https",
 			ContainerPort: 8443,

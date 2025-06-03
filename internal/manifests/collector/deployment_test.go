@@ -1,18 +1,7 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
-package collector_test
+package collector
 
 import (
 	"testing"
@@ -27,7 +16,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
 
 var testTolerationValues = []v1.Toleration{
@@ -87,7 +75,7 @@ func TestDeploymentNewDefault(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -152,7 +140,7 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -201,7 +189,7 @@ func TestDeploymenttPodSecurityContext(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d, err := Deployment(params)
@@ -233,7 +221,7 @@ func TestDeploymentUpdateStrategy(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d, err := Deployment(params)
@@ -257,7 +245,7 @@ func TestDeploymentHostNetwork(t *testing.T) {
 	params1 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol1,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d1, err := Deployment(params1)
@@ -283,7 +271,7 @@ func TestDeploymentHostNetwork(t *testing.T) {
 	params2 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol2,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d2, err := Deployment(params2)
@@ -311,7 +299,7 @@ func TestDeploymentFilterLabels(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d, err := Deployment(params)
@@ -342,7 +330,7 @@ func TestDeploymentFilterAnnotations(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d, err := Deployment(params)
@@ -367,7 +355,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 	params1 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol1,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d1, err := Deployment(params1)
@@ -395,7 +383,7 @@ func TestDeploymentNodeSelector(t *testing.T) {
 	params2 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol2,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d2, err := Deployment(params2)
@@ -415,7 +403,7 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 	params1 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol1,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d1, err := Deployment(params1)
@@ -440,7 +428,7 @@ func TestDeploymentPriorityClassName(t *testing.T) {
 	params2 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol2,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d2, err := Deployment(params2)
@@ -460,7 +448,7 @@ func TestDeploymentAffinity(t *testing.T) {
 	params1 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol1,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d1, err := Deployment(params1)
@@ -483,7 +471,7 @@ func TestDeploymentAffinity(t *testing.T) {
 	params2 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol2,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d2, err := Deployment(params2)
@@ -504,7 +492,7 @@ func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
 	params1 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol1,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d1, err := Deployment(params1)
@@ -529,7 +517,7 @@ func TestDeploymentTerminationGracePeriodSeconds(t *testing.T) {
 	params2 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol2,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d2, err := Deployment(params2)
@@ -560,7 +548,7 @@ func TestDeploymentSetInitContainer(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -587,7 +575,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	params1 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol1,
-		Log:     logger,
+		Log:     testLogger,
 	}
 	d1, err := Deployment(params1)
 	require.NoError(t, err)
@@ -611,7 +599,7 @@ func TestDeploymentTopologySpreadConstraints(t *testing.T) {
 	params2 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol2,
-		Log:     logger,
+		Log:     testLogger,
 	}
 	d2, err := Deployment(params2)
 	require.NoError(t, err)
@@ -643,7 +631,7 @@ func TestDeploymentAdditionalContainers(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -671,7 +659,7 @@ func TestDeploymentShareProcessNamespace(t *testing.T) {
 	params1 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol1,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d1, err := Deployment(params1)
@@ -695,7 +683,7 @@ func TestDeploymentShareProcessNamespace(t *testing.T) {
 	params2 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol2,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d2, err := Deployment(params2)
@@ -724,7 +712,7 @@ func TestDeploymentDNSConfig(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test

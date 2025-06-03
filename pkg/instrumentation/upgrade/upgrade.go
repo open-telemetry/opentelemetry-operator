@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package upgrade
 
@@ -49,25 +38,25 @@ type InstrumentationUpgrade struct {
 
 func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorder record.EventRecorder, cfg config.Config) *InstrumentationUpgrade {
 	defaultAnnotationToConfig := map[string]autoInstConfig{
-		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdAutoInstrumentation()},
-		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation()},
-		constants.AnnotationDefaultAutoInstrumentationGo:          {constants.FlagGo, cfg.EnableGoAutoInstrumentation()},
-		constants.AnnotationDefaultAutoInstrumentationNginx:       {constants.FlagNginx, cfg.EnableNginxAutoInstrumentation()},
-		constants.AnnotationDefaultAutoInstrumentationPython:      {constants.FlagPython, cfg.EnablePythonAutoInstrumentation()},
-		constants.AnnotationDefaultAutoInstrumentationNodeJS:      {constants.FlagNodeJS, cfg.EnableNodeJSAutoInstrumentation()},
-		constants.AnnotationDefaultAutoInstrumentationJava:        {constants.FlagJava, cfg.EnableJavaAutoInstrumentation()},
+		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationGo:          {constants.FlagGo, cfg.EnableGoAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationNginx:       {constants.FlagNginx, cfg.EnableNginxAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationPython:      {constants.FlagPython, cfg.EnablePythonAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationNodeJS:      {constants.FlagNodeJS, cfg.EnableNodeJSAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationJava:        {constants.FlagJava, cfg.EnableJavaAutoInstrumentation},
 	}
 
 	return &InstrumentationUpgrade{
 		Client:                     client,
 		Logger:                     logger,
-		DefaultAutoInstJava:        cfg.AutoInstrumentationJavaImage(),
-		DefaultAutoInstNodeJS:      cfg.AutoInstrumentationNodeJSImage(),
-		DefaultAutoInstPython:      cfg.AutoInstrumentationPythonImage(),
-		DefaultAutoInstDotNet:      cfg.AutoInstrumentationDotNetImage(),
-		DefaultAutoInstGo:          cfg.AutoInstrumentationGoImage(),
-		DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage(),
-		DefaultAutoInstNginx:       cfg.AutoInstrumentationNginxImage(),
+		DefaultAutoInstJava:        cfg.AutoInstrumentationJavaImage,
+		DefaultAutoInstNodeJS:      cfg.AutoInstrumentationNodeJSImage,
+		DefaultAutoInstPython:      cfg.AutoInstrumentationPythonImage,
+		DefaultAutoInstDotNet:      cfg.AutoInstrumentationDotNetImage,
+		DefaultAutoInstGo:          cfg.AutoInstrumentationGoImage,
+		DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage,
+		DefaultAutoInstNginx:       cfg.AutoInstrumentationNginxImage,
 		Recorder:                   recorder,
 		defaultAnnotationToConfig:  defaultAnnotationToConfig,
 	}

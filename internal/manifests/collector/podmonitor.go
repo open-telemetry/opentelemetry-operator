@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package collector
 
@@ -27,6 +16,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
+
+var monitoringPortName = "monitoring"
 
 // PodMonitor returns the pod monitor for the given instance.
 func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
@@ -55,7 +46,7 @@ func PodMonitor(params manifests.Params) (*monitoringv1.PodMonitor, error) {
 			PodMetricsEndpoints: append(
 				[]monitoringv1.PodMetricsEndpoint{
 					{
-						Port: "monitoring",
+						Port: &monitoringPortName,
 					},
 				}, metricsEndpointsFromConfig(params.Log, params.OtelCol)...),
 		},
@@ -74,7 +65,7 @@ func metricsEndpointsFromConfig(logger logr.Logger, otelcol v1beta1.OpenTelemetr
 	for _, port := range exporterPorts {
 		if strings.Contains(port.Name, "prometheus") {
 			e := monitoringv1.PodMetricsEndpoint{
-				Port: port.Name,
+				Port: &port.Name,
 			}
 			metricsEndpoints = append(metricsEndpoints, e)
 		}
@@ -91,7 +82,7 @@ func shouldCreatePodMonitor(params manifests.Params) bool {
 	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
 		l.V(2).Info("Metrics disabled for this OTEL Collector. PodMonitor will not ve created")
 		return false
-	} else if params.Config.PrometheusCRAvailability() == prometheus.NotAvailable {
+	} else if params.Config.PrometheusCRAvailability == prometheus.NotAvailable {
 		l.V(2).Info("Cannot enable PodMonitor when prometheus CRDs are unavailable")
 		return false
 	} else if params.OtelCol.Spec.Mode != v1beta1.ModeSidecar {

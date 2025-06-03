@@ -1,33 +1,17 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package v1beta1
 
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
-	"reflect"
-	"regexp"
 	"sort"
-	"strconv"
-	"strings"
 
 	"dario.cat/mergo"
 	"github.com/go-logr/logr"
-	"gopkg.in/yaml.v3"
+	go_yaml "github.com/goccy/go-yaml"
+	otelConfig "go.opentelemetry.io/contrib/otelconf/v0.3.0"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
@@ -286,7 +270,11 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 		case KindProcessor:
 			continue
 		case KindExtension:
-			continue
+			if c.Extensions == nil {
+				continue
+			}
+			retriever = extensions.ParserFor
+			cfg = *c.Extensions
 		}
 		for componentName := range enabledComponents[componentKind] {
 			parser := retriever(componentName)
@@ -306,6 +294,9 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 				continue
 			}
 
+			if componentConf == nil {
+				componentConf = map[string]interface{}{}
+			}
 			if err := mergo.Merge(&mappedCfg, componentConf); err != nil {
 				return err
 			}
@@ -345,12 +336,16 @@ func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error
 }
 
 func (c *Config) ApplyDefaults(logger logr.Logger) error {
-	return c.applyDefaultForComponentKinds(logger, KindReceiver)
+	return c.applyDefaultForComponentKinds(logger, KindReceiver, KindExtension)
 }
 
 // GetLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled
 // that provides the hinting for the liveness probe.
 func (c *Config) GetLivenessProbe(logger logr.Logger) (*corev1.Probe, error) {
+	if c.Extensions == nil {
+		return nil, nil
+	}
+
 	enabledComponents := c.GetEnabledComponents()
 	for componentName := range enabledComponents[KindExtension] {
 		// TODO: Clean up the naming here and make it simpler to use a retriever.
@@ -367,6 +362,10 @@ func (c *Config) GetLivenessProbe(logger logr.Logger) (*corev1.Probe, error) {
 // GetReadinessProbe gets the first enabled readiness probe. There should only ever be one extension enabled
 // that provides the hinting for the readiness probe.
 func (c *Config) GetReadinessProbe(logger logr.Logger) (*corev1.Probe, error) {
+	if c.Extensions == nil {
+		return nil, nil
+	}
+
 	enabledComponents := c.GetEnabledComponents()
 	for componentName := range enabledComponents[KindExtension] {
 		// TODO: Clean up the naming here and make it simpler to use a retriever.
@@ -383,8 +382,7 @@ func (c *Config) GetReadinessProbe(logger logr.Logger) (*corev1.Probe, error) {
 // Yaml encodes the current object and returns it as a string.
 func (c *Config) Yaml() (string, error) {
 	var buf bytes.Buffer
-	yamlEncoder := yaml.NewEncoder(&buf)
-	yamlEncoder.SetIndent(2)
+	yamlEncoder := go_yaml.NewEncoder(&buf, go_yaml.IndentSequence(true), go_yaml.AutoInt())
 	if err := yamlEncoder.Encode(&c); err != nil {
 		return "", err
 	}
@@ -394,24 +392,24 @@ func (c *Config) Yaml() (string, error) {
 // Returns null objects in the config.
 func (c *Config) nullObjects() []string {
 	var nullKeys []string
-	if nulls := hasNullValue(c.Receivers.Object); len(nulls) > 0 {
+	if nulls := getNullValuedKeys(c.Receivers.Object); len(nulls) > 0 {
 		nullKeys = append(nullKeys, addPrefix("receivers.", nulls)...)
 	}
-	if nulls := hasNullValue(c.Exporters.Object); len(nulls) > 0 {
+	if nulls := getNullValuedKeys(c.Exporters.Object); len(nulls) > 0 {
 		nullKeys = append(nullKeys, addPrefix("exporters.", nulls)...)
 	}
 	if c.Processors != nil {
-		if nulls := hasNullValue(c.Processors.Object); len(nulls) > 0 {
+		if nulls := getNullValuedKeys(c.Processors.Object); len(nulls) > 0 {
 			nullKeys = append(nullKeys, addPrefix("processors.", nulls)...)
 		}
 	}
 	if c.Extensions != nil {
-		if nulls := hasNullValue(c.Extensions.Object); len(nulls) > 0 {
+		if nulls := getNullValuedKeys(c.Extensions.Object); len(nulls) > 0 {
 			nullKeys = append(nullKeys, addPrefix("extensions.", nulls)...)
 		}
 	}
 	if c.Connectors != nil {
-		if nulls := hasNullValue(c.Connectors.Object); len(nulls) > 0 {
+		if nulls := getNullValuedKeys(c.Connectors.Object); len(nulls) > 0 {
 			nullKeys = append(nullKeys, addPrefix("connectors.", nulls)...)
 		}
 	}
@@ -441,63 +439,53 @@ const (
 // because the port is used to generate Service objects and mappings.
 func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
 	telemetry := s.GetTelemetry()
-	if telemetry == nil || telemetry.Metrics.Address == "" {
+	if telemetry == nil {
 		return defaultServiceHost, defaultServicePort, nil
 	}
 
-	// The regex below matches on strings that end with a colon followed by the environment variable expansion syntax.
-	// So it should match on strings ending with: ":${env:POD_IP}" or ":${POD_IP}".
-	const portEnvVarRegex = `:\${[env:]?.*}$`
-	isPortEnvVar := regexp.MustCompile(portEnvVarRegex).MatchString(telemetry.Metrics.Address)
-	if isPortEnvVar {
-		errMsg := fmt.Sprintf("couldn't determine metrics port from configuration: %s",
-			telemetry.Metrics.Address)
-		logger.Info(errMsg)
-		return "", 0, errors.New(errMsg)
+	if telemetry.Metrics.Address != "" && len(telemetry.Metrics.Readers) == 0 {
+		host, port, err := parseAddressEndpoint(telemetry.Metrics.Address)
+		if err != nil {
+			return "", 0, err
+		}
+
+		return host, port, nil
 	}
 
-	// The regex below matches on strings that end with a colon followed by 1 or more numbers (representing the port).
-	const explicitPortRegex = `:(\d+$)`
-	explicitPortMatches := regexp.MustCompile(explicitPortRegex).FindStringSubmatch(telemetry.Metrics.Address)
-	if len(explicitPortMatches) <= 1 {
-		return telemetry.Metrics.Address, defaultServicePort, nil
-	}
-
-	port, err := strconv.ParseInt(explicitPortMatches[1], 10, 32)
-	if err != nil {
-		errMsg := fmt.Sprintf("couldn't determine metrics port from configuration: %s",
-			telemetry.Metrics.Address)
-		logger.Info(errMsg, "error", err)
-		return "", 0, err
-	}
-
-	host, _, _ := strings.Cut(telemetry.Metrics.Address, explicitPortMatches[0])
-	return host, int32(port), nil
+	return defaultServiceHost, defaultServicePort, nil
 }
 
 // ApplyDefaults inserts configuration defaults if it has not been set.
 func (s *Service) ApplyDefaults(logger logr.Logger) error {
-	telemetryAddr, telemetryPort, err := s.MetricsEndpoint(logger)
+	tel := s.GetTelemetry()
+
+	if tel == nil {
+		tel = &Telemetry{}
+		s.Telemetry = &AnyConfig{
+			Object: map[string]interface{}{},
+		}
+	}
+
+	if tel.Metrics.Address != "" || len(tel.Metrics.Readers) != 0 {
+		// The user already set the address or the readers, so we don't need to do anything
+		return nil
+	}
+
+	host, port, err := s.MetricsEndpoint(logger)
 	if err != nil {
 		return err
 	}
 
-	tm := &AnyConfig{
-		Object: map[string]interface{}{
-			"metrics": map[string]interface{}{
-				"address": fmt.Sprintf("%s:%d", telemetryAddr, telemetryPort),
-			},
-		},
+	reader := AddPrometheusMetricsEndpoint(host, port)
+	tel.Metrics.Readers = append(tel.Metrics.Readers, reader)
+
+	telConfig, err := tel.ToAnyConfig()
+	if err != nil {
+		return err
 	}
 
-	if s.Telemetry == nil {
-		s.Telemetry = tm
-		return nil
-	}
-	// NOTE: Merge without overwrite. If a telemetry endpoint is specified, the defaulting
-	// respects the configuration and returns an equal value.
-	if err := mergo.Merge(s.Telemetry, tm); err != nil {
-		return fmt.Errorf("telemetry config merge failed: %w", err)
+	if err := mergo.Merge(&s.Telemetry.Object, telConfig.Object); err != nil {
+		return err
 	}
 	return nil
 }
@@ -513,6 +501,23 @@ type MetricsConfig struct {
 
 	// Address is the [address]:port that metrics exposition should be bound to.
 	Address string `json:"address,omitempty" yaml:"address,omitempty"`
+
+	otelConfig.MeterProvider `mapstructure:",squash"`
+}
+
+func (in *MetricsConfig) DeepCopyInto(out *MetricsConfig) {
+	*out = *in
+	out.MeterProvider = in.MeterProvider
+}
+
+// DeepCopy creates a new deepcopy of MetricsConfig.
+func (in *MetricsConfig) DeepCopy() *MetricsConfig {
+	if in == nil {
+		return nil
+	}
+	out := new(MetricsConfig)
+	in.DeepCopyInto(out)
+	return out
 }
 
 // Telemetry is an intermediary type that allows for easy access to the collector's telemetry settings.
@@ -524,6 +529,38 @@ type Telemetry struct {
 	// if they are not specified here. In order to suppress such attributes the
 	// attribute must be specified in this map with null YAML value (nil string pointer).
 	Resource map[string]*string `json:"resource,omitempty" yaml:"resource,omitempty"`
+}
+
+// ToAnyConfig converts the Telemetry struct to an AnyConfig struct.
+func (t *Telemetry) ToAnyConfig() (*AnyConfig, error) {
+	data, err := json.Marshal(t)
+	if err != nil {
+		return nil, err
+	}
+	var result map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+
+	normalizeConfig(result)
+
+	return &AnyConfig{
+		Object: result,
+	}, nil
+}
+
+func AddPrometheusMetricsEndpoint(host string, port int32) otelConfig.MetricReader {
+	portInt := int(port)
+	return otelConfig.MetricReader{
+		Pull: &otelConfig.PullMetricReader{
+			Exporter: otelConfig.PullMetricExporter{
+				Prometheus: &otelConfig.Prometheus{
+					Host: &host,
+					Port: &portInt,
+				},
+			},
+		},
+	}
 }
 
 // GetTelemetry serves as a helper function to access the fields we care about in the underlying telemetry struct.
@@ -543,33 +580,4 @@ func (s *Service) GetTelemetry() *Telemetry {
 		return nil
 	}
 	return t
-}
-
-func hasNullValue(cfg map[string]interface{}) []string {
-	var nullKeys []string
-	for k, v := range cfg {
-		if v == nil {
-			nullKeys = append(nullKeys, fmt.Sprintf("%s:", k))
-		}
-		if reflect.ValueOf(v).Kind() == reflect.Map {
-			var nulls []string
-			val, ok := v.(map[string]interface{})
-			if ok {
-				nulls = hasNullValue(val)
-			}
-			if len(nulls) > 0 {
-				prefixed := addPrefix(k+".", nulls)
-				nullKeys = append(nullKeys, prefixed...)
-			}
-		}
-	}
-	return nullKeys
-}
-
-func addPrefix(prefix string, arr []string) []string {
-	var prefixed []string
-	for _, v := range arr {
-		prefixed = append(prefixed, fmt.Sprintf("%s%s", prefix, v))
-	}
-	return prefixed
 }

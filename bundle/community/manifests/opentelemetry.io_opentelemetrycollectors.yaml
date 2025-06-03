@@ -2401,6 +2401,8 @@ spec:
                   runAsUser:
                     format: int64
                     type: integer
+                  seLinuxChangePolicy:
+                    type: string
                   seLinuxOptions:
                     properties:
                       level:
@@ -2486,6 +2488,7 @@ spec:
               priorityClassName:
                 type: string
               replicas:
+                default: 1
                 format: int32
                 type: integer
               resources:
@@ -3169,6 +3172,8 @@ spec:
                       runAsUser:
                         format: int64
                         type: integer
+                      seLinuxChangePolicy:
+                        type: string
                       seLinuxOptions:
                         properties:
                           level:
@@ -7034,6 +7039,8 @@ spec:
                   runAsUser:
                     format: int64
                     type: integer
+                  seLinuxChangePolicy:
+                    type: string
                   seLinuxOptions:
                     properties:
                       level:
@@ -7140,6 +7147,7 @@ spec:
                     type: integer
                 type: object
               replicas:
+                default: 1
                 format: int32
                 type: integer
               resources:
@@ -7699,6 +7707,10 @@ spec:
                     - consistent-hashing
                     - per-node
                     type: string
+                  collectorNotReadyGracePeriod:
+                    default: 30s
+                    format: duration
+                    type: string
                   enabled:
                     type: boolean
                   env:
@@ -7826,6 +7838,8 @@ spec:
                       runAsUser:
                         format: int64
                         type: integer
+                      seLinuxChangePolicy:
+                        type: string
                       seLinuxOptions:
                         properties:
                           level:
@@ -7881,6 +7895,14 @@ spec:
                     type: object
                   prometheusCR:
                     properties:
+                      allowNamespaces:
+                        items:
+                          type: string
+                        type: array
+                      denyNamespaces:
+                        items:
+                          type: string
+                        type: array
                       enabled:
                         type: boolean
                       podMonitorSelector:
@@ -9261,6 +9283,22 @@ spec:
             - config
             - managementState
             type: object
+            x-kubernetes-validations:
+            - message: the OpenTelemetry Collector mode is set to sidecar, which does
+                not support the attribute 'tolerations'
+              rule: '!(self.mode == ''sidecar'' && size(self.tolerations) > 0) ||
+                !has(self.tolerations)'
+            - message: the OpenTelemetry Collector mode is set to sidecar, which does
+                not support the attribute 'priorityClassName'
+              rule: '!(self.mode == ''sidecar'' && self.priorityClassName != '''')
+                || !has(self.priorityClassName)'
+            - message: the OpenTelemetry Collector mode is set to sidecar, which does
+                not support the attribute 'affinity'
+              rule: '!(self.mode == ''sidecar'' && self.affinity != null) || !has(self.affinity)'
+            - message: the OpenTelemetry Collector mode is set to sidecar, which does
+                not support the attribute 'additionalContainers'
+              rule: '!(self.mode == ''sidecar'' && size(self.additionalContainers)
+                > 0) || !has(self.additionalContainers)'
           status:
             properties:
               image:

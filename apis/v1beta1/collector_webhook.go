@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package v1beta1
 
@@ -195,20 +184,24 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	}
 
 	// validate tolerations
+	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
 	}
 
 	// validate priorityClassName
+	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
 	if r.Spec.Mode == ModeSidecar && r.Spec.PriorityClassName != "" {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'priorityClassName'", r.Spec.Mode)
 	}
 
 	// validate affinity
+	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
 	if r.Spec.Mode == ModeSidecar && r.Spec.Affinity != nil {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'affinity'", r.Spec.Mode)
 	}
 
+	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.AdditionalContainers) > 0 {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
 	}

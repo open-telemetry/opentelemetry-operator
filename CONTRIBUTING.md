@@ -19,7 +19,7 @@ We gratefully welcome improvements to documentation as well as to code.
 * `make lint` to run linters
 * `make fmt` to format Go code
 * `make vet` to run `go vet`
-* `make generate` to generate code and manifests based on Go struct definitions for CRDs.
+* `make update` to generate code and manifests based on Go struct definitions for CRDs.
 
 `make precommit` includes all of the above.
 
@@ -40,7 +40,7 @@ gh pr create
 The following command should be run to make sure the project manifests are up-to-date:
 
 ```bash
-make generate manifests bundle api-docs reset
+make update
 ```
 
 The local changes after running the command should be added to the pull request:
@@ -48,7 +48,7 @@ The local changes after running the command should be added to the pull request:
 The following `make` target is run on CI to verify the project structure:
 
 ```bash
-make ensure-generate-is-noop
+make ensure-update-is-noop
 ```
 
 ### Adding new components - webhook, API
@@ -128,6 +128,8 @@ The tests are located under `tests/e2e` and are written to be used with `chainsa
 
 To revert the changes made by the `make prepare-e2e` run `make reset`.
 
+To delete the kind cluster created by `make prepare-e2e` run `make stop-kind`.
+
 ### OpenShift End to End tests
 To run the end-to-end tests written for OpenShift, you'll need a OpenShift cluster.
 
@@ -159,7 +161,7 @@ Before starting the development of a new feature, please create an issue and dis
 
 ### Bug fixes
 
-Every bug fix should be accompanied with a unit test, so that we can prevent regressions.
+Every bug fix should be accompanied by a unit test, so that we can prevent regressions.
 
 ### Documentation, typos, ...
 

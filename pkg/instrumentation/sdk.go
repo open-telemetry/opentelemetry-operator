@@ -1,27 +1,18 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package instrumentation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
 	"unsafe"
 
+	"github.com/distribution/reference"
 	"github.com/go-logr/logr"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
@@ -68,7 +59,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range insts.Java.Containers {
 			index := getContainerIndex(container, pod)
-			pod, err = injectJavaagent(otelinst.Spec.Java, pod, index)
+			pod, err = injectJavaagent(otelinst.Spec.Java, pod, index, otelinst.Spec)
 			if err != nil {
 				i.logger.Info("Skipping javaagent injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
@@ -89,7 +80,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range insts.NodeJS.Containers {
 			index := getContainerIndex(container, pod)
-			pod, err = injectNodeJSSDK(otelinst.Spec.NodeJS, pod, index)
+			pod, err = injectNodeJSSDK(otelinst.Spec.NodeJS, pod, index, otelinst.Spec)
 			if err != nil {
 				i.logger.Info("Skipping NodeJS SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
@@ -110,7 +101,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range insts.Python.Containers {
 			index := getContainerIndex(container, pod)
-			pod, err = injectPythonSDK(otelinst.Spec.Python, pod, index, insts.Python.AdditionalAnnotations[annotationPythonPlatform])
+			pod, err = injectPythonSDK(otelinst.Spec.Python, pod, index, insts.Python.AdditionalAnnotations[annotationPythonPlatform], otelinst.Spec)
 			if err != nil {
 				i.logger.Info("Skipping Python SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
@@ -131,7 +122,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		for _, container := range insts.DotNet.Containers {
 			index := getContainerIndex(container, pod)
-			pod, err = injectDotNetSDK(otelinst.Spec.DotNet, pod, index, insts.DotNet.AdditionalAnnotations[annotationDotNetRuntime])
+			pod, err = injectDotNetSDK(otelinst.Spec.DotNet, pod, index, insts.DotNet.AdditionalAnnotations[annotationDotNetRuntime], otelinst.Spec)
 			if err != nil {
 				i.logger.Info("Skipping DotNet SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
@@ -153,7 +144,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 
 		// Go instrumentation supports only single container instrumentation.
 		index := getContainerIndex(insts.Go.Containers[0], pod)
-		pod, err = injectGoSDK(otelinst.Spec.Go, pod, cfg)
+		pod, err = injectGoSDK(otelinst.Spec.Go, pod, cfg, otelinst.Spec)
 		if err != nil {
 			i.logger.Info("Skipping Go SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 		} else {
@@ -182,7 +173,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			// Apache agent is configured via config files rather than env vars.
 			// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
 			useLabelsForResourceAttributes := otelinst.Spec.Defaults.UseLabelsForResourceAttributes
-			pod = injectApacheHttpdagent(i.logger, otelinst.Spec.ApacheHttpd, pod, useLabelsForResourceAttributes, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
+			pod = injectApacheHttpdagent(i.logger, otelinst.Spec.ApacheHttpd, pod, useLabelsForResourceAttributes, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index), otelinst.Spec)
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 			pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, apacheAgentInitContainerName)
@@ -203,7 +194,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			// Nginx agent is configured via config files rather than env vars.
 			// Therefore, service name, otlp endpoint and other attributes are passed to the agent injection method
 			useLabelsForResourceAttributes := otelinst.Spec.Defaults.UseLabelsForResourceAttributes
-			pod = injectNginxSDK(i.logger, otelinst.Spec.Nginx, pod, useLabelsForResourceAttributes, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index))
+			pod = injectNginxSDK(i.logger, otelinst.Spec.Nginx, pod, useLabelsForResourceAttributes, index, otelinst.Spec.Endpoint, i.createResourceMap(ctx, otelinst, ns, pod, index), otelinst.Spec)
 			pod = i.injectCommonEnvVar(otelinst, pod, index)
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 		}
@@ -239,7 +230,7 @@ func (i *sdkInjector) setInitContainerSecurityContext(pod corev1.Pod, securityCo
 
 func getContainerIndex(containerName string, pod corev1.Pod) int {
 	// We search for specific container to inject variables and if no one is found
-	// We fallback to first container
+	// We fall back to first container
 	var index = 0
 	for idx, ctnair := range pod.Spec.Containers {
 		if ctnair.Name == containerName {
@@ -288,7 +279,7 @@ func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod 
 
 // injectCommonSDKConfig adds common SDK configuration environment variables to the necessary pod
 // agentIndex represents the index of the pod the needs the env vars to instrument the application.
-// appIndex represents the index of the pod the will produce the telemetry.
+// appIndex represents the index of the pod that will produce the telemetry.
 // When the pod handling the instrumentation is the same as the pod producing the telemetry agentIndex
 // and appIndex should be the same value.  This is true for dotnet, java, nodejs, and python instrumentations.
 // Go requires the agent to be a different container in the pod, so the agentIndex should represent this new sidecar
@@ -406,10 +397,7 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 }
 
 // chooseServiceName returns the service name to be used in the instrumentation.
-// The precedence is as follows:
-// 1. label or annotation with key "service.name" or "app.kubernetes.io/name".
-// 2. k8s resource name (deployment, replicaset, statefulset, daemonset, cronjob, job, pod).
-// 3. container name.
+// See https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/k8s-attributes.md#how-servicename-should-be-calculated
 func chooseServiceName(pod corev1.Pod, useLabelsForResourceAttributes bool, resources map[string]string, index int) string {
 	if name := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceNameKey, constants.LabelAppName); name != "" {
 		return name
@@ -442,48 +430,88 @@ func chooseServiceName(pod corev1.Pod, useLabelsForResourceAttributes bool, reso
 // The precedence is as follows:
 // 1. annotation with key resource.opentelemetry.io/<resource>.
 // 2. label with key labelKey.
-func chooseLabelOrAnnotation(pod corev1.Pod, useLabelsForResourceAttributes bool, resource attribute.Key, labelKey string) string {
+func chooseLabelOrAnnotation(pod corev1.Pod, useLabelsForResourceAttributes bool, resource attribute.Key, labelKeys []string) string {
 	if v := pod.GetAnnotations()[(constants.ResourceAttributeAnnotationPrefix + string(resource))]; v != "" {
 		return v
 	}
 	if useLabelsForResourceAttributes {
-		if v := pod.GetLabels()[labelKey]; v != "" {
-			return v
+		for _, labelKey := range labelKeys {
+			if v := pod.GetLabels()[labelKey]; v != "" {
+				return v
+			}
 		}
 	}
 	return ""
 }
 
 // chooseServiceVersion returns the service version to be used in the instrumentation.
-// The precedence is as follows:
-// 1. label or annotation with key "service.version" or "app.kubernetes.io/version".
-// 2. image tag (by splitting image string on ":" and extracting final element from resulting array).
+// See https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/k8s-attributes.md#how-serviceversion-should-be-calculated
 func chooseServiceVersion(pod corev1.Pod, useLabelsForResourceAttributes bool, index int) string {
 	v := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceVersionKey, constants.LabelAppVersion)
 	if v != "" {
 		return v
 	}
-	parts := strings.Split(pod.Spec.Containers[index].Image, ":")
-	tag := parts[len(parts)-1]
-	//guard statement to handle case where image name has a port number
-	if strings.Contains(tag, "/") {
+	var err error
+	v, err = parseServiceVersionFromImage(pod.Spec.Containers[index].Image)
+	if err != nil {
 		return ""
 	}
-	return tag
+	return v
+}
+
+// chooseServiceNamespace returns the service.namespace to be used in the instrumentation.
+// See https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/k8s-attributes.md#how-servicenamespace-should-be-calculated
+func chooseServiceNamespace(pod corev1.Pod, useLabelsForResourceAttributes bool, namespaceName string) string {
+	namespace := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceNamespaceKey, nil)
+	if namespace != "" {
+		return namespace
+	}
+	return namespaceName
+}
+
+var cannotRetrieveImage = errors.New("cannot retrieve image name")
+
+// parseServiceVersionFromImage parses the service version for differently-formatted image names
+// according to https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/k8s-attributes.md#how-serviceversion-should-be-calculated
+func parseServiceVersionFromImage(image string) (string, error) {
+	ref, err := reference.Parse(image)
+	if err != nil {
+		return "", err
+	}
+
+	namedRef, ok := ref.(reference.Named)
+	if !ok {
+		return "", cannotRetrieveImage
+	}
+	var tag, digest string
+	if taggedRef, ok := namedRef.(reference.Tagged); ok {
+		tag = taggedRef.Tag()
+	}
+	if digestedRef, ok := namedRef.(reference.Digested); ok {
+		digest = digestedRef.Digest().String()
+	}
+	if digest != "" {
+		if tag != "" {
+			return fmt.Sprintf("%s@%s", tag, digest), nil
+		}
+		return digest, nil
+	}
+	if tag != "" {
+		return tag, nil
+	}
+
+	return "", cannotRetrieveImage
 }
 
 // chooseServiceInstanceId returns the service.instance.id to be used in the instrumentation.
-// The precedence is as follows:
-//  1. annotation with key "service.instance.id"
-//  2. namespace name + pod name + container name
-//     (as defined by https://opentelemetry.io/docs/specs/semconv/resource/#service-experimental)
+// See https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/k8s-attributes.md#how-serviceinstanceid-should-be-calculated
 func createServiceInstanceId(pod corev1.Pod, namespaceName, podName, containerName string) string {
 	// Do not use labels for service instance id,
 	// because multiple containers in the same pod would get the same service instance id,
 	// which violates the uniqueness requirement of service instance id -
 	// see https://opentelemetry.io/docs/specs/semconv/resource/#service-experimental.
 	// We still allow the user to set the service instance id via annotation, because this is explicitly set by the user.
-	serviceInstanceId := chooseLabelOrAnnotation(pod, false, semconv.ServiceInstanceIDKey, "")
+	serviceInstanceId := chooseLabelOrAnnotation(pod, false, semconv.ServiceInstanceIDKey, nil)
 	if serviceInstanceId != "" {
 		return serviceInstanceId
 	}
@@ -550,9 +578,9 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 			}
 		}
 	}
-	partOf := chooseLabelOrAnnotation(pod, useLabelsForResourceAttributes, semconv.ServiceNamespaceKey, constants.LabelAppPartOf)
-	if partOf != "" && !existingRes[string(semconv.ServiceNamespaceKey)] {
-		res[string(semconv.ServiceNamespaceKey)] = partOf
+	namespace := chooseServiceNamespace(pod, useLabelsForResourceAttributes, ns.Name)
+	if namespace != "" && !existingRes[string(semconv.ServiceNamespaceKey)] {
+		res[string(semconv.ServiceNamespaceKey)] = namespace
 	}
 
 	return res
@@ -659,6 +687,20 @@ func getIndexOfEnv(envs []corev1.EnvVar, name string) int {
 		}
 	}
 	return -1
+}
+
+func appendIfNotSet(envs []corev1.EnvVar, newEnvVars ...corev1.EnvVar) []corev1.EnvVar {
+	keys := make(map[string]struct{}, len(envs))
+	for _, e := range envs {
+		keys[e.Name] = struct{}{}
+	}
+	for _, envVar := range newEnvVars {
+		if _, ok := keys[envVar.Name]; !ok {
+			envs = append(envs, envVar)
+			keys[envVar.Name] = struct{}{}
+		}
+	}
+	return envs
 }
 
 func moveEnvToListEnd(envs []corev1.EnvVar, idx int) []corev1.EnvVar {

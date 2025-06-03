@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package instrumentation
 
@@ -62,18 +51,13 @@ const (
 	6) Inject mounting of volumes / files into appropriate directories in the application container
 */
 
-func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, useLabelsForResourceAttributes bool, index int, otlpEndpoint string, resourceMap map[string]string) corev1.Pod {
+func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, useLabelsForResourceAttributes bool, index int, otlpEndpoint string, resourceMap map[string]string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
 
 	// caller checks if there is at least one container
 	container := &pod.Spec.Containers[index]
 
 	// inject env vars
-	for _, env := range nginxSpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
-	}
+	container.Env = appendIfNotSet(container.Env, nginxSpec.Env...)
 
 	// First make a clone of the instrumented container to take the existing Nginx configuration from
 	// and create init container from it
@@ -244,6 +228,7 @@ mv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR
 				},
 			},
 			SecurityContext: pod.Spec.Containers[index].SecurityContext,
+			ImagePullPolicy: instSpec.ImagePullPolicy,
 		})
 
 		found := false

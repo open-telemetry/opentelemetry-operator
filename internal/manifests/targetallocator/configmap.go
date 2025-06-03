@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package targetallocator
 
@@ -105,6 +94,14 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			prometheusCRConfig["scrape_interval"] = taSpec.PrometheusCR.ScrapeInterval.Duration
 		}
 
+		if taSpec.PrometheusCR.AllowNamespaces != nil {
+			prometheusCRConfig["allow_namespaces"] = taSpec.PrometheusCR.AllowNamespaces
+		}
+
+		if taSpec.PrometheusCR.DenyNamespaces != nil {
+			prometheusCRConfig["deny_namespaces"] = taSpec.PrometheusCR.DenyNamespaces
+		}
+
 		prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
 
 		prometheusCRConfig["pod_monitor_selector"] = taSpec.PrometheusCR.PodMonitorSelector
@@ -116,7 +113,7 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 
-	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		taConfig["https"] = map[string]interface{}{
 			"enabled":            true,
 			"listen_addr":        ":8443",
@@ -124,6 +121,10 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			"tls_cert_file_path": filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSCertFileName),
 			"tls_key_file_path":  filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSKeyFileName),
 		}
+	}
+
+	if taSpec.CollectorNotReadyGracePeriod.Size() > 0 {
+		taConfig["collector_not_ready_grace_period"] = taSpec.CollectorNotReadyGracePeriod.Duration
 	}
 
 	taConfigYAML, err := yaml.Marshal(taConfig)

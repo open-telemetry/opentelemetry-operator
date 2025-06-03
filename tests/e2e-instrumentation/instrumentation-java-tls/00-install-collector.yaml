@@ -31,13 +31,19 @@ spec:
               cert_file: /certs/tls.crt
               key_file: /certs/tls.key
               client_ca_file: /certs-ca/ca.crt
-    processors:
+
+    processors: {}
 
     exporters:
-      debug: {}
+      debug:
+        verbosity: detailed
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
           exporters: [debug]
+        metrics:
+          receivers: [otlp]
+          exporters: [debug]
+ 

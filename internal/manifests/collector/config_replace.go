@@ -1,25 +1,14 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package collector
 
 import (
 	"time"
 
+	go_yaml "github.com/goccy/go-yaml"
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install" // Package install has the side-effect of registering all builtin.
-	"gopkg.in/yaml.v3"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -79,7 +68,7 @@ func ReplaceConfig(otelcol v1beta1.OpenTelemetryCollector, targetAllocator *v1al
 	// type coercion checks are handled in the AddTAConfigToPromConfig method above
 	config["receivers"].(map[interface{}]interface{})["prometheus"] = updPromCfgMap
 
-	out, updCfgMarshalErr := yaml.Marshal(config)
+	out, updCfgMarshalErr := go_yaml.MarshalWithOptions(config, go_yaml.Indent(4), go_yaml.IndentSequence(true), go_yaml.AutoInt())
 	if updCfgMarshalErr != nil {
 		return "", updCfgMarshalErr
 	}

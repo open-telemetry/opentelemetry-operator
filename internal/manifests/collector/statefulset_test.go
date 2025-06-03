@@ -1,18 +1,7 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
-package collector_test
+package collector
 
 import (
 	"testing"
@@ -21,14 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
 
 func TestStatefulSetNewDefault(t *testing.T) {
@@ -50,7 +37,7 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	params := manifests.Params{
 		OtelCol: otelcol,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -122,7 +109,7 @@ func TestStatefulSetReplicas(t *testing.T) {
 	params := manifests.Params{
 		OtelCol: otelcol,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -161,7 +148,7 @@ func TestStatefulSetVolumeClaimTemplates(t *testing.T) {
 	params := manifests.Params{
 		OtelCol: otelcol,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -199,7 +186,7 @@ func TestStatefulSetPeristentVolumeRetentionPolicy(t *testing.T) {
 	params := manifests.Params{
 		OtelCol: otelcol,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -235,7 +222,7 @@ func TestStatefulSetPodAnnotations(t *testing.T) {
 	params := manifests.Params{
 		OtelCol: otelcol,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -268,7 +255,7 @@ func TestStatefulSetPodSecurityContext(t *testing.T) {
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-				PodSecurityContext: &v1.PodSecurityContext{
+				PodSecurityContext: &corev1.PodSecurityContext{
 					RunAsNonRoot: &runAsNonRoot,
 					RunAsUser:    &runAsUser,
 					RunAsGroup:   &runasGroup,
@@ -282,7 +269,7 @@ func TestStatefulSetPodSecurityContext(t *testing.T) {
 	params := manifests.Params{
 		OtelCol: otelcol,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d, err := StatefulSet(params)
@@ -306,14 +293,14 @@ func TestStatefulSetHostNetwork(t *testing.T) {
 	params1 := manifests.Params{
 		OtelCol: otelcol1,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d1, err := StatefulSet(params1)
 	require.NoError(t, err)
 
 	assert.Equal(t, d1.Spec.Template.Spec.HostNetwork, false)
-	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
+	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, corev1.DNSClusterFirst)
 
 	// Test hostNetwork=true
 	otelcol2 := v1beta1.OpenTelemetryCollector{
@@ -332,13 +319,13 @@ func TestStatefulSetHostNetwork(t *testing.T) {
 	params2 := manifests.Params{
 		OtelCol: otelcol2,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d2, err := StatefulSet(params2)
 	require.NoError(t, err)
 	assert.Equal(t, d2.Spec.Template.Spec.HostNetwork, true)
-	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
+	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, corev1.DNSClusterFirstWithHostNet)
 }
 
 func TestStatefulSetFilterLabels(t *testing.T) {
@@ -360,7 +347,7 @@ func TestStatefulSetFilterLabels(t *testing.T) {
 	params := manifests.Params{
 		OtelCol: otelcol,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d, err := StatefulSet(params)
@@ -391,7 +378,7 @@ func TestStatefulSetFilterAnnotations(t *testing.T) {
 	params := manifests.Params{
 		OtelCol: otelcol,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d, err := StatefulSet(params)
@@ -416,7 +403,7 @@ func TestStatefulSetNodeSelector(t *testing.T) {
 	params1 := manifests.Params{
 		OtelCol: otelcol1,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d1, err := StatefulSet(params1)
@@ -444,7 +431,7 @@ func TestStatefulSetNodeSelector(t *testing.T) {
 	params2 := manifests.Params{
 		OtelCol: otelcol2,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d2, err := StatefulSet(params2)
@@ -464,7 +451,7 @@ func TestStatefulSetPriorityClassName(t *testing.T) {
 	params1 := manifests.Params{
 		OtelCol: otelcol1,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	sts1, err := StatefulSet(params1)
@@ -489,7 +476,7 @@ func TestStatefulSetPriorityClassName(t *testing.T) {
 	params2 := manifests.Params{
 		OtelCol: otelcol2,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	sts2, err := StatefulSet(params2)
@@ -509,7 +496,7 @@ func TestStatefulSetAffinity(t *testing.T) {
 	params1 := manifests.Params{
 		OtelCol: otelcol1,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	sts1, err := Deployment(params1)
@@ -532,7 +519,7 @@ func TestStatefulSetAffinity(t *testing.T) {
 	params2 := manifests.Params{
 		OtelCol: otelcol2,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	sts2, err := StatefulSet(params2)
@@ -550,7 +537,7 @@ func TestStatefulSetInitContainer(t *testing.T) {
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-				InitContainers: []v1.Container{
+				InitContainers: []corev1.Container{
 					{
 						Name: "test",
 					},
@@ -563,7 +550,7 @@ func TestStatefulSetInitContainer(t *testing.T) {
 	params := manifests.Params{
 		OtelCol: otelcol,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -590,7 +577,7 @@ func TestStatefulSetTopologySpreadConstraints(t *testing.T) {
 	params1 := manifests.Params{
 		OtelCol: otelcol1,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 	s1, err := StatefulSet(params1)
 	require.NoError(t, err)
@@ -614,7 +601,7 @@ func TestStatefulSetTopologySpreadConstraints(t *testing.T) {
 	params2 := manifests.Params{
 		OtelCol: otelcol2,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	s2, err := StatefulSet(params2)
@@ -634,7 +621,7 @@ func TestStatefulSetAdditionalContainers(t *testing.T) {
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-				AdditionalContainers: []v1.Container{
+				AdditionalContainers: []corev1.Container{
 					{
 						Name: "test",
 					},
@@ -647,7 +634,7 @@ func TestStatefulSetAdditionalContainers(t *testing.T) {
 	params := manifests.Params{
 		OtelCol: otelcol,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -659,7 +646,7 @@ func TestStatefulSetAdditionalContainers(t *testing.T) {
 	assert.Equal(t, "8888", s.Spec.Template.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", s.Spec.Template.Annotations["prometheus.io/path"])
 	assert.Len(t, s.Spec.Template.Spec.Containers, 2)
-	assert.Equal(t, v1.Container{Name: "test"}, s.Spec.Template.Spec.Containers[0])
+	assert.Equal(t, corev1.Container{Name: "test"}, s.Spec.Template.Spec.Containers[0])
 }
 
 func TestStatefulSetShareProcessNamespace(t *testing.T) {
@@ -675,7 +662,7 @@ func TestStatefulSetShareProcessNamespace(t *testing.T) {
 	params1 := manifests.Params{
 		OtelCol: otelcol1,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d1, err := StatefulSet(params1)
@@ -699,7 +686,7 @@ func TestStatefulSetShareProcessNamespace(t *testing.T) {
 	params2 := manifests.Params{
 		OtelCol: otelcol2,
 		Config:  cfg,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d2, err := StatefulSet(params2)
@@ -716,7 +703,7 @@ func TestStatefulSetDNSConfig(t *testing.T) {
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-				PodDNSConfig: v1.PodDNSConfig{
+				PodDNSConfig: corev1.PodDNSConfig{
 					Nameservers: []string{"8.8.8.8"},
 					Searches:    []string{"my.dns.search.suffix"},
 				},
@@ -728,13 +715,61 @@ func TestStatefulSetDNSConfig(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
 	d, err := StatefulSet(params)
 	require.NoError(t, err)
 	assert.Equal(t, "my-instance-collector", d.Name)
-	assert.Equal(t, v1.DNSPolicy("None"), d.Spec.Template.Spec.DNSPolicy)
+	assert.Equal(t, corev1.DNSPolicy("None"), d.Spec.Template.Spec.DNSPolicy)
 	assert.Equal(t, d.Spec.Template.Spec.DNSConfig.Nameservers, []string{"8.8.8.8"})
+}
+
+func TestStatefulSetTerminationGracePeriodSeconds(t *testing.T) {
+	// Test the case where terminationGracePeriodSeconds is not set
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	s1, err := StatefulSet(params1)
+	require.NoError(t, err)
+	assert.Nil(t, s1.Spec.Template.Spec.TerminationGracePeriodSeconds)
+
+	// Test the case where terminationGracePeriodSeconds is set
+	gracePeriodSec := int64(60)
+
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-terminationGracePeriodSeconds",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				TerminationGracePeriodSeconds: &gracePeriodSec,
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	s2, err := StatefulSet(params2)
+	require.NoError(t, err)
+	assert.NotNil(t, s2.Spec.Template.Spec.TerminationGracePeriodSeconds)
+	assert.Equal(t, gracePeriodSec, *s2.Spec.Template.Spec.TerminationGracePeriodSeconds)
 }

@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package collector
 
@@ -38,6 +27,17 @@ func TestTargetAllocator(t *testing.T) {
 		},
 		Labels: map[string]string{
 			"label_key": "label_value",
+		},
+	}
+	expectedObjectMetadata := metav1.ObjectMeta{
+		Name:      "name",
+		Namespace: "namespace",
+		Annotations: map[string]string{
+			"annotation_key": "annotation_value",
+		},
+		Labels: map[string]string{
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"label_key":                    "label_value",
 		},
 	}
 	replicas := int32(2)
@@ -74,7 +74,7 @@ func TestTargetAllocator(t *testing.T) {
 				},
 			},
 			want: &v1alpha1.TargetAllocator{
-				ObjectMeta: objectMetadata,
+				ObjectMeta: expectedObjectMetadata,
 				Spec: v1alpha1.TargetAllocatorSpec{
 					GlobalConfig: v1beta1.AnyConfig{},
 				},
@@ -183,7 +183,7 @@ func TestTargetAllocator(t *testing.T) {
 				},
 			},
 			want: &v1alpha1.TargetAllocator{
-				ObjectMeta: objectMetadata,
+				ObjectMeta: expectedObjectMetadata,
 				Spec: v1alpha1.TargetAllocatorSpec{
 					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 						Replicas:     &replicas,

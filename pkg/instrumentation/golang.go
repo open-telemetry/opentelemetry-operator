@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package instrumentation
 
@@ -31,16 +20,16 @@ const (
 	kernelDebugVolumePath = "/sys/kernel/debug"
 )
 
-func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config) (corev1.Pod, error) {
+func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
 	// skip instrumentation if share process namespaces is explicitly disabled
 	if pod.Spec.ShareProcessNamespace != nil && !*pod.Spec.ShareProcessNamespace {
 		return pod, fmt.Errorf("shared process namespace has been explicitly disabled")
 	}
 
-	// skip instrumentation when more than one containers provided
+	// skip instrumentation when more than one container is provided
 	containerNames := ""
 	ok := false
-	if cfg.EnableMultiInstrumentation() {
+	if cfg.EnableMultiInstrumentation {
 		containerNames, ok = pod.Annotations[annotationInjectGoContainersName]
 	} else {
 		containerNames, ok = pod.Annotations[annotationInjectContainerName]
@@ -68,6 +57,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config) (corev1.
 				Name:      kernelDebugVolumeName,
 			},
 		},
+		ImagePullPolicy: instSpec.ImagePullPolicy,
 	}
 
 	// Annotation takes precedence for OTEL_GO_AUTO_TARGET_EXE
@@ -81,12 +71,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config) (corev1.
 
 	// Inject Go instrumentation spec env vars.
 	// For Go, env vars must be added to the agent contain
-	for _, env := range goSpec.Env {
-		idx := getIndexOfEnv(goAgent.Env, env.Name)
-		if idx == -1 {
-			goAgent.Env = append(goAgent.Env, env)
-		}
-	}
+	goAgent.Env = appendIfNotSet(goAgent.Env, goSpec.Env...)
 
 	pod.Spec.Containers = append(pod.Spec.Containers, goAgent)
 	pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{

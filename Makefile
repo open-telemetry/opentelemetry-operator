@@ -2,17 +2,17 @@
 VERSION ?= $(shell git describe --tags | sed 's/^v//')
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 VERSION_PKG ?= github.com/open-telemetry/opentelemetry-operator/internal/version
-OTELCOL_VERSION ?= "$(shell grep -v '\#' versions.txt | grep opentelemetry-collector | awk -F= '{print $$2}')"
-OPERATOR_VERSION ?= "$(shell grep -v '\#' versions.txt | grep operator= | awk -F= '{print $$2}')"
-TARGETALLOCATOR_VERSION ?= $(shell grep -v '\#' versions.txt | grep targetallocator | awk -F= '{print $$2}')
-OPERATOR_OPAMP_BRIDGE_VERSION ?= "$(shell grep -v '\#' versions.txt | grep operator-opamp-bridge | awk -F= '{print $$2}')"
-AUTO_INSTRUMENTATION_JAVA_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-java | awk -F= '{print $$2}')"
-AUTO_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-nodejs | awk -F= '{print $$2}')"
-AUTO_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-python | awk -F= '{print $$2}')"
-AUTO_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-dotnet | awk -F= '{print $$2}')"
-AUTO_INSTRUMENTATION_GO_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-go | awk -F= '{print $$2}')"
-AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-apache-httpd | awk -F= '{print $$2}')"
-AUTO_INSTRUMENTATION_NGINX_VERSION ?= "$(shell grep -v '\#' versions.txt | grep autoinstrumentation-nginx | awk -F= '{print $$2}')"
+OTELCOL_VERSION ?= "$(shell awk -F= '/^opentelemetry-collector=/ {print $$2}' versions.txt)"
+OPERATOR_VERSION ?= "$(shell awk -F= '/^operator=/ {print $$2}' versions.txt)"
+TARGETALLOCATOR_VERSION ?= $(shell awk -F= '/^targetallocator=/ {print $$2}' versions.txt)
+OPERATOR_OPAMP_BRIDGE_VERSION ?= "$(shell awk -F= '/^operator-opamp-bridge/ {print $$2}' versions.txt)"
+AUTO_INSTRUMENTATION_JAVA_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-java=/ {print $$2}' versions.txt)"
+AUTO_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-nodejs=/ {print $$2}' versions.txt)"
+AUTO_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-python=/ {print $$2}' versions.txt)"
+AUTO_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-dotnet=/ {print $$2}' versions.txt)"
+AUTO_INSTRUMENTATION_GO_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-go=/ {print $$2}' versions.txt)"
+AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-apache-httpd=/ {print $$2}' versions.txt)"
+AUTO_INSTRUMENTATION_NGINX_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-nginx=/ {print $$2}' versions.txt)"
 COMMON_LDFLAGS ?= -s -w
 OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELCOL_VERSION} -X ${VERSION_PKG}.targetAllocator=${TARGETALLOCATOR_VERSION} -X ${VERSION_PKG}.operatorOpAMPBridge=${OPERATOR_OPAMP_BRIDGE_VERSION} -X ${VERSION_PKG}.autoInstrumentationJava=${AUTO_INSTRUMENTATION_JAVA_VERSION} -X ${VERSION_PKG}.autoInstrumentationNodeJS=${AUTO_INSTRUMENTATION_NODEJS_VERSION} -X ${VERSION_PKG}.autoInstrumentationPython=${AUTO_INSTRUMENTATION_PYTHON_VERSION} -X ${VERSION_PKG}.autoInstrumentationDotNet=${AUTO_INSTRUMENTATION_DOTNET_VERSION} -X ${VERSION_PKG}.autoInstrumentationGo=${AUTO_INSTRUMENTATION_GO_VERSION} -X ${VERSION_PKG}.autoInstrumentationApacheHttpd=${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION} -X ${VERSION_PKG}.autoInstrumentationNginx=${AUTO_INSTRUMENTATION_NGINX_VERSION}
 ARCH ?= $(shell go env GOARCH)
@@ -50,11 +50,14 @@ endif
 # by default, do not run the manager with webhooks enabled. This only affects local runs, not the build or in-cluster deployments.
 ENABLE_WEBHOOKS ?= false
 
+# Additional flags for go test command
+GOTEST_EXTRA_OPTS ?=
+
 # If we are running in CI, run go test in verbose mode
 ifeq (,$(CI))
-GOTEST_OPTS=-race
+GOTEST_OPTS=-race $(if $(GOTEST_EXTRA_OPTS),$(GOTEST_EXTRA_OPTS))
 else
-GOTEST_OPTS=-race -v
+GOTEST_OPTS=-race -v $(if $(GOTEST_EXTRA_OPTS),$(GOTEST_EXTRA_OPTS))
 endif
 
 START_KIND_CLUSTER ?= true
@@ -110,7 +113,7 @@ MANIFEST_DIR ?= config/crd/bases
 # kubectl apply does not work on large CRDs.
 CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=0"
 
-# Choose wich version to generate
+# Choose which version to generate
 BUNDLE_VARIANT ?= community
 BUNDLE_DIR = ./bundle/$(BUNDLE_VARIANT)
 MANIFESTS_DIR = config/manifests/$(BUNDLE_VARIANT)
@@ -123,22 +126,23 @@ MIN_OPENSHIFT_VERSION ?= 4.12
 ## consistent with Linux.
 SED ?= $(shell which gsed 2>/dev/null || which sed)
 
-.PHONY: ensure-generate-is-noop
-ensure-generate-is-noop: VERSION=$(OPERATOR_VERSION)
-ensure-generate-is-noop: DOCKER_USER=open-telemetry
-ensure-generate-is-noop: set-image-controller generate bundle
-	@# on make bundle config/manager/kustomization.yaml includes changes, which should be ignored for the below check
-	@git restore config/manager/kustomization.yaml
+.PHONY: ensure-update-is-noop
+ensure-update-is-noop: VERSION=$(OPERATOR_VERSION)
+ensure-update-is-noop: DOCKER_USER=open-telemetry
+ensure-update-is-noop: set-image-controller update
 	@git diff -s --exit-code apis/v1alpha1/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
 	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
-	@git diff -s --exit-code docs/api.md || (echo "Build failed: the api.md file has been changed but the generated api.md file isn't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
+	@git diff -s --exit-code docs/api || (echo "Build failed: a model has been changed but the generated docs/api/*.md files aren't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
 
 .PHONY: all
 all: manager targetallocator operator-opamp-bridge
 
 # No lint here, as CI runs it separately
 .PHONY: ci
-ci: generate fmt vet test ensure-generate-is-noop
+ci: generate fmt vet test ensure-update-is-noop
+
+.PHONY: update
+update: generate manifests bundle api-docs reset
 
 # Build manager binary
 .PHONY: manager
@@ -222,11 +226,6 @@ add-rbac-permissions-to-operator: manifests kustomize
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/replicationcontrollers.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/resourcequotas.yaml
 
-.PHONY: enable-targetallocator-cr
-enable-targetallocator-cr:
-	@$(MAKE) add-operator-arg OPERATOR_ARG='--feature-gates=operator.collector.targetallocatorcr'
-	cd config/crd && $(KUSTOMIZE) edit add resource bases/opentelemetry.io_targetallocators.yaml
-
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
 deploy: set-image-controller
@@ -257,7 +256,7 @@ test: envtest
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
 
 .PHONY: precommit
-precommit: generate fmt vet lint test ensure-generate-is-noop reset
+precommit: fmt vet lint test ensure-update-is-noop
 
 # Run go fmt against code
 .PHONY: fmt
@@ -365,8 +364,13 @@ e2e-upgrade: undeploy chainsaw
 	go run hack/check-operator-ready.go
 	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade
 
+# end-to-end tests to test crd validations
+.PHONY: e2e-crd-validations
+e2e-crd-validations: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-crd-validations
+
 .PHONY: prepare-e2e
-prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge container container-target-allocator container-operator-opamp-bridge container-bridge-test-server start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
 
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
@@ -424,6 +428,12 @@ ifeq (true,$(START_KIND_CLUSTER))
 	$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG) || true
 endif
 
+.PHONY: stop-kind
+stop-kind: kind
+ifeq (true,$(START_KIND_CLUSTER))
+	$(KIND) delete cluster --name $(KIND_CLUSTER_NAME)
+endif
+
 .PHONY: install-metrics-server
 install-metrics-server:
 	./hack/install-metrics-server.sh
@@ -434,7 +444,13 @@ install-targetallocator-prometheus-crds:
 	./hack/install-targetallocator-prometheus-crds.sh
 
 .PHONY: load-image-all
-load-image-all: load-image-operator load-image-target-allocator load-image-operator-opamp-bridge load-image-bridge-test-server
+load-image-all:
+ifeq ($(IMAGE_ARCHIVE),)
+	@make container container-target-allocator container-operator-opamp-bridge container-bridge-test-server load-image-operator load-image-target-allocator load-image-operator-opamp-bridge load-image-bridge-test-server
+else
+	$(KIND) load --name $(KIND_CLUSTER_NAME) image-archive $(IMAGE_ARCHIVE)
+endif
+
 
 .PHONY: load-image-operator
 load-image-operator: container kind
@@ -495,10 +511,10 @@ CHAINSAW ?= $(LOCALBIN)/chainsaw
 KUSTOMIZE_VERSION ?= v5.6.0
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
 CONTROLLER_TOOLS_VERSION ?= v0.17.1
-# renovate: datasource=go depName=github.com/golangci/golangci-lint/cmd/golangci-lint
-GOLANGCI_LINT_VERSION ?= v1.63.4
+# renovate: datasource=github-releases depName=golangci/golangci-lint
+GOLANGCI_LINT_VERSION ?= v2.1.6
 # renovate: datasource=go depName=sigs.k8s.io/kind
-KIND_VERSION ?= v0.26.0
+KIND_VERSION ?= v0.29.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
 CHAINSAW_VERSION ?= v0.2.12
 
@@ -511,7 +527,7 @@ kustomize: ## Download kustomize locally if necessary.
 
 .PHONY: golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
-	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 
 .PHONY: kind
 kind: ## Download kind locally if necessary.
@@ -545,7 +561,7 @@ TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 go mod init tmp ;\
 echo "Downloading $(2)" ;\
-go get -d $(2)@$(3) ;\
+go get $(2)@$(3) ;\
 GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
 rm -rf $$TMP_DIR ;\
 }
@@ -625,15 +641,20 @@ api-docs: crdoc kustomize
 	cp -r config/crd/* $$TMP_MANIFEST_DIR; \
 	$(MAKE) CRD_OPTIONS=$(CRD_OPTIONS),maxDescLen=1200 MANIFEST_DIR=$$TMP_MANIFEST_DIR/bases manifests ;\
 	TMP_DIR=$$(mktemp -d) ; \
-	$(KUSTOMIZE) build $$TMP_MANIFEST_DIR -o $$TMP_DIR/crd-output.yaml ;\
-	$(CRDOC) --resources $$TMP_DIR/crd-output.yaml --output docs/api.md ;\
+	$(KUSTOMIZE) build $$TMP_MANIFEST_DIR -o $$TMP_DIR ;\
+	mkdir -p docs/api ;\
+	for crdmanifest in $$TMP_DIR/*; do \
+	  filename="$$(basename -s .opentelemetry.io.yaml $$crdmanifest)" ;\
+	  filename="$${filename#apiextensions.k8s.io_v1_customresourcedefinition_}" ;\
+	  $(CRDOC) --resources $$crdmanifest --output docs/api/$$filename.md ;\
+	done;\
 	}
 
 
 .PHONY: chlog-install
 chlog-install: $(CHLOGGEN)
 $(CHLOGGEN): $(LOCALBIN)
-	GOBIN=$(LOCALBIN) go install go.opentelemetry.io/build-tools/chloggen@v0.11.0
+	GOBIN=$(LOCALBIN) go install go.opentelemetry.io/build-tools/chloggen@v0.23.1
 
 FILENAME?=$(shell git branch --show-current)
 .PHONY: chlog-new
@@ -709,3 +730,15 @@ catalog-build: opm bundle-build bundle-push ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	docker push $(CATALOG_IMG)
+
+container-image-archive: IMAGE_LIST_FILE = images-$(VERSION).txt
+container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server
+ifeq ($(IMAGE_ARCHIVE),)
+	$(error "Use make container-image-archive IMAGE_ARCHIVE=<filename>")
+endif
+	@rm -f $(IMAGE_LIST_FILE)
+	@echo "$(IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(TARGETALLOCATOR_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(OPERATOROPAMPBRIDGE_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(BRIDGETESTSERVER_IMG)" >>$(IMAGE_LIST_FILE)
+	xargs -x -n 50 docker save -o "$(IMAGE_ARCHIVE)" <$(IMAGE_LIST_FILE)

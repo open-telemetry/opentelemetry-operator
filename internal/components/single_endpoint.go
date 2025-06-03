@@ -1,16 +1,5 @@
 // Copyright The OpenTelemetry Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
 
 package components
 
@@ -24,6 +13,8 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
+
+const DefaultRecAddress = "0.0.0.0"
 
 var (
 	_ Parser = &GenericParser[*SingleEndpointConfig]{}
@@ -84,11 +75,11 @@ func internalParseSingleEndpoint(logger logr.Logger, name string, failSilently b
 }
 
 func NewSinglePortParserBuilder(name string, port int32) Builder[*SingleEndpointConfig] {
-	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpoint).WithDefaultsApplier(AddressDefaulter).WithDefaultRecAddress("0.0.0.0")
+	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpoint).WithDefaultsApplier(AddressDefaulter).WithDefaultRecAddress(DefaultRecAddress)
 }
 
 func NewSilentSinglePortParserBuilder(name string, port int32) Builder[*SingleEndpointConfig] {
-	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpointSilent).WithDefaultsApplier(AddressDefaulter).WithDefaultRecAddress("0.0.0.0")
+	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpointSilent).WithDefaultsApplier(AddressDefaulter).WithDefaultRecAddress(DefaultRecAddress)
 }
 
 func AddressDefaulter(logger logr.Logger, defaultRecAddr string, port int32, config *SingleEndpointConfig) (map[string]interface{}, error) {
