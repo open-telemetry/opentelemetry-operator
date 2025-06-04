@@ -60,7 +60,7 @@ jobs:
        # should be compatible with them.
        kube-version:
          - "1.23"
-         - "1.32"
+         - "1.33"
        group:
          - e2e
          - e2e-automatic-rbac
