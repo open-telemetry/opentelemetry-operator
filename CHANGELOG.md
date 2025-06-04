@@ -2,6 +2,44 @@
 
 <!-- next version -->
 
+## 0.127.0
+
+### 💡 Enhancements 💡
+
+- `collector`: Move validation to be part of the CRD for sidecar mode (#3319)
+- `target allocator`: Promote the operator.collector.targetallocatorcr feature flag to Beta (#2422)
+  
+  As a result of this change, when the target allocator section is enabled in the Collector CR, 
+  this now creates a TargetAllocator CR instead of generating the manifests directly. Behavior should otherwise be
+  unchanged. You can go back to the previous behaviour by passing the 
+  `--feature-gates=-operator.collector.targetallocatorcr` command-line option to the operator.
+  
+- `collector`: Set the default spec.replicas to 1 in the OpenTelemetryCollector CRD. (#4042)
+  
+  This default no longer relies on the admission webhook.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector, target allocator`: Fix operator RBAC for managing targetallocator finalizers on OpenShift. (#4069)
+  On OpenShift `OwnerReferencesPermissionEnforcement` is enabled by default, which requires the operator to have permissions to remove finalizers from resources it owns.
+  https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+  
+- `target allocator`: Add app.kubernetes.io/managed-by label to Target Allocator CRs created by the Collector CR (#4025)
+- `target allocator`: Fixes an issue where the same target from two different jobs was being allocated for only one job (#4044)
+
+### Components
+
+* [OpenTelemetry Collector - v0.127.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.127.0)
+* [OpenTelemetry Contrib - v0.127.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.127.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.58.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.58.1)
+* [Python - v0.54b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.54b1)
+* [Go - v0.21.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.21.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.126.0
 
 ### 🛑 Breaking changes 🛑
