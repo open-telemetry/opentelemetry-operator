@@ -74,12 +74,12 @@ func TestDiscovery(t *testing.T) {
 	defer cancelFunc()
 
 	go func() {
-		err := d.Run()
-		assert.Error(t, err)
+		runErr := d.Run()
+		assert.Error(t, runErr)
 	}()
 	go func() {
-		err := manager.Run()
-		assert.NoError(t, err)
+		runErr := manager.Run()
+		assert.NoError(t, runErr)
 	}()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
