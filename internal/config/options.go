@@ -9,6 +9,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -49,6 +50,7 @@ type options struct {
 	certManagerAvailability             certmanager.Availability
 	targetAllocatorAvailability         targetallocator.Availability
 	collectorAvailability               collector.Availability
+	opAmpBridgeAvailability             opampbridge.Availability
 	ignoreMissingCollectorCRDs          bool
 	labelsFilter                        []string
 	annotationsFilter                   []string

@@ -26,6 +26,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/autodetectutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -372,6 +373,9 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		TargetAllocatorAvailabilityFunc: func() (targetallocator.Availability, error) {
 			return targetallocator.Available, nil
 		},
+		OpAmpBridgeAvailabilityFunc: func() (opampbridge.Availability, error) {
+			return opampbridge.Available, nil
+		},
 	}
 	cfg := config.New()
 
@@ -381,6 +385,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, autoRBAC.NotAvailable, cfg.CreateRBACPermissions)
 	require.Equal(t, certmanager.NotAvailable, cfg.CertManagerAvailability)
 	require.Equal(t, targetallocator.NotAvailable, cfg.TargetAllocatorAvailability)
+	require.Equal(t, opampbridge.NotAvailable, cfg.OpAmpBridgeAvailability)
 
 	// test
 	err := autodetect.ApplyAutoDetect(mock, &cfg, ctrl.Log.WithName("test"))
@@ -392,6 +397,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, autoRBAC.Available, cfg.CreateRBACPermissions)
 	require.Equal(t, certmanager.Available, cfg.CertManagerAvailability)
 	require.Equal(t, targetallocator.Available, cfg.TargetAllocatorAvailability)
+	require.Equal(t, opampbridge.Available, cfg.OpAmpBridgeAvailability)
 }
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
@@ -403,6 +409,14 @@ type mockAutoDetect struct {
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
 	CollectorAvailabilityFunc       func() (collector.Availability, error)
+	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
+}
+
+func (m *mockAutoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, error) {
+	if m.OpAmpBridgeAvailabilityFunc != nil {
+		return m.OpAmpBridgeAvailabilityFunc()
+	}
+	return opampbridge.NotAvailable, nil
 }
 
 func (m *mockAutoDetect) CollectorAvailability() (collector.Availability, error) {

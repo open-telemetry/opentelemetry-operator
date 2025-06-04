@@ -10,6 +10,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -81,6 +82,8 @@ type Config struct {
 	TargetAllocatorAvailability targetallocator.Availability
 	// CollectorAvailability represents the availability of the OpenTelemetryCollector CRD.
 	CollectorAvailability collector.Availability
+	// OpAmpBridgeAvailability represents the availability of the OpAmpBridge CRD.
+	OpAmpBridgeAvailability opampbridge.Availability
 	// IgnoreMissingCollectorCRDs is true if the operator can ignore missing OpenTelemetryCollector CRDs.
 	IgnoreMissingCollectorCRDs bool
 	// LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
@@ -99,6 +102,7 @@ func New(opts ...Option) Config {
 		certManagerAvailability:           certmanager.NotAvailable,
 		targetAllocatorAvailability:       targetallocator.NotAvailable,
 		collectorAvailability:             collector.NotAvailable,
+		opAmpBridgeAvailability:           opampbridge.NotAvailable,
 		collectorConfigMapEntry:           defaultCollectorConfigMapEntry,
 		targetAllocatorConfigMapEntry:     defaultTargetAllocatorConfigMapEntry,
 		operatorOpAMPBridgeConfigMapEntry: defaultOperatorOpAMPBridgeConfigMapEntry,
@@ -129,6 +133,7 @@ func New(opts ...Option) Config {
 		OperatorOpAMPBridgeConfigMapEntry:   o.operatorOpAMPBridgeConfigMapEntry,
 		logger:                              o.logger,
 		OpenShiftRoutesAvailability:         o.openshiftRoutesAvailability,
+		OpAmpBridgeAvailability:             o.opAmpBridgeAvailability,
 		PrometheusCRAvailability:            o.prometheusCRAvailability,
 		CertManagerAvailability:             o.certManagerAvailability,
 		TargetAllocatorAvailability:         o.targetAllocatorAvailability,

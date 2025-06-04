@@ -47,6 +47,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -94,6 +95,7 @@ type mockAutoDetect struct {
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
 	CollectorCRDAvailabilityFunc    func() (collector.Availability, error)
+	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
 }
 
 func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
@@ -140,6 +142,13 @@ func (m *mockAutoDetect) CollectorAvailability() (collector.Availability, error)
 		return m.CollectorCRDAvailabilityFunc()
 	}
 	return collector.Available, nil
+}
+
+func (m *mockAutoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, error) {
+	if m.OpAmpBridgeAvailabilityFunc != nil {
+		return m.OpAmpBridgeAvailabilityFunc()
+	}
+	return opampbridge.NotAvailable, nil
 }
 
 func TestMain(m *testing.M) {
