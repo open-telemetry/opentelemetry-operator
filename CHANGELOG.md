@@ -8,12 +8,14 @@
 
 - `collector`: Move validation to be part of the CRD for sidecar mode (#3319)
 - `target allocator`: Promote the operator.collector.targetallocatorcr feature flag to Beta (#2422)
+  
   As a result of this change, when the target allocator section is enabled in the Collector CR, 
   this now creates a TargetAllocator CR instead of generating the manifests directly. Behavior should otherwise be
   unchanged. You can go back to the previous behaviour by passing the 
   `--feature-gates=-operator.collector.targetallocatorcr` command-line option to the operator.
   
 - `collector`: Set the default spec.replicas to 1 in the OpenTelemetryCollector CRD. (#4042)
+  
   This default no longer relies on the admission webhook.
   
 
