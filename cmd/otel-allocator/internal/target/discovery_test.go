@@ -74,12 +74,12 @@ func TestDiscovery(t *testing.T) {
 	defer cancelFunc()
 
 	go func() {
-		err := d.Run()
-		assert.Error(t, err)
+		runErr := d.Run()
+		assert.Error(t, runErr)
 	}()
 	go func() {
-		err := manager.Run()
-		assert.NoError(t, err)
+		runErr := manager.Run()
+		assert.NoError(t, runErr)
 	}()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -337,6 +337,106 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 				assert.Equal(t, lastValidConfig, scu.mockCfg)
 			}
 
+		})
+	}
+}
+
+func TestDiscoveryTargetHashing(t *testing.T) {
+	tests := []struct {
+		description string
+		cfg         *promconfig.Config
+	}{
+		{
+			description: "same targets in two different jobs",
+			cfg: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:         "prometheus",
+						HonorTimestamps: true,
+						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeTimeout:   model.Duration(30 * time.Second),
+						MetricsPath:     "/metrics",
+						Scheme:          "http",
+						ServiceDiscoveryConfigs: discovery.Configs{
+							discovery.StaticConfig{
+								{
+									Targets: []model.LabelSet{
+										{"__address__": "prom.domain:9001"},
+										{"__address__": "prom.domain:9002"},
+										{"__address__": "prom.domain:9003"},
+									},
+								},
+							},
+						},
+					},
+					{
+						JobName:         "prometheus2",
+						HonorTimestamps: true,
+						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeTimeout:   model.Duration(30 * time.Second),
+						MetricsPath:     "/metrics2",
+						Scheme:          "http",
+						ServiceDiscoveryConfigs: discovery.Configs{
+							discovery.StaticConfig{
+								{
+									Targets: []model.LabelSet{
+										{"__address__": "prom.domain:9001"},
+										{"__address__": "prom.domain:9002"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	scu := &mockScrapeConfigUpdater{}
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	registry := prometheus.NewRegistry()
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
+	require.NoError(t, err)
+	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
+	results := make(chan []*Item)
+	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, func(targets []*Item) {
+		var result []*Item
+		result = append(result, targets...)
+		results <- result
+	})
+
+	defer manager.Close()
+	defer cancelFunc()
+
+	go func() {
+		runErr := d.Run()
+		assert.Error(t, runErr)
+	}()
+	go func() {
+		runErr := manager.Run()
+		assert.NoError(t, runErr)
+	}()
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			assert.NoError(t, err)
+			assert.True(t, len(tt.cfg.ScrapeConfigs) > 0)
+			err = manager.ApplyConfig(allocatorWatcher.EventSourcePrometheusCR, tt.cfg.ScrapeConfigs)
+			assert.NoError(t, err)
+
+			gotTargets := <-results
+
+			// Verify that all targets have different hashes
+			targetHashes := make(map[ItemHash]bool)
+			for _, target := range gotTargets {
+				hash := target.Hash()
+				if _, exists := targetHashes[hash]; exists {
+					t.Errorf("Duplicate hash %d found for target %s (%s)", hash, target.TargetURL, target.JobName)
+				}
+				targetHashes[hash] = true
+			}
+			assert.Equal(t, len(gotTargets), len(targetHashes), "Number of unique hashes should match number of targets")
 		})
 	}
 }
