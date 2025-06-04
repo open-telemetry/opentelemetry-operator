@@ -88,8 +88,6 @@ type OpenTelemetryCommonFields struct {
 	// ManagementState defines if the CR should be managed by the operator or not.
 	// Default is managed.
 	//
-	// +required
-	// +kubebuilder:validation:Required
 	// +kubebuilder:default:=managed
 	ManagementState ManagementStateType `json:"managementState,omitempty"`
 	// Resources to set on generated pods.
