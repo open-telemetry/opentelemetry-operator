@@ -533,9 +533,10 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			cfg := config.New()
-			cfg.CollectorImage = "collector:v0.0.0"
-			cfg.TargetAllocatorImage = "ta:v0.0.0"
+			cfg := config.Config{
+				CollectorImage:       "collector:v0.0.0",
+				TargetAllocatorImage: "ta:v0.0.0",
+			}
 			cvw := v1beta1.NewCollectorWebhook(
 				logr.Discard(),
 				testScheme,
@@ -1472,9 +1473,10 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			cfg := config.New()
-			cfg.CollectorImage = "collector:v0.0.0"
-			cfg.TargetAllocatorImage = "ta:v0.0.0"
+			cfg := config.Config{
+				CollectorImage:       "collector:v0.0.0",
+				TargetAllocatorImage: "ta:v0.0.0",
+			}
 			cvw := v1beta1.NewCollectorWebhook(
 				logr.Discard(),
 				testScheme,

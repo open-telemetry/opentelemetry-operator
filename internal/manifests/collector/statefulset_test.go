@@ -342,8 +342,9 @@ func TestStatefulSetFilterLabels(t *testing.T) {
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
-	cfg := config.New()
-	cfg.LabelsFilter = []string{"foo*", "app.*.bar"}
+	cfg := config.Config{
+		LabelsFilter: []string{"foo*", "app.*.bar"},
+	}
 
 	params := manifests.Params{
 		OtelCol: otelcol,

@@ -32,11 +32,9 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			name: "should return true when all conditions are met",
 			params: manifests.Params{
 				ErrorAsWarning: true,
-				Config: func() config.Config {
-					cfg := config.New()
-					cfg.CreateRBACPermissions = autoRbac.NotAvailable
-					return cfg
-				}(),
+				Config: config.Config{
+					CreateRBACPermissions: autoRbac.NotAvailable,
+				},
 				Reviewer: &mockReviewer{},
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
@@ -52,11 +50,9 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			name: "should return false when ErrorAsWarning is false",
 			params: manifests.Params{
 				ErrorAsWarning: false,
-				Config: func() config.Config {
-					cfg := config.New()
-					cfg.CreateRBACPermissions = autoRbac.NotAvailable
-					return cfg
-				}(),
+				Config: config.Config{
+					CreateRBACPermissions: autoRbac.NotAvailable,
+				},
 				Reviewer: &mockReviewer{},
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
@@ -72,11 +68,9 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			name: "should return false when RBAC is available",
 			params: manifests.Params{
 				ErrorAsWarning: true,
-				Config: func() config.Config {
-					cfg := config.New()
-					cfg.CreateRBACPermissions = autoRbac.Available
-					return cfg
-				}(),
+				Config: config.Config{
+					CreateRBACPermissions: autoRbac.Available,
+				},
 				Reviewer: &mockReviewer{},
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
@@ -92,11 +86,9 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			name: "should return false when Reviewer is nil",
 			params: manifests.Params{
 				ErrorAsWarning: true,
-				Config: func() config.Config {
-					cfg := config.New()
-					cfg.CreateRBACPermissions = autoRbac.NotAvailable
-					return cfg
-				}(),
+				Config: config.Config{
+					CreateRBACPermissions: autoRbac.NotAvailable,
+				},
 				Reviewer: nil,
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
@@ -112,11 +104,9 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			name: "should return false when ServiceAccount is empty",
 			params: manifests.Params{
 				ErrorAsWarning: true,
-				Config: func() config.Config {
-					cfg := config.New()
-					cfg.CreateRBACPermissions = autoRbac.NotAvailable
-					return cfg
-				}(),
+				Config: config.Config{
+					CreateRBACPermissions: autoRbac.Available,
+				},
 				Reviewer: &mockReviewer{},
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
@@ -223,11 +213,9 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				},
-				Config: func() config.Config {
-					cfg := config.New()
-					cfg.CreateRBACPermissions = autoRbac.Available
-					return cfg
-				}(),
+				Config: config.Config{
+					CreateRBACPermissions: autoRbac.Available,
+				},
 			},
 			expectedObjects: 7,
 			wantErr:         false,
@@ -246,11 +234,9 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				},
-				Config: func() config.Config {
-					cfg := config.New()
-					cfg.PrometheusCRAvailability = prometheus.Available
-					return cfg
-				}(),
+				Config: config.Config{
+					PrometheusCRAvailability: prometheus.Available,
+				},
 			},
 			expectedObjects: 6,
 			wantErr:         false,
@@ -285,11 +271,9 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				},
-				Config: func() config.Config {
-					cfg := config.New()
-					cfg.PrometheusCRAvailability = prometheus.Available
-					return cfg
-				}(),
+				Config: config.Config{
+					PrometheusCRAvailability: prometheus.Available,
+				},
 			},
 			expectedObjects: 9,
 			wantErr:         false,
@@ -327,11 +311,7 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				},
-				Config: func() config.Config {
-					cfg := config.New()
-					cfg.PrometheusCRAvailability = prometheus.Available
-					return cfg
-				}(),
+				Config: config.Config{PrometheusCRAvailability: prometheus.Available},
 			},
 			expectedObjects: 9,
 			wantErr:         true,

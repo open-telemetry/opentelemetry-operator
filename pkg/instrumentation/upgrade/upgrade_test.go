@@ -43,21 +43,22 @@ func TestUpgrade(t *testing.T) {
 		},
 	}
 
-	cfg := config.New()
-	cfg.AutoInstrumentationJavaImage = "java:1"
-	cfg.AutoInstrumentationNodeJSImage = "nodejs:1"
-	cfg.AutoInstrumentationPythonImage = "python:1"
-	cfg.AutoInstrumentationDotNetImage = "dotnet:1"
-	cfg.AutoInstrumentationGoImage = "go:1"
-	cfg.AutoInstrumentationApacheHttpdImage = "apache-httpd:1"
-	cfg.AutoInstrumentationNginxImage = "nginx:1"
-	cfg.EnableApacheHttpdInstrumentation = true
-	cfg.EnableDotNetInstrumentation = true
-	cfg.EnableGoAutoInstrumentation = true
-	cfg.EnableNginxAutoInstrumentation = true
-	cfg.EnablePythonAutoInstrumentation = true
-	cfg.EnableNodeJSAutoInstrumentation = true
-	cfg.EnableJavaAutoInstrumentation = true
+	cfg := config.Config{
+		AutoInstrumentationJavaImage:        "java:1",
+		AutoInstrumentationNodeJSImage:      "nodejs:1",
+		AutoInstrumentationPythonImage:      "python:1",
+		AutoInstrumentationDotNetImage:      "dotnet:1",
+		AutoInstrumentationGoImage:          "go:1",
+		AutoInstrumentationApacheHttpdImage: "apache-httpd:1",
+		AutoInstrumentationNginxImage:       "nginx:1",
+		EnableApacheHttpdInstrumentation:    true,
+		EnableDotNetInstrumentation:         true,
+		EnableGoAutoInstrumentation:         true,
+		EnableNginxAutoInstrumentation:      true,
+		EnablePythonAutoInstrumentation:     true,
+		EnableNodeJSAutoInstrumentation:     true,
+		EnableJavaAutoInstrumentation:       true,
+	}
 	err = v1alpha1.NewInstrumentationWebhook(
 		logr.Discard(),
 		testScheme,
@@ -74,21 +75,22 @@ func TestUpgrade(t *testing.T) {
 	err = k8sClient.Create(context.Background(), inst)
 	require.NoError(t, err)
 
-	cfg = config.New()
-	cfg.AutoInstrumentationJavaImage = "java:2"
-	cfg.AutoInstrumentationNodeJSImage = "nodejs:2"
-	cfg.AutoInstrumentationPythonImage = "python:2"
-	cfg.AutoInstrumentationDotNetImage = "dotnet:2"
-	cfg.AutoInstrumentationGoImage = "go:2"
-	cfg.AutoInstrumentationApacheHttpdImage = "apache-httpd:2"
-	cfg.AutoInstrumentationNginxImage = "nginx:2"
-	cfg.EnableApacheHttpdInstrumentation = true
-	cfg.EnableDotNetInstrumentation = true
-	cfg.EnableGoAutoInstrumentation = true
-	cfg.EnableNginxAutoInstrumentation = true
-	cfg.EnablePythonAutoInstrumentation = true
-	cfg.EnableNodeJSAutoInstrumentation = true
-	cfg.EnableJavaAutoInstrumentation = true
+	cfg = config.Config{
+		AutoInstrumentationJavaImage:        "java:2",
+		AutoInstrumentationNodeJSImage:      "nodejs:2",
+		AutoInstrumentationPythonImage:      "python:2",
+		AutoInstrumentationDotNetImage:      "dotnet:2",
+		AutoInstrumentationGoImage:          "go:2",
+		AutoInstrumentationApacheHttpdImage: "apache-httpd:2",
+		AutoInstrumentationNginxImage:       "nginx:2",
+		EnableApacheHttpdInstrumentation:    true,
+		EnableDotNetInstrumentation:         true,
+		EnableGoAutoInstrumentation:         true,
+		EnableNginxAutoInstrumentation:      true,
+		EnablePythonAutoInstrumentation:     true,
+		EnableNodeJSAutoInstrumentation:     true,
+		EnableJavaAutoInstrumentation:       true,
+	}
 	up := NewInstrumentationUpgrade(k8sClient, ctrl.Log.WithName("instrumentation-upgrade"), &record.FakeRecorder{}, cfg)
 
 	err = up.ManagedInstances(context.Background())

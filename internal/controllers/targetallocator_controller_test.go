@@ -30,7 +30,9 @@ var testLogger = logf.Log.WithName("opamp-bridge-controller-unit-tests")
 func TestNewObjectsOnReconciliation_TargetAllocator(t *testing.T) {
 	// prepare
 	cfg := config.Config{
-		TargetAllocatorImage: "default-ta",
+		TargetAllocatorImage:          "default-ta",
+		TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
+		CollectorConfigMapEntry:       "collector.yaml",
 	}
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewTargetAllocatorReconciler(

@@ -61,12 +61,9 @@ func TestInjectGoSDK(t *testing.T) {
 				},
 			},
 			err: fmt.Errorf("go instrumentation cannot be injected into a pod, multiple containers configured"),
-			config: func() config.Config {
-				cfg := config.Config{
-					EnableMultiInstrumentation: true,
-				}
-				return cfg
-			}(),
+			config: config.Config{
+				EnableMultiInstrumentation: true,
+			},
 		},
 		{
 			name: "using container-names",

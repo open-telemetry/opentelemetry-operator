@@ -57,8 +57,9 @@ func TestContainerNewDefault(t *testing.T) {
 			Config: mustUnmarshalToConfig(t, defaultConfig),
 		},
 	}
-	cfg := config.New()
-	cfg.CollectorImage = "default-image"
+	cfg := config.Config{
+		CollectorImage: "default-image",
+	}
 
 	// test
 	c := Container(cfg, testLogger, otelcol, true)
@@ -77,8 +78,9 @@ func TestContainerWithImageOverridden(t *testing.T) {
 			},
 		},
 	}
-	cfg := config.New()
-	cfg.CollectorImage = "default-image"
+	cfg := config.Config{
+		CollectorImage: "default-image",
+	}
 	// test
 	c := Container(cfg, testLogger, otelcol, true)
 
@@ -378,8 +380,9 @@ service:
 				},
 			}
 
-			cfg := config.New()
-			cfg.CollectorImage = "default-image"
+			cfg := config.Config{
+				CollectorImage: "default-image",
+			}
 
 			// test
 			c := Container(cfg, testLogger, otelcol, true)

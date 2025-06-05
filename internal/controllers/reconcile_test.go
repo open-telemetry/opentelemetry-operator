@@ -613,10 +613,12 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			defer cancel()
 
 			cfg := config.Config{
-				CollectorImage:              "default-collector",
-				TargetAllocatorImage:        "default-ta-allocator",
-				OpenShiftRoutesAvailability: openshift.RoutesAvailable,
-				PrometheusCRAvailability:    prometheus.Available,
+				CollectorImage:                "default-collector",
+				TargetAllocatorImage:          "default-ta-allocator",
+				OpenShiftRoutesAvailability:   openshift.RoutesAvailable,
+				PrometheusCRAvailability:      prometheus.Available,
+				TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
+				CollectorConfigMapEntry:       "collector.yaml",
 			}
 			reconciler := createTestReconciler(t, testCtx, cfg)
 
@@ -1085,9 +1087,12 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 			testContext := context.Background()
 			nsn := types.NamespacedName{Name: tt.args.params.OpAMPBridge.Name, Namespace: tt.args.params.OpAMPBridge.Namespace}
 			cfg := config.Config{
-				CollectorImage:           "default-collector",
-				TargetAllocatorImage:     "default-ta-allocator",
-				OperatorOpAMPBridgeImage: "default-opamp-bridge",
+				CollectorImage:                    "default-collector",
+				TargetAllocatorImage:              "default-ta-allocator",
+				OperatorOpAMPBridgeImage:          "default-opamp-bridge",
+				OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
+				CollectorConfigMapEntry:           "collector.yaml",
+				TargetAllocatorConfigMapEntry:     "targetallocator.yaml",
 			}
 			reconciler := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
 				Client:   k8sClient,
@@ -1231,9 +1236,11 @@ service:
 	defer cancel()
 
 	cfg := config.Config{
-		CollectorImage:        "default-collector",
-		TargetAllocatorImage:  "default-ta-allocator",
-		CreateRBACPermissions: autoRBAC.Available,
+		CollectorImage:                    "default-collector",
+		TargetAllocatorImage:              "default-ta-allocator",
+		CreateRBACPermissions:             autoRBAC.Available,
+		CollectorConfigMapEntry:           "collector.yaml",
+		OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
 	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
@@ -1286,8 +1293,10 @@ func TestUpgrade(t *testing.T) {
 	defer cancel()
 
 	cfg := config.Config{
-		CollectorImage:       "default-collector",
-		TargetAllocatorImage: "default-ta-allocator",
+		CollectorImage:                "default-collector",
+		TargetAllocatorImage:          "default-ta-allocator",
+		CollectorConfigMapEntry:       "collector.yaml",
+		TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
 	}
 	reconciler := createTestReconcilerWithVersion(
 		t, testCtx,

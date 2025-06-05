@@ -116,8 +116,9 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 				Name: "test-targetallocator",
 			},
 		}
-		cfg := config.New()
-		cfg.CertManagerAvailability = certmanager.Available
+		cfg := config.Config{
+			CertManagerAvailability: certmanager.Available,
+		}
 
 		volumes := Volumes(cfg, ta)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAServerCertificate(ta.Name)})

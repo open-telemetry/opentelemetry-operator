@@ -248,8 +248,9 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 			},
 		},
 	}
-	cfg := config.New()
-	cfg.TargetAllocatorImage = "default-image"
+	cfg := config.Config{
+		TargetAllocatorImage: "default-image",
+	}
 
 	expected := corev1.Container{
 		Name:  "ta-container",

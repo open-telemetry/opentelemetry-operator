@@ -93,7 +93,7 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 	}
 }
 
-func newParams(taContainerImage string, file string, cfgFn func(*config.Config)) (manifests.Params, error) {
+func newParams(taContainerImage string, file string, cfg *config.Config) (manifests.Params, error) {
 	replicas := int32(1)
 	var configYAML []byte
 	var err error
@@ -113,18 +113,17 @@ func newParams(taContainerImage string, file string, cfgFn func(*config.Config))
 		return manifests.Params{}, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
-	cfg := config.Config{
-		CollectorImage:              defaultCollectorImage,
-		TargetAllocatorImage:        defaultTaAllocationImage,
-		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
-		PrometheusCRAvailability:    prometheus.Available,
-	}
-	if cfgFn != nil {
-		cfgFn(&cfg)
+	if cfg == nil {
+		cfg = &config.Config{
+			CollectorImage:              defaultCollectorImage,
+			TargetAllocatorImage:        defaultTaAllocationImage,
+			OpenShiftRoutesAvailability: openshift.RoutesAvailable,
+			PrometheusCRAvailability:    prometheus.Available,
+		}
 	}
 
 	params := manifests.Params{
-		Config: cfg,
+		Config: *cfg,
 		OtelCol: v1beta1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",

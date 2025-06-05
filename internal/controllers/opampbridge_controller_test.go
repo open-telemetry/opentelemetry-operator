@@ -48,7 +48,8 @@ var opampBridgeMockAutoDetector = &mockAutoDetect{
 func TestNewObjectsOnReconciliation_OpAMPBridge(t *testing.T) {
 	// prepare
 	cfg := config.Config{
-		OperatorOpAMPBridgeImage: "default-opamp-bridge",
+		OperatorOpAMPBridgeImage:          "default-opamp-bridge",
+		OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
 	}
 	nsn := types.NamespacedName{Name: "my-instance", Namespace: "default"}
 	reconciler := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
