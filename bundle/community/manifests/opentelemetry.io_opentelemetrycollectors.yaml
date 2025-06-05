@@ -9281,7 +9281,6 @@ spec:
                 x-kubernetes-list-type: atomic
             required:
             - config
-            - managementState
             type: object
             x-kubernetes-validations:
             - message: the OpenTelemetry Collector mode is set to sidecar, which does

@@ -3391,8 +3391,6 @@ spec:
                   type: object
                 type: array
                 x-kubernetes-list-type: atomic
-            required:
-            - managementState
             type: object
           status:
             properties:
