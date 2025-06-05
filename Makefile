@@ -252,8 +252,8 @@ manifests: controller-gen
 # Run tests
 # setup-envtest uses KUBEBUILDER_ASSETS which points to a directory with binaries (api-server, etcd and kubectl)
 .PHONY: test
-test: envtest
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" go test ${GOTEST_OPTS} ./...
+test: envtest gotestsum
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" $(GOTESTSUM) -- ${GOTEST_OPTS} ./...
 
 .PHONY: precommit
 precommit: fmt vet lint test ensure-update-is-noop
@@ -506,6 +506,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 CHLOGGEN ?= $(LOCALBIN)/chloggen
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 CHAINSAW ?= $(LOCALBIN)/chainsaw
+GOTESTSUM ?= $(LOCALBIN)/gotestsum
 
 # renovate: datasource=go depName=sigs.k8s.io/kustomize/kustomize/v5
 KUSTOMIZE_VERSION ?= v5.6.0
@@ -517,6 +518,8 @@ GOLANGCI_LINT_VERSION ?= v2.1.6
 KIND_VERSION ?= v0.29.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
 CHAINSAW_VERSION ?= v0.2.12
+# renovate: datasource=go depName=gotest.tools/gotestsum
+GOTESTSUM_VERSION ?= v1.12.2
 
 .PHONY: install-tools
 install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kind operator-sdk chainsaw
@@ -551,6 +554,10 @@ crdoc: ## Download crdoc locally if necessary.
 .PHONY: chainsaw
 chainsaw: ## Find or download chainsaw
 	$(call go-get-tool,$(CHAINSAW), github.com/kyverno/chainsaw,$(CHAINSAW_VERSION))
+
+.PHONY: gotestsum
+gotestsum: ## Find or download gotestsum
+	$(call go-get-tool,$(GOTESTSUM), gotest.tools/gotestsum,$(GOTESTSUM_VERSION))
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
