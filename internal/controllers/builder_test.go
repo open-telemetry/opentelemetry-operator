@@ -945,9 +945,10 @@ service:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := config.New()
-			cfg.CollectorImage = "default-collector"
-			cfg.TargetAllocatorImage = "default-ta-allocator"
+			cfg := config.Config{
+				CollectorImage:       "default-collector",
+				TargetAllocatorImage: "default-ta-allocator",
+			}
 			params := manifests.Params{
 				Log:     logr.Discard(),
 				Config:  cfg,
@@ -1170,10 +1171,11 @@ endpoint: ws://opamp-server:4320/v1/opamp
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := config.New()
-			cfg.CollectorImage = "default-collector"
-			cfg.TargetAllocatorImage = "default-ta-allocator"
-			cfg.OperatorOpAMPBridgeImage = "default-opamp-bridge"
+			cfg := config.Config{
+				CollectorImage:           "default-collector",
+				TargetAllocatorImage:     "default-ta-allocator",
+				OperatorOpAMPBridgeImage: "default-opamp-bridge",
+			}
 			reconciler := NewOpAMPBridgeReconciler(OpAMPBridgeReconcilerParams{
 				Log:    logr.Discard(),
 				Config: cfg,
@@ -1726,9 +1728,10 @@ service:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := config.New()
-			cfg.CollectorImage = "default-collector"
-			cfg.TargetAllocatorImage = "default-ta-allocator"
+			cfg := config.Config{
+				CollectorImage:       "default-collector",
+				TargetAllocatorImage: "default-ta-allocator",
+			}
 			params := manifests.Params{
 				Log:     logr.Discard(),
 				Config:  cfg,
@@ -3115,9 +3118,10 @@ prometheus_cr:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := config.New()
-			cfg.CollectorImage = "default-collector"
-			cfg.TargetAllocatorImage = "default-ta-allocator"
+			cfg := config.Config{
+				CollectorImage:       "default-collector",
+				TargetAllocatorImage: "default-ta-allocator",
+			}
 			if tt.cfgFn != nil {
 				tt.cfgFn(&cfg)
 			}

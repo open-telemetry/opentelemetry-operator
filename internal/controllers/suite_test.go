@@ -413,9 +413,10 @@ func testCollectorWithPDB(minAvailable, maxUnavailable int32) v1alpha1.OpenTelem
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
 
-	configuration := config.New()
-	configuration.CollectorImage = defaultCollectorImage
-	configuration.TargetAllocatorImage = defaultTaAllocationImage
+	configuration := config.Config{
+		CollectorImage:       defaultCollectorImage,
+		TargetAllocatorImage: defaultTaAllocationImage,
+	}
 	err = autodetect.ApplyAutoDetect(mockAutoDetector, &configuration, ctrl.Log.WithName("autodetect"))
 	if err != nil {
 		logger.Error(err, "configuration.autodetect failed")
@@ -466,8 +467,9 @@ func testCollectorWithPDB(minAvailable, maxUnavailable int32) v1alpha1.OpenTelem
 }
 
 func opampBridgeParams() manifests.Params {
-	cfg := config.New()
-	cfg.OperatorOpAMPBridgeImage = defaultOpAMPBridgeImage
+	cfg := config.Config{
+		OperatorOpAMPBridgeImage: defaultOpAMPBridgeImage,
+	}
 	return manifests.Params{
 		Config: cfg,
 		Client: k8sClient,

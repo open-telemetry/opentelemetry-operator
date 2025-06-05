@@ -612,11 +612,12 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			testCtx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			cfg := config.New()
-			cfg.CollectorImage = "default-collector"
-			cfg.TargetAllocatorImage = "default-ta-allocator"
-			cfg.OpenShiftRoutesAvailability = openshift.RoutesAvailable
-			cfg.PrometheusCRAvailability = prometheus.Available
+			cfg := config.Config{
+				CollectorImage:              "default-collector",
+				TargetAllocatorImage:        "default-ta-allocator",
+				OpenShiftRoutesAvailability: openshift.RoutesAvailable,
+				PrometheusCRAvailability:    prometheus.Available,
+			}
 			reconciler := createTestReconciler(t, testCtx, cfg)
 
 			assert.True(t, len(tt.want) > 0, "must have at least one group of checks to run")
@@ -781,11 +782,12 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 
 	testCtx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
-	cfg := config.New()
-	cfg.CollectorImage = "default-collector"
-	cfg.TargetAllocatorImage = "default-ta-allocator"
-	cfg.OpenShiftRoutesAvailability = openshift.RoutesAvailable
-	cfg.PrometheusCRAvailability = prometheus.Available
+	cfg := config.Config{
+		CollectorImage:              "default-collector",
+		TargetAllocatorImage:        "default-ta-allocator",
+		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
+		PrometheusCRAvailability:    prometheus.Available,
+	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
 	// the base query for the underlying objects
@@ -889,10 +891,11 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 
 	testCtx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
-	cfg := config.New()
-	cfg.CollectorImage = "default-collector"
-	cfg.TargetAllocatorImage = "default-ta-allocator"
-	cfg.OpenShiftRoutesAvailability = openshift.RoutesAvailable
+	cfg := config.Config{
+		CollectorImage:              "default-collector",
+		TargetAllocatorImage:        "default-ta-allocator",
+		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
+	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
 	nsn := types.NamespacedName{Name: collector.Name, Namespace: collector.Namespace}
@@ -1081,10 +1084,11 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testContext := context.Background()
 			nsn := types.NamespacedName{Name: tt.args.params.OpAMPBridge.Name, Namespace: tt.args.params.OpAMPBridge.Namespace}
-			cfg := config.New()
-			cfg.CollectorImage = "default-collector"
-			cfg.TargetAllocatorImage = "default-ta-allocator"
-			cfg.OperatorOpAMPBridgeImage = "default-opamp-bridge"
+			cfg := config.Config{
+				CollectorImage:           "default-collector",
+				TargetAllocatorImage:     "default-ta-allocator",
+				OperatorOpAMPBridgeImage: "default-opamp-bridge",
+			}
 			reconciler := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
 				Client:   k8sClient,
 				Log:      logger,
@@ -1226,10 +1230,11 @@ service:
 	testCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfg := config.New()
-	cfg.CollectorImage = "default-collector"
-	cfg.TargetAllocatorImage = "default-ta-allocator"
-	cfg.CreateRBACPermissions = autoRBAC.Available
+	cfg := config.Config{
+		CollectorImage:        "default-collector",
+		TargetAllocatorImage:  "default-ta-allocator",
+		CreateRBACPermissions: autoRBAC.Available,
+	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
 
 	nsn := types.NamespacedName{Name: otelcol.Name, Namespace: otelcol.Namespace}
@@ -1280,9 +1285,10 @@ func TestUpgrade(t *testing.T) {
 	testCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfg := config.New()
-	cfg.CollectorImage = "default-collector"
-	cfg.TargetAllocatorImage = "default-ta-allocator"
+	cfg := config.Config{
+		CollectorImage:       "default-collector",
+		TargetAllocatorImage: "default-ta-allocator",
+	}
 	reconciler := createTestReconcilerWithVersion(
 		t, testCtx,
 		cfg,

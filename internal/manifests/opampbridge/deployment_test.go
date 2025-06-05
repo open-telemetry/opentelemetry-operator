@@ -226,8 +226,9 @@ func TestDeploymentFilterLabels(t *testing.T) {
 		Spec: v1alpha1.OpAMPBridgeSpec{},
 	}
 
-	cfg := config.New()
-	cfg.LabelsFilter = []string{"foo*", "app.*.bar"}
+	cfg := config.Config{
+		LabelsFilter: []string{"foo*", "app.*.bar"},
+	}
 
 	params := manifests.Params{
 		Config:      cfg,
@@ -258,8 +259,9 @@ func TestDeploymentFilterAnnotations(t *testing.T) {
 		Spec: v1alpha1.OpAMPBridgeSpec{},
 	}
 
-	cfg := config.New()
-	cfg.AnnotationsFilter = []string{"foo*", "app.*.bar"}
+	cfg := config.Config{
+		AnnotationsFilter: []string{"foo*", "app.*.bar"},
+	}
 
 	params := manifests.Params{
 		Config:      cfg,

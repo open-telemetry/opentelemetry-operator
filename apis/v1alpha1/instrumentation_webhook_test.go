@@ -29,17 +29,15 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 		{
 			name:  "default images",
 			input: &Instrumentation{},
-			config: func() config.Config {
-				cfg := config.New()
-				cfg.AutoInstrumentationJavaImage = "java-img:1"
-				cfg.AutoInstrumentationNodeJSImage = "nodejs-img:1"
-				cfg.AutoInstrumentationPythonImage = "python-img:1"
-				cfg.AutoInstrumentationDotNetImage = "dotnet-img:1"
-				cfg.AutoInstrumentationGoImage = "go-img:1"
-				cfg.AutoInstrumentationNginxImage = "nginx-img:1"
-				cfg.AutoInstrumentationApacheHttpdImage = "apache-httpd-img:1"
-				return cfg
-			}(),
+			config: config.Config{
+				AutoInstrumentationJavaImage:        "java-img:1",
+				AutoInstrumentationNodeJSImage:      "nodejs-img:1",
+				AutoInstrumentationPythonImage:      "python-img:1",
+				AutoInstrumentationDotNetImage:      "dotnet-img:1",
+				AutoInstrumentationGoImage:          "go-img:1",
+				AutoInstrumentationNginxImage:       "nginx-img:1",
+				AutoInstrumentationApacheHttpdImage: "apache-httpd-img:1",
+			},
 			verify: func(t *testing.T, inst *Instrumentation) {
 				assert.Equal(t, "java-img:1", inst.Spec.Java.Image)
 				assert.Equal(t, "nodejs-img:1", inst.Spec.NodeJS.Image)
@@ -85,17 +83,15 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 					},
 				},
 			},
-			config: func() config.Config {
-				cfg := config.New()
-				cfg.AutoInstrumentationJavaImage = "java-img:1"
-				cfg.AutoInstrumentationNodeJSImage = "nodejs-img:1"
-				cfg.AutoInstrumentationPythonImage = "python-img:1"
-				cfg.AutoInstrumentationDotNetImage = "dotnet-img:1"
-				cfg.AutoInstrumentationGoImage = "go-img:1"
-				cfg.AutoInstrumentationNginxImage = "nginx-img:1"
-				cfg.AutoInstrumentationApacheHttpdImage = "apache-httpd-img:1"
-				return cfg
-			}(),
+			config: config.Config{
+				AutoInstrumentationJavaImage:        "java-img:1",
+				AutoInstrumentationNodeJSImage:      "nodejs-img:1",
+				AutoInstrumentationPythonImage:      "python-img:1",
+				AutoInstrumentationDotNetImage:      "dotnet-img:1",
+				AutoInstrumentationGoImage:          "go-img:1",
+				AutoInstrumentationNginxImage:       "nginx-img:1",
+				AutoInstrumentationApacheHttpdImage: "apache-httpd-img:1",
+			},
 			verify: func(t *testing.T, inst *Instrumentation) {
 				assert.Equal(t, "custom-java-img:2", inst.Spec.Java.Image)
 				assert.Equal(t, "custom-nodejs-img:2", inst.Spec.NodeJS.Image)

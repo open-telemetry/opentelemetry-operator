@@ -47,10 +47,11 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 	if err != nil {
 		fmt.Printf("Error unmarshalling YAML: %v", err)
 	}
-	cfg2 := config.New()
-	cfg2.CollectorImage = defaultCollectorImage
-	cfg2.TargetAllocatorImage = defaultTaAllocationImage
-	cfg2.PrometheusCRAvailability = prometheus.Available
+	cfg2 := config.Config{
+		CollectorImage:           defaultCollectorImage,
+		TargetAllocatorImage:     defaultTaAllocationImage,
+		PrometheusCRAvailability: prometheus.Available,
+	}
 
 	return manifests.Params{
 		Config: cfg2,
@@ -112,11 +113,12 @@ func newParams(taContainerImage string, file string, cfgFn func(*config.Config))
 		return manifests.Params{}, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
-	cfg := config.New()
-	cfg.CollectorImage = defaultCollectorImage
-	cfg.TargetAllocatorImage = defaultTaAllocationImage
-	cfg.OpenShiftRoutesAvailability = openshift.RoutesAvailable
-	cfg.PrometheusCRAvailability = prometheus.Available
+	cfg := config.Config{
+		CollectorImage:              defaultCollectorImage,
+		TargetAllocatorImage:        defaultTaAllocationImage,
+		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
+		PrometheusCRAvailability:    prometheus.Available,
+	}
 	if cfgFn != nil {
 		cfgFn(&cfg)
 	}

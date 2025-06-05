@@ -75,9 +75,10 @@ func TestValidate(t *testing.T) {
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
-		cfg := config.New()
-		cfg.CollectorImage = "default-collector"
-		cfg.TargetAllocatorImage = "default-ta-allocator"
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		params := manifests.Params{
 			Log:     logr.Discard(),
 			Config:  cfg,
@@ -93,9 +94,10 @@ func TestValidate(t *testing.T) {
 
 	for _, tt := range tests {
 		test := tt
-		cfg := config.New()
-		cfg.CollectorImage = "collector:v0.0.0"
-		cfg.TargetAllocatorImage = "ta:v0.0.0"
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		webhook := v1beta1.NewCollectorWebhook(
 			logr.Discard(),
 			testScheme,
@@ -511,9 +513,10 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
-		cfg := config.New()
-		cfg.CollectorImage = "default-collector"
-		cfg.TargetAllocatorImage = "default-ta-allocator"
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		params := manifests.Params{
 			Log:     logr.Discard(),
 			Config:  cfg,
@@ -1380,9 +1383,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
-		cfg := config.New()
-		cfg.CollectorImage = "default-collector"
-		cfg.TargetAllocatorImage = "default-ta-allocator"
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		params := manifests.Params{
 			Log:     logr.Discard(),
 			Config:  cfg,
@@ -1399,9 +1403,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			cfg := config.New()
-			cfg.CollectorImage = "collector:v0.0.0"
-			cfg.TargetAllocatorImage = "ta:v0.0.0"
+			cfg := config.Config{
+				CollectorImage:       "default-collector",
+				TargetAllocatorImage: "default-ta-allocator",
+			}
 			cvw := v1beta1.NewCollectorWebhook(
 				logr.Discard(),
 				testScheme,
@@ -1447,9 +1452,10 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
-		cfg := config.New()
-		cfg.CollectorImage = "default-collector"
-		cfg.TargetAllocatorImage = "default-ta-allocator"
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		params := manifests.Params{
 			Log:     logr.Discard(),
 			Config:  cfg,

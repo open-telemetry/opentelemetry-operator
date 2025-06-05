@@ -374,8 +374,9 @@ func TestStatefulSetFilterAnnotations(t *testing.T) {
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
-	cfg := config.New()
-	cfg.AnnotationsFilter = []string{"foo*", "app.*.bar"}
+	cfg := config.Config{
+		AnnotationsFilter: []string{"foo*", "app.*.bar"},
+	}
 
 	params := manifests.Params{
 		OtelCol: otelcol,

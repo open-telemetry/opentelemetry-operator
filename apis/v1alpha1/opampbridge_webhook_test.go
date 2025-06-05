@@ -94,10 +94,11 @@ func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			cfg := config.New()
-			cfg.CollectorImage = "collector:v0.0.0"
-			cfg.TargetAllocatorImage = "ta:v0.0.0"
-			cfg.OperatorOpAMPBridgeImage = "opampbridge:v0.0.0"
+			cfg := config.Config{
+				CollectorImage:           "collector:v0.0.0",
+				TargetAllocatorImage:     "ta:v0.0.0",
+				OperatorOpAMPBridgeImage: "opampbridge:v0.0.0",
+			}
 			webhook := &OpAMPBridgeWebhook{
 				logger: logr.Discard(),
 				scheme: testScheme,
@@ -281,10 +282,11 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			cfg := config.New()
-			cfg.CollectorImage = "collector:v0.0.0"
-			cfg.TargetAllocatorImage = "ta:v0.0.0"
-			cfg.OperatorOpAMPBridgeImage = "opampbridge:v0.0.0"
+			cfg := config.Config{
+				CollectorImage:           "collector:v0.0.0",
+				TargetAllocatorImage:     "ta:v0.0.0",
+				OperatorOpAMPBridgeImage: "opampbridge:v0.0.0",
+			}
 			webhook := &OpAMPBridgeWebhook{
 				logger: logr.Discard(),
 				scheme: testScheme,

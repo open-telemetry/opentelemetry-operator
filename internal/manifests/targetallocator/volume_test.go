@@ -71,8 +71,9 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 				Name: "test-targetallocator",
 			},
 		}
-		cfg := config.New()
-		cfg.CertManagerAvailability = certmanager.Available
+		cfg := config.Config{
+			CertManagerAvailability: certmanager.Available,
+		}
 
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
@@ -97,8 +98,9 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 				Name: "test-targetallocator",
 			},
 		}
-		cfg := config.New()
-		cfg.CertManagerAvailability = certmanager.NotAvailable
+		cfg := config.Config{
+			CertManagerAvailability: certmanager.NotAvailable,
+		}
 
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})

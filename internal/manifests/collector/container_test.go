@@ -849,8 +849,9 @@ func mustUnmarshalToConfig(t *testing.T, config string) v1beta1.Config {
 func TestContainerWithCertManagerAvailable(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{}
 
-	cfg := config.New()
-	cfg.CertManagerAvailability = certmanager.Available
+	cfg := config.Config{
+		CertManagerAvailability: certmanager.Available,
+	}
 
 	flgs := featuregate.Flags(colfg.GlobalRegistry())
 	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
@@ -871,8 +872,9 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 func TestContainerWithFeaturegateEnabledButTADisabled(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{}
 
-	cfg := config.New()
-	cfg.CertManagerAvailability = certmanager.Available
+	cfg := config.Config{
+		CertManagerAvailability: certmanager.Available,
+	}
 
 	flgs := featuregate.Flags(colfg.GlobalRegistry())
 	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
