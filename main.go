@@ -418,15 +418,17 @@ func main() {
 		}
 	}
 
-	if err = controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("OpAMPBridge"),
-		Scheme:   mgr.GetScheme(),
-		Config:   cfg,
-		Recorder: mgr.GetEventRecorderFor("opamp-bridge"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OpAMPBridge")
-		os.Exit(1)
+	if cfg.OpAmpBridgeAvailability == opampbridge.Available {
+		if err = controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
+			Client:   mgr.GetClient(),
+			Log:      ctrl.Log.WithName("controllers").WithName("OpAMPBridge"),
+			Scheme:   mgr.GetScheme(),
+			Config:   cfg,
+			Recorder: mgr.GetEventRecorderFor("opamp-bridge"),
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "OpAMPBridge")
+			os.Exit(1)
+		}
 	}
 
 	if cfg.PrometheusCRAvailability == prometheus.Available && createSMOperatorMetrics {
