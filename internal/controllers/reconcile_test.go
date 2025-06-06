@@ -1467,6 +1467,7 @@ func getAllOwnedResources(
 ) ([]client.Object, error) {
 	ownedResourceTypes := reconciler.GetOwnedResourceTypes()
 	allResources := []client.Object{}
+	copyOfOwner := *owner
 	for _, resourceType := range ownedResourceTypes {
 		list := &unstructured.UnstructuredList{}
 		gvk, err := apiutil.GVKForObject(resourceType, k8sClient.Scheme())
@@ -1484,7 +1485,7 @@ func getAllOwnedResources(
 			}
 
 			newObj := obj
-			if !IsOwnedBy(&newObj, owner) {
+			if !IsOwnedBy(&newObj, &copyOfOwner) {
 				continue
 			}
 			allResources = append(allResources, &newObj)

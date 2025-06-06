@@ -4,11 +4,12 @@
 package collector
 
 import (
+	"context"
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -23,19 +24,13 @@ const (
 	defaultMinUpdateInterval = time.Second * 5
 )
 
-var (
-	collectorsDiscovered = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "opentelemetry_allocator_collectors_discovered",
-		Help: "Number of collectors discovered.",
-	})
-)
-
 type Watcher struct {
 	log                          logr.Logger
 	k8sClient                    kubernetes.Interface
 	close                        chan struct{}
 	minUpdateInterval            time.Duration
 	collectorNotReadyGracePeriod time.Duration
+	collectorsDiscovered         metric.Int64Gauge
 }
 
 func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config, collectorNotReadyGracePeriod time.Duration) (*Watcher, error) {
@@ -44,12 +39,18 @@ func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config, collectorN
 		return &Watcher{}, err
 	}
 
+	meter := otel.GetMeterProvider().Meter("targetallocator")
+	collectorsDiscovered, err := meter.Int64Gauge("opentelemetry_allocator_collectors_discovered", metric.WithDescription("Number of collectors discovered."))
+	if err != nil {
+		return &Watcher{}, err
+	}
 	return &Watcher{
 		log:                          logger.WithValues("component", "opentelemetry-targetallocator"),
 		k8sClient:                    clientset,
 		close:                        make(chan struct{}),
 		minUpdateInterval:            defaultMinUpdateInterval,
 		collectorNotReadyGracePeriod: collectorNotReadyGracePeriod,
+		collectorsDiscovered:         collectorsDiscovered,
 	}, nil
 }
 
@@ -134,7 +135,7 @@ func (k *Watcher) runOnCollectors(store cache.Store, fn func(collectors map[stri
 
 		collectorMap[pod.Name] = allocation.NewCollector(pod.Name, pod.Spec.NodeName)
 	}
-	collectorsDiscovered.Set(float64(len(collectorMap)))
+	k.collectorsDiscovered.Record(context.Background(), int64(len(collectorMap)))
 	fn(collectorMap)
 }
 
