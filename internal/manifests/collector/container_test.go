@@ -57,7 +57,9 @@ func TestContainerNewDefault(t *testing.T) {
 			Config: mustUnmarshalToConfig(t, defaultConfig),
 		},
 	}
-	cfg := config.New(config.WithCollectorImage("default-image"))
+	cfg := config.Config{
+		CollectorImage: "default-image",
+	}
 
 	// test
 	c := Container(cfg, testLogger, otelcol, true)
@@ -76,8 +78,9 @@ func TestContainerWithImageOverridden(t *testing.T) {
 			},
 		},
 	}
-	cfg := config.New(config.WithCollectorImage("default-image"))
-
+	cfg := config.Config{
+		CollectorImage: "default-image",
+	}
 	// test
 	c := Container(cfg, testLogger, otelcol, true)
 
@@ -377,7 +380,9 @@ service:
 				},
 			}
 
-			cfg := config.New(config.WithCollectorImage("default-image"))
+			cfg := config.Config{
+				CollectorImage: "default-image",
+			}
 
 			// test
 			c := Container(cfg, testLogger, otelcol, true)
@@ -847,7 +852,9 @@ func mustUnmarshalToConfig(t *testing.T, config string) v1beta1.Config {
 func TestContainerWithCertManagerAvailable(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{}
 
-	cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+	cfg := config.Config{
+		CertManagerAvailability: certmanager.Available,
+	}
 
 	flgs := featuregate.Flags(colfg.GlobalRegistry())
 	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
@@ -868,7 +875,9 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 func TestContainerWithFeaturegateEnabledButTADisabled(t *testing.T) {
 	otelcol := v1beta1.OpenTelemetryCollector{}
 
-	cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+	cfg := config.Config{
+		CertManagerAvailability: certmanager.Available,
+	}
 
 	flgs := featuregate.Flags(colfg.GlobalRegistry())
 	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})

@@ -32,8 +32,10 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			name: "should return true when all conditions are met",
 			params: manifests.Params{
 				ErrorAsWarning: true,
-				Config:         config.New(config.WithRBACPermissions(autoRbac.NotAvailable)),
-				Reviewer:       &mockReviewer{},
+				Config: config.Config{
+					CreateRBACPermissions: autoRbac.NotAvailable,
+				},
+				Reviewer: &mockReviewer{},
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
 						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
@@ -48,8 +50,10 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			name: "should return false when ErrorAsWarning is false",
 			params: manifests.Params{
 				ErrorAsWarning: false,
-				Config:         config.New(config.WithRBACPermissions(autoRbac.NotAvailable)),
-				Reviewer:       &mockReviewer{},
+				Config: config.Config{
+					CreateRBACPermissions: autoRbac.NotAvailable,
+				},
+				Reviewer: &mockReviewer{},
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
 						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
@@ -64,8 +68,10 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			name: "should return false when RBAC is available",
 			params: manifests.Params{
 				ErrorAsWarning: true,
-				Config:         config.New(config.WithRBACPermissions(autoRbac.Available)),
-				Reviewer:       &mockReviewer{},
+				Config: config.Config{
+					CreateRBACPermissions: autoRbac.Available,
+				},
+				Reviewer: &mockReviewer{},
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
 						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
@@ -80,8 +86,10 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			name: "should return false when Reviewer is nil",
 			params: manifests.Params{
 				ErrorAsWarning: true,
-				Config:         config.New(config.WithRBACPermissions(autoRbac.NotAvailable)),
-				Reviewer:       nil,
+				Config: config.Config{
+					CreateRBACPermissions: autoRbac.NotAvailable,
+				},
+				Reviewer: nil,
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
 						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
@@ -96,8 +104,10 @@ func TestNeedsCheckSaPermissions(t *testing.T) {
 			name: "should return false when ServiceAccount is empty",
 			params: manifests.Params{
 				ErrorAsWarning: true,
-				Config:         config.New(config.WithRBACPermissions(autoRbac.NotAvailable)),
-				Reviewer:       &mockReviewer{},
+				Config: config.Config{
+					CreateRBACPermissions: autoRbac.Available,
+				},
+				Reviewer: &mockReviewer{},
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
 						OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
@@ -203,7 +213,9 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				},
-				Config: config.New(config.WithRBACPermissions(autoRbac.Available)),
+				Config: config.Config{
+					CreateRBACPermissions: autoRbac.Available,
+				},
 			},
 			expectedObjects: 7,
 			wantErr:         false,
@@ -222,7 +234,9 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				},
-				Config: config.New(config.WithPrometheusCRAvailability(prometheus.Available)),
+				Config: config.Config{
+					PrometheusCRAvailability: prometheus.Available,
+				},
 			},
 			expectedObjects: 6,
 			wantErr:         false,
@@ -257,7 +271,9 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				},
-				Config: config.New(config.WithPrometheusCRAvailability(prometheus.Available)),
+				Config: config.Config{
+					PrometheusCRAvailability: prometheus.Available,
+				},
 			},
 			expectedObjects: 9,
 			wantErr:         false,
@@ -295,7 +311,7 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				},
-				Config: config.New(config.WithPrometheusCRAvailability(prometheus.Available)),
+				Config: config.Config{PrometheusCRAvailability: prometheus.Available},
 			},
 			expectedObjects: 9,
 			wantErr:         true,

@@ -47,12 +47,14 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 	if err != nil {
 		fmt.Printf("Error unmarshalling YAML: %v", err)
 	}
+	cfg2 := config.Config{
+		CollectorImage:           defaultCollectorImage,
+		TargetAllocatorImage:     defaultTaAllocationImage,
+		PrometheusCRAvailability: prometheus.Available,
+	}
+
 	return manifests.Params{
-		Config: config.New(
-			config.WithCollectorImage(defaultCollectorImage),
-			config.WithTargetAllocatorImage(defaultTaAllocationImage),
-			config.WithPrometheusCRAvailability(prometheus.Available),
-		),
+		Config: cfg2,
 		OtelCol: v1beta1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",
@@ -91,7 +93,7 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 	}
 }
 
-func newParams(taContainerImage string, file string, options ...config.Option) (manifests.Params, error) {
+func newParams(taContainerImage string, file string, cfg *config.Config) (manifests.Params, error) {
 	replicas := int32(1)
 	var configYAML []byte
 	var err error
@@ -110,16 +112,18 @@ func newParams(taContainerImage string, file string, options ...config.Option) (
 	if err != nil {
 		return manifests.Params{}, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
-	defaultOptions := []config.Option{
-		config.WithCollectorImage(defaultCollectorImage),
-		config.WithTargetAllocatorImage(defaultTaAllocationImage),
-		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
-		config.WithPrometheusCRAvailability(prometheus.Available),
+
+	if cfg == nil {
+		cfg = &config.Config{
+			CollectorImage:              defaultCollectorImage,
+			TargetAllocatorImage:        defaultTaAllocationImage,
+			OpenShiftRoutesAvailability: openshift.RoutesAvailable,
+			PrometheusCRAvailability:    prometheus.Available,
+		}
 	}
-	cfg := config.New(append(defaultOptions, options...)...)
 
 	params := manifests.Params{
-		Config: cfg,
+		Config: *cfg,
 		OtelCol: v1beta1.OpenTelemetryCollector{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "opentelemetry.io",

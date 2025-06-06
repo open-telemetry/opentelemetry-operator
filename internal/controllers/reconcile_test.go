@@ -612,12 +612,15 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			testCtx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			reconciler := createTestReconciler(t, testCtx, config.New(
-				config.WithCollectorImage("default-collector"),
-				config.WithTargetAllocatorImage("default-ta-allocator"),
-				config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
-				config.WithPrometheusCRAvailability(prometheus.Available),
-			))
+			cfg := config.Config{
+				CollectorImage:                "default-collector",
+				TargetAllocatorImage:          "default-ta-allocator",
+				OpenShiftRoutesAvailability:   openshift.RoutesAvailable,
+				PrometheusCRAvailability:      prometheus.Available,
+				TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
+				CollectorConfigMapEntry:       "collector.yaml",
+			}
+			reconciler := createTestReconciler(t, testCtx, cfg)
 
 			assert.True(t, len(tt.want) > 0, "must have at least one group of checks to run")
 			firstCheck := tt.want[0]
@@ -781,12 +784,13 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 
 	testCtx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
-	reconciler := createTestReconciler(t, testCtx, config.New(
-		config.WithCollectorImage("default-collector"),
-		config.WithTargetAllocatorImage("default-ta-allocator"),
-		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
-		config.WithPrometheusCRAvailability(prometheus.Available),
-	))
+	cfg := config.Config{
+		CollectorImage:              "default-collector",
+		TargetAllocatorImage:        "default-ta-allocator",
+		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
+		PrometheusCRAvailability:    prometheus.Available,
+	}
+	reconciler := createTestReconciler(t, testCtx, cfg)
 
 	// the base query for the underlying objects
 	opts := []client.ListOption{
@@ -889,11 +893,12 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 
 	testCtx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
-	reconciler := createTestReconciler(t, testCtx, config.New(
-		config.WithCollectorImage("default-collector"),
-		config.WithTargetAllocatorImage("default-ta-allocator"),
-		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
-	))
+	cfg := config.Config{
+		CollectorImage:              "default-collector",
+		TargetAllocatorImage:        "default-ta-allocator",
+		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
+	}
+	reconciler := createTestReconciler(t, testCtx, cfg)
 
 	nsn := types.NamespacedName{Name: collector.Name, Namespace: collector.Namespace}
 	// the base query for the underlying objects
@@ -1081,16 +1086,20 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testContext := context.Background()
 			nsn := types.NamespacedName{Name: tt.args.params.OpAMPBridge.Name, Namespace: tt.args.params.OpAMPBridge.Namespace}
+			cfg := config.Config{
+				CollectorImage:                    "default-collector",
+				TargetAllocatorImage:              "default-ta-allocator",
+				OperatorOpAMPBridgeImage:          "default-opamp-bridge",
+				OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
+				CollectorConfigMapEntry:           "collector.yaml",
+				TargetAllocatorConfigMapEntry:     "targetallocator.yaml",
+			}
 			reconciler := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
 				Client:   k8sClient,
 				Log:      logger,
 				Scheme:   testScheme,
 				Recorder: record.NewFakeRecorder(20),
-				Config: config.New(
-					config.WithCollectorImage("default-collector"),
-					config.WithTargetAllocatorImage("default-ta-allocator"),
-					config.WithOperatorOpAMPBridgeImage("default-opamp-bridge"),
-				),
+				Config:   cfg,
 			})
 			assert.True(t, len(tt.want) > 0, "must have at least one group of checks to run")
 			firstCheck := tt.want[0]
@@ -1226,11 +1235,14 @@ service:
 	testCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	reconciler := createTestReconciler(t, testCtx, config.New(
-		config.WithCollectorImage("default-collector"),
-		config.WithTargetAllocatorImage("default-ta-allocator"),
-		config.WithRBACPermissions(autoRBAC.Available),
-	))
+	cfg := config.Config{
+		CollectorImage:                    "default-collector",
+		TargetAllocatorImage:              "default-ta-allocator",
+		CreateRBACPermissions:             autoRBAC.Available,
+		CollectorConfigMapEntry:           "collector.yaml",
+		OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
+	}
+	reconciler := createTestReconciler(t, testCtx, cfg)
 
 	nsn := types.NamespacedName{Name: otelcol.Name, Namespace: otelcol.Namespace}
 	req := k8sreconcile.Request{
@@ -1280,12 +1292,15 @@ func TestUpgrade(t *testing.T) {
 	testCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	cfg := config.Config{
+		CollectorImage:                "default-collector",
+		TargetAllocatorImage:          "default-ta-allocator",
+		CollectorConfigMapEntry:       "collector.yaml",
+		TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
+	}
 	reconciler := createTestReconcilerWithVersion(
 		t, testCtx,
-		config.New(
-			config.WithCollectorImage("default-collector"),
-			config.WithTargetAllocatorImage("default-ta-allocator"),
-		),
+		cfg,
 		version.Version{OpenTelemetryCollector: upgrade.Latest.String()},
 	)
 

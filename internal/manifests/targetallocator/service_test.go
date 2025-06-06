@@ -38,7 +38,9 @@ func TestServicePorts(t *testing.T) {
 
 func TestServicePortsWithTargetAllocatorMTLS(t *testing.T) {
 	targetAllocator := targetAllocatorInstance()
-	cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+	cfg := config.Config{
+		CertManagerAvailability: certmanager.Available,
+	}
 
 	flgs := featuregate.Flags(colfg.GlobalRegistry())
 	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})

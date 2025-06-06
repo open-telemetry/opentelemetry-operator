@@ -67,7 +67,7 @@ func TestDesiredRoutes(t *testing.T) {
 			hostname = "example.com"
 		)
 
-		params, err := newParams("something:tag", testFileIngress)
+		params, err := newParams("something:tag", testFileIngress, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -117,7 +117,7 @@ func TestDesiredRoutes(t *testing.T) {
 		}, got)
 	})
 	t.Run("hostname is set", func(t *testing.T) {
-		params, err := newParams("something:tag", testFileIngress)
+		params, err := newParams("something:tag", testFileIngress, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -139,7 +139,7 @@ func TestDesiredRoutes(t *testing.T) {
 		assert.Equal(t, "otlp-test-grpc.example.com", routes[2].Spec.Host)
 	})
 	t.Run("hostname is not set", func(t *testing.T) {
-		params, err := newParams("something:tag", testFileIngress)
+		params, err := newParams("something:tag", testFileIngress, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
