@@ -758,7 +758,7 @@ spec:
 You can also use common labels to set resource attributes (first entry wins).
 
 The following labels are supported:
-- `app.kubernetes.io/instance` becomes `service.name`
+- `app.kubernetes.io/instance` becomes `service.instance`
 - `app.kubernetes.io/name` becomes `service.name`
 - `app.kubernetes.io/version` becomes `service.version`
 
