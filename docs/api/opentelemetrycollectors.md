@@ -19441,17 +19441,6 @@ The empty objects e.g. batch: should be written as batch: {} otherwise they won'
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>managementState</b></td>
-        <td>enum</td>
-        <td>
-          ManagementState defines if the CR should be managed by the operator or not.
-Default is managed.<br/>
-          <br/>
-            <i>Enum</i>: managed, unmanaged<br/>
-            <i>Default</i>: managed<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindex-1">additionalContainers</a></b></td>
         <td>[]object</td>
         <td>
@@ -19612,6 +19601,17 @@ to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies
         <td>
           Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
 It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>managementState</b></td>
+        <td>enum</td>
+        <td>
+          ManagementState defines if the CR should be managed by the operator or not.
+Default is managed.<br/>
+          <br/>
+            <i>Enum</i>: managed, unmanaged<br/>
+            <i>Default</i>: managed<br/>
         </td>
         <td>false</td>
       </tr><tr>
