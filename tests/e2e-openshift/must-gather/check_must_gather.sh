@@ -15,6 +15,7 @@ REQUIRED_ITEMS=(
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/olm/subscription-opentelemetry-operator-v*-sub.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-collector-headless.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-collector.yaml
+  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/targetallocator-stateful.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/deployment-stateful-targetallocator.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-collector-monitoring.yaml
   ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/poddisruptionbudget-stateful-targetallocator.yaml
