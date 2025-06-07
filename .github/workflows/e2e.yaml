@@ -132,6 +132,13 @@ jobs:
       run: |
         set -e
         make e2e-log-operator KUBE_VERSION=$KUBE_VERSION
+    - name: Upload test results
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      if: always()
+      with:
+        path: .testresults/e2e/*.xml
+        name: e2e-junit-${{ matrix.group }}-${{ matrix.kube-version }}
+        retention-days: 7
 
   e2e-tests-check:
     runs-on: ubuntu-latest
@@ -149,3 +156,14 @@ jobs:
             echo "One or more matrix jobs failed."
             false
           fi
+  # This event file is used by the JUnit report action in e2e-junit-report.yaml
+  event_file:
+    name: "Event File"
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: Event File
+        path: ${{ github.event_path }}
