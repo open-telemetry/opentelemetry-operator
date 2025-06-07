@@ -1,4 +1,4 @@
-opentelemetry-distro==0.54b1
+opentelemetry-distro==0.55b0
 
 # We add an upper limit to urllib3 version else Python 3.8 support is dropped.
 # TODO: Update autoinstrumentation image builds to support all supported Python versions
