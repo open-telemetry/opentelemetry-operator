@@ -68,6 +68,10 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	err = cluster.GetTargetAllocators()
+	if err != nil {
+		log.Fatalln(err)
+	}
 	err = cluster.GetInstrumentations()
 	if err != nil {
 		log.Fatalln(err)

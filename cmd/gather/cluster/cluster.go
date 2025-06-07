@@ -248,6 +248,33 @@ func (c *Cluster) GetOpenTelemetryCollectors() error {
 	return nil
 }
 
+func (c *Cluster) GetTargetAllocators() error {
+	tas := otelv1alpha1.TargetAllocatorList{}
+
+	err := c.config.KubernetesClient.List(context.TODO(), &tas)
+	if err != nil {
+		return err
+	}
+
+	log.Println("TargetAllocators found:", len(tas.Items))
+
+	errorDetected := false
+
+	for _, ta := range tas.Items {
+		otelTA := ta
+		err := c.processOTELTargetAllocator(&otelTA)
+		if err != nil {
+			log.Fatalln(err)
+			errorDetected = true
+		}
+	}
+
+	if errorDetected {
+		return fmt.Errorf("something failed while getting the targetallocators")
+	}
+	return nil
+}
+
 func (c *Cluster) GetInstrumentations() error {
 	instrumentations := otelv1alpha1.InstrumentationList{}
 
@@ -281,7 +308,7 @@ func (c *Cluster) GetInstrumentations() error {
 
 func (c *Cluster) processOTELCollector(otelCol *otelv1beta1.OpenTelemetryCollector) error {
 	log.Printf("Processing OpenTelemetryCollector %s/%s", otelCol.Namespace, otelCol.Name)
-	folder, err := createOTELFolder(c.config.CollectionDir, otelCol)
+	folder, err := createOTELFolder(c.config.CollectionDir, otelCol.ObjectMeta)
 	if err != nil {
 		return err
 	}
@@ -295,11 +322,28 @@ func (c *Cluster) processOTELCollector(otelCol *otelv1beta1.OpenTelemetryCollect
 	return nil
 }
 
+func (c *Cluster) processOTELTargetAllocator(ta *otelv1alpha1.TargetAllocator) error {
+	log.Printf("Processing TargetAllocator %s/%s", ta.Namespace, ta.Name)
+	folder, err := createOTELFolder(c.config.CollectionDir, ta.ObjectMeta)
+	if err != nil {
+		return err
+	}
+	writeToFile(folder, ta)
+
+	err = c.processOwnedResources(ta, folder)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *Cluster) processOwnedResources(owner interface{}, folder string) error {
 	resourceTypes := []struct {
 		list     client.ObjectList
 		apiCheck func() bool
 	}{
+		{&otelv1alpha1.TargetAllocatorList{}, func() bool { return true }},
 		{&appsv1.DaemonSetList{}, func() bool { return true }},
 		{&appsv1.DeploymentList{}, func() bool { return true }},
 		{&appsv1.StatefulSetList{}, func() bool { return true }},
@@ -399,6 +443,9 @@ func hasOwnerReference(obj client.Object, owner interface{}) bool {
 
 	switch o := owner.(type) {
 	case *otelv1beta1.OpenTelemetryCollector:
+		ownerKind = o.Kind
+		ownerUID = o.UID
+	case *otelv1alpha1.TargetAllocator:
 		ownerKind = o.Kind
 		ownerUID = o.UID
 	default:
