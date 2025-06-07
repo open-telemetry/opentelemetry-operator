@@ -65,6 +65,7 @@ jobs:
          - e2e
          - e2e-automatic-rbac
          - e2e-autoscale
+         - e2e-instrumentation-default
          - e2e-instrumentation
          - e2e-opampbridge
          - e2e-pdb
@@ -72,15 +73,20 @@ jobs:
          - e2e-targetallocator
          - e2e-targetallocator-cr
          - e2e-upgrade
+         - e2e-multi-instrumentation-default
          - e2e-multi-instrumentation
          - e2e-metadata-filters
          - e2e-ta-collector-mtls
          - e2e-crd-validations
        include:
+         - group: e2e-instrumentation-default
+           setup: "add-instrumentation-params prepare-e2e"
          - group: e2e-instrumentation
+           setup: "add-instrumentation-params add-instrumentation-images prepare-e2e"
+         - group: e2e-multi-instrumentation-default
            setup: "add-instrumentation-params prepare-e2e"
          - group: e2e-multi-instrumentation
-           setup: "add-instrumentation-params prepare-e2e"
+           setup: "add-instrumentation-params add-instrumentation-images prepare-e2e"
          - group: e2e-metadata-filters
            setup: "add-operator-arg OPERATOR_ARG='--annotations-filter=.*filter.out --annotations-filter=config.*.gke.io.* --labels-filter=.*filter.out' prepare-e2e"
          - group: e2e-ta-collector-mtls
