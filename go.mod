@@ -229,7 +229,7 @@ require (
 require gotest.tools/v3 v3.5.2
 
 require (
-	github.com/goccy/go-yaml v1.17.1
+	github.com/goccy/go-yaml v1.18.0
 	go.opentelemetry.io/contrib/otelconf v0.15.0
 )
 

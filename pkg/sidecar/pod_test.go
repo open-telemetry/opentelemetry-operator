@@ -67,7 +67,9 @@ func TestAddNativeSidecar(t *testing.T) {
 
 	otelcolYaml, err := otelcol.Spec.Config.Yaml()
 	require.NoError(t, err)
-	cfg := config.New(config.WithCollectorImage("some-default-image"))
+	cfg := config.Config{
+		CollectorImage: "some-default-image",
+	}
 
 	// test
 	changed, err := add(cfg, logger, otelcol, pod, nil)
@@ -153,7 +155,9 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 
 	otelcolYaml, err := otelcol.Spec.Config.Yaml()
 	require.NoError(t, err)
-	cfg := config.New(config.WithCollectorImage("some-default-image"))
+	cfg := config.Config{
+		CollectorImage: "some-default-image",
+	}
 
 	// test
 	changed, err := add(cfg, logger, otelcol, pod, nil)
@@ -206,7 +210,9 @@ func TestAddSidecarWhenOneExistsAlready(t *testing.T) {
 		},
 	}
 	otelcol := v1beta1.OpenTelemetryCollector{}
-	cfg := config.New(config.WithCollectorImage("some-default-image"))
+	cfg := config.Config{
+		CollectorImage: "some-default-image",
+	}
 
 	// test
 	changed, err := add(cfg, logger, otelcol, pod, nil)
@@ -318,7 +324,9 @@ func TestAddSidecarWithAditionalEnv(t *testing.T) {
 			Namespace: "some-app",
 		},
 	}
-	cfg := config.New(config.WithCollectorImage("some-default-image"))
+	cfg := config.Config{
+		CollectorImage: "some-default-image",
+	}
 
 	extraEnv := corev1.EnvVar{
 		Name:  "extraenv",

@@ -24,8 +24,9 @@ const (
 	AnnotationDefaultAutoInstrumentationApacheHttpd = InstrumentationPrefix + "default-auto-instrumentation-apache-httpd-image"
 	AnnotationDefaultAutoInstrumentationNginx       = InstrumentationPrefix + "default-auto-instrumentation-nginx-image"
 
-	LabelTargetAllocator              = "opentelemetry.io/target-allocator"
-	ResourceAttributeAnnotationPrefix = "resource.opentelemetry.io/"
+	LabelTargetAllocator                         = "opentelemetry.io/target-allocator"
+	ResourceAttributeAnnotationPrefix            = "resource.opentelemetry.io/"
+	KubernetesLastAppliedConfigurationAnnotation = "^kubectl\\.kubernetes\\.io/last-applied-configuration$"
 
 	EnvPodName  = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
 	EnvPodUID   = "OTEL_RESOURCE_ATTRIBUTES_POD_UID"
@@ -34,6 +35,7 @@ const (
 	EnvNodeIP   = "OTEL_NODE_IP"
 
 	FlagCRMetrics   = "enable-cr-metrics"
+	FlagMulti       = "enable-multi-instrumentation"
 	FlagApacheHttpd = "enable-apache-httpd-instrumentation"
 	FlagDotNet      = "enable-dotnet-instrumentation"
 	FlagGo          = "enable-go-instrumentation"
