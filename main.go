@@ -180,7 +180,11 @@ func main() {
 		ec.MessageKey = encodeMessageKey
 		ec.LevelKey = encodeLevelKey
 		ec.TimeKey = encodeTimeKey
-		ec.EncodeLevel = config.WithEncodeLevelFormat(encodeLevelFormat)
+		if encodeLevelFormat == "lowercase" {
+			ec.EncodeLevel = zapcore.LowercaseLevelEncoder
+		} else {
+			ec.EncodeLevel = zapcore.CapitalLevelEncoder
+		}
 	})
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
@@ -302,33 +306,12 @@ func main() {
 	}
 
 	configLog := ctrl.Log.WithName("config")
-	cfg := config.New(
-		config.WithLogger(configLog),
-		config.WithVersion(v),
-		config.WithCollectorImage(collectorImage),
-		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
-		config.WithEnableApacheHttpdInstrumentation(enableApacheHttpdInstrumentation),
-		config.WithEnableDotNetInstrumentation(enableDotNetInstrumentation),
-		config.WithEnableGoInstrumentation(enableGoInstrumentation),
-		config.WithEnableNginxInstrumentation(enableNginxInstrumentation),
-		config.WithEnablePythonInstrumentation(enablePythonInstrumentation),
-		config.WithEnableNodeJSInstrumentation(enableNodeJSInstrumentation),
-		config.WithEnableJavaInstrumentation(enableJavaInstrumentation),
-		config.WithTargetAllocatorImage(targetAllocatorImage),
-		config.WithOperatorOpAMPBridgeImage(operatorOpAMPBridgeImage),
-		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
-		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
-		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
-		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
-		config.WithAutoInstrumentationGoImage(autoInstrumentationGo),
-		config.WithAutoInstrumentationApacheHttpdImage(autoInstrumentationApacheHttpd),
-		config.WithAutoInstrumentationNginxImage(autoInstrumentationNginx),
-		config.WithLabelFilters(labelsFilter),
-		config.WithAnnotationFilters(annotationsFilter),
-		config.WithIgnoreMissingCollectorCRDs(ignoreMissingCollectorCRDs),
-	)
-	err = autodetect.ApplyAutoDetect(ad, &cfg, configLog)
-	if err != nil {
+	cfg := config.New()
+	config.ApplyEnvVars(&cfg)
+	if err = config.ApplyCLI(&cfg); err != nil {
+		setupLog.Error(err, "failed to apply CLI flags")
+	}
+	if err = autodetect.ApplyAutoDetect(ad, &cfg, configLog); err != nil {
 		setupLog.Error(err, "failed to autodetect config variables")
 	}
 	// Only add these to the scheme if they are available

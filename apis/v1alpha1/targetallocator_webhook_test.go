@@ -155,12 +155,13 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			cfg := config.Config{
+				TargetAllocatorImage: "ta:v0.0.0",
+			}
 			webhook := &TargetAllocatorWebhook{
 				logger: logr.Discard(),
 				scheme: testScheme,
-				cfg: config.New(
-					config.WithTargetAllocatorImage("ta:v0.0.0"),
-				),
+				cfg:    cfg,
 			}
 			ctx := context.Background()
 			err := webhook.Default(ctx, &test.targetallocator)
@@ -319,13 +320,14 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			cfg := config.Config{
+				CollectorImage:       "targetallocator:v0.0.0",
+				TargetAllocatorImage: "ta:v0.0.0",
+			}
 			cvw := &TargetAllocatorWebhook{
-				logger: logr.Discard(),
-				scheme: testScheme,
-				cfg: config.New(
-					config.WithCollectorImage("targetallocator:v0.0.0"),
-					config.WithTargetAllocatorImage("ta:v0.0.0"),
-				),
+				logger:   logr.Discard(),
+				scheme:   testScheme,
+				cfg:      cfg,
 				reviewer: getReviewer(test.shouldFailSar),
 			}
 			ctx := context.Background()

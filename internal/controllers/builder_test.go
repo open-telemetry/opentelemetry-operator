@@ -945,10 +945,11 @@ service:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := config.New(
-				config.WithCollectorImage("default-collector"),
-				config.WithTargetAllocatorImage("default-ta-allocator"),
-			)
+			cfg := config.Config{
+				CollectorImage:          "default-collector",
+				TargetAllocatorImage:    "default-ta-allocator",
+				CollectorConfigMapEntry: "collector.yaml",
+			}
 			params := manifests.Params{
 				Log:     logr.Discard(),
 				Config:  cfg,
@@ -1171,11 +1172,14 @@ endpoint: ws://opamp-server:4320/v1/opamp
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg := config.New(
-				config.WithOperatorOpAMPBridgeImage("default-collector"),
-				config.WithTargetAllocatorImage("default-ta-allocator"),
-				config.WithOperatorOpAMPBridgeImage("default-opamp-bridge"),
-			)
+			cfg := config.Config{
+				CollectorImage:                    "default-collector",
+				TargetAllocatorImage:              "default-ta-allocator",
+				OperatorOpAMPBridgeImage:          "default-opamp-bridge",
+				CollectorConfigMapEntry:           "collector.yaml",
+				OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
+				TargetAllocatorConfigMapEntry:     "targetallocator.yaml",
+			}
 			reconciler := NewOpAMPBridgeReconciler(OpAMPBridgeReconcilerParams{
 				Log:    logr.Discard(),
 				Config: cfg,
@@ -1235,7 +1239,6 @@ service:
 		want         []client.Object
 		featuregates []*colfeaturegate.Gate
 		wantErr      bool
-		opts         []config.Option
 	}{
 		{
 			name: "base case",
@@ -1729,14 +1732,12 @@ service:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			opts := []config.Option{
-				config.WithCollectorImage("default-collector"),
-				config.WithTargetAllocatorImage("default-ta-allocator"),
+			cfg := config.Config{
+				CollectorImage:                "default-collector",
+				TargetAllocatorImage:          "default-ta-allocator",
+				CollectorConfigMapEntry:       "collector.yaml",
+				TargetAllocatorConfigMapEntry: "targetallocator.yaml",
 			}
-			opts = append(opts, tt.opts...)
-			cfg := config.New(
-				opts...,
-			)
 			params := manifests.Params{
 				Log:     logr.Discard(),
 				Config:  cfg,
@@ -1782,7 +1783,7 @@ func TestBuildTargetAllocator(t *testing.T) {
 		want         []client.Object
 		featuregates []*colfeaturegate.Gate
 		wantErr      bool
-		opts         []config.Option
+		cfg          config.Config
 	}{
 		{
 			name: "base case",
@@ -2052,6 +2053,12 @@ prometheus_cr:
 				},
 			},
 			wantErr: false,
+			cfg: config.Config{
+				CollectorImage:                "default-collector",
+				TargetAllocatorImage:          "default-ta-allocator",
+				TargetAllocatorConfigMapEntry: "targetallocator.yaml",
+				CollectorConfigMapEntry:       "collector.yaml",
+			},
 		},
 		{
 			name: "enable metrics case",
@@ -2359,6 +2366,12 @@ prometheus_cr:
 				},
 			},
 			wantErr: false,
+			cfg: config.Config{
+				CollectorImage:                "default-collector",
+				TargetAllocatorImage:          "default-ta-allocator",
+				TargetAllocatorConfigMapEntry: "targetallocator.yaml",
+				CollectorConfigMapEntry:       "collector.yaml",
+			},
 		},
 		{
 			name: "collector present",
@@ -2652,6 +2665,12 @@ prometheus_cr:
 				},
 			},
 			wantErr: false,
+			cfg: config.Config{
+				CollectorImage:                "default-collector",
+				TargetAllocatorImage:          "default-ta-allocator",
+				TargetAllocatorConfigMapEntry: "targetallocator.yaml",
+				CollectorConfigMapEntry:       "collector.yaml",
+			},
 		},
 		{
 			name: "mtls",
@@ -3115,25 +3134,21 @@ prometheus_cr:
 				},
 			},
 			wantErr: false,
-			opts: []config.Option{
-				config.WithCertManagerAvailability(certmanager.Available),
+			cfg: config.Config{
+				CertManagerAvailability:       certmanager.Available,
+				CollectorImage:                "default-collector",
+				TargetAllocatorImage:          "default-ta-allocator",
+				TargetAllocatorConfigMapEntry: "targetallocator.yaml",
+				CollectorConfigMapEntry:       "collector.yaml",
 			},
 			featuregates: []*colfeaturegate.Gate{featuregate.EnableTargetAllocatorMTLS},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			opts := []config.Option{
-				config.WithCollectorImage("default-collector"),
-				config.WithTargetAllocatorImage("default-ta-allocator"),
-			}
-			opts = append(opts, tt.opts...)
-			cfg := config.New(
-				opts...,
-			)
 			params := targetallocator.Params{
 				Log:             logr.Discard(),
-				Config:          cfg,
+				Config:          tt.cfg,
 				TargetAllocator: tt.args.instance,
 				Collector:       tt.args.collector,
 			}
@@ -3155,6 +3170,8 @@ prometheus_cr:
 				t.Errorf("BuildAll() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			require.Equal(t, tt.want[0], got[0])
+			require.Equal(t, tt.want[1], got[1])
 			require.Equal(t, tt.want, got)
 
 		})

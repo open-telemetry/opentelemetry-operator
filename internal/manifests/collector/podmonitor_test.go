@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -43,7 +44,7 @@ func TestDesiredPodMonitors(t *testing.T) {
 }
 
 func TestDesiredPodMonitorsWithPrometheus(t *testing.T) {
-	params, err := newParams("", "testdata/prometheus-exporter.yaml")
+	params, err := newParams("", "testdata/prometheus-exporter.yaml", nil)
 	assert.NoError(t, err)
 	params.OtelCol.Spec.Mode = v1beta1.ModeSidecar
 	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
@@ -65,7 +66,12 @@ func TestDesiredPodMonitorsWithPrometheus(t *testing.T) {
 }
 
 func TestDesiredPodMonitorsPrometheusNotAvailable(t *testing.T) {
-	params, err := newParams("", "testdata/prometheus-exporter.yaml", config.WithPrometheusCRAvailability(prometheus.NotAvailable))
+	params, err := newParams("", "testdata/prometheus-exporter.yaml", &config.Config{
+		CollectorImage:              defaultCollectorImage,
+		TargetAllocatorImage:        defaultTaAllocationImage,
+		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
+		PrometheusCRAvailability:    prometheus.NotAvailable,
+	})
 	assert.NoError(t, err)
 	params.OtelCol.Spec.Mode = v1beta1.ModeSidecar
 	params.OtelCol.Spec.Observability.Metrics.EnableMetrics = true
