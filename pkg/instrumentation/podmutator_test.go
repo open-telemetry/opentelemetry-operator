@@ -4298,7 +4298,7 @@ func TestMutatePod(t *testing.T) {
 				EnableJavaAutoInstrumentation:   true,
 				EnableNodeJSAutoInstrumentation: true,
 				EnablePythonAutoInstrumentation: true,
-				EnableDotNetInstrumentation:     true,
+				EnableDotNetAutoInstrumentation: true,
 			},
 		},
 		{
