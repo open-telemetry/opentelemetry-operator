@@ -6,15 +6,34 @@ OTELCOL_VERSION ?= "$(shell awk -F= '/^opentelemetry-collector=/ {print $$2}' ve
 OPERATOR_VERSION ?= "$(shell awk -F= '/^operator=/ {print $$2}' versions.txt)"
 TARGETALLOCATOR_VERSION ?= $(shell awk -F= '/^targetallocator=/ {print $$2}' versions.txt)
 OPERATOR_OPAMP_BRIDGE_VERSION ?= "$(shell awk -F= '/^operator-opamp-bridge/ {print $$2}' versions.txt)"
-AUTO_INSTRUMENTATION_JAVA_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-java=/ {print $$2}' versions.txt)"
-AUTO_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-nodejs=/ {print $$2}' versions.txt)"
-AUTO_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-python=/ {print $$2}' versions.txt)"
-AUTO_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-dotnet=/ {print $$2}' versions.txt)"
-AUTO_INSTRUMENTATION_GO_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-go=/ {print $$2}' versions.txt)"
-AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-apache-httpd=/ {print $$2}' versions.txt)"
-AUTO_INSTRUMENTATION_NGINX_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-nginx=/ {print $$2}' versions.txt)"
+DEFAULT_INSTRUMENTATION_JAVA_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-java=/ {print $$2}' versions.txt)"
+DEFAULT_INSTRUMENTATION_NODEJS_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-nodejs=/ {print $$2}' versions.txt)"
+DEFAULT_INSTRUMENTATION_PYTHON_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-python=/ {print $$2}' versions.txt)"
+DEFAULT_INSTRUMENTATION_DOTNET_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-dotnet=/ {print $$2}' versions.txt)"
+DEFAULT_INSTRUMENTATION_GO_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-go=/ {print $$2}' versions.txt)"
+DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-apache-httpd=/ {print $$2}' versions.txt)"
+DEFAULT_INSTRUMENTATION_NGINX_VERSION ?= "$(shell awk -F= '/^autoinstrumentation-nginx=/ {print $$2}' versions.txt)"
+
+# Actual versions used for publishing instrumentation images
+INSTRUMENTATION_JAVA_VERSION ?= "$(shell cat autoinstrumentation/java/version.txt)"
+INSTRUMENTATION_NODEJS_VERSION ?= "$(shell grep -o '"@opentelemetry/auto-instrumentations-node": "[^"]*' autoinstrumentation/nodejs/package.json | cut -d'"' -f4)"
+INSTRUMENTATION_PYTHON_VERSION ?= "$(shell grep -o '^opentelemetry-instrumentation==[^ ]*' autoinstrumentation/python/requirements.txt | cut -d'=' -f3)"
+INSTRUMENTATION_DOTNET_VERSION ?= "$(shell cat autoinstrumentation/dotnet/version.txt)"
+INSTRUMENTATION_APACHE_HTTPD_VERSION ?= "$(shell cat autoinstrumentation/apache-httpd/version.txt)"
+
 COMMON_LDFLAGS ?= -s -w
-OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION} -X ${VERSION_PKG}.buildDate=${VERSION_DATE} -X ${VERSION_PKG}.otelCol=${OTELCOL_VERSION} -X ${VERSION_PKG}.targetAllocator=${TARGETALLOCATOR_VERSION} -X ${VERSION_PKG}.operatorOpAMPBridge=${OPERATOR_OPAMP_BRIDGE_VERSION} -X ${VERSION_PKG}.autoInstrumentationJava=${AUTO_INSTRUMENTATION_JAVA_VERSION} -X ${VERSION_PKG}.autoInstrumentationNodeJS=${AUTO_INSTRUMENTATION_NODEJS_VERSION} -X ${VERSION_PKG}.autoInstrumentationPython=${AUTO_INSTRUMENTATION_PYTHON_VERSION} -X ${VERSION_PKG}.autoInstrumentationDotNet=${AUTO_INSTRUMENTATION_DOTNET_VERSION} -X ${VERSION_PKG}.autoInstrumentationGo=${AUTO_INSTRUMENTATION_GO_VERSION} -X ${VERSION_PKG}.autoInstrumentationApacheHttpd=${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION} -X ${VERSION_PKG}.autoInstrumentationNginx=${AUTO_INSTRUMENTATION_NGINX_VERSION}
+OPERATOR_LDFLAGS ?= -X ${VERSION_PKG}.version=${VERSION}\
+	-X ${VERSION_PKG}.buildDate=${VERSION_DATE}\
+	-X ${VERSION_PKG}.otelCol=${OTELCOL_VERSION}\
+	-X ${VERSION_PKG}.targetAllocator=${TARGETALLOCATOR_VERSION}\
+	-X ${VERSION_PKG}.operatorOpAMPBridge=${OPERATOR_OPAMP_BRIDGE_VERSION}\
+	-X ${VERSION_PKG}.autoInstrumentationJava=${DEFAULT_INSTRUMENTATION_JAVA_VERSION}\
+	-X ${VERSION_PKG}.autoInstrumentationNodeJS=${DEFAULT_INSTRUMENTATION_NODEJS_VERSION}\
+	-X ${VERSION_PKG}.autoInstrumentationPython=${DEFAULT_INSTRUMENTATION_PYTHON_VERSION}\
+	-X ${VERSION_PKG}.autoInstrumentationDotNet=${DEFAULT_INSTRUMENTATION_DOTNET_VERSION}\
+	-X ${VERSION_PKG}.autoInstrumentationGo=${DEFAULT_INSTRUMENTATION_GO_VERSION}\
+	-X ${VERSION_PKG}.autoInstrumentationApacheHttpd=${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION}\
+	-X ${VERSION_PKG}.autoInstrumentationNginx=${DEFAULT_INSTRUMENTATION_NGINX_VERSION}
 ARCH ?= $(shell go env GOARCH)
 ifeq ($(shell uname), Darwin)
   SED_INPLACE := sed -i ''
@@ -37,6 +56,21 @@ OPERATOROPAMPBRIDGE_IMG ?= ${IMG_PREFIX}/${OPERATOROPAMPBRIDGE_IMG_REPO}:$(addpr
 
 BRIDGETESTSERVER_IMG_REPO ?= e2e-test-app-bridge-server
 BRIDGETESTSERVER_IMG ?= ${IMG_PREFIX}/${BRIDGETESTSERVER_IMG_REPO}:ve2e
+
+INSTRUMENTATION_JAVA_IMG_REPO ?= autoinstrumentation-java
+INSTRUMENTATION_JAVA_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_JAVA_IMG_REPO}:${INSTRUMENTATION_JAVA_VERSION}
+
+INSTRUMENTATION_NODEJS_IMG_REPO ?= autoinstrumentation-nodejs
+INSTRUMENTATION_NODEJS_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_NODEJS_IMG_REPO}:${INSTRUMENTATION_NODEJS_VERSION}
+
+INSTRUMENTATION_PYTHON_IMG_REPO ?= autoinstrumentation-python
+INSTRUMENTATION_PYTHON_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_PYTHON_IMG_REPO}:${INSTRUMENTATION_PYTHON_VERSION}
+
+INSTRUMENTATION_DOTNET_IMG_REPO ?= autoinstrumentation-dotnet
+INSTRUMENTATION_DOTNET_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_DOTNET_IMG_REPO}:${INSTRUMENTATION_DOTNET_VERSION}
+
+INSTRUMENTATION_APACHE_HTTPD_IMG_REPO ?= autoinstrumentation-apache-httpd
+INSTRUMENTATION_APACHE_HTTPD_IMG ?= ${IMG_PREFIX}/${INSTRUMENTATION_APACHE_HTTPD_IMG_REPO}:${INSTRUMENTATION_APACHE_HTTPD_VERSION}
 
 MUSTGATHER_IMG ?= ${IMG_PREFIX}/must-gather
 
@@ -192,6 +226,14 @@ add-operator-arg: manifests kustomize
 add-image-targetallocator:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--target-allocator-image=$(TARGETALLOCATOR_IMG)
 
+.PHONY: add-image-instrumentation
+add-instrumentation-images:
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-java-image=$(INSTRUMENTATION_JAVA_IMG)
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-nodejs-image=$(INSTRUMENTATION_NODEJS_IMG)
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-python-image=$(INSTRUMENTATION_PYTHON_IMG)
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-dotnet-image=$(INSTRUMENTATION_DOTNET_IMG)
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-apache-httpd-image=$(INSTRUMENTATION_APACHE_HTTPD_IMG)
+
 .PHONY: add-instrumentation-params
 add-instrumentation-params:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-go-instrumentation=true
@@ -300,6 +342,11 @@ e2e-automatic-rbac: chainsaw
 e2e-autoscale: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-autoscale --report-name e2e-autoscale
 
+# instrumentation end-to-tests, alias to make matrix tests more convenient
+# the tests are the same, but the setup is different
+.PHONY: e2e-instrumentation-default
+e2e-instrumentation-default: e2e-instrumentation
+
 # instrumentation end-to-tests
 .PHONY: e2e-instrumentation
 e2e-instrumentation: chainsaw
@@ -309,6 +356,11 @@ e2e-instrumentation: chainsaw
 e2e-log-operator:
 	kubectl get pod -n opentelemetry-operator-system | grep "opentelemetry-operator" | awk '{print $$1}' | xargs -I {} kubectl logs -n opentelemetry-operator-system {} manager
 	kubectl get deploy -A
+
+# multi-instrumentation end-to-tests, alias to make matrix tests more convenient
+# the tests are the same, but the setup is different
+.PHONY: e2e-multi-instrumentation-default
+e2e-multi-instrumentation-default: e2e-multi-instrumentation
 
 # end-to-tests for multi-instrumentation
 .PHONY: e2e-multi-instrumentation
@@ -423,6 +475,34 @@ container-must-gather: must-gather
 container-must-gather-push:
 	docker push ${MUSTGATHER_IMG}
 
+.PHONY: container-instrumentation-java
+container-instrumentation-java:
+	docker build --load -t ${INSTRUMENTATION_JAVA_IMG} autoinstrumentation/java \
+		--build-arg version=${INSTRUMENTATION_JAVA_VERSION}
+
+.PHONY: container-instrumentation-nodejs
+container-instrumentation-nodejs:
+	docker build --load -t ${INSTRUMENTATION_NODEJS_IMG} autoinstrumentation/nodejs \
+		--build-arg version=${INSTRUMENTATION_NODEJS_VERSION}
+
+.PHONY: container-instrumentation-python
+container-instrumentation-python:
+	docker build --load -t ${INSTRUMENTATION_PYTHON_IMG} autoinstrumentation/python \
+		--build-arg version=${INSTRUMENTATION_PYTHON_VERSION}
+
+.PHONY: container-instrumentation-dotnet
+container-instrumentation-dotnet:
+	docker build --load -t ${INSTRUMENTATION_DOTNET_IMG} autoinstrumentation/dotnet \
+		--build-arg version=${INSTRUMENTATION_DOTNET_VERSION}
+
+.PHONY: container-instrumentation-apache-httpd
+container-instrumentation-apache-httpd:
+	docker build --load -t ${INSTRUMENTATION_APACHE_HTTPD_IMG} autoinstrumentation/apache-httpd \
+		--build-arg version=${INSTRUMENTATION_APACHE_HTTPD_VERSION}
+
+.PHONY: container-instrumentation-all
+container-instrumentation-all: container-instrumentation-java container-instrumentation-nodejs container-instrumentation-python container-instrumentation-dotnet container-instrumentation-apache-httpd
+
 .PHONY: start-kind
 start-kind: kind
 ifeq (true,$(START_KIND_CLUSTER))
@@ -447,7 +527,7 @@ install-targetallocator-prometheus-crds:
 .PHONY: load-image-all
 load-image-all:
 ifeq ($(IMAGE_ARCHIVE),)
-	@make container container-target-allocator container-operator-opamp-bridge container-bridge-test-server load-image-operator load-image-target-allocator load-image-operator-opamp-bridge load-image-bridge-test-server
+	@make container load-image-operator load-image-target-allocator load-image-operator-opamp-bridge load-image-bridge-test-server
 else
 	$(KIND) load --name $(KIND_CLUSTER_NAME) image-archive $(IMAGE_ARCHIVE)
 endif
@@ -476,6 +556,14 @@ load-image-bridge-test-server: container-bridge-test-server kind
 .PHONY: load-image-operator-opamp-bridge
 load-image-operator-opamp-bridge: container-operator-opamp-bridge kind
 	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${OPERATOROPAMPBRIDGE_IMG}
+
+.PHONY: load-images-instrumentation
+load-images-instrumentation: container-instrumentation-all kind
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${INSTRUMENTATION_JAVA_IMG}
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${INSTRUMENTATION_NODEJS_IMG}
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${INSTRUMENTATION_PYTHON_IMG}
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${INSTRUMENTATION_DOTNET_IMG}
+	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${INSTRUMENTATION_APACHE_HTTPD_IMG}
 
 .PHONY: cert-manager
 cert-manager: cmctl
@@ -687,13 +775,13 @@ chlog-insert-components:
 	@echo "" >>components.md
 	@echo "* [OpenTelemetry Collector - v${OTELCOL_VERSION}](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v${OTELCOL_VERSION})" >>components.md
 	@echo "* [OpenTelemetry Contrib - v${OTELCOL_VERSION}](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v${OTELCOL_VERSION})" >>components.md
-	@echo "* [Java auto-instrumentation - v${AUTO_INSTRUMENTATION_JAVA_VERSION}](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v${AUTO_INSTRUMENTATION_JAVA_VERSION})" >>components.md
-	@echo "* [.NET auto-instrumentation - v${AUTO_INSTRUMENTATION_DOTNET_VERSION}](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v${AUTO_INSTRUMENTATION_DOTNET_VERSION})" >>components.md
-	@echo "* [Node.JS - v${AUTO_INSTRUMENTATION_NODEJS_VERSION}](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv${AUTO_INSTRUMENTATION_NODEJS_VERSION})" >>components.md
-	@echo "* [Python - v${AUTO_INSTRUMENTATION_PYTHON_VERSION}](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v${AUTO_INSTRUMENTATION_PYTHON_VERSION})" >>components.md
-	@echo "* [Go - ${AUTO_INSTRUMENTATION_GO_VERSION}](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/${AUTO_INSTRUMENTATION_GO_VERSION})" >>components.md
-	@echo "* [ApacheHTTPD - ${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${AUTO_INSTRUMENTATION_APACHE_HTTPD_VERSION})" >>components.md
-	@echo "* [Nginx - ${AUTO_INSTRUMENTATION_NGINX_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${AUTO_INSTRUMENTATION_NGINX_VERSION})" >>components.md
+	@echo "* [Java auto-instrumentation - v${DEFAULT_INSTRUMENTATION_JAVA_VERSION}](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_JAVA_VERSION})" >>components.md
+	@echo "* [.NET auto-instrumentation - v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION}](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v${DEFAULT_INSTRUMENTATION_DOTNET_VERSION})" >>components.md
+	@echo "* [Node.JS - v${DEFAULT_INSTRUMENTATION_NODEJS_VERSION}](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv${DEFAULT_INSTRUMENTATION_NODEJS_VERSION})" >>components.md
+	@echo "* [Python - v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION}](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v${DEFAULT_INSTRUMENTATION_PYTHON_VERSION})" >>components.md
+	@echo "* [Go - ${DEFAULT_INSTRUMENTATION_GO_VERSION}](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/${DEFAULT_INSTRUMENTATION_GO_VERSION})" >>components.md
+	@echo "* [ApacheHTTPD - ${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${DEFAULT_INSTRUMENTATION_APACHE_HTTPD_VERSION})" >>components.md
+	@echo "* [Nginx - ${DEFAULT_INSTRUMENTATION_NGINX_VERSION}](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv${DEFAULT_INSTRUMENTATION_NGINX_VERSION})" >>components.md
 	@$(SED_INPLACE) '/<!-- next version -->/r ./components.md' CHANGELOG.md
 	@$(SED_INPLACE) '/<!-- next version -->/G' CHANGELOG.md
 	@rm components.md
@@ -740,7 +828,7 @@ catalog-push: ## Push a catalog image.
 	docker push $(CATALOG_IMG)
 
 container-image-archive: IMAGE_LIST_FILE = images-$(VERSION).txt
-container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server
+container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server container-instrumentation-all
 ifeq ($(IMAGE_ARCHIVE),)
 	$(error "Use make container-image-archive IMAGE_ARCHIVE=<filename>")
 endif
@@ -749,4 +837,9 @@ endif
 	@echo "$(TARGETALLOCATOR_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(OPERATOROPAMPBRIDGE_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(BRIDGETESTSERVER_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(INSTRUMENTATION_JAVA_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(INSTRUMENTATION_NODEJS_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(INSTRUMENTATION_PYTHON_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(INSTRUMENTATION_DOTNET_IMG)" >>$(IMAGE_LIST_FILE)
+	@echo "$(INSTRUMENTATION_APACHE_HTTPD_IMG)" >>$(IMAGE_LIST_FILE)
 	xargs -x -n 50 docker save -o "$(IMAGE_ARCHIVE)" <$(IMAGE_LIST_FILE)
