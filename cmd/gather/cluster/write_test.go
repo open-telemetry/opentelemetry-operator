@@ -182,7 +182,7 @@ func TestCreateOTELFolder(t *testing.T) {
 		},
 	}
 
-	outputDir, err := createOTELFolder(collectionDir, otelCol)
+	outputDir, err := createOTELFolder(collectionDir, otelCol.ObjectMeta)
 
 	expectedDir := filepath.Join(collectionDir, "namespaces", otelCol.Namespace, otelCol.Name)
 	assert.NoError(t, err)
