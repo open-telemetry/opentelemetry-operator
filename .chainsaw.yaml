@@ -12,3 +12,5 @@ spec:
     error: 5m0s
     apply: 15s
     exec: 15s
+  reportFormat: JUNIT-TEST
+  reportPath: ./.testresults/e2e

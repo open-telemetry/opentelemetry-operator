@@ -1,0 +1,42 @@
+name: E2E Junit Report
+on:
+  workflow_run:
+    workflows: [ "End-to-end tests" ]
+    types: [ completed ]
+  workflow_dispatch:
+    inputs:
+      e2e_workflow_id:
+        description: "Workflow ID"
+        required: true
+
+permissions:
+  checks: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Test Report
+        uses: dawidd6/action-download-artifact@4c1e823582f43b179e2cbb49c3eade4e41f992e2 # v10
+        with:
+          path: '.testresults/e2e'
+          name: 'e2e-junit-.*'
+          name_is_regexp: 'true'
+          run_id: ${{ github.event.workflow_run.id || inputs.e2e_workflow_id }}
+      - name: Download Github Event File
+        uses: dawidd6/action-download-artifact@4c1e823582f43b179e2cbb49c3eade4e41f992e2 # v10
+        with:
+          name: 'Event File'
+          run_id: ${{ github.event.workflow_run.id || inputs.e2e_workflow_id }}
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          commit: ${{ github.event.workflow_run.head_sha }}
+          event_file: event.json
+          event_name: ${{ github.event.workflow_run.event }}
+          files: '.testresults/e2e/**/*.xml'
+          comment_title: 'E2E Test Results'
+          comment_mode: 'failures'
+          check_name: 'E2E Test Results'
