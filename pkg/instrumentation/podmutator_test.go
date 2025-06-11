@@ -3198,7 +3198,7 @@ func TestMutatePod(t *testing.T) {
 							Name:    nginxAgentCloneContainerName,
 							Image:   "",
 							Command: []string{"/bin/sh", "-c"},
-							Args:    []string{"cp -r /etc/nginx/* /opt/opentelemetry-webserver/source-conf && export NGINX_VERSION=$( { nginx -v ; } 2>&1 ) && echo ${NGINX_VERSION##*/} > /opt/opentelemetry-webserver/source-conf/version.txt"},
+							Args:    []string{"cp -r /etc/nginx/* /opt/opentelemetry-webserver/source-conf && export NGINX_VERSION=\"$( { nginx -v ; } 2>&1 )\" && echo ${NGINX_VERSION##*/} > /opt/opentelemetry-webserver/source-conf/version.txt"},
 							VolumeMounts: []corev1.VolumeMount{{
 								Name:      nginxAgentConfigVolume,
 								MountPath: nginxAgentConfDirFull,
