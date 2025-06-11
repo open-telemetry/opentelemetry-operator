@@ -5,7 +5,7 @@ change_type: bug_fix
 component: collector
 
 # A brief description of the change
-note: "Fix the headless service name in StatefulSet mode. When not specified, defaults to '<name>-headless' for StatefulSet headless services."
+note: "Fix the headless service name in StatefulSet mode. Use the ServiceName field in the OpenTelemetryCollector spec to customize the headless service name."
 
 # One or more tracking issues related to the change
 issues: [4029]
