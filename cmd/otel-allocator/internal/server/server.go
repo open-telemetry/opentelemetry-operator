@@ -7,7 +7,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"html/template"
 	"net/http"
 	"net/http/pprof"
 	"net/url"
@@ -378,16 +377,10 @@ func (s *Server) TargetHTMLHandler(c *gin.Context) {
 	targetHashStr := c.Request.URL.Query().Get("target_hash")
 	if targetHashStr == "" || targetHashStr == "0" {
 		c.Status(http.StatusBadRequest)
-		_, err := c.Writer.WriteString(`<html>
-<body>
-<h1>Bad Request</h1>
-<p>Expected target_hash in the query string</p>
-<p>Example: /debug/target?target_hash=my-target-42</p>
-</body>
-</html>`)
-		if err != nil {
-			s.logger.Error(err, "failed to write response")
-		}
+		WriteHTMLBadRequest(c.Writer, BadRequestData{
+			Error:   "Expected target_hash in the query string",
+			Example: "/debug/target?target_hash=my-target-42",
+		})
 		return
 	}
 
@@ -395,33 +388,18 @@ func (s *Server) TargetHTMLHandler(c *gin.Context) {
 	targetHash, err := strconv.ParseUint(targetHashStr, 10, 64)
 	if err != nil {
 		c.Status(http.StatusBadRequest)
-		_, err := c.Writer.WriteString(`<html>
-<body>
-<h1>Bad Request</h1>
-<p>Expected target_hash to be a number</p>
-<p>Example: /debug/target?target_hash=42</p>
-</body>
-</html>`)
-		if err != nil {
-			s.logger.Error(err, "failed to write response")
-			return
-		}
+		WriteHTMLBadRequest(c.Writer, BadRequestData{
+			Error:   "Expected target_hash to be a number",
+			Example: "/debug/target?target_hash=42",
+		})
 	}
 	target, found := s.allocator.TargetItems()[target.ItemHash(targetHash)]
 	if !found {
 		c.Status(http.StatusNotFound)
-		t, err := template.New("unknown_target").Parse(`<html>
-<body>
-<h1>Unknown Target: {{.}}</h1>
-</body>
-</html>`)
-		if err != nil {
-			s.logger.Error(err, "failed to parse template")
-		}
-		err = t.Execute(c.Writer, targetHashStr)
-		if err != nil {
-			s.logger.Error(err, "failed to write response")
-		}
+		WriteHTMLNotFound(c.Writer, NotFoundData{
+			ResourceType: "Target",
+			ResourceName: targetHashStr,
+		})
 		return
 	}
 
@@ -565,16 +543,10 @@ func (s *Server) CollectorHTMLHandler(c *gin.Context) {
 
 	if collectorId == "" {
 		c.Status(http.StatusBadRequest)
-		_, err := c.Writer.WriteString(`<html>
-<body>
-<h1>Bad Request</h1>
-<p>Expected collector_id in the query string</p>
-<p>Example: /collector?collector_id=my-collector-42</p>
-</body>
-</html>`)
-		if err != nil {
-			s.logger.Error(err, "failed to write response")
-		}
+		WriteHTMLBadRequest(c.Writer, BadRequestData{
+			Error:   "Expected collector_id in the query string",
+			Example: "/debug/collector?collector_id=my-collector-42",
+		})
 		return
 	}
 
@@ -587,18 +559,10 @@ func (s *Server) CollectorHTMLHandler(c *gin.Context) {
 	}
 	if !found {
 		c.Status(http.StatusNotFound)
-		t, err := template.New("unknown_collector").Parse(`<html>
-<body>
-<h1>Unknown Collector: {{.}}</h1>
-</body>
-</html>`)
-		if err != nil {
-			s.logger.Error(err, "failed to parse template")
-		}
-		err = t.Execute(c.Writer, collectorId)
-		if err != nil {
-			s.logger.Error(err, "failed to write response")
-		}
+		WriteHTMLNotFound(c.Writer, NotFoundData{
+			ResourceType: "Collector",
+			ResourceName: collectorId,
+		})
 		return
 	}
 

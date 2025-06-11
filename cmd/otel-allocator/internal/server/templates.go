@@ -26,6 +26,14 @@ var (
 	//go:embed templates/properties_table.html
 	propertiesTableBytes    []byte
 	propertiesTableTemplate = parseTemplate("properties_table", propertiesTableBytes)
+
+	//go:embed templates/bad_request.html
+	badRequestBytes    []byte
+	badRequestTemplate = parseTemplate("bad_request", badRequestBytes)
+
+	//go:embed templates/not_found.html
+	notFoundBytes    []byte
+	notFoundTemplate = parseTemplate("not_found", notFoundBytes)
 )
 
 func parseTemplate(name string, bytes []byte) *template.Template {
@@ -35,6 +43,18 @@ func parseTemplate(name string, bytes []byte) *template.Template {
 // HeaderData contains data for the header template.
 type HeaderData struct {
 	Title string
+}
+
+// BadRequestData contains data for the bad request template.
+type BadRequestData struct {
+	Error   string
+	Example string
+}
+
+// BadRequestData contains data for the bad request template.
+type NotFoundData struct {
+	ResourceType string
+	ResourceName string
 }
 
 // WriteHTMLPageHeader writes the header.
@@ -78,6 +98,20 @@ func WriteHTMLPropertiesTable(w io.Writer, chd PropertiesTableData) {
 // WriteHTMLPageFooter writes the footer.
 func WriteHTMLPageFooter(w io.Writer) {
 	if err := footerTemplate.Execute(w, nil); err != nil {
+		log.Printf("ta: executing template: %v", err)
+	}
+}
+
+// WriteHTMLBadRequest writes the bad request page.
+func WriteHTMLBadRequest(w io.Writer, br BadRequestData) {
+	if err := badRequestTemplate.Execute(w, br); err != nil {
+		log.Printf("ta: executing template: %v", err)
+	}
+}
+
+// WriteHTMLNotFound writes the not found page.
+func WriteHTMLNotFound(w io.Writer, nf NotFoundData) {
+	if err := notFoundTemplate.Execute(w, nf); err != nil {
 		log.Printf("ta: executing template: %v", err)
 	}
 }
