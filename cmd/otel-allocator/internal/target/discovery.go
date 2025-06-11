@@ -24,8 +24,6 @@ import (
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
 
-const labelBuilderPreallocSize = 100
-
 var (
 	targetsDiscovered = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "opentelemetry_allocator_targets",
@@ -195,24 +193,25 @@ func (m *Discoverer) Reload() {
 
 // processTargetGroups processes the target groups and returns a map of targets.
 func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.Group, intoTargets []*Item) {
-	groupBuilder := labels.NewScratchBuilder(labelBuilderPreallocSize)
+	builder := labels.NewBuilder(labels.Labels{})
 	timer := prometheus.NewTimer(processTargetGroupsDuration.WithLabelValues(jobName))
 
 	defer timer.ObserveDuration()
 	var count float64 = 0
 	index := 0
 	for _, tg := range groups {
-		groupBuilder.Reset()
+		builder.Reset(labels.EmptyLabels())
 		for ln, lv := range tg.Labels {
-			groupBuilder.Add(string(ln), string(lv))
+			builder.Set(string(ln), string(lv))
 		}
+		groupLabels := builder.Labels()
 		for _, t := range tg.Targets {
 			count++
-			targetBuilder := groupBuilder
+			builder.Reset(groupLabels)
 			for ln, lv := range t {
-				targetBuilder.Add(string(ln), string(lv))
+				builder.Set(string(ln), string(lv))
 			}
-			item := NewItem(jobName, string(t[model.AddressLabel]), targetBuilder.Labels(), "")
+			item := NewItem(jobName, string(t[model.AddressLabel]), builder.Labels(), "")
 			intoTargets[index] = item
 			index++
 		}

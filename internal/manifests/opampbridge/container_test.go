@@ -19,7 +19,9 @@ var logger = logf.Log.WithName("unit-tests")
 func TestContainerNewDefault(t *testing.T) {
 	// prepare
 	opampBridge := v1alpha1.OpAMPBridge{}
-	cfg := config.New(config.WithOperatorOpAMPBridgeImage("default-image"))
+	cfg := config.Config{
+		OperatorOpAMPBridgeImage: "default-image",
+	}
 
 	// test
 	c := Container(cfg, logger, opampBridge)
@@ -36,7 +38,9 @@ func TestContainerWithImageOverridden(t *testing.T) {
 		},
 	}
 
-	cfg := config.New(config.WithOperatorOpAMPBridgeImage("default-image"))
+	cfg := config.Config{
+		OperatorOpAMPBridgeImage: "default-image",
+	}
 
 	// test
 	c := Container(cfg, logger, otelcol)

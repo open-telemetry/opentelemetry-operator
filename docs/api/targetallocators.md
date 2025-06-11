@@ -84,17 +84,6 @@ TargetAllocatorSpec defines the desired state of TargetAllocator.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>managementState</b></td>
-        <td>enum</td>
-        <td>
-          ManagementState defines if the CR should be managed by the operator or not.
-Default is managed.<br/>
-          <br/>
-            <i>Enum</i>: managed, unmanaged<br/>
-            <i>Default</i>: managed<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b><a href="#targetallocatorspecadditionalcontainersindex">additionalContainers</a></b></td>
         <td>[]object</td>
         <td>
@@ -236,6 +225,17 @@ to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies
         <td>object</td>
         <td>
           Actions that the management system should take in response to container lifecycle events. Cannot be updated.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>managementState</b></td>
+        <td>enum</td>
+        <td>
+          ManagementState defines if the CR should be managed by the operator or not.
+Default is managed.<br/>
+          <br/>
+            <i>Enum</i>: managed, unmanaged<br/>
+            <i>Default</i>: managed<br/>
         </td>
         <td>false</td>
       </tr><tr>

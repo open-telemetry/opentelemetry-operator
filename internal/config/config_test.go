@@ -7,34 +7,20 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
-
-func TestNewConfig(t *testing.T) {
-	// prepare
-	cfg := config.New(
-		config.WithCollectorImage("some-image"),
-		config.WithCollectorConfigMapEntry("some-config.yaml"),
-		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
-		config.WithPrometheusCRAvailability(prometheus.Available),
-	)
-
-	// test
-	assert.Equal(t, "some-image", cfg.CollectorImage)
-	assert.Equal(t, "some-config.yaml", cfg.CollectorConfigMapEntry)
-	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability)
-	assert.Equal(t, prometheus.Available, cfg.PrometheusCRAvailability)
-}
 
 func TestConfigChangesOnAutoDetect(t *testing.T) {
 	// prepare
@@ -57,10 +43,11 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		CollectorAvailabilityFunc: func() (collector.Availability, error) {
 			return collector.Available, nil
 		},
+		OpAmpBridgeAvailabilityFunc: func() (opampbridge.Availability, error) {
+			return opampbridge.Available, nil
+		},
 	}
-	cfg := config.New(
-		config.WithAutoDetect(mock),
-	)
+	cfg := config.New()
 
 	// sanity check
 	require.Equal(t, openshift.RoutesNotAvailable, cfg.OpenShiftRoutesAvailability)
@@ -69,10 +56,10 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, certmanager.NotAvailable, cfg.CertManagerAvailability)
 	require.Equal(t, targetallocator.NotAvailable, cfg.TargetAllocatorAvailability)
 	require.Equal(t, collector.NotAvailable, cfg.CollectorAvailability)
+	require.Equal(t, opampbridge.NotAvailable, cfg.OpAmpBridgeAvailability)
 
 	// test
-	err := cfg.AutoDetect()
-	require.NoError(t, err)
+	require.NoError(t, autodetect.ApplyAutoDetect(mock, &cfg, logr.Discard()))
 
 	// verify
 	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability)
@@ -80,6 +67,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, rbac.Available, cfg.CreateRBACPermissions)
 	require.Equal(t, certmanager.Available, cfg.CertManagerAvailability)
 	require.Equal(t, targetallocator.Available, cfg.TargetAllocatorAvailability)
+	require.Equal(t, opampbridge.Available, cfg.OpAmpBridgeAvailability)
 }
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
@@ -91,6 +79,14 @@ type mockAutoDetect struct {
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
 	CollectorAvailabilityFunc       func() (collector.Availability, error)
+	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
+}
+
+func (m *mockAutoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, error) {
+	if m.OpAmpBridgeAvailabilityFunc != nil {
+		return m.OpAmpBridgeAvailabilityFunc()
+	}
+	return opampbridge.NotAvailable, nil
 }
 
 func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {

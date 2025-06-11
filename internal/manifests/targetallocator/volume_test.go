@@ -71,7 +71,9 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 				Name: "test-targetallocator",
 			},
 		}
-		cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+		cfg := config.Config{
+			CertManagerAvailability: certmanager.Available,
+		}
 
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
@@ -96,7 +98,9 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 				Name: "test-targetallocator",
 			},
 		}
-		cfg := config.New(config.WithCertManagerAvailability(certmanager.NotAvailable))
+		cfg := config.Config{
+			CertManagerAvailability: certmanager.NotAvailable,
+		}
 
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
@@ -112,7 +116,9 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 				Name: "test-targetallocator",
 			},
 		}
-		cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+		cfg := config.Config{
+			CertManagerAvailability: certmanager.Available,
+		}
 
 		volumes := Volumes(cfg, ta)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAServerCertificate(ta.Name)})

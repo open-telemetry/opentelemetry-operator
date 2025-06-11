@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         id: setup-go
         with:
-          go-version: "~1.24.3"
+          go-version: "~1.24.4"
 
       - name: Cache tools
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -60,11 +60,12 @@ jobs:
        # should be compatible with them.
        kube-version:
          - "1.23"
-         - "1.32"
+         - "1.33"
        group:
          - e2e
          - e2e-automatic-rbac
          - e2e-autoscale
+         - e2e-instrumentation-default
          - e2e-instrumentation
          - e2e-opampbridge
          - e2e-pdb
@@ -72,14 +73,20 @@ jobs:
          - e2e-targetallocator
          - e2e-targetallocator-cr
          - e2e-upgrade
+         - e2e-multi-instrumentation-default
          - e2e-multi-instrumentation
          - e2e-metadata-filters
          - e2e-ta-collector-mtls
+         - e2e-crd-validations
        include:
+         - group: e2e-instrumentation-default
+           setup: "add-instrumentation-params prepare-e2e"
          - group: e2e-instrumentation
+           setup: "add-instrumentation-params add-instrumentation-images prepare-e2e"
+         - group: e2e-multi-instrumentation-default
            setup: "add-instrumentation-params prepare-e2e"
          - group: e2e-multi-instrumentation
-           setup: "add-instrumentation-params prepare-e2e"
+           setup: "add-instrumentation-params add-instrumentation-images prepare-e2e"
          - group: e2e-metadata-filters
            setup: "add-operator-arg OPERATOR_ARG='--annotations-filter=.*filter.out --annotations-filter=config.*.gke.io.* --labels-filter=.*filter.out' prepare-e2e"
          - group: e2e-ta-collector-mtls
@@ -96,7 +103,7 @@ jobs:
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       id: setup-go
       with:
-        go-version: "~1.24.3"
+        go-version: "~1.24.4"
 
     - name: Cache tools
       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -131,6 +138,13 @@ jobs:
       run: |
         set -e
         make e2e-log-operator KUBE_VERSION=$KUBE_VERSION
+    - name: Upload test results
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      if: always()
+      with:
+        path: .testresults/e2e/*.xml
+        name: e2e-junit-${{ matrix.group }}-${{ matrix.kube-version }}
+        retention-days: 7
 
   e2e-tests-check:
     runs-on: ubuntu-latest
@@ -148,3 +162,14 @@ jobs:
             echo "One or more matrix jobs failed."
             false
           fi
+  # This event file is used by the JUnit report action in e2e-junit-report.yaml
+  event_file:
+    name: "Event File"
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: Event File
+        path: ${{ github.event_path }}

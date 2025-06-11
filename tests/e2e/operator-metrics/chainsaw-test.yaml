@@ -1,0 +1,120 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: operator-metrics
+spec:
+  steps:
+    - name: Assert operator metrics.
+      try:
+        - command:
+            entrypoint: kubectl
+            args:
+            - get
+            - pods
+            - -A
+            - -l control-plane=controller-manager
+            - -l app.kubernetes.io/name=opentelemetry-operator
+            - -o 
+            - jsonpath={.items[0].metadata.namespace}
+            outputs:
+            - name: otelnamespace
+              value: ($stdout)
+        - assert:
+            file: assert-operator.yaml
+        - command:
+            env:
+              - name: otelnamespace
+                value: ($otelnamespace)
+            entrypoint: kubectl
+            args:
+              - get
+              - service
+              - -n
+              - $otelnamespace
+              - -l
+              - control-plane=controller-manager
+              - -o
+              - jsonpath={.items[0].metadata.name}
+            outputs:
+              - name: serviceName
+                value: ($stdout)
+        - script:
+            env:
+              - name: serviceName
+                value: ($serviceName)
+            content: |
+              #!/bin/bash
+              kubectl get --raw https://${serviceName}:8443/metrics
+            outputs:
+              - name: metrics
+                value: (x_metrics_decode($stdout))
+            check:
+              ($error == null): true
+        - assert:
+            resource:
+              (length($metrics[?as_string(metric."__name__") == 'certwatcher_read_certificate_errors_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'certwatcher_read_certificate_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_active_workers']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_max_concurrent_reconciles']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_reconcile_errors_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_reconcile_panics_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_reconcile_time_seconds_bucket']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_reconcile_time_seconds_sum']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_reconcile_time_seconds_count']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_reconcile_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_terminal_reconcile_errors_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_webhook_latency_seconds_bucket']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_webhook_latency_seconds_sum']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_webhook_latency_seconds_count']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_webhook_panics_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_webhook_requests_in_flight']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'controller_runtime_webhook_requests_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_gc_duration_seconds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_gc_duration_seconds_sum']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_gc_duration_seconds_count']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_gc_gogc_percent']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_gc_gomemlimit_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_goroutines']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_info']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_alloc_bytes_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_buck_hash_sys_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_frees_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_gc_sys_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_heap_alloc_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_heap_idle_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_heap_inuse_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_heap_objects']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_heap_released_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_heap_sys_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_last_gc_time_seconds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_mcache_inuse_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_mcache_sys_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_mspan_inuse_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_next_gc_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_stack_inuse_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_stack_sys_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_sys_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_sched_gomaxprocs_threads']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_threads']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'leader_election_master_status']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_cpu_seconds_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_max_fds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_network_receive_bytes_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_network_transmit_bytes_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_open_fds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_resident_memory_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_start_time_seconds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_virtual_memory_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_virtual_memory_max_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'rest_client_requests_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_adds_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_depth']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_longest_running_processor_seconds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_queue_duration_seconds_bucket']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_queue_duration_seconds_sum']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_queue_duration_seconds_count']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_retries_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_unfinished_work_seconds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_work_duration_seconds_bucket']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_work_duration_seconds_sum']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'workqueue_work_duration_seconds_count']) >= `0`): true

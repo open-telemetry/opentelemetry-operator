@@ -41,6 +41,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
@@ -179,7 +180,11 @@ func main() {
 		ec.MessageKey = encodeMessageKey
 		ec.LevelKey = encodeLevelKey
 		ec.TimeKey = encodeTimeKey
-		ec.EncodeLevel = config.WithEncodeLevelFormat(encodeLevelFormat)
+		if encodeLevelFormat == "lowercase" {
+			ec.EncodeLevel = zapcore.LowercaseLevelEncoder
+		} else {
+			ec.EncodeLevel = zapcore.CapitalLevelEncoder
+		}
 	})
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
@@ -300,34 +305,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	cfg := config.New(
-		config.WithLogger(ctrl.Log.WithName("config")),
-		config.WithVersion(v),
-		config.WithCollectorImage(collectorImage),
-		config.WithEnableMultiInstrumentation(enableMultiInstrumentation),
-		config.WithEnableApacheHttpdInstrumentation(enableApacheHttpdInstrumentation),
-		config.WithEnableDotNetInstrumentation(enableDotNetInstrumentation),
-		config.WithEnableGoInstrumentation(enableGoInstrumentation),
-		config.WithEnableNginxInstrumentation(enableNginxInstrumentation),
-		config.WithEnablePythonInstrumentation(enablePythonInstrumentation),
-		config.WithEnableNodeJSInstrumentation(enableNodeJSInstrumentation),
-		config.WithEnableJavaInstrumentation(enableJavaInstrumentation),
-		config.WithTargetAllocatorImage(targetAllocatorImage),
-		config.WithOperatorOpAMPBridgeImage(operatorOpAMPBridgeImage),
-		config.WithAutoInstrumentationJavaImage(autoInstrumentationJava),
-		config.WithAutoInstrumentationNodeJSImage(autoInstrumentationNodeJS),
-		config.WithAutoInstrumentationPythonImage(autoInstrumentationPython),
-		config.WithAutoInstrumentationDotNetImage(autoInstrumentationDotNet),
-		config.WithAutoInstrumentationGoImage(autoInstrumentationGo),
-		config.WithAutoInstrumentationApacheHttpdImage(autoInstrumentationApacheHttpd),
-		config.WithAutoInstrumentationNginxImage(autoInstrumentationNginx),
-		config.WithAutoDetect(ad),
-		config.WithLabelFilters(labelsFilter),
-		config.WithAnnotationFilters(annotationsFilter),
-		config.WithIgnoreMissingCollectorCRDs(ignoreMissingCollectorCRDs),
-	)
-	err = cfg.AutoDetect()
-	if err != nil {
+	configLog := ctrl.Log.WithName("config")
+	cfg := config.New()
+	config.ApplyEnvVars(&cfg)
+	if err = config.ApplyCLI(&cfg); err != nil {
+		setupLog.Error(err, "failed to apply CLI flags")
+	}
+	if err = autodetect.ApplyAutoDetect(ad, &cfg, configLog); err != nil {
 		setupLog.Error(err, "failed to autodetect config variables")
 	}
 	// Only add these to the scheme if they are available
@@ -417,15 +401,17 @@ func main() {
 		}
 	}
 
-	if err = controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("OpAMPBridge"),
-		Scheme:   mgr.GetScheme(),
-		Config:   cfg,
-		Recorder: mgr.GetEventRecorderFor("opamp-bridge"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "OpAMPBridge")
-		os.Exit(1)
+	if cfg.OpAmpBridgeAvailability == opampbridge.Available {
+		if err = controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
+			Client:   mgr.GetClient(),
+			Log:      ctrl.Log.WithName("controllers").WithName("OpAMPBridge"),
+			Scheme:   mgr.GetScheme(),
+			Config:   cfg,
+			Recorder: mgr.GetEventRecorderFor("opamp-bridge"),
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "OpAMPBridge")
+			os.Exit(1)
+		}
 	}
 
 	if cfg.PrometheusCRAvailability == prometheus.Available && createSMOperatorMetrics {
@@ -502,9 +488,11 @@ func main() {
 				}),
 		})
 
-		if err = otelv1alpha1.SetupOpAMPBridgeWebhook(mgr, cfg); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "OpAMPBridge")
-			os.Exit(1)
+		if cfg.OpAmpBridgeAvailability == opampbridge.Available {
+			if err = otelv1alpha1.SetupOpAMPBridgeWebhook(mgr, cfg); err != nil {
+				setupLog.Error(err, "unable to create webhook", "webhook", "OpAMPBridge")
+				os.Exit(1)
+			}
 		}
 	} else {
 		ctrl.Log.Info("Webhooks are disabled, operator is running an unsupported mode", "ENABLE_WEBHOOKS", "false")
