@@ -135,3 +135,10 @@ func (c Config) String() string {
 	b, _ := yaml.Marshal(c)
 	return string(b)
 }
+
+func (c Config) ToStringMap() map[string]string {
+	b, _ := yaml.Marshal(c)
+	var m map[string]string
+	_ = yaml.Unmarshal(b, &m)
+	return m
+}

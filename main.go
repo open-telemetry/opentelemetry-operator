@@ -174,7 +174,7 @@ func main() {
 		"go-arch", runtime.GOARCH,
 		"go-os", runtime.GOOS,
 		"feature-gates", flagset.Lookup(featuregate.FeatureGatesFlag).Value.String(),
-		"config", cfg,
+		"config", cfg.ToStringMap(),
 		"create-openshift-dashboard", createOpenShiftDashboard,
 		"create-sm-operator-metrics", createSMOperatorMetrics,
 		"zap-message-key", encodeMessageKey,
