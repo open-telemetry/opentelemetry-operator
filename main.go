@@ -44,6 +44,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
+	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/controllers"
@@ -74,16 +75,6 @@ func init() {
 	// +kubebuilder:scaffold:scheme
 }
 
-// stringFlagOrEnv defines a string flag which can be set by an environment variable.
-// Precedence: flag > env var > default value.
-func stringFlagOrEnv(p *string, name string, envName string, defaultValue string, usage string) {
-	envValue := os.Getenv(envName)
-	if envValue != "" {
-		defaultValue = envValue
-	}
-	pflag.StringVar(p, name, defaultValue, usage)
-}
-
 func main() {
 	// registers any flags that underlying libraries might use
 	opts := zap.Options{}
@@ -92,47 +83,25 @@ func main() {
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.CommandLine.AddGoFlagSet(flagset)
 
-	v := version.Get()
-
 	// add flags related to this operator
 	var (
-		metricsAddr                      string
-		probeAddr                        string
-		pprofAddr                        string
-		enableLeaderElection             bool
-		createRBACPermissions            bool
-		createOpenShiftDashboard         bool
-		enableMultiInstrumentation       bool
-		enableApacheHttpdInstrumentation bool
-		enableDotNetInstrumentation      bool
-		enableGoInstrumentation          bool
-		enablePythonInstrumentation      bool
-		enableNginxInstrumentation       bool
-		enableNodeJSInstrumentation      bool
-		enableJavaInstrumentation        bool
-		enableCRMetrics                  bool
-		createSMOperatorMetrics          bool
-		ignoreMissingCollectorCRDs       bool
-		collectorImage                   string
-		targetAllocatorImage             string
-		operatorOpAMPBridgeImage         string
-		autoInstrumentationJava          string
-		autoInstrumentationNodeJS        string
-		autoInstrumentationPython        string
-		autoInstrumentationDotNet        string
-		autoInstrumentationApacheHttpd   string
-		autoInstrumentationNginx         string
-		autoInstrumentationGo            string
-		labelsFilter                     []string
-		annotationsFilter                []string
-		webhookPort                      int
-		tlsOpt                           config.TLSConfig
-		encodeMessageKey                 string
-		encodeLevelKey                   string
-		encodeTimeKey                    string
-		encodeLevelFormat                string
-		fipsDisabledComponents           string
+		metricsAddr              string
+		probeAddr                string
+		pprofAddr                string
+		enableLeaderElection     bool
+		createOpenShiftDashboard bool
+		enableCRMetrics          bool
+		createSMOperatorMetrics  bool
+		webhookPort              int
+		tlsOpt                   config.TLSConfig
+		encodeMessageKey         string
+		encodeLevelKey           string
+		encodeTimeKey            string
+		encodeLevelFormat        string
+		fipsDisabledComponents   string
 	)
+
+	cfg := config.New()
 
 	pflag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	pflag.StringVar(&probeAddr, "health-probe-addr", ":8081", "The address the probe endpoint binds to.")
@@ -140,32 +109,32 @@ func main() {
 	pflag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	pflag.BoolVar(&createRBACPermissions, "create-rbac-permissions", false, "Automatically create RBAC permissions needed by the processors (deprecated)")
+	pflag.Bool("create-rbac-permissions", cfg.CreateRBACPermissions == autoRBAC.Available, "Automatically create RBAC permissions needed by the processors (deprecated)")
 	pflag.BoolVar(&createOpenShiftDashboard, "openshift-create-dashboard", false, "Create an OpenShift dashboard for monitoring the OpenTelemetryCollector instances")
-	pflag.BoolVar(&enableMultiInstrumentation, "enable-multi-instrumentation", true, "Controls whether the operator supports multi instrumentation")
-	pflag.BoolVar(&enableApacheHttpdInstrumentation, constants.FlagApacheHttpd, true, "Controls whether the operator supports Apache HTTPD auto-instrumentation")
-	pflag.BoolVar(&enableDotNetInstrumentation, constants.FlagDotNet, true, "Controls whether the operator supports dotnet auto-instrumentation")
-	pflag.BoolVar(&enableGoInstrumentation, constants.FlagGo, false, "Controls whether the operator supports Go auto-instrumentation")
-	pflag.BoolVar(&enablePythonInstrumentation, constants.FlagPython, true, "Controls whether the operator supports python auto-instrumentation")
-	pflag.BoolVar(&enableNginxInstrumentation, constants.FlagNginx, false, "Controls whether the operator supports nginx auto-instrumentation")
-	pflag.BoolVar(&enableNodeJSInstrumentation, constants.FlagNodeJS, true, "Controls whether the operator supports nodejs auto-instrumentation")
-	pflag.BoolVar(&enableJavaInstrumentation, constants.FlagJava, true, "Controls whether the operator supports java auto-instrumentation")
+	pflag.Bool("enable-multi-instrumentation", cfg.EnableMultiInstrumentation, "Controls whether the operator supports multi instrumentation")
+	pflag.Bool(constants.FlagApacheHttpd, cfg.EnableApacheHttpdInstrumentation, "Controls whether the operator supports Apache HTTPD auto-instrumentation")
+	pflag.Bool(constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation, "Controls whether the operator supports dotnet auto-instrumentation")
+	pflag.Bool(constants.FlagGo, cfg.EnableGoAutoInstrumentation, "Controls whether the operator supports Go auto-instrumentation")
+	pflag.Bool(constants.FlagPython, cfg.EnablePythonAutoInstrumentation, "Controls whether the operator supports python auto-instrumentation")
+	pflag.Bool(constants.FlagNginx, cfg.EnableNginxAutoInstrumentation, "Controls whether the operator supports nginx auto-instrumentation")
+	pflag.Bool(constants.FlagNodeJS, cfg.EnableNodeJSAutoInstrumentation, "Controls whether the operator supports nodejs auto-instrumentation")
+	pflag.Bool(constants.FlagJava, cfg.EnableJavaAutoInstrumentation, "Controls whether the operator supports java auto-instrumentation")
 	pflag.BoolVar(&enableCRMetrics, constants.FlagCRMetrics, false, "Controls whether exposing the CR metrics is enabled")
 	pflag.BoolVar(&createSMOperatorMetrics, "create-sm-operator-metrics", false, "Create a ServiceMonitor for the operator metrics")
-	pflag.BoolVar(&ignoreMissingCollectorCRDs, "ignore-missing-collector-crds", false, "Ignore missing OpenTelemetryCollector CRDs presence in the cluster")
+	pflag.Bool("ignore-missing-collector-crds", cfg.IgnoreMissingCollectorCRDs, "Ignore missing OpenTelemetryCollector CRDs presence in the cluster")
 
-	stringFlagOrEnv(&collectorImage, "collector-image", "RELATED_IMAGE_COLLECTOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector), "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
-	stringFlagOrEnv(&targetAllocatorImage, "target-allocator-image", "RELATED_IMAGE_TARGET_ALLOCATOR", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator), "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
-	stringFlagOrEnv(&operatorOpAMPBridgeImage, "operator-opamp-bridge-image", "RELATED_IMAGE_OPERATOR_OPAMP_BRIDGE", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:%s", v.OperatorOpAMPBridge), "The default OpenTelemetry Operator OpAMP Bridge image. This image is used when no image is specified in the CustomResource.")
-	stringFlagOrEnv(&autoInstrumentationJava, "auto-instrumentation-java-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_JAVA", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:%s", v.AutoInstrumentationJava), "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
-	stringFlagOrEnv(&autoInstrumentationNodeJS, "auto-instrumentation-nodejs-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_NODEJS", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:%s", v.AutoInstrumentationNodeJS), "The default OpenTelemetry NodeJS instrumentation image. This image is used when no image is specified in the CustomResource.")
-	stringFlagOrEnv(&autoInstrumentationPython, "auto-instrumentation-python-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:%s", v.AutoInstrumentationPython), "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
-	stringFlagOrEnv(&autoInstrumentationDotNet, "auto-instrumentation-dotnet-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:%s", v.AutoInstrumentationDotNet), "The default OpenTelemetry DotNet instrumentation image. This image is used when no image is specified in the CustomResource.")
-	stringFlagOrEnv(&autoInstrumentationGo, "auto-instrumentation-go-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_GO", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:%s", v.AutoInstrumentationGo), "The default OpenTelemetry Go instrumentation image. This image is used when no image is specified in the CustomResource.")
-	stringFlagOrEnv(&autoInstrumentationApacheHttpd, "auto-instrumentation-apache-httpd-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_APACHE_HTTPD", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationApacheHttpd), "The default OpenTelemetry Apache HTTPD instrumentation image. This image is used when no image is specified in the CustomResource.")
-	stringFlagOrEnv(&autoInstrumentationNginx, "auto-instrumentation-nginx-image", "RELATED_IMAGE_AUTO_INSTRUMENTATION_NGINX", fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationNginx), "The default OpenTelemetry Nginx instrumentation image. This image is used when no image is specified in the CustomResource.")
-	pflag.StringArrayVar(&labelsFilter, "labels-filter", []string{}, "Labels to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --labels-filter=.*filter.out will filter out labels that looks like: label.filter.out: true")
-	pflag.StringArrayVar(&annotationsFilter, "annotations-filter", []string{}, "Annotations to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --annotations-filter=.*filter.out will filter out annotations that looks like: annotation.filter.out: true")
+	pflag.String("collector-image", cfg.CollectorImage, "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
+	pflag.String("target-allocator-image", cfg.TargetAllocatorImage, "The default OpenTelemetry target allocator image. This image is used when no image is specified in the CustomResource.")
+	pflag.String("operator-opamp-bridge-image", cfg.OperatorOpAMPBridgeImage, "The default OpenTelemetry Operator OpAMP Bridge image. This image is used when no image is specified in the CustomResource.")
+	pflag.String("auto-instrumentation-java-image", cfg.AutoInstrumentationJavaImage, "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.String("auto-instrumentation-nodejs-image", cfg.AutoInstrumentationNodeJSImage, "The default OpenTelemetry NodeJS instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.String("auto-instrumentation-python-image", cfg.AutoInstrumentationPythonImage, "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.String("auto-instrumentation-dotnet-image", cfg.AutoInstrumentationDotNetImage, "The default OpenTelemetry DotNet instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.String("auto-instrumentation-go-image", cfg.AutoInstrumentationGoImage, "The default OpenTelemetry Go instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.String("auto-instrumentation-apache-httpd-image", cfg.AutoInstrumentationApacheHttpdImage, "The default OpenTelemetry Apache HTTPD instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.String("auto-instrumentation-nginx-image", cfg.AutoInstrumentationNginxImage, "The default OpenTelemetry Nginx instrumentation image. This image is used when no image is specified in the CustomResource.")
+	pflag.StringArray("labels-filter", cfg.LabelsFilter, "Labels to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --labels-filter=.*filter.out will filter out labels that looks like: label.filter.out: true")
+	pflag.StringArray("annotations-filter", cfg.AnnotationsFilter, "Annotations to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --annotations-filter=.*filter.out will filter out annotations that looks like: annotation.filter.out: true")
 	pflag.StringVar(&tlsOpt.MinVersion, "tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
 	pflag.StringSliceVar(&tlsOpt.CipherSuites, "tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
 	pflag.StringVar(&encodeMessageKey, "zap-message-key", "message", "The message key to be used in the customized Log Encoder")
@@ -190,34 +159,22 @@ func main() {
 	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
 
+	configLog := ctrl.Log.WithName("config")
+	config.ApplyEnvVars(&cfg)
+	if err := config.ApplyCLI(&cfg); err != nil {
+		setupLog.Error(err, "failed to apply CLI flags")
+	}
+
+	v := version.Get()
+
 	logger.Info("Starting the OpenTelemetry Operator",
 		"opentelemetry-operator", v.Operator,
-		"opentelemetry-collector", collectorImage,
-		"opentelemetry-targetallocator", targetAllocatorImage,
-		"operator-opamp-bridge", operatorOpAMPBridgeImage,
-		"ignore-missing-collector-crds", ignoreMissingCollectorCRDs,
-		"auto-instrumentation-java", autoInstrumentationJava,
-		"auto-instrumentation-nodejs", autoInstrumentationNodeJS,
-		"auto-instrumentation-python", autoInstrumentationPython,
-		"auto-instrumentation-dotnet", autoInstrumentationDotNet,
-		"auto-instrumentation-go", autoInstrumentationGo,
-		"auto-instrumentation-apache-httpd", autoInstrumentationApacheHttpd,
-		"auto-instrumentation-nginx", autoInstrumentationNginx,
-		"feature-gates", flagset.Lookup(featuregate.FeatureGatesFlag).Value.String(),
 		"build-date", v.BuildDate,
 		"go-version", v.Go,
 		"go-arch", runtime.GOARCH,
 		"go-os", runtime.GOOS,
-		"labels-filter", labelsFilter,
-		"annotations-filter", annotationsFilter,
-		"enable-multi-instrumentation", enableMultiInstrumentation,
-		"enable-apache-httpd-instrumentation", enableApacheHttpdInstrumentation,
-		"enable-dotnet-instrumentation", enableDotNetInstrumentation,
-		"enable-go-instrumentation", enableGoInstrumentation,
-		"enable-python-instrumentation", enablePythonInstrumentation,
-		"enable-nginx-instrumentation", enableNginxInstrumentation,
-		"enable-nodejs-instrumentation", enableNodeJSInstrumentation,
-		"enable-java-instrumentation", enableJavaInstrumentation,
+		"feature-gates", flagset.Lookup(featuregate.FeatureGatesFlag).Value.String(),
+		"config", cfg.ToStringMap(),
 		"create-openshift-dashboard", createOpenShiftDashboard,
 		"create-sm-operator-metrics", createSMOperatorMetrics,
 		"zap-message-key", encodeMessageKey,
@@ -305,12 +262,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	configLog := ctrl.Log.WithName("config")
-	cfg := config.New()
-	config.ApplyEnvVars(&cfg)
-	if err = config.ApplyCLI(&cfg); err != nil {
-		setupLog.Error(err, "failed to apply CLI flags")
-	}
 	if err = autodetect.ApplyAutoDetect(ad, &cfg, configLog); err != nil {
 		setupLog.Error(err, "failed to autodetect config variables")
 	}
