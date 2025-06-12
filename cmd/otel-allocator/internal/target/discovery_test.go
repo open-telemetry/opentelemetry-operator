@@ -16,6 +16,7 @@ import (
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
+	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -459,6 +460,41 @@ func TestDiscovery_NoConfig(t *testing.T) {
 	// check the updated scrape configs
 	expectedScrapeConfigs := map[string]*promconfig.ScrapeConfig{}
 	assert.Equal(t, expectedScrapeConfigs, scu.mockCfg)
+}
+
+func TestProcessTargetGroups_StableLabelIterationOrder(t *testing.T) {
+	// Labels are used to compute the hash of targets and hashing is
+	// reliant on consistent ordering of labels. Creating one label
+	// per letter of the english alphabet is enough to reliably
+	// reproduce inconsistent label ordering due to non-deterministic
+	// map iteration order + lack of sorting.
+	groupLabels := model.LabelSet{}
+	for i := 'a'; i <= 'm'; i++ {
+		groupLabels[model.LabelName(i)] = model.LabelValue(i)
+	}
+
+	targetLabels := model.LabelSet{}
+	for i := 'n'; i <= 'z'; i++ {
+		targetLabels[model.LabelName(i)] = model.LabelValue(i)
+	}
+
+	groups := []*targetgroup.Group{
+		{
+			Labels:  groupLabels,
+			Source:  "",
+			Targets: []model.LabelSet{targetLabels},
+		},
+	}
+
+	results := make([]*Item, 1)
+	var d *Discoverer
+	d.processTargetGroups("test", groups, results)
+
+	for i, l := range results[0].Labels {
+		expected := string(rune('a' + i))
+		assert.Equal(t, expected, l.Name, "unexpected label key at index %d", i)
+		assert.Equal(t, expected, l.Value, "unexpected label value at index %d", i)
+	}
 }
 
 func BenchmarkApplyScrapeConfig(b *testing.B) {

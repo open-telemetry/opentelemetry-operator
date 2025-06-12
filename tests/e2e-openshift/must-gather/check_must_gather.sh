@@ -9,31 +9,32 @@ oc adm must-gather --dest-dir=$MUST_GATHER_DIR --image=ghcr.io/open-telemetry/op
 # Define required files and directories
 REQUIRED_ITEMS=(
   event-filter.html
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/olm/*opentelemetry-operato*.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/olm/clusterserviceversion-opentelemetry-operator-v*.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/olm/installplan-install-*.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/olm/subscription-opentelemetry-operator-v*-sub.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-collector-headless.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-collector.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/deployment-stateful-targetallocator.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-collector-monitoring.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/poddisruptionbudget-stateful-targetallocator.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/poddisruptionbudget-stateful-collector.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-targetallocator.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/configmap-stateful-collector-*.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/configmap-stateful-targetallocator.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/statefulset-stateful-collector.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/opentelemetrycollector-stateful.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/serviceaccount-stateful-collector.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/service-sidecar-collector.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/opentelemetrycollector-sidecar.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/service-sidecar-collector-monitoring.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/configmap-sidecar-collector-*.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/serviceaccount-sidecar-collector.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/service-sidecar-collector-headless.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/chainsaw-must-gather/instrumentation-nodejs.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/opentelemetry-operator-controller-manager-*
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/deployment-opentelemetry-operator-controller-manager.yaml
+  *-must-gather-sha256-*/olm/*opentelemetry-operato*.yaml
+  *-must-gather-sha256-*/olm/clusterserviceversion-opentelemetry-operator-v*.yaml
+  *-must-gather-sha256-*/olm/installplan-install-*.yaml
+  *-must-gather-sha256-*/olm/subscription-opentelemetry-operator-v*-sub.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-collector-headless.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/targetallocator-stateful.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/deployment-stateful-targetallocator.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-collector-monitoring.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/poddisruptionbudget-stateful-targetallocator.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/poddisruptionbudget-stateful-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-targetallocator.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/configmap-stateful-collector-*.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/configmap-stateful-targetallocator.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/statefulset-stateful-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/opentelemetrycollector-stateful.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/serviceaccount-stateful-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/service-sidecar-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/opentelemetrycollector-sidecar.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/service-sidecar-collector-monitoring.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/configmap-sidecar-collector-*.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/serviceaccount-sidecar-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/service-sidecar-collector-headless.yaml
+  *-must-gather-sha256-*/chainsaw-must-gather/instrumentation-nodejs.yaml
+  *-must-gather-sha256-*/opentelemetry-operator-controller-manager-*
+  *-must-gather-sha256-*/deployment-opentelemetry-operator-controller-manager.yaml
   timestamp
 )
 

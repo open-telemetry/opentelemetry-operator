@@ -137,6 +137,7 @@ func (a *allocator) GetTargetsForCollectorAndJob(collector string, job string) [
 }
 
 // TargetItems returns a shallow copy of the targetItems map.
+// The key is the target item's hash, and the value is the target item.
 func (a *allocator) TargetItems() map[target.ItemHash]*target.Item {
 	a.m.RLock()
 	defer a.m.RUnlock()
