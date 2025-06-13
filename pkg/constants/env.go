@@ -34,16 +34,6 @@ const (
 	EnvNodeName = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
 	EnvNodeIP   = "OTEL_NODE_IP"
 
-	FlagCRMetrics   = "enable-cr-metrics"
-	FlagMulti       = "enable-multi-instrumentation"
-	FlagApacheHttpd = "enable-apache-httpd-instrumentation"
-	FlagDotNet      = "enable-dotnet-instrumentation"
-	FlagGo          = "enable-go-instrumentation"
-	FlagPython      = "enable-python-instrumentation"
-	FlagNginx       = "enable-nginx-instrumentation"
-	FlagNodeJS      = "enable-nodejs-instrumentation"
-	FlagJava        = "enable-java-instrumentation"
-
 	TACollectorTLSDirPath      = "/tls"
 	TACollectorCAFileName      = "ca.crt"
 	TACollectorTLSKeyFileName  = "tls.key"

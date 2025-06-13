@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/pflag"
 
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 var args = os.Args[1:]
@@ -26,14 +25,14 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.Bool("create-rbac-permissions", cfg.CreateRBACPermissions == autoRBAC.Available, "Automatically create RBAC permissions needed by the processors (deprecated)")
 	f.Bool("openshift-create-dashboard", cfg.OpenshiftCreateDashboard, "Create an OpenShift dashboard for monitoring the OpenTelemetryCollector instances")
 	f.Bool("enable-multi-instrumentation", cfg.EnableMultiInstrumentation, "Controls whether the operator supports multi instrumentation")
-	f.Bool(constants.FlagApacheHttpd, cfg.EnableApacheHttpdInstrumentation, "Controls whether the operator supports Apache HTTPD auto-instrumentation")
-	f.Bool(constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation, "Controls whether the operator supports dotnet auto-instrumentation")
-	f.Bool(constants.FlagGo, cfg.EnableGoAutoInstrumentation, "Controls whether the operator supports Go auto-instrumentation")
-	f.Bool(constants.FlagPython, cfg.EnablePythonAutoInstrumentation, "Controls whether the operator supports python auto-instrumentation")
-	f.Bool(constants.FlagNginx, cfg.EnableNginxAutoInstrumentation, "Controls whether the operator supports nginx auto-instrumentation")
-	f.Bool(constants.FlagNodeJS, cfg.EnableNodeJSAutoInstrumentation, "Controls whether the operator supports nodejs auto-instrumentation")
-	f.Bool(constants.FlagJava, cfg.EnableJavaAutoInstrumentation, "Controls whether the operator supports java auto-instrumentation")
-	f.Bool(constants.FlagCRMetrics, cfg.EnableCRMetrics, "Controls whether exposing the CR metrics is enabled")
+	f.Bool("enable-apache-httpd-instrumentation", cfg.EnableApacheHttpdInstrumentation, "Controls whether the operator supports Apache HTTPD auto-instrumentation")
+	f.Bool("enable-dotnet-instrumentation", cfg.EnableDotNetAutoInstrumentation, "Controls whether the operator supports dotnet auto-instrumentation")
+	f.Bool("enable-go-instrumentation", cfg.EnableGoAutoInstrumentation, "Controls whether the operator supports Go auto-instrumentation")
+	f.Bool("enable-python-instrumentation", cfg.EnablePythonAutoInstrumentation, "Controls whether the operator supports python auto-instrumentation")
+	f.Bool("enable-nginx-instrumentation", cfg.EnableNginxAutoInstrumentation, "Controls whether the operator supports nginx auto-instrumentation")
+	f.Bool("enable-nodejs-instrumentation", cfg.EnableNodeJSAutoInstrumentation, "Controls whether the operator supports nodejs auto-instrumentation")
+	f.Bool("enable-java-instrumentation", cfg.EnableJavaAutoInstrumentation, "Controls whether the operator supports java auto-instrumentation")
+	f.Bool("enable-cr-metrics", cfg.EnableCRMetrics, "Controls whether exposing the CR metrics is enabled")
 	f.Bool("create-sm-operator-metrics", cfg.CreateServiceMonitorOperatorMetrics, "Create a ServiceMonitor for the operator metrics")
 	f.Bool("ignore-missing-collector-crds", cfg.IgnoreMissingCollectorCRDs, "Ignore missing OpenTelemetryCollector CRDs presence in the cluster")
 	f.String("collector-image", cfg.CollectorImage, "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
@@ -71,22 +70,22 @@ func ApplyCLI(cfg *Config) error {
 	f.Visit(func(fl *pflag.Flag) {
 		if fl.Changed {
 			switch fl.Name {
-			case constants.FlagMulti:
+			case "enable-multi-instrumentation":
 				cfg.EnableMultiInstrumentation, _ = f.GetBool("enable-multi-instrumentation")
-			case constants.FlagApacheHttpd:
-				cfg.EnableApacheHttpdInstrumentation, _ = f.GetBool(constants.FlagApacheHttpd)
-			case constants.FlagDotNet:
-				cfg.EnableDotNetAutoInstrumentation, _ = f.GetBool(constants.FlagDotNet)
-			case constants.FlagGo:
-				cfg.EnableGoAutoInstrumentation, _ = f.GetBool(constants.FlagGo)
-			case constants.FlagPython:
-				cfg.EnablePythonAutoInstrumentation, _ = f.GetBool(constants.FlagPython)
-			case constants.FlagNginx:
-				cfg.EnableNginxAutoInstrumentation, _ = f.GetBool(constants.FlagNginx)
-			case constants.FlagNodeJS:
-				cfg.EnableNodeJSAutoInstrumentation, _ = f.GetBool(constants.FlagNodeJS)
-			case constants.FlagJava:
-				cfg.EnableJavaAutoInstrumentation, _ = f.GetBool(constants.FlagJava)
+			case "enable-apache-httpd-instrumentation":
+				cfg.EnableApacheHttpdInstrumentation, _ = f.GetBool("enable-apache-httpd-instrumentation")
+			case "enable-dotnet-instrumentation":
+				cfg.EnableDotNetAutoInstrumentation, _ = f.GetBool("enable-dotnet-instrumentation")
+			case "enable-go-instrumentation":
+				cfg.EnableGoAutoInstrumentation, _ = f.GetBool("enable-go-instrumentation")
+			case "enable-python-instrumentation":
+				cfg.EnablePythonAutoInstrumentation, _ = f.GetBool("enable-python-instrumentation")
+			case "enable-nginx-instrumentation":
+				cfg.EnableNginxAutoInstrumentation, _ = f.GetBool("enable-nginx-instrumentation")
+			case "enable-nodejs-instrumentation":
+				cfg.EnableNodeJSAutoInstrumentation, _ = f.GetBool("enable-nodejs-instrumentation")
+			case "enable-java-instrumentation":
+				cfg.EnableJavaAutoInstrumentation, _ = f.GetBool("enable-java-instrumentation")
 			case "ignore-missing-collector-crds":
 				cfg.IgnoreMissingCollectorCRDs, _ = f.GetBool("ignore-missing-collector-crds")
 			case "collector-image":
