@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "labels": ["dependencies"],
-  "enabledManagers": ["regex"],
+  "enabledManagers": ["regex", "npm", "pip_requirements"],
   "customManagers": [
     {
       "customType": "regex",
@@ -37,6 +37,32 @@
       "matchStrings": [
         "ENV CHAINSAW_VERSION=(?<currentValue>v[\\d\\.]+)"
       ]
+    },
+    {
+      "customType": "regex",
+      "description": "Update OpenTelemetry Java instrumentation version",
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "open-telemetry/opentelemetry-java-instrumentation",
+      "extractVersionTemplate": "^v?(?<version>.*)$",
+      "fileMatch": [
+        "(^|/)autoinstrumentation/java/version\\.txt$"
+      ],
+      "matchStrings": [
+        "^(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\\s*$"
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Update OpenTelemetry .NET instrumentation version",
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "open-telemetry/opentelemetry-dotnet-instrumentation",
+      "extractVersionTemplate": "^v?(?<version>.*)$",
+      "fileMatch": [
+        "(^|/)autoinstrumentation/dotnet/version\\.txt$"
+      ],
+      "matchStrings": [
+        "^(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\\s*$"
+      ]
     }
   ],
   "packageRules": [
@@ -55,6 +81,32 @@
       "matchManagers": ["regex"],
       "matchFileNames": ["tests/e2e-openshift/Dockerfile"],
       "commitMessageTopic": "Update Chainsaw version in OpenShift CI Dockerfile"
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchFileNames": ["autoinstrumentation/java/version.txt"],
+      "commitMessageTopic": "OpenTelemetry java agent version"
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchFileNames": ["autoinstrumentation/dotnet/version.txt"],
+      "commitMessageTopic": "OpenTelemetry dotnet agent version"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchFileNames": ["autoinstrumentation/nodejs/package.json"],
+      "matchPackageNames": ["@opentelemetry/auto-instrumentations-node"],
+      "commitMessageTopic": "OpenTelemetry nodejs agent version"
+    },
+    {
+      "matchManagers": ["pip_requirements"],
+      "matchFileNames": ["autoinstrumentation/python/requirements.txt"],
+      "matchPackagePatterns": ["^opentelemetry-"],
+      "groupName": "OpenTelemetry Python packages",
+      "group": {
+        "commitMessageTopic": "OpenTelemetry python agent version to {{ upgrades.0.newVersion }}"
+      }
+
     }
   ]
 }
