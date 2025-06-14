@@ -261,7 +261,6 @@ func TestAgent_getHealth(t *testing.T) {
 		configFile string
 	}
 	type args struct {
-		ctx context.Context
 		// List of mappings from namespace/name to a config file, tests are run in order of list
 		configs []map[string]string
 		healths map[uuid.UUID]*protobufs.ComponentHealth
@@ -280,7 +279,6 @@ func TestAgent_getHealth(t *testing.T) {
 				configFile: agentTestFileName,
 			},
 			args: args{
-				ctx:     context.Background(),
 				configs: nil,
 				podList: mockPodList,
 				healths: map[uuid.UUID]*protobufs.ComponentHealth{},
@@ -302,7 +300,6 @@ func TestAgent_getHealth(t *testing.T) {
 				configFile: agentTestFileName,
 			},
 			args: args{
-				ctx: context.Background(),
 				configs: []map[string]string{
 					{
 						testCollectorKey: collectorBasicFile,
@@ -346,7 +343,6 @@ func TestAgent_getHealth(t *testing.T) {
 				configFile: agentTestFileName,
 			},
 			args: args{
-				ctx: context.Background(),
 				configs: []map[string]string{
 					{
 						testCollectorKey:  collectorBasicFile,
@@ -388,7 +384,6 @@ func TestAgent_getHealth(t *testing.T) {
 				configFile: agentTestFileName,
 			},
 			args: args{
-				ctx: context.Background(),
 				configs: []map[string]string{
 					{
 						thirdCollectorKey: collectorBasicFile,
@@ -428,7 +423,6 @@ func TestAgent_getHealth(t *testing.T) {
 				configFile: agentTestFileName,
 			},
 			args: args{
-				ctx: context.Background(),
 				configs: []map[string]string{
 					{
 						thirdCollectorKey: collectorBasicFile,
@@ -485,11 +479,12 @@ func TestAgent_getHealth(t *testing.T) {
 			}
 
 			for i, configMap := range tt.args.configs {
+				ctx := context.Background()
 				var data *types.MessageData
 				data, err := getMessageDataFromConfigFile(configMap)
 				require.NoError(t, err, "should be able to load data")
-				agent.onMessage(tt.args.ctx, data)
-				effectiveConfig, err := agent.getEffectiveConfig(tt.args.ctx)
+				agent.onMessage(ctx, data)
+				effectiveConfig, err := agent.getEffectiveConfig(ctx)
 				require.NoError(t, err, "should be able to get effective config")
 				// We should only expect this to happen if we supply configuration
 				assert.Equal(t, effectiveConfig, mockClient.lastEffectiveConfig, "client's config should be updated")
