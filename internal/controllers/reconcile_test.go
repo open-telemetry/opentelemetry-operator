@@ -1437,10 +1437,12 @@ func TestUpgrade(t *testing.T) {
 			err = k8sClient.Status().Update(testCtx, otelcol)
 			require.NoError(t, err)
 
-			// Update cache.
-			// Otherwise, adding the finalizer in opentelemetrycollector_controller intermittently fails with:
-			// Operation cannot be fulfilled on opentelemetrycollectors.opentelemetry.io "...": the object has been modified; please apply your changes to the latest version and try again
-			_ = k8sClient.Get(ctx, nsn, otelcol)
+			// Wait until cache refreshes
+			require.EventuallyWithT(t, func(collect *assert.CollectT) {
+				getErr := k8sClient.Get(ctx, nsn, otelcol)
+				require.NoError(t, getErr)
+				assert.Equal(t, tt.input.Status, otelcol.Status)
+			}, time.Second*10, time.Millisecond*10)
 
 			// First reconcile
 			req := k8sreconcile.Request{NamespacedName: nsn}
