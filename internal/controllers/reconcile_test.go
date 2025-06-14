@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -711,8 +712,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 	expectedStartingResourceCount := 7
 	startingCollector := &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "placeholder",
-			Namespace: metav1.NamespaceDefault,
+			Name: "placeholder",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
@@ -803,12 +803,19 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			namespace, err := createRandomNamespace(k8sClient)
+			require.NoError(t, err)
+			t.Cleanup(func() {
+				delErr := k8sClient.Delete(context.Background(), namespace)
+				assert.NoError(t, delErr)
+			})
 			collectorName := sanitizeResourceName(tc.name)
 			collector := startingCollector.DeepCopy()
 			collector.Name = collectorName
+			collector.Namespace = namespace.Name
 			nsn := types.NamespacedName{Name: collector.Name, Namespace: collector.Namespace}
 			clientCtx := context.Background()
-			err := k8sClient.Create(clientCtx, collector)
+			err = k8sClient.Create(clientCtx, collector)
 			require.NoError(t, err)
 			t.Cleanup(func() {
 				deleteErr := k8sClient.Delete(clientCtx, collector)
@@ -1561,4 +1568,19 @@ func sanitizeResourceName(name string) string {
 	re := regexp.MustCompile("[^a-z0-9-]")
 	sanitized = re.ReplaceAllString(sanitized, "-")
 	return sanitized
+}
+
+func createRandomNamespace(k8sClient client.Client) (*v1.Namespace, error) {
+	name := uuid.NewString()
+	namespace := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+
+	err := k8sClient.Create(context.Background(), namespace)
+	if err != nil {
+		return nil, err
+	}
+	return namespace, nil
 }
