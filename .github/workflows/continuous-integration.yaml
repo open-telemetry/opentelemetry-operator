@@ -34,6 +34,8 @@ jobs:
       run: make install-tools
 
     - name: "basic checks"
+      env:
+        KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT: "true"  # Get control plane output in case of envtest errors
       run: make ci
 
   lint:
