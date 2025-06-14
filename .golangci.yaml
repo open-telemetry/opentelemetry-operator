@@ -54,11 +54,11 @@ linters:
         - -ST1019 # FIXME Importing the same package multiple times
         - -ST1023 # FIXME Redundant type in variable declaration
   enable:
+    - containedctx
     - depguard
     - errcheck
     - errorlint
     - exhaustive
-    - containedctx
     - godot
     - goheader
     - gosec
