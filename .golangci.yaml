@@ -58,6 +58,7 @@ linters:
     - errcheck
     - errorlint
     - exhaustive
+    - containedctx
     - godot
     - goheader
     - gosec
@@ -65,6 +66,7 @@ linters:
     - ineffassign
     - misspell
     - staticcheck
+    - usetesting
     - unparam
     - unused
   exclusions:
