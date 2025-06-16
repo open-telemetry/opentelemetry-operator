@@ -175,7 +175,7 @@ func TestToStringMap(t *testing.T) {
 		"operator-op-amp-bridge-configmap-entry":  "foo.yaml",
 		"operatoropampbridge-image":               "",
 		"pprof-addr":                              "",
-		"probe-addr":                              "",
+		"health-probe-addr":                       "",
 		"prometheus-cr-availability":              "0",
 		"target-allocator-availability":           "0",
 		"target-allocator-configmap-entry":        "",

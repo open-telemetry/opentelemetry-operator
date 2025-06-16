@@ -116,8 +116,8 @@ func ApplyCLI(cfg *Config) error {
 				cfg.OpenshiftCreateDashboard, _ = f.GetBool("openshift-create-dashboard")
 			case "metrics-addr":
 				cfg.MetricsAddr, _ = f.GetString("metrics-addr")
-			case "probe-addr":
-				cfg.ProbeAddr, _ = f.GetString("probe-addr")
+			case "health-probe-addr":
+				cfg.ProbeAddr, _ = f.GetString("health-probe-addr")
 			case "pprof-addr":
 				cfg.PprofAddr, _ = f.GetString("pprof-addr")
 			case "enable-leader-election":

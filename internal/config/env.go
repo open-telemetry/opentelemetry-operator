@@ -46,7 +46,7 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("METRICS_ADDR"); ok {
 		cfg.MetricsAddr = v
 	}
-	if v, ok := os.LookupEnv("PROBE_ADDR"); ok {
+	if v, ok := os.LookupEnv("HEALTH_PROBE_ADDR"); ok {
 		cfg.ProbeAddr = v
 	}
 	if v, ok := os.LookupEnv("PPROF_ADDR"); ok {
