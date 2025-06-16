@@ -13,7 +13,7 @@ require (
 	github.com/buraksezer/consistent v0.10.0
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/gin-gonic/gin v1.10.0
+	github.com/gin-gonic/gin v1.10.1
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logr/logr v1.4.2
 	github.com/go-viper/mapstructure/v2 v2.2.1
