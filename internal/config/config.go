@@ -102,11 +102,7 @@ type Config struct {
 	// MetricsAddr is the address the metric endpoint binds to.
 	MetricsAddr string `yaml:"metrics-addr"`
 	// ProbeAddr is the address the probe endpoint binds to.
-<<<<<<< HEAD
 	ProbeAddr string `yaml:"health-probe-addr"`
-=======
-	ProbeAddr string `yaml:"probe-addr"`
->>>>>>> d7ae23a1 (Harmonize CLI and env var configuration to allow setting all configuration)
 	// PprofAddr is the address to expose the pprof server. Default is empty string which disables the pprof server.
 	PprofAddr string `yaml:"pprof-addr"`
 	// EnableLeaderElection enables leader election for controller manager
