@@ -1750,8 +1750,8 @@ func TestInjectGo(t *testing.T) {
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"instrumentation.opentelemetry.io/otel-go-auto-target-exe": "foo",
 						"instrumentation.opentelemetry.io/go-container-names":      "app",
+						"instrumentation.opentelemetry.io/otel-go-auto-target-exe": "foo",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -1770,6 +1770,7 @@ func TestInjectGo(t *testing.T) {
 			expected: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/go-container-names":      "app",
 						"instrumentation.opentelemetry.io/otel-go-auto-target-exe": "foo",
 					},
 				},

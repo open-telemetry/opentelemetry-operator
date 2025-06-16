@@ -5,7 +5,7 @@ change_type: bug_fix
 component: auto-instrumentation
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Fix the bug that k8s.container.name in OTEL_RESOURCE_ATTRIBUTES env is not set correctly for the auto-instrumentation when the pod has multiple containers.
+note: Fix the bug that k8s.container.name in OTEL_RESOURCE_ATTRIBUTES env is not set correctly for Go the auto-instrumentation when the pod has multiple containers.
 
 # One or more tracking issues related to the change
 issues: []
