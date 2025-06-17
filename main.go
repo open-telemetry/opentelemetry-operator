@@ -88,6 +88,7 @@ func main() {
 
 	var configFile string
 	cliFlags.StringVar(&configFile, "config-file", "", "Path to config file")
+
 	if err := cliFlags.Parse(os.Args[1:]); err != nil {
 		panic(err)
 	}

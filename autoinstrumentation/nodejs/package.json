@@ -13,6 +13,6 @@
     },
     "dependencies": {
         "@opentelemetry/api": "1.9.0",
-        "@opentelemetry/auto-instrumentations-node": "0.58.1"
+        "@opentelemetry/auto-instrumentations-node": "0.60.1"
     }
 }

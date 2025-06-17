@@ -11,6 +11,26 @@ The TA serves two functions:
 * Even distribution of Prometheus targets among a pool of Collectors
 * Discovery of Prometheus Custom Resources
 
+## Configuration
+
+The Target Allocator uses a configuration file (by default under `/conf/targetallocator.yaml`). It accepts the following elements:
+
+| Name                               | Description                                                                   | Default Value                                 | Environment variable | 
+|------------------------------------|-------------------------------------------------------------------------------|-----------------------------------------------|----------------------|
+| `collector_namespace` (required)   | Namespace to watch for collector deployments for job assignments              |                                               | `OTELCOL_NAMESPACE`  |
+| `collector_selector`               | Kubernetes selector to select collectors for job assignments                  |                                               |                      |
+| `listen_addr`                      | Endpoint on which the target allocator exposes job definitions for collectors | `:8080`  or `:8443` if `https` is set to true |                      |
+| `kube_config_file_path`            | Path to the file on the pod containing the Kube config.                       | "~/.kube/config"                              | `KUBECONFIG`         |
+| `config`                           | Prometheus configuration block                                                |                                               |                      |
+| `allocation_strategy`              | Allocation strategy to apply to job assignments                               | `consistent-hashing`                          |                      |
+| `allocation_fallback_strategy`     | Fallback allocation strategy for job assignments                              |                                               |                      |
+| `filter_strategy`                  | Filter strategy to apply to metrics                                           | `relabel-config`                              |                      |
+| `prometheus_cr`                    | Whether to watch Prometheus Custom Resources                                  |                                               |                      |
+| `https`                            | Whether to expose the target allocator endpoint over https                    |                                               |                      |
+| `collector_not_ready_grace_period` | Wait time before assigning jobs to a new collector.                           | 30s                                           |                      |
+
+Additional configuration options are present under [./internal/config/config.go](./internal/config/config.go).
+
 ## Even Distribution of Prometheus Targets
 
 The Target Allocator’s first job is to discover targets to scrape and OTel Collectors to allocate targets to. Then it can distribute the targets it discovers among the Collectors. The Collectors in turn query the Target Allocator for Metrics endpoints to scrape, and then the Collectors’ [Prometheus Receivers](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/README.md) scrape  the Metrics targets. 

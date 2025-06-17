@@ -600,7 +600,7 @@ GOTESTSUM ?= $(LOCALBIN)/gotestsum
 # renovate: datasource=go depName=sigs.k8s.io/kustomize/kustomize/v5
 KUSTOMIZE_VERSION ?= v5.6.0
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
-CONTROLLER_TOOLS_VERSION ?= v0.17.1
+CONTROLLER_TOOLS_VERSION ?= v0.18.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
 GOLANGCI_LINT_VERSION ?= v2.1.6
 # renovate: datasource=go depName=sigs.k8s.io/kind
@@ -611,7 +611,7 @@ CHAINSAW_VERSION ?= v0.2.12
 GOTESTSUM_VERSION ?= v1.12.2
 
 .PHONY: install-tools
-install-tools: kustomize golangci-lint kind controller-gen envtest crdoc kind operator-sdk chainsaw
+install-tools: kustomize golangci-lint kind controller-gen envtest crdoc operator-sdk chainsaw gotestsum
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
