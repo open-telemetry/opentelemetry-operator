@@ -8,19 +8,35 @@ spec:
       try:
         - apply:
             file: 00-install.yaml
+    - name: Wait for the OpenTelemetryCollector to be ready
+      try:
+        - sleep:
+            duration: 10s 
+        - wait:
+            apiVersion: v1
+            kind: Pod
+            namespace: ($namespace)
+            timeout: 1m
+            for:
+              condition:
+                name: ready
+                value: 'true'
         - assert:
             file: 00-assert.yaml
     - name: Assert Target Allocator metrics
       try:
         - command:
+            env:
+              - name: namespace
+                value: ($namespace)
             entrypoint: kubectl
             args:
               - get
               - pod
               - -n
-              - opentelemetry-operator-system
+              - $namespace
               - -l
-              - app.kubernetes.io/component=opentelemetry-targetallocator
+              - app.kubernetes.io/component=opentelemetry-collector
               - -o
               - jsonpath={.items[0].metadata.name}
             outputs:
@@ -30,9 +46,11 @@ spec:
             env:
               - name: podName
                 value: ($podName)
+              - name: namespace
+                value: ($namespace)
             content: |
               #!/bin/bash
-              kubectl get --raw /api/v1/namespaces/opentelemetry-operator-system/pods/${podName}:8080/proxy/metrics
+              kubectl get --raw /api/v1/namespaces/$namespace/pods/${podName}:9090/proxy/metrics
             outputs:
               - name: metrics
                 value: (x_metrics_decode($stdout))
@@ -40,6 +58,7 @@ spec:
               ($error == null): true
         - assert:
             resource:
+              (length($metrics[?as_string(metric."__name__") == 'go_gc_duration_seconds']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'go_gc_duration_seconds_count']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'go_gc_duration_seconds_sum']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'go_gc_gogc_percent']) >= `0`): true
@@ -70,7 +89,9 @@ spec:
               (length($metrics[?as_string(metric."__name__") == 'go_memstats_sys_bytes']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'go_sched_gomaxprocs_threads']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'go_threads']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_collectors_allocatable']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_collectors_discovered']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_events_total']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_http_duration_seconds_bucket']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_http_duration_seconds_count']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_http_duration_seconds_sum']) >= `0`): true
@@ -81,6 +102,7 @@ spec:
               (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_process_targets_duration_seconds_count']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_process_targets_duration_seconds_sum']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_targets']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_targets_per_collector']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_targets_remaining']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_targets_unassigned']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_time_to_allocate_bucket']) >= `0`): true
@@ -129,3 +151,9 @@ spec:
               (length($metrics[?as_string(metric."__name__") == 'prometheus_treecache_zookeeper_failures_total']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'promhttp_metric_handler_requests_in_flight']) >= `0`): true
               (length($metrics[?as_string(metric."__name__") == 'promhttp_metric_handler_requests_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'scrape_duration_seconds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'scrape_samples_post_metric_relabeling']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'scrape_samples_scraped']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'scrape_series_added']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'target_info']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'up']) >= `0`): true

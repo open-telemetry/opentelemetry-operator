@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  namespace: opentelemetry-operator-system
+  namespace: ($namespace)
   labels:
     app.kubernetes.io/component: opentelemetry-targetallocator
 status:
@@ -16,7 +16,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: simplest-targetallocator
-  namespace: opentelemetry-operator-system
+  namespace: ($namespace)
 spec:
   ports:
     - name: targetallocation
