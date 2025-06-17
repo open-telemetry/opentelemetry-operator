@@ -100,11 +100,6 @@ spec:
           exporters: [prometheus]
 
   mode: statefulset
-  # observability:
-  #   metrics:
-  #     enableMetrics: true
-  livenessProbe:
-    initialDelaySeconds: 10
   targetAllocator:
     enabled: true
     serviceAccount: ta
