@@ -26,6 +26,13 @@ const (
 	defaultOperatorOpAMPBridgeConfigMapEntry = "remoteconfiguration.yaml"
 )
 
+type ZapConfig struct {
+	MessageKey  string `yaml:"message-key"`
+	TimeKey     string `yaml:"time-key"`
+	LevelKey    string `yaml:"level-key"`
+	LevelFormat string `yaml:"level-format"`
+}
+
 // Config holds the static configuration for this operator.
 type Config struct {
 	// TargetAllocatorImage represents the flag to override the OpenTelemetry TargetAllocator container image.
@@ -72,7 +79,8 @@ type Config struct {
 	AutoInstrumentationNodeJSImage string `yaml:"auto-instrumentation-node-js-image"`
 	// AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.
 	AutoInstrumentationJavaImage string `yaml:"auto-instrumentation-java-image"`
-
+	// OpenshiftCreateDashboard creates an OpenShift dashboard for monitoring the OpenTelemetryCollector instances
+	OpenshiftCreateDashboard bool `yaml:"openshift-create-dashboard"`
 	// OpenShiftRoutesAvailability represents the availability of the OpenShift Routes API.
 	OpenShiftRoutesAvailability openshift.RoutesAvailability `yaml:"open-shift-routes-availability"`
 	// PrometheusCRAvailability represents the availability of the Prometheus Operator CRDs.
@@ -91,6 +99,26 @@ type Config struct {
 	LabelsFilter []string `yaml:"labels-filter"`
 	// AnnotationsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 	AnnotationsFilter []string `yaml:"annotations-filter"`
+	// MetricsAddr is the address the metric endpoint binds to.
+	MetricsAddr string `yaml:"metrics-addr"`
+	// ProbeAddr is the address the probe endpoint binds to.
+	ProbeAddr string `yaml:"health-probe-addr"`
+	// PprofAddr is the address to expose the pprof server. Default is empty string which disables the pprof server.
+	PprofAddr string `yaml:"pprof-addr"`
+	// EnableLeaderElection enables leader election for controller manager
+	EnableLeaderElection bool `yaml:"enable-leader-election"`
+	// EnableCRMetrics controls whether exposing the CR metrics is enabled
+	EnableCRMetrics bool `yaml:"enable-cr-metrics"`
+	// CreateServiceMonitorOperatorMetrics creates a ServiceMonitor for the operator metrics
+	CreateServiceMonitorOperatorMetrics bool `yaml:"create-service-monitor-operator-metrics"`
+	// WebhookPort is the port the webhook endpoint binds to.
+	WebhookPort int `yaml:"webhook-port"`
+	// FipsDisabledComponents are disabled collector components when operator runs on FIPS enabled platform
+	FipsDisabledComponents string `yaml:"fips-disabled-components"`
+	// TLS holds the TLS configuration of the controllers.
+	TLS TLSConfig `yaml:"tls"`
+	// ZapConfig holds the advanced Zap logging config
+	Zap ZapConfig `yaml:"zap"`
 }
 
 // New constructs a new configuration.
@@ -128,6 +156,20 @@ func New() Config {
 		AnnotationsFilter:                   []string{constants.KubernetesLastAppliedConfigurationAnnotation},
 		CreateRBACPermissions:               autoRBAC.NotAvailable,
 		OpAmpBridgeAvailability:             opampbridge.NotAvailable,
+		MetricsAddr:                         ":8080",
+		ProbeAddr:                           ":8081",
+		WebhookPort:                         9443,
+		FipsDisabledComponents:              "uppercase",
+		TLS: TLSConfig{
+			MinVersion:   "VersionTLS12",
+			CipherSuites: nil,
+		},
+		Zap: ZapConfig{
+			MessageKey:  "message",
+			TimeKey:     "timestamp",
+			LevelKey:    "level",
+			LevelFormat: "uppercase",
+		},
 	}
 }
 

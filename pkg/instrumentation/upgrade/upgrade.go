@@ -38,13 +38,13 @@ type InstrumentationUpgrade struct {
 
 func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorder record.EventRecorder, cfg config.Config) *InstrumentationUpgrade {
 	defaultAnnotationToConfig := map[string]autoInstConfig{
-		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {constants.FlagApacheHttpd, cfg.EnableApacheHttpdInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationDotNet:      {constants.FlagDotNet, cfg.EnableDotNetAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationGo:          {constants.FlagGo, cfg.EnableGoAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationNginx:       {constants.FlagNginx, cfg.EnableNginxAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationPython:      {constants.FlagPython, cfg.EnablePythonAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationNodeJS:      {constants.FlagNodeJS, cfg.EnableNodeJSAutoInstrumentation},
-		constants.AnnotationDefaultAutoInstrumentationJava:        {constants.FlagJava, cfg.EnableJavaAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationApacheHttpd: {"enable-apache-httpd-instrumentation", cfg.EnableApacheHttpdInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationDotNet:      {"enable-dotnet-instrumentation", cfg.EnableDotNetAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationGo:          {"enable-go-instrumentation", cfg.EnableGoAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationNginx:       {"enable-nginx-instrumentation", cfg.EnableNginxAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationPython:      {"enable-python-instrumentation", cfg.EnablePythonAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationNodeJS:      {"enable-nodejs-instrumentation", cfg.EnableNodeJSAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationJava:        {"enable-java-instrumentation", cfg.EnableJavaAutoInstrumentation},
 	}
 
 	return &InstrumentationUpgrade{
