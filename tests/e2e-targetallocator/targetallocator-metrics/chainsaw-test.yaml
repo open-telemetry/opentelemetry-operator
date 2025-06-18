@@ -8,7 +8,7 @@ spec:
       try:
         - apply:
             file: 00-install.yaml
-    - name: Wait for the OpenTelemetryCollector to be ready
+    - name: Wait for OpenTelemetryCollector and Target Allocator pods to be ready
       try:
         - sleep:
             duration: 10s 
@@ -26,15 +26,12 @@ spec:
     - name: Assert Target Allocator metrics
       try:
         - command:
-            env:
-              - name: namespace
-                value: ($namespace)
             entrypoint: kubectl
             args:
               - get
               - pod
               - -n
-              - $namespace
+              - ${NAMESPACE}
               - -l
               - app.kubernetes.io/component=opentelemetry-collector
               - -o
@@ -46,11 +43,9 @@ spec:
             env:
               - name: podName
                 value: ($podName)
-              - name: namespace
-                value: ($namespace)
             content: |
               #!/bin/bash
-              kubectl get --raw /api/v1/namespaces/$namespace/pods/${podName}:9090/proxy/metrics
+              kubectl get --raw /api/v1/namespaces/${NAMESPACE}/pods/${podName}:9090/proxy/metrics
             outputs:
               - name: metrics
                 value: (x_metrics_decode($stdout))
