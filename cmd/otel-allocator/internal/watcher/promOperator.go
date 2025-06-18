@@ -218,6 +218,7 @@ func checkCRDAvailability(dcl discovery.DiscoveryInterface, groupVersion string,
 	return false, nil
 }
 
+// getInformers returns a map of informers for the given resources.
 func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.Config, logger *slog.Logger) (map[string]*informers.ForResource, error) {
 	informersMap := make(map[string]*informers.ForResource)
 
