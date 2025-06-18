@@ -108,15 +108,10 @@ func main() {
 
 	configLog := ctrl.Log.WithName("config")
 
-	if configFile != "" {
-		if err := config.ApplyConfigFile(configFile, &cfg, configLog); err != nil {
-			panic(err)
-		}
-	}
-
-	config.ApplyEnvVars(&cfg)
-	if err := config.ApplyCLI(&cfg); err != nil {
-		setupLog.Error(err, "failed to apply CLI flags")
+	err := cfg.Apply(configFile)
+	if err != nil {
+		configLog.Error(err, "configuration error")
+		os.Exit(1)
 	}
 
 	v := version.Get()
@@ -152,8 +147,7 @@ func main() {
 
 	optionsTlSOptsFuncs := []func(*tls.Config){
 		func(config *tls.Config) {
-			err := cfg.TLS.ApplyTLSConfig(config)
-			if err != nil {
+			if err = cfg.TLS.ApplyTLSConfig(config); err != nil {
 				setupLog.Error(err, "error setting up TLS")
 			}
 		},

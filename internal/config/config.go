@@ -184,3 +184,18 @@ func (c Config) ToStringMap() map[string]string {
 	_ = yaml.Unmarshal(b, &m)
 	return m
 }
+
+func (c *Config) Apply(configFile string) error {
+	if configFile != "" {
+		if err := ApplyConfigFile(configFile, c); err != nil {
+			return fmt.Errorf("failed to apply file config: %w", err)
+		}
+	}
+
+	ApplyEnvVars(c)
+	if err := ApplyCLI(c); err != nil {
+		return fmt.Errorf("failed to apply cli config: %w", err)
+	}
+
+	return nil
+}
