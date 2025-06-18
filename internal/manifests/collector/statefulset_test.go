@@ -84,7 +84,7 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	}
 
 	// assert correct service name
-	assert.Equal(t, "my-instance-collector", ss.Spec.ServiceName)
+	assert.Equal(t, "my-instance-collector-headless", ss.Spec.ServiceName)
 
 	// assert correct pod management policy
 	assert.Equal(t, appsv1.ParallelPodManagement, ss.Spec.PodManagementPolicy)

@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: stateful-collector
+spec:
+  serviceName: stateful-collector-headless
 status:
   replicas: 1
   readyReplicas: 1
