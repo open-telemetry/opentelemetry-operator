@@ -2028,7 +2028,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableDotNetInstrumentation: true,
+				EnableDotNetAutoInstrumentation: true,
 			},
 		},
 		{
@@ -2226,7 +2226,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableDotNetInstrumentation: true,
+				EnableDotNetAutoInstrumentation: true,
 			},
 		},
 		{
@@ -2536,7 +2536,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableDotNetInstrumentation: true,
+				EnableDotNetAutoInstrumentation: true,
 			},
 		},
 		{
@@ -2617,7 +2617,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableDotNetInstrumentation: false,
+				EnableDotNetAutoInstrumentation: false,
 			},
 		},
 		{
@@ -3392,7 +3392,7 @@ func TestMutatePod(t *testing.T) {
 				EnableMultiInstrumentation:      true,
 				EnableNodeJSAutoInstrumentation: true,
 				EnablePythonAutoInstrumentation: true,
-				EnableDotNetInstrumentation:     false,
+				EnableDotNetAutoInstrumentation: false,
 			},
 		},
 
@@ -4298,7 +4298,7 @@ func TestMutatePod(t *testing.T) {
 				EnableJavaAutoInstrumentation:   true,
 				EnableNodeJSAutoInstrumentation: true,
 				EnablePythonAutoInstrumentation: true,
-				EnableDotNetInstrumentation:     true,
+				EnableDotNetAutoInstrumentation: true,
 			},
 		},
 		{
@@ -4458,7 +4458,7 @@ func TestMutatePod(t *testing.T) {
 				EnableJavaAutoInstrumentation:   false,
 				EnableNodeJSAutoInstrumentation: false,
 				EnablePythonAutoInstrumentation: false,
-				EnableDotNetInstrumentation:     false,
+				EnableDotNetAutoInstrumentation: false,
 			},
 		},
 		{
@@ -4802,8 +4802,8 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
-				EnableMultiInstrumentation:  true,
-				EnableDotNetInstrumentation: true,
+				EnableMultiInstrumentation:      true,
+				EnableDotNetAutoInstrumentation: true,
 			},
 		},
 		{
@@ -4906,7 +4906,7 @@ func TestMutatePod(t *testing.T) {
 			},
 			config: config.Config{
 				EnableMultiInstrumentation:      true,
-				EnableDotNetInstrumentation:     false,
+				EnableDotNetAutoInstrumentation: false,
 				EnableNodeJSAutoInstrumentation: false,
 			},
 		},

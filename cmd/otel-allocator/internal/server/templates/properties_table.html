@@ -1,0 +1,25 @@
+<table>
+    <thead>
+    {{- range $index, $name := .Headers }}
+    <td>
+        {{$name}}
+    </td>
+    {{- end}}
+    </thead>
+    {{- $index := 0 }}
+    {{- range $index, $row := .Rows }}
+    <tr {{ if (even $index) }}style="background: #eee"{{end}}>
+        {{- range $index, $cell := $row}}
+        <td style="vertical-align: top;">
+            {{- if $cell.Link }}
+            <a href="{{$cell.Link}}">{{$cell.Text}}</a>
+            {{- else if $cell.Preformatted }}
+            <pre>{{$cell.Text}}</pre>
+            {{- else}}
+            {{$cell.Text}}
+            {{- end}}
+        </td>
+        {{- end}}
+    </tr>
+    {{- end}}
+</table>

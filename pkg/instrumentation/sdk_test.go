@@ -1733,6 +1733,133 @@ func TestInjectGo(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "instrumentation with annotation in pod with multiple containers",
+			insts: languageInstrumentations{
+				Go: instrumentationWithContainers{
+					Containers: []string{"app"},
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							Go: v1alpha1.Go{
+								Image: "otel/go:1",
+							},
+						},
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/go-container-names":      "app",
+						"instrumentation.opentelemetry.io/otel-go-auto-target-exe": "foo",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "istio-proxy",
+							Image: "docker.io/istio/proxyv2:1.20.1",
+						},
+						{
+							Name:  "app",
+							Image: "app:latest",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"instrumentation.opentelemetry.io/go-container-names":      "app",
+						"instrumentation.opentelemetry.io/otel-go-auto-target-exe": "foo",
+					},
+				},
+				Spec: corev1.PodSpec{
+					ShareProcessNamespace: &true,
+					Containers: []corev1.Container{
+						{
+							Name:  "istio-proxy",
+							Image: "docker.io/istio/proxyv2:1.20.1",
+						},
+						{
+							Name:  "app",
+							Image: "app:latest",
+						},
+						{
+							Name:  sideCarName,
+							Image: "otel/go:1",
+							SecurityContext: &corev1.SecurityContext{
+								RunAsUser:  &zero,
+								Privileged: &true,
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									MountPath: "/sys/kernel/debug",
+									Name:      kernelDebugVolumeName,
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_GO_AUTO_TARGET_EXE",
+									Value: "foo",
+								},
+
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=app,k8s.namespace.name=ns,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ns.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=ns,service.version=latest",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: kernelDebugVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: kernelDebugVolumePath,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
