@@ -3,7 +3,7 @@ opentelemetry-distro==0.55b1
 # We add an upper limit to urllib3 version else Python 3.8 support is dropped.
 # TODO: Update autoinstrumentation image builds to support all supported Python versions
 #       https://github.com/open-telemetry/opentelemetry-operator/issues/3712
-urllib3 < 2.3.0
+urllib3 <2.5.1
 # We don't use the distro[otlp] option which automatically includes exporters since gRPC is not appropriate for
 # injected auto-instrumentation, where it has a strict dependency on the OS / Python version the artifact is built for.
 opentelemetry-exporter-otlp-proto-http==1.34.1
