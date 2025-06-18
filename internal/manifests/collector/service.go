@@ -39,17 +39,12 @@ func (s ServiceType) String() string {
 }
 
 func HeadlessService(params manifests.Params) (*corev1.Service, error) {
-	// Use serviceName from spec if provided, otherwise default to <name>-headless for StatefulSets
-	serviceName := params.OtelCol.Spec.ServiceName
-	if serviceName == "" {
-		serviceName = naming.HeadlessService(params.OtelCol.Name)
-	}
 	h, err := Service(params)
 	if h == nil || err != nil {
 		return h, err
 	}
 
-	h.Name = serviceName
+	h.Name = naming.HeadlessService(params.OtelCol.Name)
 	h.Labels[headlessLabel] = valueExists
 	h.Labels[serviceTypeLabel] = HeadlessServiceType.String()
 

@@ -794,7 +794,7 @@ func TestStatefulSetServiceName(t *testing.T) {
 					Mode: v1beta1.ModeStatefulSet,
 				},
 			},
-			expectedServiceName: "my-instance-collector",
+			expectedServiceName: "my-instance-collector-headless",
 		},
 		{
 			name: "StatefulSet with custom service name",
