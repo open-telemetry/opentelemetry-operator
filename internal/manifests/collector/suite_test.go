@@ -36,10 +36,6 @@ func deploymentParams() manifests.Params {
 	return paramsWithMode(v1beta1.ModeDeployment)
 }
 
-func statefulsetParams() manifests.Params {
-	return paramsWithMode(v1beta1.ModeStatefulSet)
-}
-
 func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 	replicas := int32(2)
 	configYAML, err := os.ReadFile("testdata/test.yaml")
