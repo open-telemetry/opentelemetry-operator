@@ -190,8 +190,8 @@ func getNamespaceInformer(ctx context.Context, allowList, denyList map[string]st
 
 }
 
-// checkCRDAvailability checks if a specific CRD is available in the cluster
-func checkCRDAvailability(dcl discovery.DiscoveryInterface, groupVersion string, resourceName string) (bool, error) {
+// checkCRDAvailability checks if a specific CRD is available in the cluster.
+func checkCRDAvailability(dcl discovery.DiscoveryInterface, resourceName string) (bool, error) {
 	apiList, err := dcl.ServerGroups()
 	if err != nil {
 		return false, err
@@ -199,7 +199,7 @@ func checkCRDAvailability(dcl discovery.DiscoveryInterface, groupVersion string,
 
 	apiGroups := apiList.Groups
 	for _, group := range apiGroups {
-		if group.Name == groupVersion {
+		if group.Name == "monitoring.coreos.com" {
 			for _, version := range group.Versions {
 				resources, err := dcl.ServerResourcesForGroupVersion(version.GroupVersion)
 				if err != nil {
@@ -229,13 +229,13 @@ func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.
 	}
 
 	// Check for ServiceMonitor availability
-	serviceMonitorAvailable, err := checkCRDAvailability(dcl, "monitoring.coreos.com", "servicemonitors")
+	serviceMonitorAvailable, err := checkCRDAvailability(dcl, "servicemonitors")
 	if err != nil {
 		logger.Warn("Failed to check ServiceMonitor availability", "error", err)
 	} else if serviceMonitorAvailable {
-		serviceMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName))
-		if err != nil {
-			return nil, err
+		serviceMonitorInformers, err2 := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName))
+		if err2 != nil {
+			return nil, err2
 		}
 		informersMap[monitoringv1.ServiceMonitorName] = serviceMonitorInformers
 	} else {
@@ -243,13 +243,13 @@ func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.
 	}
 
 	// Check for PodMonitor availability
-	podMonitorAvailable, err := checkCRDAvailability(dcl, "monitoring.coreos.com", "podmonitors")
+	podMonitorAvailable, err := checkCRDAvailability(dcl, "podmonitors")
 	if err != nil {
 		logger.Warn("Failed to check PodMonitor availability", "error", err)
 	} else if podMonitorAvailable {
-		podMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName))
-		if err != nil {
-			return nil, err
+		podMonitorInformers, err2 := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName))
+		if err2 != nil {
+			return nil, err2
 		}
 		informersMap[monitoringv1.PodMonitorName] = podMonitorInformers
 	} else {
@@ -257,13 +257,13 @@ func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.
 	}
 
 	// Check for Probe availability
-	probeAvailable, err := checkCRDAvailability(dcl, "monitoring.coreos.com", "probes")
+	probeAvailable, err := checkCRDAvailability(dcl, "probes")
 	if err != nil {
 		logger.Warn("Failed to check Probe availability", "error", err)
 	} else if probeAvailable {
-		probeInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName))
-		if err != nil {
-			return nil, err
+		probeInformers, err2 := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName))
+		if err2 != nil {
+			return nil, err2
 		}
 		informersMap[monitoringv1.ProbeName] = probeInformers
 	} else {
@@ -271,13 +271,13 @@ func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.
 	}
 
 	// Check for ScrapeConfig availability
-	scrapeConfigAvailable, err := checkCRDAvailability(dcl, "monitoring.coreos.com", "scrapeconfigs")
+	scrapeConfigAvailable, err := checkCRDAvailability(dcl, "scrapeconfigs")
 	if err != nil {
 		logger.Warn("Failed to check ScrapeConfig availability", "error", err)
 	} else if scrapeConfigAvailable {
-		scrapeConfigInformers, err := informers.NewInformersForResource(factory, promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName))
-		if err != nil {
-			return nil, err
+		scrapeConfigInformers, err2 := informers.NewInformersForResource(factory, promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName))
+		if err2 != nil {
+			return nil, err2
 		}
 		informersMap[promv1alpha1.ScrapeConfigName] = scrapeConfigInformers
 	} else {

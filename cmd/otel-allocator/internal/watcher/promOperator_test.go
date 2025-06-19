@@ -1220,7 +1220,8 @@ func getTestPrometheusCRWatcher(
 	}
 
 	factory := informers.NewMonitoringInformerFactories(map[string]struct{}{v1.NamespaceAll: {}}, map[string]struct{}{}, mClient, 0, nil)
-	informers, err := getInformers(factory)
+
+	informers, err := getTestInformers(factory)
 	if err != nil {
 		t.Fatal(t, err)
 	}
@@ -1302,4 +1303,39 @@ func sanitizeScrapeConfigsForTest(scs []*promconfig.ScrapeConfig) {
 		sc.RelabelConfigs = nil
 		sc.MetricRelabelConfigs = nil
 	}
+}
+
+// getTestInformers creates informers for testing without CRD availability checks.
+func getTestInformers(factory informers.FactoriesForNamespaces) (map[string]*informers.ForResource, error) {
+	informersMap := make(map[string]*informers.ForResource)
+
+	// Create ServiceMonitor informers
+	serviceMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName))
+	if err != nil {
+		return nil, err
+	}
+	informersMap[monitoringv1.ServiceMonitorName] = serviceMonitorInformers
+
+	// Create PodMonitor informers
+	podMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName))
+	if err != nil {
+		return nil, err
+	}
+	informersMap[monitoringv1.PodMonitorName] = podMonitorInformers
+
+	// Create Probe informers
+	probeInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName))
+	if err != nil {
+		return nil, err
+	}
+	informersMap[monitoringv1.ProbeName] = probeInformers
+
+	// Create ScrapeConfig informers
+	scrapeConfigInformers, err := informers.NewInformersForResource(factory, promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName))
+	if err != nil {
+		return nil, err
+	}
+	informersMap[promv1alpha1.ScrapeConfigName] = scrapeConfigInformers
+
+	return informersMap, nil
 }
