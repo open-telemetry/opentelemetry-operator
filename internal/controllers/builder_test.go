@@ -1283,7 +1283,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Spec: appsv1.StatefulSetSpec{
-						ServiceName: "test-collector",
+						ServiceName: "test-collector-headless",
 						Replicas:    &one,
 						Selector: &metav1.LabelSelector{
 							MatchLabels: selectorLabels,
@@ -1527,7 +1527,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Spec: appsv1.StatefulSetSpec{
-						ServiceName: "test-collector",
+						ServiceName: "test-collector-headless",
 						Replicas:    &one,
 						Selector: &metav1.LabelSelector{
 							MatchLabels: selectorLabels,
