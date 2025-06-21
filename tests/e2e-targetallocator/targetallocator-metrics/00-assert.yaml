@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: ($namespace)
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+status:
+  containerStatuses:
+    - name: ta-container
+      ready: true
+      started: true
+  phase: Running
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: simplest-targetallocator
+  namespace: ($namespace)
+spec:
+  ports:
+    - name: targetallocation
+      port: 80
+      protocol: TCP
+      targetPort: http
+  selector:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+  type: ClusterIP
