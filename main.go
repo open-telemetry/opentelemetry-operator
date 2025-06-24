@@ -86,6 +86,8 @@ func main() {
 	featureGates := featuregate.Flags(colfeaturegate.GlobalRegistry())
 	cliFlags.AddGoFlagSet(featureGates)
 
+	var configFile string
+	cliFlags.StringVar(&configFile, "config-file", "", "Path to config file")
 	if err := cliFlags.Parse(os.Args[1:]); err != nil {
 		panic(err)
 	}
@@ -105,9 +107,11 @@ func main() {
 	ctrl.SetLogger(logger)
 
 	configLog := ctrl.Log.WithName("config")
-	config.ApplyEnvVars(&cfg)
-	if err := config.ApplyCLI(&cfg); err != nil {
-		setupLog.Error(err, "failed to apply CLI flags")
+
+	err := cfg.Apply(configFile)
+	if err != nil {
+		configLog.Error(err, "configuration error")
+		os.Exit(1)
 	}
 
 	v := version.Get()
@@ -143,8 +147,7 @@ func main() {
 
 	optionsTlSOptsFuncs := []func(*tls.Config){
 		func(config *tls.Config) {
-			err := cfg.TLS.ApplyTLSConfig(config)
-			if err != nil {
+			if err = cfg.TLS.ApplyTLSConfig(config); err != nil {
 				setupLog.Error(err, "error setting up TLS")
 			}
 		},
