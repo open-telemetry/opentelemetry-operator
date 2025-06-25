@@ -850,17 +850,40 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 In addition to the [core responsibilities](https://github.com/open-telemetry/community/blob/main/community-membership.md) the operator project requires approvers and maintainers to be responsible for releasing the project. See [RELEASE.md](./RELEASE.md) for more information and release schedule.
 
-Triagers ([@open-telemetry/operator-triagers](https://github.com/orgs/open-telemetry/teams/operator-triagers)):
+### Maintainers
 
-- [Antoine Toulme](https://github.com/atoulme), Splunk
+- [Benedikt Bongartz](https://github.com/frzifus), Red Hat
+- [Jacob Aronoff](https://github.com/jaronoff97), Omlet
+- [Mikołaj Świątek](https://github.com/swiatekm), Elastic
+- [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 
-Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-telemetry/teams/operator-approvers)):
+For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#maintainer).
+
+### Approvers
 
 - [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), OllyGarden
 - [Israel Blancas](https://github.com/iblancasa), Coralogix
 
-Emeritus Approvers:
+For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#approver).
+
+### Triagers
+
+- [Antoine Toulme](https://github.com/atoulme), Splunk
+
+For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#triagers).
+
+### Emeritus Maintainers
+
+- [Alex Boten](https://github.com/codeboten), Lightstep
+- [Bogdan Drutu](https://github.com/BogdanDrutu), Splunk
+- [Juraci Paixão Kröhling](https://github.com/jpkrohling), Grafana Labs
+- [Tigran Najaryan](https://github.com/tigrannajaryan), Splunk
+- [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
+
+For more information about the emeritus role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#emeritus-maintainerapprovertriager).
+
+### Emeritus Approvers
 
 - [Anthony Mirabella](https://github.com/Aneurysm9), AWS
 - [Dmitrii Anoshin](https://github.com/dmitryax), Splunk
@@ -869,22 +892,7 @@ Emeritus Approvers:
 - [Owais Lone](https://github.com/owais), Splunk
 - [Pablo Baeyens](https://github.com/mx-psi), DataDog
 
-Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
-
-- [Benedikt Bongartz](https://github.com/frzifus), Red Hat
-- [Jacob Aronoff](https://github.com/jaronoff97), Omlet
-- [Mikołaj Świątek](https://github.com/swiatekm), Elastic
-- [Pavol Loffay](https://github.com/pavolloffay), Red Hat
-
-Emeritus Maintainers
-
-- [Alex Boten](https://github.com/codeboten), Lightstep
-- [Bogdan Drutu](https://github.com/BogdanDrutu), Splunk
-- [Juraci Paixão Kröhling](https://github.com/jpkrohling), Grafana Labs
-- [Tigran Najaryan](https://github.com/tigrannajaryan), Splunk
-- [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
-
-Learn more about roles in the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md).
+For more information about the emeritus role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#emeritus-maintainerapprovertriager).
 
 Thanks to all the people who already contributed!
 
