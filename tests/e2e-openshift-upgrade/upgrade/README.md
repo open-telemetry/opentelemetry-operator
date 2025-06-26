@@ -6,9 +6,10 @@ This directory contains end-to-end tests for verifying OpenTelemetry Operator up
 
 The test validates that OpenTelemetry Collector and Target Allocator continue to function correctly after an OpenTelemetry Operator upgrade by:
 
-1. **Deploying telemetry infrastructure** - Sets up OpenTelemetry collectors and Tempo for trace storage
-2. **Generating test traces** - Uses telemetrygen to create sample traces
-3. **Verifying trace ingestion** - Queries Tempo to confirm traces are properly stored and queryable
+1. **Deploying telemetry infrastructure** - Sets up OpenTelemetry Collectors with Target Allocator enabled, Tempo for trace storage, and Prometheus metrics collection
+2. **Generating test data** - Uses telemetrygen to create sample traces and metrics
+3. **Verifying data collection** - Queries Tempo to confirm traces are properly stored and validates Target Allocator metrics endpoints
+4. **Testing upgrade resilience** - Ensures both OpenTelemetry Collector and Target Allocator remain functional after operator upgrade
 
 **TraceQL Query**: `{ resource.service.name="telemetrygen" }`
 
@@ -61,7 +62,35 @@ chainsaw test tests/e2e-openshift-upgrade --values values.yaml
 
 ## Test Flow
 
-1. **Setup Phase**: Deploy OpenTelemetry collectors, Target Allocator, Tempo, and telemetrygen
-2. **Upgrade Phase**: Perform OpenTelemetry Operator upgrade 
-3. **Verification Phase**: Run `verify-traces` job to confirm collectors and target allocator still work
-4. **Cleanup Phase**: Remove test resources
+1. **Setup Phase**: 
+   - Deploy OpenTelemetry Operators from marketplace
+   - Create Tempo Monolithic instance for trace storage
+   - Enable user workload monitoring
+   - Deploy OpenTelemetry Collector for metrics collection
+   - Deploy OpenTelemetry Collector with Target Allocator enabled
+   - Generate test traces and metrics using telemetrygen
+
+2. **Pre-Upgrade Verification**:
+   - Verify traces are being ingested correctly by Tempo
+   - Validate Target Allocator metrics endpoints are accessible
+   - Assert Target Allocator-specific metrics (collectors discovered, targets allocated, etc.)
+
+3. **Upgrade Phase**: 
+   - Create upgrade catalog for OpenTelemetry Operator
+   - Perform OpenTelemetry Operator upgrade to specified version
+
+4. **Post-Upgrade Verification**:
+   - Assert OpenTelemetry Collector and Target Allocator pods are ready
+   - Re-generate test traces and metrics
+   - Verify traces are still being ingested correctly by Tempo
+   - Re-validate Target Allocator metrics endpoints and specific metrics
+
+5. **Target Allocator Metrics Validation**:
+   - Validate core Target Allocator metrics such as:
+     - `opentelemetry_allocator_collectors_allocatable`
+     - `opentelemetry_allocator_collectors_discovered`
+     - `opentelemetry_allocator_targets`
+     - `opentelemetry_allocator_targets_per_collector`
+     - And other Target Allocator-specific metrics
+
+6. **Cleanup Phase**: Remove test resources
