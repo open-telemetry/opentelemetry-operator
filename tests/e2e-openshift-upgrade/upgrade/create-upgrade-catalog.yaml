@@ -1,0 +1,32 @@
+apiVersion: config.openshift.io/v1
+kind: ImageDigestMirrorSet
+metadata:
+  name: otel-idms
+spec:
+  imageDigestMirrors:
+  - source: registry.redhat.io/rhosdt/opentelemetry-collector-rhel8
+    mirrors:
+      - quay.io/redhat-user-workloads/rhosdt-tenant/otel/opentelemetry-collector
+  - source: registry.redhat.io/rhosdt/opentelemetry-target-allocator-rhel8
+    mirrors:
+      - quay.io/redhat-user-workloads/rhosdt-tenant/otel/opentelemetry-target-allocator
+  - source: registry.redhat.io/rhosdt/opentelemetry-rhel8-operator
+    mirrors:
+      - quay.io/redhat-user-workloads/rhosdt-tenant/otel/opentelemetry-operator
+  - source: registry.redhat.io/rhosdt/opentelemetry-operator-bundle
+    mirrors:
+      - quay.io/redhat-user-workloads/rhosdt-tenant/otel/opentelemetry-bundle
+
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: otel-registry
+  namespace: openshift-marketplace
+spec:
+  sourceType: grpc
+  image: ($upgrade_fbc_image)
+  publisher: Openshift QE
+  updateStrategy:
+    registryPoll:
+      interval: 10m0s 
