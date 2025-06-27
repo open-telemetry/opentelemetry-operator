@@ -55,6 +55,7 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.String("zap-level-key", "level", "The level key to be used in the customized Log Encoder")
 	f.String("zap-time-key", "timestamp", "The time key to be used in the customized Log Encoder")
 	f.String("zap-level-format", "uppercase", "The level format to be used in the customized Log Encoder")
+	f.Bool("enable-webhooks", cfg.EnableWebhooks, "Enable webhooks for the controllers")
 
 	return f
 }
@@ -142,6 +143,8 @@ func ApplyCLI(cfg *Config) error {
 				cfg.Zap.TimeKey, _ = f.GetString("zap-time-key")
 			case "zap-level-format":
 				cfg.Zap.LevelFormat, _ = f.GetString("zap-level-format")
+			case "enable-webhooks":
+				cfg.EnableWebhooks, _ = f.GetBool("enable-webhooks")
 			}
 		}
 	})

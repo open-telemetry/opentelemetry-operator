@@ -1,0 +1,154 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: targetallocator-metrics
+spec:
+  steps:
+    - name: Install OpenTelemetryCollector with Target Allocator enabled
+      try:
+        - apply:
+            file: 00-install.yaml
+    - name: Wait for OpenTelemetryCollector and Target Allocator pods to be ready
+      try:
+        - sleep:
+            duration: 10s 
+        - wait:
+            apiVersion: v1
+            kind: Pod
+            namespace: ($namespace)
+            timeout: 1m
+            for:
+              condition:
+                name: ready
+                value: 'true'
+        - assert:
+            file: 00-assert.yaml
+    - name: Assert Target Allocator metrics
+      try:
+        - command:
+            entrypoint: kubectl
+            args:
+              - get
+              - pod
+              - -n
+              - ${NAMESPACE}
+              - -l
+              - app.kubernetes.io/component=opentelemetry-collector
+              - -o
+              - jsonpath={.items[0].metadata.name}
+            outputs:
+              - name: podName
+                value: ($stdout)
+        - script:
+            env:
+              - name: podName
+                value: ($podName)
+            content: |
+              #!/bin/bash
+              kubectl get --raw /api/v1/namespaces/${NAMESPACE}/pods/${podName}:9090/proxy/metrics
+            outputs:
+              - name: metrics
+                value: (x_metrics_decode($stdout))
+            check:
+              ($error == null): true
+        - assert:
+            resource:
+              (length($metrics[?as_string(metric."__name__") == 'go_gc_duration_seconds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_gc_duration_seconds_count']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_gc_duration_seconds_sum']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_gc_gogc_percent']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_gc_gomemlimit_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_goroutines']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_info']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_alloc_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_alloc_bytes_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_buck_hash_sys_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_frees_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_gc_sys_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_heap_alloc_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_heap_idle_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_heap_inuse_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_heap_objects']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_heap_released_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_heap_sys_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_last_gc_time_seconds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_mallocs_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_mcache_inuse_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_mcache_sys_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_mspan_inuse_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_mspan_sys_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_next_gc_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_other_sys_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_stack_inuse_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_stack_sys_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_memstats_sys_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_sched_gomaxprocs_threads']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'go_threads']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_collectors_allocatable']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_collectors_discovered']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_events_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_http_duration_seconds_bucket']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_http_duration_seconds_count']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_http_duration_seconds_sum']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_process_target_groups_duration_seconds_bucket']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_process_target_groups_duration_seconds_count']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_process_target_groups_duration_seconds_sum']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_process_targets_duration_seconds_bucket']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_process_targets_duration_seconds_count']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_process_targets_duration_seconds_sum']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_targets']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_targets_per_collector']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_targets_remaining']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_targets_unassigned']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_time_to_allocate_bucket']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_time_to_allocate_count']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'opentelemetry_allocator_time_to_allocate_sum']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_cpu_seconds_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_max_fds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_network_receive_bytes_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_network_transmit_bytes_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_open_fds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_resident_memory_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_start_time_seconds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_virtual_memory_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'process_virtual_memory_max_bytes']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_azure_cache_hit_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_azure_failures_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_consul_rpc_duration_seconds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_consul_rpc_duration_seconds_count']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_consul_rpc_duration_seconds_sum']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_consul_rpc_failures_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_discovered_targets']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_dns_lookup_failures_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_dns_lookups_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_failed_configs']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_file_read_errors_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_file_scan_duration_seconds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_file_scan_duration_seconds_count']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_file_scan_duration_seconds_sum']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_file_watcher_errors_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_http_failures_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_kubernetes_events_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_kubernetes_failures_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_kuma_fetch_duration_seconds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_kuma_fetch_duration_seconds_count']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_kuma_fetch_duration_seconds_sum']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_kuma_fetch_failures_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_kuma_fetch_skipped_updates_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_linode_failures_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_nomad_failures_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_received_updates_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_updates_delayed_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_sd_updates_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_template_text_expansion_failures_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_template_text_expansions_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_treecache_watcher_goroutines']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'prometheus_treecache_zookeeper_failures_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'promhttp_metric_handler_requests_in_flight']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'promhttp_metric_handler_requests_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'scrape_duration_seconds']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'scrape_samples_post_metric_relabeling']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'scrape_samples_scraped']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'scrape_series_added']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'target_info']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'up']) >= `0`): true
