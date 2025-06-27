@@ -47,6 +47,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
+	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation"
+	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/upgrade"
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	openshiftDashboards "github.com/open-telemetry/opentelemetry-operator/internal/openshift/dashboards"
 	operatormetrics "github.com/open-telemetry/opentelemetry-operator/internal/operator-metrics"
@@ -54,8 +56,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation"
-	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/pkg/instrumentation/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
 )
 

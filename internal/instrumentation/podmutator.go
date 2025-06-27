@@ -245,7 +245,7 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns meta
 
 var _ podmutation.PodMutator = (*instPodMutator)(nil)
 
-func NewMutator(logger logr.Logger, client client.Client, recorder record.EventRecorder, cfg config.Config) *instPodMutator {
+func NewMutator(logger logr.Logger, client client.Client, recorder record.EventRecorder, cfg config.Config) podmutation.PodMutator {
 	return &instPodMutator{
 		Logger: logger,
 		Client: client,
