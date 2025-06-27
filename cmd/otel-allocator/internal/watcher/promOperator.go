@@ -27,6 +27,7 @@ import (
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -218,6 +219,35 @@ func checkCRDAvailability(dcl discovery.DiscoveryInterface, resourceName string)
 	return false, nil
 }
 
+// createInformerIfAvailable creates an informer for the given resource if the CRD is available,
+// otherwise returns nil.
+func createInformerIfAvailable(
+	factory informers.FactoriesForNamespaces,
+	dcl discovery.DiscoveryInterface,
+	resourceName string,
+	groupVersion schema.GroupVersionResource,
+	logger *slog.Logger,
+) (*informers.ForResource, error) {
+	available, err := checkCRDAvailability(dcl, resourceName)
+	if err != nil {
+		logger.Warn("Failed to check CRD availability", "resource", resourceName, "error", err)
+		// Return nil on error to indicate unavailability
+		return nil, nil
+	}
+
+	if !available {
+		logger.Warn("CRD not available, skipping informer", "resource", resourceName)
+		return nil, nil
+	}
+
+	informer, err := informers.NewInformersForResource(factory, groupVersion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create informer for %s: %w", resourceName, err)
+	}
+
+	return informer, nil
+}
+
 // getInformers returns a map of informers for the given resources.
 func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.Config, logger *slog.Logger) (map[string]*informers.ForResource, error) {
 	informersMap := make(map[string]*informers.ForResource)
@@ -228,60 +258,56 @@ func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.
 		return nil, fmt.Errorf("failed to create discovery client: %w", err)
 	}
 
-	// Check for ServiceMonitor availability
-	serviceMonitorAvailable, err := checkCRDAvailability(dcl, "servicemonitors")
+	// ServiceMonitor
+	serviceMonitorInformer, err := createInformerIfAvailable(
+		factory, dcl, "servicemonitors",
+		monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName),
+		logger,
+	)
 	if err != nil {
-		logger.Warn("Failed to check ServiceMonitor availability", "error", err)
-	} else if serviceMonitorAvailable {
-		serviceMonitorInformers, err2 := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName))
-		if err2 != nil {
-			return nil, err2
-		}
-		informersMap[monitoringv1.ServiceMonitorName] = serviceMonitorInformers
-	} else {
-		logger.Warn("ServiceMonitor CRD not available, skipping informer")
+		return nil, err
+	}
+	if serviceMonitorInformer != nil {
+		informersMap[monitoringv1.ServiceMonitorName] = serviceMonitorInformer
 	}
 
-	// Check for PodMonitor availability
-	podMonitorAvailable, err := checkCRDAvailability(dcl, "podmonitors")
+	// PodMonitor
+	podMonitorInformer, err := createInformerIfAvailable(
+		factory, dcl, "podmonitors",
+		monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName),
+		logger,
+	)
 	if err != nil {
-		logger.Warn("Failed to check PodMonitor availability", "error", err)
-	} else if podMonitorAvailable {
-		podMonitorInformers, err2 := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName))
-		if err2 != nil {
-			return nil, err2
-		}
-		informersMap[monitoringv1.PodMonitorName] = podMonitorInformers
-	} else {
-		logger.Warn("PodMonitor CRD not available, skipping informer")
+		return nil, err
+	}
+	if podMonitorInformer != nil {
+		informersMap[monitoringv1.PodMonitorName] = podMonitorInformer
 	}
 
-	// Check for Probe availability
-	probeAvailable, err := checkCRDAvailability(dcl, "probes")
+	// Probe
+	probeInformer, err := createInformerIfAvailable(
+		factory, dcl, "probes",
+		monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName),
+		logger,
+	)
 	if err != nil {
-		logger.Warn("Failed to check Probe availability", "error", err)
-	} else if probeAvailable {
-		probeInformers, err2 := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName))
-		if err2 != nil {
-			return nil, err2
-		}
-		informersMap[monitoringv1.ProbeName] = probeInformers
-	} else {
-		logger.Warn("Probe CRD not available, skipping informer")
+		return nil, err
+	}
+	if probeInformer != nil {
+		informersMap[monitoringv1.ProbeName] = probeInformer
 	}
 
-	// Check for ScrapeConfig availability
-	scrapeConfigAvailable, err := checkCRDAvailability(dcl, "scrapeconfigs")
+	// ScrapeConfig
+	scrapeConfigInformer, err := createInformerIfAvailable(
+		factory, dcl, "scrapeconfigs",
+		promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName),
+		logger,
+	)
 	if err != nil {
-		logger.Warn("Failed to check ScrapeConfig availability", "error", err)
-	} else if scrapeConfigAvailable {
-		scrapeConfigInformers, err2 := informers.NewInformersForResource(factory, promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName))
-		if err2 != nil {
-			return nil, err2
-		}
-		informersMap[promv1alpha1.ScrapeConfigName] = scrapeConfigInformers
-	} else {
-		logger.Warn("ScrapeConfig CRD not available, skipping informer")
+		return nil, err
+	}
+	if scrapeConfigInformer != nil {
+		informersMap[promv1alpha1.ScrapeConfigName] = scrapeConfigInformer
 	}
 
 	return informersMap, nil
@@ -426,42 +452,46 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 	promCfg := &promconfig.Config{}
 
 	if w.resourceSelector != nil {
-		var serviceMonitorInstances map[string]*monitoringv1.ServiceMonitor
-		var podMonitorInstances map[string]*monitoringv1.PodMonitor
-		var probeInstances map[string]*monitoringv1.Probe
-		var scrapeConfigInstances map[string]*promv1alpha1.ScrapeConfig
-		var err error
+		// Initialize empty maps for all resource types
+		serviceMonitorInstances := make(map[string]*monitoringv1.ServiceMonitor)
+		podMonitorInstances := make(map[string]*monitoringv1.PodMonitor)
+		probeInstances := make(map[string]*monitoringv1.Probe)
+		scrapeConfigInstances := make(map[string]*promv1alpha1.ScrapeConfig)
 
-		// Only try to get ServiceMonitors if the informer exists
+		// Get ServiceMonitors if the informer exists
 		if informer, ok := w.informers[monitoringv1.ServiceMonitorName]; ok {
-			serviceMonitorInstances, err = w.resourceSelector.SelectServiceMonitors(ctx, informer.ListAllByNamespace)
+			instances, err := w.resourceSelector.SelectServiceMonitors(ctx, informer.ListAllByNamespace)
 			if err != nil {
 				return nil, err
 			}
+			serviceMonitorInstances = instances
 		}
 
-		// Only try to get PodMonitors if the informer exists
+		// Get PodMonitors if the informer exists
 		if informer, ok := w.informers[monitoringv1.PodMonitorName]; ok {
-			podMonitorInstances, err = w.resourceSelector.SelectPodMonitors(ctx, informer.ListAllByNamespace)
+			instances, err := w.resourceSelector.SelectPodMonitors(ctx, informer.ListAllByNamespace)
 			if err != nil {
 				return nil, err
 			}
+			podMonitorInstances = instances
 		}
 
-		// Only try to get Probes if the informer exists
+		// Get Probes if the informer exists
 		if informer, ok := w.informers[monitoringv1.ProbeName]; ok {
-			probeInstances, err = w.resourceSelector.SelectProbes(ctx, informer.ListAllByNamespace)
+			instances, err := w.resourceSelector.SelectProbes(ctx, informer.ListAllByNamespace)
 			if err != nil {
 				return nil, err
 			}
+			probeInstances = instances
 		}
 
-		// Only try to get ScrapeConfigs if the informer exists
+		// Get ScrapeConfigs if the informer exists
 		if informer, ok := w.informers[promv1alpha1.ScrapeConfigName]; ok {
-			scrapeConfigInstances, err = w.resourceSelector.SelectScrapeConfigs(ctx, informer.ListAllByNamespace)
+			instances, err := w.resourceSelector.SelectScrapeConfigs(ctx, informer.ListAllByNamespace)
 			if err != nil {
 				return nil, err
 			}
+			scrapeConfigInstances = instances
 		}
 
 		generatedConfig, err := w.configGenerator.GenerateServerConfiguration(
