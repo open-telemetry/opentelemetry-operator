@@ -33,7 +33,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator"
 	taStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 // TargetAllocatorReconciler reconciles a TargetAllocator object.
@@ -191,7 +190,7 @@ func (r *TargetAllocatorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.Deployment{}).
 		Owns(&policyV1.PodDisruptionBudget{})
 
-	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability == prometheus.Available {
+	if r.config.PrometheusCRAvailability == prometheus.Available {
 		ctrlBuilder.Owns(&monitoringv1.ServiceMonitor{})
 		ctrlBuilder.Owns(&monitoringv1.PodMonitor{})
 	}
