@@ -89,7 +89,7 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 		},
 	}
 
-	generator, err := prometheus.NewConfigGenerator(promLogger, prom, prometheus.WithEndpointSliceSupport())
+	generator, err := prometheus.NewConfigGenerator(promLogger, prom, prometheus.WithEndpointSliceSupport(), prometheus.WithInlineTLSConfig())
 
 	if err != nil {
 		return nil, err

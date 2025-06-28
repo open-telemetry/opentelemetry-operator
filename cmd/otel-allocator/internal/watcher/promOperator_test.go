@@ -1251,7 +1251,7 @@ func getTestPrometheusCRWatcher(
 
 	promOperatorLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
 
-	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom, prometheus.WithEndpointSliceSupport())
+	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom, prometheus.WithEndpointSliceSupport(), prometheus.WithInlineTLSConfig())
 	if err != nil {
 		t.Fatal(t, err)
 	}
