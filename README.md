@@ -844,7 +844,7 @@ Choose the first value found:
 - `pod.annotation[resource.opentelemetry.io/service.namespace]`
 - `k8s.namespace.name`
 
-## Contributing and Developing
+## Contributing
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
