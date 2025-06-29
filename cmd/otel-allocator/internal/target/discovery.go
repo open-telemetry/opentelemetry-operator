@@ -4,6 +4,7 @@
 package target
 
 import (
+	"context"
 	"hash"
 	"hash/fnv"
 	"sync"
@@ -11,50 +12,35 @@ import (
 
 	"github.com/go-logr/logr"
 	go_yaml "github.com/goccy/go-yaml"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap/zapcore"
 
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
 
-var (
-	targetsDiscovered = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "opentelemetry_allocator_targets",
-		Help: "Number of targets discovered.",
-	}, []string{"job_name"})
-
-	processTargetsDuration = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name:    "opentelemetry_allocator_process_targets_duration_seconds",
-		Help:    "Duration of processing targets.",
-		Buckets: []float64{1, 5, 10, 30, 60, 120},
-	})
-
-	processTargetGroupsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "opentelemetry_allocator_process_target_groups_duration_seconds",
-		Help:    "Duration of processing target groups.",
-		Buckets: []float64{1, 5, 10, 30, 60, 120},
-	}, []string{"job_name"})
-)
-
 type Discoverer struct {
-	log                    logr.Logger
-	manager                *discovery.Manager
-	close                  chan struct{}
-	mtxScrape              sync.Mutex // Guards the fields below.
-	configsMap             map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig
-	hook                   discoveryHook
-	scrapeConfigsHash      hash.Hash
-	scrapeConfigsUpdater   scrapeConfigsUpdater
-	targetSets             map[string][]*targetgroup.Group
-	triggerReload          chan struct{}
-	processTargetsCallBack func(targets []*Item)
+	log                         logr.Logger
+	manager                     *discovery.Manager
+	close                       chan struct{}
+	mtxScrape                   sync.Mutex // Guards the fields below.
+	configsMap                  map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig
+	hook                        discoveryHook
+	scrapeConfigsHash           hash.Hash
+	scrapeConfigsUpdater        scrapeConfigsUpdater
+	targetSets                  map[string][]*targetgroup.Group
+	triggerReload               chan struct{}
+	processTargetsCallBack      func(targets []*Item)
+	targetsDiscovered           metric.Float64Gauge
+	processTargetsDuration      metric.Float64Histogram
+	processTargetGroupsDuration metric.Float64Histogram
 }
 
 type discoveryHook interface {
@@ -65,18 +51,36 @@ type scrapeConfigsUpdater interface {
 	UpdateScrapeConfigResponse(map[string]*promconfig.ScrapeConfig) error
 }
 
-func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHook, scrapeConfigsUpdater scrapeConfigsUpdater, setTargets func(targets []*Item)) *Discoverer {
-	return &Discoverer{
-		log:                    log,
-		manager:                manager,
-		close:                  make(chan struct{}),
-		triggerReload:          make(chan struct{}, 1),
-		configsMap:             make(map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig),
-		hook:                   hook,
-		scrapeConfigsHash:      nil, // we want the first update to succeed even if the config is empty
-		scrapeConfigsUpdater:   scrapeConfigsUpdater,
-		processTargetsCallBack: setTargets,
+func NewDiscoverer(log logr.Logger, manager *discovery.Manager, hook discoveryHook, scrapeConfigsUpdater scrapeConfigsUpdater, setTargets func(targets []*Item)) (*Discoverer, error) {
+	meter := otel.GetMeterProvider().Meter("targetallocator")
+	targetsDiscovered, err := meter.Float64Gauge("opentelemetry_allocator_targets", metric.WithDescription("Number of targets discovered."))
+	if err != nil {
+		return nil, err
 	}
+	processTargetsDuration, err := meter.Float64Histogram("opentelemetry_allocator_process_targets_duration_seconds",
+		metric.WithDescription("Duration of processing targets."), metric.WithExplicitBucketBoundaries(1, 5, 10, 30, 60, 120))
+	if err != nil {
+		return nil, err
+	}
+	processTargetGroupsDuration, err := meter.Float64Histogram("opentelemetry_allocator_process_target_groups_duration_seconds",
+		metric.WithDescription("Duration of processing target groups."), metric.WithExplicitBucketBoundaries(1, 5, 10, 30, 60, 120))
+	if err != nil {
+		return nil, err
+	}
+	return &Discoverer{
+		log:                         log,
+		manager:                     manager,
+		close:                       make(chan struct{}),
+		triggerReload:               make(chan struct{}, 1),
+		configsMap:                  make(map[allocatorWatcher.EventSource][]*promconfig.ScrapeConfig),
+		hook:                        hook,
+		scrapeConfigsHash:           nil, // we want the first update to succeed even if the config is empty
+		scrapeConfigsUpdater:        scrapeConfigsUpdater,
+		processTargetsCallBack:      setTargets,
+		targetsDiscovered:           targetsDiscovered,
+		processTargetsDuration:      processTargetsDuration,
+		processTargetGroupsDuration: processTargetGroupsDuration,
+	}, nil
 }
 
 func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConfigs []*promconfig.ScrapeConfig) error {
@@ -162,8 +166,10 @@ func (m *Discoverer) reloader() {
 func (m *Discoverer) Reload() {
 	m.mtxScrape.Lock()
 	var wg sync.WaitGroup
-	timer := prometheus.NewTimer(processTargetsDuration)
-	defer timer.ObserveDuration()
+	begin := time.Now()
+	defer func() {
+		m.processTargetsDuration.Record(context.Background(), time.Since(begin).Seconds())
+	}()
 
 	// count targets and preallocate
 	targetCount := 0
@@ -194,9 +200,11 @@ func (m *Discoverer) Reload() {
 // processTargetGroups processes the target groups and returns a map of targets.
 func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.Group, intoTargets []*Item) {
 	builder := labels.NewBuilder(labels.Labels{})
-	timer := prometheus.NewTimer(processTargetGroupsDuration.WithLabelValues(jobName))
 
-	defer timer.ObserveDuration()
+	begin := time.Now()
+	defer func() {
+		m.processTargetGroupsDuration.Record(context.Background(), time.Since(begin).Seconds(), metric.WithAttributes(attribute.String("job.name", jobName)))
+	}()
 	var count float64 = 0
 	index := 0
 	for _, tg := range groups {
@@ -216,7 +224,7 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 			index++
 		}
 	}
-	targetsDiscovered.WithLabelValues(jobName).Set(count)
+	m.targetsDiscovered.Record(context.Background(), count, metric.WithAttributes(attribute.String("job.name", jobName)))
 }
 
 // Run receives and saves target set updates and triggers the scraping loops reloading.

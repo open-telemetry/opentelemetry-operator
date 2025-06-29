@@ -47,7 +47,8 @@ var (
 func TestServer_LivenessProbeHandler(t *testing.T) {
 	leastWeighted, _ := allocation.New("least-weighted", logger)
 	listenAddr := ":8080"
-	s := NewServer(logger, leastWeighted, listenAddr)
+	s, err := NewServer(logger, leastWeighted, listenAddr)
+	require.NoError(t, err)
 	request := httptest.NewRequest("GET", "/livez", nil)
 	w := httptest.NewRecorder()
 
@@ -161,7 +162,8 @@ func TestServer_TargetsHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, tt.args.allocator, listenAddr)
+			s, err := NewServer(logger, tt.args.allocator, listenAddr)
+			require.NoError(t, err)
 
 			tt.args.allocator.SetCollectors(map[string]*allocation.Collector{"test-collector": {Name: "test-collector"}})
 			tt.args.allocator.SetTargets(tt.args.targets)
@@ -501,7 +503,8 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, nil, listenAddr, tc.serverOptions...)
+			s, err := NewServer(logger, nil, listenAddr, tc.serverOptions...)
+			require.NoError(t, err)
 			assert.NoError(t, s.UpdateScrapeConfigResponse(tc.scrapeConfigs))
 
 			request := httptest.NewRequest("GET", "/scrape_configs", nil)
@@ -592,7 +595,8 @@ func TestServer_JobHandler(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
 			a := &mockAllocator{targetItems: tc.targetItems}
-			s := NewServer(logger, a, listenAddr)
+			s, err := NewServer(logger, a, listenAddr)
+			require.NoError(t, err)
 			request := httptest.NewRequest("GET", "/jobs", nil)
 			w := httptest.NewRecorder()
 
@@ -652,7 +656,8 @@ func TestServer_JobsHandler_HTML(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
 			a := &mockAllocator{targetItems: tc.targetItems}
-			s := NewServer(logger, a, listenAddr)
+			s, err := NewServer(logger, a, listenAddr)
+			require.NoError(t, err)
 			a.SetCollectors(map[string]*allocation.Collector{
 				"test-collector":  {Name: "test-collector"},
 				"test-collector2": {Name: "test-collector2"},
@@ -721,7 +726,8 @@ func TestServer_JobHandler_HTML(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, tt.args.allocator, listenAddr)
+			s, err := NewServer(logger, tt.args.allocator, listenAddr)
+			require.NoError(t, err)
 			tt.args.allocator.SetCollectors(map[string]*allocation.Collector{
 				"test-collector":  {Name: "test-collector"},
 				"test-collector2": {Name: "test-collector2"},
@@ -779,7 +785,8 @@ func TestServer_IndexHandler(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, tc.allocator, listenAddr)
+			s, err := NewServer(logger, tc.allocator, listenAddr)
+			require.NoError(t, err)
 			tc.allocator.SetCollectors(map[string]*allocation.Collector{
 				"test-collector1": {Name: "test-collector1"},
 				"test-collector2": {Name: "test-collector2"},
@@ -836,7 +843,8 @@ func TestServer_TargetsHTMLHandler(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, tc.allocator, listenAddr)
+			s, err := NewServer(logger, tc.allocator, listenAddr)
+			require.NoError(t, err)
 			tc.allocator.SetCollectors(map[string]*allocation.Collector{
 				"test-collector1": {Name: "test-collector1"},
 				"test-collector2": {Name: "test-collector2"},
@@ -923,7 +931,8 @@ func TestServer_CollectorHandler(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, tc.allocator, listenAddr)
+			s, err := NewServer(logger, tc.allocator, listenAddr)
+			require.NoError(t, err)
 			tc.allocator.SetCollectors(map[string]*allocation.Collector{
 				"test-collector":  {Name: "test-collector"},
 				"test-collector2": {Name: "test-collector2"},
@@ -989,7 +998,8 @@ func TestServer_TargetHTMLHandler(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, tc.allocator, listenAddr)
+			s, err := NewServer(logger, tc.allocator, listenAddr)
+			require.NoError(t, err)
 			tc.allocator.SetCollectors(map[string]*allocation.Collector{
 				"test-collector":  {Name: "test-collector"},
 				"test-collector2": {Name: "test-collector2"},
@@ -1060,7 +1070,8 @@ func TestServer_Readiness(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, nil, listenAddr)
+			s, err := NewServer(logger, nil, listenAddr)
+			require.NoError(t, err)
 			if tc.scrapeConfigs != nil {
 				assert.NoError(t, s.UpdateScrapeConfigResponse(tc.scrapeConfigs))
 			}
@@ -1101,10 +1112,11 @@ func TestServer_ScrapeConfigResponse(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, nil, listenAddr)
+			s, err := NewServer(logger, nil, listenAddr)
+			require.NoError(t, err)
 
 			allocCfg := allocatorconfig.CreateDefaultConfig()
-			err := allocatorconfig.LoadFromFile(tc.filePath, &allocCfg)
+			err = allocatorconfig.LoadFromFile(tc.filePath, &allocCfg)
 			require.NoError(t, err)
 
 			jobToScrapeConfig := make(map[string]*promconfig.ScrapeConfig)
