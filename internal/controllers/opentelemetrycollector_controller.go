@@ -370,7 +370,7 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 		ownedResources = append(ownedResources, &rbacv1.ClusterRoleBinding{})
 	}
 
-	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability == prometheus.Available {
+	if r.config.PrometheusCRAvailability == prometheus.Available {
 		ownedResources = append(ownedResources, &monitoringv1.PodMonitor{})
 		ownedResources = append(ownedResources, &monitoringv1.ServiceMonitor{})
 	}
