@@ -10,17 +10,15 @@ spec:
             file: 00-install.yaml
     - name: Wait for OpenTelemetryCollector and Target Allocator pods to be ready
       try:
-        - sleep:
-            duration: 10s 
         - wait:
-            apiVersion: v1
-            kind: Pod
+            apiVersion: opentelemetry.io/v1beta1
+            kind: OpenTelemetryCollector
             namespace: ($namespace)
             timeout: 1m
             for:
-              condition:
-                name: ready
-                value: 'true'
+              jsonPath:
+                path: '{.status.scale.statusReplicas}'
+                value: '1/1'
         - assert:
             file: 00-assert.yaml
     - name: Assert Target Allocator metrics
