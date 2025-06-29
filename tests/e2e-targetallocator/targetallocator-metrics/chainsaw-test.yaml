@@ -45,7 +45,9 @@ spec:
                 value: ($podName)
             content: |
               #!/bin/bash
-              kubectl get --raw /api/v1/namespaces/${NAMESPACE}/pods/${podName}:9090/proxy/metrics
+              while ! kubectl get --raw /api/v1/namespaces/${NAMESPACE}/pods/${podName}:9090/proxy/metrics; do
+                sleep 1
+              done
             outputs:
               - name: metrics
                 value: (x_metrics_decode($stdout))
