@@ -20,23 +20,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	"github.com/goccy/go-json"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	promcommconfig "github.com/prometheus/common/config"
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/model/labels"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"gopkg.in/yaml.v2"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
-)
-
-var (
-	httpDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "opentelemetry_allocator_http_duration_seconds",
-		Help: "Duration of received HTTP requests.",
-	}, []string{"path"})
 )
 
 type collectorJSON struct {
@@ -65,6 +59,7 @@ type Server struct {
 	mtx                                  sync.RWMutex
 	scrapeConfigResponse                 []byte
 	ScrapeConfigMarshalledSecretResponse []byte
+	httpDuration                         metric.Float64Histogram
 }
 
 type Option func(*Server)
@@ -103,10 +98,16 @@ func (s *Server) setRouter(router *gin.Engine) {
 	registerPprof(router.Group("/debug/pprof/"))
 }
 
-func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr string, options ...Option) *Server {
+func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr string, options ...Option) (*Server, error) {
+	meter := otel.GetMeterProvider().Meter("targetallocator")
+	httpDuration, err := meter.Float64Histogram("opentelemetry_allocator_http_duration_seconds", metric.WithDescription("Duration of received HTTP requests."))
+	if err != nil {
+		return nil, err
+	}
 	s := &Server{
-		logger:    log,
-		allocator: allocator,
+		logger:       log,
+		allocator:    allocator,
+		httpDuration: httpDuration,
 	}
 
 	gin.SetMode(gin.ReleaseMode)
@@ -119,7 +120,7 @@ func NewServer(log logr.Logger, allocator allocation.Allocator, listenAddr strin
 		opt(s)
 	}
 
-	return s
+	return s, nil
 }
 
 func (s *Server) Start() error {
@@ -282,9 +283,9 @@ func (s *Server) LivenessProbeHandler(c *gin.Context) {
 
 func (s *Server) PrometheusMiddleware(c *gin.Context) {
 	path := c.FullPath()
-	timer := prometheus.NewTimer(httpDuration.WithLabelValues(path))
+	begin := time.Now()
 	c.Next()
-	timer.ObserveDuration()
+	s.httpDuration.Record(context.Background(), time.Since(begin).Seconds(), metric.WithAttributes(attribute.String("path", path)))
 }
 
 // IndexHandler displays the main page of the allocator. It shows the number of jobs and targets.
