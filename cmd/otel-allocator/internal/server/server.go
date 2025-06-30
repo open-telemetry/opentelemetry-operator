@@ -186,6 +186,29 @@ func RemoveRegexFromRelabelAction(jsonConfig []byte) ([]byte, error) {
 	return jsonConfigNew, nil
 }
 
+func addMissingScrapeConfigDefaults(jsonConfig []byte) ([]byte, error) {
+	var jobToScrapeConfig map[string]interface{}
+	err := json.Unmarshal(jsonConfig, &jobToScrapeConfig)
+	if err != nil {
+		return nil, err
+	}
+	for _, scrapeConfig := range jobToScrapeConfig {
+		scrapeConfig := scrapeConfig.(map[string]interface{})
+		if _, ok := scrapeConfig["metric_name_validation_scheme"]; !ok {
+			scrapeConfig["metric_name_validation_scheme"] = "utf8"
+		}
+		if _, ok := scrapeConfig["metric_name_escaping_scheme"]; !ok {
+			scrapeConfig["metric_name_escaping_scheme"] = "allow-utf-8"
+		}
+	}
+
+	jsonConfigNew, err := json.Marshal(jobToScrapeConfig)
+	if err != nil {
+		return nil, err
+	}
+	return jsonConfigNew, nil
+}
+
 func (s *Server) MarshalScrapeConfig(configs map[string]*promconfig.ScrapeConfig, marshalSecretValue bool) error {
 	promcommconfig.MarshalSecretValue = marshalSecretValue
 
@@ -201,6 +224,11 @@ func (s *Server) MarshalScrapeConfig(configs map[string]*promconfig.ScrapeConfig
 	}
 
 	jsonConfigNew, err := RemoveRegexFromRelabelAction(jsonConfig)
+	if err != nil {
+		return err
+	}
+
+	jsonConfigNew, err = addMissingScrapeConfigDefaults(jsonConfigNew)
 	if err != nil {
 		return err
 	}
