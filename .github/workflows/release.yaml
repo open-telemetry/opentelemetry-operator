@@ -7,6 +7,9 @@ on:
     paths:
       - 'versions.txt'
 
+permissions:
+  contents: read
+
 jobs:
   get-versions:
     runs-on: ubuntu-latest

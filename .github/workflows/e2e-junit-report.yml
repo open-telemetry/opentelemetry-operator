@@ -10,12 +10,14 @@ on:
         required: true
 
 permissions:
-  checks: write
-  pull-requests: write
-  actions: read
+  contents: read
 
 jobs:
   report:
+    permissions:
+      checks: write
+      pull-requests: write
+      actions: read
     runs-on: ubuntu-latest
     steps:
       - name: Download Test Report
