@@ -193,9 +193,6 @@ spec:
           receivers: [prometheus]
           exporters: [prometheus]
       telemetry:
-        metrics:
-          address: 0.0.0.0:8888
-          level: detailed
         logs:
           level: "DEBUG"
           development: true

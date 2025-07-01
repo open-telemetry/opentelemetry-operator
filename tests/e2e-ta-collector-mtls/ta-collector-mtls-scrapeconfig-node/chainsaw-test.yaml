@@ -65,6 +65,29 @@ spec:
           file: 01-install.yaml
       - assert:
           file: 01-assert.yaml
+      - script:
+          timeout: 1m
+          content: |
+            #!/bin/bash
+            # Wait for the scrape config to be used by the collector to scrape nodes. It can take 30s for the collector to start scraping nodes.
+            while ! kubectl get --raw /api/v1/namespaces/${NAMESPACE}/pods/prometheus-cr-v1beta1-collector-0:9090/proxy/metrics | grep up{ | grep "job=\"scrapeConfig/${NAMESPACE}/scrape-config-cr\""; do
+              sleep 1
+            done
+          outputs:
+            - name: metrics
+              value: ($stdout)
+          check:
+            ($error == null): true
+      - script:
+          env:
+            - name: TT
+              value: (to_string(x_metrics_decode($metrics)))
+          content: echo $TT
+      - assert:
+          timeout: 1s
+          resource:
+            ((x_metrics_decode($metrics))):
+              ([?as_string(metric.__name__) == 'up' && as_string(metric.job) == join('/', ['scrapeConfig', $namespace, 'scrape-config-cr'])].value): [ 1 ]
     catch:
       - podLogs:
           selector: app.kubernetes.io/managed-by=opentelemetry-operator
