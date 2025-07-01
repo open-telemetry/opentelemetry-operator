@@ -12,7 +12,6 @@ spec:
             - get
             - pods
             - -A
-            - -l control-plane=controller-manager
             - -l app.kubernetes.io/name=opentelemetry-operator
             - -o 
             - jsonpath={.items[0].metadata.namespace}
@@ -32,7 +31,7 @@ spec:
               - -n
               - $otelnamespace
               - -l
-              - control-plane=controller-manager
+              - app.kubernetes.io/name=opentelemetry-operator
               - -o
               - jsonpath={.items[0].metadata.name}
             outputs:
