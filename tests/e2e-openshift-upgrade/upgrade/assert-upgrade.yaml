@@ -1,0 +1,50 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: opentelemetry-product
+  namespace: openshift-opentelemetry-operator
+status:
+  state: AtLatestKnown
+  installedCSV: ($upgrade_operator_csv_name)
+
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: InstallPlan
+metadata:
+  namespace: openshift-opentelemetry-operator
+  ownerReferences:
+  - apiVersion: operators.coreos.com/v1alpha1
+    kind: Subscription
+    name: opentelemetry-product
+status:
+  phase: Complete
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: opentelemetry-operator
+  namespace: openshift-opentelemetry-operator
+status:
+  readyReplicas: 1 
+
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: cluster-collector
+  namespace: chainsaw-upgrade
+status:
+  scale:
+    replicas: 1
+  version: ($upgrade_otel_version)
+
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: TargetAllocator
+metadata:
+  name: simplest
+  namespace: chainsaw-upgrade
+status:
+  version: ($upgrade_otel_version)

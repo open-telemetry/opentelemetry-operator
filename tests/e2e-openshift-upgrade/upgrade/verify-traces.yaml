@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: verify-traces
+  namespace: chainsaw-upgrade
+spec:
+  template:
+    spec:
+      containers:
+      - name: verify-traces
+        image: ghcr.io/grafana/tempo-operator/test-utils:main
+        command: ["/bin/bash", "-eux", "-c"]
+        args:
+        - |
+          # Calculate time range: last 1 minute using Unix seconds
+          end_time=$(date +%s)
+          start_time=$((end_time - 30))
+          
+          echo "Querying traces from $(date -d @${start_time}) to $(date -d @${end_time})"
+          
+          curl -sS -G \
+            --data-urlencode 'q={ resource.service.name="telemetrygen" }' \
+            --data-urlencode "start=${start_time}" \
+            --data-urlencode "end=${end_time}" \
+            http://tempo-otlpmetrics.chainsaw-upgrade.svc:3200/api/search \
+            | tee /tmp/tempo.out
+
+          num_traces=$(jq ".traces | length" /tmp/tempo.out)
+          echo "Found $num_traces traces"
+          
+          if [[ "$num_traces" -le "1" ]]; then
+            echo && echo "The Tempo API returned $num_traces."
+            exit 1
+          fi
+      restartPolicy: Never

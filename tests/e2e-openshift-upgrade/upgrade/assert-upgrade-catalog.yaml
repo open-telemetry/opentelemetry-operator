@@ -1,0 +1,9 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: otel-registry
+  namespace: openshift-marketplace
+status:
+  connectionState:
+    lastObservedState: READY
+  
