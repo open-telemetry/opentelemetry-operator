@@ -78,11 +78,6 @@ spec:
               value: ($stdout)
           check:
             ($error == null): true
-      - script:
-          env:
-            - name: TT
-              value: (to_string(x_metrics_decode($metrics)))
-          content: echo $TT
       - assert:
           timeout: 1s
           resource:
