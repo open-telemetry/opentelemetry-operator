@@ -41,5 +41,6 @@ autoinstrumentation-go=v0.21.0
 autoinstrumentation-apache-httpd=1.0.4
 
 # Represents the current release of Apache Nginx instrumentation.
+# Intentionally uses the same image and version as Apache HTTPD.
 # Should match autoinstrumentation/apache-httpd/version.txt
 autoinstrumentation-nginx=1.0.4
