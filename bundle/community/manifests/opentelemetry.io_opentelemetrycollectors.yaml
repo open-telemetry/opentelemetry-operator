@@ -2598,6 +2598,8 @@ spec:
                 type: object
               serviceAccount:
                 type: string
+              serviceName:
+                type: string
               shareProcessNamespace:
                 type: boolean
               targetAllocator:
@@ -7256,6 +7258,8 @@ spec:
                     type: object
                 type: object
               serviceAccount:
+                type: string
+              serviceName:
                 type: string
               shareProcessNamespace:
                 type: boolean
