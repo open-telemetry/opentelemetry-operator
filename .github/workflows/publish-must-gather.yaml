@@ -12,12 +12,13 @@ env:
 
 permissions:
   contents: read
-  packages: write
-  attestations: write
-  id-token: write
 
 jobs:
   publish:
+    permissions:
+      packages: write
+      attestations: write
+      id-token: write
     name: Publish must-gather container image
     runs-on: ubuntu-latest
     steps:
