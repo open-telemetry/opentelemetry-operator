@@ -844,7 +844,7 @@ Choose the first value found:
 - `pod.annotation[resource.opentelemetry.io/service.namespace]`
 - `k8s.namespace.name`
 
-## Contributing and Developing
+## Contributing
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -857,7 +857,7 @@ In addition to the [core responsibilities](https://github.com/open-telemetry/com
 - [Mikołaj Świątek](https://github.com/swiatekm), Elastic
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 
-For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#maintainer).
+For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#maintainer).
 
 ### Approvers
 
@@ -865,13 +865,13 @@ For more information about the maintainer role, see the [community repository](h
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), OllyGarden
 - [Israel Blancas](https://github.com/iblancasa), Coralogix
 
-For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#approver).
+For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
 
 ### Triagers
 
 - [Antoine Toulme](https://github.com/atoulme), Splunk
 
-For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md#triagers).
+For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#triager).
 
 ### Emeritus Maintainers
 

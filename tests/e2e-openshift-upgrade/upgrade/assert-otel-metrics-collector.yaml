@@ -1,0 +1,52 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: chainsaw-upgrade
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: chainsaw-upgrade.cluster-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: cluster-collector-monitoring-collector
+  name: cluster-collector-monitoring-collector
+  namespace: chainsaw-upgrade
+spec:
+  endpoints:
+  - port: monitoring
+  namespaceSelector:
+    matchNames:
+    - chainsaw-upgrade
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: chainsaw-upgrade.cluster-collector
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      operator.opentelemetry.io/collector-service-type: monitoring
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/instance: chainsaw-upgrade.cluster-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: cluster-collector-collector
+  name: cluster-collector-collector
+  namespace: chainsaw-upgrade
+spec:
+  endpoints:
+  - port: prometheus
+  namespaceSelector:
+    matchNames:
+    - chainsaw-upgrade
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: chainsaw-upgrade.cluster-collector
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      operator.opentelemetry.io/collector-service-type: base

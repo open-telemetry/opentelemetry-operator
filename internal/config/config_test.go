@@ -58,6 +58,7 @@ func TestToStringMap(t *testing.T) {
 		"target-allocator-configmap-entry":        "",
 		"targetallocator-image":                   "",
 		"webhook-port":                            "0",
+		"enable-webhooks":                         "false",
 	}, cfg.ToStringMap())
 }
 

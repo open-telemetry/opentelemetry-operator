@@ -4,6 +4,11 @@
 
 ## 0.129.0
 
+### 🛑 Breaking changes 🛑
+
+- `pkg/instrumentation`: Move pkg/instrumentation to internal/instrumentation (#4140)
+- `targetallocator, collector`: Remove stable feature gate PrometheusOperatorIsAvailable (#4141)
+
 ### 💡 Enhancements 💡
 
 - `controller`: Harmonize CLI and env var configuration to allow setting all configuration (#3565)
@@ -20,6 +25,10 @@
 - `target allocator`: Fix OpenShift must-gather for Target Allocator (#4084)
 - `opampbridge`: Do not register the opampbridge webhook if the CRD is not present (#4070)
 - `auto-instrumentation`: Fix the bug that k8s.container.name in OTEL_RESOURCE_ATTRIBUTES env is not set correctly for Go the auto-instrumentation when the pod has multiple containers. (#4089)
+- `collector`: Fix the headless service name in StatefulSet mode to ensure consistent DNS resolution. The ServiceName field in the OpenTelemetryCollector spec can be used to customize the StatefulSet's serviceName. (#4029)
+  The ServiceName field in the OpenTelemetryCollector
+  spec can be used to customize the StatefulSet's serviceName if needed, while maintaining
+  the default behavior of using the headless service name.
 
 ### Components
 
