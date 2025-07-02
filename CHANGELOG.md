@@ -2,7 +2,7 @@
 
 <!-- next version -->
 
-## 0.128.0
+## 0.129.0
 
 ### 💡 Enhancements 💡
 
@@ -23,8 +23,8 @@
 
 ### Components
 
-* [OpenTelemetry Collector - v0.128.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.128.0)
-* [OpenTelemetry Contrib - v0.128.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.128.0)
+* [OpenTelemetry Collector - v0.129.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.129.0)
+* [OpenTelemetry Contrib - v0.129.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.129.0)
 * [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
 * [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
 * [Node.JS - v0.58.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.58.1)
