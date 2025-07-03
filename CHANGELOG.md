@@ -2,7 +2,7 @@
 
 <!-- next version -->
 
-## 0.129.0
+## 0.129.1
 
 ### 🛑 Breaking changes 🛑
 
@@ -29,6 +29,9 @@
   The ServiceName field in the OpenTelemetryCollector
   spec can be used to customize the StatefulSet's serviceName if needed, while maintaining
   the default behavior of using the headless service name.
+- `operator`: Remove invalid `operator.observability.prometheus` feature flag references (#4159)
+  Fixed operator installation failure caused by references to the non-existent `operator.observability.prometheus` feature flag.
+  Removed the flag from the bundle and cleaned up API and documentation references.
 
 ### Components
 
