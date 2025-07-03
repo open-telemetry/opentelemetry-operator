@@ -9789,8 +9789,7 @@ Metrics defines the metrics configuration for operands.
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
-          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12969,8 +12968,7 @@ Metrics defines the metrics configuration for operands.
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
-          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -29416,8 +29414,7 @@ Metrics defines the metrics configuration for operands.
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
-          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -32826,8 +32823,7 @@ Metrics defines the metrics configuration for operands.
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
-          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
