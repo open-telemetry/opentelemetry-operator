@@ -1,0 +1,90 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: ta-collector-mtls-scrapeconfig-node
+spec:
+  steps:
+  - name: step-00
+    try:
+    - apply:
+        file: 00-install.yaml
+    - assert:
+        file: 00-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/managed-by=opentelemetry-operator
+    - podLogs:
+        selector: checker=true
+  - name: step-01
+    try:
+      - create:
+          template: false
+          resource:
+            apiVersion: monitoring.coreos.com/v1alpha1
+            kind: ScrapeConfig
+            metadata:
+              name: scrape-config-cr
+            spec:
+              kubernetesSDConfigs:
+                - role: Node
+              relabelings:
+                - action: labelmap
+                  regex: __meta_kubernetes_node_label_(.+)
+                  replacement: $1
+                  separator: ;
+                - action: replace
+                  regex: (.*)
+                  replacement: kubernetes.default.svc:443
+                  separator: ;
+                  targetLabel: __address__
+                - action: replace
+                  regex: (.+)
+                  replacement: /api/v1/nodes/$1/proxy/metrics
+                  separator: ;
+                  sourceLabels:
+                    - __meta_kubernetes_node_name
+                  targetLabel: __metrics_path__
+              scheme: HTTPS
+              authorization:
+                type: Bearer
+                credentials:
+                  key: "token"
+                  name: "collector"
+              tlsConfig:
+                ca:
+                  secret:
+                    key: "ca.crt"
+                    name: "collector"
+                insecureSkipVerify: false
+      - apply:
+          template: true
+          bindings:
+            - name: namespace
+              value: ($namespace)
+          file: 01-install.yaml
+      - assert:
+          file: 01-assert.yaml
+      - script:
+          timeout: 1m
+          content: |
+            #!/bin/bash
+            # Wait for the scrape config to be used by the collector to scrape nodes. It can take 30s for the collector to start scraping nodes.
+            while ! kubectl get --raw /api/v1/namespaces/${NAMESPACE}/pods/prometheus-cr-v1beta1-collector-0:9090/proxy/metrics | grep up{ | grep "job=\"scrapeConfig/${NAMESPACE}/scrape-config-cr\""; do
+              sleep 1
+            done
+          outputs:
+            - name: metrics
+              value: ($stdout)
+          check:
+            ($error == null): true
+      - assert:
+          timeout: 1s
+          resource:
+            ((x_metrics_decode($metrics))):
+              ([?as_string(metric.__name__) == 'up' && as_string(metric.job) == join('/', ['scrapeConfig', $namespace, 'scrape-config-cr'])].value): [ 1 ]
+    catch:
+      - podLogs:
+          selector: app.kubernetes.io/managed-by=opentelemetry-operator
+      - podLogs:
+          selector: checker=true
