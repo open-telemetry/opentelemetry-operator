@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         kube-version:
-          - "1.23"
+          - "1.25"
           - "1.33"
 
     steps:
