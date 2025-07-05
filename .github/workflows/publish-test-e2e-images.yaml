@@ -5,12 +5,14 @@ on:
     paths:
       - 'tests/test-e2e-apps/**'
       - '.github/workflows/publish-test-e2e-images.yaml'
+      - '.github/workflows/reusable-publish-test-e2e-images.yaml'
     branches:
       - main
   pull_request:
     paths:
       - 'tests/test-e2e-apps/**'
       - '.github/workflows/publish-test-e2e-images.yaml'
+      - '.github/workflows/reusable-publish-test-e2e-images.yaml'
   workflow_dispatch:
 
 concurrency:
