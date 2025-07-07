@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2025-07-02T14:25:34Z"
+    createdAt: "2025-07-05T13:19:48Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -638,7 +638,7 @@ spec:
   - email: jpkroehling@redhat.com
     name: Juraci Paixão Kröhling
   maturity: alpha
-  minKubeVersion: 1.23.0
+  minKubeVersion: 1.25.0
   provider:
     name: OpenTelemetry Community
   version: 0.129.1
