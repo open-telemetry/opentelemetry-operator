@@ -362,6 +362,14 @@ the operator will not automatically create a ServiceAccount for the collector.<b
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>serviceName</b></td>
+        <td>string</td>
+        <td>
+          ServiceName is the name of the Service to be used.
+If not specified, it will default to "<name>-headless".<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>shareProcessNamespace</b></td>
         <td>boolean</td>
         <td>
@@ -9781,8 +9789,7 @@ Metrics defines the metrics configuration for operands.
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
-          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12961,8 +12968,7 @@ Metrics defines the metrics configuration for operands.
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
-          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19745,6 +19751,14 @@ injected sidecar container.<br/>
         <td>
           ServiceAccount indicates the name of an existing service account to use with this instance. When set,
 the operator will not automatically create a ServiceAccount.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>serviceName</b></td>
+        <td>string</td>
+        <td>
+          ServiceName is the name of the Service to be used.
+If not specified, it will default to "<name>-headless".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -29400,8 +29414,7 @@ Metrics defines the metrics configuration for operands.
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
-          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -32810,8 +32823,7 @@ Metrics defines the metrics configuration for operands.
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
-          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
