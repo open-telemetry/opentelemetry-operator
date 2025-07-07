@@ -6,6 +6,8 @@ package main
 import (
 	"context"
 	"fmt"
+	monitoringclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
+	"k8s.io/client-go/kubernetes"
 	"os"
 	"os/signal"
 	"syscall"
@@ -67,6 +69,17 @@ func main() {
 	ctx := context.Background()
 	log := ctrl.Log.WithName("allocator")
 
+	k8sClient, err := kubernetes.NewForConfig(cfg.ClusterConfig)
+	if err != nil {
+		setupLog.Error(err, "Unable to initialize kubernetes client")
+		os.Exit(1)
+	}
+	monitoringClient, err := monitoringclient.NewForConfig(cfg.ClusterConfig)
+	if err != nil {
+		setupLog.Error(err, "Unable to initialize monitoring client")
+		os.Exit(1)
+	}
+
 	metricExporter, promErr := otelprom.New()
 	if promErr != nil {
 		panic(promErr)
@@ -107,7 +120,7 @@ func main() {
 	if targetErr != nil {
 		panic(targetErr)
 	}
-	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, cfg.ClusterConfig, cfg.CollectorNotReadyGracePeriod)
+	collectorWatcher, collectorWatcherErr := collector.NewCollectorWatcher(log, k8sClient, cfg.CollectorNotReadyGracePeriod)
 	if collectorWatcherErr != nil {
 		setupLog.Error(collectorWatcherErr, "Unable to initialize collector watcher")
 		os.Exit(1)
@@ -116,7 +129,8 @@ func main() {
 	defer close(interrupts)
 
 	if cfg.PrometheusCR.Enabled {
-		promWatcher, allocErr := allocatorWatcher.NewPrometheusCRWatcher(ctx, setupLog.WithName("prometheus-cr-watcher"), *cfg)
+		promWatcher, allocErr := allocatorWatcher.NewPrometheusCRWatcher(
+			ctx, setupLog.WithName("prometheus-cr-watcher"), k8sClient, monitoringClient, *cfg)
 		if allocErr != nil {
 			setupLog.Error(allocErr, "Can't start the prometheus watcher")
 			os.Exit(1)

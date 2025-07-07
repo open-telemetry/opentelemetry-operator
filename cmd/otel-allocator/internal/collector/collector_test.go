@@ -42,7 +42,7 @@ func (r *reportingGauge) Record(_ context.Context, value int64, _ ...metric.Reco
 
 func getTestPodWatcher(collectorNotReadyGracePeriod time.Duration) Watcher {
 	podWatcher := Watcher{
-		k8sClient:                    fake.NewSimpleClientset(),
+		k8sClient:                    fake.NewClientset(),
 		close:                        make(chan struct{}),
 		log:                          logger,
 		minUpdateInterval:            time.Millisecond,

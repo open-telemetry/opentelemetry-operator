@@ -39,23 +39,20 @@ const (
 	minEventInterval = time.Second * 5
 )
 
-func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocatorconfig.Config) (*PrometheusCRWatcher, error) {
+func NewPrometheusCRWatcher(
+	ctx context.Context,
+	logger logr.Logger,
+	client kubernetes.Interface,
+	monitoringclient monitoringclient.Interface,
+	cfg allocatorconfig.Config,
+) (*PrometheusCRWatcher, error) {
 	promLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	slogger := slog.New(logr.ToSlogHandler(logger))
 	var resourceSelector *prometheus.ResourceSelector
-	mClient, err := monitoringclient.NewForConfig(cfg.ClusterConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	clientset, err := kubernetes.NewForConfig(cfg.ClusterConfig)
-	if err != nil {
-		return nil, err
-	}
 
 	allowList, denyList := cfg.PrometheusCR.GetAllowDenyLists()
 
-	factory := informers.NewMonitoringInformerFactories(allowList, denyList, mClient, allocatorconfig.DefaultResyncTime, nil)
+	factory := informers.NewMonitoringInformerFactories(allowList, denyList, monitoringclient, allocatorconfig.DefaultResyncTime, nil)
 
 	monitoringInformers, err := getInformers(factory)
 	if err != nil {
@@ -95,11 +92,11 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 		return nil, err
 	}
 
-	store := assets.NewStoreBuilder(clientset.CoreV1(), clientset.CoreV1())
+	store := assets.NewStoreBuilder(client.CoreV1(), client.CoreV1())
 	promRegisterer := prometheusgoclient.NewRegistry()
 	operatorMetrics := operator.NewMetrics(promRegisterer)
 	eventRecorderFactory := operator.NewEventRecorderFactory(false)
-	eventRecorder := eventRecorderFactory(clientset, "target-allocator")
+	eventRecorder := eventRecorderFactory(client, "target-allocator")
 
 	var nsMonInf cache.SharedIndexInformer
 	getNamespaceInformerErr := retry.OnError(retry.DefaultRetry,
@@ -107,7 +104,7 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 			logger.Error(err, "Retrying namespace informer creation in promOperator CRD watcher")
 			return true
 		}, func() error {
-			nsMonInf, err = getNamespaceInformer(ctx, allowList, denyList, promLogger, clientset, operatorMetrics)
+			nsMonInf, err = getNamespaceInformer(ctx, allowList, denyList, promLogger, client, operatorMetrics)
 			return err
 		})
 	if getNamespaceInformerErr != nil {
@@ -122,8 +119,8 @@ func NewPrometheusCRWatcher(ctx context.Context, logger logr.Logger, cfg allocat
 
 	return &PrometheusCRWatcher{
 		logger:                          slogger,
-		kubeMonitoringClient:            mClient,
-		k8sClient:                       clientset,
+		kubeMonitoringClient:            monitoringclient,
+		k8sClient:                       client,
 		informers:                       monitoringInformers,
 		nsInformer:                      nsMonInf,
 		stopChannel:                     make(chan struct{}),
