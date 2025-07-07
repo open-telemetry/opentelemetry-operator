@@ -13,12 +13,13 @@ on:
 
 permissions:
   contents: read
-  packages: write
-  attestations: write
-  id-token: write
 
 jobs:
   publish:
+    permissions:
+      packages: write
+      attestations: write
+      id-token: write
     runs-on: ubuntu-latest
 
     steps:
