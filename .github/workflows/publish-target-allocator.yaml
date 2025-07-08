@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 env:
-  PLATFORMS: linux/amd64,linux/arm64,linux/s390x,linux/ppc64le
+  PLATFORMS: linux/amd64,linux/arm64,linux/s390x,linux/ppc64le,windows/amd64
 
 permissions:
   contents: read
@@ -42,8 +42,9 @@ jobs:
         run: |
           for platform in $(echo $PLATFORMS | tr "," "\n"); do
             arch=${platform#*/}
-            echo "Building target allocator for $arch"
-            make targetallocator ARCH=$arch
+            os=${platform%/*}
+            echo "Building target allocator for os $os and arch $arch"
+            make targetallocator ARCH=$arch GOOS=$os
           done
 
       - name: Docker meta
