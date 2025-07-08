@@ -14,7 +14,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
@@ -33,12 +32,7 @@ type Watcher struct {
 	collectorsDiscovered         metric.Int64Gauge
 }
 
-func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config, collectorNotReadyGracePeriod time.Duration) (*Watcher, error) {
-	clientset, err := kubernetes.NewForConfig(kubeConfig)
-	if err != nil {
-		return &Watcher{}, err
-	}
-
+func NewCollectorWatcher(logger logr.Logger, client kubernetes.Interface, collectorNotReadyGracePeriod time.Duration) (*Watcher, error) {
 	meter := otel.GetMeterProvider().Meter("targetallocator")
 	collectorsDiscovered, err := meter.Int64Gauge("opentelemetry_allocator_collectors_discovered", metric.WithDescription("Number of collectors discovered."))
 	if err != nil {
@@ -46,7 +40,7 @@ func NewCollectorWatcher(logger logr.Logger, kubeConfig *rest.Config, collectorN
 	}
 	return &Watcher{
 		log:                          logger.WithValues("component", "opentelemetry-targetallocator"),
-		k8sClient:                    clientset,
+		k8sClient:                    client,
 		close:                        make(chan struct{}),
 		minUpdateInterval:            defaultMinUpdateInterval,
 		collectorNotReadyGracePeriod: collectorNotReadyGracePeriod,
@@ -69,7 +63,7 @@ func (k *Watcher) Watch(
 	}
 	informerFactory := informers.NewSharedInformerFactoryWithOptions(
 		k.k8sClient,
-		time.Second*30,
+		2*k.minUpdateInterval,
 		informers.WithNamespace(collectorNamespace),
 		informers.WithTweakListOptions(listOptionsFunc))
 	informer := informerFactory.Core().V1().Pods().Informer()
