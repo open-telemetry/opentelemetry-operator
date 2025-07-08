@@ -5,13 +5,18 @@ on:
     paths:
       - 'tests/test-e2e-apps/**'
       - '.github/workflows/publish-test-e2e-images.yaml'
+      - '.github/workflows/reusable-publish-test-e2e-images.yaml'
     branches:
       - main
   pull_request:
     paths:
       - 'tests/test-e2e-apps/**'
       - '.github/workflows/publish-test-e2e-images.yaml'
+      - '.github/workflows/reusable-publish-test-e2e-images.yaml'
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -19,41 +24,84 @@ concurrency:
 
 jobs:
   bridge-server:
+    permissions: # required by the reusable workflow
+      packages: write
+      attestations: write
+      id-token: write
     uses: ./.github/workflows/reusable-publish-test-e2e-images.yaml
     with:
       path: bridge-server
       platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
   golang:
+    permissions: # required by the reusable workflow
+      packages: write
+      attestations: write
+      id-token: write
     uses: ./.github/workflows/reusable-publish-test-e2e-images.yaml
     with:
       path: golang
       platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
-  python:
+  python-latest:
+    permissions: # required by the reusable workflow
+      packages: write
+      attestations: write
+      id-token: write
     uses: ./.github/workflows/reusable-publish-test-e2e-images.yaml
     with:
       path: python
       platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
+  python-oldest:
+    permissions: # required by the reusable workflow
+      packages: write
+      attestations: write
+      id-token: write
+    uses: ./.github/workflows/reusable-publish-test-e2e-images.yaml
+    with:
+      path: python
+      build-args: 'python_version=3.9'
+      tag-suffix: '-3.9'
+      platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
   java:
+    permissions: # required by the reusable workflow
+      packages: write
+      attestations: write
+      id-token: write
     uses: ./.github/workflows/reusable-publish-test-e2e-images.yaml
     with:
       path: java
       platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
   apache-httpd:
+    permissions: # required by the reusable workflow
+      packages: write
+      attestations: write
+      id-token: write
     uses: ./.github/workflows/reusable-publish-test-e2e-images.yaml
     with:
       path: apache-httpd
       platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
   dotnet:
+    permissions: # required by the reusable workflow
+      packages: write
+      attestations: write
+      id-token: write
     uses: ./.github/workflows/reusable-publish-test-e2e-images.yaml
     with:
       path: dotnet
       platforms: linux/arm64,linux/amd64
   nodejs:
+    permissions: # required by the reusable workflow
+      packages: write
+      attestations: write
+      id-token: write
     uses: ./.github/workflows/reusable-publish-test-e2e-images.yaml
     with:
       path: nodejs
       platforms: linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
   metrics-basic-auth:
+    permissions: # required by the reusable workflow
+      packages: write
+      attestations: write
+      id-token: write
     uses: ./.github/workflows/reusable-publish-test-e2e-images.yaml
     with:
       path: metrics-basic-auth

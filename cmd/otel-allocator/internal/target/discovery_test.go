@@ -63,13 +63,14 @@ func TestDiscovery(t *testing.T) {
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
 	results := make(chan []string)
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, func(targets []*Item) {
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, func(targets []*Item) {
 		var result []string
 		for _, t := range targets {
 			result = append(result, t.TargetURL)
 		}
 		results <- result
 	})
+	require.NoError(t, err)
 
 	defer func() { manager.Close() }()
 	defer cancelFunc()
@@ -310,7 +311,8 @@ func TestDiscovery_ScrapeConfigHashing(t *testing.T) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
+	require.NoError(t, err)
 
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
@@ -401,11 +403,12 @@ func TestDiscoveryTargetHashing(t *testing.T) {
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
 	results := make(chan []*Item)
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, func(targets []*Item) {
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, func(targets []*Item) {
 		var result []*Item
 		result = append(result, targets...)
 		results <- result
 	})
+	require.NoError(t, err)
 
 	defer manager.Close()
 	defer cancelFunc()
@@ -449,7 +452,8 @@ func TestDiscovery_NoConfig(t *testing.T) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(t, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
+	require.NoError(t, err)
 	defer close(manager.close)
 	defer cancelFunc()
 
@@ -487,7 +491,14 @@ func TestProcessTargetGroups_StableLabelIterationOrder(t *testing.T) {
 	}
 
 	results := make([]*Item, 1)
-	var d *Discoverer
+	scu := &mockScrapeConfigUpdater{}
+	ctx := context.Background()
+	registry := prometheus.NewRegistry()
+	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
+	require.NoError(t, err)
+	manager := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
+	d, err := NewDiscoverer(ctrl.Log.WithName("test"), manager, nil, scu, nil)
+	require.NoError(t, err)
 	d.processTargetGroups("test", groups, results)
 
 	for i, l := range results[0].Labels {
@@ -534,7 +545,8 @@ func BenchmarkApplyScrapeConfig(b *testing.B) {
 	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(registry)
 	require.NoError(b, err)
 	d := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	manager := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
+	manager, err := NewDiscoverer(ctrl.Log.WithName("test"), d, nil, scu, nil)
+	require.NoError(b, err)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

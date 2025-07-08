@@ -35,14 +35,6 @@ var (
 		featuregate.WithRegisterDescription("controls whether the operator supports sidecar containers as init containers. Should only be enabled on k8s v1.29+"),
 		featuregate.WithRegisterFromVersion("v0.111.0"),
 	)
-	// PrometheusOperatorIsAvailable is the feature gate that enables features associated to the Prometheus Operator.
-	PrometheusOperatorIsAvailable = featuregate.GlobalRegistry().MustRegister(
-		"operator.observability.prometheus",
-		featuregate.StageStable,
-		featuregate.WithRegisterDescription("enables features associated to the Prometheus Operator"),
-		featuregate.WithRegisterFromVersion("v0.82.0"),
-		featuregate.WithRegisterToVersion("v0.122.0"),
-	)
 	// SetGolangFlags is the feature gate that enables automatically setting GOMEMLIMIT and GOMAXPROCS for the
 	// collector, bridge, and target allocator.
 	SetGolangFlags = featuregate.GlobalRegistry().MustRegister(

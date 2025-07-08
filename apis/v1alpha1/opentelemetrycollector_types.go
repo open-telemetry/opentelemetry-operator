@@ -234,6 +234,11 @@ type OpenTelemetryCollectorSpec struct {
 	// +optional
 	InitContainers []v1.Container `json:"initContainers,omitempty"`
 
+	// ServiceName is the name of the Service to be used.
+	// If not specified, it will default to "<name>-headless".
+	// +optional
+	ServiceName string `json:"serviceName,omitempty"`
+
 	// AdditionalContainers allows injecting additional containers into the Collector's pod definition.
 	// These sidecar containers can be used for authentication proxies, log shipping sidecars, agents for shipping
 	// metrics to their cloud, or in general sidecars that do not support automatic injection. This option only
@@ -517,7 +522,6 @@ type PodDisruptionBudgetSpec struct {
 // MetricsConfigSpec defines a metrics config.
 type MetricsConfigSpec struct {
 	// EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-	// The operator.observability.prometheus feature gate must be enabled to use this feature.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional

@@ -153,7 +153,7 @@ BUNDLE_DIR = ./bundle/$(BUNDLE_VARIANT)
 MANIFESTS_DIR = config/manifests/$(BUNDLE_VARIANT)
 BUNDLE_BUILD_GEN_FLAGS ?= $(BUNDLE_GEN_FLAGS) --output-dir . --kustomize-dir ../../$(MANIFESTS_DIR)
 
-MIN_KUBERNETES_VERSION ?= 1.23.0
+MIN_KUBERNETES_VERSION ?= 1.25.0
 MIN_OPENSHIFT_VERSION ?= 4.12
 
 ## On MacOS, use gsed instead of sed, to make sed behavior
@@ -598,11 +598,11 @@ CHAINSAW ?= $(LOCALBIN)/chainsaw
 GOTESTSUM ?= $(LOCALBIN)/gotestsum
 
 # renovate: datasource=go depName=sigs.k8s.io/kustomize/kustomize/v5
-KUSTOMIZE_VERSION ?= v5.6.0
+KUSTOMIZE_VERSION ?= v5.7.0
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
 CONTROLLER_TOOLS_VERSION ?= v0.18.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION ?= v2.1.6
+GOLANGCI_LINT_VERSION ?= v2.2.1
 # renovate: datasource=go depName=sigs.k8s.io/kind
 KIND_VERSION ?= v0.29.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
@@ -679,7 +679,7 @@ operator-sdk: $(LOCALBIN)
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: generate-bundle
 generate-bundle: kustomize operator-sdk manifests set-image-controller api-docs
-	sed -e 's/minKubeVersion: .*/minKubeVersion: $(MIN_KUBERNETES_VERSION)/' config/manifests/$(BUNDLE_VARIANT)/bases/opentelemetry-operator.clusterserviceversion.yaml
+	@$(SED_INPLACE) 's/minKubeVersion: .*/minKubeVersion: $(MIN_KUBERNETES_VERSION)/' config/manifests/$(BUNDLE_VARIANT)/bases/opentelemetry-operator.clusterserviceversion.yaml
 
 	$(OPERATOR_SDK) generate kustomize manifests -q --input-dir $(MANIFESTS_DIR) --output-dir $(MANIFESTS_DIR)
 	cd $(BUNDLE_DIR) && cp ../../PROJECT . && $(KUSTOMIZE) build ../../$(MANIFESTS_DIR) | $(OPERATOR_SDK) generate bundle $(BUNDLE_BUILD_GEN_FLAGS) && rm PROJECT

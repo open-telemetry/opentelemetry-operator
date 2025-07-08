@@ -1,0 +1,55 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: opentelemetry-product
+  namespace: openshift-opentelemetry-operator
+status:
+  state: AtLatestKnown
+
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: tempo-product
+  namespace: openshift-tempo-operator
+status:
+  state: AtLatestKnown
+
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: cluster-observability-operator
+  namespace: openshift-cluster-observability-operator
+status:
+  state: AtLatestKnown
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: tempo-operator
+  namespace: openshift-tempo-operator
+status:
+  readyReplicas: 1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: opentelemetry-operator
+  namespace: openshift-opentelemetry-operator
+status:
+  readyReplicas: 1 
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: observability-operator
+  namespace: openshift-cluster-observability-operator
+status:
+  readyReplicas: 1 

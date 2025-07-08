@@ -2,6 +2,49 @@
 
 <!-- next version -->
 
+## 0.129.1
+
+### 🛑 Breaking changes 🛑
+
+- `pkg/instrumentation`: Move pkg/instrumentation to internal/instrumentation (#4140)
+- `targetallocator, collector`: Remove stable feature gate PrometheusOperatorIsAvailable (#4141)
+
+### 💡 Enhancements 💡
+
+- `controller`: Harmonize CLI and env var configuration to allow setting all configuration (#3565)
+  In order of priority, the default configuration is assigned first, overwritten by environment variables and CLI arguments successively.
+  
+- `managementState`: managementState property on resources is no longer a required field since it has a default value as managed (#4076)
+- `operator`: Support for Kubernetes `1.33`  version. (#4048)
+- `target allocator`: Adds support for HTML output in the target allocator. (#3622)
+- `controller`: Support a yaml config file to set all the configuration options exposed by controllers (#3565)
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: ensure stable iteration order of target labels when generating hash (#4082)
+- `target allocator`: Fix OpenShift must-gather for Target Allocator (#4084)
+- `opampbridge`: Do not register the opampbridge webhook if the CRD is not present (#4070)
+- `auto-instrumentation`: Fix the bug that k8s.container.name in OTEL_RESOURCE_ATTRIBUTES env is not set correctly for Go the auto-instrumentation when the pod has multiple containers. (#4089)
+- `collector`: Fix the headless service name in StatefulSet mode to ensure consistent DNS resolution. The ServiceName field in the OpenTelemetryCollector spec can be used to customize the StatefulSet's serviceName. (#4029)
+  The ServiceName field in the OpenTelemetryCollector
+  spec can be used to customize the StatefulSet's serviceName if needed, while maintaining
+  the default behavior of using the headless service name.
+- `operator`: Remove invalid `operator.observability.prometheus` feature flag references (#4159)
+  Fixed operator installation failure caused by references to the non-existent `operator.observability.prometheus` feature flag.
+  Removed the flag from the bundle and cleaned up API and documentation references.
+
+### Components
+
+* [OpenTelemetry Collector - v0.129.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.129.0)
+* [OpenTelemetry Contrib - v0.129.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.129.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.58.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.58.1)
+* [Python - v0.54b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.54b1)
+* [Go - v0.21.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.21.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.127.0
 
 ### 💡 Enhancements 💡

@@ -135,6 +135,11 @@ type OpenTelemetryCollectorSpec struct {
 	// This is only applicable to Deployment mode.
 	// +optional
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
+
+	// ServiceName is the name of the Service to be used.
+	// If not specified, it will default to "<name>-headless".
+	// +optional
+	ServiceName string `json:"serviceName,omitempty"`
 }
 
 // TargetAllocatorEmbedded defines the configuration for the Prometheus target allocator, embedded in the
@@ -275,7 +280,6 @@ type ObservabilitySpec struct {
 // MetricsConfigSpec defines a metrics config.
 type MetricsConfigSpec struct {
 	// EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-	// The operator.observability.prometheus feature gate must be enabled to use this feature.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional

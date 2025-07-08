@@ -9,15 +9,24 @@ on:
       platforms:
         type: string
         required: true
+      build-args:
+        type: string
+        required: false
+        default: ''
+      tag-suffix:
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
-  packages: write
-  attestations: write
-  id-token: write
 
 jobs:
   publish-e2e-image:
+    permissions:
+      packages: write
+      attestations: write
+      id-token: write
     runs-on: ubuntu-latest
 
     steps:
@@ -28,9 +37,9 @@ jobs:
         uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
         with:
           images: |
-            ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-${{ inputs.path }}
+            ghcr.io/${{ github.repository }}/e2e-test-app-${{ inputs.path }}
           tags: |
-            type=ref,event=branch
+            type=ref,event=branch,suffix=${{ inputs.tag-suffix }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
@@ -59,6 +68,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           context: tests/test-e2e-apps/${{ inputs.path }}
           platforms: ${{ inputs.platforms }}
+          build-args: ${{ inputs.build-args }}
           push: ${{ github.event_name == 'push' }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache

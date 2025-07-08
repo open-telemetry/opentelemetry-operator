@@ -6,7 +6,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -41,7 +40,8 @@ func BenchmarkProcessTargets(b *testing.B) {
 		tsets := prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob)
 		for _, strategy := range allocation.GetRegisteredAllocatorNames() {
 			b.Run(fmt.Sprintf("%s/%d", strategy, numTargets), func(b *testing.B) {
-				targetDiscoverer := createTestDiscoverer(strategy, map[string][]*relabel.Config{})
+				targetDiscoverer, err := createTestDiscoverer(strategy, map[string][]*relabel.Config{})
+				require.NoError(b, err)
 				targetDiscoverer.UpdateTsets(tsets)
 				b.ResetTimer()
 				for i := 0; i < b.N; i++ {
@@ -82,7 +82,8 @@ func BenchmarkProcessTargetsWithRelabelConfig(b *testing.B) {
 
 		for _, strategy := range allocation.GetRegisteredAllocatorNames() {
 			b.Run(fmt.Sprintf("%s/%d", strategy, numTargets), func(b *testing.B) {
-				targetDiscoverer := createTestDiscoverer(strategy, prehookConfig)
+				targetDiscoverer, err := createTestDiscoverer(strategy, prehookConfig)
+				require.NoError(b, err)
 				targetDiscoverer.UpdateTsets(tsets)
 				b.ResetTimer()
 				for i := 0; i < b.N; i++ {
@@ -167,21 +168,26 @@ func prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob int) map[str
 	return tsets
 }
 
-func createTestDiscoverer(allocationStrategy string, prehookConfig map[string][]*relabel.Config) *target.Discoverer {
+func createTestDiscoverer(allocationStrategy string, prehookConfig map[string][]*relabel.Config) (*target.Discoverer, error) {
 	ctx := context.Background()
 	logger := ctrl.Log.WithName(fmt.Sprintf("bench-%s", allocationStrategy))
 	ctrl.SetLogger(logr.New(log.NullLogSink{}))
 	allocatorPrehook := prehook.New("relabel-config", logger)
 	allocatorPrehook.SetConfig(prehookConfig)
 	allocator, err := allocation.New(allocationStrategy, logger, allocation.WithFilter(allocatorPrehook))
-	srv := server.NewServer(logger, allocator, "localhost:0")
 	if err != nil {
-		setupLog.Error(err, "Unable to initialize allocation strategy")
-		os.Exit(1)
+		return nil, err
+	}
+	srv, err := server.NewServer(logger, allocator, "localhost:0")
+	if err != nil {
+		return nil, err
 	}
 	registry := prometheus.NewRegistry()
 	sdMetrics, _ := discovery.CreateAndRegisterSDMetrics(registry)
 	discoveryManager := discovery.NewManager(ctx, config.NopLogger, registry, sdMetrics)
-	targetDiscoverer := target.NewDiscoverer(logger, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
-	return targetDiscoverer
+	targetDiscoverer, err := target.NewDiscoverer(logger, discoveryManager, allocatorPrehook, srv, allocator.SetTargets)
+	if err != nil {
+		return nil, err
+	}
+	return targetDiscoverer, nil
 }
