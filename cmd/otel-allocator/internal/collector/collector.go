@@ -63,7 +63,7 @@ func (k *Watcher) Watch(
 	}
 	informerFactory := informers.NewSharedInformerFactoryWithOptions(
 		k.k8sClient,
-		time.Second*30,
+		2*k.minUpdateInterval,
 		informers.WithNamespace(collectorNamespace),
 		informers.WithTweakListOptions(listOptionsFunc))
 	informer := informerFactory.Core().V1().Pods().Informer()
