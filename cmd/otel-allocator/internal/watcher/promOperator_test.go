@@ -34,6 +34,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
+	fakediscovery "k8s.io/client-go/discovery/fake"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -1338,4 +1339,85 @@ func getTestInformers(factory informers.FactoriesForNamespaces) (map[string]*inf
 	informersMap[promv1alpha1.ScrapeConfigName] = scrapeConfigInformers
 
 	return informersMap, nil
+}
+
+// TestCRDAvailabilityChecks tests the CRDs' availability.
+func TestCRDAvailabilityChecks(t *testing.T) {
+	tests := []struct {
+		name          string
+		availableCRDs []string
+		expectedCRDs  []string
+	}{
+		{
+			name:          "ServiceMonitor available",
+			availableCRDs: []string{"servicemonitors"},
+			expectedCRDs:  []string{"servicemonitors"},
+		},
+		{
+			name:          "All CRDs available",
+			availableCRDs: []string{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"},
+			expectedCRDs:  []string{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"},
+		},
+		{
+			name:          "No CRDs available",
+			availableCRDs: []string{},
+			expectedCRDs:  []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create fake discovery client
+			fakeDiscovery := &fakediscovery.FakeDiscovery{
+				Fake: &fake.NewSimpleClientset().Fake,
+			}
+
+			// Set up resources
+			fakeDiscovery.Resources = []*metav1.APIResourceList{}
+
+			// Add v1 resources
+			v1Resources := &metav1.APIResourceList{
+				GroupVersion: "monitoring.coreos.com/v1",
+				APIResources: []metav1.APIResource{},
+			}
+			for _, crd := range tt.availableCRDs {
+				if crd == "servicemonitors" || crd == "podmonitors" || crd == "probes" {
+					v1Resources.APIResources = append(v1Resources.APIResources, metav1.APIResource{
+						Name: crd,
+					})
+				}
+			}
+			fakeDiscovery.Resources = append(fakeDiscovery.Resources, v1Resources)
+
+			// Add v1alpha1 resources
+			v1alpha1Resources := &metav1.APIResourceList{
+				GroupVersion: "monitoring.coreos.com/v1alpha1",
+				APIResources: []metav1.APIResource{},
+			}
+			for _, crd := range tt.availableCRDs {
+				if crd == "scrapeconfigs" {
+					v1alpha1Resources.APIResources = append(v1alpha1Resources.APIResources, metav1.APIResource{
+						Name: crd,
+					})
+				}
+			}
+			fakeDiscovery.Resources = append(fakeDiscovery.Resources, v1alpha1Resources)
+
+			// Test each CRD availability
+			for _, crd := range []string{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"} {
+				available, err := checkCRDAvailability(fakeDiscovery, crd)
+				require.NoError(t, err)
+
+				expected := false
+				for _, expectedCRD := range tt.expectedCRDs {
+					if crd == expectedCRD {
+						expected = true
+						break
+					}
+				}
+
+				assert.Equal(t, expected, available, "CRD %s availability should match expectation", crd)
+			}
+		})
+	}
 }
