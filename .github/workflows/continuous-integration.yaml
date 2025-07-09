@@ -25,7 +25,7 @@ jobs:
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       id: setup-go
       with:
-        go-version: "~1.24.4"
+        go-version: "~1.24.5"
 
     - name: Cache tools
       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -52,7 +52,7 @@ jobs:
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       id: setup-go
       with:
-        go-version: "~1.24.4"
+        go-version: "~1.24.5"
 
     - name: Cache tools
       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -84,7 +84,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       with:
-        go-version: "~1.24.4"
+        go-version: "~1.24.5"
 
     - name: Initialize CodeQL
       uses: github/codeql-action/init@181d5eefc20863364f96762470ba6f862bdef56b # v3.29.2
