@@ -49,6 +49,8 @@ func createServiceMonitor(name string, params manifests.Params, serviceType Serv
 	var sm monitoringv1.ServiceMonitor
 
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	// Add extra labels to the ServiceMonitor
+	addExtraLabels(&labels, params.OtelCol.Spec.Observability.Metrics.ExtraLabels)
 	selectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
 	// This label is the one which differentiates the services
 	selectorLabels[serviceTypeLabel] = serviceType.String()
@@ -110,4 +112,11 @@ func endpointsFromConfig(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollec
 		}
 	}
 	return endpoints
+}
+
+// addExtraLabels adds extra labels to the ServiceMonitor labels map.
+func addExtraLabels(labels *map[string]string, extraLabels map[string]string) {
+	for k, v := range extraLabels {
+		(*labels)[k] = v
+	}
 }
