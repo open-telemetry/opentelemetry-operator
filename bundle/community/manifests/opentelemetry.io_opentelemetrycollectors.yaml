@@ -6968,6 +6968,10 @@ spec:
                         type: boolean
                       enableMetrics:
                         type: boolean
+                      extraLabels:
+                        additionalProperties:
+                          type: string
+                        type: object
                     type: object
                 type: object
               persistentVolumeClaimRetentionPolicy:
@@ -7803,6 +7807,10 @@ spec:
                             type: boolean
                           enableMetrics:
                             type: boolean
+                          extraLabels:
+                            additionalProperties:
+                              type: string
+                            type: object
                         type: object
                     type: object
                   podDisruptionBudget:

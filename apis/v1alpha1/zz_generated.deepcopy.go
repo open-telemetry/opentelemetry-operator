@@ -1387,7 +1387,7 @@ func (in *TargetAllocatorSpec) DeepCopyInto(out *TargetAllocatorSpec) {
 		}
 	}
 	in.PrometheusCR.DeepCopyInto(&out.PrometheusCR)
-	out.Observability = in.Observability
+	in.Observability.DeepCopyInto(&out.Observability)
 	if in.CollectorNotReadyGracePeriod != nil {
 		in, out := &in.CollectorNotReadyGracePeriod, &out.CollectorNotReadyGracePeriod
 		*out = new(metav1.Duration)

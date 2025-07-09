@@ -8814,6 +8814,13 @@ Metrics defines the metrics configuration for operands.
           EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>extraLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          ExtraLabels are additional labels to be added to the ServiceMonitor<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
