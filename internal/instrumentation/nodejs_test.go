@@ -136,6 +136,120 @@ func TestInjectNodeJSSDK(t *testing.T) {
 			err: nil,
 		},
 		{
+			name:   "NODE_OPTIONS not defined and UseImport true",
+			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1", UseImport: true},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-nodejs",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-nodejs",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-nodejs",
+								MountPath: "/otel-auto-instrumentation-nodejs",
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-nodejs",
+									MountPath: "/otel-auto-instrumentation-nodejs",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "NODE_OPTIONS",
+									Value: " --import /otel-auto-instrumentation-nodejs/autoinstrumentation.js",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "NODE_OPTIONS defined and UseImport true",
+			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1", Resources: testResourceRequirements, UseImport: true},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Env: []corev1.EnvVar{
+								{
+									Name:  "NODE_OPTIONS",
+									Value: "-Dbaz=bar",
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-nodejs",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-nodejs",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-nodejs",
+								MountPath: "/otel-auto-instrumentation-nodejs",
+							}},
+							Resources: testResourceRequirements,
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-nodejs",
+									MountPath: "/otel-auto-instrumentation-nodejs",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "NODE_OPTIONS",
+									Value: "-Dbaz=bar" + " --import /otel-auto-instrumentation-nodejs/autoinstrumentation.js",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
 			name:   "NODE_OPTIONS defined as ValueFrom",
 			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
 			pod: corev1.Pod{

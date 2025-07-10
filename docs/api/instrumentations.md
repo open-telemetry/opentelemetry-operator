@@ -5671,6 +5671,14 @@ If the former var had been defined, then the other vars would be ignored.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>useImport</b></td>
+        <td>boolean</td>
+        <td>
+          UseImport overrides the default injected --require flag with an --import flag.
+Node.js ^18.19.0 || ^20.6.0 || >=22 is required for the flag to be supported.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#instrumentationspecnodejsvolumeclaimtemplate">volumeClaimTemplate</a></b></td>
         <td>object</td>
         <td>

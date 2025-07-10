@@ -12,6 +12,7 @@ import (
 const (
 	envNodeOptions          = "NODE_OPTIONS"
 	nodeRequireArgument     = " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js"
+	nodeImportArgument      = " --import /otel-auto-instrumentation-nodejs/autoinstrumentation.js"
 	nodejsInitContainerName = initContainerName + "-nodejs"
 	nodejsVolumeName        = volumeName + "-nodejs"
 	nodejsInstrMountPath    = "/otel-auto-instrumentation-nodejs"
@@ -31,14 +32,20 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int, inst
 	// inject NodeJS instrumentation spec env vars.
 	container.Env = appendIfNotSet(container.Env, nodeJSSpec.Env...)
 
+	var nodeArgument string
+	if nodeJSSpec.UseImport {
+		nodeArgument = nodeImportArgument
+	} else {
+		nodeArgument = nodeRequireArgument
+	}
 	idx := getIndexOfEnv(container.Env, envNodeOptions)
 	if idx == -1 {
 		container.Env = append(container.Env, corev1.EnvVar{
 			Name:  envNodeOptions,
-			Value: nodeRequireArgument,
+			Value: nodeArgument,
 		})
 	} else if idx > -1 {
-		container.Env[idx].Value = container.Env[idx].Value + nodeRequireArgument
+		container.Env[idx].Value = container.Env[idx].Value + nodeArgument
 	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
