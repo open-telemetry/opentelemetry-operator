@@ -217,7 +217,8 @@ func checkCRDAvailability(dcl discovery.DiscoveryInterface, resourceName string)
 }
 
 // createInformerIfAvailable creates an informer for the given resource if the CRD is available,
-// otherwise returns nil.
+// otherwise returns nil. If CRD availability cannot be checked due to permissions or other errors,
+// it fails open and attempts to create the informer anyway.
 func createInformerIfAvailable(
 	factory informers.FactoriesForNamespaces,
 	dcl discovery.DiscoveryInterface,
@@ -227,9 +228,9 @@ func createInformerIfAvailable(
 ) (*informers.ForResource, error) {
 	available, err := checkCRDAvailability(dcl, resourceName)
 	if err != nil {
-		logger.Warn("Failed to check CRD availability", "resource", resourceName, "error", err)
-		// Return nil on error to indicate unavailability
-		return nil, nil
+		logger.Warn("Failed to check CRD availability, assuming CRD is available", "resource", resourceName, "error", err)
+		// Fail open: if we can't check availability, assume the CRD is available and try to create the informer
+		available = true
 	}
 
 	if !available {
