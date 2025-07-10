@@ -75,6 +75,8 @@ jobs:
       run: make lint
 
   security:
+    permissions:
+      security-events: write # for github/codeql-action/analyze to upload SARIF results
     name: Security
     runs-on: ubuntu-latest
     steps:
