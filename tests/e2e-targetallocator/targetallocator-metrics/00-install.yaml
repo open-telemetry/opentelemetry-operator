@@ -89,11 +89,14 @@ spec:
       prometheus:
         config:
           scrape_configs: []
-    processors:
     exporters:
       prometheus:
         endpoint: 0.0.0.0:9090
+    extensions:
+      health_check:
     service:
+      extensions:
+      - health_check
       pipelines:
         metrics:
           receivers: [prometheus]
@@ -111,5 +114,5 @@ spec:
       serviceMonitorSelector:
         matchLabels:
           app.kubernetes.io/name: simplest-targetallocator
-      podMonitorSelector:
+      podMonitorSelector: {}
 
