@@ -726,6 +726,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - configmaps: [get]",
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - discovery.k8s.io/endpointslices: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /metrics: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /api: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /api/*: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /apis: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /apis/*: [get]",
 			},
 		},
 		{
