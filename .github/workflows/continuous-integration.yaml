@@ -75,6 +75,8 @@ jobs:
       run: make lint
 
   security:
+    permissions:
+      security-events: write
     name: Security
     runs-on: ubuntu-latest
     steps:
