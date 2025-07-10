@@ -5,7 +5,7 @@ change_type: enhancement
 component: collector, targer allocator,  opamp
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Require Go 1.21+ to build the collector, target allocator, and opamp.
+note: Require Go 1.24+ to build the collector, target allocator, and opamp.
 
 # One or more tracking issues related to the change
 issues: [4173]
