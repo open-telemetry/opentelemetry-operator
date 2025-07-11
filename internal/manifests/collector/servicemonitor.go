@@ -50,7 +50,7 @@ func createServiceMonitor(name string, params manifests.Params, serviceType Serv
 
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	// Add extra labels to the ServiceMonitor
-	addExtraLabels(&labels, params.OtelCol.Spec.Observability.Metrics.ExtraLabels)
+	addExtraLabels(&params.Log, &labels, params.OtelCol.Spec.Observability.Metrics.ExtraLabels)
 	selectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
 	// This label is the one which differentiates the services
 	selectorLabels[serviceTypeLabel] = serviceType.String()
@@ -115,8 +115,13 @@ func endpointsFromConfig(logger logr.Logger, otelcol v1beta1.OpenTelemetryCollec
 }
 
 // addExtraLabels adds extra labels to the ServiceMonitor labels map.
-func addExtraLabels(labels *map[string]string, extraLabels map[string]string) {
+func addExtraLabels(logger *logr.Logger, labels *map[string]string, extraLabels map[string]string) {
 	for k, v := range extraLabels {
+		if existingValue, exists := (*labels)[k]; exists {
+			if existingValue != v {
+				logger.Info("Overwriting label", "label", k, "old value", existingValue, "new value", v)
+			}
+		}
 		(*labels)[k] = v
 	}
 }
