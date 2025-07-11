@@ -1,0 +1,27 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: override-labels
+  namespace: create-sm-prometheus
+spec:
+  observability:
+    metrics:
+      enableMetrics: true
+      extraLabels:
+        app.kubernetes.io/managed-by: "custom-operator"
+        custom.label: "value"
+        team: "platform"
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+    exporters:
+      prometheus/main:
+        endpoint: 0.0.0.0:8886
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          exporters: [prometheus/main]
