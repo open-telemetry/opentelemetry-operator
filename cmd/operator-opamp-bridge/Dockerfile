@@ -14,7 +14,7 @@ WORKDIR /root/
 COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # Copy binary built on the host
-COPY bin/opampbridge_${TARGETARCH} ./main
+COPY bin/opampbridge_${TARGETOS}_${TARGETARCH} ./main
 
 # "nonroot"
 USER 65532:65532

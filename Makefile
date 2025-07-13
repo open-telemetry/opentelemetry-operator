@@ -181,7 +181,7 @@ update: generate manifests bundle api-docs reset
 # Build manager binary
 .PHONY: manager
 manager: generate
-	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o bin/manager_${ARCH} -ldflags "${COMMON_LDFLAGS} ${OPERATOR_LDFLAGS}" main.go
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o bin/manager_${GOOS}_${ARCH} -ldflags "${COMMON_LDFLAGS} ${OPERATOR_LDFLAGS}" main.go
 
 .PHONY: must-gather
 must-gather:
@@ -190,12 +190,12 @@ must-gather:
 # Build target allocator binary
 .PHONY: targetallocator
 targetallocator:
-	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/otel-allocator/bin/targetallocator_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/otel-allocator
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/otel-allocator/bin/targetallocator_${GOOS}_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/otel-allocator
 
 # Build opamp bridge binary
 .PHONY: operator-opamp-bridge
 operator-opamp-bridge: generate
-	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/operator-opamp-bridge/bin/opampbridge_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/operator-opamp-bridge
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o cmd/operator-opamp-bridge/bin/opampbridge_${GOOS}_${ARCH} -ldflags "${COMMON_LDFLAGS}" ./cmd/operator-opamp-bridge
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
