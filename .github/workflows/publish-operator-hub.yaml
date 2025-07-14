@@ -16,7 +16,7 @@ jobs:
       repo: community-operators-prod
       folder: openshift
     secrets:
-      OPENTELEMETRYBOT_GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+      OTELBOT_PRIVATE_KEY: ${{ secrets.OTELBOT_PRIVATE_KEY }}
 
   operator-hub-community-release:
     permissions: # required by the reusable workflow
@@ -27,4 +27,4 @@ jobs:
       repo: community-operators
       folder: community
     secrets:
-      OPENTELEMETRYBOT_GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+      OTELBOT_PRIVATE_KEY: ${{ secrets.OTELBOT_PRIVATE_KEY }}

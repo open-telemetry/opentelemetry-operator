@@ -13,7 +13,7 @@ on:
         type: string
         required: true
     secrets:
-      OPENTELEMETRYBOT_GITHUB_TOKEN:
+      OTELBOT_PRIVATE_KEY:
         required: true
 
 permissions:
@@ -33,28 +33,34 @@ jobs:
           TAG=${TAG:1} # remove v (prefix)
           echo version=${TAG} >> $GITHUB_ENV # update GitHub ENV vars
 
+      - uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+        id: otelbot-token
+        with:
+          app-id: ${{ vars.OTELBOT_APP_ID }}
+          private-key: ${{ secrets.OTELBOT_PRIVATE_KEY }}
+
       - name: Sync fork
         env:
-          GH_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.otelbot-token.outputs.token }}
         run: |
           # synchronizing the fork is fast, and avoids the need to fetch the full upstream repo
           # (fetching the upstream repo with "--depth 1" would lead to "shallow update not allowed"
           #  error when pushing back to the origin repo)
-          gh repo sync opentelemetrybot/${{ inputs.repo }} \
+          gh repo sync otelbot/${{ inputs.repo }} \
               --source ${{ inputs.org }}/${{ inputs.repo }} \
               --force
 
       - name: Checkout operatorhub repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          repository: opentelemetrybot/${{ inputs.repo }}
-          token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+          repository: otelbot/${{ inputs.repo }}
+          token: ${{ steps.otelbot-token.outputs.token }}
 
       - name: Checkout opentelemetry-operator to tmp/ directory
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           repository: open-telemetry/opentelemetry-operator
-          token: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+          token: ${{ steps.otelbot-token.outputs.token }}
           path: tmp/
 
       - name: Update version
@@ -67,13 +73,13 @@ jobs:
 
       - name: Use CLA approved github bot
         run: |
-          git config user.name opentelemetrybot
-          git config user.email 107717825+opentelemetrybot@users.noreply.github.com
+          git config user.name otelbot
+          git config user.email 197425009+otelbot@users.noreply.github.com
 
       - name: Create pull request against ${{ inputs.org }}/${{ inputs.repo }}
         env:
           VERSION: ${{ env.version }}
-          GH_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.otelbot-token.outputs.token }}
         run: |
           message="Update the opentelemetry to $VERSION"
           body="Release opentelemetry-operator \`$VERSION\`.
