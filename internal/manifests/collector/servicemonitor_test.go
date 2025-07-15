@@ -141,11 +141,10 @@ func TestDesiredServiceMonitorsWithExtraLabels(t *testing.T) {
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/name":       "test-collector",
 		"app.kubernetes.io/version":    "latest",
-		// Extra labels
-		"prometheus":    "kube-prometheus",
-		"team":          "platform",
-		"environment":   "production",
-		"custom.io/key": "custom-value",
+		"prometheus":                   "kube-prometheus",
+		"team":                         "platform",
+		"environment":                  "production",
+		"custom.io/key":                "custom-value",
 	}
 	assert.Equal(t, expectedLabels, actual.ObjectMeta.Labels)
 

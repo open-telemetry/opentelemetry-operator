@@ -15,6 +15,7 @@ import (
 func ServiceMonitor(params Params) *monitoringv1.ServiceMonitor {
 	name := naming.TargetAllocator(params.TargetAllocator.Name)
 	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+	manifestutils.AddExtraLabels(&params.Log, labels, params.TargetAllocator.Spec.Observability.Metrics.ExtraLabels)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{

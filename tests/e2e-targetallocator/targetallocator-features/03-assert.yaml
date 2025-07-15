@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: extralabels-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: "latest"
+    custom.label: "ta-value"
+    environment: "test"
+    team: "platform"
+  name: extralabels-targetallocator
+spec:
+  endpoints:
+  - port: targetallocation
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-targetallocator
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/name: extralabels-targetallocator
+      app.kubernetes.io/part-of: opentelemetry
