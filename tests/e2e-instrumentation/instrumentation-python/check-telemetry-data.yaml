@@ -40,5 +40,5 @@ spec:
           ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] > `1`): true
   catch:
     - podLogs:
-        selector: $(LABEL_SELECTOR)
+        selector: ($LABEL_SELECTOR)
         container: otc-container
