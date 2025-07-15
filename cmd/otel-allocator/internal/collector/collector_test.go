@@ -40,16 +40,16 @@ func (r *reportingGauge) Record(_ context.Context, value int64, _ ...metric.Reco
 	r.value.Store(value)
 }
 
-func getTestPodWatcher(collectorNotReadyGracePeriod time.Duration) Watcher {
+func getTestPodWatcher(collectorNotReadyGracePeriod time.Duration) *Watcher {
 	podWatcher := Watcher{
-		k8sClient:                    fake.NewSimpleClientset(),
+		k8sClient:                    fake.NewClientset(),
 		close:                        make(chan struct{}),
 		log:                          logger,
 		minUpdateInterval:            time.Millisecond,
 		collectorNotReadyGracePeriod: collectorNotReadyGracePeriod,
 		collectorsDiscovered:         &reportingGauge{},
 	}
-	return podWatcher
+	return &podWatcher
 }
 
 func pod(name string) *v1.Pod {
@@ -105,7 +105,7 @@ func Test_runWatch(t *testing.T) {
 	namespace := "test-ns"
 	type args struct {
 		collectorNotReadyGracePeriod time.Duration
-		kubeFn                       func(t *testing.T, podWatcher Watcher)
+		kubeFn                       func(t *testing.T, podWatcher *Watcher)
 		collectorMap                 map[string]*allocation.Collector
 	}
 	tests := []struct {
@@ -117,7 +117,7 @@ func Test_runWatch(t *testing.T) {
 			name: "pod add",
 			args: args{
 				collectorNotReadyGracePeriod: 0 * time.Second,
-				kubeFn: func(t *testing.T, podWatcher Watcher) {
+				kubeFn: func(t *testing.T, podWatcher *Watcher) {
 					for _, k := range []string{"test-pod1", "test-pod2", "test-pod3"} {
 						p := pod(k)
 						_, err := podWatcher.k8sClient.CoreV1().Pods(namespace).Create(context.Background(), p, metav1.CreateOptions{})
@@ -145,7 +145,7 @@ func Test_runWatch(t *testing.T) {
 			name: "pod delete",
 			args: args{
 				collectorNotReadyGracePeriod: 0 * time.Second,
-				kubeFn: func(t *testing.T, podWatcher Watcher) {
+				kubeFn: func(t *testing.T, podWatcher *Watcher) {
 					for _, k := range []string{"test-pod2", "test-pod3"} {
 						err := podWatcher.k8sClient.CoreV1().Pods(namespace).Delete(context.Background(), k, metav1.DeleteOptions{})
 						assert.NoError(t, err)
@@ -187,14 +187,15 @@ func Test_runWatch(t *testing.T) {
 				_, err := podWatcher.k8sClient.CoreV1().Pods("test-ns").Create(context.Background(), p, metav1.CreateOptions{})
 				assert.NoError(t, err)
 			}
-			go func(podWatcher Watcher) {
+			go func() {
 				err := podWatcher.Watch(namespace, &labelSelector, func(colMap map[string]*allocation.Collector) {
 					mapMutex.Lock()
 					defer mapMutex.Unlock()
 					actual = colMap
 				})
 				require.NoError(t, err)
-			}(podWatcher)
+			}()
+			assert.Eventually(t, podWatcher.isSynced, time.Second*30, time.Millisecond*100)
 
 			tt.args.kubeFn(t, podWatcher)
 
@@ -311,14 +312,14 @@ func Test_gracePeriodWithNonRunningPodPhase(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			go func(podWatcher Watcher) {
+			go func() {
 				err := podWatcher.Watch(namespace, &labelSelector, func(colMap map[string]*allocation.Collector) {
 					mapMutex.Lock()
 					defer mapMutex.Unlock()
 					actual = colMap
 				})
 				require.NoError(t, err)
-			}(podWatcher)
+			}()
 
 			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 				mapMutex.Lock()
@@ -434,14 +435,14 @@ func Test_gracePeriodWithNonReadyPodCondition(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			go func(podWatcher Watcher) {
+			go func() {
 				err := podWatcher.Watch(namespace, &labelSelector, func(colMap map[string]*allocation.Collector) {
 					mapMutex.Lock()
 					defer mapMutex.Unlock()
 					actual = colMap
 				})
 				require.NoError(t, err)
-			}(podWatcher)
+			}()
 
 			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 				mapMutex.Lock()
@@ -461,11 +462,11 @@ func Test_closeChannel(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	go func(podWatcher Watcher) {
+	go func() {
 		defer wg.Done()
 		err := podWatcher.Watch("default", &labelSelector, func(colMap map[string]*allocation.Collector) {})
 		require.NoError(t, err)
-	}(podWatcher)
+	}()
 
 	podWatcher.Close()
 	wg.Wait()

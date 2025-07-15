@@ -39,6 +39,9 @@ var (
 		}, {
 			NonResourceURLs: []string{"/metrics"},
 			Verbs:           []string{"get"},
+		}, {
+			NonResourceURLs: []string{"/api", "/api/*", "/apis", "/apis/*"},
+			Verbs:           []string{"get"},
 		},
 	}
 )
