@@ -9,6 +9,8 @@
 # - Grant the necessary access to `/autoinstrumentation` directory. `chmod -R go+r /autoinstrumentation`
 # - For auto-instrumentation by container injection, the Linux command cp is
 #   used and must be available in the image.
+# - By default a file named autoinstrumentation.js is loaded using `require`, but the UseImport configuration option
+#   overrides this default behaviour and loads it autoinstrumentation.mjs using `import`.
 FROM node:20 AS build
 
 WORKDIR /operator-build
