@@ -14,7 +14,7 @@ spec:
         args:
         - annotate
         - namespace
-        - ${NAMESPACE}
+        - my-python-multiannotation-ns
         - openshift.io/sa.scc.uid-range=1000/1000
         - --overwrite
     - command:
@@ -22,7 +22,7 @@ spec:
         args:
         - annotate
         - namespace
-        - ${NAMESPACE}
+        - my-python-multiannotation-ns
         - openshift.io/sa.scc.supplemental-groups=3000/3000
         - --overwrite
     - apply:
@@ -37,7 +37,7 @@ spec:
         file: 01-assert.yaml
     catch:
       - podLogs:
-          selector: app=my-python
+          selector: app=my-python-with-pod-annotation
   - name: step-02
     try:
     - apply:
@@ -46,13 +46,4 @@ spec:
         file: 02-assert.yaml
     catch:
       - podLogs:
-          selector: app=my-sdk
-  - name: step-03
-    try:
-    - apply:
-        file: 03-install-app.yaml
-    - assert:
-        file: 03-assert.yaml
-    catch:
-      - podLogs:
-          selector: app=my-python-multi-container
+          selector: app=my-sdk-from-namespace

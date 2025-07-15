@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-python
-  namespace: my-other-python-ns
+  name: my-python-with-pod-annotation
+  namespace: my-python-multiannotation-ns
 spec:
   selector:
     matchLabels:
-      app: my-python
+      app: my-python-with-pod-annotation
   replicas: 1
   template:
     metadata:
       labels:
-        app: my-python
+        app: my-python-with-pod-annotation
       annotations:
         instrumentation.opentelemetry.io/inject-python: "true"
         sidecar.opentelemetry.io/inject: "true"

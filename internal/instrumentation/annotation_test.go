@@ -115,6 +115,83 @@ func TestEffectiveAnnotationValue(t *testing.T) {
 		},
 
 		{
+			"pod-python-overrides-ns-sdk",
+			"",
+			corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectPython: "true",
+					},
+				},
+			},
+			corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectSdk: "true",
+					},
+				},
+			},
+		},
+
+		{
+			"pod-python-and-java-no-sdk-from-ns",
+			"true",
+			corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectPython: "true",
+						annotationInjectJava:   "true",
+					},
+				},
+			},
+			corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectSdk: "true",
+					},
+				},
+			},
+		},
+
+		{
+			"ns-java-applied-when-pod-has-no-instrumentation",
+			"true",
+			corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"some.other.annotation": "value",
+					},
+				},
+			},
+			corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectJava: "true",
+					},
+				},
+			},
+		},
+
+		{
+			"pod-false-blocks-ns-sdk",
+			"false",
+			corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectJava: "false",
+					},
+				},
+			},
+			corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectSdk: "true",
+					},
+				},
+			},
+		},
+
+		{
 			"pod-has-explicit-false",
 			"false",
 			corev1.Pod{
@@ -162,6 +239,82 @@ func TestEffectiveAnnotationValue(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			// test
 			annValue := annotationValue(tt.ns.ObjectMeta, tt.pod.ObjectMeta, annotationInjectJava)
+
+			// verify
+			assert.Equal(t, tt.expected, annValue)
+		})
+	}
+}
+
+func TestCrossInstrumentationPrecedence(t *testing.T) {
+	for _, tt := range []struct {
+		desc        string
+		expected    string
+		pod         corev1.Pod
+		ns          corev1.Namespace
+		annotation  string
+	}{
+		{
+			"pod-python-blocks-ns-sdk-when-testing-sdk",
+			"",
+			corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectPython: "true",
+					},
+				},
+			},
+			corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectSdk: "true",
+					},
+				},
+			},
+			annotationInjectSdk,
+		},
+		{
+			"ns-sdk-used-when-pod-has-no-instrumentation",
+			"true",
+			corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"some.other.annotation": "value",
+					},
+				},
+			},
+			corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectSdk: "true",
+					},
+				},
+			},
+			annotationInjectSdk,
+		},
+		{
+			"pod-go-blocks-ns-python-when-testing-python",
+			"",
+			corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectGo: "true",
+					},
+				},
+			},
+			corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectPython: "true",
+					},
+				},
+			},
+			annotationInjectPython,
+		},
+	} {
+		t.Run(tt.desc, func(t *testing.T) {
+			// test
+			annValue := annotationValue(tt.ns.ObjectMeta, tt.pod.ObjectMeta, tt.annotation)
 
 			// verify
 			assert.Equal(t, tt.expected, annValue)

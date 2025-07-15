@@ -53,8 +53,38 @@ func hasMatchingInjectAnnotation(annotations map[string]string, containerAnnotat
 	return injectAnnotation, found
 }
 
-// annotationValue returns the effective annotationInjectJava value, based on the annotations from the pod and namespace.
+// allInstrumentationAnnotations returns all instrumentation inject annotations
+func allInstrumentationAnnotations() []string {
+	return []string{
+		annotationInjectJava,
+		annotationInjectNodeJS,
+		annotationInjectPython,
+		annotationInjectDotNet,
+		annotationInjectGo,
+		annotationInjectSdk,
+		annotationInjectApacheHttpd,
+		annotationInjectNginx,
+	}
+}
+
+// hasAnyInstrumentationAnnotation checks if the given annotations contain any instrumentation inject annotation
+func hasAnyInstrumentationAnnotation(annotations map[string]string) bool {
+	if annotations == nil {
+		return false
+	}
+	for _, annotation := range allInstrumentationAnnotations() {
+		if val, exists := annotations[annotation]; exists && len(val) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// annotationValue returns the effective annotation value, based on the annotations from the pod and namespace.
+// This function implements unified precedence: if pod has ANY instrumentation annotation, 
+// namespace instrumentation annotations are ignored completely.
 func annotationValue(ns metav1.ObjectMeta, pod metav1.ObjectMeta, annotation string) string {
+	// Check for container-specific annotations first (highest priority)
 	if injectAnnotation, isContainerNames := hasMatchingInjectAnnotation(pod.Annotations, annotation); isContainerNames {
 		if _, injectExists := pod.Annotations[injectAnnotation]; injectExists {
 			if val, exists := pod.Annotations[annotation]; exists && len(val) > 0 {
@@ -71,9 +101,22 @@ func annotationValue(ns metav1.ObjectMeta, pod metav1.ObjectMeta, annotation str
 		}
 	}
 
+	// Check if pod has any instrumentation annotations
+	podHasInstrumentationAnnotations := hasAnyInstrumentationAnnotation(pod.Annotations)
+	
 	podAnnValue, podExists := pod.Annotations[annotation]
 	nsAnnValue, nsExists := ns.Annotations[annotation]
 
+	// If pod has any instrumentation annotations, only consider pod annotations
+	if podHasInstrumentationAnnotations {
+		if podExists && len(podAnnValue) > 0 {
+			return podAnnValue
+		}
+		// Pod has instrumentation annotations but not this specific one, return empty
+		return ""
+	}
+
+	// Pod has no instrumentation annotations, fall back to namespace
 	if podExists && len(podAnnValue) > 0 {
 		return podAnnValue
 	}
