@@ -72,7 +72,7 @@ spec:
             file: 01-assert.yaml
       catch:
         - podLogs:
-            selector: $(LABEL_SELECTOR)
+            selector: ($LABEL_SELECTOR)
     - name: Make a request to the app
       use:
         template: app-request.yaml
