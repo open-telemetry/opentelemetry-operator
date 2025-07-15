@@ -14,7 +14,7 @@
 #  - For auto-instrumentation by container injection, the Linux command cp is
 #    used and must be available in the image.
 
-FROM busybox as downloader
+FROM busybox AS downloader
 
 ARG version
 

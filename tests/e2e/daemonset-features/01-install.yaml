@@ -4,6 +4,7 @@ metadata:
   name: daemonset
 spec:
   mode: daemonset
+  terminationGracePeriodSeconds: 600
   hostNetwork: true
   config: |
     receivers:

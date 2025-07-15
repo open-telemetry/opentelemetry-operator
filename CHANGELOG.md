@@ -2,6 +2,177 @@
 
 <!-- next version -->
 
+## 0.129.1
+
+### 🛑 Breaking changes 🛑
+
+- `pkg/instrumentation`: Move pkg/instrumentation to internal/instrumentation (#4140)
+- `targetallocator, collector`: Remove stable feature gate PrometheusOperatorIsAvailable (#4141)
+
+### 💡 Enhancements 💡
+
+- `controller`: Harmonize CLI and env var configuration to allow setting all configuration (#3565)
+  In order of priority, the default configuration is assigned first, overwritten by environment variables and CLI arguments successively.
+  
+- `managementState`: managementState property on resources is no longer a required field since it has a default value as managed (#4076)
+- `operator`: Support for Kubernetes `1.33`  version. (#4048)
+- `target allocator`: Adds support for HTML output in the target allocator. (#3622)
+- `controller`: Support a yaml config file to set all the configuration options exposed by controllers (#3565)
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: ensure stable iteration order of target labels when generating hash (#4082)
+- `target allocator`: Fix OpenShift must-gather for Target Allocator (#4084)
+- `opampbridge`: Do not register the opampbridge webhook if the CRD is not present (#4070)
+- `auto-instrumentation`: Fix the bug that k8s.container.name in OTEL_RESOURCE_ATTRIBUTES env is not set correctly for Go the auto-instrumentation when the pod has multiple containers. (#4089)
+- `collector`: Fix the headless service name in StatefulSet mode to ensure consistent DNS resolution. The ServiceName field in the OpenTelemetryCollector spec can be used to customize the StatefulSet's serviceName. (#4029)
+  The ServiceName field in the OpenTelemetryCollector
+  spec can be used to customize the StatefulSet's serviceName if needed, while maintaining
+  the default behavior of using the headless service name.
+- `operator`: Remove invalid `operator.observability.prometheus` feature flag references (#4159)
+  Fixed operator installation failure caused by references to the non-existent `operator.observability.prometheus` feature flag.
+  Removed the flag from the bundle and cleaned up API and documentation references.
+
+### Components
+
+* [OpenTelemetry Collector - v0.129.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.129.0)
+* [OpenTelemetry Contrib - v0.129.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.129.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.58.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.58.1)
+* [Python - v0.54b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.54b1)
+* [Go - v0.21.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.21.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.127.0
+
+### 💡 Enhancements 💡
+
+- `collector`: Move validation to be part of the CRD for sidecar mode (#3319)
+- `target allocator`: Promote the operator.collector.targetallocatorcr feature flag to Beta (#2422)
+  
+  As a result of this change, when the target allocator section is enabled in the Collector CR, 
+  this now creates a TargetAllocator CR instead of generating the manifests directly. Behavior should otherwise be
+  unchanged. You can go back to the previous behaviour by passing the 
+  `--feature-gates=-operator.collector.targetallocatorcr` command-line option to the operator.
+  
+- `collector`: Set the default spec.replicas to 1 in the OpenTelemetryCollector CRD. (#4042)
+  
+  This default no longer relies on the admission webhook.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector, target allocator`: Fix operator RBAC for managing targetallocator finalizers on OpenShift. (#4069)
+  On OpenShift `OwnerReferencesPermissionEnforcement` is enabled by default, which requires the operator to have permissions to remove finalizers from resources it owns.
+  https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+  
+- `target allocator`: Add app.kubernetes.io/managed-by label to Target Allocator CRs created by the Collector CR (#4025)
+- `target allocator`: Fixes an issue where the same target from two different jobs was being allocated for only one job (#4044)
+
+### Components
+
+* [OpenTelemetry Collector - v0.127.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.127.0)
+* [OpenTelemetry Contrib - v0.127.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.127.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.58.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.58.1)
+* [Python - v0.54b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.54b1)
+* [Go - v0.21.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.21.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.126.0
+
+### 🛑 Breaking changes 🛑
+
+- `target-allocator`: Switch to Prometheus 3.0 defaults for ScraperProtocols, requires prometheusreceiver >0.120.0 (#3872)
+
+### 💡 Enhancements 💡
+
+- `target-allocator`: Allow to configure ScraperProtocols in prometheus common config (#4000)
+- `target allocator`: set default target allocator grace period to 30 seconds (#3989)
+  The config option collectorNotReadyGracePeriod have been set to 30s by default. The target allocator now waits for 30 seconds before reallocating targets from a collector which isn't Ready.
+  Setting this value to 0 will restore previous behaviour.
+
+### 🧰 Bug fixes 🧰
+
+- `otel-allocator`: Remove overwrite of global config ScraperProtocols (#3996)
+- `target allocator`: Fix user-defined volumes in the TargetAllocator CR (#3992)
+- `collector`: add terminationGracePeriodSeconds to DaemonSet and StatefulSet specs (#4003)
+
+### Components
+
+* [OpenTelemetry Collector - v0.126.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.126.0)
+* [OpenTelemetry Contrib - v0.126.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.126.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.58.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.58.1)
+* [Python - v0.54b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.54b1)
+* [Go - v0.21.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.21.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.125.0
+
+### 💡 Enhancements 💡
+
+- `webhook`: Allow to run the operator without the OpenTelemetry CRDs present (#3568)
+  Skip registering the webhook and keep the operator working in case the OpenTelemetryCollector CRDs are not deployed.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fixes container port duplication for user-provided and operator inferred ports (#3950)
+  This patch improves container port collisions when the user defines additional ports in the CR.
+  
+  When ports are specified in the CR:
+  - If a port number from the CR matches a port inferred from the config, the inferred port is removed
+  - If a port name from the CR matches an inferred port name, the inferred port is renamed to "port-{number}"
+  
+- `collector`: Prevent the operator from overriding the env vars defined by the user in the OpenTelemetryCollector spec. (#3963)
+  This change ensures that the operator does not override the environment variables defined by the user in the OpenTelemetryCollector spec.
+  It combines user-defined environment variables with automatically inferred ones, giving precedence to user-defined ones.
+  
+- `opamp`: Fix config loading priority (#3928)
+- `target allocator`: Fix config loading priority (#3928)
+- `collector`: Set the `statusReplicas` field for the `DaemonSet` (#3930)
+- `collector`: Fix OpenShift internal collector metrics dashboards to use `_total` suffix (#3994)
+  The following settings (or missing metrics configuration since 0.119.0) exposes metrics with `_total` suffix:
+  ```yaml
+     service:
+       telemetry:
+         metrics:
+           readers:
+            - pull:
+              exporter:
+                prometheus:
+                  host: '0.0.0.0'
+                  port: 8888
+  ```
+  
+  The following settings exposes metrics without `_total` suffix:
+  ```yaml
+     service:
+       telemetry:
+           address: 0.0.0.0:8888
+  ````
+  
+- `targetallocator`: Do not override the collector namespace from the config file if the environment variable is not set. (#3976)
+
+### Components
+
+* [OpenTelemetry Collector - v0.125.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.125.0)
+* [OpenTelemetry Contrib - v0.125.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.125.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.58.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.58.1)
+* [Python - v0.53b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.53b1)
+* [Go - v0.19.0-alpha](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.19.0-alpha)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.124.0
 
 ### 💡 Enhancements 💡

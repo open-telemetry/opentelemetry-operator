@@ -36,7 +36,7 @@ type TargetAllocator struct {
 type TargetAllocatorList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []v1beta1.OpenTelemetryCollector `json:"items"`
+	Items           []TargetAllocator `json:"items"`
 }
 
 // TargetAllocatorStatus defines the observed state of Target Allocator.
@@ -87,8 +87,10 @@ type TargetAllocatorSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Observability"
 	Observability v1beta1.ObservabilitySpec `json:"observability,omitempty"`
 	// CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
-	// The default is 0s, which means that all collectors can be assigned targets irrespective of their readiness.
+	// The default is 30s, which means that if a collector becomes not Ready, the target allocator will wait for 30 seconds before reassigning its targets. The assumption is that the state is temporary, and an expensive target reallocation should be avoided if possible.
 	//
 	// +optional
+	// +kubebuilder:default:="30s"
+	// +kubebuilder:validation:Format:=duration
 	CollectorNotReadyGracePeriod *metav1.Duration `json:"collectorNotReadyGracePeriod,omitempty"`
 }

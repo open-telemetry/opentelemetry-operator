@@ -6,6 +6,7 @@ spec:
   podManagementPolicy: Parallel
   template:
     spec:
+       terminationGracePeriodSeconds: 600
        containers:
        - args:
          - --config=/conf/collector.yaml

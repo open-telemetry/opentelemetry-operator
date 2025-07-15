@@ -1349,7 +1349,7 @@ func (in *TargetAllocatorList) DeepCopyInto(out *TargetAllocatorList) {
 	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
-		*out = make([]v1beta1.OpenTelemetryCollector, len(*in))
+		*out = make([]TargetAllocator, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

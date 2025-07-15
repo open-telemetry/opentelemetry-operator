@@ -77,8 +77,8 @@ spec:
             value: "5"
           - name: SEARCH_STRINGS_ENV
             value: |
-              Name: process.runtime.dotnet.gc.collections.count
-              Description: Number of garbage collections that have occurred since process start
+              Name: process.cpu.time
+              Description: Total CPU seconds broken down by different states.
         timeout: 2m
         content: ../../test-e2e-apps/scripts/check_pod_logs.sh
   - name: Check the instrumented app has sent the telemetry data successfully
@@ -191,8 +191,8 @@ spec:
             value: "5"
           - name: SEARCH_STRINGS_ENV
             value: |
-              Name: process.runtime.dotnet.gc.collections.count
-              Description: Number of garbage collections that have occurred since process start
+              Name: process.cpu.time
+              Description: Total CPU seconds broken down by different states.
         timeout: 2m
         content: ../../test-e2e-apps/scripts/check_pod_logs.sh
   - name: Check the instrumented app has sent the telemetry data successfully

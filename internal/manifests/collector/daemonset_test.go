@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package collector_test
+package collector
 
 import (
 	"testing"
@@ -16,7 +16,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
 
 func TestDaemonSetNewDefault(t *testing.T) {
@@ -34,7 +33,7 @@ func TestDaemonSetNewDefault(t *testing.T) {
 				},
 			},
 		},
-		Log: logger,
+		Log: testLogger,
 	}
 
 	// test
@@ -91,7 +90,7 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 			},
 			Spec: v1beta1.OpenTelemetryCollectorSpec{},
 		},
-		Log: logger,
+		Log: testLogger,
 	}
 	// test
 	d1, err := DaemonSet(params1)
@@ -113,7 +112,7 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 				},
 			},
 		},
-		Log: logger,
+		Log: testLogger,
 	}
 	d2, err := DaemonSet(params2)
 	require.NoError(t, err)
@@ -139,7 +138,7 @@ func TestDaemonsetPodAnnotations(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -188,7 +187,7 @@ func TestDaemonstPodSecurityContext(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d, err := DaemonSet(params)
@@ -213,12 +212,14 @@ func TestDaemonsetFilterLabels(t *testing.T) {
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
-	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
+	cfg := config.Config{
+		LabelsFilter: []string{"foo*", "app.*.bar"},
+	}
 
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d, err := DaemonSet(params)
@@ -244,12 +245,14 @@ func TestDaemonsetFilterAnnotations(t *testing.T) {
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
-	cfg := config.New(config.WithAnnotationFilters([]string{"foo*", "app.*.bar"}))
+	cfg := config.Config{
+		AnnotationsFilter: []string{"foo*", "app.*.bar"},
+	}
 
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d, err := DaemonSet(params)
@@ -274,7 +277,7 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 	params1 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol1,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d1, err := DaemonSet(params1)
@@ -302,7 +305,7 @@ func TestDaemonSetNodeSelector(t *testing.T) {
 	params2 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol2,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d2, err := DaemonSet(params2)
@@ -322,7 +325,7 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 	params1 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol1,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d1, err := DaemonSet(params1)
@@ -347,7 +350,7 @@ func TestDaemonSetPriorityClassName(t *testing.T) {
 	params2 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol2,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d2, err := DaemonSet(params2)
@@ -367,7 +370,7 @@ func TestDaemonSetAffinity(t *testing.T) {
 	params1 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol1,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d1, err := DaemonSet(params1)
@@ -390,7 +393,7 @@ func TestDaemonSetAffinity(t *testing.T) {
 	params2 := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol2,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	d2, err := DaemonSet(params2)
@@ -421,7 +424,7 @@ func TestDaemonSetInitContainer(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -457,7 +460,7 @@ func TestDaemonSetAdditionalContainer(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -494,7 +497,7 @@ func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -529,7 +532,7 @@ func TestDaemonSetOnDeleteUpdateStrategy(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -551,7 +554,7 @@ func TestDaemonsetShareProcessNamespace(t *testing.T) {
 			},
 			Spec: v1beta1.OpenTelemetryCollectorSpec{},
 		},
-		Log: logger,
+		Log: testLogger,
 	}
 	// test
 	d1, err := DaemonSet(params1)
@@ -571,7 +574,7 @@ func TestDaemonsetShareProcessNamespace(t *testing.T) {
 				},
 			},
 		},
-		Log: logger,
+		Log: testLogger,
 	}
 	d2, err := DaemonSet(params2)
 	require.NoError(t, err)
@@ -599,7 +602,7 @@ func TestDaemonSetDNSConfig(t *testing.T) {
 	params := manifests.Params{
 		Config:  cfg,
 		OtelCol: otelcol,
-		Log:     logger,
+		Log:     testLogger,
 	}
 
 	// test
@@ -608,4 +611,52 @@ func TestDaemonSetDNSConfig(t *testing.T) {
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, v1.DNSPolicy("None"), d.Spec.Template.Spec.DNSPolicy)
 	assert.Equal(t, d.Spec.Template.Spec.DNSConfig.Nameservers, []string{"8.8.8.8"})
+}
+
+func TestDaemonSetTerminationGracePeriodSeconds(t *testing.T) {
+	// Test the case where terminationGracePeriodSeconds is not set
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
+	assert.Nil(t, d1.Spec.Template.Spec.TerminationGracePeriodSeconds)
+
+	// Test the case where terminationGracePeriodSeconds is set
+	gracePeriodSec := int64(60)
+
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-terminationGracePeriodSeconds",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				TerminationGracePeriodSeconds: &gracePeriodSec,
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
+	assert.NotNil(t, d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
+	assert.Equal(t, gracePeriodSec, *d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
 }

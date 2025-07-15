@@ -3,8 +3,15 @@ kind: Instrumentation
 metadata:
   name: java
 spec:
+  env:
+    # This is the default protocol in 2.x, whereas in 1.x it's grp. Set this here so the test can pass on both.
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
+    # This exporter is enabled by default in 2.x, but disabled in 1.x.
+    - name: OTEL_LOGS_EXPORTER
+      value: none
   exporter:
-    endpoint: https://simplest-collector:4317
+    endpoint: https://simplest-collector:4318
     tls:
       secretName: client-certs
       configMapName: ca
@@ -17,3 +24,9 @@ spec:
   sampler:
     type: parentbased_traceidratio
     argument: "1"
+  java:
+    env:
+    - name: OTEL_JAVAAGENT_DEBUG
+      value: "true"
+    - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
+      value: "false"

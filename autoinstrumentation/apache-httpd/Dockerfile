@@ -2,7 +2,7 @@
 ############################
 # STEP 1 download the webserver agent 
 ############################
-FROM alpine:latest as agent
+FROM alpine:latest AS agent
 
 ARG version
 

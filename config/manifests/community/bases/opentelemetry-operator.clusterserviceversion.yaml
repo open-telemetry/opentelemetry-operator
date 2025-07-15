@@ -56,8 +56,6 @@ spec:
         path: observability.metrics
       - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
           mode) should be created for the service managed by the OpenTelemetry Operator.
-          The operator.observability.prometheus feature gate must be enabled to use
-          this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: observability.metrics.enableMetrics
       - description: ObservabilitySpec defines how telemetry data gets handled.
@@ -68,8 +66,6 @@ spec:
         path: targetAllocator.observability.metrics
       - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
           mode) should be created for the service managed by the OpenTelemetry Operator.
-          The operator.observability.prometheus feature gate must be enabled to use
-          this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: targetAllocator.observability.metrics.enableMetrics
       version: v1beta1
@@ -136,8 +132,6 @@ spec:
         path: observability.metrics
       - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
           mode) should be created for the service managed by the OpenTelemetry Operator.
-          The operator.observability.prometheus feature gate must be enabled to use
-          this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: observability.metrics.enableMetrics
       - description: ObservabilitySpec defines how telemetry data gets handled.
@@ -148,8 +142,6 @@ spec:
         path: targetAllocator.observability.metrics
       - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
           mode) should be created for the service managed by the OpenTelemetry Operator.
-          The operator.observability.prometheus feature gate must be enabled to use
-          this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: targetAllocator.observability.metrics.enableMetrics
       version: v1alpha1
@@ -188,14 +180,10 @@ spec:
         path: observability.metrics
       - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
           mode) should be created for the service managed by the OpenTelemetry Operator.
-          The operator.observability.prometheus feature gate must be enabled to use
-          this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: observability.metrics.enableMetrics
       - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
           mode) should be created for the service managed by the OpenTelemetry Operator.
-          The operator.observability.prometheus feature gate must be enabled to use
-          this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: observability.metrics.enableMetrics
       version: v1alpha1
@@ -239,7 +227,7 @@ spec:
   - email: jpkroehling@redhat.com
     name: Juraci Paixão Kröhling
   maturity: alpha
-  minKubeVersion: 1.23.0
+  minKubeVersion: 1.25.0
   provider:
     name: OpenTelemetry Community
   version: 0.0.0

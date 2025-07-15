@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package collector_test
+package collector
 
 import (
 	"testing"
@@ -14,7 +14,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
 
 func TestHPA(t *testing.T) {
@@ -75,7 +74,7 @@ func TestHPA(t *testing.T) {
 							},
 						},
 					},
-					Log: logger,
+					Log: testLogger,
 				}
 				hpa, err := HorizontalPodAutoscaler(params)
 				require.NoError(t, err)

@@ -13,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -37,6 +38,32 @@ func TestVolumeNewDefault(t *testing.T) {
 	assert.Equal(t, naming.TAConfigMapVolume(), volumes[0].Name)
 }
 
+func TestUserDefinedVolume(t *testing.T) {
+	ta := v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-targetallocator",
+		},
+		Spec: v1alpha1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Volumes: []corev1.Volume{
+					{
+						Name: "custom-volume",
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
+						},
+					},
+				},
+			},
+		},
+	}
+	cfg := config.New()
+
+	volumes := Volumes(cfg, ta)
+
+	assert.Len(t, volumes, 2)
+	assert.Contains(t, volumes, ta.Spec.Volumes[0])
+}
+
 func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 	t.Run("CertManager available and EnableTargetAllocatorMTLS enabled", func(t *testing.T) {
 		ta := v1alpha1.TargetAllocator{
@@ -44,7 +71,9 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 				Name: "test-targetallocator",
 			},
 		}
-		cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+		cfg := config.Config{
+			CertManagerAvailability: certmanager.Available,
+		}
 
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
@@ -69,7 +98,9 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 				Name: "test-targetallocator",
 			},
 		}
-		cfg := config.New(config.WithCertManagerAvailability(certmanager.NotAvailable))
+		cfg := config.Config{
+			CertManagerAvailability: certmanager.NotAvailable,
+		}
 
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
@@ -85,7 +116,9 @@ func TestVolumeWithTargetAllocatorMTLS(t *testing.T) {
 				Name: "test-targetallocator",
 			},
 		}
-		cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+		cfg := config.Config{
+			CertManagerAvailability: certmanager.Available,
+		}
 
 		volumes := Volumes(cfg, ta)
 		assert.NotContains(t, volumes, corev1.Volume{Name: naming.TAServerCertificate(ta.Name)})

@@ -33,37 +33,55 @@ func TestFlagGetters(t *testing.T) {
 			name:          "GetConfigFilePath",
 			flagArgs:      []string{"--" + configFilePathFlagName, "/path/to/config"},
 			expectedValue: "/path/to/config",
-			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getConfigFilePath(fs) },
+			getterFunc: func(fs *pflag.FlagSet) (interface{}, error) {
+				value, _, err := getConfigFilePath(fs)
+				return value, err
+			},
 		},
 		{
 			name:          "GetKubeConfigFilePath",
 			flagArgs:      []string{"--" + kubeConfigPathFlagName, filepath.Join("~", ".kube", "config")},
 			expectedValue: filepath.Join("~", ".kube", "config"),
-			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getKubeConfigFilePath(fs) },
+			getterFunc: func(fs *pflag.FlagSet) (interface{}, error) {
+				value, _, err := getKubeConfigFilePath(fs)
+				return value, err
+			},
 		},
 		{
 			name:          "GetName",
 			flagArgs:      []string{"--" + nameFlagName, "test"},
 			expectedValue: "test",
-			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getName(fs) },
+			getterFunc: func(fs *pflag.FlagSet) (interface{}, error) {
+				value, _, err := getName(fs)
+				return value, err
+			},
 		},
 		{
 			name:          "GetListenAddr",
 			flagArgs:      []string{"--" + listenAddrFlagName, ":8081"},
 			expectedValue: ":8081",
-			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getListenAddr(fs) },
+			getterFunc: func(fs *pflag.FlagSet) (interface{}, error) {
+				value, _, err := getListenAddr(fs)
+				return value, err
+			},
 		},
 		{
 			name:          "GetHeartbeatInterval",
 			flagArgs:      []string{"--" + heartbeatIntervalFlagName, "45s"},
 			expectedValue: 45 * time.Second,
-			getterFunc:    func(fs *pflag.FlagSet) (interface{}, error) { return getHeartbeatInterval(fs) },
+			getterFunc: func(fs *pflag.FlagSet) (interface{}, error) {
+				value, _, err := getHeartbeatInterval(fs)
+				return value, err
+			},
 		},
 		{
 			name:        "InvalidFlag",
 			flagArgs:    []string{"--invalid-flag", "value"},
 			expectedErr: true,
-			getterFunc:  func(fs *pflag.FlagSet) (interface{}, error) { return getConfigFilePath(fs) },
+			getterFunc: func(fs *pflag.FlagSet) (interface{}, error) {
+				value, _, err := getConfigFilePath(fs)
+				return value, err
+			},
 		},
 	}
 

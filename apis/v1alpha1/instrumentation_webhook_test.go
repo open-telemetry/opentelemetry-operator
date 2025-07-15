@@ -21,7 +21,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	type testCase struct {
 		name   string
 		input  *Instrumentation
-		config []config.Option
+		config config.Config
 		verify func(t *testing.T, inst *Instrumentation)
 	}
 
@@ -29,14 +29,14 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 		{
 			name:  "default images",
 			input: &Instrumentation{},
-			config: []config.Option{
-				config.WithAutoInstrumentationJavaImage("java-img:1"),
-				config.WithAutoInstrumentationNodeJSImage("nodejs-img:1"),
-				config.WithAutoInstrumentationPythonImage("python-img:1"),
-				config.WithAutoInstrumentationDotNetImage("dotnet-img:1"),
-				config.WithAutoInstrumentationGoImage("go-img:1"),
-				config.WithAutoInstrumentationNginxImage("nginx-img:1"),
-				config.WithAutoInstrumentationApacheHttpdImage("apache-httpd-img:1"),
+			config: config.Config{
+				AutoInstrumentationJavaImage:        "java-img:1",
+				AutoInstrumentationNodeJSImage:      "nodejs-img:1",
+				AutoInstrumentationPythonImage:      "python-img:1",
+				AutoInstrumentationDotNetImage:      "dotnet-img:1",
+				AutoInstrumentationGoImage:          "go-img:1",
+				AutoInstrumentationNginxImage:       "nginx-img:1",
+				AutoInstrumentationApacheHttpdImage: "apache-httpd-img:1",
 			},
 			verify: func(t *testing.T, inst *Instrumentation) {
 				assert.Equal(t, "java-img:1", inst.Spec.Java.Image)
@@ -83,14 +83,14 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 					},
 				},
 			},
-			config: []config.Option{
-				config.WithAutoInstrumentationJavaImage("java-img:1"),
-				config.WithAutoInstrumentationNodeJSImage("nodejs-img:1"),
-				config.WithAutoInstrumentationPythonImage("python-img:1"),
-				config.WithAutoInstrumentationDotNetImage("dotnet-img:1"),
-				config.WithAutoInstrumentationGoImage("go-img:1"),
-				config.WithAutoInstrumentationNginxImage("nginx-img:1"),
-				config.WithAutoInstrumentationApacheHttpdImage("apache-httpd-img:1"),
+			config: config.Config{
+				AutoInstrumentationJavaImage:        "java-img:1",
+				AutoInstrumentationNodeJSImage:      "nodejs-img:1",
+				AutoInstrumentationPythonImage:      "python-img:1",
+				AutoInstrumentationDotNetImage:      "dotnet-img:1",
+				AutoInstrumentationGoImage:          "go-img:1",
+				AutoInstrumentationNginxImage:       "nginx-img:1",
+				AutoInstrumentationApacheHttpdImage: "apache-httpd-img:1",
 			},
 			verify: func(t *testing.T, inst *Instrumentation) {
 				assert.Equal(t, "custom-java-img:2", inst.Spec.Java.Image)
@@ -113,7 +113,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 		{
 			name:   "default resource and config settings",
 			input:  &Instrumentation{},
-			config: []config.Option{},
+			config: config.New(),
 			verify: func(t *testing.T, inst *Instrumentation) {
 				assert.Equal(t, resource.MustParse("500m"), inst.Spec.Java.Resources.Limits[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("256Mi"), inst.Spec.Java.Resources.Limits[corev1.ResourceMemory])
@@ -248,7 +248,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 					},
 				},
 			},
-			config: []config.Option{},
+			config: config.New(),
 			verify: func(t *testing.T, inst *Instrumentation) {
 				assert.Equal(t, resource.MustParse("500m"), inst.Spec.Java.Resources.Limits[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("128Mi"), inst.Spec.Java.Resources.Limits[corev1.ResourceMemory])
@@ -294,7 +294,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			webhook := InstrumentationWebhook{
-				cfg: config.New(test.config...),
+				cfg: test.config,
 			}
 
 			err := webhook.Default(context.Background(), test.input)

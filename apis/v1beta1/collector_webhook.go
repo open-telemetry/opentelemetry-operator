@@ -184,20 +184,24 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	}
 
 	// validate tolerations
+	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
 	}
 
 	// validate priorityClassName
+	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
 	if r.Spec.Mode == ModeSidecar && r.Spec.PriorityClassName != "" {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'priorityClassName'", r.Spec.Mode)
 	}
 
 	// validate affinity
+	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
 	if r.Spec.Mode == ModeSidecar && r.Spec.Affinity != nil {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'affinity'", r.Spec.Mode)
 	}
 
+	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.AdditionalContainers) > 0 {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
 	}

@@ -24,7 +24,7 @@ import (
 func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAllocator) corev1.Container {
 	image := instance.Spec.Image
 	if len(image) == 0 {
-		image = cfg.TargetAllocatorImage()
+		image = cfg.TargetAllocatorImage
 	}
 
 	ports := make([]corev1.ContainerPort, 0)
@@ -119,7 +119,7 @@ func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAl
 		},
 	}
 
-	if cfg.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if cfg.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		ports = append(ports, corev1.ContainerPort{
 			Name:          "https",
 			ContainerPort: 8443,

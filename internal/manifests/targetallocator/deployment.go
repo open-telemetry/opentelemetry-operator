@@ -22,7 +22,7 @@ func Deployment(params Params) (*appsv1.Deployment, error) {
 		params.Log.Info("failed to construct target allocator config map for annotations")
 		configMap = nil
 	}
-	annotations := Annotations(params.TargetAllocator, configMap, params.Config.AnnotationsFilter())
+	annotations := Annotations(params.TargetAllocator, configMap, params.Config.AnnotationsFilter)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

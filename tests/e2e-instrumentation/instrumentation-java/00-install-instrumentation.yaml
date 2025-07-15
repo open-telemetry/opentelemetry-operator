@@ -4,18 +4,16 @@ metadata:
   name: java
 spec:
   env:
-    - name: OTEL_TRACES_EXPORTER
-      value: otlp
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4317
-    - name: OTEL_EXPORTER_OTLP_TIMEOUT
-      value: "20000"
     - name: OTEL_TRACES_SAMPLER
       value: always_on
-    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
-      value: "true"
+    # This is the default protocol in 2.x, whereas in 1.x it's grpc. Set this here so the test can pass on both.
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
+    # This exporter is enabled by default in 2.x, but disabled in 1.x.
+    - name: OTEL_LOGS_EXPORTER
+      value: none
   exporter:
-    endpoint: http://localhost:4317
+    endpoint: http://localhost:4318
   propagators:
     - jaeger
     - b3
@@ -24,6 +22,4 @@ spec:
     - name: OTEL_JAVAAGENT_DEBUG
       value: "true"
     - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
-      value: "false"
-    - name: SPLUNK_PROFILER_ENABLED
       value: "false"

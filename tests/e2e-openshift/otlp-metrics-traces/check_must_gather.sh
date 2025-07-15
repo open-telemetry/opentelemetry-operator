@@ -10,20 +10,20 @@ oc adm must-gather --dest-dir=$MUST_GATHER_DIR --image=ghcr.io/open-telemetry/op
 # Define required files and directories
 REQUIRED_ITEMS=(
   event-filter.html
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/olm/clusterserviceversion-opentelemetry-operator-*.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/olm/*opentelemetry-operator*.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/olm/installplan-install-*.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/olm/subscription-opentelemetry-operator-v*-sub.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/service-cluster-collector-collector-headless.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/deployment-cluster-collector-collector.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/service-cluster-collector-collector-monitoring.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/opentelemetrycollector-cluster-collector.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/configmap-cluster-collector-collector-*.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/serviceaccount-cluster-collector-collector.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/service-cluster-collector-collector.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/poddisruptionbudget-cluster-collector-collector.yaml
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/opentelemetry-operator-controller-manager-*
-  ghcr-io-open-telemetry-opentelemetry-operator-must-gather-sha256-*/deployment-opentelemetry-operator-controller-manager.yaml
+  *-must-gather-sha256-*/olm/clusterserviceversion-opentelemetry-operator-*.yaml
+  *-must-gather-sha256-*/olm/*opentelemetry-operator*.yaml
+  *-must-gather-sha256-*/olm/installplan-install-*.yaml
+  *-must-gather-sha256-*/olm/subscription-opentelemetry-operator-v*-sub.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/service-cluster-collector-collector-headless.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/deployment-cluster-collector-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/service-cluster-collector-collector-monitoring.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/opentelemetrycollector-cluster-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/configmap-cluster-collector-collector-*.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/serviceaccount-cluster-collector-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/service-cluster-collector-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-otlp-metrics/cluster-collector/poddisruptionbudget-cluster-collector-collector.yaml
+  *-must-gather-sha256-*/opentelemetry-operator-controller-manager-*
+  *-must-gather-sha256-*/deployment-opentelemetry-operator-controller-manager.yaml
   timestamp
 )
 

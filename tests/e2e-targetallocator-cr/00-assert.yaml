@@ -84,6 +84,7 @@ apiVersion: v1
 data:
   targetallocator.yaml: |
     allocation_strategy: consistent-hashing
+    collector_not_ready_grace_period: 30s
     collector_selector: null
     config:
       scrape_configs:

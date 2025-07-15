@@ -6,9 +6,9 @@ spec:
   autoscaler: null
   config:
     receivers:
-      nop:
+      nop: {}
     exporters:
-      nop:
+      nop: {}
     service:
       pipelines:
         metrics:

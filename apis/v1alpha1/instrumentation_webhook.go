@@ -82,7 +82,7 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 		r.Labels = map[string]string{}
 	}
 	if r.Spec.Java.Image == "" {
-		r.Spec.Java.Image = w.cfg.AutoInstrumentationJavaImage()
+		r.Spec.Java.Image = w.cfg.AutoInstrumentationJavaImage
 	}
 	if r.Spec.Java.Resources.Limits == nil {
 		r.Spec.Java.Resources.Limits = corev1.ResourceList{
@@ -97,7 +97,7 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 		}
 	}
 	if r.Spec.NodeJS.Image == "" {
-		r.Spec.NodeJS.Image = w.cfg.AutoInstrumentationNodeJSImage()
+		r.Spec.NodeJS.Image = w.cfg.AutoInstrumentationNodeJSImage
 	}
 	if r.Spec.NodeJS.Resources.Limits == nil {
 		r.Spec.NodeJS.Resources.Limits = corev1.ResourceList{
@@ -112,7 +112,7 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 		}
 	}
 	if r.Spec.Python.Image == "" {
-		r.Spec.Python.Image = w.cfg.AutoInstrumentationPythonImage()
+		r.Spec.Python.Image = w.cfg.AutoInstrumentationPythonImage
 	}
 	if r.Spec.Python.Resources.Limits == nil {
 		r.Spec.Python.Resources.Limits = corev1.ResourceList{
@@ -127,7 +127,7 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 		}
 	}
 	if r.Spec.DotNet.Image == "" {
-		r.Spec.DotNet.Image = w.cfg.AutoInstrumentationDotNetImage()
+		r.Spec.DotNet.Image = w.cfg.AutoInstrumentationDotNetImage
 	}
 	if r.Spec.DotNet.Resources.Limits == nil {
 		r.Spec.DotNet.Resources.Limits = corev1.ResourceList{
@@ -142,7 +142,7 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 		}
 	}
 	if r.Spec.Go.Image == "" {
-		r.Spec.Go.Image = w.cfg.AutoInstrumentationGoImage()
+		r.Spec.Go.Image = w.cfg.AutoInstrumentationGoImage
 	}
 	if r.Spec.Go.Resources.Limits == nil {
 		r.Spec.Go.Resources.Limits = corev1.ResourceList{
@@ -157,7 +157,7 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 		}
 	}
 	if r.Spec.ApacheHttpd.Image == "" {
-		r.Spec.ApacheHttpd.Image = w.cfg.AutoInstrumentationApacheHttpdImage()
+		r.Spec.ApacheHttpd.Image = w.cfg.AutoInstrumentationApacheHttpdImage
 	}
 	if r.Spec.ApacheHttpd.Resources.Limits == nil {
 		r.Spec.ApacheHttpd.Resources.Limits = initContainerDefaultLimitResources
@@ -172,7 +172,7 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 		r.Spec.ApacheHttpd.ConfigPath = "/usr/local/apache2/conf"
 	}
 	if r.Spec.Nginx.Image == "" {
-		r.Spec.Nginx.Image = w.cfg.AutoInstrumentationNginxImage()
+		r.Spec.Nginx.Image = w.cfg.AutoInstrumentationNginxImage
 	}
 	if r.Spec.Nginx.Resources.Limits == nil {
 		r.Spec.Nginx.Resources.Limits = initContainerDefaultLimitResources
@@ -187,13 +187,13 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	if r.Annotations == nil {
 		r.Annotations = map[string]string{}
 	}
-	r.Annotations[constants.AnnotationDefaultAutoInstrumentationJava] = w.cfg.AutoInstrumentationJavaImage()
-	r.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS] = w.cfg.AutoInstrumentationNodeJSImage()
-	r.Annotations[constants.AnnotationDefaultAutoInstrumentationPython] = w.cfg.AutoInstrumentationPythonImage()
-	r.Annotations[constants.AnnotationDefaultAutoInstrumentationDotNet] = w.cfg.AutoInstrumentationDotNetImage()
-	r.Annotations[constants.AnnotationDefaultAutoInstrumentationGo] = w.cfg.AutoInstrumentationGoImage()
-	r.Annotations[constants.AnnotationDefaultAutoInstrumentationApacheHttpd] = w.cfg.AutoInstrumentationApacheHttpdImage()
-	r.Annotations[constants.AnnotationDefaultAutoInstrumentationNginx] = w.cfg.AutoInstrumentationNginxImage()
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationJava] = w.cfg.AutoInstrumentationJavaImage
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationNodeJS] = w.cfg.AutoInstrumentationNodeJSImage
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationPython] = w.cfg.AutoInstrumentationPythonImage
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationDotNet] = w.cfg.AutoInstrumentationDotNetImage
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationGo] = w.cfg.AutoInstrumentationGoImage
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationApacheHttpd] = w.cfg.AutoInstrumentationApacheHttpdImage
+	r.Annotations[constants.AnnotationDefaultAutoInstrumentationNginx] = w.cfg.AutoInstrumentationNginxImage
 	return nil
 }
 

@@ -21,6 +21,8 @@ spec:
           fieldPath: status.podIP
     - name: ASPNETCORE_URLS
       value: http://+:8080
+    - name: OTEL_METRIC_EXPORT_INTERVAL
+      value: "30000"
     - name: CORECLR_ENABLE_PROFILING
       value: "1"
     - name: CORECLR_PROFILER
@@ -35,18 +37,12 @@ spec:
       value: /otel-auto-instrumentation-dotnet
     - name: DOTNET_SHARED_STORE
       value: /otel-auto-instrumentation-dotnet/store
-    - name: OTEL_TRACES_EXPORTER
-      value: otlp
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4318
-    - name: OTEL_EXPORTER_OTLP_TIMEOUT
-      value: "20000"
     - name: OTEL_TRACES_SAMPLER
       value: always_on
-    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
-      value: "true"
     - name: OTEL_SERVICE_NAME
       value: my-dotnet
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4318
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
       valueFrom:
         fieldRef:
@@ -58,7 +54,7 @@ spec:
           apiVersion: v1
           fieldPath: spec.nodeName
     - name: OTEL_PROPAGATORS
-      value: jaeger,b3multi
+      value: b3multi
     - name: OTEL_RESOURCE_ATTRIBUTES
     name: myapp
     ports:

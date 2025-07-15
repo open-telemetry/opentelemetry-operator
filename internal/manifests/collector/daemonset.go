@@ -16,14 +16,14 @@ import (
 // DaemonSet builds the deployment for the given instance.
 func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)
 
-	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {
 		return nil, err
 	}
 
-	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter())
+	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -45,19 +45,20 @@ func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName:    ServiceAccountName(params.OtelCol),
-					InitContainers:        params.OtelCol.Spec.InitContainers,
-					Containers:            append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
-					Volumes:               Volumes(params.Config, params.OtelCol),
-					Tolerations:           params.OtelCol.Spec.Tolerations,
-					NodeSelector:          params.OtelCol.Spec.NodeSelector,
-					HostNetwork:           params.OtelCol.Spec.HostNetwork,
-					ShareProcessNamespace: &params.OtelCol.Spec.ShareProcessNamespace,
-					DNSPolicy:             manifestutils.GetDNSPolicy(params.OtelCol.Spec.HostNetwork, params.OtelCol.Spec.PodDNSConfig),
-					DNSConfig:             &params.OtelCol.Spec.PodDNSConfig,
-					SecurityContext:       params.OtelCol.Spec.PodSecurityContext,
-					PriorityClassName:     params.OtelCol.Spec.PriorityClassName,
-					Affinity:              params.OtelCol.Spec.Affinity,
+					ServiceAccountName:            ServiceAccountName(params.OtelCol),
+					InitContainers:                params.OtelCol.Spec.InitContainers,
+					Containers:                    append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
+					Volumes:                       Volumes(params.Config, params.OtelCol),
+					Tolerations:                   params.OtelCol.Spec.Tolerations,
+					NodeSelector:                  params.OtelCol.Spec.NodeSelector,
+					HostNetwork:                   params.OtelCol.Spec.HostNetwork,
+					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
+					DNSPolicy:                     manifestutils.GetDNSPolicy(params.OtelCol.Spec.HostNetwork, params.OtelCol.Spec.PodDNSConfig),
+					DNSConfig:                     &params.OtelCol.Spec.PodDNSConfig,
+					SecurityContext:               params.OtelCol.Spec.PodSecurityContext,
+					PriorityClassName:             params.OtelCol.Spec.PriorityClassName,
+					Affinity:                      params.OtelCol.Spec.Affinity,
+					TerminationGracePeriodSeconds: params.OtelCol.Spec.TerminationGracePeriodSeconds,
 				},
 			},
 			UpdateStrategy: params.OtelCol.Spec.DaemonSetUpdateStrategy,

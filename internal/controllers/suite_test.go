@@ -46,6 +46,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -92,6 +94,8 @@ type mockAutoDetect struct {
 	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
+	CollectorCRDAvailabilityFunc    func() (collector.Availability, error)
+	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
 }
 
 func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
@@ -131,6 +135,20 @@ func (m *mockAutoDetect) TargetAllocatorAvailability() (targetallocator.Availabi
 		return m.TargetAllocatorAvailabilityFunc()
 	}
 	return targetallocator.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) CollectorAvailability() (collector.Availability, error) {
+	if m.CollectorCRDAvailabilityFunc != nil {
+		return m.CollectorCRDAvailabilityFunc()
+	}
+	return collector.Available, nil
+}
+
+func (m *mockAutoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, error) {
+	if m.OpAmpBridgeAvailabilityFunc != nil {
+		return m.OpAmpBridgeAvailabilityFunc()
+	}
+	return opampbridge.NotAvailable, nil
 }
 
 func TestMain(m *testing.M) {
@@ -395,8 +413,11 @@ func testCollectorWithPDB(minAvailable, maxUnavailable int32) v1alpha1.OpenTelem
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
 
-	configuration := config.New(config.WithAutoDetect(mockAutoDetector), config.WithCollectorImage(defaultCollectorImage), config.WithTargetAllocatorImage(defaultTaAllocationImage))
-	err = configuration.AutoDetect()
+	configuration := config.Config{
+		CollectorImage:       defaultCollectorImage,
+		TargetAllocatorImage: defaultTaAllocationImage,
+	}
+	err = autodetect.ApplyAutoDetect(mockAutoDetector, &configuration, ctrl.Log.WithName("autodetect"))
 	if err != nil {
 		logger.Error(err, "configuration.autodetect failed")
 	}
@@ -446,8 +467,11 @@ func testCollectorWithPDB(minAvailable, maxUnavailable int32) v1alpha1.OpenTelem
 }
 
 func opampBridgeParams() manifests.Params {
+	cfg := config.Config{
+		OperatorOpAMPBridgeImage: defaultOpAMPBridgeImage,
+	}
 	return manifests.Params{
-		Config: config.New(config.WithOperatorOpAMPBridgeImage(defaultOpAMPBridgeImage)),
+		Config: cfg,
 		Client: k8sClient,
 		OpAMPBridge: v1alpha1.OpAMPBridge{
 			TypeMeta: metav1.TypeMeta{
