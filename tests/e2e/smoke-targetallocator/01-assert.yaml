@@ -1,8 +1,0 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: stateful-targetallocator
-status:
-  replicas: 1
-  readyReplicas: 1
-  observedGeneration: 2
