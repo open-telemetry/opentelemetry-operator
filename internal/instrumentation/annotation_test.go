@@ -248,11 +248,11 @@ func TestEffectiveAnnotationValue(t *testing.T) {
 
 func TestCrossInstrumentationPrecedence(t *testing.T) {
 	for _, tt := range []struct {
-		desc        string
-		expected    string
-		pod         corev1.Pod
-		ns          corev1.Namespace
-		annotation  string
+		desc       string
+		expected   string
+		pod        corev1.Pod
+		ns         corev1.Namespace
+		annotation string
 	}{
 		{
 			"pod-python-blocks-ns-sdk-when-testing-sdk",
