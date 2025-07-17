@@ -551,12 +551,14 @@ func (t *Telemetry) ToAnyConfig() (*AnyConfig, error) {
 
 func AddPrometheusMetricsEndpoint(host string, port int32) otelConfig.MetricReader {
 	portInt := int(port)
+	t := true
 	return otelConfig.MetricReader{
 		Pull: &otelConfig.PullMetricReader{
 			Exporter: otelConfig.PullMetricExporter{
 				Prometheus: &otelConfig.Prometheus{
-					Host: &host,
-					Port: &portInt,
+					Host:         &host,
+					Port:         &portInt,
+					WithoutUnits: &t,
 				},
 			},
 		},
