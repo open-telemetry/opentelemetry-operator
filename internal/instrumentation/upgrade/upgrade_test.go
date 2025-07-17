@@ -45,6 +45,7 @@ func TestUpgrade(t *testing.T) {
 	}
 
 	cfg := config.Config{
+		EnableInstrumentationCRDs:           true,
 		AutoInstrumentationJavaImage:        "java:1",
 		AutoInstrumentationNodeJSImage:      "nodejs:1",
 		AutoInstrumentationPythonImage:      "python:1",
@@ -77,6 +78,7 @@ func TestUpgrade(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg = config.Config{
+		EnableInstrumentationCRDs:           true,
 		AutoInstrumentationJavaImage:        "java:2",
 		AutoInstrumentationNodeJSImage:      "nodejs:2",
 		AutoInstrumentationPythonImage:      "python:2",
@@ -94,7 +96,7 @@ func TestUpgrade(t *testing.T) {
 	}
 	up := NewInstrumentationUpgrade(k8sClient, ctrl.Log.WithName("instrumentation-upgrade"), &events.FakeRecorder{}, cfg)
 
-	err = up.ManagedInstances(context.Background())
+	err = up.ManagedInstances(context.Background(), cfg)
 	require.NoError(t, err)
 
 	updated := v1alpha1.Instrumentation{}
