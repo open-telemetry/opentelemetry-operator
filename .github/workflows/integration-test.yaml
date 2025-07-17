@@ -1,0 +1,49 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+jobs:
+  java-autoinstrumentation:
+    env:
+      KUBECONFIG: /tmp/kube-config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: make our image
+        run: VERSION=dev make container
+      - name: make java autoinstrumentation image
+        run: |
+          cd autoinstrumentation/java && docker build -t java-autoinstrumentation:dev --build-arg version=$(cat version.txt) .
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.11.0
+        with:
+          cluster_name: kind
+          node_image: kindest/node:v1.27.3
+      - name: Deploy certificate signing request
+        run: kubectl apply -f tests/integration/certs.yaml
+      - name: Approve our certificate signing request
+        run: kubectl certificate approve operator
+      - name: register our image
+        run: |
+          img=$(docker images | grep operator | awk '{print $1":"$2}')
+          docker tag $img manager:dev
+          kind load docker-image manager:dev --name kind
+          kind load docker-image java-autoinstrumentation:dev --name kind
+      - name: Deploy collector
+        run: kubectl apply -f tests/integration/collector.yaml
+      - name: Deploy operator
+        run: kubectl apply -f tests/integration/operator.yaml
+      - name: Sleep 10s
+        run: sleep 10
+      - name: Deploy java app
+        run: kubectl apply -f tests/integration/java.yaml
+      - name: Sleep 20s
+        run: sleep 20
+      - name: Check logs
+        run: |
+          COLLECTOR_POD=$(kubectl get pod -l app=collector -o jsonpath="{.items[0].metadata.name}")
+          LOGS=$(kubectl logs ${COLLECTOR_POD})
+          echo ${LOGS}
+          echo ${LOGS} | grep "Starting Servlet engine"
