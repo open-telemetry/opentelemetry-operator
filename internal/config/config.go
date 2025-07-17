@@ -149,6 +149,10 @@ type Internal struct {
 	// the operator restarts (via SecurityProfileWatcher) and all collectors are reconciled
 	// with the new TLS settings.
 	OperandTLSProfile components.TLSProfile `yaml:"-"`
+	// Instrumentation is the set of instrumentations to use if CRDs are not present
+	Instrumentation webhook.Instrumentation `yaml:"instrumentations"`
+	// EnableInstrumentationCRDs enables looking for instrumentation CRDs.
+	EnableInstrumentationCRDs bool `yaml:"enable-instrumentation-crds"`
 }
 
 // New constructs a new configuration.
@@ -209,6 +213,7 @@ func New() Config {
 		Internal: Internal{
 			NativeSidecarSupport: false,
 		},
+		EnableInstrumentationCRDs: true,
 	}
 }
 

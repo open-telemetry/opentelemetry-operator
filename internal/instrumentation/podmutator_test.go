@@ -680,6 +680,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:     true,
 				EnableJavaAutoInstrumentation: false,
 			},
 		},
@@ -866,6 +867,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:       true,
 				EnableNodeJSAutoInstrumentation: true,
 			},
 		},
@@ -1140,6 +1142,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:       true,
 				EnableNodeJSAutoInstrumentation: true,
 			},
 		},
@@ -1428,6 +1431,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:       true,
 				EnablePythonAutoInstrumentation: true,
 			},
 		},
@@ -1734,6 +1738,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:       true,
 				EnablePythonAutoInstrumentation: true,
 			},
 		},
@@ -2028,6 +2033,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:       true,
 				EnableDotNetAutoInstrumentation: true,
 			},
 		},
@@ -2226,6 +2232,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:       true,
 				EnableDotNetAutoInstrumentation: true,
 			},
 		},
@@ -2536,6 +2543,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:       true,
 				EnableDotNetAutoInstrumentation: true,
 			},
 		},
@@ -2617,6 +2625,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:       true,
 				EnableDotNetAutoInstrumentation: false,
 			},
 		},
@@ -2795,6 +2804,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:   true,
 				EnableGoAutoInstrumentation: true,
 			},
 		},
@@ -2878,6 +2888,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:   true,
 				EnableGoAutoInstrumentation: false,
 			},
 		},
@@ -3050,6 +3061,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:        true,
 				EnableApacheHttpdInstrumentation: true,
 			},
 		},
@@ -3127,6 +3139,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:        true,
 				EnableApacheHttpdInstrumentation: false,
 			},
 		},
@@ -3308,6 +3321,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:      true,
 				EnableNginxAutoInstrumentation: true,
 			},
 		},
@@ -3391,6 +3405,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:       true,
 				EnableMultiInstrumentation:      true,
 				EnableNodeJSAutoInstrumentation: true,
 				EnablePythonAutoInstrumentation: true,
@@ -3524,6 +3539,9 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			err: `instrumentations.opentelemetry.io "doesnotexists" not found`,
+			config: config.Config{
+				EnableInstrumentationCRDs: true,
+			},
 		},
 		{
 			name: "multi instrumentation for multiple containers feature gate enabled",
@@ -4296,6 +4314,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:       true,
 				EnableMultiInstrumentation:      true,
 				EnableJavaAutoInstrumentation:   true,
 				EnableNodeJSAutoInstrumentation: true,
@@ -4456,6 +4475,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:       true,
 				EnableMultiInstrumentation:      false,
 				EnableJavaAutoInstrumentation:   false,
 				EnableNodeJSAutoInstrumentation: false,
@@ -4606,6 +4626,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:     true,
 				EnableMultiInstrumentation:    true,
 				EnableJavaAutoInstrumentation: false,
 			},
@@ -4804,6 +4825,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:       true,
 				EnableMultiInstrumentation:      true,
 				EnableDotNetAutoInstrumentation: true,
 			},
@@ -4907,6 +4929,7 @@ func TestMutatePod(t *testing.T) {
 				},
 			},
 			config: config.Config{
+				EnableInstrumentationCRDs:       true,
 				EnableMultiInstrumentation:      true,
 				EnableDotNetAutoInstrumentation: false,
 				EnableNodeJSAutoInstrumentation: false,
@@ -4993,6 +5016,7 @@ func TestMutatePod(t *testing.T) {
 				require.NoError(t, err)
 				assert.Equal(t, test.expected, pod)
 			} else {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), test.err)
 			}
 		})
