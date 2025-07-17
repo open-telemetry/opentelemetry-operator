@@ -67,6 +67,7 @@ data:
                               prometheus:
                                   host: 0.0.0.0
                                   port: 8888
+                                  without_units: true
 kind: ConfigMap
 metadata:
   name: prometheus-cr-collector-84db057e
