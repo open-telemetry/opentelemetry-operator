@@ -2,6 +2,41 @@
 
 <!-- next version -->
 
+## 0.130.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: Drop support for Kubernetes 1.23 and 1.24 (#4104)
+
+### 💡 Enhancements 💡
+
+- `collector`: Add support for extraLabels in ServiceMonitor creation (#4138)
+  Added extraLabels field to MetricsConfigSpec in v1beta1 API to allow custom labels on ServiceMonitor resources.
+  This enables users to add additional labels to ServiceMonitors created by the operator for better organization and filtering.
+  
+- `collector, targer allocator,  opamp`: Require Go 1.24+ to build the collector, target allocator, and opamp. (#4173)
+- `auto-instrumentation`: Upgrade urllib3 upper limit following Python 3.8 support drop (#3712)
+
+### 🧰 Bug fixes 🧰
+
+- `collector upgrade`: Adds an upgrade script for version v0.130.0 of the collector to handle a bug with internal telemetry metric names. (#4198)
+- `target allocator`: check CRD availability before registering informers (#3987)
+- `target allocator`: Allow collector to use TLS Config from Target Allocator with ScrapeConfig (#3724)
+  This change allows the target allocator to configure TLS Config for a collector using the ScrapeConfig.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.130.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.130.0)
+* [OpenTelemetry Contrib - v0.130.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.130.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.62.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.62.0)
+* [Python - v0.56b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.56b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.129.1
 
 ### 🛑 Breaking changes 🛑

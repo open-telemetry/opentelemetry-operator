@@ -67,8 +67,9 @@ func TestUpgrade0_122_0(t *testing.T) {
 												"pull": map[string]interface{}{
 													"exporter": map[string]interface{}{
 														"prometheus": map[string]interface{}{
-															"host": "0.0.0.0",
-															"port": int32(8888),
+															"host":          "0.0.0.0",
+															"port":          int32(8888),
+															"without_units": true,
 														},
 													},
 												},
@@ -153,8 +154,9 @@ func TestUpgrade0_122_0(t *testing.T) {
 												"pull": map[string]interface{}{
 													"exporter": map[string]interface{}{
 														"prometheus": map[string]interface{}{
-															"host": "0.0.0.0",
-															"port": int32(8888),
+															"host":          "0.0.0.0",
+															"port":          int32(8888),
+															"without_units": true,
 														},
 													},
 												},
@@ -187,8 +189,9 @@ func TestUpgrade0_122_0(t *testing.T) {
 												"pull": map[string]interface{}{
 													"exporter": map[string]interface{}{
 														"prometheus": map[string]interface{}{
-															"host": "0.0.0.0",
-															"port": int32(8888),
+															"host":          "0.0.0.0",
+															"port":          int32(8888),
+															"without_units": true,
 														},
 													},
 												},
