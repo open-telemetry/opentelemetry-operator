@@ -69,7 +69,7 @@ data:
                                   port: 8888
 kind: ConfigMap
 metadata:
-  name: prometheus-cr-collector-84db057e
+  (starts_with(name, 'prometheus-cr-collector-')): true
 ---
 apiVersion: v1
 kind: Pod
