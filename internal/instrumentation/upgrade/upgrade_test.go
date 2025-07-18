@@ -93,7 +93,7 @@ func TestUpgrade(t *testing.T) {
 	}
 	up := NewInstrumentationUpgrade(k8sClient, ctrl.Log.WithName("instrumentation-upgrade"), &record.FakeRecorder{}, cfg)
 
-	err = up.ManagedInstances(context.Background())
+	err = up.ManagedInstances(context.Background(), cfg)
 	require.NoError(t, err)
 
 	updated := v1alpha1.Instrumentation{}
