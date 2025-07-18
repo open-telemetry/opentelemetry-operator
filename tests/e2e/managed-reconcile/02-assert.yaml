@@ -52,7 +52,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: simplest-collector-d5e146a9
+  (starts_with(name, 'simplest-collector-')): true
 data:
   collector.yaml: |
     receivers:
