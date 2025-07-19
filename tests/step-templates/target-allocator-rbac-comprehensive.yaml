@@ -1,0 +1,101 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: StepTemplate
+metadata:
+  name: target-allocator-rbac-comprehensive
+spec:
+  bindings:
+    - name: serviceAccountName
+      value: ta
+    - name: clusterRoleName
+      value: (join('-', ['ta', $namespace]))
+    - name: clusterRoleBindingName
+      value: (join('-', ['ta', $namespace]))
+  try:
+    - apply:
+        resource:
+          apiVersion: v1
+          automountServiceAccountToken: true
+          kind: ServiceAccount
+          metadata:
+            name: ($serviceAccountName)
+    - apply:
+        resource:
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            name: ($clusterRoleName)
+          rules:
+          - apiGroups:
+              - ""
+            resources:
+              - pods
+              - nodes
+              - nodes/metrics
+              - services
+              - endpoints
+              - configmaps
+              - secrets
+              - namespaces
+            verbs:
+              - get
+              - watch
+              - list
+          - apiGroups:
+              - apps
+            resources:
+              - statefulsets
+              - services
+              - endpoints
+            verbs:
+              - get
+              - watch
+              - list
+          - apiGroups:
+              - discovery.k8s.io
+            resources:
+              - endpointslices
+            verbs:
+              - get
+              - watch
+              - list
+          - apiGroups:
+              - networking.k8s.io
+            resources:
+              - ingresses
+            verbs:
+              - get
+              - watch
+              - list
+          - apiGroups:
+              - monitoring.coreos.com
+            resources:
+              - servicemonitors
+              - podmonitors
+              - scrapeconfigs
+              - probes
+            verbs:
+              - get
+              - watch
+              - list
+          - nonResourceURLs:
+              - /metrics
+              - /apis
+              - /apis/*
+              - /api
+              - /api/*
+            verbs:
+              - get
+    - apply:
+        resource:
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRoleBinding
+          metadata:
+            name: ($clusterRoleBindingName)
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: ($clusterRoleName)
+          subjects:
+          - kind: ServiceAccount
+            name: ($serviceAccountName)
+            namespace: ($namespace)

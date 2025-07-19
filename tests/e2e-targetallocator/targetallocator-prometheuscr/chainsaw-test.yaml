@@ -6,6 +6,15 @@ metadata:
   name: targetallocator-prometheuscr
 spec:
   steps:
+  - name: Setup Target Allocator RBAC
+    use:
+      template: ../../step-templates/target-allocator-rbac-comprehensive.yaml
+      with:
+        bindings:
+        - name: clusterRoleName
+          value: targetallocator-prometheuscr
+        - name: clusterRoleBindingName
+          value: (join('-', ['ta', $namespace]))
   - name: step-00
     try:
     - apply:
