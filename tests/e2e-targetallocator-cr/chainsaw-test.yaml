@@ -5,25 +5,11 @@ metadata:
   name: targetallocator-cr
 spec:
   steps:
+  - name: Add OpenShift namespace annotations
+    use:
+      template: ../step-templates/openshift-namespace-annotations.yaml
   - name: step-00
     try:
-    # In OpenShift, when a namespace is created, all necessary SCC annotations are automatically added. However, if a namespace is created using a resource file with only selected SCCs, the other auto-added SCCs are not included. Therefore, the UID-range and supplemental groups SCC annotations must be set after the namespace is created.
-    - command:
-        entrypoint: kubectl
-        args:
-        - annotate
-        - namespace
-        - ${NAMESPACE}
-        - openshift.io/sa.scc.uid-range=1000/1000
-        - --overwrite
-    - command:
-        entrypoint: kubectl
-        args:
-        - annotate
-        - namespace
-        - ${NAMESPACE}
-        - openshift.io/sa.scc.supplemental-groups=3000/1000
-        - --overwrite
     - apply:
         template: true
         file: 00-install.yaml
