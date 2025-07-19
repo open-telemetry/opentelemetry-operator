@@ -6,6 +6,13 @@ metadata:
   name: smoke-targetallocator
 spec:
   steps:
+  - name: Setup Target Allocator RBAC
+    use:
+      template: ../../step-templates/target-allocator-rbac.yaml
+      with:
+        bindings:
+        - name: clusterRoleName
+          value: smoke-targetallocator
   - name: step-00
     try:
     - apply:
