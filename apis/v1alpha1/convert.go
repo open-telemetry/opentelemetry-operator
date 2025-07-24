@@ -187,6 +187,7 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 		PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 			Enabled:        in.PrometheusCR.Enabled,
 			ScrapeInterval: in.PrometheusCR.ScrapeInterval,
+			ScrapeClasses:  in.PrometheusCR.ScrapeClasses,
 			// prometheus_cr.pod_monitor_selector shouldn't be nil when selector is empty
 			PodMonitorSelector: &metav1.LabelSelector{
 				MatchLabels: in.PrometheusCR.PodMonitorSelector,
@@ -458,6 +459,7 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		PrometheusCR: OpenTelemetryTargetAllocatorPrometheusCR{
 			Enabled:                in.PrometheusCR.Enabled,
 			ScrapeInterval:         in.PrometheusCR.ScrapeInterval,
+			ScrapeClasses:          in.PrometheusCR.ScrapeClasses,
 			PodMonitorSelector:     podMonitorSelector,
 			ServiceMonitorSelector: serviceMonitorSelector,
 		},
