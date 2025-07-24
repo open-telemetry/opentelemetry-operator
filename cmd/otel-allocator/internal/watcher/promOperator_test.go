@@ -1245,7 +1245,6 @@ func getTestPrometheusCRWatcher(
 				ScrapeConfigSelector:            cfg.PrometheusCR.ScrapeConfigSelector,
 				ScrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
 				ServiceDiscoveryRole:            &serviceDiscoveryRole,
-				Version:                         "2.55.1",
 			},
 			EvaluationInterval: monitoringv1.Duration("30s"),
 		},
