@@ -44,6 +44,7 @@ func TestLoadConfig(t *testing.T) {
 		name            string
 		serviceMonitors []*monitoringv1.ServiceMonitor
 		podMonitors     []*monitoringv1.PodMonitor
+		scrapeClasses   []*monitoringv1.ScrapeClass
 		scrapeConfigs   []*promv1alpha1.ScrapeConfig
 		probes          []*monitoringv1.Probe
 		want            *promconfig.Config
@@ -919,6 +920,68 @@ func TestLoadConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "pod monitor with referenced scrape class",
+			podMonitors: []*monitoringv1.PodMonitor{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: namespace,
+					},
+					Spec: monitoringv1.PodMonitorSpec{
+						JobLabel:        "test",
+						ScrapeClassName: ptr.To("attach-node-metadata"),
+						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
+							{
+								Port: &portName,
+							},
+						},
+					},
+				},
+			},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					PodMonitorSelector: &metav1.LabelSelector{},
+					ScrapeClasses: []monitoringv1.ScrapeClass{
+						{
+							Name: "attach-node-metadata",
+							AttachMetadata: &monitoringv1.AttachMetadata{
+								Node: ptr.To(true),
+							},
+						},
+					},
+				},
+			},
+			want: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:         "podMonitor/test/simple/0",
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
+						ScrapeTimeout:   model.Duration(10 * time.Second),
+						HonorTimestamps: true,
+						HonorLabels:     false,
+						Scheme:          "http",
+						MetricsPath:     "/metrics",
+						ServiceDiscoveryConfigs: []discovery.Config{
+							&kubeDiscovery.SDConfig{
+								Role: "pod",
+								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
+									Names:               []string{namespace},
+									IncludeOwnNamespace: false,
+								},
+								HTTPClientConfig: config.DefaultHTTPClientConfig,
+								AttachMetadata: kubeDiscovery.AttachMetadataConfig{
+									Node: true, // Added by scrape-class!
+								},
+							},
+						},
+						HTTPClientConfig:  config.DefaultHTTPClientConfig,
+						EnableCompression: true,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1346,6 +1409,7 @@ func getTestPrometheusCRWatcher(
 				ProbeNamespaceSelector:          cfg.PrometheusCR.ProbeNamespaceSelector,
 				ScrapeConfigSelector:            cfg.PrometheusCR.ScrapeConfigSelector,
 				ScrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
+				ScrapeClasses:                   cfg.PrometheusCR.ScrapeClasses,
 				ServiceDiscoveryRole:            &serviceDiscoveryRole,
 			},
 			EvaluationInterval: monitoringv1.Duration(cfg.PrometheusCR.EvaluationInterval.String()),
