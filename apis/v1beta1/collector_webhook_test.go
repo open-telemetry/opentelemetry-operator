@@ -920,6 +920,17 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "maxReplicas should be defined and one or more",
 		},
 		{
+			name: "it should return error when minReplica is set but maxReplica is not set",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Autoscaler: &v1beta1.AutoscalerSpec{
+						MinReplicas: &three,
+					},
+				},
+			},
+			expectedErr: "spec.maxReplica must be set when spec.minReplica is set",
+		},
+		{
 			name: "invalid replicas, greater than max",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
