@@ -234,7 +234,7 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MinReplicas != nil && r.Spec.Autoscaler.MaxReplicas == nil {
 		return warnings, fmt.Errorf("spec.maxReplica must be set when spec.minReplica is set")
 	}
-	
+
 	// check deprecated .Spec.MinReplicas if minReplicas is not set
 	if minReplicas == nil {
 		minReplicas = r.Spec.Replicas
