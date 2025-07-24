@@ -25,6 +25,12 @@ type TargetAllocatorPrometheusCR struct {
 	// +kubebuilder:default:="30s"
 	// +kubebuilder:validation:Format:=duration
 	ScrapeInterval *metav1.Duration `json:"scrapeInterval,omitempty"`
+	// ScrapeClasses to be referenced by PodMonitors and ServiceMonitors to include common configuration.
+	// If specified, expects an array of ScrapeClass objects as specified by https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ScrapeClass.
+	// +optional
+	// +listType=atomic
+	// +kubebuilder:pruning:PreserveUnknownFields
+	ScrapeClasses []AnyConfig `json:"scrapeClasses,omitempty"`
 	// PodMonitors to be selected for target discovery.
 	// A label selector is a label query over a set of resources. The result of matchLabels and
 	// matchExpressions are ANDed. An empty label selector matches all objects. A null
