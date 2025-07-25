@@ -39,3 +39,4 @@ spec:
       name: testvolume
   volumes:
     - name: testvolume
+      emptyDir: {}

@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
@@ -38,7 +38,6 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -48,7 +47,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
@@ -75,18 +73,6 @@ var (
 type check[T any] func(t *testing.T, params T)
 
 func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
-	// enable the collector CR feature flag, as these tests assume it
-	// TODO: drop this after the flag is enabled by default
-	registry := colfeaturegate.GlobalRegistry()
-	current := featuregate.CollectorUsesTargetAllocatorCR.IsEnabled()
-	require.False(t, current, "don't set gates which are enabled by default")
-	regErr := registry.Set(featuregate.CollectorUsesTargetAllocatorCR.ID(), true)
-	require.NoError(t, regErr)
-	t.Cleanup(func() {
-		err := registry.Set(featuregate.CollectorUsesTargetAllocatorCR.ID(), current)
-		require.NoError(t, err)
-	})
-
 	addedMetadataDeployment := testCollectorWithMode("test-deployment", v1alpha1.ModeDeployment)
 	addedMetadataDeployment.Labels = map[string]string{
 		labelName: labelVal,
@@ -533,7 +519,9 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									Name:      params.Name,
 									Namespace: params.Namespace,
-									Labels:    nil,
+									Labels: map[string]string{
+										"app.kubernetes.io/managed-by": "opentelemetry-operator",
+									},
 								},
 								Spec: v1alpha1.TargetAllocatorSpec{
 									OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{},
@@ -625,12 +613,15 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			testCtx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			reconciler := createTestReconciler(t, testCtx, config.New(
-				config.WithCollectorImage("default-collector"),
-				config.WithTargetAllocatorImage("default-ta-allocator"),
-				config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
-				config.WithPrometheusCRAvailability(prometheus.Available),
-			))
+			cfg := config.Config{
+				CollectorImage:                "default-collector",
+				TargetAllocatorImage:          "default-ta-allocator",
+				OpenShiftRoutesAvailability:   openshift.RoutesAvailable,
+				PrometheusCRAvailability:      prometheus.Available,
+				TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
+				CollectorConfigMapEntry:       "collector.yaml",
+			}
+			reconciler := createTestReconciler(t, testCtx, cfg)
 
 			assert.True(t, len(tt.want) > 0, "must have at least one group of checks to run")
 			firstCheck := tt.want[0]
@@ -718,11 +709,10 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 // TestOpenTelemetryCollectorReconciler_RemoveDisabled starts off with optional resources enabled, and then disables
 // them one by one to ensure they're actually deleted.
 func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
-	expectedStartingResourceCount := 11
+	expectedStartingResourceCount := 7
 	startingCollector := &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "placeholder",
-			Namespace: metav1.NamespaceDefault,
+			Name: "placeholder",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
@@ -774,7 +764,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 			mutateCollector: func(obj *v1beta1.OpenTelemetryCollector) {
 				obj.Spec.TargetAllocator.Enabled = false
 			},
-			expectedResourcesDeletedCount: 5,
+			expectedResourcesDeletedCount: 1,
 		},
 		{
 			name: "disable metrics",
@@ -794,15 +784,13 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 
 	testCtx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
-	reconciler := createTestReconciler(t, testCtx, config.New(
-		config.WithAutoDetect(&mockAutoDetect{CollectorCRDAvailabilityFunc: func() (collector.Availability, error) {
-			return collector.Available, nil
-		}}),
-		config.WithCollectorImage("default-collector"),
-		config.WithTargetAllocatorImage("default-ta-allocator"),
-		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
-		config.WithPrometheusCRAvailability(prometheus.Available),
-	))
+	cfg := config.Config{
+		CollectorImage:              "default-collector",
+		TargetAllocatorImage:        "default-ta-allocator",
+		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
+		PrometheusCRAvailability:    prometheus.Available,
+	}
+	reconciler := createTestReconciler(t, testCtx, cfg)
 
 	// the base query for the underlying objects
 	opts := []client.ListOption{
@@ -815,12 +803,19 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			namespace, err := createRandomNamespace(k8sClient)
+			require.NoError(t, err)
+			t.Cleanup(func() {
+				delErr := k8sClient.Delete(context.Background(), namespace)
+				assert.NoError(t, delErr)
+			})
 			collectorName := sanitizeResourceName(tc.name)
 			collector := startingCollector.DeepCopy()
 			collector.Name = collectorName
+			collector.Namespace = namespace.Name
 			nsn := types.NamespacedName{Name: collector.Name, Namespace: collector.Namespace}
 			clientCtx := context.Background()
-			err := k8sClient.Create(clientCtx, collector)
+			err = k8sClient.Create(clientCtx, collector)
 			require.NoError(t, err)
 			t.Cleanup(func() {
 				deleteErr := k8sClient.Delete(clientCtx, collector)
@@ -879,21 +874,10 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 				PodDisruptionBudget: &v1beta1.PodDisruptionBudgetSpec{},
 			},
 			ConfigVersions: 1,
-			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
-				Enabled: true,
-				PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
-					Enabled: true,
-				},
-			},
-			Mode: v1beta1.ModeStatefulSet,
+			Mode:           v1beta1.ModeStatefulSet,
 			Config: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
 					Object: map[string]interface{}{
-						"prometheus": map[string]interface{}{
-							"config": map[string]interface{}{
-								"scrape_configs": []interface{}{},
-							},
-						},
 						"nop": map[string]interface{}{},
 					},
 				},
@@ -916,12 +900,12 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 
 	testCtx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
-	reconciler := createTestReconciler(t, testCtx, config.New(
-		config.WithCollectorImage("default-collector"),
-		config.WithTargetAllocatorImage("default-ta-allocator"),
-		config.WithOpenShiftRoutesAvailability(openshift.RoutesAvailable),
-		config.WithPrometheusCRAvailability(prometheus.Available),
-	))
+	cfg := config.Config{
+		CollectorImage:              "default-collector",
+		TargetAllocatorImage:        "default-ta-allocator",
+		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
+	}
+	reconciler := createTestReconciler(t, testCtx, cfg)
 
 	nsn := types.NamespacedName{Name: collector.Name, Namespace: collector.Namespace}
 	// the base query for the underlying objects
@@ -953,7 +937,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		listErr := k8sClient.List(clientCtx, configMaps, opts...)
 		assert.NoError(collect, listErr)
 		assert.NotEmpty(collect, configMaps)
-		assert.Len(collect, configMaps.Items, 2)
+		assert.Len(collect, configMaps.Items, 1)
 	}, time.Second*30, time.Millisecond*100)
 
 	// modify the ConfigMap, it should be kept
@@ -979,7 +963,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		listErr := k8sClient.List(clientCtx, configMaps, opts...)
 		assert.NoError(collect, listErr)
 		assert.NotEmpty(collect, configMaps)
-		assert.Len(collect, configMaps.Items, 3)
+		assert.Len(collect, configMaps.Items, 2)
 	}, time.Second*30, time.Millisecond*100)
 
 	// modify the ConfigMap again, the oldest one is still kept, but is dropped after next reconciliation
@@ -1005,7 +989,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		listErr := k8sClient.List(clientCtx, configMaps, opts...)
 		assert.NoError(collect, listErr)
 		assert.NotEmpty(collect, configMaps)
-		assert.Len(collect, configMaps.Items, 4)
+		assert.Len(collect, configMaps.Items, 3)
 	}, time.Second*30, time.Millisecond*100)
 
 	_, reconcileErr = reconciler.Reconcile(clientCtx, req)
@@ -1016,7 +1000,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 		listErr := k8sClient.List(clientCtx, configMaps, opts...)
 		assert.NoError(collect, listErr)
 		assert.NotEmpty(collect, configMaps)
-		assert.Len(collect, configMaps.Items, 3)
+		assert.Len(collect, configMaps.Items, 2)
 	}, time.Second*5, time.Second)
 }
 
@@ -1109,16 +1093,20 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testContext := context.Background()
 			nsn := types.NamespacedName{Name: tt.args.params.OpAMPBridge.Name, Namespace: tt.args.params.OpAMPBridge.Namespace}
+			cfg := config.Config{
+				CollectorImage:                    "default-collector",
+				TargetAllocatorImage:              "default-ta-allocator",
+				OperatorOpAMPBridgeImage:          "default-opamp-bridge",
+				OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
+				CollectorConfigMapEntry:           "collector.yaml",
+				TargetAllocatorConfigMapEntry:     "targetallocator.yaml",
+			}
 			reconciler := controllers.NewOpAMPBridgeReconciler(controllers.OpAMPBridgeReconcilerParams{
 				Client:   k8sClient,
 				Log:      logger,
 				Scheme:   testScheme,
 				Recorder: record.NewFakeRecorder(20),
-				Config: config.New(
-					config.WithCollectorImage("default-collector"),
-					config.WithTargetAllocatorImage("default-ta-allocator"),
-					config.WithOperatorOpAMPBridgeImage("default-opamp-bridge"),
-				),
+				Config:   cfg,
 			})
 			assert.True(t, len(tt.want) > 0, "must have at least one group of checks to run")
 			firstCheck := tt.want[0]
@@ -1254,11 +1242,14 @@ service:
 	testCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	reconciler := createTestReconciler(t, testCtx, config.New(
-		config.WithCollectorImage("default-collector"),
-		config.WithTargetAllocatorImage("default-ta-allocator"),
-		config.WithRBACPermissions(autoRBAC.Available),
-	))
+	cfg := config.Config{
+		CollectorImage:                    "default-collector",
+		TargetAllocatorImage:              "default-ta-allocator",
+		CreateRBACPermissions:             autoRBAC.Available,
+		CollectorConfigMapEntry:           "collector.yaml",
+		OperatorOpAMPBridgeConfigMapEntry: "remoteconfiguration.yaml",
+	}
+	reconciler := createTestReconciler(t, testCtx, cfg)
 
 	nsn := types.NamespacedName{Name: otelcol.Name, Namespace: otelcol.Namespace}
 	req := k8sreconcile.Request{
@@ -1308,12 +1299,15 @@ func TestUpgrade(t *testing.T) {
 	testCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	cfg := config.Config{
+		CollectorImage:                "default-collector",
+		TargetAllocatorImage:          "default-ta-allocator",
+		CollectorConfigMapEntry:       "collector.yaml",
+		TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
+	}
 	reconciler := createTestReconcilerWithVersion(
 		t, testCtx,
-		config.New(
-			config.WithCollectorImage("default-collector"),
-			config.WithTargetAllocatorImage("default-ta-allocator"),
-		),
+		cfg,
 		version.Version{OpenTelemetryCollector: upgrade.Latest.String()},
 	)
 
@@ -1450,10 +1444,12 @@ func TestUpgrade(t *testing.T) {
 			err = k8sClient.Status().Update(testCtx, otelcol)
 			require.NoError(t, err)
 
-			// Update cache.
-			// Otherwise, adding the finalizer in opentelemetrycollector_controller intermittently fails with:
-			// Operation cannot be fulfilled on opentelemetrycollectors.opentelemetry.io "...": the object has been modified; please apply your changes to the latest version and try again
-			_ = k8sClient.Get(ctx, nsn, otelcol)
+			// Wait until cache refreshes
+			require.EventuallyWithT(t, func(collect *assert.CollectT) {
+				getErr := k8sClient.Get(ctx, nsn, otelcol)
+				require.NoError(t, getErr)
+				assert.Equal(t, tt.input.Status, otelcol.Status)
+			}, time.Second*10, time.Millisecond*10)
 
 			// First reconcile
 			req := k8sreconcile.Request{NamespacedName: nsn}
@@ -1495,6 +1491,7 @@ func getAllOwnedResources(
 ) ([]client.Object, error) {
 	ownedResourceTypes := reconciler.GetOwnedResourceTypes()
 	allResources := []client.Object{}
+	copyOfOwner := *owner
 	for _, resourceType := range ownedResourceTypes {
 		list := &unstructured.UnstructuredList{}
 		gvk, err := apiutil.GVKForObject(resourceType, k8sClient.Scheme())
@@ -1512,7 +1509,7 @@ func getAllOwnedResources(
 			}
 
 			newObj := obj
-			if !IsOwnedBy(&newObj, owner) {
+			if !IsOwnedBy(&newObj, &copyOfOwner) {
 				continue
 			}
 			allResources = append(allResources, &newObj)
@@ -1572,4 +1569,19 @@ func sanitizeResourceName(name string) string {
 	re := regexp.MustCompile("[^a-z0-9-]")
 	sanitized = re.ReplaceAllString(sanitized, "-")
 	return sanitized
+}
+
+func createRandomNamespace(k8sClient client.Client) (*v1.Namespace, error) {
+	name := uuid.NewString()
+	namespace := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+
+	err := k8sClient.Create(context.Background(), namespace)
+	if err != nil {
+		return nil, err
+	}
+	return namespace, nil
 }

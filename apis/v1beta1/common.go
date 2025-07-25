@@ -88,8 +88,6 @@ type OpenTelemetryCommonFields struct {
 	// ManagementState defines if the CR should be managed by the operator or not.
 	// Default is managed.
 	//
-	// +required
-	// +kubebuilder:validation:Required
 	// +kubebuilder:default:=managed
 	ManagementState ManagementStateType `json:"managementState,omitempty"`
 	// Resources to set on generated pods.
@@ -104,6 +102,7 @@ type OpenTelemetryCommonFields struct {
 	Args map[string]string `json:"args,omitempty"`
 	// Replicas is the number of pod instances for the underlying replicaset. Set this if you are not using autoscaling.
 	// +optional
+	// +kubebuilder:default:=1
 	Replicas *int32 `json:"replicas,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
 	// for the generated workload. By default, a PDB with a MaxUnavailable of one is set.

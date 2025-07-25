@@ -758,7 +758,7 @@ spec:
 You can also use common labels to set resource attributes (first entry wins).
 
 The following labels are supported:
-- `app.kubernetes.io/instance` becomes `service.name`
+- `app.kubernetes.io/instance` becomes `service.instance`
 - `app.kubernetes.io/name` becomes `service.name`
 - `app.kubernetes.io/version` becomes `service.version`
 
@@ -844,47 +844,55 @@ Choose the first value found:
 - `pod.annotation[resource.opentelemetry.io/service.namespace]`
 - `k8s.namespace.name`
 
-## Contributing and Developing
+## Contributing
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 In addition to the [core responsibilities](https://github.com/open-telemetry/community/blob/main/community-membership.md) the operator project requires approvers and maintainers to be responsible for releasing the project. See [RELEASE.md](./RELEASE.md) for more information and release schedule.
 
-Triagers ([@open-telemetry/operator-triagers](https://github.com/orgs/open-telemetry/teams/operator-triagers)):
-
-- [Antoine Toulme](https://github.com/atoulme), Splunk
-
-Approvers ([@open-telemetry/operator-approvers](https://github.com/orgs/open-telemetry/teams/operator-approvers)):
-
-- [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
-- [Yuri Oliveira Sa](https://github.com/yuriolisa), OllyGarden
-- [Israel Blancas](https://github.com/iblancasa), Coralogix
-
-Emeritus Approvers:
-
-- [Anthony Mirabella](https://github.com/Aneurysm9), AWS
-- [Dmitrii Anoshin](https://github.com/dmitryax), Splunk
-- [Jay Camp](https://github.com/jrcamp), Splunk
-- [James Bebbington](https://github.com/james-bebbington), Google
-- [Owais Lone](https://github.com/owais), Splunk
-- [Pablo Baeyens](https://github.com/mx-psi), DataDog
-
-Maintainers ([@open-telemetry/operator-maintainers](https://github.com/orgs/open-telemetry/teams/operator-maintainers)):
+### Maintainers
 
 - [Benedikt Bongartz](https://github.com/frzifus), Red Hat
 - [Jacob Aronoff](https://github.com/jaronoff97), Omlet
 - [Mikołaj Świątek](https://github.com/swiatekm), Elastic
 - [Pavol Loffay](https://github.com/pavolloffay), Red Hat
 
-Emeritus Maintainers
+For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#maintainer).
 
-- [Alex Boten](https://github.com/codeboten), Lightstep
-- [Bogdan Drutu](https://github.com/BogdanDrutu), Splunk
-- [Juraci Paixão Kröhling](https://github.com/jpkrohling), Grafana Labs
-- [Tigran Najaryan](https://github.com/tigrannajaryan), Splunk
-- [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
+### Approvers
 
-Learn more about roles in the [community repository](https://github.com/open-telemetry/community/blob/main/community-membership.md).
+- [Israel Blancas](https://github.com/iblancasa), Coralogix
+- [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
+- [Yuri Oliveira Sa](https://github.com/yuriolisa), OllyGarden
+
+For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
+
+### Triagers
+
+- [Antoine Toulme](https://github.com/atoulme), Splunk
+
+For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#triager).
+
+### Emeritus Maintainers
+
+- [Alex Boten](https://github.com/codeboten)
+- [Bogdan Drutu](https://github.com/BogdanDrutu)
+- [Juraci Paixão Kröhling](https://github.com/jpkrohling)
+- [Tigran Najaryan](https://github.com/tigrannajaryan)
+- [Vineeth Pothulapati](https://github.com/VineethReddy02)
+
+For more information about the emeritus role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#emeritus-maintainerapprovertriager).
+
+### Emeritus Approvers
+
+- [Anthony Mirabella](https://github.com/Aneurysm9)
+- [Dmitrii Anoshin](https://github.com/dmitryax)
+- [James Bebbington](https://github.com/james-bebbington)
+- [Jay Camp](https://github.com/jrcamp)
+- [Owais Lone](https://github.com/owais)
+- [Pablo Baeyens](https://github.com/mx-psi)
+
+For more information about the emeritus role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#emeritus-maintainerapprovertriager).
 
 Thanks to all the people who already contributed!
 

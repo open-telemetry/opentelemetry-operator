@@ -8,8 +8,6 @@ import (
 
 	"github.com/buraksezer/consistent"
 	"github.com/go-logr/logr"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
@@ -22,29 +20,6 @@ var (
 		consistentHashingStrategyName: newConsistentHashingStrategy(),
 		perNodeStrategyName:           newPerNodeStrategy(),
 	}
-
-	// TargetsPerCollector records how many targets have been assigned to each collector.
-	// It is currently the responsibility of the strategy to track this information.
-	TargetsPerCollector = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "opentelemetry_allocator_targets_per_collector",
-		Help: "The number of targets for each collector.",
-	}, []string{"collector_name", "strategy"})
-	CollectorsAllocatable = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "opentelemetry_allocator_collectors_allocatable",
-		Help: "Number of collectors the allocator is able to allocate to.",
-	}, []string{"strategy"})
-	TimeToAssign = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "opentelemetry_allocator_time_to_allocate",
-		Help: "The time it takes to allocate",
-	}, []string{"method", "strategy"})
-	TargetsRemaining = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "opentelemetry_allocator_targets_remaining",
-		Help: "Number of targets kept after filtering.",
-	})
-	TargetsUnassigned = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "opentelemetry_allocator_targets_unassigned",
-		Help: "Number of targets that could not be assigned due to missing node label.",
-	})
 )
 
 type Option func(Allocator)
@@ -69,13 +44,9 @@ func WithFallbackStrategy(fallbackStrategy string) Option {
 	}
 }
 
-func RecordTargetsKept(targets []*target.Item) {
-	TargetsRemaining.Set(float64(len(targets)))
-}
-
 func New(name string, log logr.Logger, opts ...Option) (Allocator, error) {
 	if strategy, ok := strategies[name]; ok {
-		return newAllocator(log.WithValues("allocator", name), strategy, opts...), nil
+		return newAllocator(log.WithValues("allocator", name), strategy, opts...)
 	}
 	return nil, fmt.Errorf("unregistered strategy: %s", name)
 }

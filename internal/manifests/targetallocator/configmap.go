@@ -113,7 +113,7 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 
-	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		taConfig["https"] = map[string]interface{}{
 			"enabled":            true,
 			"listen_addr":        ":8443",

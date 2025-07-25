@@ -48,4 +48,4 @@ data:
             - jaeger
 kind: ConfigMap
 metadata:
-  name: prometheus-cr-collector-5a741df8
+  (starts_with(name, 'prometheus-cr-collector-')): true

@@ -49,6 +49,8 @@ func createServiceMonitor(name string, params manifests.Params, serviceType Serv
 	var sm monitoringv1.ServiceMonitor
 
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	// Add extra labels to the ServiceMonitor
+	manifestutils.AddExtraLabels(&params.Log, labels, params.OtelCol.Spec.Observability.Metrics.ExtraLabels)
 	selectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
 	// This label is the one which differentiates the services
 	selectorLabels[serviceTypeLabel] = serviceType.String()
@@ -82,7 +84,7 @@ func shouldCreateServiceMonitor(params manifests.Params) bool {
 	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
 		l.V(2).Info("Metrics disabled for this OTEL Collector. ServiceMonitor will not ve created")
 		return false
-	} else if params.Config.PrometheusCRAvailability() == prometheus.NotAvailable {
+	} else if params.Config.PrometheusCRAvailability == prometheus.NotAvailable {
 		l.V(2).Info("Cannot enable ServiceMonitor when prometheus CRDs are unavailable")
 		return false
 	} else if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {

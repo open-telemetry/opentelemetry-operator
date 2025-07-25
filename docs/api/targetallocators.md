@@ -84,17 +84,6 @@ TargetAllocatorSpec defines the desired state of TargetAllocator.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>managementState</b></td>
-        <td>enum</td>
-        <td>
-          ManagementState defines if the CR should be managed by the operator or not.
-Default is managed.<br/>
-          <br/>
-            <i>Enum</i>: managed, unmanaged<br/>
-            <i>Default</i>: managed<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b><a href="#targetallocatorspecadditionalcontainersindex">additionalContainers</a></b></td>
         <td>[]object</td>
         <td>
@@ -142,7 +131,10 @@ WARNING: The per-node strategy currently ignores targets without a Node, like co
         <td>string</td>
         <td>
           CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
-The default is 0s, which means that all collectors can be assigned targets irrespective of their readiness.<br/>
+The default is 30s, which means that if a collector becomes not Ready, the target allocator will wait for 30 seconds before reassigning its targets. The assumption is that the state is temporary, and an expensive target reallocation should be avoided if possible.<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+            <i>Default</i>: 30s<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -236,6 +228,17 @@ to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>managementState</b></td>
+        <td>enum</td>
+        <td>
+          ManagementState defines if the CR should be managed by the operator or not.
+Default is managed.<br/>
+          <br/>
+            <i>Enum</i>: managed, unmanaged<br/>
+            <i>Default</i>: managed<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
         <td>
@@ -316,6 +319,7 @@ default.<br/>
           Replicas is the number of pod instances for the underlying replicaset. Set this if you are not using autoscaling.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Default</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8807,8 +8811,14 @@ Metrics defines the metrics configuration for operands.
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
-          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>extraLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          ExtraLabels are additional labels to be added to the ServiceMonitor<br/>
         </td>
         <td>false</td>
       </tr></tbody>

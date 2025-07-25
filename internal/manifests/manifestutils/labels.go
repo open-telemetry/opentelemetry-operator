@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -87,4 +88,16 @@ func TASelectorLabels(instance v1alpha1.TargetAllocator, component string) map[s
 		selectorLabels["app.kubernetes.io/name"] = naming.TargetAllocator(instance.Name)
 	}
 	return selectorLabels
+}
+
+// AddExtraLabels adds extra labels to the ServiceMonitor labels map.
+func AddExtraLabels(logger *logr.Logger, labels map[string]string, extraLabels map[string]string) {
+	for k, v := range extraLabels {
+		if existingValue, exists := (labels)[k]; exists {
+			if existingValue != v {
+				logger.Info("Overwriting label", "label", k, "old value", existingValue, "new value", v)
+			}
+		}
+		labels[k] = v
+	}
 }

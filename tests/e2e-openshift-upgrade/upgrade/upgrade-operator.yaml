@@ -1,0 +1,8 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: opentelemetry-product
+  namespace: openshift-opentelemetry-operator
+spec:
+  source: otel-registry
+  sourceNamespace: openshift-marketplace

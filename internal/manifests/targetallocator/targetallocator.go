@@ -32,11 +32,11 @@ func Build(params Params) ([]client.Object, error) {
 		manifests.Factory(PodDisruptionBudget),
 	}
 
-	if params.TargetAllocator.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+	if params.TargetAllocator.Spec.Observability.Metrics.EnableMetrics {
 		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServiceMonitor))
 	}
 
-	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		resourceFactories = append(resourceFactories,
 			manifests.FactoryWithoutError(SelfSignedIssuer),
 			manifests.FactoryWithoutError(CACertificate),

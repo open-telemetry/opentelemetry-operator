@@ -18,6 +18,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/go-viper/mapstructure/v2"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	_ "github.com/prometheus/prometheus/discovery/install"
@@ -41,19 +42,18 @@ const (
 	DefaultCRScrapeInterval             model.Duration = model.Duration(time.Second * 30)
 	DefaultAllocationStrategy                          = "consistent-hashing"
 	DefaultFilterStrategy                              = "relabel-config"
-	DefaultCollectorNotReadyGracePeriod                = 0 * time.Second
+	DefaultCollectorNotReadyGracePeriod                = 30 * time.Second
 )
 
 var (
 	DefaultKubeConfigFilePath string = filepath.Join(homedir.HomeDir(), ".kube", "config")
 )
 
-// By default, scrape protocols include PrometheusText1_0_0, which only Prometheus >=3.0 supports.
-// Manually exclude this protocol until several versions of the Otel Collector support it.
-var DefaultScrapeProtocols = []promconfig.ScrapeProtocol{
-	promconfig.OpenMetricsText1_0_0,
-	promconfig.OpenMetricsText0_0_1,
-	promconfig.PrometheusText0_0_4,
+var defaultScrapeProtocolsCR = []monitoringv1.ScrapeProtocol{
+	monitoringv1.OpenMetricsText1_0_0,
+	monitoringv1.OpenMetricsText0_0_1,
+	monitoringv1.PrometheusText1_0_0,
+	monitoringv1.PrometheusText0_0_4,
 }
 
 // logger which discards all messages written to it. Replace this with slog.DiscardHandler after we require Go 1.24.
@@ -76,18 +76,19 @@ type Config struct {
 }
 
 type PrometheusCRConfig struct {
-	Enabled                         bool                  `yaml:"enabled,omitempty"`
-	AllowNamespaces                 []string              `yaml:"allow_namespaces,omitempty"`
-	DenyNamespaces                  []string              `yaml:"deny_namespaces,omitempty"`
-	PodMonitorSelector              *metav1.LabelSelector `yaml:"pod_monitor_selector,omitempty"`
-	PodMonitorNamespaceSelector     *metav1.LabelSelector `yaml:"pod_monitor_namespace_selector,omitempty"`
-	ServiceMonitorSelector          *metav1.LabelSelector `yaml:"service_monitor_selector,omitempty"`
-	ServiceMonitorNamespaceSelector *metav1.LabelSelector `yaml:"service_monitor_namespace_selector,omitempty"`
-	ScrapeConfigSelector            *metav1.LabelSelector `yaml:"scrape_config_selector,omitempty"`
-	ScrapeConfigNamespaceSelector   *metav1.LabelSelector `yaml:"scrape_config_namespace_selector,omitempty"`
-	ProbeSelector                   *metav1.LabelSelector `yaml:"probe_selector,omitempty"`
-	ProbeNamespaceSelector          *metav1.LabelSelector `yaml:"probe_namespace_selector,omitempty"`
-	ScrapeInterval                  model.Duration        `yaml:"scrape_interval,omitempty"`
+	Enabled                         bool                          `yaml:"enabled,omitempty"`
+	AllowNamespaces                 []string                      `yaml:"allow_namespaces,omitempty"`
+	DenyNamespaces                  []string                      `yaml:"deny_namespaces,omitempty"`
+	PodMonitorSelector              *metav1.LabelSelector         `yaml:"pod_monitor_selector,omitempty"`
+	PodMonitorNamespaceSelector     *metav1.LabelSelector         `yaml:"pod_monitor_namespace_selector,omitempty"`
+	ServiceMonitorSelector          *metav1.LabelSelector         `yaml:"service_monitor_selector,omitempty"`
+	ServiceMonitorNamespaceSelector *metav1.LabelSelector         `yaml:"service_monitor_namespace_selector,omitempty"`
+	ScrapeConfigSelector            *metav1.LabelSelector         `yaml:"scrape_config_selector,omitempty"`
+	ScrapeConfigNamespaceSelector   *metav1.LabelSelector         `yaml:"scrape_config_namespace_selector,omitempty"`
+	ProbeSelector                   *metav1.LabelSelector         `yaml:"probe_selector,omitempty"`
+	ProbeNamespaceSelector          *metav1.LabelSelector         `yaml:"probe_namespace_selector,omitempty"`
+	ScrapeProtocols                 []monitoringv1.ScrapeProtocol `yaml:"scrape_protocols,omitempty"`
+	ScrapeInterval                  model.Duration                `yaml:"scrape_interval,omitempty"`
 }
 
 type HTTPSServerConfig struct {
@@ -135,50 +136,19 @@ func MapToPromConfig() mapstructure.DecodeHookFuncType {
 			return data, nil
 		}
 
-		pConfig := &promconfig.Config{}
-
 		dataMap := data.(map[any]any)
-		err := ApplyPromConfigDefaults(dataMap)
-		if err != nil {
-			return nil, err
-		}
 		mb, err := yaml.Marshal(dataMap)
 		if err != nil {
 			return nil, err
 		}
 
+		pConfig := &promconfig.Config{}
 		err = yaml.Unmarshal(mb, pConfig)
 		if err != nil {
 			return nil, err
 		}
 		return pConfig, nil
 	}
-}
-
-// applyPromConfigDefaults applies our own defaults to the Prometheus configuration. The unmarshalling process for
-// Prometheus config is quite involved, and as a result, we need to apply our own defaults before it happens.
-func ApplyPromConfigDefaults(promcCfgMap map[any]any) error {
-	// use our own struct definition here because we don't want Prometheus unmarshalling logic to apply here
-	promCfg := struct {
-		GlobalConfig struct {
-			ScrapeProtocols []promconfig.ScrapeProtocol `mapstructure:"scrape_protocols"`
-			Rest            map[any]any                 `mapstructure:",remain"`
-		} `mapstructure:"global"`
-		Rest map[any]any `mapstructure:",remain"`
-	}{}
-	err := mapstructure.Decode(promcCfgMap, &promCfg)
-	if err != nil {
-		return err
-	}
-	// apply defaults here
-	promCfg.GlobalConfig.ScrapeProtocols = DefaultScrapeProtocols
-
-	// decode back into the map
-	err = mapstructure.Decode(promCfg, &promcCfgMap)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // MapToLabelSelector returns a DecodeHookFuncType that
@@ -361,6 +331,7 @@ func CreateDefaultConfig() Config {
 			PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
 			ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
 			ProbeNamespaceSelector:          &metav1.LabelSelector{},
+			ScrapeProtocols:                 defaultScrapeProtocolsCR,
 		},
 		CollectorNotReadyGracePeriod: DefaultCollectorNotReadyGracePeriod,
 	}

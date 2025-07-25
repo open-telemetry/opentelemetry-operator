@@ -3,8 +3,13 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+
 jobs:
   operator-hub-prod-release:
+    permissions: # required by the reusable workflow
+      contents: write
     uses: ./.github/workflows/reusable-operator-hub-release.yaml
     with:
       org: redhat-openshift-ecosystem
@@ -14,6 +19,8 @@ jobs:
       OPENTELEMETRYBOT_GITHUB_TOKEN: ${{ secrets.OPENTELEMETRYBOT_GITHUB_TOKEN }}
 
   operator-hub-community-release:
+    permissions: # required by the reusable workflow
+      contents: write
     uses: ./.github/workflows/reusable-operator-hub-release.yaml
     with:
       org: k8s-operatorhub

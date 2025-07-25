@@ -84,7 +84,7 @@ func TestStatefulSetNewDefault(t *testing.T) {
 	}
 
 	// assert correct service name
-	assert.Equal(t, "my-instance-collector", ss.Spec.ServiceName)
+	assert.Equal(t, "my-instance-collector-headless", ss.Spec.ServiceName)
 
 	// assert correct pod management policy
 	assert.Equal(t, appsv1.ParallelPodManagement, ss.Spec.PodManagementPolicy)
@@ -342,7 +342,9 @@ func TestStatefulSetFilterLabels(t *testing.T) {
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
-	cfg := config.New(config.WithLabelFilters([]string{"foo*", "app.*.bar"}))
+	cfg := config.Config{
+		LabelsFilter: []string{"foo*", "app.*.bar"},
+	}
 
 	params := manifests.Params{
 		OtelCol: otelcol,
@@ -373,7 +375,9 @@ func TestStatefulSetFilterAnnotations(t *testing.T) {
 		Spec: v1beta1.OpenTelemetryCollectorSpec{},
 	}
 
-	cfg := config.New(config.WithAnnotationFilters([]string{"foo*", "app.*.bar"}))
+	cfg := config.Config{
+		AnnotationsFilter: []string{"foo*", "app.*.bar"},
+	}
 
 	params := manifests.Params{
 		OtelCol: otelcol,
@@ -724,4 +728,101 @@ func TestStatefulSetDNSConfig(t *testing.T) {
 	assert.Equal(t, "my-instance-collector", d.Name)
 	assert.Equal(t, corev1.DNSPolicy("None"), d.Spec.Template.Spec.DNSPolicy)
 	assert.Equal(t, d.Spec.Template.Spec.DNSConfig.Nameservers, []string{"8.8.8.8"})
+}
+
+func TestStatefulSetTerminationGracePeriodSeconds(t *testing.T) {
+	// Test the case where terminationGracePeriodSeconds is not set
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	s1, err := StatefulSet(params1)
+	require.NoError(t, err)
+	assert.Nil(t, s1.Spec.Template.Spec.TerminationGracePeriodSeconds)
+
+	// Test the case where terminationGracePeriodSeconds is set
+	gracePeriodSec := int64(60)
+
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-terminationGracePeriodSeconds",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				TerminationGracePeriodSeconds: &gracePeriodSec,
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	s2, err := StatefulSet(params2)
+	require.NoError(t, err)
+	assert.NotNil(t, s2.Spec.Template.Spec.TerminationGracePeriodSeconds)
+	assert.Equal(t, gracePeriodSec, *s2.Spec.Template.Spec.TerminationGracePeriodSeconds)
+}
+
+func TestStatefulSetServiceName(t *testing.T) {
+	tests := []struct {
+		name                string
+		otelcol             v1beta1.OpenTelemetryCollector
+		expectedServiceName string
+	}{
+		{
+			name: "StatefulSet with default naming",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-instance",
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode: v1beta1.ModeStatefulSet,
+				},
+			},
+			expectedServiceName: "my-instance-collector-headless",
+		},
+		{
+			name: "StatefulSet with custom service name",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-instance",
+				},
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Mode:        v1beta1.ModeStatefulSet,
+					ServiceName: "custom-headless",
+				},
+			},
+			expectedServiceName: "custom-headless",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cfg := config.New()
+			params := manifests.Params{
+				OtelCol: test.otelcol,
+				Config:  cfg,
+				Log:     testLogger,
+			}
+
+			ss, err := StatefulSet(params)
+			require.NoError(t, err)
+			assert.Equal(t, test.expectedServiceName, ss.Spec.ServiceName)
+		})
+	}
 }

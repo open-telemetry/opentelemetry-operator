@@ -52,7 +52,7 @@ spec:
               static_configs:
                 - targets: [ '0.0.0.0:8888' ]
     exporters:
-      debug:
+      debug: {}
     service:
       pipelines:
         metrics:

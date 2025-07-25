@@ -65,6 +65,11 @@ type OpenTelemetryCollectorStatus struct {
 	Image string `json:"image,omitempty"`
 }
 
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && size(self.tolerations) > 0) || !has(self.tolerations)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'"
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && self.priorityClassName != '') || !has(self.priorityClassName)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'"
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && self.affinity != null) || !has(self.affinity)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'"
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && size(self.additionalContainers) > 0) || !has(self.additionalContainers)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'"
+
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
 type OpenTelemetryCollectorSpec struct {
 	// OpenTelemetryCommonFields are fields that are on all OpenTelemetry CRD workloads.
@@ -130,6 +135,11 @@ type OpenTelemetryCollectorSpec struct {
 	// This is only applicable to Deployment mode.
 	// +optional
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
+
+	// ServiceName is the name of the Service to be used.
+	// If not specified, it will default to "<name>-headless".
+	// +optional
+	ServiceName string `json:"serviceName,omitempty"`
 }
 
 // TargetAllocatorEmbedded defines the configuration for the Prometheus target allocator, embedded in the
@@ -211,9 +221,11 @@ type TargetAllocatorEmbedded struct {
 	// +optional
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
 	// CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
-	// The default is 0s, which means that all collectors can be assigned targets irrespective of their readiness.
+	// The default is 30s, which means that if a collector becomes not Ready, the target allocator will wait for 30 seconds before reassigning its targets. The assumption is that the state is temporary, and an expensive target reallocation should be avoided if possible.
 	//
 	// +optional
+	// +kubebuilder:default:="30s"
+	// +kubebuilder:validation:Format:=duration
 	CollectorNotReadyGracePeriod *metav1.Duration `json:"collectorNotReadyGracePeriod,omitempty"`
 }
 
@@ -268,12 +280,17 @@ type ObservabilitySpec struct {
 // MetricsConfigSpec defines a metrics config.
 type MetricsConfigSpec struct {
 	// EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-	// The operator.observability.prometheus feature gate must be enabled to use this feature.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Create ServiceMonitors for OpenTelemetry Collector"
 	EnableMetrics bool `json:"enableMetrics,omitempty"`
+	// ExtraLabels are additional labels to be added to the ServiceMonitor
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	ExtraLabels map[string]string `json:"extraLabels,omitempty"`
+
 	// DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations
 	// ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
 	//

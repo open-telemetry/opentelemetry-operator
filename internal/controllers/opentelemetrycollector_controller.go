@@ -225,6 +225,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/finalizers,verbs=get;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=targetallocators,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=opentelemetry.io,resources=targetallocators/finalizers,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile the current state of an OpenTelemetry collector resource with the desired state.
 func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -364,18 +365,22 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 		&policyV1.PodDisruptionBudget{},
 	}
 
-	if r.config.CreateRBACPermissions() == rbac.Available {
+	if r.config.CreateRBACPermissions == rbac.Available {
 		ownedResources = append(ownedResources, &rbacv1.ClusterRole{})
 		ownedResources = append(ownedResources, &rbacv1.ClusterRoleBinding{})
 	}
 
-	if featuregate.PrometheusOperatorIsAvailable.IsEnabled() && r.config.PrometheusCRAvailability() == prometheus.Available {
+	if r.config.PrometheusCRAvailability == prometheus.Available {
 		ownedResources = append(ownedResources, &monitoringv1.PodMonitor{})
 		ownedResources = append(ownedResources, &monitoringv1.ServiceMonitor{})
 	}
 
-	if r.config.OpenShiftRoutesAvailability() == openshift.RoutesAvailable {
+	if r.config.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
 		ownedResources = append(ownedResources, &routev1.Route{})
+	}
+
+	if featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() {
+		ownedResources = append(ownedResources, &v1alpha1.TargetAllocator{})
 	}
 
 	return ownedResources
@@ -385,7 +390,7 @@ const collectorFinalizer = "opentelemetrycollector.opentelemetry.io/finalizer"
 
 func (r *OpenTelemetryCollectorReconciler) finalizeCollector(ctx context.Context, params manifests.Params) error {
 	// The cluster scope objects do not have owner reference. They need to be deleted explicitly
-	if params.Config.CreateRBACPermissions() == rbac.Available {
+	if params.Config.CreateRBACPermissions == rbac.Available {
 		objects, err := r.findClusterRoleObjects(ctx, params)
 		if err != nil {
 			return err

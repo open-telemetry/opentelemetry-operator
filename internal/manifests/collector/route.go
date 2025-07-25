@@ -17,7 +17,7 @@ import (
 )
 
 func Routes(params manifests.Params) ([]*routev1.Route, error) {
-	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeRoute || params.Config.OpenShiftRoutesAvailability() != openshift.RoutesAvailable {
+	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeRoute || params.Config.OpenShiftRoutesAvailability != openshift.RoutesAvailable {
 		return nil, nil
 	}
 

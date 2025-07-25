@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -22,7 +25,7 @@ jobs:
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       id: setup-go
       with:
-        go-version: "~1.24.3"
+        go-version: "~1.24.5"
 
     - name: Cache tools
       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -34,6 +37,8 @@ jobs:
       run: make install-tools
 
     - name: "basic checks"
+      env:
+        KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT: "true"  # Get control plane output in case of envtest errors
       run: make ci
 
   lint:
@@ -47,7 +52,7 @@ jobs:
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       id: setup-go
       with:
-        go-version: "~1.24.3"
+        go-version: "~1.24.5"
 
     - name: Cache tools
       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -70,6 +75,8 @@ jobs:
       run: make lint
 
   security:
+    permissions:
+      security-events: write # for github/codeql-action/analyze to upload SARIF results
     name: Security
     runs-on: ubuntu-latest
     steps:
@@ -79,18 +86,18 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       with:
-        go-version: "~1.24.3"
+        go-version: "~1.24.5"
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@60168efe1c415ce0f5521ea06d5c2062adbeed1b # v3.28.17
+      uses: github/codeql-action/init@181d5eefc20863364f96762470ba6f862bdef56b # v3.29.2
       with:
         languages: go
 
     - name: Autobuild
-      uses: github/codeql-action/autobuild@60168efe1c415ce0f5521ea06d5c2062adbeed1b # v3.28.17
+      uses: github/codeql-action/autobuild@181d5eefc20863364f96762470ba6f862bdef56b # v3.29.2
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@60168efe1c415ce0f5521ea06d5c2062adbeed1b # v3.28.17
+      uses: github/codeql-action/analyze@181d5eefc20863364f96762470ba6f862bdef56b # v3.29.2
 
     - name: Govulncheck
       uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee # v1.0.4

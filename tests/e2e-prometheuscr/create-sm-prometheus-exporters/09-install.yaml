@@ -1,0 +1,27 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: extralabels
+  namespace: create-sm-prometheus
+spec:
+  observability:
+    metrics:
+      enableMetrics: true
+      extraLabels:
+        prometheus.io/scrape: "true"
+        environment: "test"
+        team: "backend"
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+    exporters:
+      prometheus/prod:
+        endpoint: 0.0.0.0:8884
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          exporters: [prometheus/prod]

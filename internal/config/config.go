@@ -5,19 +5,19 @@
 package config
 
 import (
-	"context"
+	"fmt"
 
-	"github.com/go-logr/logr"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"github.com/goccy/go-yaml"
 
-	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
 const (
@@ -26,297 +26,179 @@ const (
 	defaultOperatorOpAMPBridgeConfigMapEntry = "remoteconfiguration.yaml"
 )
 
+type ZapConfig struct {
+	MessageKey  string `yaml:"message-key"`
+	TimeKey     string `yaml:"time-key"`
+	LevelKey    string `yaml:"level-key"`
+	LevelFormat string `yaml:"level-format"`
+}
+
 // Config holds the static configuration for this operator.
 type Config struct {
-	autoDetect                          autodetect.AutoDetect
-	logger                              logr.Logger
-	targetAllocatorImage                string
-	operatorOpAMPBridgeImage            string
-	autoInstrumentationPythonImage      string
-	collectorImage                      string
-	collectorConfigMapEntry             string
-	createRBACPermissions               autoRBAC.Availability
-	enableMultiInstrumentation          bool
-	enableApacheHttpdInstrumentation    bool
-	enableDotNetInstrumentation         bool
-	enableGoInstrumentation             bool
-	enableNginxInstrumentation          bool
-	enablePythonInstrumentation         bool
-	enableNodeJSInstrumentation         bool
-	enableJavaInstrumentation           bool
-	autoInstrumentationDotNetImage      string
-	autoInstrumentationGoImage          string
-	autoInstrumentationApacheHttpdImage string
-	autoInstrumentationNginxImage       string
-	targetAllocatorConfigMapEntry       string
-	operatorOpAMPBridgeConfigMapEntry   string
-	autoInstrumentationNodeJSImage      string
-	autoInstrumentationJavaImage        string
-
-	openshiftRoutesAvailability openshift.RoutesAvailability
-	prometheusCRAvailability    prometheus.Availability
-	certManagerAvailability     certmanager.Availability
-	targetAllocatorAvailability targetallocator.Availability
-	collectorAvailability       collector.Availability
-	ignoreMissingCollectorCRDs  bool
-	labelsFilter                []string
-	annotationsFilter           []string
+	// TargetAllocatorImage represents the flag to override the OpenTelemetry TargetAllocator container image.
+	TargetAllocatorImage string `yaml:"targetallocator-image"`
+	// OperatorOpAMPBridgeImage represents the flag to override the OpAMPBridge container image.
+	OperatorOpAMPBridgeImage string `yaml:"operatoropampbridge-image"`
+	// AutoInstrumentationPythonImage is the OpenTelemetry Python auto-instrumentation container image.
+	AutoInstrumentationPythonImage string `yaml:"auto-instrumentation-python-image"`
+	// CollectorImage represents the flag to override the OpenTelemetry Collector container image.
+	CollectorImage string `yaml:"collector-image"`
+	// CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
+	CollectorConfigMapEntry string `yaml:"collector-configmap-entry"`
+	// CreateRBACPermissions is true when the operator can create RBAC permissions for SAs running a collector instance. Immutable.
+	CreateRBACPermissions autoRBAC.Availability `yaml:"create-rbac-permissions"`
+	// EnableMultiInstrumentation is true when the operator supports multi instrumentation.
+	EnableMultiInstrumentation bool `yaml:"enable-multi-instrumentation"`
+	// EnableApacheHttpdAutoInstrumentation is true when the operator supports ApacheHttpd auto instrumentation.
+	EnableApacheHttpdInstrumentation bool `yaml:"enable-apache-httpd-instrumentation"`
+	// EnableDotNetAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+	EnableDotNetAutoInstrumentation bool `yaml:"enable-dot-net-auto-instrumentation"`
+	// EnableGoAutoInstrumentation is true when the operator supports Go auto instrumentation.
+	EnableGoAutoInstrumentation bool `yaml:"enable-go-auto-instrumentation"`
+	// EnableNginxAutoInstrumentation is true when the operator supports nginx auto instrumentation.
+	EnableNginxAutoInstrumentation bool `yaml:"enable-nginx-auto-instrumentation"`
+	// EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+	EnablePythonAutoInstrumentation bool `yaml:"enable-python-auto-instrumentation"`
+	// EnableNodeJSAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
+	EnableNodeJSAutoInstrumentation bool `yaml:"enable-node-js-auto-instrumentation"`
+	// EnableJavaAutoInstrumentation is true when the operator supports java auto instrumentation.
+	EnableJavaAutoInstrumentation bool `yaml:"enable-java-auto-instrumentation"`
+	// AutoInstrumentationDotNetImage is the OpenTelemetry DotNet auto-instrumentation container image.
+	AutoInstrumentationDotNetImage string `yaml:"auto-instrumentation-dot-net-image"`
+	// AutoInstrumentationGoImage is the OpenTelemetry Go auto-instrumentation container image.
+	AutoInstrumentationGoImage string `yaml:"auto-instrumentation-go-image"`
+	// AutoInstrumentationApacheHttpdImage is the OpenTelemetry ApacheHttpd auto-instrumentation container image.
+	AutoInstrumentationApacheHttpdImage string `yaml:"auto-instrumentation-apache-httpd-image"`
+	// AutoInstrumentationNginxImage is the OpenTelemetry Nginx auto-instrumentation container image.
+	AutoInstrumentationNginxImage string `yaml:"auto-instrumentation-nginx-image"`
+	// TargetAllocatorConfigMapEntry represents the configuration file name for the TargetAllocator. Immutable.
+	TargetAllocatorConfigMapEntry string `yaml:"target-allocator-configmap-entry"`
+	// OperatorOpAMPBridgeImageConfigMapEntry represents the configuration file name for the OpAMPBridge. Immutable.
+	OperatorOpAMPBridgeConfigMapEntry string `yaml:"operator-op-amp-bridge-configmap-entry"`
+	// AutoInstrumentationNodeJSImage is the OpenTelemetry NodeJS auto-instrumentation container image.
+	AutoInstrumentationNodeJSImage string `yaml:"auto-instrumentation-node-js-image"`
+	// AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.
+	AutoInstrumentationJavaImage string `yaml:"auto-instrumentation-java-image"`
+	// OpenshiftCreateDashboard creates an OpenShift dashboard for monitoring the OpenTelemetryCollector instances
+	OpenshiftCreateDashboard bool `yaml:"openshift-create-dashboard"`
+	// OpenShiftRoutesAvailability represents the availability of the OpenShift Routes API.
+	OpenShiftRoutesAvailability openshift.RoutesAvailability `yaml:"open-shift-routes-availability"`
+	// PrometheusCRAvailability represents the availability of the Prometheus Operator CRDs.
+	PrometheusCRAvailability prometheus.Availability `yaml:"prometheus-cr-availability"`
+	// CertManagerAvailability represents the availability of the Cert-Manager.
+	CertManagerAvailability certmanager.Availability `yaml:"cert-manager-availability"`
+	// TargetAllocatorAvailability represents the availability of the TargetAllocator CRD.
+	TargetAllocatorAvailability targetallocator.Availability `yaml:"target-allocator-availability"`
+	// CollectorAvailability represents the availability of the OpenTelemetryCollector CRD.
+	CollectorAvailability collector.Availability `yaml:"collector-availability"`
+	// OpAmpBridgeAvailability represents the availability of the OpAmpBridge CRD.
+	OpAmpBridgeAvailability opampbridge.Availability `yaml:"opampbridge-availability"`
+	// IgnoreMissingCollectorCRDs is true if the operator can ignore missing OpenTelemetryCollector CRDs.
+	IgnoreMissingCollectorCRDs bool `yaml:"ignore-missing-collector-crds"`
+	// LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
+	LabelsFilter []string `yaml:"labels-filter"`
+	// AnnotationsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
+	AnnotationsFilter []string `yaml:"annotations-filter"`
+	// MetricsAddr is the address the metric endpoint binds to.
+	MetricsAddr string `yaml:"metrics-addr"`
+	// ProbeAddr is the address the probe endpoint binds to.
+	ProbeAddr string `yaml:"health-probe-addr"`
+	// PprofAddr is the address to expose the pprof server. Default is empty string which disables the pprof server.
+	PprofAddr string `yaml:"pprof-addr"`
+	// EnableLeaderElection enables leader election for controller manager
+	EnableLeaderElection bool `yaml:"enable-leader-election"`
+	// EnableCRMetrics controls whether exposing the CR metrics is enabled
+	EnableCRMetrics bool `yaml:"enable-cr-metrics"`
+	// CreateServiceMonitorOperatorMetrics creates a ServiceMonitor for the operator metrics
+	CreateServiceMonitorOperatorMetrics bool `yaml:"create-service-monitor-operator-metrics"`
+	// WebhookPort is the port the webhook endpoint binds to.
+	WebhookPort int `yaml:"webhook-port"`
+	// FipsDisabledComponents are disabled collector components when operator runs on FIPS enabled platform
+	FipsDisabledComponents string `yaml:"fips-disabled-components"`
+	// TLS holds the TLS configuration of the controllers.
+	TLS TLSConfig `yaml:"tls"`
+	// ZapConfig holds the advanced Zap logging config
+	Zap ZapConfig `yaml:"zap"`
+	// EnableWebhooks enables the webhooks used by controllers.
+	EnableWebhooks bool `yaml:"enable-webhooks"`
 }
 
-// New constructs a new configuration based on the given options.
-func New(opts ...Option) Config {
-	// initialize with the default values
-	o := options{
-		prometheusCRAvailability:          prometheus.NotAvailable,
-		openshiftRoutesAvailability:       openshift.RoutesNotAvailable,
-		createRBACPermissions:             autoRBAC.NotAvailable,
-		certManagerAvailability:           certmanager.NotAvailable,
-		targetAllocatorAvailability:       targetallocator.NotAvailable,
-		collectorAvailability:             collector.NotAvailable,
-		collectorConfigMapEntry:           defaultCollectorConfigMapEntry,
-		targetAllocatorConfigMapEntry:     defaultTargetAllocatorConfigMapEntry,
-		operatorOpAMPBridgeConfigMapEntry: defaultOperatorOpAMPBridgeConfigMapEntry,
-		logger:                            logf.Log.WithName("config"),
-		version:                           version.Get(),
-		enableJavaInstrumentation:         true,
-		annotationsFilter:                 []string{"kubectl.kubernetes.io/last-applied-configuration"},
-	}
-
-	for _, opt := range opts {
-		opt(&o)
-	}
-
+// New constructs a new configuration.
+func New() Config {
+	v := version.Get()
 	return Config{
-		autoDetect:                          o.autoDetect,
-		collectorImage:                      o.collectorImage,
-		collectorConfigMapEntry:             o.collectorConfigMapEntry,
-		enableMultiInstrumentation:          o.enableMultiInstrumentation,
-		enableApacheHttpdInstrumentation:    o.enableApacheHttpdInstrumentation,
-		enableDotNetInstrumentation:         o.enableDotNetInstrumentation,
-		enableGoInstrumentation:             o.enableGoInstrumentation,
-		enableNginxInstrumentation:          o.enableNginxInstrumentation,
-		enablePythonInstrumentation:         o.enablePythonInstrumentation,
-		enableNodeJSInstrumentation:         o.enableNodeJSInstrumentation,
-		enableJavaInstrumentation:           o.enableJavaInstrumentation,
-		targetAllocatorImage:                o.targetAllocatorImage,
-		operatorOpAMPBridgeImage:            o.operatorOpAMPBridgeImage,
-		targetAllocatorConfigMapEntry:       o.targetAllocatorConfigMapEntry,
-		operatorOpAMPBridgeConfigMapEntry:   o.operatorOpAMPBridgeConfigMapEntry,
-		logger:                              o.logger,
-		openshiftRoutesAvailability:         o.openshiftRoutesAvailability,
-		prometheusCRAvailability:            o.prometheusCRAvailability,
-		certManagerAvailability:             o.certManagerAvailability,
-		targetAllocatorAvailability:         o.targetAllocatorAvailability,
-		collectorAvailability:               o.collectorAvailability,
-		ignoreMissingCollectorCRDs:          o.ignoreMissingCollectorCRDs,
-		autoInstrumentationJavaImage:        o.autoInstrumentationJavaImage,
-		autoInstrumentationNodeJSImage:      o.autoInstrumentationNodeJSImage,
-		autoInstrumentationPythonImage:      o.autoInstrumentationPythonImage,
-		autoInstrumentationDotNetImage:      o.autoInstrumentationDotNetImage,
-		autoInstrumentationGoImage:          o.autoInstrumentationGoImage,
-		autoInstrumentationApacheHttpdImage: o.autoInstrumentationApacheHttpdImage,
-		autoInstrumentationNginxImage:       o.autoInstrumentationNginxImage,
-		labelsFilter:                        o.labelsFilter,
-		annotationsFilter:                   o.annotationsFilter,
-		createRBACPermissions:               o.createRBACPermissions,
+		CollectorImage:                      fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector:%s", v.OpenTelemetryCollector),
+		CollectorConfigMapEntry:             defaultCollectorConfigMapEntry,
+		EnableMultiInstrumentation:          true,
+		EnableApacheHttpdInstrumentation:    true,
+		EnableDotNetAutoInstrumentation:     true,
+		EnableGoAutoInstrumentation:         false,
+		EnableNginxAutoInstrumentation:      false,
+		EnablePythonAutoInstrumentation:     true,
+		EnableNodeJSAutoInstrumentation:     true,
+		EnableJavaAutoInstrumentation:       true,
+		TargetAllocatorImage:                fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator),
+		OperatorOpAMPBridgeImage:            fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:%s", v.OperatorOpAMPBridge),
+		TargetAllocatorConfigMapEntry:       defaultTargetAllocatorConfigMapEntry,
+		OperatorOpAMPBridgeConfigMapEntry:   defaultOperatorOpAMPBridgeConfigMapEntry,
+		OpenShiftRoutesAvailability:         openshift.RoutesNotAvailable,
+		PrometheusCRAvailability:            prometheus.NotAvailable,
+		CertManagerAvailability:             certmanager.NotAvailable,
+		TargetAllocatorAvailability:         targetallocator.NotAvailable,
+		CollectorAvailability:               collector.NotAvailable,
+		IgnoreMissingCollectorCRDs:          false,
+		AutoInstrumentationJavaImage:        fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:%s", v.AutoInstrumentationJava),
+		AutoInstrumentationNodeJSImage:      fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:%s", v.AutoInstrumentationNodeJS),
+		AutoInstrumentationPythonImage:      fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:%s", v.AutoInstrumentationPython),
+		AutoInstrumentationDotNetImage:      fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:%s", v.AutoInstrumentationDotNet),
+		AutoInstrumentationGoImage:          fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:%s", v.AutoInstrumentationGo),
+		AutoInstrumentationApacheHttpdImage: fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationApacheHttpd),
+		AutoInstrumentationNginxImage:       fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationNginx),
+		LabelsFilter:                        []string{},
+		AnnotationsFilter:                   []string{constants.KubernetesLastAppliedConfigurationAnnotation},
+		CreateRBACPermissions:               autoRBAC.NotAvailable,
+		OpAmpBridgeAvailability:             opampbridge.NotAvailable,
+		MetricsAddr:                         ":8080",
+		ProbeAddr:                           ":8081",
+		WebhookPort:                         9443,
+		FipsDisabledComponents:              "uppercase",
+		TLS: TLSConfig{
+			MinVersion:   "VersionTLS12",
+			CipherSuites: nil,
+		},
+		Zap: ZapConfig{
+			MessageKey:  "message",
+			TimeKey:     "timestamp",
+			LevelKey:    "level",
+			LevelFormat: "uppercase",
+		},
+		EnableWebhooks: true,
 	}
 }
 
-// AutoDetect attempts to automatically detect relevant information for this operator.
-func (c *Config) AutoDetect() error {
-	c.logger.V(2).Info("auto-detecting the configuration based on the environment")
+func (c Config) String() string {
+	b, _ := yaml.Marshal(c)
+	return string(b)
+}
 
-	ora, err := c.autoDetect.OpenShiftRoutesAvailability()
-	if err != nil {
-		return err
-	}
-	c.openshiftRoutesAvailability = ora
-	c.logger.V(2).Info("openshift routes detected", "availability", ora)
+func (c Config) ToStringMap() map[string]string {
+	b, _ := yaml.Marshal(c)
+	var m map[string]string
+	_ = yaml.Unmarshal(b, &m)
+	return m
+}
 
-	pcrd, err := c.autoDetect.PrometheusCRsAvailability()
-	if err != nil {
-		return err
+func (c *Config) Apply(configFile string) error {
+	if configFile != "" {
+		if err := ApplyConfigFile(configFile, c); err != nil {
+			return fmt.Errorf("failed to apply file config: %w", err)
+		}
 	}
-	c.prometheusCRAvailability = pcrd
-	c.logger.V(2).Info("prometheus cr detected", "availability", pcrd)
 
-	rAuto, err := c.autoDetect.RBACPermissions(context.Background())
-	if err != nil {
-		c.logger.V(2).Info("the rbac permissions are not set for the operator", "reason", err)
+	ApplyEnvVars(c)
+	if err := ApplyCLI(c); err != nil {
+		return fmt.Errorf("failed to apply cli config: %w", err)
 	}
-	c.createRBACPermissions = rAuto
-	c.logger.V(2).Info("create rbac permissions detected", "availability", rAuto)
-
-	cmAvl, err := c.autoDetect.CertManagerAvailability(context.Background())
-	if err != nil {
-		c.logger.V(2).Info("the cert manager crd and permissions are not set for the operator", "reason", err)
-	}
-	c.certManagerAvailability = cmAvl
-	c.logger.V(2).Info("the cert manager crd and permissions are set for the operator", "availability", cmAvl)
-
-	taAvl, err := c.autoDetect.TargetAllocatorAvailability()
-	if err != nil {
-		return err
-	}
-	c.targetAllocatorAvailability = taAvl
-	c.logger.V(2).Info("determined TargetAllocator CRD availability", "availability", cmAvl)
-
-	coAvl, err := c.autoDetect.CollectorAvailability()
-	if err != nil {
-		return err
-	}
-	c.collectorAvailability = coAvl
-	c.logger.V(2).Info("determined Collector CRD availability", "availability", coAvl)
 
 	return nil
-}
-
-// CollectorImage represents the flag to override the OpenTelemetry Collector container image.
-func (c *Config) CollectorImage() string {
-	return c.collectorImage
-}
-
-// EnableMultiInstrumentation is true when the operator supports multi instrumentation.
-func (c *Config) EnableMultiInstrumentation() bool {
-	return c.enableMultiInstrumentation
-}
-
-// EnableApacheHttpdAutoInstrumentation is true when the operator supports ApacheHttpd auto instrumentation.
-func (c *Config) EnableApacheHttpdAutoInstrumentation() bool {
-	return c.enableApacheHttpdInstrumentation
-}
-
-// EnableDotNetAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
-func (c *Config) EnableDotNetAutoInstrumentation() bool {
-	return c.enableDotNetInstrumentation
-}
-
-// EnableGoAutoInstrumentation is true when the operator supports Go auto instrumentation.
-func (c *Config) EnableGoAutoInstrumentation() bool {
-	return c.enableGoInstrumentation
-}
-
-// EnableNginxAutoInstrumentation is true when the operator supports nginx auto instrumentation.
-func (c *Config) EnableNginxAutoInstrumentation() bool {
-	return c.enableNginxInstrumentation
-}
-
-// EnableJavaAutoInstrumentation is true when the operator supports nginx auto instrumentation.
-func (c *Config) EnableJavaAutoInstrumentation() bool {
-	return c.enableJavaInstrumentation
-}
-
-// EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
-func (c *Config) EnablePythonAutoInstrumentation() bool {
-	return c.enablePythonInstrumentation
-}
-
-// EnableNodeJSAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
-func (c *Config) EnableNodeJSAutoInstrumentation() bool {
-	return c.enableNodeJSInstrumentation
-}
-
-// CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
-func (c *Config) CollectorConfigMapEntry() string {
-	return c.collectorConfigMapEntry
-}
-
-// CreateRBACPermissions is true when the operator can create RBAC permissions for SAs running a collector instance. Immutable.
-func (c *Config) CreateRBACPermissions() autoRBAC.Availability {
-	return c.createRBACPermissions
-}
-
-// TargetAllocatorImage represents the flag to override the OpenTelemetry TargetAllocator container image.
-func (c *Config) TargetAllocatorImage() string {
-	return c.targetAllocatorImage
-}
-
-// OperatorOpAMPBridgeImage represents the flag to override the OpAMPBridge container image.
-func (c *Config) OperatorOpAMPBridgeImage() string {
-	return c.operatorOpAMPBridgeImage
-}
-
-// TargetAllocatorConfigMapEntry represents the configuration file name for the TargetAllocator. Immutable.
-func (c *Config) TargetAllocatorConfigMapEntry() string {
-	return c.targetAllocatorConfigMapEntry
-}
-
-// OperatorOpAMPBridgeImageConfigMapEntry represents the configuration file name for the OpAMPBridge. Immutable.
-func (c *Config) OperatorOpAMPBridgeConfigMapEntry() string {
-	return c.operatorOpAMPBridgeConfigMapEntry
-}
-
-// OpenShiftRoutesAvailability represents the availability of the OpenShift Routes API.
-func (c *Config) OpenShiftRoutesAvailability() openshift.RoutesAvailability {
-	return c.openshiftRoutesAvailability
-}
-
-// PrometheusCRAvailability represents the availability of the Prometheus Operator CRDs.
-func (c *Config) PrometheusCRAvailability() prometheus.Availability {
-	return c.prometheusCRAvailability
-}
-
-// CertManagerAvailability represents the availability of the Cert-Manager.
-func (c *Config) CertManagerAvailability() certmanager.Availability {
-	return c.certManagerAvailability
-}
-
-// TargetAllocatorAvailability represents the availability of the TargetAllocator CRD.
-func (c *Config) TargetAllocatorAvailability() targetallocator.Availability {
-	return c.targetAllocatorAvailability
-}
-
-// CollectorAvailability represents the availability of the OpenTelemetryCollector CRD.
-func (c *Config) CollectorAvailability() collector.Availability {
-	return c.collectorAvailability
-}
-
-// IgnoreMissingCollectorCRDs is true if the operator can ignore missing OpenTelemetryCollector CRDs.
-func (c *Config) IgnoreMissingCollectorCRDs() bool {
-	return c.ignoreMissingCollectorCRDs
-}
-
-// AutoInstrumentationJavaImage returns OpenTelemetry Java auto-instrumentation container image.
-func (c *Config) AutoInstrumentationJavaImage() string {
-	return c.autoInstrumentationJavaImage
-}
-
-// AutoInstrumentationNodeJSImage returns OpenTelemetry NodeJS auto-instrumentation container image.
-func (c *Config) AutoInstrumentationNodeJSImage() string {
-	return c.autoInstrumentationNodeJSImage
-}
-
-// AutoInstrumentationPythonImage returns OpenTelemetry Python auto-instrumentation container image.
-func (c *Config) AutoInstrumentationPythonImage() string {
-	return c.autoInstrumentationPythonImage
-}
-
-// AutoInstrumentationDotNetImage returns OpenTelemetry DotNet auto-instrumentation container image.
-func (c *Config) AutoInstrumentationDotNetImage() string {
-	return c.autoInstrumentationDotNetImage
-}
-
-// AutoInstrumentationGoImage returns OpenTelemetry Go auto-instrumentation container image.
-func (c *Config) AutoInstrumentationGoImage() string {
-	return c.autoInstrumentationGoImage
-}
-
-// AutoInstrumentationApacheHttpdImage returns OpenTelemetry ApacheHttpd auto-instrumentation container image.
-func (c *Config) AutoInstrumentationApacheHttpdImage() string {
-	return c.autoInstrumentationApacheHttpdImage
-}
-
-// AutoInstrumentationNginxImage returns OpenTelemetry Nginx auto-instrumentation container image.
-func (c *Config) AutoInstrumentationNginxImage() string {
-	return c.autoInstrumentationNginxImage
-}
-
-// LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
-func (c *Config) LabelsFilter() []string {
-	return c.labelsFilter
-}
-
-// AnnotationsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
-func (c *Config) AnnotationsFilter() []string {
-	return c.annotationsFilter
 }
