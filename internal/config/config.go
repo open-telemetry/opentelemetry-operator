@@ -121,6 +121,21 @@ type Config struct {
 	Zap ZapConfig `yaml:"zap"`
 	// EnableWebhooks enables the webhooks used by controllers.
 	EnableWebhooks bool `yaml:"enable-webhooks"`
+	// Instrumentation is the set of instrumentations to use if CRDs are not present
+	Instrumentation Instrumentation `yaml:"instrumentations"`
+	// EnableInstrumentationCRDs enables looking for instrumentation CRDs.
+	EnableInstrumentationCRDs bool `yaml:"enable-instrumentation-crds"`
+}
+
+type Instrumentation struct {
+	ApacheHttpd *InstrumentationSpec `yaml:"apache-httpd,omitempty"`
+	DotNet      *InstrumentationSpec `yaml:"dotnet,omitempty"`
+	Java        *InstrumentationSpec `yaml:"java,omitempty"`
+	Go          *InstrumentationSpec `yaml:"go,omitempty"`
+	NodeJS      *InstrumentationSpec `yaml:"nodejs,omitempty"`
+	Python      *InstrumentationSpec `yaml:"python,omitempty"`
+	Nginx       *InstrumentationSpec `yaml:"nginx,omitempty"`
+	Sdk         *InstrumentationSpec `yaml:"sdk,omitempty"`
 }
 
 // New constructs a new configuration.
@@ -172,7 +187,8 @@ func New() Config {
 			LevelKey:    "level",
 			LevelFormat: "uppercase",
 		},
-		EnableWebhooks: true,
+		EnableWebhooks:            true,
+		EnableInstrumentationCRDs: true,
 	}
 }
 

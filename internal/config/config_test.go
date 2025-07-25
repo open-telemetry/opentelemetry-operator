@@ -36,6 +36,7 @@ func TestToStringMap(t *testing.T) {
 		"enable-apache-httpd-instrumentation":     "false",
 		"enable-cr-metrics":                       "false",
 		"enable-dot-net-auto-instrumentation":     "false",
+		"enable-instrumentation-crds":             "false",
 		"enable-go-auto-instrumentation":          "false",
 		"enable-java-auto-instrumentation":        "false",
 		"enable-leader-election":                  "false",
