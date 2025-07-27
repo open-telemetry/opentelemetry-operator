@@ -51,11 +51,12 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 				PodAnnotations:            params.OtelCol.Spec.PodAnnotations,
 				PodDisruptionBudget:       taSpec.PodDisruptionBudget,
 			},
-			AllocationStrategy:           taSpec.AllocationStrategy,
-			FilterStrategy:               taSpec.FilterStrategy,
-			PrometheusCR:                 taSpec.PrometheusCR,
-			Observability:                taSpec.Observability,
-			CollectorNotReadyGracePeriod: taSpec.CollectorNotReadyGracePeriod,
+			AllocationStrategy:            taSpec.AllocationStrategy,
+			FilterStrategy:                taSpec.FilterStrategy,
+			PrometheusCR:                  taSpec.PrometheusCR,
+			Observability:                 taSpec.Observability,
+			CollectorNotReadyGracePeriod:  taSpec.CollectorNotReadyGracePeriod,
+			CollectorTargetReloadInterval: taSpec.CollectorTargetReloadInterval,
 		},
 	}, nil
 }

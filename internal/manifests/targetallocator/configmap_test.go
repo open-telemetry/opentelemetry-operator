@@ -775,3 +775,46 @@ filter_strategy: relabel-config
 		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
 	})
 }
+
+func TestGetCollectorTargetReloadInterval(t *testing.T) {
+	collector := collectorInstance()
+	targetAllocator := targetAllocatorInstanceWithCollectorTargetReloadInterval()
+	cfg := config.New()
+	params := Params{
+		Collector:       collector,
+		TargetAllocator: targetAllocator,
+		Config:          cfg,
+		Log:             logr.Discard(),
+	}
+
+	t.Run("should return expected target allocator config map with collector_target_reload_interval", func(t *testing.T) {
+		expectedData := map[string]string{
+			targetAllocatorFilename: `allocation_fallback_strategy: consistent-hashing
+allocation_strategy: consistent-hashing
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
+collector_target_reload_interval: 30s
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+filter_strategy: relabel-config
+`,
+		}
+
+		actual, err := ConfigMap(params)
+		require.NoError(t, err)
+
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
+	})
+}

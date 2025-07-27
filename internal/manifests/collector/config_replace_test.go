@@ -6,10 +6,12 @@ package collector
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
 )
@@ -124,5 +126,31 @@ func TestReplaceConfig(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.YAMLEq(t, expectedConfig, actualConfig)
+	})
+
+	t.Run("should set default collectorTargetReloadInterval if not specified", func(t *testing.T) {
+		defaultInterval := &metav1.Duration{Duration: 30 * time.Second}
+
+		actualConfig, err := ReplaceConfig(param.OtelCol, param.TargetAllocator)
+		assert.NoError(t, err)
+
+		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
+		assert.NoError(t, err)
+
+		assert.Equal(t, defaultInterval.Duration.String(), promCfgMap["target_allocator"].(map[interface{}]interface{})["interval"])
+	})
+
+	t.Run("should update collectorTargetReloadInterval if specified", func(t *testing.T) {
+		interval := &metav1.Duration{Duration: 10 * time.Second}
+
+		param.TargetAllocator.Spec.CollectorTargetReloadInterval = interval
+
+		actualConfig, err := ReplaceConfig(param.OtelCol, param.TargetAllocator, ta.WithCollectorTargetReloadInterval(interval.Duration.String()))
+		assert.NoError(t, err)
+
+		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
+		assert.NoError(t, err)
+
+		assert.Equal(t, interval.Duration.String(), promCfgMap["target_allocator"].(map[interface{}]interface{})["interval"])
 	})
 }

@@ -219,6 +219,16 @@ func targetAllocatorInstanceWithCollectorNotReadyGracePeriod() v1alpha1.TargetAl
 	return *targetAllocator
 }
 
+func targetAllocatorInstanceWithCollectorTargetReloadInterval() v1alpha1.TargetAllocator {
+	collectorInstance := collectorInstance()
+	collectorInstance.Spec.TargetAllocator.Enabled = true
+	params := manifests.Params{OtelCol: *collectorInstance}
+	targetAllocator, _ := collector.TargetAllocator(params)
+	targetAllocator.Spec.Image = "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-targetallocator:0.47.0"
+	targetAllocator.Spec.CollectorTargetReloadInterval = &metav1.Duration{Duration: 30 * time.Second}
+	return *targetAllocator
+}
+
 func TestDeploymentNodeSelector(t *testing.T) {
 	// Test default
 	targetAllocator1 := v1alpha1.TargetAllocator{}
