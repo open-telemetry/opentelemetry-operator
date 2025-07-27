@@ -88,6 +88,7 @@ data:
     allocation_strategy: consistent-hashing
     collector_not_ready_grace_period: 30s
     collector_selector: null
+    collector_target_reload_interval: 30s
     filter_strategy: relabel-config
     prometheus_cr:
       enabled: true
