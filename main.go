@@ -9,9 +9,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -52,6 +54,7 @@ import (
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	openshiftDashboards "github.com/open-telemetry/opentelemetry-operator/internal/openshift/dashboards"
 	operatormetrics "github.com/open-telemetry/opentelemetry-operator/internal/operator-metrics"
+	"github.com/open-telemetry/opentelemetry-operator/internal/operatornetworkpolicies"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
@@ -192,6 +195,36 @@ func main() {
 		dashErr := mgr.Add(openshiftDashboards.NewDashboardManagement(clientset))
 		if dashErr != nil {
 			setupLog.Error(dashErr, "failed to create the OpenShift dashboards")
+		}
+	}
+	if featuregate.EnableOperatorNetworkPolicy.IsEnabled() {
+		operatorNamespace := os.Getenv("NAMESPACE")
+		if operatorNamespace == "" {
+			setupLog.Error(errors.New("NAMESPACE environment variable is not set"), "failed to create the Operator network policies")
+			os.Exit(1)
+		}
+		var policyOpts []operatornetworkpolicies.Option
+		policyOpts = append(policyOpts, operatornetworkpolicies.WithOperatorNamespace(operatorNamespace))
+
+		if cfg.EnableWebhooks {
+			policyOpts = append(policyOpts, operatornetworkpolicies.WithWebhookPort(int32(cfg.WebhookPort)))
+		}
+		if cfg.MetricsAddr != "" {
+			_, portStr, errParse := net.SplitHostPort(cfg.MetricsAddr)
+			if errParse != nil {
+				setupLog.Error(errParse, "failed to parse port from metrics address", "metricsAddr", cfg.MetricsAddr)
+				os.Exit(1)
+			}
+			metricsPort, errParse := strconv.Atoi(portStr)
+			if errParse != nil {
+				setupLog.Error(errParse, "failed to parse port from metrics address", "metricsAddr", cfg.MetricsAddr)
+				os.Exit(1)
+			}
+			policyOpts = append(policyOpts, operatornetworkpolicies.WithMetricsPort(int32(metricsPort)))
+		}
+		operatorNetworkPoliciesErr := mgr.Add(operatornetworkpolicies.NewOperatorNetworkPolicy(clientset, mgr.GetScheme(), policyOpts...))
+		if operatorNetworkPoliciesErr != nil {
+			setupLog.Error(operatorNetworkPoliciesErr, "failed to create the Operator network policies")
 		}
 	}
 

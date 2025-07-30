@@ -65,6 +65,13 @@ var (
 		featuregate.WithRegisterDescription("enables the operator to default the endpoint for known components"),
 		featuregate.WithRegisterFromVersion("v0.110.0"),
 	)
+	// EnableOperatorNetworkPolicy is the feature gate that enables the operator to create network policies for the operator.
+	EnableOperatorNetworkPolicy = featuregate.GlobalRegistry().MustRegister(
+		"operator.networkpolicy",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables the operator to create network policies for the operator"),
+		featuregate.WithRegisterFromVersion("v0.132.0"),
+	)
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.
