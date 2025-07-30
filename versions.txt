@@ -30,7 +30,7 @@ autoinstrumentation-python=0.57b0
 autoinstrumentation-dotnet=1.2.0
 
 # Represents the current release of Go instrumentation.
-autoinstrumentation-go=v0.21.0
+autoinstrumentation-go=v0.22.1
 
 # Represents the current release of PHP instrumentation.
 # Should match autoinstrumentation/php/version.txt
