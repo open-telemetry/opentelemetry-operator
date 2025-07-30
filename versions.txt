@@ -23,7 +23,7 @@ autoinstrumentation-nodejs=0.62.0
 
 # Represents the current release of Python instrumentation.
 # Should match value in autoinstrumentation/python/requirements.txt
-autoinstrumentation-python=0.56b0
+autoinstrumentation-python=0.57b0
 
 # Represents the current release of DotNet instrumentation.
 # Should match autoinstrumentation/dotnet/version.txt
