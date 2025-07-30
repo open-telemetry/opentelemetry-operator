@@ -155,11 +155,14 @@ func TestBuild(t *testing.T) {
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
 						Mode: v1beta1.ModeDeployment,
+						NetworkPolicy: v1beta1.NetworkPolicy{
+							Enabled: true,
+						},
 					},
 				},
 				Config: config.New(),
 			},
-			expectedObjects: 5,
+			expectedObjects: 6,
 			wantErr:         false,
 		},
 		{
