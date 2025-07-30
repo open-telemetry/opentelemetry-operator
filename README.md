@@ -870,8 +870,6 @@ For more information about the approver role, see the [community repository](htt
 
 ### Triagers
 
-- [Antoine Toulme](https://github.com/atoulme), Splunk
-
 For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#triager).
 
 ### Emeritus Maintainers
