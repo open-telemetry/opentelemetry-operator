@@ -159,6 +159,14 @@ func (c *Config) getRbacRulesForComponentKinds(logger logr.Logger, componentKind
 				cfg = *c.Processors
 			}
 		case KindExtension:
+			retriever = extensions.ParserFor
+			if c.Extensions == nil {
+				cfg = AnyConfig{}
+			} else {
+				cfg = *c.Extensions
+			}
+		default:
+			logger.V(1).Info("unknown component kind", "kind", componentKind)
 			continue
 		}
 		for componentName := range enabledComponents[componentKind] {
@@ -332,7 +340,7 @@ func (c *Config) GetEnvironmentVariables(logger logr.Logger) ([]corev1.EnvVar, e
 }
 
 func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error) {
-	return c.getRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor)
+	return c.getRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor, KindExtension)
 }
 
 func (c *Config) ApplyDefaults(logger logr.Logger) error {
