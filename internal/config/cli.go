@@ -24,6 +24,7 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 			"Enabling this will ensure there is only one active controller manager.")
 	f.Bool("create-rbac-permissions", cfg.CreateRBACPermissions == autoRBAC.Available, "Automatically create RBAC permissions needed by the processors (deprecated)")
 	f.Bool("openshift-create-dashboard", cfg.OpenshiftCreateDashboard, "Create an OpenShift dashboard for monitoring the OpenTelemetryCollector instances")
+	f.Bool("create-network-policies", cfg.CreateNetworkPolicies, "Create NetworkPolicies for operator and operands created by the operator")
 	f.Bool("enable-multi-instrumentation", cfg.EnableMultiInstrumentation, "Controls whether the operator supports multi instrumentation")
 	f.Bool("enable-apache-httpd-instrumentation", cfg.EnableApacheHttpdInstrumentation, "Controls whether the operator supports Apache HTTPD auto-instrumentation")
 	f.Bool("enable-dotnet-instrumentation", cfg.EnableDotNetAutoInstrumentation, "Controls whether the operator supports dotnet auto-instrumentation")

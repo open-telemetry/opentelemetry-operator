@@ -43,6 +43,9 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("OPENSHIFT_CREATE_DASHBOARD"); ok {
 		cfg.OpenshiftCreateDashboard, _ = strconv.ParseBool(v)
 	}
+	if v, ok := os.LookupEnv("CREATE_NETWORK_POLICIES"); ok {
+		cfg.CreateNetworkPolicies, _ = strconv.ParseBool(v)
+	}
 	if v, ok := os.LookupEnv("METRICS_ADDR"); ok {
 		cfg.MetricsAddr = v
 	}
