@@ -21,6 +21,7 @@ operator-op-amp-bridge-configmap-entry: remoteconfiguration.yaml
 auto-instrumentation-node-js-image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:0.0.0
 auto-instrumentation-java-image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:0.0.0
 openshift-create-dashboard: false
+create-network-policies: true
 open-shift-routes-availability: 1
 prometheus-cr-availability: 0
 cert-manager-availability: 0

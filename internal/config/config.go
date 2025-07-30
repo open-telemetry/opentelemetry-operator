@@ -81,6 +81,8 @@ type Config struct {
 	AutoInstrumentationJavaImage string `yaml:"auto-instrumentation-java-image"`
 	// OpenshiftCreateDashboard creates an OpenShift dashboard for monitoring the OpenTelemetryCollector instances
 	OpenshiftCreateDashboard bool `yaml:"openshift-create-dashboard"`
+	// CreateNetworkPolicies creates network policies for the operator and operands created by the operator.
+	CreateNetworkPolicies bool `yaml:"create-network-policies"`
 	// OpenShiftRoutesAvailability represents the availability of the OpenShift Routes API.
 	OpenShiftRoutesAvailability openshift.RoutesAvailability `yaml:"open-shift-routes-availability"`
 	// PrometheusCRAvailability represents the availability of the Prometheus Operator CRDs.
@@ -142,6 +144,7 @@ func New() Config {
 		TargetAllocatorConfigMapEntry:       defaultTargetAllocatorConfigMapEntry,
 		OperatorOpAMPBridgeConfigMapEntry:   defaultOperatorOpAMPBridgeConfigMapEntry,
 		OpenShiftRoutesAvailability:         openshift.RoutesNotAvailable,
+		CreateNetworkPolicies:               true,
 		PrometheusCRAvailability:            prometheus.NotAvailable,
 		CertManagerAvailability:             certmanager.NotAvailable,
 		TargetAllocatorAvailability:         targetallocator.NotAvailable,

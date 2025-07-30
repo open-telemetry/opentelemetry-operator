@@ -49,6 +49,7 @@ func TestToStringMap(t *testing.T) {
 		"opampbridge-availability":                "0",
 		"open-shift-routes-availability":          "0",
 		"openshift-create-dashboard":              "false",
+		"create-network-policies":                 "false",
 		"operator-op-amp-bridge-configmap-entry":  "foo.yaml",
 		"operatoropampbridge-image":               "",
 		"pprof-addr":                              "",

@@ -1,0 +1,31 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:12345
+      http: {}
+  otlp/test:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:98764
+exporters:
+  debug: {}
+  prometheus:
+    endpoint: 0.0.0.0:1111
+
+service:
+  telemetry:
+    metrics:
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 3333
+  pipelines:
+    traces:
+      receivers: [otlp, otlp/test]
+      exporters: [debug]
+    metrics:
+      receivers: [otlp]
+      exporters: [prometheus]

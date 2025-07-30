@@ -34,3 +34,5 @@ spec:
         duration: 10s
     - assert:
         file: assert-operator-pod.yaml
+    - assert:
+        file: assert-operator-network-policy.yaml

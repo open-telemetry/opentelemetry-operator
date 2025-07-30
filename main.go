@@ -50,6 +50,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation"
 	instrumentationupgrade "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/upgrade"
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/networkpolicies"
 	openshiftDashboards "github.com/open-telemetry/opentelemetry-operator/internal/openshift/dashboards"
 	operatormetrics "github.com/open-telemetry/opentelemetry-operator/internal/operator-metrics"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
@@ -192,6 +193,17 @@ func main() {
 		dashErr := mgr.Add(openshiftDashboards.NewDashboardManagement(clientset))
 		if dashErr != nil {
 			setupLog.Error(dashErr, "failed to create the OpenShift dashboards")
+		}
+	}
+	if cfg.CreateNetworkPolicies {
+		operatorNamespace := os.Getenv("NAMESPACE")
+		if operatorNamespace == "" {
+			setupLog.Error(errors.New("NAMESPACE environment variable is not set"), "failed to create the Operator network policies")
+			os.Exit(1)
+		}
+		operatorNetworkPoliciesErr := mgr.Add(networkpolicies.NewOperatorNetworkPolicies(operatorNamespace, clientset, mgr.GetScheme()))
+		if operatorNetworkPoliciesErr != nil {
+			setupLog.Error(operatorNetworkPoliciesErr, "failed to create the Operator network policies")
 		}
 	}
 
