@@ -146,6 +146,11 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 			wantIng := desired.(*networkingv1.Ingress)
 			mutateIngress(ing, wantIng)
 
+		case *networkingv1.NetworkPolicy:
+			ds := existing.(*networkingv1.NetworkPolicy)
+			wantDs := desired.(*networkingv1.NetworkPolicy)
+			mutateNetworkPolicy(ds, wantDs)
+
 		case *autoscalingv2.HorizontalPodAutoscaler:
 			existingHPA := existing.(*autoscalingv2.HorizontalPodAutoscaler)
 			desiredHPA := desired.(*autoscalingv2.HorizontalPodAutoscaler)
@@ -250,6 +255,12 @@ func mutateIngress(existing, desired *networkingv1.Ingress) {
 	existing.Spec.DefaultBackend = desired.Spec.DefaultBackend
 	existing.Spec.Rules = desired.Spec.Rules
 	existing.Spec.TLS = desired.Spec.TLS
+}
+
+func mutateNetworkPolicy(existing, desired *networkingv1.NetworkPolicy) {
+	existing.Annotations = desired.Annotations
+	existing.Labels = desired.Labels
+	existing.Spec = desired.Spec
 }
 
 func mutateRoute(existing, desired *routev1.Route) {
