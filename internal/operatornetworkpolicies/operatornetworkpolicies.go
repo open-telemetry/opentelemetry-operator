@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package networkpolicies
+package operatornetworkpolicies
 
 import (
 	"context"
@@ -31,14 +31,14 @@ var _ manager.Runnable = (*networkPolicies)(nil)
 var _ manager.LeaderElectionRunnable = (*networkPolicies)(nil)
 
 func NewOperatorNetworkPolicies(operatorNamespace string, clientset kubernetes.Interface, scheme *runtime.Scheme) manager.Runnable {
-	return networkPolicies{
+	return &networkPolicies{
 		clientset:         clientset,
 		operatorNamespace: operatorNamespace,
 		scheme:            scheme,
 	}
 }
 
-func (n networkPolicies) Start(ctx context.Context) error {
+func (n *networkPolicies) Start(ctx context.Context) error {
 	tcp := corev1.ProtocolTCP
 	webhookPort := intstr.FromInt32(9443)
 	metricsPort := intstr.FromInt32(8443)
@@ -79,7 +79,7 @@ func (n networkPolicies) Start(ctx context.Context) error {
 					},
 				},
 			},
-			PolicyTypes: []networkingv1.PolicyType{"Ingress", "Egress"},
+			PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress},
 		},
 	}
 
@@ -103,6 +103,6 @@ func (n networkPolicies) Start(ctx context.Context) error {
 	return nil
 }
 
-func (d networkPolicies) NeedLeaderElection() bool {
+func (d *networkPolicies) NeedLeaderElection() bool {
 	return true
 }
