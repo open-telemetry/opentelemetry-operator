@@ -33,6 +33,9 @@ func TestNetworkPolicy(t *testing.T) {
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: v1beta1.Config{},
+					NetworkPolicy: v1beta1.NetworkPolicy{
+						Enabled: true,
+					},
 				},
 			},
 		}
@@ -65,6 +68,9 @@ func TestNetworkPolicy(t *testing.T) {
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: cfg,
+					NetworkPolicy: v1beta1.NetworkPolicy{
+						Enabled: true,
+					},
 				},
 			},
 		}

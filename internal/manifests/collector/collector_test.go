@@ -155,6 +155,9 @@ func TestBuild(t *testing.T) {
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
 						Mode: v1beta1.ModeDeployment,
+						NetworkPolicy: v1beta1.NetworkPolicy{
+							Enabled: true,
+						},
 					},
 				},
 				Config: config.New(),
@@ -173,7 +176,7 @@ func TestBuild(t *testing.T) {
 				},
 				Config: config.New(),
 			},
-			expectedObjects: 6,
+			expectedObjects: 5,
 			wantErr:         false,
 		},
 		{
@@ -187,7 +190,7 @@ func TestBuild(t *testing.T) {
 				},
 				Config: config.New(),
 			},
-			expectedObjects: 4,
+			expectedObjects: 3,
 			wantErr:         false,
 		},
 		{
@@ -217,7 +220,7 @@ func TestBuild(t *testing.T) {
 					CreateRBACPermissions: autoRbac.Available,
 				},
 			},
-			expectedObjects: 8,
+			expectedObjects: 7,
 			wantErr:         false,
 		},
 		{
@@ -238,7 +241,7 @@ func TestBuild(t *testing.T) {
 					PrometheusCRAvailability: prometheus.Available,
 				},
 			},
-			expectedObjects: 7,
+			expectedObjects: 6,
 			wantErr:         false,
 		},
 		{
@@ -275,7 +278,7 @@ func TestBuild(t *testing.T) {
 					PrometheusCRAvailability: prometheus.Available,
 				},
 			},
-			expectedObjects: 10,
+			expectedObjects: 9,
 			wantErr:         false,
 		},
 		{
@@ -313,7 +316,7 @@ func TestBuild(t *testing.T) {
 				},
 				Config: config.Config{PrometheusCRAvailability: prometheus.Available},
 			},
-			expectedObjects: 10,
+			expectedObjects: 9,
 			wantErr:         true,
 		},
 	}
