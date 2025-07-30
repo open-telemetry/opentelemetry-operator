@@ -39,7 +39,7 @@ spec:
     - name: OTEL_TRACES_SAMPLER_ARG
       value: "0.85"
     - name: OTEL_SERVICE_NAME
-      value: my-python
+      value: my-python-with-pod-annotation
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
       valueFrom:
         fieldRef:
