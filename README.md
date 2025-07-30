@@ -861,6 +861,7 @@ For more information about the maintainer role, see the [community repository](h
 
 ### Approvers
 
+- [Antoine Toulme](https://github.com/atoulme), Splunk
 - [Israel Blancas](https://github.com/iblancasa), Coralogix
 - [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), OllyGarden
