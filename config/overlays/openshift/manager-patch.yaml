@@ -11,3 +11,4 @@
     - '--enable-cr-metrics=true'
     - '--create-sm-operator-metrics=true'
     - '--feature-gates=operator.sidecarcontainers.native'
+    - '--feature-gates=operator.networkpolicy'

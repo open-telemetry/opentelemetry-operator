@@ -56,6 +56,15 @@ rules:
 - apiGroups:
   - apps
   resources:
+  - deployments/finalizers
+  verbs:
+  - get
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
   - replicasets
   verbs:
   - get
@@ -116,6 +125,7 @@ rules:
   - networking.k8s.io
   resources:
   - ingresses
+  - networkpolicies
   verbs:
   - create
   - delete
