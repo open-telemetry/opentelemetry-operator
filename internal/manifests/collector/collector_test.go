@@ -159,7 +159,7 @@ func TestBuild(t *testing.T) {
 				},
 				Config: config.New(),
 			},
-			expectedObjects: 5,
+			expectedObjects: 6,
 			wantErr:         false,
 		},
 		{
@@ -173,7 +173,7 @@ func TestBuild(t *testing.T) {
 				},
 				Config: config.New(),
 			},
-			expectedObjects: 5,
+			expectedObjects: 6,
 			wantErr:         false,
 		},
 		{
@@ -187,7 +187,7 @@ func TestBuild(t *testing.T) {
 				},
 				Config: config.New(),
 			},
-			expectedObjects: 3,
+			expectedObjects: 4,
 			wantErr:         false,
 		},
 		{
@@ -217,7 +217,7 @@ func TestBuild(t *testing.T) {
 					CreateRBACPermissions: autoRbac.Available,
 				},
 			},
-			expectedObjects: 7,
+			expectedObjects: 8,
 			wantErr:         false,
 		},
 		{
@@ -238,7 +238,7 @@ func TestBuild(t *testing.T) {
 					PrometheusCRAvailability: prometheus.Available,
 				},
 			},
-			expectedObjects: 6,
+			expectedObjects: 7,
 			wantErr:         false,
 		},
 		{
@@ -275,7 +275,7 @@ func TestBuild(t *testing.T) {
 					PrometheusCRAvailability: prometheus.Available,
 				},
 			},
-			expectedObjects: 9,
+			expectedObjects: 10,
 			wantErr:         false,
 		},
 		{
@@ -313,7 +313,7 @@ func TestBuild(t *testing.T) {
 				},
 				Config: config.Config{PrometheusCRAvailability: prometheus.Available},
 			},
-			expectedObjects: 9,
+			expectedObjects: 10,
 			wantErr:         true,
 		},
 	}
