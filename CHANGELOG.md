@@ -2,6 +2,47 @@
 
 <!-- next version -->
 
+## 0.131.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: Drop support for Kubernetes 1.23 and 1.24 (#4104)
+
+### 💡 Enhancements 💡
+
+- `collector`: Add support for extraLabels in ServiceMonitor creation (#4138)
+  Added extraLabels field to MetricsConfigSpec in v1beta1 API to allow custom labels on ServiceMonitor resources.
+  This enables users to add additional labels to ServiceMonitors created by the operator for better organization and filtering.
+  
+- `manager, target-allocator, opamp-bridge, must-gather`: add -trimpath when building binaries (#4078)
+- `collector, targer allocator,  opamp`: Require Go 1.24+ to build the collector, target allocator, and opamp. (#4173)
+- `collector`: Added RBAC permissions for config.extensions.k8s_observer. (#4113)
+  Generating RBAC rules for the k8s_observer extension in the OpenTelemetry Collector when used in the operator.
+  The change addresses the issue where the collector lacked necessary permissions to list and watch Kubernetes resources.
+  
+- `auto-instrumentation`: Upgrade urllib3 upper limit following Python 3.8 support drop (#3712)
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: added check for maxReplica when minReplica is set in autoscaler (#4160)
+  When using the AutoScaler, maxReplica must be set when minReplica is set.
+- `target allocator`: check CRD availability before registering informers (#3987)
+- `target allocator`: Allow collector to use TLS Config from Target Allocator with ScrapeConfig (#3724)
+  This change allows the target allocator to configure TLS Config for a collector using the ScrapeConfig.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.131.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.131.1)
+* [OpenTelemetry Contrib - v0.131.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.131.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.62.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.62.0)
+* [Python - v0.57b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.57b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.129.1
 
 ### 🛑 Breaking changes 🛑
