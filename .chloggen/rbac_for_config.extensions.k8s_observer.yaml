@@ -2,7 +2,7 @@
 change_type: enhancement
 
 # The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
-component: rbac
+component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
 note: "Added RBAC permissions for config.extensions.k8s_observer."
