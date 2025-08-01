@@ -16,7 +16,7 @@
   
 - `manager, target-allocator, opamp-bridge, must-gather`: add -trimpath when building binaries (#4078)
 - `collector, targer allocator,  opamp`: Require Go 1.24+ to build the collector, target allocator, and opamp. (#4173)
-- `rbac`: Added RBAC permissions for config.extensions.k8s_observer. (#4113)
+- `collector`: Added RBAC permissions for config.extensions.k8s_observer. (#4113)
   Generating RBAC rules for the k8s_observer extension in the OpenTelemetry Collector when used in the operator.
   The change addresses the issue where the collector lacked necessary permissions to list and watch Kubernetes resources.
   
@@ -33,7 +33,7 @@
 
 ### Components
 
-* [OpenTelemetry Collector - v0.131.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.131.0)
+* [OpenTelemetry Collector - v0.131.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.131.1)
 * [OpenTelemetry Contrib - v0.131.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.131.0)
 * [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
 * [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
