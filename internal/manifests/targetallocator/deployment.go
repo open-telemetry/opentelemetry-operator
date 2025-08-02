@@ -15,7 +15,12 @@ import (
 // Deployment builds the deployment for the given instance.
 func Deployment(params Params) (*appsv1.Deployment, error) {
 	name := naming.TargetAllocator(params.TargetAllocator.Name)
-	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
+
+	image := params.TargetAllocator.Spec.Image
+	if len(image) == 0 {
+		image = params.Config.TargetAllocatorImage
+	}
+	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, image, ComponentOpenTelemetryTargetAllocator, nil)
 
 	configMap, err := ConfigMap(params)
 	if err != nil {
