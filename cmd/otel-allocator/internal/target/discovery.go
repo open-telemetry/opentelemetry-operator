@@ -105,7 +105,7 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 
 	if m.hook != nil {
 		m.hook.SetConfig(relabelCfg)
-		m.rewriteRelabelConfigs(jobToScrapeConfig)
+		m.removeRelabelConfigs(jobToScrapeConfig)
 	}
 
 	// If the hash has changed, updated stored hash and send the new config.
