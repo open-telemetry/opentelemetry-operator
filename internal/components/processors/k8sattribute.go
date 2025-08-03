@@ -53,7 +53,7 @@ func GenerateK8SAttrRbacRules(_ logr.Logger, config K8sAttributeConfig) ([]rbacv
 	addedReplicasetPolicy := false
 	for _, m := range config.Extract.Metadata {
 		metadataField := fmt.Sprint(m)
-		if (metadataField == "k8s.deployment.uid" || metadataField == "k8s.deployment.name") && !addedReplicasetPolicy {
+		if (metadataField == "k8s.deployment.uid" || metadataField == "k8s.deployment.name" || metadataField == "service.name") && !addedReplicasetPolicy {
 			prs = append(prs, replicasetPolicy)
 			addedReplicasetPolicy = true
 		} else if strings.Contains(metadataField, "k8s.node") {
