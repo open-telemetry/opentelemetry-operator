@@ -239,6 +239,13 @@ func main() {
 			os.Exit(1)
 		}
 	}
+
+	if cfg.NativeSidecarSupport {
+		setupLog.Info("Native Sidecar is enabled")
+	} else {
+		setupLog.Info("Native Sidecar is disabled")
+	}
+
 	if cfg.AnnotationsFilter != nil {
 		for _, basePattern := range cfg.AnnotationsFilter {
 			_, compileErr := regexp.Compile(basePattern)
