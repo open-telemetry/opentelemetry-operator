@@ -46,6 +46,7 @@ func TestToStringMap(t *testing.T) {
 		"fips-disabled-components":                "",
 		"ignore-missing-collector-crds":           "true",
 		"metrics-addr":                            "",
+		"native-sidecar-support":                  "false",
 		"opampbridge-availability":                "0",
 		"open-shift-routes-availability":          "0",
 		"openshift-create-dashboard":              "false",

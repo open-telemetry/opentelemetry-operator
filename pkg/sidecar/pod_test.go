@@ -68,7 +68,8 @@ func TestAddNativeSidecar(t *testing.T) {
 	otelcolYaml, err := otelcol.Spec.Config.Yaml()
 	require.NoError(t, err)
 	cfg := config.Config{
-		CollectorImage: "some-default-image",
+		CollectorImage:       "some-default-image",
+		NativeSidecarSupport: true,
 	}
 
 	// test
@@ -240,7 +241,7 @@ func TestRemoveSidecar(t *testing.T) {
 	}
 
 	// test
-	changed := remove(pod)
+	changed := remove(false, pod)
 
 	// verify
 	assert.Len(t, changed.Spec.Containers, 1)
@@ -257,7 +258,7 @@ func TestRemoveNonExistingSidecar(t *testing.T) {
 	}
 
 	// test
-	changed := remove(pod)
+	changed := remove(false, pod)
 
 	// verify
 	assert.Len(t, changed.Spec.Containers, 1)
@@ -304,7 +305,8 @@ func TestExistsIn(t *testing.T) {
 			false},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
-			assert.Equal(t, tt.expected, existsIn(tt.pod))
+			useNativeSidecars := tt.desc == "does-have-native-sidecar"
+			assert.Equal(t, tt.expected, existsIn(useNativeSidecars, tt.pod))
 		})
 	}
 }
