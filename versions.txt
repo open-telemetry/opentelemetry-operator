@@ -44,3 +44,4 @@ autoinstrumentation-apache-httpd=1.0.4
 # Intentionally uses the same image and version as Apache HTTPD.
 # Should match autoinstrumentation/apache-httpd/version.txt
 autoinstrumentation-nginx=1.0.4
+
