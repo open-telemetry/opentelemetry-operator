@@ -309,6 +309,15 @@ func TestMonitoringService(t *testing.T) {
 		assert.NotNil(t, actual)
 		assert.Equal(t, expected, actual.Spec.Ports)
 	})
+
+	t.Run("should return nil when DisableMonitoringService is true", func(t *testing.T) {
+		params := deploymentParams()
+		params.OtelCol.Spec.Observability.Metrics.DisableMonitoringService = true
+
+		actual, err := MonitoringService(params)
+		assert.NoError(t, err)
+		assert.Nil(t, actual)
+	})
 }
 
 func TestExtensionService(t *testing.T) {

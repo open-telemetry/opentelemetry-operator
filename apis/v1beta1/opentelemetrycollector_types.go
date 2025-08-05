@@ -297,6 +297,12 @@ type MetricsConfigSpec struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	DisablePrometheusAnnotations bool `json:"disablePrometheusAnnotations,omitempty"`
+
+	// DisableMonitoringService controls whether the monitoring service should be created
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	DisableMonitoringService bool `json:"disableMonitoringService,omitempty"`
 }
 
 // ScaleSubresourceStatus defines the observed state of the OpenTelemetryCollector's

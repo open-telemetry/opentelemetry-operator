@@ -62,6 +62,10 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 }
 
 func MonitoringService(params manifests.Params) (*corev1.Service, error) {
+	if params.OtelCol.Spec.Observability.Metrics.DisableMonitoringService {
+		return nil, nil
+	}
+
 	name := naming.MonitoringService(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[monitoringLabel] = valueExists
