@@ -10,6 +10,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -258,6 +259,15 @@ func TestDesiredService(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	t.Run("should use custom service name when specified", func(t *testing.T) {
+		params := deploymentParams()
+		params.OtelCol.Spec.Service = v1beta1.ServiceSpec{Enabled: ptr.To(true), Name: "custom-service"}
+		actual, err := Service(params)
+		assert.NoError(t, err)
+		assert.NotNil(t, actual)
+		assert.Equal(t, "custom-service", actual.Name)
+	})
+
 }
 
 func TestHeadlessService(t *testing.T) {
@@ -267,6 +277,14 @@ func TestHeadlessService(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, actual.GetAnnotations()["service.beta.openshift.io/serving-cert-secret-name"], "test-collector-headless-tls")
 		assert.Equal(t, actual.Spec.ClusterIP, "None")
+	})
+
+	t.Run("should use custom headless service name when specified", func(t *testing.T) {
+		params := deploymentParams()
+		params.OtelCol.Spec.HeadlessService = v1beta1.ServiceSpec{Enabled: ptr.To(true), Name: "custom-headless-service"}
+		actual, err := HeadlessService(params)
+		assert.NoError(t, err)
+		assert.Equal(t, "custom-headless-service", actual.Name)
 	})
 }
 
@@ -309,13 +327,22 @@ func TestMonitoringService(t *testing.T) {
 		assert.NotNil(t, actual)
 		assert.Equal(t, expected, actual.Spec.Ports)
 	})
+
+	t.Run("should use custom monitoring service name when specified", func(t *testing.T) {
+		params := deploymentParams()
+		params.OtelCol.Spec.MonitoringService = v1beta1.ServiceSpec{Enabled: ptr.To(true), Name: "custom-monitoring-service"}
+		actual, err := MonitoringService(params)
+		assert.NoError(t, err)
+		assert.Equal(t, "custom-monitoring-service", actual.Name)
+	})
 }
 
 func TestExtensionService(t *testing.T) {
 	testCases := []struct {
-		name          string
-		params        manifests.Params
-		expectedPorts []v1.ServicePort
+		name            string
+		params          manifests.Params
+		expectedPorts   []v1.ServicePort
+		expectedService string
 	}{
 		{
 			name: "when the extension has http endpoint",
@@ -487,6 +514,32 @@ func TestExtensionService(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "when the extension service name is overridden",
+			params: manifests.Params{
+				Config: config.Config{},
+				Log:    testLogger,
+				OtelCol: v1beta1.OpenTelemetryCollector{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test",
+					},
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						Config: v1beta1.Config{
+							Service: v1beta1.Service{
+								Extensions: []string{"jaeger_query"},
+							},
+							Extensions: &v1beta1.AnyConfig{
+								Object: map[string]interface{}{},
+							},
+						},
+						ExtensionService: v1beta1.ServiceSpec{
+							Name: "custom-extension-service",
+						},
+					},
+				},
+			},
+			expectedService: "custom-extension-service",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -497,7 +550,11 @@ func TestExtensionService(t *testing.T) {
 
 			if len(tc.expectedPorts) > 0 {
 				assert.NotNil(t, actual)
-				assert.Equal(t, actual.Name, naming.ExtensionService(tc.params.OtelCol.Name))
+				expectedServiceName := tc.expectedService
+				if expectedServiceName == "" {
+					expectedServiceName = naming.ExtensionService(tc.params.OtelCol.Name)
+				}
+				assert.Equal(t, expectedServiceName, actual.Name)
 				// ports assertion
 				assert.Equal(t, len(tc.expectedPorts), len(actual.Spec.Ports))
 				assert.Equal(t, tc.expectedPorts[0].Name, actual.Spec.Ports[0].Name)

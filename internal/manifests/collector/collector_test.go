@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/authorization/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/utils/ptr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -159,7 +160,7 @@ func TestBuild(t *testing.T) {
 				},
 				Config: config.New(),
 			},
-			expectedObjects: 5,
+			expectedObjects: 5, // ConfigMap, ServiceAccount, Deployment, PodDisruptionBudget, MonitoringService
 			wantErr:         false,
 		},
 		{
@@ -315,6 +316,21 @@ func TestBuild(t *testing.T) {
 			},
 			expectedObjects: 9,
 			wantErr:         true,
+		},
+		{
+			name: "disabled services are not created",
+			params: manifests.Params{
+				Log: logger,
+				OtelCol: v1beta1.OpenTelemetryCollector{
+					Spec: v1beta1.OpenTelemetryCollectorSpec{
+						Mode:              v1beta1.ModeDeployment,
+						MonitoringService: v1beta1.ServiceSpec{Enabled: ptr.To(false)},
+					},
+				},
+				Config: config.New(),
+			},
+			expectedObjects: 4, // ConfigMap, ServiceAccount, Deployment, PodDisruptionBudget
+			wantErr:         false,
 		},
 	}
 

@@ -44,7 +44,10 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 		return h, err
 	}
 
-	h.Name = naming.HeadlessService(params.OtelCol.Name)
+	h.Name = params.OtelCol.Spec.HeadlessService.Name
+	if h.Name == "" {
+		h.Name = naming.HeadlessService(params.OtelCol.Name)
+	}
 	h.Labels[headlessLabel] = valueExists
 	h.Labels[serviceTypeLabel] = HeadlessServiceType.String()
 
@@ -62,7 +65,10 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 }
 
 func MonitoringService(params manifests.Params) (*corev1.Service, error) {
-	name := naming.MonitoringService(params.OtelCol.Name)
+	name := params.OtelCol.Spec.MonitoringService.Name
+	if name == "" {
+		name = naming.MonitoringService(params.OtelCol.Name)
+	}
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[monitoringLabel] = valueExists
 	labels[serviceTypeLabel] = MonitoringServiceType.String()
@@ -98,7 +104,10 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 }
 
 func ExtensionService(params manifests.Params) (*corev1.Service, error) {
-	name := naming.ExtensionService(params.OtelCol.Name)
+	name := params.OtelCol.Spec.ExtensionService.Name
+	if name == "" {
+		name = naming.ExtensionService(params.OtelCol.Name)
+	}
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[serviceTypeLabel] = ExtensionServiceType.String()
 
@@ -131,7 +140,10 @@ func ExtensionService(params manifests.Params) (*corev1.Service, error) {
 }
 
 func Service(params manifests.Params) (*corev1.Service, error) {
-	name := naming.Service(params.OtelCol.Name)
+	name := params.OtelCol.Spec.Service.Name
+	if name == "" {
+		name = naming.Service(params.OtelCol.Name)
+	}
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[serviceTypeLabel] = BaseServiceType.String()
 
@@ -187,7 +199,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        naming.Service(params.OtelCol.Name),
+			Name:        name,
 			Namespace:   params.OtelCol.Namespace,
 			Labels:      labels,
 			Annotations: annotations,
