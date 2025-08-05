@@ -29403,6 +29403,13 @@ Metrics defines the metrics configuration for operands.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>disableMonitoringService</b></td>
+        <td>boolean</td>
+        <td>
+          DisableMonitoringService controls whether the monitoring service should be created<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>disablePrometheusAnnotations</b></td>
         <td>boolean</td>
         <td>
@@ -32819,6 +32826,13 @@ Metrics defines the metrics configuration for operands.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>disableMonitoringService</b></td>
+        <td>boolean</td>
+        <td>
+          DisableMonitoringService controls whether the monitoring service should be created<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>disablePrometheusAnnotations</b></td>
         <td>boolean</td>
         <td>

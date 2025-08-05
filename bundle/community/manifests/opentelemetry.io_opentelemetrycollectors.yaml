@@ -6964,6 +6964,8 @@ spec:
                 properties:
                   metrics:
                     properties:
+                      disableMonitoringService:
+                        type: boolean
                       disablePrometheusAnnotations:
                         type: boolean
                       enableMetrics:
@@ -7803,6 +7805,8 @@ spec:
                     properties:
                       metrics:
                         properties:
+                          disableMonitoringService:
+                            type: boolean
                           disablePrometheusAnnotations:
                             type: boolean
                           enableMetrics:
