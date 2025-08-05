@@ -374,14 +374,8 @@ func mutateIssuer(existing, desired *cmv1.Issuer) {
 }
 
 func mutatePodTemplate(existing, desired *corev1.PodTemplateSpec) error {
-	if err := mergeWithOverride(&existing.Labels, desired.Labels); err != nil {
-		return err
-	}
-
-	if err := mergeWithOverride(&existing.Annotations, desired.Annotations); err != nil {
-		return err
-	}
-
+	existing.Labels = desired.Labels
+	existing.Annotations = desired.Annotations
 	existing.Spec = desired.Spec
 
 	return nil
