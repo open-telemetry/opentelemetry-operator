@@ -54,7 +54,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		i.logger.V(1).Info("injecting Java instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
 		if len(insts.Java.Containers) == 0 {
-			insts.Java.Containers = []string{pod.Spec.Containers[0].Name}
+			insts.Java.Containers = containersByLanguage(pod, "java")
 		}
 
 		for _, container := range insts.Java.Containers {
@@ -75,7 +75,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		i.logger.V(1).Info("injecting NodeJS instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
 		if len(insts.NodeJS.Containers) == 0 {
-			insts.NodeJS.Containers = []string{pod.Spec.Containers[0].Name}
+			insts.NodeJS.Containers = containersByLanguage(pod, "nodejs")
 		}
 
 		for _, container := range insts.NodeJS.Containers {
@@ -96,7 +96,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		i.logger.V(1).Info("injecting Python instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
 		if len(insts.Python.Containers) == 0 {
-			insts.Python.Containers = []string{pod.Spec.Containers[0].Name}
+			insts.Python.Containers = containersByLanguage(pod, "python")
 		}
 
 		for _, container := range insts.Python.Containers {
@@ -117,7 +117,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		i.logger.V(1).Info("injecting DotNet instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
 		if len(insts.DotNet.Containers) == 0 {
-			insts.DotNet.Containers = []string{pod.Spec.Containers[0].Name}
+			insts.DotNet.Containers = containersByLanguage(pod, "dotnet")
 		}
 
 		for _, container := range insts.DotNet.Containers {
@@ -139,7 +139,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		i.logger.V(1).Info("injecting Go instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
 		if len(insts.Go.Containers) == 0 {
-			insts.Go.Containers = []string{pod.Spec.Containers[0].Name}
+			insts.Go.Containers = containersByLanguage(pod, "go")
 		}
 
 		// Go instrumentation supports only single container instrumentation.
@@ -165,7 +165,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		i.logger.V(1).Info("injecting Apache Httpd instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
 		if len(insts.ApacheHttpd.Containers) == 0 {
-			insts.ApacheHttpd.Containers = []string{pod.Spec.Containers[0].Name}
+			insts.ApacheHttpd.Containers = containersByLanguage(pod, "apache")
 		}
 
 		for _, container := range insts.ApacheHttpd.Containers {
@@ -186,7 +186,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		i.logger.V(1).Info("injecting Nginx instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
 		if len(insts.Nginx.Containers) == 0 {
-			insts.Nginx.Containers = []string{pod.Spec.Containers[0].Name}
+			insts.Nginx.Containers = containersByLanguage(pod, "nginx")
 		}
 
 		for _, container := range insts.Nginx.Containers {
@@ -205,7 +205,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		i.logger.V(1).Info("injecting sdk-only instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
 		if len(insts.Sdk.Containers) == 0 {
-			insts.Sdk.Containers = []string{pod.Spec.Containers[0].Name}
+			insts.Sdk.Containers = containersByLanguage(pod, "sdk")
 		}
 
 		for _, container := range insts.Sdk.Containers {
@@ -226,6 +226,52 @@ func (i *sdkInjector) setInitContainerSecurityContext(pod corev1.Pod, securityCo
 	}
 
 	return pod
+}
+
+func containersByLanguage(pod corev1.Pod, language string) []string {
+	var detectedContainers []string
+
+	languagePatterns := map[string][]string{
+		"java":    {"java"},
+		"nodejs":  {"nodejs", "node"},
+		"python":  {"python"},
+		"dotnet":  {"dotnet"},
+		"go":      {"golang", "go"},
+		"apache":  {"apache", "httpd"},
+		"nginx":   {"nginx"},
+		"sdk":     {},
+	}
+	
+	patterns, exists := languagePatterns[language]
+	if !exists {
+		if len(pod.Spec.Containers) > 0 {
+			return []string{pod.Spec.Containers[0].Name}
+		}
+		return []string{}
+	}
+
+	if language == "sdk" {
+		if len(pod.Spec.Containers) > 0 {
+			return []string{pod.Spec.Containers[0].Name}
+		}
+		return []string{}
+	}
+
+	for _, container := range pod.Spec.Containers {
+		containerImage := strings.ToLower(container.Image)
+		for _, pattern := range patterns {
+			if strings.Contains(containerImage, pattern) {
+				detectedContainers = append(detectedContainers, container.Name)
+				break
+			}
+		}
+	}
+
+	if len(detectedContainers) == 0 && len(pod.Spec.Containers) > 0 {
+		return []string{pod.Spec.Containers[0].Name}
+	}
+	
+	return detectedContainers
 }
 
 func getContainerIndex(containerName string, pod corev1.Pod) int {

@@ -10,21 +10,95 @@ metadata:
 spec:
   containers:
   - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
     - name: TEST
       value: test
     - name: NODE_PATH
       value: /usr/local/lib/node_modules
+    - name: OTEL_SERVICE_NAME
+      value: nodejsapp
+    - name: NODE_OPTIONS
+      value: " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js"
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.85"
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4317
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: OTEL_PROPAGATORS
+      value: jaeger,b3
+    - name: OTEL_RESOURCE_ATTRIBUTES
     name: nodejsapp
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
+    - mountPath: /otel-auto-instrumentation-nodejs
+      name: opentelemetry-auto-instrumentation-nodejs
   - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
     - name: TEST
       value: test
+    - name: OTEL_SERVICE_NAME
+      value: pythonapp
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4318
+    - name: PYTHONPATH
+      value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp
+    - name: OTEL_METRICS_EXPORTER
+      value: otlp
+    - name: OTEL_LOGS_EXPORTER
+      value: otlp
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.85"
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: OTEL_PROPAGATORS
+      value: jaeger,b3
+    - name: OTEL_RESOURCE_ATTRIBUTES
     name: pythonapp
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
+    - mountPath: /otel-auto-instrumentation-python
+      name: opentelemetry-auto-instrumentation-python
   - args:
     - --config=env:OTEL_CONFIG
     name: otc-container
