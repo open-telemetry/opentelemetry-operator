@@ -232,16 +232,16 @@ func containersByLanguage(pod corev1.Pod, language string) []string {
 	var detectedContainers []string
 
 	languagePatterns := map[string][]string{
-		"java":    {"java"},
-		"nodejs":  {"nodejs", "node"},
-		"python":  {"python"},
-		"dotnet":  {"dotnet"},
-		"go":      {"golang", "go"},
-		"apache":  {"apache", "httpd"},
-		"nginx":   {"nginx"},
-		"sdk":     {},
+		"java":   {"java"},
+		"nodejs": {"nodejs", "node"},
+		"python": {"python"},
+		"dotnet": {"dotnet"},
+		"go":     {"golang", "go"},
+		"apache": {"apache", "httpd"},
+		"nginx":  {"nginx"},
+		"sdk":    {},
 	}
-	
+
 	patterns, exists := languagePatterns[language]
 	if !exists {
 		if len(pod.Spec.Containers) > 0 {
@@ -270,7 +270,7 @@ func containersByLanguage(pod corev1.Pod, language string) []string {
 	if len(detectedContainers) == 0 && len(pod.Spec.Containers) > 0 {
 		return []string{pod.Spec.Containers[0].Name}
 	}
-	
+
 	return detectedContainers
 }
 
