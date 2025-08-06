@@ -1,0 +1,8 @@
+(x_k8s_exists($client, 'v1', 'Service', $namespace, 'simplest-disabled-collector')): false
+---
+(x_k8s_exists($client, 'v1', 'Service', $namespace, 'simplest-disabled-collector-headless')): false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: simplest-disabled-collector-monitoring

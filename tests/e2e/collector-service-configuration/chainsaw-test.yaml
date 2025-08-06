@@ -1,0 +1,25 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: collector-service-configuration
+spec:
+  description: Test collector service configuration functionality
+  steps:
+  - name: install-collector-default-services
+    try:
+    - apply:
+        file: 00-install-default.yaml
+    - assert:
+        file: 00-assert-default.yaml
+  - name: install-collector-disabled-services
+    try:
+    - apply:
+        file: 01-install-disabled.yaml
+    - assert:
+        file: 01-assert-disabled.yaml
+  - name: install-collector-custom-names
+    try:
+    - apply:
+        file: 02-install-custom-names.yaml
+    - assert:
+        file: 02-assert-custom-names.yaml
