@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-collector
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: daemonset-collector
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: statefulset-collector
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deployment-collector-monitoring
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: daemonset-collector-monitoring
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: statefulset-collector-monitoring

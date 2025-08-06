@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-collector
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: daemonset-collector
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: statefulset-collector
+---
+(x_k8s_exists($client, 'v1', 'Service', $namespace, 'deployment-collector-monitoring')): false
+---
+(x_k8s_exists($client, 'v1', 'Service', $namespace, 'daemonset-collector-monitoring')): false
+---
+(x_k8s_exists($client, 'v1', 'Service', $namespace, 'statefulset-collector-monitoring')): false
