@@ -17,6 +17,11 @@ import (
 )
 
 func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
+	// Skip RBAC creation if custom ServiceAccount is provided
+	if params.OtelCol.Spec.ServiceAccount != "" {
+		return nil, nil
+	}
+
 	rules, err := params.OtelCol.Spec.Config.GetAllRbacRules(params.Log)
 	if err != nil {
 		return nil, err
@@ -43,6 +48,10 @@ func ClusterRole(params manifests.Params) (*rbacv1.ClusterRole, error) {
 }
 
 func ClusterRoleBinding(params manifests.Params) (*rbacv1.ClusterRoleBinding, error) {
+	if params.OtelCol.Spec.ServiceAccount != "" {
+		return nil, nil
+	}
+
 	rules, err := params.OtelCol.Spec.Config.GetAllRbacRules(params.Log)
 	if err != nil {
 		return nil, err

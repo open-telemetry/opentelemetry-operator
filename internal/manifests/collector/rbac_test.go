@@ -12,10 +12,8 @@ import (
 )
 
 func TestDesiredClusterRoles(t *testing.T) {
-
-	// No Cluster Roles
 	params, err := newParams("", "testdata/prometheus-exporter.yaml", nil)
-	assert.NoError(t, err, "No")
+	assert.NoError(t, err)
 
 	cr, err := ClusterRole(params)
 	require.NoError(t, err)
@@ -125,4 +123,23 @@ func TestDesiredClusterRolBinding(t *testing.T) {
 	crb, err = ClusterRoleBinding(params)
 	require.NoError(t, err)
 	assert.NotNil(t, crb)
+}
+
+func TestSkipRBACWhenCustomServiceAccount(t *testing.T) {
+	// Test that ClusterRole and ClusterRoleBinding are not created when custom ServiceAccount is provided
+	params, err := newParams("", "testdata/rbac_resourcedetectionprocessor_k8s.yaml", nil)
+	assert.NoError(t, err)
+
+	// Set custom ServiceAccount
+	params.OtelCol.Spec.ServiceAccount = "my-custom-service-account"
+
+	// Should return nil for ClusterRole when custom SA is provided
+	cr, err := ClusterRole(params)
+	require.NoError(t, err)
+	assert.Nil(t, cr, "ClusterRole should not be created when custom ServiceAccount is provided")
+
+	// Should return nil for ClusterRoleBinding when custom SA is provided
+	crb, err := ClusterRoleBinding(params)
+	require.NoError(t, err)
+	assert.Nil(t, crb, "ClusterRoleBinding should not be created when custom ServiceAccount is provided")
 }
