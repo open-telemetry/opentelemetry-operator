@@ -103,15 +103,11 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 			StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
 				VolumeClaimTemplates: copy.Spec.VolumeClaimTemplates,
 			},
-			Autoscaler:        tov1beta1Autoscaler(copy.Spec.Autoscaler, copy.Spec.MinReplicas, copy.Spec.MaxReplicas),
-			TargetAllocator:   tov1beta1TA(copy.Spec.TargetAllocator),
-			Mode:              v1beta1.Mode(copy.Spec.Mode),
-			UpgradeStrategy:   v1beta1.UpgradeStrategy(copy.Spec.UpgradeStrategy),
-			Config:            *cfg,
-			Service:           tov1beta1ServiceSpec(copy.Spec.Service),
-			HeadlessService:   tov1beta1ServiceSpec(copy.Spec.HeadlessService),
-			MonitoringService: tov1beta1ServiceSpec(copy.Spec.MonitoringService),
-			ExtensionService:  tov1beta1ServiceSpec(copy.Spec.ExtensionService),
+			Autoscaler:      tov1beta1Autoscaler(copy.Spec.Autoscaler, copy.Spec.MinReplicas, copy.Spec.MaxReplicas),
+			TargetAllocator: tov1beta1TA(copy.Spec.TargetAllocator),
+			Mode:            v1beta1.Mode(copy.Spec.Mode),
+			UpgradeStrategy: v1beta1.UpgradeStrategy(copy.Spec.UpgradeStrategy),
+			Config:          *cfg,
 			Ingress: v1beta1.Ingress{
 				Type:             v1beta1.IngressType(copy.Spec.Ingress.Type),
 				RuleType:         v1beta1.IngressRuleType(copy.Spec.Ingress.RuleType),
@@ -254,13 +250,6 @@ func tov1beta1Probe(in *Probe) *v1beta1.Probe {
 	}
 }
 
-func tov1beta1ServiceSpec(in ServiceSpec) v1beta1.ServiceSpec {
-	return v1beta1.ServiceSpec{
-		Enabled: in.Enabled,
-		Name:    in.Name,
-	}
-}
-
 func tov1beta1ConfigMaps(in []ConfigMapsSpec) []v1beta1.ConfigMapsSpec {
 	var mapsSpecs []v1beta1.ConfigMapsSpec
 	for _, m := range in {
@@ -347,10 +336,6 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 					Termination: TLSRouteTerminationType(copy.Spec.Ingress.Route.Termination),
 				},
 			},
-			Service:                       tov1alpha1ServiceSpec(copy.Spec.Service),
-			HeadlessService:               tov1alpha1ServiceSpec(copy.Spec.HeadlessService),
-			MonitoringService:             tov1alpha1ServiceSpec(copy.Spec.MonitoringService),
-			ExtensionService:              tov1alpha1ServiceSpec(copy.Spec.ExtensionService),
 			HostNetwork:                   copy.Spec.HostNetwork,
 			ShareProcessNamespace:         copy.Spec.ShareProcessNamespace,
 			PriorityClassName:             copy.Spec.PriorityClassName,
@@ -395,13 +380,6 @@ func tov1alpha1Probe(in *v1beta1.Probe) *Probe {
 		SuccessThreshold:              in.SuccessThreshold,
 		FailureThreshold:              in.FailureThreshold,
 		TerminationGracePeriodSeconds: in.TerminationGracePeriodSeconds,
-	}
-}
-
-func tov1alpha1ServiceSpec(in v1beta1.ServiceSpec) ServiceSpec {
-	return ServiceSpec{
-		Enabled: in.Enabled,
-		Name:    in.Name,
 	}
 }
 

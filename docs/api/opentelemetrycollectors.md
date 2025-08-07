@@ -177,20 +177,6 @@ These can then in certain cases be consumed in the config file for the Collector
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspecextensionservice">extensionService</a></b></td>
-        <td>object</td>
-        <td>
-          ExtensionService to override configuration of the generated Collector ExtensionService.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspecheadlessservice">headlessService</a></b></td>
-        <td>object</td>
-        <td>
-          HeadlessService to override configuration of the generated Collector HeadlessService.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>hostNetwork</b></td>
         <td>boolean</td>
         <td>
@@ -273,13 +259,6 @@ Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.<br
           Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)<br/>
           <br/>
             <i>Enum</i>: daemonset, deployment, sidecar, statefulset<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspecmonitoringservice">monitoringService</a></b></td>
-        <td>object</td>
-        <td>
-          MonitoringService to override configuration of the generated Collector MonitoringService.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -372,13 +351,6 @@ container.
 
 In sidecar mode, this controls the security context for the
 injected sidecar container.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspecservice">service</a></b></td>
-        <td>object</td>
-        <td>
-          Service to override configuration of the generated Collector Service.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6086,76 +6058,6 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 </table>
 
 
-### OpenTelemetryCollector.spec.extensionService
-<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
-
-
-
-ExtensionService to override configuration of the generated Collector ExtensionService.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>enabled</b></td>
-        <td>boolean</td>
-        <td>
-          Enabled indicates whether the Service should be created.
-nil means not set (defaults to enabled for backward compatibility)<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name to override the default Service name<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### OpenTelemetryCollector.spec.headlessService
-<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
-
-
-
-HeadlessService to override configuration of the generated Collector HeadlessService.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>enabled</b></td>
-        <td>boolean</td>
-        <td>
-          Enabled indicates whether the Service should be created.
-nil means not set (defaults to enabled for backward compatibility)<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name to override the default Service name<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
 ### OpenTelemetryCollector.spec.ingress
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
 
@@ -9832,41 +9734,6 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
 </table>
 
 
-### OpenTelemetryCollector.spec.monitoringService
-<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
-
-
-
-MonitoringService to override configuration of the generated Collector MonitoringService.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>enabled</b></td>
-        <td>boolean</td>
-        <td>
-          Enabled indicates whether the Service should be created.
-nil means not set (defaults to enabled for backward compatibility)<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name to override the default Service name<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
 ### OpenTelemetryCollector.spec.observability
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
 
@@ -10978,41 +10845,6 @@ In addition, if HostProcess is true then HostNetwork must also be set to true.<b
 Defaults to the user specified in image metadata if unspecified.
 May also be set in PodSecurityContext. If set in both SecurityContext and
 PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### OpenTelemetryCollector.spec.service
-<sup><sup>[↩ Parent](#opentelemetrycollectorspec)</sup></sup>
-
-
-
-Service to override configuration of the generated Collector Service.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>enabled</b></td>
-        <td>boolean</td>
-        <td>
-          Enabled indicates whether the Service should be created.
-nil means not set (defaults to enabled for backward compatibility)<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name to override the default Service name<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19707,14 +19539,14 @@ This is only applicable to Deployment mode.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspecextensionservice-1">extensionService</a></b></td>
+        <td><b><a href="#opentelemetrycollectorspecextensionservice">extensionService</a></b></td>
         <td>object</td>
         <td>
           ExtensionService to override configuration of the generated Collector ExtensionService.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspecheadlessservice-1">headlessService</a></b></td>
+        <td><b><a href="#opentelemetrycollectorspecheadlessservice">headlessService</a></b></td>
         <td>object</td>
         <td>
           HeadlessService to override configuration of the generated Collector HeadlessService.<br/>
@@ -19814,7 +19646,7 @@ Default is managed.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspecmonitoringservice-1">monitoringService</a></b></td>
+        <td><b><a href="#opentelemetrycollectorspecmonitoringservice">monitoringService</a></b></td>
         <td>object</td>
         <td>
           MonitoringService to override configuration of the generated Collector MonitoringService.<br/>
@@ -19937,7 +19769,7 @@ injected sidecar container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspecservice-1">service</a></b></td>
+        <td><b><a href="#opentelemetrycollectorspecservice">service</a></b></td>
         <td>object</td>
         <td>
           Service to override configuration of the generated Collector Service.<br/>
