@@ -5,10 +5,10 @@ change_type: enhancement
 component: opamp
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Enables the OpAMP Bridge to act as a read-only proxy for effective configuration and health reporting.
+note: Correlates the OpAMP data from the proxy server with the bridge's own OpAMP data.
 
 # One or more tracking issues related to the change
-issues: [3823]
+issues: [3837]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
