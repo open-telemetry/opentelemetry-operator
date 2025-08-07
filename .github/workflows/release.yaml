@@ -8,7 +8,7 @@ on:
       - 'versions.txt'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   get-versions:

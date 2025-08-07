@@ -4,15 +4,17 @@ change_type: enhancement
 # The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
 component: collector
 
-# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Add support for extraLabels in ServiceMonitor creation
+# A brief description of the change. Surround your text with quotes ("") if you need to start with a backtick (`).
+note: "k8sattributes: Add automatic RBAC for new service.name resource attribute generator"
 
 # One or more tracking issues related to the change
-issues: [4138]
+issues: [4131]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
 subtext: |
-  Added extraLabels field to MetricsConfigSpec in v1beta1 API to allow custom labels on ServiceMonitor resources.
-  This enables users to add additional labels to ServiceMonitors created by the operator for better organization and filtering.
+  The k8sattributes processor recently added support for automatic service.name resource attribute generation.
+  This change ensures that when service.name is configured in the k8sattributes processor, the operator
+  automatically adds the necessary RBAC rules for replicasets access, which is required for extracting
+  k8s.deployment.name.
