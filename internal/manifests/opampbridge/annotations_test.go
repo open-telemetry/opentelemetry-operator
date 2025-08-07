@@ -42,7 +42,7 @@ func TestConfigMapHash(t *testing.T) {
 	expectedConfig := expectedConfigMap.Data[OpAMPBridgeFilename]
 	require.NotEmpty(t, expectedConfig)
 	expectedHash := sha256.Sum256([]byte(expectedConfig))
-	annotations := Annotations(opampBridge, expectedConfigMap, []string{".*\\.bar\\.io"})
+	annotations := PodAnnotations(opampBridge, expectedConfigMap, []string{".*\\.bar\\.io"})
 	require.Contains(t, annotations, configMapHashAnnotationKey)
 	cmHash := annotations[configMapHashAnnotationKey]
 	assert.Equal(t, fmt.Sprintf("%x", expectedHash), cmHash)
