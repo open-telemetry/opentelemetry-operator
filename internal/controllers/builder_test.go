@@ -1021,6 +1021,7 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
+						Annotations: map[string]string{},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &one,
