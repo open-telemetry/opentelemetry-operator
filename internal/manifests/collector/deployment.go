@@ -35,7 +35,7 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 			Annotations: annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: params.OtelCol.Spec.Replicas,
+			Replicas: manifestutils.GetInitialReplicas(params.OtelCol),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			},
