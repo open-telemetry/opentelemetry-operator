@@ -112,4 +112,7 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("ENABLE_WEBHOOKS"); ok {
 		cfg.EnableWebhooks, _ = strconv.ParseBool(v)
 	}
+	if v, ok := os.LookupEnv("ENABLE_NATIVE_SIDECAR"); ok {
+		cfg.NativeSidecarSupport, _ = strconv.ParseBool(v)
+	}
 }
