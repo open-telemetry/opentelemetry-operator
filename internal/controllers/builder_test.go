@@ -1021,9 +1021,6 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-opampbridge-config/hash": "05e1dc681267a9bc28fc2877ab464a98b9bd043843f14ffc0b4a394b5c86ba9f",
-						},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &one,
@@ -1039,6 +1036,9 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 									"app.kubernetes.io/name":       "test-opamp-bridge",
 									"app.kubernetes.io/part-of":    "opentelemetry",
 									"app.kubernetes.io/version":    "latest",
+								},
+								Annotations: map[string]string{
+									"opentelemetry-opampbridge-config/hash": "05e1dc681267a9bc28fc2877ab464a98b9bd043843f14ffc0b4a394b5c86ba9f",
 								},
 							},
 							Spec: corev1.PodSpec{
