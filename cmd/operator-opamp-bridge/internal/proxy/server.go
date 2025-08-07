@@ -17,7 +17,6 @@ import (
 	"github.com/open-telemetry/opamp-go/server"
 	"github.com/open-telemetry/opamp-go/server/types"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/logger"
 )
@@ -106,9 +105,14 @@ func (s *OpAMPProxy) onDisconnect(conn types.Connection) {
 	defer s.mux.Unlock()
 
 	for instanceId := range s.connections[conn] {
+		if hostName := s.agentsById[instanceId].GetHostname(); len(hostName) > 0 {
+			delete(s.agentsByHostName, hostName)
+		}
 		delete(s.agentsById, instanceId)
 	}
 	delete(s.connections, conn)
+	// Tell listeners to get updates.
+	s.updatesChan <- struct{}{}
 }
 
 func (s *OpAMPProxy) onMessage(ctx context.Context, conn types.Connection, msg *protobufs.AgentToServer) *protobufs.ServerToAgent {
@@ -134,20 +138,12 @@ func (s *OpAMPProxy) onMessage(ctx context.Context, conn types.Connection, msg *
 			s.connections[conn] = map[uuid.UUID]bool{}
 		}
 		s.connections[conn][instanceId] = true
-		hostName := ""
-		if msg.AgentDescription != nil {
-			for _, kv := range msg.AgentDescription.GetNonIdentifyingAttributes() {
-				if kv.Key == string(semconv.HostNameKey) {
-					hostName = kv.Value.GetStringValue()
-				}
-			}
-		}
-		if len(hostName) > 0 {
-			s.agentsByHostName[hostName] = instanceId
-		}
 		agentUpdated = true
 	}
 	agentUpdated = s.agentsById[instanceId].UpdateStatus(msg, response) || agentUpdated
+	if hostName := s.agentsById[instanceId].GetHostname(); len(hostName) > 0 {
+		s.agentsByHostName[hostName] = instanceId
+	}
 	s.mux.Unlock()
 	if agentUpdated {
 		s.updatesChan <- struct{}{}

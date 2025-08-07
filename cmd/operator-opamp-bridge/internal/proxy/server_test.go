@@ -56,6 +56,7 @@ func TestOpAMPProxy_OnDisconnect(t *testing.T) {
 
 	assert.Empty(t, proxyServer.agentsById, "agentsById should be empty")
 	assert.Empty(t, proxyServer.connections, "connections should be empty")
+	assert.Empty(t, proxyServer.agentsByHostName, "agentsByHostName should be empty")
 }
 
 func TestOpAMPProxy_GetConfigurations(t *testing.T) {
