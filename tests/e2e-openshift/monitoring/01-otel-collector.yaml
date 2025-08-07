@@ -1,4 +1,4 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: cluster-collector
@@ -7,17 +7,28 @@ spec:
   observability:
     metrics:
       enableMetrics: true
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
+          grpc: {}
+          http: {}
     processors:
+      memory_limiter:
+        check_interval: 1
+        limit_percentage: 75
+        spike_limit_percentage: 15
     exporters:
       debug:
+        verbosity: detailed
     service:
       pipelines:
         traces:
+          receivers: [otlp]
+          exporters: [debug]
+        logs:
+          receivers: [otlp]
+          exporters: [debug]
+        metrics:
           receivers: [otlp]
           exporters: [debug]

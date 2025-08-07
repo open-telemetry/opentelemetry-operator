@@ -21,24 +21,18 @@ spec:
       value: "true"
     - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
       value: "false"
-    - name: SPLUNK_PROFILER_ENABLED
-      value: "false"
     - name: JAVA_TOOL_OPTIONS
-      value: ' -javaagent:/otel-auto-instrumentation-java/javaagent.jar'
-    - name: OTEL_TRACES_EXPORTER
-      value: otlp
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4317
-    - name: OTEL_EXPORTER_OTLP_TIMEOUT
-      value: "20"
+      value: ' -javaagent:/otel-auto-instrumentation-java-myapp/javaagent.jar'
     - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
-    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
-      value: "true"
+      value: always_on
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_LOGS_EXPORTER
+      value: none
     - name: OTEL_SERVICE_NAME
       value: my-java
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4318
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
       valueFrom:
         fieldRef:
@@ -53,14 +47,20 @@ spec:
       value: jaeger,b3
     - name: OTEL_RESOURCE_ATTRIBUTES
     name: myapp
+    ports:
+    - containerPort: 8080
+      protocol: TCP
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
-    - mountPath: /otel-auto-instrumentation-java
+    - mountPath: /otel-auto-instrumentation-java-myapp
       name: opentelemetry-auto-instrumentation-java
   - args:
     - --config=env:OTEL_CONFIG
     name: otc-container
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
   initContainers:
   - name: opentelemetry-auto-instrumentation-java
 status:

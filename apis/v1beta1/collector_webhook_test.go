@@ -11,9 +11,10 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	go_yaml "github.com/goccy/go-yaml"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -74,10 +75,10 @@ func TestValidate(t *testing.T) {
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
-		cfg := config.New(
-			config.WithCollectorImage("default-collector"),
-			config.WithTargetAllocatorImage("default-ta-allocator"),
-		)
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		params := manifests.Params{
 			Log:     logr.Discard(),
 			Config:  cfg,
@@ -93,13 +94,14 @@ func TestValidate(t *testing.T) {
 
 	for _, tt := range tests {
 		test := tt
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		webhook := v1beta1.NewCollectorWebhook(
 			logr.Discard(),
 			testScheme,
-			config.New(
-				config.WithCollectorImage("collector:v0.0.0"),
-				config.WithTargetAllocatorImage("ta:v0.0.0"),
-			),
+			cfg,
 			getReviewer(test.shouldFailSar),
 			nil,
 			bv,
@@ -141,7 +143,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Config: func() v1beta1.Config {
 						const input = `{"receivers":{"otlp":{"protocols":{"grpc":null,"http":null}}},"exporters":{"debug":null},"service":{"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
-						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
+						require.NoError(t, go_yaml.Unmarshal([]byte(input), &cfg))
 						return cfg
 					}(),
 				},
@@ -158,9 +160,11 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            v1beta1.ModeDeployment,
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
 					Config: func() v1beta1.Config {
-						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317"},"http":{"endpoint":"0.0.0.0:4318"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"address":"0.0.0.0:8888"}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
+						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317"},"http":{"endpoint":"0.0.0.0:4318"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"0.0.0.0","port":8888}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
-						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
+						require.NoError(t, go_yaml.Unmarshal([]byte(input), &cfg))
+						// This is a workaround to avoid the type mismatch because how go-yaml unmarshals
+						cfg.Service.Telemetry.Object["metrics"].(map[string]interface{})["readers"].([]interface{})[0].(map[string]interface{})["pull"].(map[string]interface{})["exporter"].(map[string]interface{})["prometheus"].(map[string]interface{})["port"] = int32(8888)
 						return cfg
 					}(),
 				},
@@ -171,9 +175,9 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: func() v1beta1.Config {
-						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"address":"1.2.3.4:7654"}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
+						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"localhost","port":9999}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
-						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
+						require.NoError(t, go_yaml.Unmarshal([]byte(input), &cfg))
 						return cfg
 					}(),
 				},
@@ -190,9 +194,9 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            v1beta1.ModeDeployment,
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
 					Config: func() v1beta1.Config {
-						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317","headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"address":"1.2.3.4:7654"}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
+						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317","headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"localhost","port":9999}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
-						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
+						require.NoError(t, go_yaml.Unmarshal([]byte(input), &cfg))
 						return cfg
 					}(),
 				},
@@ -509,10 +513,10 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
-		cfg := config.New(
-			config.WithCollectorImage("default-collector"),
-			config.WithTargetAllocatorImage("default-ta-allocator"),
-		)
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		params := manifests.Params{
 			Log:     logr.Discard(),
 			Config:  cfg,
@@ -529,13 +533,14 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			cfg := config.Config{
+				CollectorImage:       "collector:v0.0.0",
+				TargetAllocatorImage: "ta:v0.0.0",
+			}
 			cvw := v1beta1.NewCollectorWebhook(
 				logr.Discard(),
 				testScheme,
-				config.New(
-					config.WithCollectorImage("collector:v0.0.0"),
-					config.WithTargetAllocatorImage("ta:v0.0.0"),
-				),
+				cfg,
 				getReviewer(test.shouldFailSar),
 				nil,
 				bv,
@@ -547,7 +552,9 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				assert.NoError(t, test.expected.Spec.Config.Service.ApplyDefaults(logr.Discard()), "could not apply defaults")
 			}
 			assert.NoError(t, err)
-			assert.Equal(t, test.expected, test.otelcol)
+			if diff := cmp.Diff(test.expected, test.otelcol); diff != "" {
+				t.Errorf("v1beta1.OpenTelemetryCollector mismatch (-want +got):\n%s", diff)
+			}
 		})
 	}
 }
@@ -582,13 +589,24 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			Telemetry: &v1beta1.AnyConfig{
 				Object: map[string]interface{}{
 					"metrics": map[string]interface{}{
-						"address": "${env:POD_ID}:8888",
+						"readers": []map[string]interface{}{
+							{
+								"pull": map[string]interface{}{
+									"exporter": map[string]interface{}{
+										"prometheus": map[string]interface{}{
+											"host": "${env:POD_ID}",
+											"port": int32(8888),
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
 		},
 	}
-	err := yaml.Unmarshal([]byte(cfgYaml), &cfg)
+	err := go_yaml.Unmarshal([]byte(cfgYaml), &cfg)
 	require.NoError(t, err)
 
 	tests := []struct { //nolint:govet
@@ -708,6 +726,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - configmaps: [get]",
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - discovery.k8s.io/endpointslices: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /metrics: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /api: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /api/*: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /apis: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /apis/*: [get]",
 			},
 		},
 		{
@@ -838,7 +860,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 						Ports: []v1beta1.PortsSpec{
 							{
 								ServicePort: v1.ServicePort{
-									// this port name contains a non alphanumeric character, which is invalid.
+									// this port name contains a non-alphanumeric character, which is invalid.
 									Name:     "-test🦄port",
 									Port:     12345,
 									Protocol: v1.ProtocolTCP,
@@ -896,6 +918,17 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "maxReplicas should be defined and one or more",
+		},
+		{
+			name: "it should return error when minReplica is set but maxReplica is not set",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Autoscaler: &v1beta1.AutoscalerSpec{
+						MinReplicas: &three,
+					},
+				},
+			},
+			expectedErr: "spec.maxReplica must be set when spec.minReplica is set",
 		},
 		{
 			name: "invalid replicas, greater than max",
@@ -1366,10 +1399,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
-		cfg := config.New(
-			config.WithCollectorImage("default-collector"),
-			config.WithTargetAllocatorImage("default-ta-allocator"),
-		)
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		params := manifests.Params{
 			Log:     logr.Discard(),
 			Config:  cfg,
@@ -1386,13 +1419,14 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			cfg := config.Config{
+				CollectorImage:       "default-collector",
+				TargetAllocatorImage: "default-ta-allocator",
+			}
 			cvw := v1beta1.NewCollectorWebhook(
 				logr.Discard(),
 				testScheme,
-				config.New(
-					config.WithCollectorImage("collector:v0.0.0"),
-					config.WithTargetAllocatorImage("ta:v0.0.0"),
-				),
+				cfg,
 				getReviewer(test.shouldFailSar),
 				nil,
 				bv,
@@ -1434,10 +1468,10 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
-		cfg := config.New(
-			config.WithCollectorImage("default-collector"),
-			config.WithTargetAllocatorImage("default-ta-allocator"),
-		)
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		params := manifests.Params{
 			Log:     logr.Discard(),
 			Config:  cfg,
@@ -1454,13 +1488,14 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			cfg := config.Config{
+				CollectorImage:       "collector:v0.0.0",
+				TargetAllocatorImage: "ta:v0.0.0",
+			}
 			cvw := v1beta1.NewCollectorWebhook(
 				logr.Discard(),
 				testScheme,
-				config.New(
-					config.WithCollectorImage("collector:v0.0.0"),
-					config.WithTargetAllocatorImage("ta:v0.0.0"),
-				),
+				cfg,
 				getReviewer(test.shouldFailSar),
 				nil,
 				bv,

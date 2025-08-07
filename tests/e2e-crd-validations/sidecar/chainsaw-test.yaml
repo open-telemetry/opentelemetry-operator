@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: cel-validations-test
+spec:
+  bindings:
+  - name: version
+    value: (x_k8s_server_version($config))
+  - name: minorVersion
+    value: (to_number($version.minor))
+  steps:
+  - name: step-00
+    bindings:
+    - name: priorityClassErrorMessageCEL
+      value: |-
+        OpenTelemetryCollector.opentelemetry.io "sidecar-priorityclass" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'
+    - name: priorityClassErrorMessageWebhook
+      value: |-
+        admission webhook "vopentelemetrycollectorcreateupdatebeta.kb.io" denied the request: the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'
+    try:
+    - apply:
+        file: 00-install-priority-class.yaml
+        expect:
+         - check:
+            ($error != null): true
+            ($error): (($minorVersion > `24` && $priorityClassErrorMessageCEL) || $priorityClassErrorMessageWebhook)
+  - name: step-01
+    bindings:
+    - name: tolerationErrorMessageCEL
+      value: |-
+        OpenTelemetryCollector.opentelemetry.io "sidecar-tolerations" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'
+    - name: tolerationErrorMessageWebhook
+      value: |-
+        admission webhook "vopentelemetrycollectorcreateupdatebeta.kb.io" denied the request: the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'
+    try:
+    - apply:
+        file: 01-install-tolerations.yaml
+        expect:
+         - check:
+            ($error != null): true
+            ($error): (($minorVersion > `24` && $tolerationErrorMessageCEL) || $tolerationErrorMessageWebhook)
+  - name: step-02
+    bindings:
+    - name: affinityErrorMessageCEL
+      value: |-
+        OpenTelemetryCollector.opentelemetry.io "sidecar-affinity" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'
+    - name: affinityErrorMessageWebhook
+      value: |-
+        admission webhook "vopentelemetrycollectorcreateupdatebeta.kb.io" denied the request: the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'
+    try:
+    - apply:
+        file: 02-install-affinity.yaml
+        expect:
+         - check:
+            ($error != null): true
+            ($error): (($minorVersion > `24` && $affinityErrorMessageCEL) || $affinityErrorMessageWebhook)
+  - name: step-03
+    bindings:
+    - name: affinityErrorMessageCEL
+      value: |-
+        OpenTelemetryCollector.opentelemetry.io "sidecar-additional-containers" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'
+    - name: affinityErrorMessageWebhook
+      value: |-
+        admission webhook "vopentelemetrycollectorcreateupdatebeta.kb.io" denied the request: the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'AdditionalContainers'
+    try:
+    - apply:
+        file: 03-install-additional-containers.yaml
+        expect:
+         - check:
+            ($error != null): true
+            ($error): (($minorVersion > `24` && $affinityErrorMessageCEL) || $affinityErrorMessageWebhook)

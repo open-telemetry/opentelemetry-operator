@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package collector_test
+package collector
 
 import (
 	"testing"
@@ -14,7 +14,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	. "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 )
 
 func TestPDB(t *testing.T) {
@@ -114,7 +113,7 @@ func TestPDB(t *testing.T) {
 				otelcol.Spec.PodDisruptionBudget = test.spec.DeepCopy()
 				configuration := config.New()
 				pdb, err := PodDisruptionBudget(manifests.Params{
-					Log:     logger,
+					Log:     testLogger,
 					Config:  configuration,
 					OtelCol: otelcol,
 				})

@@ -13,6 +13,12 @@ spec:
         protocols:
           grpc:
           http:
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: 'test-job'
+            static_configs:
+            - targets: ['localhost:9090']
 
     exporters:
       prometheus/prod:
@@ -27,5 +33,5 @@ spec:
     service:
       pipelines:
         metrics:
-          receivers: [otlp]
+          receivers: [otlp, prometheus]
           exporters: [prometheus/dev, prometheus/prod, prometheusremotewrite/prometheus]

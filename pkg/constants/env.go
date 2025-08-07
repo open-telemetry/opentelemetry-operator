@@ -24,12 +24,9 @@ const (
 	AnnotationDefaultAutoInstrumentationApacheHttpd = InstrumentationPrefix + "default-auto-instrumentation-apache-httpd-image"
 	AnnotationDefaultAutoInstrumentationNginx       = InstrumentationPrefix + "default-auto-instrumentation-nginx-image"
 
-	LabelAppName    = "app.kubernetes.io/name"
-	LabelAppVersion = "app.kubernetes.io/version"
-	LabelAppPartOf  = "app.kubernetes.io/part-of"
-
-	LabelTargetAllocator              = "opentelemetry.io/target-allocator"
-	ResourceAttributeAnnotationPrefix = "resource.opentelemetry.io/"
+	LabelTargetAllocator                         = "opentelemetry.io/target-allocator"
+	ResourceAttributeAnnotationPrefix            = "resource.opentelemetry.io/"
+	KubernetesLastAppliedConfigurationAnnotation = "^kubectl\\.kubernetes\\.io/last-applied-configuration$"
 
 	EnvPodName  = "OTEL_RESOURCE_ATTRIBUTES_POD_NAME"
 	EnvPodUID   = "OTEL_RESOURCE_ATTRIBUTES_POD_UID"
@@ -37,17 +34,16 @@ const (
 	EnvNodeName = "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME"
 	EnvNodeIP   = "OTEL_NODE_IP"
 
-	FlagCRMetrics   = "enable-cr-metrics"
-	FlagApacheHttpd = "enable-apache-httpd-instrumentation"
-	FlagDotNet      = "enable-dotnet-instrumentation"
-	FlagGo          = "enable-go-instrumentation"
-	FlagPython      = "enable-python-instrumentation"
-	FlagNginx       = "enable-nginx-instrumentation"
-	FlagNodeJS      = "enable-nodejs-instrumentation"
-	FlagJava        = "enable-java-instrumentation"
-
 	TACollectorTLSDirPath      = "/tls"
 	TACollectorCAFileName      = "ca.crt"
 	TACollectorTLSKeyFileName  = "tls.key"
 	TACollectorTLSCertFileName = "tls.crt"
+)
+
+var (
+	LabelAppName = []string{
+		"app.kubernetes.io/instance",
+		"app.kubernetes.io/name",
+	}
+	LabelAppVersion = []string{"app.kubernetes.io/version"}
 )

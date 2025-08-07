@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: opentelemetry-operator-system/opentelemetry-operator-serving-cert
-    controller-gen.kubebuilder.io/version: v0.17.1
+    controller-gen.kubebuilder.io/version: v0.18.0
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: opentelemetry-operator
@@ -1170,6 +1170,10 @@ spec:
                 additionalProperties:
                   type: string
                 type: object
+              collectorNotReadyGracePeriod:
+                default: 30s
+                format: duration
+                type: string
               env:
                 items:
                   properties:
@@ -2103,6 +2107,10 @@ spec:
                         type: boolean
                       enableMetrics:
                         type: boolean
+                      extraLabels:
+                        additionalProperties:
+                          type: string
+                        type: object
                     type: object
                 type: object
               podAnnotations:
@@ -2377,6 +2385,7 @@ spec:
                     x-kubernetes-map-type: atomic
                 type: object
               replicas:
+                default: 1
                 format: int32
                 type: integer
               resources:
@@ -3389,8 +3398,6 @@ spec:
                   type: object
                 type: array
                 x-kubernetes-list-type: atomic
-            required:
-            - managementState
             type: object
           status:
             properties:

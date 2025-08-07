@@ -11,14 +11,13 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	go_yaml "github.com/goccy/go-yaml"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	go_yaml "gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/yaml"
 )
 
 func TestConfigFiles(t *testing.T) {
@@ -35,7 +34,7 @@ func TestConfigFiles(t *testing.T) {
 			collectorYaml, err := os.ReadFile(testFile)
 			require.NoError(t, err)
 
-			collectorJson, err := yaml.YAMLToJSON(collectorYaml)
+			collectorJson, err := go_yaml.YAMLToJSON(collectorYaml)
 			require.NoError(t, err)
 
 			cfg := &Config{}
@@ -45,7 +44,7 @@ func TestConfigFiles(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.JSONEq(t, string(collectorJson), string(jsonCfg))
-			yamlCfg, err := yaml.JSONToYAML(jsonCfg)
+			yamlCfg, err := go_yaml.JSONToYAML(jsonCfg)
 			require.NoError(t, err)
 			assert.YAMLEq(t, string(collectorYaml), string(yamlCfg))
 		})
@@ -56,7 +55,7 @@ func TestNullObjects(t *testing.T) {
 	collectorYaml, err := os.ReadFile("./testdata/otelcol-null-values.yaml")
 	require.NoError(t, err)
 
-	collectorJson, err := yaml.YAMLToJSON(collectorYaml)
+	collectorJson, err := go_yaml.YAMLToJSON(collectorYaml)
 	require.NoError(t, err)
 
 	cfg := &Config{}
@@ -71,7 +70,7 @@ func TestNullObjects_issue_3445(t *testing.T) {
 	collectorYaml, err := os.ReadFile("./testdata/issue-3452.yaml")
 	require.NoError(t, err)
 
-	collectorJson, err := yaml.YAMLToJSON(collectorYaml)
+	collectorJson, err := go_yaml.YAMLToJSON(collectorYaml)
 	require.NoError(t, err)
 
 	cfg := &Config{}
@@ -1096,4 +1095,52 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
+	// Test case where logs configuration exists and metrics is added
+	cfg := &Config{
+		Service: Service{
+			Telemetry: &AnyConfig{
+				Object: map[string]interface{}{
+					"logs": map[string]interface{}{
+						"level": "debug",
+					},
+				},
+			},
+		},
+	}
+
+	expected := &Config{
+		Service: Service{
+			Telemetry: &AnyConfig{
+				Object: map[string]interface{}{
+					"logs": map[string]interface{}{
+						"level": "debug",
+					},
+					"metrics": map[string]interface{}{
+						"readers": []interface{}{
+							map[string]interface{}{
+								"pull": map[string]interface{}{
+									"exporter": map[string]interface{}{
+										"prometheus": map[string]interface{}{
+											"host": "0.0.0.0",
+											"port": int32(8888),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := cfg.Service.ApplyDefaults(logr.Discard())
+	require.NoError(t, err)
+
+	telemetry := cfg.Service.GetTelemetry()
+	require.NotNil(t, telemetry)
+	require.Equal(t, expected, cfg)
 }

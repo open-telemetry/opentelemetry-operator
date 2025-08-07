@@ -113,7 +113,7 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
 
-	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		taConfig["https"] = map[string]interface{}{
 			"enabled":            true,
 			"listen_addr":        ":8443",
@@ -121,6 +121,10 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			"tls_cert_file_path": filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSCertFileName),
 			"tls_key_file_path":  filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorTLSKeyFileName),
 		}
+	}
+
+	if taSpec.CollectorNotReadyGracePeriod.Size() > 0 {
+		taConfig["collector_not_ready_grace_period"] = taSpec.CollectorNotReadyGracePeriod.Duration
 	}
 
 	taConfigYAML, err := yaml.Marshal(taConfig)

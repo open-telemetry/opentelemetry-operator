@@ -155,12 +155,13 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			cfg := config.Config{
+				TargetAllocatorImage: "ta:v0.0.0",
+			}
 			webhook := &TargetAllocatorWebhook{
 				logger: logr.Discard(),
 				scheme: testScheme,
-				cfg: config.New(
-					config.WithTargetAllocatorImage("ta:v0.0.0"),
-				),
+				cfg:    cfg,
 			}
 			ctx := context.Background()
 			err := webhook.Default(ctx, &test.targetallocator)
@@ -236,6 +237,10 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - configmaps: [get]",
 				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - discovery.k8s.io/endpointslices: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /metrics: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /api: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /api/*: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /apis: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /apis/*: [get]",
 			},
 		},
 		{
@@ -253,7 +258,7 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 						Ports: []v1beta1.PortsSpec{
 							{
 								ServicePort: v1.ServicePort{
-									// this port name contains a non alphanumeric character, which is invalid.
+									// this port name contains a non-alphanumeric character, which is invalid.
 									Name:     "-test🦄port",
 									Port:     12345,
 									Protocol: v1.ProtocolTCP,
@@ -319,13 +324,14 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			cfg := config.Config{
+				CollectorImage:       "targetallocator:v0.0.0",
+				TargetAllocatorImage: "ta:v0.0.0",
+			}
 			cvw := &TargetAllocatorWebhook{
-				logger: logr.Discard(),
-				scheme: testScheme,
-				cfg: config.New(
-					config.WithCollectorImage("targetallocator:v0.0.0"),
-					config.WithTargetAllocatorImage("ta:v0.0.0"),
-				),
+				logger:   logr.Discard(),
+				scheme:   testScheme,
+				cfg:      cfg,
 				reviewer: getReviewer(test.shouldFailSar),
 			}
 			ctx := context.Background()

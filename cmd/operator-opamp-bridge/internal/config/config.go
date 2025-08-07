@@ -103,8 +103,12 @@ type AgentDescription struct {
 
 func NewConfig(logger logr.Logger) *Config {
 	return &Config{
-		instanceId: mustGetInstanceId(),
-		RootLogger: logger,
+		instanceId:         mustGetInstanceId(),
+		Name:               opampBridgeName,
+		ListenAddr:         defaultServerListenAddr,
+		HeartbeatInterval:  defaultHeartbeatInterval,
+		KubeConfigFilePath: defaultKubeConfigPath,
+		RootLogger:         logger,
 	}
 }
 
@@ -204,7 +208,7 @@ func keyValuePair(key string, value string) *protobufs.KeyValue {
 func mustGetInstanceId() uuid.UUID {
 	u, err := uuid.NewV7()
 	if err != nil {
-		// This really should never happen and if it does we should fail.
+		// This really should never happen and if it does, we should fail.
 		panic(err)
 	}
 	return u
@@ -230,13 +234,21 @@ func (c *Config) GetKubernetesClient() (client.Client, error) {
 	})
 }
 
-func Load(logger logr.Logger, flagSet *pflag.FlagSet) (*Config, error) {
-	cfg := NewConfig(logger)
-
-	// load the config from the config file
-	configFilePath, err := getConfigFilePath(flagSet)
+func Load(logger logr.Logger, args []string) (*Config, error) {
+	flagSet := GetFlagSet(pflag.ExitOnError)
+	err := flagSet.Parse(args)
 	if err != nil {
 		return nil, err
+	}
+	cfg := NewConfig(logger)
+	configFilePath := defaultConfigFilePath
+	// load the config from the config file
+	configFilePathByFlag, changed, err := getConfigFilePath(flagSet)
+	if err != nil {
+		return nil, err
+	}
+	if changed {
+		configFilePath = configFilePathByFlag
 	}
 	err = LoadFromFile(cfg, configFilePath)
 	if err != nil {
@@ -252,42 +264,42 @@ func Load(logger logr.Logger, flagSet *pflag.FlagSet) (*Config, error) {
 }
 
 func LoadFromCLI(target *Config, flagSet *pflag.FlagSet) error {
-	var err error
 	klog.SetLogger(target.RootLogger)
 	ctrl.SetLogger(target.RootLogger)
 
-	target.KubeConfigFilePath, err = getKubeConfigFilePath(flagSet)
-	if err != nil {
+	if kubeConfigFilePath, changed, err := getKubeConfigFilePath(flagSet); err != nil {
 		return err
+	} else if changed {
+		target.KubeConfigFilePath = kubeConfigFilePath
 	}
-	clusterConfig, err := clientcmd.BuildConfigFromFlags("", target.KubeConfigFilePath)
-	if err != nil {
+	clusterConfig, errBuildFromConfig := clientcmd.BuildConfigFromFlags("", target.KubeConfigFilePath)
+	if errBuildFromConfig != nil {
 		pathError := &fs.PathError{}
-		if ok := errors.As(err, &pathError); !ok {
-			return err
+		if ok := errors.As(errBuildFromConfig, &pathError); !ok {
+			return errBuildFromConfig
 		}
-		clusterConfig, err = rest.InClusterConfig()
-		if err != nil {
-			return err
+		clusterConfig, errBuildFromConfig = rest.InClusterConfig()
+		if errBuildFromConfig != nil {
+			return errBuildFromConfig
 		}
 	}
 	target.ClusterConfig = clusterConfig
 
-	target.ListenAddr, err = getListenAddr(flagSet)
-	if err != nil {
+	if listenAddr, changed, err := getListenAddr(flagSet); err != nil {
 		return err
+	} else if changed {
+		target.ListenAddr = listenAddr
 	}
-
-	target.HeartbeatInterval, err = getHeartbeatInterval(flagSet)
-	if err != nil {
+	if heartbeatInterval, changed, err := getHeartbeatInterval(flagSet); err != nil {
 		return err
+	} else if changed {
+		target.HeartbeatInterval = heartbeatInterval
 	}
-
-	target.Name, err = getName(flagSet)
-	if err != nil {
+	if name, changed, err := getName(flagSet); err != nil {
 		return err
+	} else if changed {
+		target.Name = name
 	}
-
 	return nil
 }
 

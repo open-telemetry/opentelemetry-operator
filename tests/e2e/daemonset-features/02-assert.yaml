@@ -5,6 +5,7 @@ metadata:
 spec:
   template:
     spec:
+       terminationGracePeriodSeconds: 600
        hostNetwork: true
        containers:
        - args:

@@ -1,4 +1,4 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: smoke-ports
@@ -11,7 +11,7 @@ spec:
     protocol: TCP
     targetPort: 4317
     hostPort: 4317
-  config: |
+  config:
     receivers:
       jaeger:
         protocols:

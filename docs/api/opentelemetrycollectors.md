@@ -325,9 +325,10 @@ default.<br/>
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
-          Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if your are not using autoscaling<br/>
+          Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if you are not using autoscaling<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Default</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -358,6 +359,14 @@ injected sidecar container.<br/>
         <td>
           ServiceAccount indicates the name of an existing service account to use with this instance. When set,
 the operator will not automatically create a ServiceAccount for the collector.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>serviceName</b></td>
+        <td>string</td>
+        <td>
+          ServiceName is the name of the Service to be used.
+If not specified, it will default to "<name>-headless".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5012,7 +5021,7 @@ Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these 
         <td><b>minReplicas</b></td>
         <td>integer</td>
         <td>
-          MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1<br/>
+          MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -9780,8 +9789,7 @@ Metrics defines the metrics configuration for operands.
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
-          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -12960,8 +12968,7 @@ Metrics defines the metrics configuration for operands.
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
-          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -19440,17 +19447,6 @@ The empty objects e.g. batch: should be written as batch: {} otherwise they won'
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b>managementState</b></td>
-        <td>enum</td>
-        <td>
-          ManagementState defines if the CR should be managed by the operator or not.
-Default is managed.<br/>
-          <br/>
-            <i>Enum</i>: managed, unmanaged<br/>
-            <i>Default</i>: managed<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecadditionalcontainersindex-1">additionalContainers</a></b></td>
         <td>[]object</td>
         <td>
@@ -19614,6 +19610,17 @@ It is only effective when healthcheckextension is configured in the OpenTelemetr
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>managementState</b></td>
+        <td>enum</td>
+        <td>
+          ManagementState defines if the CR should be managed by the operator or not.
+Default is managed.<br/>
+          <br/>
+            <i>Enum</i>: managed, unmanaged<br/>
+            <i>Default</i>: managed<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>mode</b></td>
         <td>enum</td>
         <td>
@@ -19713,6 +19720,7 @@ It is only effective when healthcheckextension is configured in the OpenTelemetr
           Replicas is the number of pod instances for the underlying replicaset. Set this if you are not using autoscaling.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Default</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19743,6 +19751,14 @@ injected sidecar container.<br/>
         <td>
           ServiceAccount indicates the name of an existing service account to use with this instance. When set,
 the operator will not automatically create a ServiceAccount.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>serviceName</b></td>
+        <td>string</td>
+        <td>
+          ServiceName is the name of the Service to be used.
+If not specified, it will default to "<name>-headless".<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24534,7 +24550,7 @@ Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these 
         <td><b>minReplicas</b></td>
         <td>integer</td>
         <td>
-          MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1<br/>
+          MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1<br/>
           <br/>
             <i>Format</i>: int32<br/>
         </td>
@@ -29398,8 +29414,14 @@ Metrics defines the metrics configuration for operands.
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
-          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>extraLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          ExtraLabels are additional labels to be added to the ServiceMonitor<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -30712,6 +30734,17 @@ WARNING: The per-node strategy currently ignores targets without a Node, like co
           <br/>
             <i>Enum</i>: least-weighted, consistent-hashing, per-node<br/>
             <i>Default</i>: consistent-hashing<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>collectorNotReadyGracePeriod</b></td>
+        <td>string</td>
+        <td>
+          CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
+The default is 30s, which means that if a collector becomes not Ready, the target allocator will wait for 30 seconds before reassigning its targets. The assumption is that the state is temporary, and an expensive target reallocation should be avoided if possible.<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+            <i>Default</i>: 30s<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -32797,8 +32830,14 @@ Metrics defines the metrics configuration for operands.
         <td><b>enableMetrics</b></td>
         <td>boolean</td>
         <td>
-          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-The operator.observability.prometheus feature gate must be enabled to use this feature.<br/>
+          EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>extraLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          ExtraLabels are additional labels to be added to the ServiceMonitor<br/>
         </td>
         <td>false</td>
       </tr></tbody>

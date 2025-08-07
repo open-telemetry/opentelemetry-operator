@@ -4,13 +4,17 @@
 package allocation
 
 import (
+	"context"
 	"errors"
 	"runtime"
 	"slices"
 	"sync"
+	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/diff"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
@@ -25,19 +29,48 @@ import (
 
 var _ Allocator = &allocator{}
 
-func newAllocator(log logr.Logger, strategy Strategy, opts ...Option) Allocator {
+func newAllocator(log logr.Logger, strategy Strategy, opts ...Option) (Allocator, error) {
+	meter := otel.GetMeterProvider().Meter("targetallocator")
+	// targetsPerCollector records how many targets have been assigned to each collector.
+	// It is currently the responsibility of the strategy to track this information.
+	targetsPerCollector, err := meter.Int64Gauge("opentelemetry_allocator_targets_per_collector", metric.WithDescription("The number of targets for each collector."))
+	if err != nil {
+		return nil, err
+	}
+	collectorsAllocatable, err := meter.Int64Gauge("opentelemetry_allocator_collectors_allocatable", metric.WithDescription("Number of collectors the allocator is able to allocate to."))
+	if err != nil {
+		return nil, err
+	}
+	timeToAssign, err := meter.Float64Histogram("opentelemetry_allocator_time_to_allocate", metric.WithDescription("The time it takes to allocate"))
+	if err != nil {
+		return nil, err
+	}
+	targetsRemaining, err := meter.Int64Gauge("opentelemetry_allocator_targets_remaining", metric.WithDescription("Number of targets kept after filtering."))
+	if err != nil {
+		return nil, err
+	}
+	targetsUnassigned, err := meter.Int64Gauge("opentelemetry_allocator_targets_unassigned", metric.WithDescription("Number of targets that could not be assigned due to missing node label."))
+	if err != nil {
+		return nil, err
+	}
+
 	chAllocator := &allocator{
 		strategy:                      strategy,
 		collectors:                    make(map[string]*Collector),
-		targetItems:                   make(map[string]*target.Item),
-		targetItemsPerJobPerCollector: make(map[string]map[string]map[string]bool),
+		targetItems:                   make(map[target.ItemHash]*target.Item),
+		targetItemsPerJobPerCollector: make(map[string]map[string]map[target.ItemHash]bool),
 		log:                           log,
+		targetsPerCollector:           targetsPerCollector,
+		collectorsAllocatable:         collectorsAllocatable,
+		timeToAssign:                  timeToAssign,
+		targetsRemaining:              targetsRemaining,
+		targetsUnassigned:             targetsUnassigned,
 	}
 	for _, opt := range opts {
 		opt(chAllocator)
 	}
 
-	return chAllocator
+	return chAllocator, nil
 }
 
 type allocator struct {
@@ -49,17 +82,22 @@ type allocator struct {
 
 	// targetItems is a map from a target item's hash to the target items allocated state
 	// targetItem hash -> target item pointer
-	targetItems map[string]*target.Item
+	targetItems map[target.ItemHash]*target.Item
 
 	// collectorKey -> job -> target item hash -> true
-	targetItemsPerJobPerCollector map[string]map[string]map[string]bool
+	targetItemsPerJobPerCollector map[string]map[string]map[target.ItemHash]bool
 
 	// m protects collectors, targetItems and targetItemsPerJobPerCollector for concurrent use.
 	m sync.RWMutex
 
 	log logr.Logger
 
-	filter Filter
+	filter                Filter
+	targetsPerCollector   metric.Int64Gauge
+	collectorsAllocatable metric.Int64Gauge
+	timeToAssign          metric.Float64Histogram
+	targetsRemaining      metric.Int64Gauge
+	targetsUnassigned     metric.Int64Gauge
 }
 
 // SetFilter sets the filtering hook to use.
@@ -76,13 +114,16 @@ func (a *allocator) SetFallbackStrategy(strategy Strategy) {
 // load balancing decisions. This method should be called when there are
 // new targets discovered or existing targets are shutdown.
 func (a *allocator) SetTargets(targets []*target.Item) {
-	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetTargets", a.strategy.GetName()))
-	defer timer.ObserveDuration()
+	begin := time.Now()
+	defer func() {
+		a.timeToAssign.Record(context.Background(), time.Since(begin).Seconds(), metric.WithAttributes(attribute.String("method", "SetTargets"), attribute.String("strategy", a.strategy.GetName())))
+	}()
 
 	if a.filter != nil {
 		targets = a.filter.Apply(targets)
 	}
-	RecordTargetsKept(targets)
+
+	a.targetsRemaining.Record(context.Background(), int64(len(targets)))
 	concurrency := runtime.NumCPU() * 2 // determined experimentally
 	targetMap := buildTargetMap(targets, concurrency)
 
@@ -100,10 +141,12 @@ func (a *allocator) SetTargets(targets []*target.Item) {
 // SetCollectors sets the set of collectors with key=collectorName, value=Collector object.
 // This method is called when Collectors are added or removed.
 func (a *allocator) SetCollectors(collectors map[string]*Collector) {
-	timer := prometheus.NewTimer(TimeToAssign.WithLabelValues("SetCollectors", a.strategy.GetName()))
-	defer timer.ObserveDuration()
+	begin := time.Now()
+	defer func() {
+		a.timeToAssign.Record(context.Background(), time.Since(begin).Seconds(), metric.WithAttributes(attribute.String("strategy", a.strategy.GetName()), attribute.String("method", "SetCollectors")))
+	}()
 
-	CollectorsAllocatable.WithLabelValues(a.strategy.GetName()).Set(float64(len(collectors)))
+	a.collectorsAllocatable.Record(context.Background(), int64(len(collectors)), metric.WithAttributes(attribute.String("strategy", a.strategy.GetName())))
 	if len(collectors) == 0 {
 		a.log.Info("No collector instances present")
 	}
@@ -137,10 +180,11 @@ func (a *allocator) GetTargetsForCollectorAndJob(collector string, job string) [
 }
 
 // TargetItems returns a shallow copy of the targetItems map.
-func (a *allocator) TargetItems() map[string]*target.Item {
+// The key is the target item's hash, and the value is the target item.
+func (a *allocator) TargetItems() map[target.ItemHash]*target.Item {
 	a.m.RLock()
 	defer a.m.RUnlock()
-	targetItemsCopy := make(map[string]*target.Item)
+	targetItemsCopy := make(map[target.ItemHash]*target.Item)
 	for k, v := range a.targetItems {
 		targetItemsCopy[k] = v
 	}
@@ -161,7 +205,7 @@ func (a *allocator) Collectors() map[string]*Collector {
 // handleTargets receives the new and removed targets and reconciles the current state.
 // Any removals are removed from the allocator's targetItems and unassigned from the corresponding collector.
 // Any net-new additions are assigned to the collector on the same node as the target.
-func (a *allocator) handleTargets(diff diff.Changes[*target.Item]) {
+func (a *allocator) handleTargets(diff diff.Changes[target.ItemHash, *target.Item]) {
 	// Check for removals
 	for k, item := range a.targetItems {
 		// if the current item is in the removals list
@@ -192,7 +236,7 @@ func (a *allocator) handleTargets(diff diff.Changes[*target.Item]) {
 	if unassignedTargets > 0 {
 		err := errors.Join(assignmentErrors...)
 		a.log.Info("Could not assign targets for some jobs", "targets", unassignedTargets, "error", err)
-		TargetsUnassigned.Set(float64(unassignedTargets))
+		a.targetsUnassigned.Record(context.Background(), int64(unassignedTargets))
 	}
 }
 
@@ -217,8 +261,7 @@ func (a *allocator) addTargetToTargetItems(tg *target.Item) error {
 	tg.CollectorName = colOwner.Name
 	a.addCollectorTargetItemMapping(tg)
 	a.collectors[colOwner.Name].NumTargets++
-	TargetsPerCollector.WithLabelValues(colOwner.String(), a.strategy.GetName()).Set(float64(a.collectors[colOwner.String()].NumTargets))
-
+	a.targetsPerCollector.Record(context.Background(), int64(a.collectors[colOwner.String()].NumTargets), metric.WithAttributes(attribute.String("collector_name", colOwner.String()), attribute.String("strategy", a.strategy.GetName())))
 	return nil
 }
 
@@ -233,7 +276,7 @@ func (a *allocator) unassignTargetItem(item *target.Item) {
 		return
 	}
 	c.NumTargets--
-	TargetsPerCollector.WithLabelValues(item.CollectorName, a.strategy.GetName()).Set(float64(c.NumTargets))
+	a.targetsPerCollector.Record(context.Background(), int64(c.NumTargets), metric.WithAttributes(attribute.String("collector_name", item.CollectorName), attribute.String("strategy", a.strategy.GetName())))
 	delete(a.targetItemsPerJobPerCollector[item.CollectorName][item.JobName], item.Hash())
 	if len(a.targetItemsPerJobPerCollector[item.CollectorName][item.JobName]) == 0 {
 		delete(a.targetItemsPerJobPerCollector[item.CollectorName], item.JobName)
@@ -257,7 +300,7 @@ func (a *allocator) removeCollector(collector *Collector) {
 		}
 	}
 	delete(a.targetItemsPerJobPerCollector, collector.Name)
-	TargetsPerCollector.WithLabelValues(collector.Name, a.strategy.GetName()).Set(0)
+	a.targetsPerCollector.Record(context.Background(), 0, metric.WithAttributes(attribute.String("collector_name", collector.Name), attribute.String("strategy", a.strategy.GetName())))
 }
 
 // addCollectorTargetItemMapping keeps track of which collector has which jobs and targets
@@ -265,10 +308,10 @@ func (a *allocator) removeCollector(collector *Collector) {
 // has to acquire a lock.
 func (a *allocator) addCollectorTargetItemMapping(tg *target.Item) {
 	if a.targetItemsPerJobPerCollector[tg.CollectorName] == nil {
-		a.targetItemsPerJobPerCollector[tg.CollectorName] = make(map[string]map[string]bool)
+		a.targetItemsPerJobPerCollector[tg.CollectorName] = make(map[string]map[target.ItemHash]bool)
 	}
 	if a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName] == nil {
-		a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName] = make(map[string]bool)
+		a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName] = make(map[target.ItemHash]bool)
 	}
 	a.targetItemsPerJobPerCollector[tg.CollectorName][tg.JobName][tg.Hash()] = true
 }
@@ -276,7 +319,7 @@ func (a *allocator) addCollectorTargetItemMapping(tg *target.Item) {
 // handleCollectors receives the new and removed collectors and reconciles the current state.
 // Any removals are removed from the allocator's collectors. New collectors are added to the allocator's collector map.
 // Finally, update all targets' collector assignments.
-func (a *allocator) handleCollectors(diff diff.Changes[*Collector]) {
+func (a *allocator) handleCollectors(diff diff.Changes[string, *Collector]) {
 	// Clear removed collectors
 	for _, k := range diff.Removals() {
 		a.removeCollector(k)
@@ -303,7 +346,7 @@ func (a *allocator) handleCollectors(diff diff.Changes[*Collector]) {
 	if unassignedTargets > 0 {
 		err := errors.Join(assignmentErrors...)
 		a.log.Info("Could not assign targets for some jobs", "targets", unassignedTargets, "error", err)
-		TargetsUnassigned.Set(float64(unassignedTargets))
+		a.targetsUnassigned.Record(context.Background(), int64(unassignedTargets))
 	}
 }
 
@@ -312,9 +355,9 @@ const minChunkSize = 100 // for small target counts, it's not worth it to spawn 
 // buildTargetMap builds a map of targets, using their hashes as keys. It does this concurrently, and the concurrency
 // is configurable via the concurrency parameter. We do this in parallel because target hashing is surprisingly
 // expensive.
-func buildTargetMap(targets []*target.Item, concurrency int) map[string]*target.Item {
+func buildTargetMap(targets []*target.Item, concurrency int) map[target.ItemHash]*target.Item {
 	// technically there may be duplicates, so this may overallocate, but in the majority of cases it will be exact
-	result := make(map[string]*target.Item, len(targets))
+	result := make(map[target.ItemHash]*target.Item, len(targets))
 	chunkSize := len(targets) / concurrency
 	chunkSize = max(chunkSize, minChunkSize)
 	wg := sync.WaitGroup{}

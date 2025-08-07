@@ -21,11 +21,6 @@ RUN mkdir -p /tmp/go/bin $GOCACHE \
 # Install dependencies required by test cases and debugging
 RUN apt-get update && apt-get install -y jq vim libreadline-dev unzip
 
-# Install kuttl e2e
-RUN curl -LO https://github.com/kudobuilder/kuttl/releases/download/v0.15.0/kubectl-kuttl_0.15.0_linux_x86_64 \
-    && chmod +x kubectl-kuttl_0.15.0_linux_x86_64 \
-    && mv kubectl-kuttl_0.15.0_linux_x86_64 /usr/local/bin/kuttl
-
 # Install chainsaw
 RUN curl -L -o chainsaw.tar.gz https://github.com/kyverno/chainsaw/releases/download/${CHAINSAW_VERSION}/chainsaw_linux_amd64.tar.gz \
     && tar -xvzf chainsaw.tar.gz \
@@ -43,6 +38,11 @@ RUN curl -LO https://github.com/grafana/loki/releases/latest/download/logcli-lin
     && unzip logcli-linux-amd64.zip \
     && chmod +x logcli-linux-amd64 \
     && mv logcli-linux-amd64 /usr/local/bin/logcli
+
+# Install AWS CLI
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install
 
 # Set the working directory
 WORKDIR /tmp/opentelemetry-operator

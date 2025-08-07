@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
+	go_yaml "github.com/goccy/go-yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	go_yaml "gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -205,6 +206,16 @@ func targetAllocatorInstance() v1alpha1.TargetAllocator {
 	params := manifests.Params{OtelCol: *collectorInstance}
 	targetAllocator, _ := collector.TargetAllocator(params)
 	targetAllocator.Spec.Image = "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-targetallocator:0.47.0"
+	return *targetAllocator
+}
+
+func targetAllocatorInstanceWithCollectorNotReadyGracePeriod() v1alpha1.TargetAllocator {
+	collectorInstance := collectorInstance()
+	collectorInstance.Spec.TargetAllocator.Enabled = true
+	params := manifests.Params{OtelCol: *collectorInstance}
+	targetAllocator, _ := collector.TargetAllocator(params)
+	targetAllocator.Spec.Image = "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-targetallocator:0.47.0"
+	targetAllocator.Spec.CollectorNotReadyGracePeriod = &metav1.Duration{Duration: 30 * time.Second}
 	return *targetAllocator
 }
 

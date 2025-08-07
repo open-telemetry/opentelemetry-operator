@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.1
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: opentelemetrycollectors.opentelemetry.io
 spec:
   group: opentelemetry.io
@@ -2474,6 +2474,7 @@ spec:
               priorityClassName:
                 type: string
               replicas:
+                default: 1
                 format: int32
                 type: integer
               resources:
@@ -2582,6 +2583,8 @@ spec:
                     type: object
                 type: object
               serviceAccount:
+                type: string
+              serviceName:
                 type: string
               shareProcessNamespace:
                 type: boolean
@@ -6951,6 +6954,10 @@ spec:
                         type: boolean
                       enableMetrics:
                         type: boolean
+                      extraLabels:
+                        additionalProperties:
+                          type: string
+                        type: object
                     type: object
                 type: object
               persistentVolumeClaimRetentionPolicy:
@@ -7132,6 +7139,7 @@ spec:
                     type: integer
                 type: object
               replicas:
+                default: 1
                 format: int32
                 type: integer
               resources:
@@ -7240,6 +7248,8 @@ spec:
                     type: object
                 type: object
               serviceAccount:
+                type: string
+              serviceName:
                 type: string
               shareProcessNamespace:
                 type: boolean
@@ -7691,6 +7701,10 @@ spec:
                     - consistent-hashing
                     - per-node
                     type: string
+                  collectorNotReadyGracePeriod:
+                    default: 30s
+                    format: duration
+                    type: string
                   enabled:
                     type: boolean
                   env:
@@ -7779,6 +7793,10 @@ spec:
                             type: boolean
                           enableMetrics:
                             type: boolean
+                          extraLabels:
+                            additionalProperties:
+                              type: string
+                            type: object
                         type: object
                     type: object
                   podDisruptionBudget:
@@ -9261,8 +9279,23 @@ spec:
                 x-kubernetes-list-type: atomic
             required:
             - config
-            - managementState
             type: object
+            x-kubernetes-validations:
+            - message: the OpenTelemetry Collector mode is set to sidecar, which does
+                not support the attribute 'tolerations'
+              rule: '!(self.mode == ''sidecar'' && size(self.tolerations) > 0) ||
+                !has(self.tolerations)'
+            - message: the OpenTelemetry Collector mode is set to sidecar, which does
+                not support the attribute 'priorityClassName'
+              rule: '!(self.mode == ''sidecar'' && self.priorityClassName != '''')
+                || !has(self.priorityClassName)'
+            - message: the OpenTelemetry Collector mode is set to sidecar, which does
+                not support the attribute 'affinity'
+              rule: '!(self.mode == ''sidecar'' && self.affinity != null) || !has(self.affinity)'
+            - message: the OpenTelemetry Collector mode is set to sidecar, which does
+                not support the attribute 'additionalContainers'
+              rule: '!(self.mode == ''sidecar'' && size(self.additionalContainers)
+                > 0) || !has(self.additionalContainers)'
           status:
             properties:
               image:

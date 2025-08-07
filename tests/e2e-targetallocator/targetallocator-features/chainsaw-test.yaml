@@ -45,3 +45,9 @@ spec:
         file: 02-install.yaml
     - assert:
         file: 02-assert.yaml
+  - name: step-03
+    try:
+    - apply:
+        file: 03-install.yaml
+    - assert:
+        file: 03-assert.yaml

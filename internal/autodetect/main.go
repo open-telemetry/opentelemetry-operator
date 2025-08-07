@@ -9,16 +9,20 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/fips"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
@@ -31,6 +35,8 @@ type AutoDetect interface {
 	RBACPermissions(ctx context.Context) (autoRBAC.Availability, error)
 	CertManagerAvailability(ctx context.Context) (certmanager.Availability, error)
 	TargetAllocatorAvailability() (targetallocator.Availability, error)
+	CollectorAvailability() (collector.Availability, error)
+	OpAmpBridgeAvailablity() (opampbridge.Availability, error)
 	FIPSEnabled(ctx context.Context) bool
 }
 
@@ -150,7 +156,7 @@ func (a *autoDetect) CertManagerAvailability(ctx context.Context) (certmanager.A
 	return certmanager.Available, nil
 }
 
-// TargetAllocatorAvailability checks if OpenShift Route are available.
+// TargetAllocatorAvailability checks if TargetAllocator CR are available.
 func (a *autoDetect) TargetAllocatorAvailability() (targetallocator.Availability, error) {
 	apiList, err := a.dcl.ServerGroups()
 	if err != nil {
@@ -182,6 +188,126 @@ func (a *autoDetect) TargetAllocatorAvailability() (targetallocator.Availability
 	return targetallocator.NotAvailable, nil
 }
 
+// CollectorAvailability checks if OpenTelemetryCollector CR are available.
+func (a *autoDetect) CollectorAvailability() (collector.Availability, error) {
+	apiList, err := a.dcl.ServerGroups()
+	if err != nil {
+		return collector.NotAvailable, err
+	}
+
+	apiGroups := apiList.Groups
+	otelGroupIndex := slices.IndexFunc(apiGroups, func(group metav1.APIGroup) bool {
+		return group.Name == "opentelemetry.io"
+	})
+	if otelGroupIndex == -1 {
+		return collector.NotAvailable, nil
+	}
+
+	otelGroup := apiGroups[otelGroupIndex]
+	for _, groupVersion := range otelGroup.Versions {
+		resourceList, err := a.dcl.ServerResourcesForGroupVersion(groupVersion.GroupVersion)
+		if err != nil {
+			return collector.NotAvailable, err
+		}
+		collectorIndex := slices.IndexFunc(resourceList.APIResources, func(group metav1.APIResource) bool {
+			return group.Kind == "OpenTelemetryCollector"
+		})
+		if collectorIndex >= 0 {
+			return collector.Available, nil
+		}
+	}
+
+	return collector.NotAvailable, nil
+}
+
+// OpAmpBridgeAvailablity checks if OpAMPBridge CR are available.
+func (a *autoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, error) {
+	apiList, err := a.dcl.ServerGroups()
+	if err != nil {
+		return opampbridge.NotAvailable, err
+	}
+
+	apiGroups := apiList.Groups
+	otelGroupIndex := slices.IndexFunc(apiGroups, func(group metav1.APIGroup) bool {
+		return group.Name == "opentelemetry.io"
+	})
+	if otelGroupIndex == -1 {
+		return opampbridge.NotAvailable, nil
+	}
+
+	otelGroup := apiGroups[otelGroupIndex]
+	for _, groupVersion := range otelGroup.Versions {
+		resourceList, err := a.dcl.ServerResourcesForGroupVersion(groupVersion.GroupVersion)
+		if err != nil {
+			return opampbridge.NotAvailable, err
+		}
+		index := slices.IndexFunc(resourceList.APIResources, func(group metav1.APIResource) bool {
+			return group.Kind == "OpAMPBridge"
+		})
+		if index >= 0 {
+			return opampbridge.Available, nil
+		}
+	}
+
+	return opampbridge.NotAvailable, nil
+}
+
 func (a *autoDetect) FIPSEnabled(_ context.Context) bool {
 	return fips.IsFipsEnabled()
+}
+
+// ApplyAutoDetect attempts to automatically detect relevant information for this operator.
+func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger) error {
+	logger.V(2).Info("auto-detecting the configuration based on the environment")
+
+	ora, err := autoDetect.OpenShiftRoutesAvailability()
+	if err != nil {
+		return err
+	}
+	c.OpenShiftRoutesAvailability = ora
+	logger.V(2).Info("openshift routes detected", "availability", ora)
+
+	pcrd, err := autoDetect.PrometheusCRsAvailability()
+	if err != nil {
+		return err
+	}
+	c.PrometheusCRAvailability = pcrd
+	logger.V(2).Info("prometheus cr detected", "availability", pcrd)
+
+	rAuto, err := autoDetect.RBACPermissions(context.Background())
+	if err != nil {
+		logger.V(2).Info("the rbac permissions are not set for the operator", "reason", err)
+	}
+	c.CreateRBACPermissions = rAuto
+	logger.V(2).Info("create rbac permissions detected", "availability", rAuto)
+
+	cmAvl, err := autoDetect.CertManagerAvailability(context.Background())
+	if err != nil {
+		logger.V(2).Info("the cert manager crd and permissions are not set for the operator", "reason", err)
+	}
+	c.CertManagerAvailability = cmAvl
+	logger.V(2).Info("the cert manager crd and permissions are set for the operator", "availability", cmAvl)
+
+	taAvl, err := autoDetect.TargetAllocatorAvailability()
+	if err != nil {
+		return err
+	}
+	c.TargetAllocatorAvailability = taAvl
+	logger.V(2).Info("determined TargetAllocator CRD availability", "availability", cmAvl)
+
+	coAvl, err := autoDetect.CollectorAvailability()
+	if err != nil {
+		return err
+	}
+	c.CollectorAvailability = coAvl
+	logger.V(2).Info("determined Collector CRD availability", "availability", coAvl)
+
+	opAvl, err := autoDetect.OpAmpBridgeAvailablity()
+	if err != nil {
+		return err
+	}
+	c.OpAmpBridgeAvailability = opAvl
+	logger.V(2).Info("determined OpAmpBridge CRD availability", "availability", coAvl)
+
+	return nil
 }

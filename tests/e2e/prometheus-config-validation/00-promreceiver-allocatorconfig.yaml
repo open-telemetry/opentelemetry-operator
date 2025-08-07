@@ -32,12 +32,12 @@ subjects:
   name: ta
   namespace: ($namespace)
 ---
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: promreceiver-allocatorconfig
 spec:
-  config: |
+  config:
     receivers:
       jaeger:
           protocols:
@@ -56,8 +56,6 @@ spec:
           interval: 30s
           collector_id: ${POD_NAME}
 
-    processors:
-
     exporters:
       debug:
     extensions:
@@ -66,7 +64,12 @@ spec:
     service:
       telemetry:
         metrics:
-          address: :8888
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
       extensions:
         - health_check
       pipelines:

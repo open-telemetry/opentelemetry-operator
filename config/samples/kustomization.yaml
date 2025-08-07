@@ -5,3 +5,5 @@ resources:
 - instrumentation_v1alpha1_instrumentation.yaml
 - _v1alpha1_opampbridge.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization

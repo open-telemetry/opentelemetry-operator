@@ -128,6 +128,8 @@ The tests are located under `tests/e2e` and are written to be used with `chainsa
 
 To revert the changes made by the `make prepare-e2e` run `make reset`.
 
+To delete the kind cluster created by `make prepare-e2e` run `make stop-kind`.
+
 ### OpenShift End to End tests
 To run the end-to-end tests written for OpenShift, you'll need a OpenShift cluster.
 
@@ -159,7 +161,7 @@ Before starting the development of a new feature, please create an issue and dis
 
 ### Bug fixes
 
-Every bug fix should be accompanied with a unit test, so that we can prevent regressions.
+Every bug fix should be accompanied by a unit test, so that we can prevent regressions.
 
 ### Documentation, typos, ...
 

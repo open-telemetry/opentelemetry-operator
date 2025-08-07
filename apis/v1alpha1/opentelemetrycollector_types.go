@@ -98,8 +98,9 @@ type OpenTelemetryCollectorSpec struct {
 	// Args is the set of arguments to pass to the OpenTelemetry Collector binary
 	// +optional
 	Args map[string]string `json:"args,omitempty"`
-	// Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if your are not using autoscaling
+	// Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if you are not using autoscaling
 	// +optional
+	// +kubebuilder:default:=1
 	Replicas *int32 `json:"replicas,omitempty"`
 	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
 	// +optional
@@ -232,6 +233,11 @@ type OpenTelemetryCollectorSpec struct {
 	// https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 	// +optional
 	InitContainers []v1.Container `json:"initContainers,omitempty"`
+
+	// ServiceName is the name of the Service to be used.
+	// If not specified, it will default to "<name>-headless".
+	// +optional
+	ServiceName string `json:"serviceName,omitempty"`
 
 	// AdditionalContainers allows injecting additional containers into the Collector's pod definition.
 	// These sidecar containers can be used for authentication proxies, log shipping sidecars, agents for shipping
@@ -474,7 +480,7 @@ type OpenTelemetryCollectorList struct {
 
 // AutoscalerSpec defines the OpenTelemetryCollector's pod autoscaling specification.
 type AutoscalerSpec struct {
-	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
+	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
 	// +optional
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
@@ -516,7 +522,6 @@ type PodDisruptionBudgetSpec struct {
 // MetricsConfigSpec defines a metrics config.
 type MetricsConfigSpec struct {
 	// EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-	// The operator.observability.prometheus feature gate must be enabled to use this feature.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional

@@ -15,7 +15,7 @@ import (
 )
 
 func TestPrometheusParser(t *testing.T) {
-	param, err := newParams("test/test-img", "testdata/http_sd_config_test.yaml")
+	param, err := newParams("test/test-img", "testdata/http_sd_config_test.yaml", nil)
 	assert.NoError(t, err)
 
 	t.Run("should update config with targetAllocator block if block not present", func(t *testing.T) {
@@ -42,7 +42,7 @@ func TestPrometheusParser(t *testing.T) {
 
 	t.Run("should update config with targetAllocator block if block already present", func(t *testing.T) {
 		// Set up the test scenario
-		paramTa, err := newParams("test/test-img", "testdata/http_sd_config_ta_test.yaml")
+		paramTa, err := newParams("test/test-img", "testdata/http_sd_config_ta_test.yaml", nil)
 		require.NoError(t, err)
 
 		actualConfig, err := ReplaceConfig(paramTa.OtelCol, param.TargetAllocator)
@@ -100,7 +100,7 @@ func TestPrometheusParser(t *testing.T) {
 }
 
 func TestReplaceConfig(t *testing.T) {
-	param, err := newParams("test/test-img", "testdata/relabel_config_original.yaml")
+	param, err := newParams("test/test-img", "testdata/relabel_config_original.yaml", nil)
 	assert.NoError(t, err)
 
 	t.Run("should not modify config when TargetAllocator is disabled", func(t *testing.T) {

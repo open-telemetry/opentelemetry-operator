@@ -10,9 +10,48 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
+env:
+  IMAGE_ARCHIVE_FILENAME: images.tar
+  VERSION: e2e
+
 jobs:
+  build-test-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        id: setup-go
+        with:
+          go-version: "~1.24.6"
+
+      - name: Cache tools
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: bin
+          key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
+
+      - name: Install tools
+        run: make install-tools
+
+      - name: Build test image archive
+        run: make container-image-archive IMAGE_ARCHIVE=${IMAGE_ARCHIVE_FILENAME} VERSION=${VERSION}
+
+      - name: Upload test image archive
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Test image archive
+          path: ${{ env.IMAGE_ARCHIVE_FILENAME }}
+          if-no-files-found: 'error'
+          retention-days: 1
+
   e2e-tests:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    needs: [build-test-images]
     strategy:
       fail-fast: false
       matrix:
@@ -20,12 +59,13 @@ jobs:
        # All Kubernetes version in between expose the same APIs, hence the operator
        # should be compatible with them.
        kube-version:
-         - "1.23"
-         - "1.32"
+         - "1.25"
+         - "1.33"
        group:
          - e2e
          - e2e-automatic-rbac
          - e2e-autoscale
+         - e2e-instrumentation-default
          - e2e-instrumentation
          - e2e-opampbridge
          - e2e-pdb
@@ -33,14 +73,20 @@ jobs:
          - e2e-targetallocator
          - e2e-targetallocator-cr
          - e2e-upgrade
+         - e2e-multi-instrumentation-default
          - e2e-multi-instrumentation
          - e2e-metadata-filters
          - e2e-ta-collector-mtls
+         - e2e-crd-validations
        include:
+         - group: e2e-instrumentation-default
+           setup: "add-instrumentation-params prepare-e2e"
          - group: e2e-instrumentation
+           setup: "add-instrumentation-params add-instrumentation-images prepare-e2e"
+         - group: e2e-multi-instrumentation-default
            setup: "add-instrumentation-params prepare-e2e"
          - group: e2e-multi-instrumentation
-           setup: "add-instrumentation-params prepare-e2e"
+           setup: "add-instrumentation-params add-instrumentation-images prepare-e2e"
          - group: e2e-metadata-filters
            setup: "add-operator-arg OPERATOR_ARG='--annotations-filter=.*filter.out --annotations-filter=config.*.gke.io.* --labels-filter=.*filter.out' prepare-e2e"
          - group: e2e-ta-collector-mtls
@@ -50,21 +96,17 @@ jobs:
          - group: e2e-native-sidecar
            setup: "add-operator-arg OPERATOR_ARG='--feature-gates=operator.sidecarcontainers.native' prepare-e2e"
            kube-version: "1.29"
-         - group: e2e-targetallocator
-           setup: "enable-targetallocator-cr prepare-e2e"
-         - group: e2e-targetallocator-cr
-           setup: "enable-targetallocator-cr prepare-e2e"
     steps:
     - name: Check out code into the Go module directory
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       id: setup-go
       with:
-        go-version: "~1.24.1"
+        go-version: "~1.24.6"
 
     - name: Cache tools
-      uses: actions/cache@v4
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       with:
         path: bin
         key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
@@ -72,12 +114,17 @@ jobs:
     - name: Install tools
       run: make install-tools
 
+    - name: Download test image archive
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      with:
+        name: Test image archive
+
     - name: Prepare e2e tests
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
       run: |
         set -e
-        make ${{ matrix.setup != '' && matrix.setup || 'prepare-e2e' }} KUBE_VERSION=$KUBE_VERSION VERSION=e2e
+        make ${{ matrix.setup != '' && matrix.setup || 'prepare-e2e' }} KUBE_VERSION=$KUBE_VERSION VERSION=$VERSION IMAGE_ARCHIVE=$IMAGE_ARCHIVE_FILENAME
     - name: Run e2e tests
       env:
         KUBE_VERSION: ${{ matrix.kube-version }}
@@ -91,9 +138,16 @@ jobs:
       run: |
         set -e
         make e2e-log-operator KUBE_VERSION=$KUBE_VERSION
+    - name: Upload test results
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      if: always()
+      with:
+        path: .testresults/e2e/*.xml
+        name: e2e-junit-${{ matrix.group }}-${{ matrix.kube-version }}
+        retention-days: 7
 
   e2e-tests-check:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: always()
     needs: [e2e-tests]
     steps:
@@ -108,3 +162,14 @@ jobs:
             echo "One or more matrix jobs failed."
             false
           fi
+  # This event file is used by the JUnit report action in e2e-junit-report.yaml
+  event_file:
+    name: "Event File"
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: Event File
+        path: ${{ github.event_path }}

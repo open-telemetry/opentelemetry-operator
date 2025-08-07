@@ -8,6 +8,5 @@
     - --enable-nginx-instrumentation=true
     - '--enable-go-instrumentation=true'
     - '--openshift-create-dashboard=true'
-    - '--feature-gates=+operator.observability.prometheus'
     - '--enable-cr-metrics=true'
     - '--create-sm-operator-metrics=true'

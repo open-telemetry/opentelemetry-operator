@@ -39,6 +39,7 @@ kubeconfig
 tests/_build/
 config/rbac/extra-permissions-operator/
 config/rbac/certmanager-permissions/
+.testresults
 
 # autoinstrumentation artifacts
 build

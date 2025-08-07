@@ -4,7 +4,6 @@
 package targetallocator
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +28,9 @@ var logger = logf.Log.WithName("unit-tests")
 func TestContainerNewDefault(t *testing.T) {
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{}
-	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
+	cfg := config.Config{
+		TargetAllocatorImage: "default-image",
+	}
 
 	// test
 	c := Container(cfg, logger, targetAllocator)
@@ -47,7 +48,9 @@ func TestContainerWithImageOverridden(t *testing.T) {
 			},
 		},
 	}
-	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
+	cfg := config.Config{
+		TargetAllocatorImage: "default-image",
+	}
 
 	// test
 	c := Container(cfg, logger, targetAllocator)
@@ -134,7 +137,9 @@ func TestContainerHasEnvVars(t *testing.T) {
 			},
 		},
 	}
-	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
+	cfg := config.Config{
+		TargetAllocatorImage: "default-image",
+	}
 
 	expected := corev1.Container{
 		Name:  "ta-container",
@@ -201,9 +206,7 @@ func TestContainerHasEnvVars(t *testing.T) {
 }
 
 func TestContainerHasProxyEnvVars(t *testing.T) {
-	err := os.Setenv("NO_PROXY", "localhost")
-	require.NoError(t, err)
-	defer os.Unsetenv("NO_PROXY")
+	t.Setenv("NO_PROXY", "localhost")
 
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{
@@ -218,7 +221,9 @@ func TestContainerHasProxyEnvVars(t *testing.T) {
 			},
 		},
 	}
-	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
+	cfg := config.Config{
+		TargetAllocatorImage: "default-image",
+	}
 
 	// test
 	c := Container(cfg, logger, targetAllocator)
@@ -243,7 +248,9 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 			},
 		},
 	}
-	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
+	cfg := config.Config{
+		TargetAllocatorImage: "default-image",
+	}
 
 	expected := corev1.Container{
 		Name:  "ta-container",
@@ -385,7 +392,9 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
 	require.NoError(t, err)
 
-	cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+	cfg := config.Config{
+		CertManagerAvailability: certmanager.Available,
+	}
 
 	// test
 	c := Container(cfg, logger, targetAllocator)

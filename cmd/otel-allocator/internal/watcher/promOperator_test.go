@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
 	fcache "k8s.io/client-go/tools/cache/testing"
@@ -36,14 +37,9 @@ import (
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 )
 
-var defaultScrapeProtocols = []promconfig.ScrapeProtocol{
-	promconfig.OpenMetricsText1_0_0,
-	promconfig.OpenMetricsText0_0_1,
-	promconfig.PrometheusText0_0_4,
-}
-
 func TestLoadConfig(t *testing.T) {
 	namespace := "test"
+	portName := "web"
 	tests := []struct {
 		name            string
 		serviceMonitors []*monitoringv1.ServiceMonitor
@@ -66,7 +62,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -82,7 +78,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -99,7 +95,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/simple/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -121,7 +117,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/simple/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -155,7 +151,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "auth",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 								BasicAuth: &monitoringv1.BasicAuth{
 									Username: v1.SecretKeySelector{
 										LocalObjectReference: v1.LocalObjectReference{
@@ -192,7 +188,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/auth/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -233,7 +229,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "bearer",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 								Authorization: &monitoringv1.SafeAuthorization{
 									Type: "Bearer",
 									Credentials: &v1.SecretKeySelector{
@@ -260,7 +256,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/bearer/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -301,7 +297,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -317,7 +313,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -331,7 +327,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 								RelabelConfigs: []monitoringv1.RelabelConfig{
 									{
 										Action:      "keep",
@@ -356,7 +352,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/valid-sm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -378,7 +374,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -412,7 +408,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -426,7 +422,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 								RelabelConfigs: []monitoringv1.RelabelConfig{
 									{
 										Action:      "keep",
@@ -450,7 +446,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -467,7 +463,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/valid-sm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -489,7 +485,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -526,7 +522,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -540,7 +536,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: namespace,
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -560,7 +556,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/test/sm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -597,7 +593,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -611,7 +607,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -631,7 +627,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/test/pm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -692,7 +688,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "scrapeConfig/test/scrapeconfig-test-1",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -756,7 +752,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "probe/test/probe-test-1",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -795,7 +791,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -809,7 +805,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -831,7 +827,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "serviceMonitor/labellednamespace/sm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -865,7 +861,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -879,7 +875,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -901,7 +897,7 @@ func TestLoadConfig(t *testing.T) {
 					{
 						JobName:         "podMonitor/labellednamespace/pm-1/0",
 						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -958,6 +954,7 @@ func TestLoadConfig(t *testing.T) {
 func TestNamespaceLabelUpdate(t *testing.T) {
 	var err error
 	namespace := "test"
+	portName := "web"
 	podMonitors := []*monitoringv1.PodMonitor{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -968,7 +965,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 				JobLabel: "test",
 				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 					{
-						Port: "web",
+						Port: &portName,
 					},
 				},
 			},
@@ -982,7 +979,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 				JobLabel: "test",
 				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 					{
-						Port: "web",
+						Port: &portName,
 					},
 				},
 			},
@@ -1006,7 +1003,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 			{
 				JobName:         "podMonitor/labellednamespace/pm-1/0",
 				ScrapeInterval:  model.Duration(30 * time.Second),
-				ScrapeProtocols: defaultScrapeProtocols,
+				ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 				ScrapeTimeout:   model.Duration(10 * time.Second),
 				HonorTimestamps: true,
 				HonorLabels:     false,
@@ -1066,16 +1063,13 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		},
 	}})
 
-	select {
-	case <-events:
-	case <-time.After(5 * time.Second):
-	}
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		got, err = w.LoadConfig(context.Background())
+		assert.NoError(t, err)
 
-	got, err = w.LoadConfig(context.Background())
-	assert.NoError(t, err)
-
-	sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
-	assert.Equal(t, want_after.ScrapeConfigs, got.ScrapeConfigs)
+		sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
+		assert.Equal(t, want_after.ScrapeConfigs, got.ScrapeConfigs)
+	}, time.Second*30, time.Millisecond*100)
 }
 
 func TestRateLimit(t *testing.T) {
@@ -1227,7 +1221,8 @@ func getTestPrometheusCRWatcher(
 	}
 
 	factory := informers.NewMonitoringInformerFactories(map[string]struct{}{v1.NamespaceAll: {}}, map[string]struct{}{}, mClient, 0, nil)
-	informers, err := getInformers(factory)
+
+	informers, err := getTestInformers(factory)
 	if err != nil {
 		t.Fatal(t, err)
 	}
@@ -1257,7 +1252,7 @@ func getTestPrometheusCRWatcher(
 
 	promOperatorLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
 
-	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom, prometheus.WithEndpointSliceSupport())
+	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom, prometheus.WithEndpointSliceSupport(), prometheus.WithInlineTLSConfig())
 	if err != nil {
 		t.Fatal(t, err)
 	}
@@ -1307,5 +1302,121 @@ func sanitizeScrapeConfigsForTest(scs []*promconfig.ScrapeConfig) {
 	for _, sc := range scs {
 		sc.RelabelConfigs = nil
 		sc.MetricRelabelConfigs = nil
+	}
+}
+
+// getTestInformers creates informers for testing without CRD availability checks.
+func getTestInformers(factory informers.FactoriesForNamespaces) (map[string]*informers.ForResource, error) {
+	informersMap := make(map[string]*informers.ForResource)
+
+	// Create ServiceMonitor informers
+	serviceMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName))
+	if err != nil {
+		return nil, err
+	}
+	informersMap[monitoringv1.ServiceMonitorName] = serviceMonitorInformers
+
+	// Create PodMonitor informers
+	podMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName))
+	if err != nil {
+		return nil, err
+	}
+	informersMap[monitoringv1.PodMonitorName] = podMonitorInformers
+
+	// Create Probe informers
+	probeInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName))
+	if err != nil {
+		return nil, err
+	}
+	informersMap[monitoringv1.ProbeName] = probeInformers
+
+	// Create ScrapeConfig informers
+	scrapeConfigInformers, err := informers.NewInformersForResource(factory, promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName))
+	if err != nil {
+		return nil, err
+	}
+	informersMap[promv1alpha1.ScrapeConfigName] = scrapeConfigInformers
+
+	return informersMap, nil
+}
+
+// TestCRDAvailabilityChecks tests the CRDs' availability.
+func TestCRDAvailabilityChecks(t *testing.T) {
+	tests := []struct {
+		name          string
+		availableCRDs []string
+		expectedCRDs  []string
+	}{
+		{
+			name:          "ServiceMonitor available",
+			availableCRDs: []string{"servicemonitors"},
+			expectedCRDs:  []string{"servicemonitors"},
+		},
+		{
+			name:          "All CRDs available",
+			availableCRDs: []string{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"},
+			expectedCRDs:  []string{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"},
+		},
+		{
+			name:          "No CRDs available",
+			availableCRDs: []string{},
+			expectedCRDs:  []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create fake discovery client
+			fakeDiscovery := &fakediscovery.FakeDiscovery{
+				Fake: &fake.NewSimpleClientset().Fake,
+			}
+
+			// Set up resources
+			fakeDiscovery.Resources = []*metav1.APIResourceList{}
+
+			// Add v1 resources
+			v1Resources := &metav1.APIResourceList{
+				GroupVersion: "monitoring.coreos.com/v1",
+				APIResources: []metav1.APIResource{},
+			}
+			for _, crd := range tt.availableCRDs {
+				if crd == "servicemonitors" || crd == "podmonitors" || crd == "probes" {
+					v1Resources.APIResources = append(v1Resources.APIResources, metav1.APIResource{
+						Name: crd,
+					})
+				}
+			}
+			fakeDiscovery.Resources = append(fakeDiscovery.Resources, v1Resources)
+
+			// Add v1alpha1 resources
+			v1alpha1Resources := &metav1.APIResourceList{
+				GroupVersion: "monitoring.coreos.com/v1alpha1",
+				APIResources: []metav1.APIResource{},
+			}
+			for _, crd := range tt.availableCRDs {
+				if crd == "scrapeconfigs" {
+					v1alpha1Resources.APIResources = append(v1alpha1Resources.APIResources, metav1.APIResource{
+						Name: crd,
+					})
+				}
+			}
+			fakeDiscovery.Resources = append(fakeDiscovery.Resources, v1alpha1Resources)
+
+			// Test each CRD availability
+			for _, crd := range []string{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"} {
+				available, err := checkCRDAvailability(fakeDiscovery, crd)
+				require.NoError(t, err)
+
+				expected := false
+				for _, expectedCRD := range tt.expectedCRDs {
+					if crd == expectedCRD {
+						expected = true
+						break
+					}
+				}
+
+				assert.Equal(t, expected, available, "CRD %s availability should match expectation", crd)
+			}
+		})
 	}
 }

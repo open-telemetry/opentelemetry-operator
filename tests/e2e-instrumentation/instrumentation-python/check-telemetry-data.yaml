@@ -1,0 +1,44 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: StepTemplate
+metadata:
+  name: check-telemetry-data
+spec:
+  try:
+    - command:
+        entrypoint: kubectl
+        env:
+          - name: LABEL_SELECTOR
+            value: ($LABEL_SELECTOR)
+        args:
+          - get
+          - pod
+          - -n
+          - ${NAMESPACE}
+          - -l
+          - ${LABEL_SELECTOR}
+          - -o
+          - jsonpath={.items[0].metadata.name}
+        outputs:
+          - name: podName
+            value: ($stdout)
+    - script:
+        env:
+          - name: podName
+            value: ($podName)
+        content: |
+          #!/bin/bash
+          # set -ex
+          kubectl get --raw /api/v1/namespaces/$NAMESPACE/pods/${podName}:8888/proxy/metrics
+        outputs:
+          - name: metrics
+            value: (x_metrics_decode($stdout))
+        check:
+          ($error == null): true
+    - assert:
+        resource:
+          ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] > `1`): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] > `1`): true
+  catch:
+    - podLogs:
+        selector: ($LABEL_SELECTOR)
+        container: otc-container

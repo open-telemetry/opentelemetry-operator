@@ -16,13 +16,13 @@ import (
 // Deployment builds the deployment for the given instance.
 func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
-	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {
 		return nil, err
 	}
 
-	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter())
+	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 			Annotations: annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: params.OtelCol.Spec.Replicas,
+			Replicas: manifestutils.GetInitialReplicas(params.OtelCol),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			},

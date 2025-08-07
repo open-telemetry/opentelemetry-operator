@@ -25,14 +25,14 @@ func Volumes(cfg config.Config, otelcol v1beta1.OpenTelemetryCollector) []corev1
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{Name: configMapName},
 				Items: []corev1.KeyToPath{{
-					Key:  cfg.CollectorConfigMapEntry(),
-					Path: cfg.CollectorConfigMapEntry(),
+					Key:  cfg.CollectorConfigMapEntry,
+					Path: cfg.CollectorConfigMapEntry,
 				}},
 			},
 		},
 	}}
 
-	if otelcol.Spec.TargetAllocator.Enabled && cfg.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if otelcol.Spec.TargetAllocator.Enabled && cfg.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		volumes = append(volumes, corev1.Volume{
 			Name: naming.TAClientCertificate(otelcol.Name),
 			VolumeSource: corev1.VolumeSource{
