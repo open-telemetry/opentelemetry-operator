@@ -598,41 +598,31 @@ func AddPrometheusMetricsEndpoint(host string, port int32) otelConfig.MetricRead
 // This exists to avoid needing to worry extra fields in the telemetry struct.
 func (s *Service) GetTelemetry(logger *logr.Logger) *Telemetry {
 	if s.Telemetry == nil {
-		if logger != nil {
-			logger.V(1).Info("no telemetry configuration found")
-		}
+		logger.V(2).Info("no spec.service.telemetry configuration found")
 		return nil
 	}
 
 	// Convert map to JSON bytes
 	jsonData, err := json.Marshal(s.Telemetry)
 	if err != nil {
-		if logger != nil {
-			logger.Error(err, "failed to marshal telemetry configuration to JSON", "telemetry", s.Telemetry.Object)
-		}
+		logger.Error(err, "failed to marshal telemetry configuration to JSON", "telemetry", s.Telemetry.Object)
 		return nil
 	}
 
-	if logger != nil {
-		logger.V(2).Info("marshaled telemetry configuration", "json", string(jsonData))
-	}
+	logger.V(2).Info("marshaled telemetry configuration", "json", string(jsonData))
 
 	t := &Telemetry{}
 	// Unmarshal JSON into the provided struct
 	if err := json.Unmarshal(jsonData, t); err != nil {
-		if logger != nil {
-			logger.Error(err, "failed to unmarshal telemetry configuration - this may indicate invalid configuration",
-				"json", string(jsonData), "originalConfig", s.Telemetry.Object)
-		}
+		logger.Error(err, "failed to unmarshal telemetry configuration - this may indicate invalid configuration",
+			"json", string(jsonData), "originalConfig", s.Telemetry.Object)
 		return nil
 	}
 
-	if logger != nil {
-		logger.V(1).Info("successfully parsed telemetry configuration",
-			"metricsLevel", t.Metrics.Level,
-			"metricsAddress", t.Metrics.Address,
-			"readersCount", len(t.Metrics.Readers))
-	}
+	logger.V(2).Info("successfully parsed telemetry configuration",
+		"metricsLevel", t.Metrics.Level,
+		"metricsAddress", t.Metrics.Address,
+		"readersCount", len(t.Metrics.Readers))
 
 	return t
 }
