@@ -614,8 +614,7 @@ func (s *Service) GetTelemetry(logger *logr.Logger) *Telemetry {
 	t := &Telemetry{}
 	// Unmarshal JSON into the provided struct
 	if err := json.Unmarshal(jsonData, t); err != nil {
-		logger.Error(err, "failed to unmarshal telemetry configuration - this may indicate invalid configuration",
-			"json", string(jsonData), "originalConfig", s.Telemetry.Object)
+		logger.Error(err, "failed to unmarshal telemetry configuration, this may indicate invalid configuration", "json", string(jsonData), "originalConfig", s.Telemetry.Object)
 		return nil
 	}
 
