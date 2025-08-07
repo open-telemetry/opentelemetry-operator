@@ -274,6 +274,9 @@ func TestDeploymentFilterAnnotations(t *testing.T) {
 
 	d := Deployment(params)
 
+	assert.Len(t, d.ObjectMeta.Annotations, 1)
+	assert.NotContains(t, d.ObjectMeta.Annotations, "foo")
+	assert.NotContains(t, d.ObjectMeta.Annotations, "app.foo.bar")
 	assert.Len(t, d.Spec.Template.ObjectMeta.Annotations, 2)
 	assert.NotContains(t, d.Spec.Template.ObjectMeta.Annotations, "foo")
 	assert.NotContains(t, d.Spec.Template.ObjectMeta.Annotations, "app.foo.bar")

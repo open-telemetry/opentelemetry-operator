@@ -23,11 +23,13 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 		configMap = nil
 	}
 	podAnnotations := PodAnnotations(params.OpAMPBridge, configMap, params.Config.AnnotationsFilter)
+	annotations := Annotations(params.OpAMPBridge, params.Config.AnnotationsFilter)
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: params.OpAMPBridge.Namespace,
-			Labels:    labels,
+			Name:        name,
+			Namespace:   params.OpAMPBridge.Namespace,
+			Labels:      labels,
+			Annotations: annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: params.OpAMPBridge.Spec.Replicas,
