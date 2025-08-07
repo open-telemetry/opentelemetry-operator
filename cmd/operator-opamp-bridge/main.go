@@ -8,8 +8,6 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/spf13/pflag"
-
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/agent"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/operator"

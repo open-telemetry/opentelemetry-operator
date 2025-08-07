@@ -5,6 +5,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -19,6 +20,7 @@ const (
 	defaultConfigFilePath     = "/conf/remoteconfiguration.yaml"
 	configFilePathFlagName    = "config-file"
 	listenAddrFlagName        = "listen-addr"
+	defaultServerListenAddr   = ":8080"
 	kubeConfigPathFlagName    = "kubeconfig-path"
 	heartbeatIntervalFlagName = "heartbeat-interval"
 	nameFlagName              = "name"

@@ -27,11 +27,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/operator-opamp-bridge/internal/proxy"
 )
 
-const (
-	// proxyPrefix is included to make clear if a collector configuration is proxied.
-	proxyPrefix = "proxy:"
-)
-
 type Agent struct {
 	logger logr.Logger
 
