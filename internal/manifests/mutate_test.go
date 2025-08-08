@@ -2319,6 +2319,80 @@ func TestMutateDeploymentLabelChange(t *testing.T) {
 	}
 }
 
+func TestMutatePodTemplateAnnotationsAndLabelsRemoval(t *testing.T) {
+	tests := []struct {
+		name     string
+		existing appsv1.Deployment
+		desired  appsv1.Deployment
+	}{
+		{
+			name: "remove annotation from pod template",
+			existing: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "deployment",
+				},
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								"user-annotation":         "existing",
+								"user-removed-annotation": "remove-value",
+							},
+							Labels: map[string]string{
+								"user-label":         "existing",
+								"user-removed-label": "remove-value",
+							},
+						},
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "deployment",
+				},
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								"user-annotation": "existing",
+							},
+							Labels: map[string]string{
+								"user-label": "existing",
+							},
+						},
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
+			err := mutateFn()
+			require.NoError(t, err)
+			assert.Equal(t, tt.desired.Spec.Template.Annotations, tt.existing.Spec.Template.Annotations)
+			assert.Equal(t, tt.desired.Spec.Template.Labels, tt.existing.Spec.Template.Labels)
+		})
+	}
+}
+
 func TestMutateStatefulSetLabelChange(t *testing.T) {
 	tests := []struct {
 		name     string
