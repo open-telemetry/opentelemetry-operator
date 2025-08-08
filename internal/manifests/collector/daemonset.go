@@ -16,7 +16,12 @@ import (
 // DaemonSet builds the deployment for the given instance.
 func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)
+
+	image := params.OtelCol.Spec.Image
+	if len(image) == 0 {
+		image = params.Config.CollectorImage
+	}
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)
 
 	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {

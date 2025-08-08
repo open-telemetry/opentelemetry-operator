@@ -105,7 +105,7 @@ func TestDeploymentNewDefault(t *testing.T) {
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/name":       "my-instance-collector",
 		"app.kubernetes.io/part-of":    "opentelemetry",
-		"app.kubernetes.io/version":    "latest",
+		"app.kubernetes.io/version":    "0.0.0",
 	}
 	assert.Equal(t, expectedLabels, d.Spec.Template.Labels)
 
@@ -121,6 +121,92 @@ func TestDeploymentNewDefault(t *testing.T) {
 	for k, v := range d.Spec.Selector.MatchLabels {
 		assert.Equal(t, v, d.Spec.Template.Labels[k])
 	}
+}
+
+func TestDeploymentVersionLabelFromSpec(t *testing.T) {
+	// prepare
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.129.1",
+			},
+		},
+	}
+	cfg := config.New()
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
+	// test
+	d, err := Deployment(params)
+	require.NoError(t, err)
+
+	// verify
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "0.129.1", d.Spec.Template.Labels["app.kubernetes.io/version"])
+	assert.Equal(t, "0.129.1", d.Labels["app.kubernetes.io/version"])
+}
+
+func TestDeploymentVersionLabelFromConfig(t *testing.T) {
+	// prepare
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{},
+	}
+	cfg := config.New()
+	cfg.CollectorImage = "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.130.0"
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
+	// test
+	d, err := Deployment(params)
+	require.NoError(t, err)
+
+	// verify
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "0.130.0", d.Spec.Template.Labels["app.kubernetes.io/version"])
+	assert.Equal(t, "0.130.0", d.Labels["app.kubernetes.io/version"])
+}
+
+func TestDeploymentVersionLabelLatest(t *testing.T) {
+	// prepare
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{},
+	}
+	cfg := config.Config{}
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
+	// test
+	d, err := Deployment(params)
+	require.NoError(t, err)
+
+	// verify
+	assert.Equal(t, "my-instance-collector", d.Name)
+	assert.Equal(t, "latest", d.Spec.Template.Labels["app.kubernetes.io/version"])
+	assert.Equal(t, "latest", d.Labels["app.kubernetes.io/version"])
 }
 
 func TestDeploymentPodAnnotations(t *testing.T) {
