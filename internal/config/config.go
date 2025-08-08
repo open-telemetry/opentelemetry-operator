@@ -121,6 +121,14 @@ type Config struct {
 	Zap ZapConfig `yaml:"zap"`
 	// EnableWebhooks enables the webhooks used by controllers.
 	EnableWebhooks bool `yaml:"enable-webhooks"`
+	// Internal contains configuration that is propagated and cannot be accessed from the operator configuration.
+	Internal Internal `yaml:"-"`
+}
+
+// Internal contains configuration that is propagated and cannot be accessed from the operator configuration.
+type Internal struct {
+	// NativeSidecarSupport is set to true if the corresponding featuregate is enabled and the minimum required k8s version is met.
+	NativeSidecarSupport bool `yaml:"native-sidecar-support"`
 }
 
 // New constructs a new configuration.
@@ -173,6 +181,9 @@ func New() Config {
 			LevelFormat: "uppercase",
 		},
 		EnableWebhooks: true,
+		Internal: Internal{
+			NativeSidecarSupport: false,
+		},
 	}
 }
 

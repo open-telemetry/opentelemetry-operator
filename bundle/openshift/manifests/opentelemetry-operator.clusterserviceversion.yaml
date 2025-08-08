@@ -292,6 +292,10 @@ spec:
     spec:
       clusterPermissions:
       - rules:
+        - nonResourceURLs:
+          - /version
+          verbs:
+          - get
         - apiGroups:
           - ""
           resources:
@@ -517,6 +521,7 @@ spec:
                 - --openshift-create-dashboard=true
                 - --enable-cr-metrics=true
                 - --create-sm-operator-metrics=true
+                - --feature-gates=operator.sidecarcontainers.native
                 env:
                 - name: SERVICE_ACCOUNT_NAME
                   valueFrom:

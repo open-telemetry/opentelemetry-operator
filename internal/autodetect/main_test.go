@@ -376,6 +376,9 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		OpAmpBridgeAvailabilityFunc: func() (opampbridge.Availability, error) {
 			return opampbridge.Available, nil
 		},
+		NativeSidecarSupportFunc: func() (bool, error) {
+			return true, nil
+		},
 	}
 	cfg := config.New()
 
@@ -386,6 +389,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, certmanager.NotAvailable, cfg.CertManagerAvailability)
 	require.Equal(t, targetallocator.NotAvailable, cfg.TargetAllocatorAvailability)
 	require.Equal(t, opampbridge.NotAvailable, cfg.OpAmpBridgeAvailability)
+	require.Equal(t, false, cfg.Internal.NativeSidecarSupport)
 
 	// test
 	err := autodetect.ApplyAutoDetect(mock, &cfg, ctrl.Log.WithName("test"))
@@ -398,6 +402,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, certmanager.Available, cfg.CertManagerAvailability)
 	require.Equal(t, targetallocator.Available, cfg.TargetAllocatorAvailability)
 	require.Equal(t, opampbridge.Available, cfg.OpAmpBridgeAvailability)
+	require.Equal(t, true, cfg.Internal.NativeSidecarSupport)
 }
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
@@ -410,6 +415,7 @@ type mockAutoDetect struct {
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
 	CollectorAvailabilityFunc       func() (collector.Availability, error)
 	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
+	NativeSidecarSupportFunc        func() (bool, error)
 }
 
 func (m *mockAutoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, error) {
@@ -463,4 +469,11 @@ func (m *mockAutoDetect) TargetAllocatorAvailability() (targetallocator.Availabi
 		return m.TargetAllocatorAvailabilityFunc()
 	}
 	return targetallocator.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) NativeSidecarSupport() (bool, error) {
+	if m.NativeSidecarSupportFunc != nil {
+		return m.NativeSidecarSupportFunc()
+	}
+	return false, nil
 }

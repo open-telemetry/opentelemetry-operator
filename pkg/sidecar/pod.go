@@ -15,7 +15,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
@@ -39,7 +38,7 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCol
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, otelcol.Spec.InitContainers...)
 
-	if featuregate.EnableNativeSidecarContainers.IsEnabled() {
+	if cfg.Internal.NativeSidecarSupport {
 		policy := corev1.ContainerRestartPolicyAlways
 		container.RestartPolicy = &policy
 		// NOTE: Use ReadinessProbe as startup probe.
@@ -62,14 +61,14 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCol
 func isOtelColContainer(c corev1.Container) bool { return c.Name == naming.Container() }
 
 // remove the sidecar container from the given pod.
-func remove(pod corev1.Pod) corev1.Pod {
-	if !existsIn(pod) {
+func remove(useNativeSidecars bool, pod corev1.Pod) corev1.Pod {
+	if !existsIn(useNativeSidecars, pod) {
 		return pod
 	}
 
 	pod.Spec.Containers = slices.DeleteFunc(pod.Spec.Containers, isOtelColContainer)
 
-	if featuregate.EnableNativeSidecarContainers.IsEnabled() {
+	if useNativeSidecars {
 		// NOTE: we also remove init containers (native sidecars) since k8s 1.28.
 		// This should have no side effects.
 		pod.Spec.InitContainers = slices.DeleteFunc(pod.Spec.InitContainers, isOtelColContainer)
@@ -78,12 +77,12 @@ func remove(pod corev1.Pod) corev1.Pod {
 }
 
 // existsIn checks whether a sidecar container exists in the given pod.
-func existsIn(pod corev1.Pod) bool {
+func existsIn(useNativeSidecars bool, pod corev1.Pod) bool {
 	if slices.ContainsFunc(pod.Spec.Containers, isOtelColContainer) {
 		return true
 	}
 
-	if featuregate.EnableNativeSidecarContainers.IsEnabled() {
+	if useNativeSidecars {
 		// NOTE: we also check init containers (native sidecars) since k8s 1.28.
 		// This should have no side effects.
 		if slices.ContainsFunc(pod.Spec.InitContainers, isOtelColContainer) {

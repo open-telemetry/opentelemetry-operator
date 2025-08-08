@@ -102,6 +102,10 @@ func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
 	return false
 }
 
+func (m *mockAutoDetect) NativeSidecarSupport() (bool, error) {
+	return false, nil
+}
+
 func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error) {
 	if m.OpenShiftRoutesAvailabilityFunc != nil {
 		return m.OpenShiftRoutesAvailabilityFunc()
