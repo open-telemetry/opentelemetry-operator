@@ -52,7 +52,7 @@ spec:
         - assert:
             resource:
               (length($metrics[?as_string(metric."__name__") == 'otel_scope_info']) >= `0`): true
-              (length($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_metric_points_total']) >= `0`): true
+              (length($metrics[?as_string(metric."__name__") == 'otelcol_process_cpu_seconds_total']) >= `0`): true
     - name: Assert Target Allocator metrics
       try:
         - command:

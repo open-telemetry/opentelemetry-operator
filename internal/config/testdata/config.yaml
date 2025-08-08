@@ -47,3 +47,4 @@ zap:
   level-key: level
   level-format: uppercase
 enable-webhooks: true
+enable-instrumentation-crds: true
