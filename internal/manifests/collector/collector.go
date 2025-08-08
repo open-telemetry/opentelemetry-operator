@@ -39,12 +39,20 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.Factory(ConfigMap),
 		manifests.Factory(HorizontalPodAutoscaler),
 		manifests.Factory(ServiceAccount),
-		manifests.Factory(Service),
-		manifests.Factory(HeadlessService),
-		manifests.Factory(MonitoringService),
-		manifests.Factory(ExtensionService),
 		manifests.Factory(Ingress),
 	}...)
+	if params.OtelCol.Spec.Service.IsEnabled() {
+		manifestFactories = append(manifestFactories, manifests.Factory(Service))
+	}
+	if params.OtelCol.Spec.HeadlessService.IsEnabled() {
+		manifestFactories = append(manifestFactories, manifests.Factory(HeadlessService))
+	}
+	if params.OtelCol.Spec.MonitoringService.IsEnabled() {
+		manifestFactories = append(manifestFactories, manifests.Factory(MonitoringService))
+	}
+	if params.OtelCol.Spec.ExtensionService.IsEnabled() {
+		manifestFactories = append(manifestFactories, manifests.Factory(ExtensionService))
+	}
 
 	if featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() {
 		manifestFactories = append(manifestFactories, manifests.Factory(TargetAllocator))
@@ -54,7 +62,12 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
 			manifestFactories = append(manifestFactories, manifests.Factory(PodMonitor))
 		} else {
-			manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor), manifests.Factory(ServiceMonitorMonitoring))
+			if params.OtelCol.Spec.Service.IsEnabled() {
+				manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitor))
+			}
+			if params.OtelCol.Spec.MonitoringService.IsEnabled() {
+				manifestFactories = append(manifestFactories, manifests.Factory(ServiceMonitorMonitoring))
+			}
 		}
 	}
 
