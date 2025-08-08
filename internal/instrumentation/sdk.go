@@ -37,6 +37,17 @@ const (
 	sideCarName       = "opentelemetry-auto-instrumentation"
 )
 
+var languagePatterns = map[string][]string{
+	"java":   {"java"},
+	"nodejs": {"nodejs", "node"},
+	"python": {"python"},
+	"dotnet": {"dotnet"},
+	"go":     {"golang", "go"},
+	"apache": {"apache", "httpd"},
+	"nginx":  {"nginx"},
+	"sdk":    {},
+}
+
 // inject a new sidecar container to the given pod, based on the given OpenTelemetryCollector.
 
 type sdkInjector struct {
@@ -230,17 +241,6 @@ func (i *sdkInjector) setInitContainerSecurityContext(pod corev1.Pod, securityCo
 
 func containersByLanguage(pod corev1.Pod, language string) []string {
 	var detectedContainers []string
-
-	languagePatterns := map[string][]string{
-		"java":   {"java"},
-		"nodejs": {"nodejs", "node"},
-		"python": {"python"},
-		"dotnet": {"dotnet"},
-		"go":     {"golang", "go"},
-		"apache": {"apache", "httpd"},
-		"nginx":  {"nginx"},
-		"sdk":    {},
-	}
 
 	patterns, exists := languagePatterns[language]
 	if !exists {
