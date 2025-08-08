@@ -56,7 +56,6 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.String("zap-time-key", "timestamp", "The time key to be used in the customized Log Encoder")
 	f.String("zap-level-format", "uppercase", "The level format to be used in the customized Log Encoder")
 	f.Bool("enable-webhooks", cfg.EnableWebhooks, "Enable webhooks for the controllers")
-	f.Bool("enable-native-sidecar", cfg.NativeSidecarSupport, "Enable native sidecar support for OpenTelemetry Collector")
 
 	return f
 }
@@ -146,8 +145,6 @@ func ApplyCLI(cfg *Config) error {
 				cfg.Zap.LevelFormat, _ = f.GetString("zap-level-format")
 			case "enable-webhooks":
 				cfg.EnableWebhooks, _ = f.GetBool("enable-webhooks")
-			case "enable-native-sidecar":
-				cfg.NativeSidecarSupport, _ = f.GetBool("enable-native-sidecar")
 			}
 		}
 	})
