@@ -22,7 +22,8 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 		params.Log.Info("failed to construct OpAMPBridge ConfigMap for annotations")
 		configMap = nil
 	}
-	annotations := Annotations(params.OpAMPBridge, configMap, params.Config.AnnotationsFilter)
+	podAnnotations := PodAnnotations(params.OpAMPBridge, configMap, params.Config.AnnotationsFilter)
+	annotations := Annotations(params.OpAMPBridge, params.Config.AnnotationsFilter)
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -38,7 +39,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
-					Annotations: params.OpAMPBridge.Spec.PodAnnotations,
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:        ServiceAccountName(params.OpAMPBridge),
