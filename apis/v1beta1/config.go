@@ -6,6 +6,7 @@ package v1beta1
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"sort"
 
 	"dario.cat/mergo"
@@ -14,6 +15,8 @@ import (
 	otelConfig "go.opentelemetry.io/contrib/otelconf/v0.3.0"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/exporters"
@@ -262,7 +265,7 @@ func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, co
 
 // applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
 func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) error {
-	if err := c.Service.ApplyDefaults(logger); err != nil {
+	if err := c.Service.ApplyDefaults(logger, nil, nil); err != nil {
 		return err
 	}
 	enabledComponents := c.GetEnabledComponents()
@@ -446,7 +449,7 @@ const (
 // In cases which the port itself is a variable, i.e. "${env:POD_IP}:${env:PORT}", this returns an error. This happens
 // because the port is used to generate Service objects and mappings.
 func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
-	telemetry := s.GetTelemetry()
+	telemetry := s.GetTelemetry(&logger)
 	if telemetry == nil {
 		return defaultServiceHost, defaultServicePort, nil
 	}
@@ -464,10 +467,11 @@ func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
 }
 
 // ApplyDefaults inserts configuration defaults if it has not been set.
-func (s *Service) ApplyDefaults(logger logr.Logger) error {
-	tel := s.GetTelemetry()
+func (s *Service) ApplyDefaults(logger logr.Logger, recorder record.EventRecorder, obj runtime.Object) error {
+	tel := s.GetTelemetry(&logger)
 
 	if tel == nil {
+		logger.V(1).Info("no telemetry configuration parsed, creating default")
 		tel = &Telemetry{}
 		s.Telemetry = &AnyConfig{
 			Object: map[string]interface{}{},
@@ -476,16 +480,27 @@ func (s *Service) ApplyDefaults(logger logr.Logger) error {
 
 	if tel.Metrics.Address != "" || len(tel.Metrics.Readers) != 0 {
 		// The user already set the address or the readers, so we don't need to do anything
+		logger.V(1).Info("telemetry configuration already provided by user, skipping defaults",
+			"metricsAddress", tel.Metrics.Address,
+			"readersCount", len(tel.Metrics.Readers))
 		return nil
 	}
 
+	logger.Info("no telemetry readers configuration found, applying default Prometheus endpoint")
+
 	host, port, err := s.MetricsEndpoint(logger)
 	if err != nil {
+		logger.Error(err, "failed to determine metrics endpoint for default configuration")
 		return err
 	}
 
 	reader := AddPrometheusMetricsEndpoint(host, port)
 	tel.Metrics.Readers = append(tel.Metrics.Readers, reader)
+
+	if recorder != nil && obj != nil {
+		recorder.Event(obj, corev1.EventTypeNormal, "Spec.Service.Telemetry.DefaultsApplied",
+			fmt.Sprintf("Applied default Prometheus telemetry configuration (host: %s, port: %d)", host, port))
+	}
 
 	telConfig, err := tel.ToAnyConfig()
 	if err != nil {
@@ -573,19 +588,32 @@ func AddPrometheusMetricsEndpoint(host string, port int32) otelConfig.MetricRead
 
 // GetTelemetry serves as a helper function to access the fields we care about in the underlying telemetry struct.
 // This exists to avoid needing to worry extra fields in the telemetry struct.
-func (s *Service) GetTelemetry() *Telemetry {
+func (s *Service) GetTelemetry(logger *logr.Logger) *Telemetry {
 	if s.Telemetry == nil {
+		logger.V(2).Info("no spec.service.telemetry configuration found")
 		return nil
 	}
+
 	// Convert map to JSON bytes
 	jsonData, err := json.Marshal(s.Telemetry)
 	if err != nil {
+		logger.Error(err, "failed to marshal telemetry configuration to JSON", "telemetry", s.Telemetry.Object)
 		return nil
 	}
+
+	logger.V(2).Info("marshaled telemetry configuration", "json", string(jsonData))
+
 	t := &Telemetry{}
 	// Unmarshal JSON into the provided struct
 	if err := json.Unmarshal(jsonData, t); err != nil {
+		logger.Error(err, "failed to unmarshal telemetry configuration, this may indicate invalid configuration", "json", string(jsonData), "originalConfig", s.Telemetry.Object)
 		return nil
 	}
+
+	logger.V(2).Info("successfully parsed telemetry configuration",
+		"metricsLevel", t.Metrics.Level,
+		"metricsAddress", t.Metrics.Address,
+		"readersCount", len(t.Metrics.Readers))
+
 	return t
 }
