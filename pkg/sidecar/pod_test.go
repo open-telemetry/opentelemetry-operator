@@ -68,8 +68,10 @@ func TestAddNativeSidecar(t *testing.T) {
 	otelcolYaml, err := otelcol.Spec.Config.Yaml()
 	require.NoError(t, err)
 	cfg := config.Config{
-		CollectorImage:       "some-default-image",
-		NativeSidecarSupport: true,
+		CollectorImage: "some-default-image",
+		Internal: config.Internal{
+			NativeSidecarSupport: true,
+		},
 	}
 
 	// test

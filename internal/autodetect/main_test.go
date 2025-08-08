@@ -389,7 +389,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, certmanager.NotAvailable, cfg.CertManagerAvailability)
 	require.Equal(t, targetallocator.NotAvailable, cfg.TargetAllocatorAvailability)
 	require.Equal(t, opampbridge.NotAvailable, cfg.OpAmpBridgeAvailability)
-	require.Equal(t, false, cfg.NativeSidecarSupport)
+	require.Equal(t, false, cfg.Internal.NativeSidecarSupport)
 
 	// test
 	err := autodetect.ApplyAutoDetect(mock, &cfg, ctrl.Log.WithName("test"))
@@ -402,7 +402,7 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 	require.Equal(t, certmanager.Available, cfg.CertManagerAvailability)
 	require.Equal(t, targetallocator.Available, cfg.TargetAllocatorAvailability)
 	require.Equal(t, opampbridge.Available, cfg.OpAmpBridgeAvailability)
-	require.Equal(t, true, cfg.NativeSidecarSupport)
+	require.Equal(t, true, cfg.Internal.NativeSidecarSupport)
 }
 
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)

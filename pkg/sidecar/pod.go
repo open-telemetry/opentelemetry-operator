@@ -38,7 +38,7 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCol
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, otelcol.Spec.InitContainers...)
 
-	if cfg.NativeSidecarSupport {
+	if cfg.Internal.NativeSidecarSupport {
 		policy := corev1.ContainerRestartPolicyAlways
 		container.RestartPolicy = &policy
 		// NOTE: Use ReadinessProbe as startup probe.

@@ -95,8 +95,6 @@ type Config struct {
 	OpAmpBridgeAvailability opampbridge.Availability `yaml:"opampbridge-availability"`
 	// IgnoreMissingCollectorCRDs is true if the operator can ignore missing OpenTelemetryCollector CRDs.
 	IgnoreMissingCollectorCRDs bool `yaml:"ignore-missing-collector-crds"`
-	// NativeSidecarSupport is set to true if the corresponding featuregate is enabled and the minimum required k8s version is met.
-	NativeSidecarSupport bool `yaml:"native-sidecar-support"`
 	// LabelsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
 	LabelsFilter []string `yaml:"labels-filter"`
 	// AnnotationsFilter Returns the filters converted to regex strings used to filter out unwanted labels from propagations.
@@ -123,6 +121,14 @@ type Config struct {
 	Zap ZapConfig `yaml:"zap"`
 	// EnableWebhooks enables the webhooks used by controllers.
 	EnableWebhooks bool `yaml:"enable-webhooks"`
+	// Internal contains configuration that is propagated and cannot be accessed from the operator configuration.
+	Internal Internal `yaml:"-"`
+}
+
+// Internal contains configuration that is propagated and cannot be accessed from the operator configuration.
+type Internal struct {
+	// NativeSidecarSupport is set to true if the corresponding featuregate is enabled and the minimum required k8s version is met.
+	NativeSidecarSupport bool `yaml:"native-sidecar-support"`
 }
 
 // New constructs a new configuration.
@@ -160,7 +166,6 @@ func New() Config {
 		AnnotationsFilter:                   []string{constants.KubernetesLastAppliedConfigurationAnnotation},
 		CreateRBACPermissions:               autoRBAC.NotAvailable,
 		OpAmpBridgeAvailability:             opampbridge.NotAvailable,
-		NativeSidecarSupport:                false,
 		MetricsAddr:                         ":8080",
 		ProbeAddr:                           ":8081",
 		WebhookPort:                         9443,
@@ -176,6 +181,9 @@ func New() Config {
 			LevelFormat: "uppercase",
 		},
 		EnableWebhooks: true,
+		Internal: Internal{
+			NativeSidecarSupport: false,
+		},
 	}
 }
 
