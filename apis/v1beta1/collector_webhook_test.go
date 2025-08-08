@@ -549,7 +549,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			ctx := context.Background()
 			err := cvw.Default(ctx, &test.otelcol)
 			if test.expected.Spec.Config.Service.Telemetry == nil {
-				assert.NoError(t, test.expected.Spec.Config.Service.ApplyDefaults(logr.Discard()), "could not apply defaults")
+				assert.NoError(t, test.expected.Spec.Config.Service.ApplyDefaults(logr.Discard(), nil, nil), "could not apply defaults")
 			}
 			assert.NoError(t, err)
 			if diff := cmp.Diff(test.expected, test.otelcol); diff != "" {

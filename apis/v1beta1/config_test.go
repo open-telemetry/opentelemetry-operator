@@ -1139,11 +1139,51 @@ func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 		},
 	}
 
-	err := cfg.Service.ApplyDefaults(logr.Discard())
+	err := cfg.Service.ApplyDefaults(logr.Discard(), nil, nil)
 	require.NoError(t, err)
 
 	logger := logr.Discard()
 	telemetry := cfg.Service.GetTelemetry(&logger)
 	require.NotNil(t, telemetry)
 	require.Equal(t, expected, cfg)
+}
+
+func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
+	cfg := &Config{
+		Service: Service{
+			Telemetry: &AnyConfig{
+				Object: map[string]interface{}{
+					"metrics": map[string]interface{}{
+						"level": "basic",
+						"readers": []interface{}{
+							map[string]interface{}{
+								"periodic": map[string]interface{}{
+									"exporter": map[string]interface{}{
+										"otlp": map[string]interface{}{
+											"endpoint": "otlp_host:4317",
+											// Missing protocol - makes this invalid
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := cfg.Service.ApplyDefaults(logr.Discard(), nil, nil)
+	require.NoError(t, err)
+
+	logger := logr.Discard()
+	telemetry := cfg.Service.GetTelemetry(&logger)
+	require.NotNil(t, telemetry)
+
+	require.Len(t, telemetry.Metrics.Readers, 1)
+
+	require.NotNil(t, telemetry.Metrics.Readers[0].Pull)
+	require.NotNil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus)
+	require.Equal(t, "0.0.0.0", *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Host)
+	require.Equal(t, 8888, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Port)
 }

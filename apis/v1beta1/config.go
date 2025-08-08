@@ -6,6 +6,7 @@ package v1beta1
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"sort"
 
 	"dario.cat/mergo"
@@ -14,6 +15,8 @@ import (
 	otelConfig "go.opentelemetry.io/contrib/otelconf/v0.3.0"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/exporters"
@@ -262,7 +265,7 @@ func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, co
 
 // applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
 func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) error {
-	if err := c.Service.ApplyDefaults(logger); err != nil {
+	if err := c.Service.ApplyDefaults(logger, nil, nil); err != nil {
 		return err
 	}
 	enabledComponents := c.GetEnabledComponents()
@@ -464,19 +467,7 @@ func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
 }
 
 // ApplyDefaults inserts configuration defaults if it has not been set.
-func (s *Service) ApplyDefaults(logger logr.Logger) error {
-	if s.Telemetry != nil {
-		logger.V(2).Info("original telemetry configuration before parsing", "rawConfig", s.Telemetry.Object)
-
-		if metricsConfig, ok := s.Telemetry.Object["metrics"]; ok {
-			if metricsMap, ok := metricsConfig.(map[string]interface{}); ok {
-				if readers, hasReaders := metricsMap["readers"]; hasReaders && readers != nil {
-					logger.Info("found telemetry readers in original configuration", "readers", readers)
-				}
-			}
-		}
-	}
-
+func (s *Service) ApplyDefaults(logger logr.Logger, recorder record.EventRecorder, obj runtime.Object) error {
 	tel := s.GetTelemetry(&logger)
 
 	if tel == nil {
@@ -506,9 +497,10 @@ func (s *Service) ApplyDefaults(logger logr.Logger) error {
 	reader := AddPrometheusMetricsEndpoint(host, port)
 	tel.Metrics.Readers = append(tel.Metrics.Readers, reader)
 
-	logger.Info("applied default Prometheus telemetry configuration",
-		"host", host,
-		"port", port)
+	if recorder != nil && obj != nil {
+		recorder.Event(obj, corev1.EventTypeNormal, "Spec.Service.Telemetry.DefaultsApplied",
+			fmt.Sprintf("Applied default Prometheus telemetry configuration (host: %s, port: %d)", host, port))
+	}
 
 	telConfig, err := tel.ToAnyConfig()
 	if err != nil {
