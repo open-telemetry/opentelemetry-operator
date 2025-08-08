@@ -6,6 +6,7 @@ package proxy
 import (
 	"context"
 	"errors"
+	"maps"
 	"net/http"
 	"sync"
 
@@ -21,6 +22,7 @@ import (
 )
 
 type Server interface {
+	GetAgentsByHostname() map[string]uuid.UUID
 	GetConfigurations() map[uuid.UUID]*protobufs.EffectiveConfig
 	GetHealth() map[uuid.UUID]*protobufs.ComponentHealth
 	HasUpdates() <-chan struct{}
@@ -42,18 +44,22 @@ type OpAMPProxy struct {
 	// internal state
 	mux        sync.RWMutex
 	agentsById map[uuid.UUID]*Agent
+	// agentsByHostName allows a lookup for an agent instance ID based on its hostname.
+	// Canonically, host.name is set to the kubernetes pod name.
+	agentsByHostName map[string]uuid.UUID
 	// connections map is required because that's the only way we know to remove an agent.
 	connections map[types.Connection]map[uuid.UUID]bool
 }
 
 func NewOpAMPProxy(l logr.Logger, endpoint string) *OpAMPProxy {
 	return &OpAMPProxy{
-		logger:      l,
-		OpAMPServer: server.New(logger.NewLogger(l)),
-		endpoint:    endpoint,
-		agentsById:  map[uuid.UUID]*Agent{},
-		connections: map[types.Connection]map[uuid.UUID]bool{},
-		updatesChan: make(chan struct{}, 1),
+		logger:           l,
+		OpAMPServer:      server.New(logger.NewLogger(l)),
+		endpoint:         endpoint,
+		agentsById:       map[uuid.UUID]*Agent{},
+		agentsByHostName: map[string]uuid.UUID{},
+		connections:      map[types.Connection]map[uuid.UUID]bool{},
+		updatesChan:      make(chan struct{}, 1),
 	}
 }
 
@@ -99,6 +105,9 @@ func (s *OpAMPProxy) onDisconnect(conn types.Connection) {
 	defer s.mux.Unlock()
 
 	for instanceId := range s.connections[conn] {
+		if hostName := s.agentsById[instanceId].GetHostname(); len(hostName) > 0 {
+			delete(s.agentsByHostName, hostName)
+		}
 		delete(s.agentsById, instanceId)
 	}
 	delete(s.connections, conn)
@@ -132,6 +141,9 @@ func (s *OpAMPProxy) onMessage(ctx context.Context, conn types.Connection, msg *
 		agentUpdated = true
 	}
 	agentUpdated = s.agentsById[instanceId].UpdateStatus(msg, response) || agentUpdated
+	if hostName := s.agentsById[instanceId].GetHostname(); len(hostName) > 0 {
+		s.agentsByHostName[hostName] = instanceId
+	}
 	s.mux.Unlock()
 	if agentUpdated {
 		s.updatesChan <- struct{}{}
@@ -159,6 +171,15 @@ func (s *OpAMPProxy) GetHealth() map[uuid.UUID]*protobufs.ComponentHealth {
 	for i, agent := range s.agentsById {
 		toReturn[i] = agent.GetHealth()
 	}
+	return toReturn
+}
+
+// GetAgentsByHostname implements Server.
+func (s *OpAMPProxy) GetAgentsByHostname() map[string]uuid.UUID {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+	toReturn := make(map[string]uuid.UUID, len(s.agentsByHostName))
+	maps.Copy(toReturn, s.agentsByHostName)
 	return toReturn
 }
 

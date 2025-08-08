@@ -131,21 +131,28 @@ func getConfigHash(key, file string) string {
 }
 
 var _ client.OpAMPClient = &mockOpampClient{}
-var _ proxy.Server = newMockProxy(nil, nil)
+var _ proxy.Server = newMockProxy(nil, nil, nil)
 
-func newMockProxy(configs map[uuid.UUID]*protobufs.EffectiveConfig, healths map[uuid.UUID]*protobufs.ComponentHealth) *mockProxy {
+func newMockProxy(configs map[uuid.UUID]*protobufs.EffectiveConfig, healths map[uuid.UUID]*protobufs.ComponentHealth, agentsByHostname map[string]uuid.UUID) *mockProxy {
 	return &mockProxy{
-		configs:     configs,
-		healths:     healths,
-		updatesChan: make(chan struct{}, 1),
+		configs:          configs,
+		healths:          healths,
+		agentsByHostName: agentsByHostname,
+		updatesChan:      make(chan struct{}, 1),
 	}
 }
 
 type mockProxy struct {
-	mu          sync.Mutex
-	configs     map[uuid.UUID]*protobufs.EffectiveConfig
-	healths     map[uuid.UUID]*protobufs.ComponentHealth
-	updatesChan chan struct{}
+	mu               sync.Mutex
+	configs          map[uuid.UUID]*protobufs.EffectiveConfig
+	healths          map[uuid.UUID]*protobufs.ComponentHealth
+	agentsByHostName map[string]uuid.UUID
+	updatesChan      chan struct{}
+}
+
+// GetAgentsByHostname implements proxy.Server.
+func (m *mockProxy) GetAgentsByHostname() map[string]uuid.UUID {
+	return m.agentsByHostName
 }
 
 func (m *mockProxy) sendUpdate() {
@@ -263,9 +270,10 @@ func TestAgent_getHealth(t *testing.T) {
 	type args struct {
 		ctx context.Context
 		// List of mappings from namespace/name to a config file, tests are run in order of list
-		configs []map[string]string
-		healths map[uuid.UUID]*protobufs.ComponentHealth
-		podList *v1.PodList
+		configs          []map[string]string
+		healths          map[uuid.UUID]*protobufs.ComponentHealth
+		agentsByHostname map[string]uuid.UUID
+		podList          *v1.PodList
 	}
 	tests := []struct {
 		name   string
@@ -415,6 +423,61 @@ func TestAgent_getHealth(t *testing.T) {
 									Status:             "Running",
 									StatusTimeUnixNano: startTime,
 									StartTimeUnixNano:  podTimeUnsigned,
+									ComponentHealthMap: map[string]*protobufs.ComponentHealth{},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "base case with correlation",
+			fields: fields{
+				configFile: agentTestFileName,
+			},
+			args: args{
+				ctx: context.Background(),
+				configs: []map[string]string{
+					{
+						thirdCollectorKey: collectorBasicFile,
+					},
+				},
+				podList:          mockPodList,
+				agentsByHostname: map[string]uuid.UUID{thirdCollectorName + "-1": mockInstanceId},
+				healths: map[uuid.UUID]*protobufs.ComponentHealth{
+					mockInstanceId: {
+						Healthy:            true,
+						StartTimeUnixNano:  startTime,
+						StatusTimeUnixNano: startTime,
+					},
+				},
+			},
+			want: []*protobufs.ComponentHealth{
+				{
+					Healthy:            true,
+					StartTimeUnixNano:  startTime,
+					StatusTimeUnixNano: startTime,
+					ComponentHealthMap: map[string]*protobufs.ComponentHealth{
+						"other/third": {
+							Healthy:            true,
+							StartTimeUnixNano:  collectorStartTime,
+							LastError:          "",
+							Status:             "",
+							StatusTimeUnixNano: startTime,
+							ComponentHealthMap: map[string]*protobufs.ComponentHealth{
+								otherCollectorName + "/" + thirdCollectorName + "-1": {
+									Healthy:            true,
+									Status:             "Running",
+									StatusTimeUnixNano: startTime,
+									StartTimeUnixNano:  podTimeUnsigned,
+									ComponentHealthMap: map[string]*protobufs.ComponentHealth{
+										mockInstanceId.String(): {
+											Healthy:            true,
+											StartTimeUnixNano:  startTime,
+											StatusTimeUnixNano: startTime,
+										},
+									},
 								},
 							},
 						},
@@ -455,6 +518,7 @@ func TestAgent_getHealth(t *testing.T) {
 									Status:             "Running",
 									StatusTimeUnixNano: startTime,
 									StartTimeUnixNano:  uint64(0),
+									ComponentHealthMap: map[string]*protobufs.ComponentHealth{},
 								},
 							},
 						},
@@ -470,7 +534,7 @@ func TestAgent_getHealth(t *testing.T) {
 			loadErr := config.LoadFromFile(conf, tt.fields.configFile)
 			require.NoError(t, loadErr, "should be able to load config")
 			applier := getFakeApplier(t, conf, tt.args.podList)
-			mp := newMockProxy(nil, tt.args.healths)
+			mp := newMockProxy(nil, tt.args.healths, tt.args.agentsByHostname)
 			agent := NewAgent(l, applier, conf, mockClient, mp)
 			agent.clock = fakeClock
 			err := agent.Start()
@@ -630,7 +694,7 @@ func TestAgent_onMessage(t *testing.T) {
 						"- otlp",
 						"status:",
 					},
-					proxyPrefix + mockInstanceId.String(): {
+					mockInstanceId.String(): {
 						"receivers:",
 						"otlp:",
 						"service:",
@@ -945,7 +1009,7 @@ func TestAgent_onMessage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := &mockOpampClient{}
-			mp := newMockProxy(tt.args.configs, nil)
+			mp := newMockProxy(tt.args.configs, nil, nil)
 
 			conf := config.NewConfig(logr.Discard())
 			loadErr := config.LoadFromFile(conf, tt.fields.configFile)
@@ -1014,7 +1078,7 @@ func Test_CanUpdateIdentity(t *testing.T) {
 	loadErr := config.LoadFromFile(conf, agentTestFileName)
 	require.NoError(t, loadErr, "should be able to load config")
 	applier := getFakeApplier(t, conf)
-	mp := newMockProxy(nil, nil)
+	mp := newMockProxy(nil, nil, nil)
 	agent := NewAgent(l, applier, conf, mockClient, mp)
 	err = agent.Start()
 	defer agent.Shutdown()
@@ -1038,7 +1102,7 @@ func Test_CanUpdateIdentity(t *testing.T) {
 
 func TestAgent_ListensForUpdates(t *testing.T) {
 	mockClient := &mockOpampClient{}
-	mockProxy := newMockProxy(nil, nil)
+	mockProxy := newMockProxy(nil, nil, nil)
 	conf := config.NewConfig(logr.Discard())
 	applier := getFakeApplier(t, conf)
 
