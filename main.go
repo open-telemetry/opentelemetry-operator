@@ -418,7 +418,7 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config) err
 			mgr.GetEventRecorderFor("opentelemetry-operator"),
 			cfg,
 		)
-		return u.ManagedInstances(c)
+		return u.ManagedInstances(c, cfg)
 	}))
 	if err != nil {
 		return fmt.Errorf("failed to upgrade Instrumentation instances: %w", err)

@@ -414,7 +414,143 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	return modifiedPod, nil
 }
 
+func ConvertConfig(cfg *config.InstrumentationSpec) *v1alpha1.InstrumentationSpec {
+	if cfg == nil {
+		return nil
+	}
+	var tls *v1alpha1.TLS
+	if cfg.TLS != nil {
+		tls = &v1alpha1.TLS{
+			SecretName:    cfg.TLS.SecretName,
+			ConfigMapName: cfg.TLS.ConfigMapName,
+			CA:            cfg.TLS.CA,
+			Cert:          cfg.TLS.Cert,
+			Key:           cfg.TLS.Key,
+		}
+	}
+	return &v1alpha1.InstrumentationSpec{
+		Exporter: v1alpha1.Exporter{
+			Endpoint: cfg.Exporter.Endpoint,
+			TLS:      tls,
+		},
+		Resource: v1alpha1.Resource{
+			Attributes:          cfg.Resource.Attributes,
+			AddK8sUIDAttributes: cfg.Resource.AddK8sUIDAttributes,
+		},
+		Propagators: func() []v1alpha1.Propagator {
+			result := make([]v1alpha1.Propagator, len(cfg.Propagators))
+			for i, p := range cfg.Propagators {
+				result[i] = v1alpha1.Propagator(p)
+			}
+			return result
+		}(),
+		Sampler: v1alpha1.Sampler{
+			Type:     v1alpha1.SamplerType(cfg.Sampler.Type),
+			Argument: cfg.Sampler.Argument,
+		},
+		Defaults: v1alpha1.Defaults{
+			UseLabelsForResourceAttributes: cfg.Defaults.UseLabelsForResourceAttributes,
+		},
+		Env: cfg.Env,
+		Java: v1alpha1.Java{
+			Image:               cfg.Java.Image,
+			VolumeClaimTemplate: cfg.Java.VolumeClaimTemplate,
+			VolumeSizeLimit:     cfg.Java.VolumeSizeLimit,
+			Env:                 cfg.Java.Env,
+			Resources:           cfg.Java.Resources,
+			Extensions: func() []v1alpha1.Extensions {
+				result := make([]v1alpha1.Extensions, len(cfg.Java.Extensions))
+				for _, ext := range cfg.Java.Extensions {
+					result = append(result, v1alpha1.Extensions{
+						Image: ext.Image,
+						Dir:   ext.Dir,
+					})
+				}
+				return result
+			}(),
+		},
+		NodeJS: v1alpha1.NodeJS{
+			Image:               cfg.NodeJS.Image,
+			VolumeClaimTemplate: cfg.NodeJS.VolumeClaimTemplate,
+			VolumeSizeLimit:     cfg.NodeJS.VolumeSizeLimit,
+			Env:                 cfg.NodeJS.Env,
+			Resources:           cfg.NodeJS.Resources,
+		},
+		Python: v1alpha1.Python{
+			Image:               cfg.Python.Image,
+			VolumeClaimTemplate: cfg.Python.VolumeClaimTemplate,
+			VolumeSizeLimit:     cfg.Python.VolumeSizeLimit,
+			Env:                 cfg.Python.Env,
+			Resources:           cfg.Python.Resources,
+		},
+		DotNet: v1alpha1.DotNet{
+			Image:               cfg.DotNet.Image,
+			VolumeClaimTemplate: cfg.DotNet.VolumeClaimTemplate,
+			VolumeSizeLimit:     cfg.DotNet.VolumeSizeLimit,
+			Env:                 cfg.DotNet.Env,
+			Resources:           cfg.DotNet.Resources,
+		},
+		Go: v1alpha1.Go{
+			Image:               cfg.Go.Image,
+			VolumeClaimTemplate: cfg.Go.VolumeClaimTemplate,
+			VolumeSizeLimit:     cfg.Go.VolumeSizeLimit,
+			Env:                 cfg.Go.Env,
+			Resources:           cfg.Go.Resources,
+		},
+		ApacheHttpd: v1alpha1.ApacheHttpd{
+			Image:               cfg.ApacheHttpd.Image,
+			VolumeClaimTemplate: cfg.ApacheHttpd.VolumeClaimTemplate,
+			VolumeSizeLimit:     cfg.ApacheHttpd.VolumeSizeLimit,
+			Env:                 cfg.ApacheHttpd.Env,
+			Attrs:               cfg.ApacheHttpd.Attrs,
+			Version:             cfg.ApacheHttpd.Version,
+			ConfigPath:          cfg.ApacheHttpd.ConfigPath,
+			Resources:           cfg.ApacheHttpd.Resources,
+		},
+		Nginx: v1alpha1.Nginx{
+			Image:               cfg.Nginx.Image,
+			VolumeClaimTemplate: cfg.Nginx.VolumeClaimTemplate,
+			VolumeSizeLimit:     cfg.Nginx.VolumeSizeLimit,
+			Env:                 cfg.Nginx.Env,
+			Attrs:               cfg.Nginx.Attrs,
+			ConfigFile:          cfg.Nginx.ConfigFile,
+			Resources:           cfg.Nginx.Resources,
+		},
+		ImagePullPolicy: cfg.ImagePullPolicy,
+	}
+}
+
 func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string) (*v1alpha1.Instrumentation, error) {
+	if !pm.config.EnableInstrumentationCRDs {
+		var instr *v1alpha1.InstrumentationSpec
+		switch instAnnotation {
+		case annotationInjectDotNet:
+			instr = ConvertConfig(pm.config.Instrumentation.DotNet)
+
+		case annotationInjectJava:
+			instr = ConvertConfig(pm.config.Instrumentation.Java)
+		case annotationInjectNodeJS:
+			instr = ConvertConfig(pm.config.Instrumentation.NodeJS)
+		case annotationInjectGo:
+			instr = ConvertConfig(pm.config.Instrumentation.Go)
+		case annotationInjectApacheHttpd:
+			instr = ConvertConfig(pm.config.Instrumentation.ApacheHttpd)
+		case annotationInjectNginx:
+			instr = ConvertConfig(pm.config.Instrumentation.Nginx)
+		case annotationInjectPython:
+			instr = ConvertConfig(pm.config.Instrumentation.Python)
+		case annotationInjectSdk:
+			instr = ConvertConfig(pm.config.Instrumentation.Sdk)
+		default:
+			panic("Unknown instrumentation annotation: " + instAnnotation)
+		}
+		if instr == nil {
+			return nil, nil
+		}
+		return &v1alpha1.Instrumentation{
+			Spec: *instr,
+		}, nil
+	}
 	instValue := annotationValue(ns.ObjectMeta, pod.ObjectMeta, instAnnotation)
 
 	if len(instValue) == 0 || strings.EqualFold(instValue, "false") {

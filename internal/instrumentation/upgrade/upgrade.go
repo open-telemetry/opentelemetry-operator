@@ -7,13 +7,16 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"github.com/go-logr/logr"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
@@ -66,13 +69,100 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
 
 // ManagedInstances upgrades managed instances by the opentelemetry-operator.
-func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
-	u.Logger.Info("looking for managed Instrumentation instances to upgrade")
+func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context, cfg config.Config) error {
 	list := &v1alpha1.InstrumentationList{}
-	if err := u.Client.List(ctx, list); err != nil {
-		return fmt.Errorf("failed to list: %w", err)
+	if cfg.EnableInstrumentationCRDs {
+		u.Logger.Info("looking for managed Instrumentation instances to upgrade")
+		if err := u.Client.List(ctx, list); err != nil {
+			return fmt.Errorf("failed to list: %w", err)
+		}
+	} else {
+		list.Items = []v1alpha1.Instrumentation{}
+		if instr := instrumentation.ConvertConfig(cfg.Instrumentation.Java); instr != nil {
+			list.Items = append(list.Items, v1alpha1.Instrumentation{
+				Status:   v1alpha1.InstrumentationStatus{},
+				TypeMeta: metav1.TypeMeta{},
+				Spec:     *instr,
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"enable-java-instrumentation": strconv.FormatBool(cfg.EnableJavaAutoInstrumentation),
+					},
+				},
+			})
+		}
+		if instr := instrumentation.ConvertConfig(cfg.Instrumentation.NodeJS); instr != nil {
+			list.Items = append(list.Items, v1alpha1.Instrumentation{
+				Status:   v1alpha1.InstrumentationStatus{},
+				TypeMeta: metav1.TypeMeta{},
+				Spec:     *instr,
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"enable-nodejs-instrumentation": strconv.FormatBool(cfg.EnableNodeJSAutoInstrumentation),
+					},
+				},
+			})
+		}
+		if instr := instrumentation.ConvertConfig(cfg.Instrumentation.DotNet); instr != nil {
+			list.Items = append(list.Items, v1alpha1.Instrumentation{
+				Status:   v1alpha1.InstrumentationStatus{},
+				TypeMeta: metav1.TypeMeta{},
+				Spec:     *instr,
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"enable-dotnet-instrumentation": strconv.FormatBool(cfg.EnableDotNetAutoInstrumentation),
+					},
+				},
+			})
+		}
+		if instr := instrumentation.ConvertConfig(cfg.Instrumentation.Go); instr != nil {
+			list.Items = append(list.Items, v1alpha1.Instrumentation{
+				Status:   v1alpha1.InstrumentationStatus{},
+				TypeMeta: metav1.TypeMeta{},
+				Spec:     *instr,
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"enable-go-instrumentation": strconv.FormatBool(cfg.EnableGoAutoInstrumentation),
+					},
+				},
+			})
+		}
+		if instr := instrumentation.ConvertConfig(cfg.Instrumentation.Python); instr != nil {
+			list.Items = append(list.Items, v1alpha1.Instrumentation{
+				Status:   v1alpha1.InstrumentationStatus{},
+				TypeMeta: metav1.TypeMeta{},
+				Spec:     *instr,
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"enable-python-instrumentation": strconv.FormatBool(cfg.EnablePythonAutoInstrumentation),
+					},
+				},
+			})
+		}
+		if instr := instrumentation.ConvertConfig(cfg.Instrumentation.ApacheHttpd); instr != nil {
+			list.Items = append(list.Items, v1alpha1.Instrumentation{
+				Status:   v1alpha1.InstrumentationStatus{},
+				TypeMeta: metav1.TypeMeta{},
+				Spec:     *instr,
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"enable-apache-httpd-instrumentation": strconv.FormatBool(cfg.EnableApacheHttpdInstrumentation),
+					},
+				},
+			})
+		}
+		if instr := instrumentation.ConvertConfig(cfg.Instrumentation.Nginx); instr != nil {
+			list.Items = append(list.Items, v1alpha1.Instrumentation{
+				Status:   v1alpha1.InstrumentationStatus{},
+				TypeMeta: metav1.TypeMeta{},
+				Spec:     *instr,
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"enable-nginx-instrumentation": strconv.FormatBool(cfg.EnableNginxAutoInstrumentation),
+					},
+				},
+			})
+		}
 	}
-
 	for i := range list.Items {
 		toUpgrade := list.Items[i]
 		upgraded := u.upgrade(ctx, toUpgrade)
