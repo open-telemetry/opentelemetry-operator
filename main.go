@@ -431,6 +431,7 @@ func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interfa
 	policyOpts = append(policyOpts, operatornetworkpolicy.WithOperatorNamespace(operatorNamespace))
 
 	if cfg.EnableWebhooks {
+		//nolint:gosec // disable G115
 		policyOpts = append(policyOpts, operatornetworkpolicy.WithWebhookPort(int32(cfg.WebhookPort)))
 	}
 	if cfg.MetricsAddr != "" {
