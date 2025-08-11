@@ -19532,6 +19532,13 @@ This is only applicable to Deployment mode.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>dnsPolicy</b></td>
+        <td>string</td>
+        <td>
+          DNSPolicy defines how a pod's DNS will be configured.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecenvindex-1">env</a></b></td>
         <td>[]object</td>
         <td>

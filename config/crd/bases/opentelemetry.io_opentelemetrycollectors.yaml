@@ -5960,6 +5960,8 @@ spec:
                   type:
                     type: string
                 type: object
+              dnsPolicy:
+                type: string
               env:
                 items:
                   properties:
