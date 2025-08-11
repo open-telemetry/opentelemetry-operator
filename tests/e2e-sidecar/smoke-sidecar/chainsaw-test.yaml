@@ -3,7 +3,7 @@ apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
   creationTimestamp: null
-  name: create-pm-prometheus-exporters
+  name: smoke-sidecar
   labels:
     sidecar: legacy
 spec:
@@ -19,11 +19,12 @@ spec:
     - assert:
         file: 01-assert.yaml
 ---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
   creationTimestamp: null
-  name: create-pm-prometheus-exporters-native
+  name: smoke-sidecar-native
   labels:
     sidecar: native
 spec:
