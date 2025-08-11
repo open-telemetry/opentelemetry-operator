@@ -292,6 +292,10 @@ spec:
     spec:
       clusterPermissions:
       - rules:
+        - nonResourceURLs:
+          - /version
+          verbs:
+          - get
         - apiGroups:
           - ""
           resources:
