@@ -657,6 +657,7 @@ TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 go mod init tmp ;\
 echo "Downloading $(2)" ;\
+echo "replace fybrik.io/crdoc => github.com/fybrik/crdoc v0.5.2" >> go.mod ;\
 go get $(2)@$(3) ;\
 GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
 rm -rf $$TMP_DIR ;\
