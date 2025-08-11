@@ -6,7 +6,7 @@ spec:
   # Running the test serially as its disruptive causing operator pod restart
   concurrent: false
   steps:
-  - name: Delete operator pod
+  - name: Enable operator network policy
     try:
     - command:
         entrypoint: kubectl
@@ -21,16 +21,29 @@ spec:
         outputs:
         - name: OTEL_NAMESPACE
           value: ($stdout)
-    - delete:
-        ref:
-          apiVersion: v1
-          kind: Pod
-          namespace: ($OTEL_NAMESPACE)
-          labels:
-            control-plane: controller-manager
-            app.kubernetes.io/name: opentelemetry-operator
+    - command:
+        env:
+          - name: otelnamespace
+            value: ($OTEL_NAMESPACE)
+        entrypoint: kubectl
+        args:
+          - patch
+          - deployment
+          - opentelemetry-operator-controller-manager
+          - -n
+          - $otelnamespace
+          - --type=json
+          - -p
+          - '[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--feature-gates=+operator.networkpolicy"}]'
     # Adding 10s sleep here cause sometimes the pod will be in running state for a while but can fail later if there is any issue with the component startup.
     - sleep:
         duration: 10s
     - assert:
-        file: assert-operator-pod.yaml
+        file: 00-assert-operator-pod.yaml
+    - assert:
+        file: 00-assert-operator-network-policy.yaml
+    - apply:
+#        check if the operator is able to talk to the API server and create collector resources
+        file: 01-install-collector.yaml
+    - assert:
+        file: 01-assert-collector.yaml

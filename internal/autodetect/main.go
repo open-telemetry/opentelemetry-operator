@@ -11,12 +11,14 @@ import (
 
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/fips"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/k8s"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -24,6 +26,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var _ AutoDetect = (*autoDetect)(nil)
@@ -38,11 +41,17 @@ type AutoDetect interface {
 	CollectorAvailability() (collector.Availability, error)
 	OpAmpBridgeAvailablity() (opampbridge.Availability, error)
 	FIPSEnabled(ctx context.Context) bool
+	NativeSidecarSupport() (bool, error)
+}
+
+type k8sVersionDiscovery interface {
+	GetKubernetesVersion() (*version.Version, error)
 }
 
 type autoDetect struct {
-	dcl      discovery.DiscoveryInterface
-	reviewer *rbac.Reviewer
+	dcl         discovery.DiscoveryInterface
+	reviewer    *rbac.Reviewer
+	k8sDetector k8sVersionDiscovery
 }
 
 // New creates a new auto-detection worker, using the given client when talking to the current cluster.
@@ -56,8 +65,9 @@ func New(restConfig *rest.Config, reviewer *rbac.Reviewer) (AutoDetect, error) {
 	}
 
 	return &autoDetect{
-		dcl:      dcl,
-		reviewer: reviewer,
+		dcl:         dcl,
+		reviewer:    reviewer,
+		k8sDetector: k8s.NewDetector(dcl),
 	}, nil
 }
 
@@ -256,6 +266,23 @@ func (a *autoDetect) FIPSEnabled(_ context.Context) bool {
 	return fips.IsFipsEnabled()
 }
 
+// CheckNativeSidecarSupport checks if native sidecars are available and enabled.
+// This requires both the operator feature gate to be enabled AND
+// Kubernetes version >= 1.29 (beta support).
+func (a *autoDetect) NativeSidecarSupport() (bool, error) {
+	if !featuregate.EnableNativeSidecarContainers.IsEnabled() {
+		return false, nil
+	}
+
+	currentVersion, err := a.k8sDetector.GetKubernetesVersion()
+	if err != nil {
+		return false, err
+	}
+
+	minimumVersion := version.MustParseGeneric("1.29.0")
+	return currentVersion.AtLeast(minimumVersion), nil
+}
+
 // ApplyAutoDetect attempts to automatically detect relevant information for this operator.
 func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger) error {
 	logger.V(2).Info("auto-detecting the configuration based on the environment")
@@ -307,7 +334,15 @@ func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger
 		return err
 	}
 	c.OpAmpBridgeAvailability = opAvl
-	logger.V(2).Info("determined OpAmpBridge CRD availability", "availability", coAvl)
+	logger.V(2).Info("determined OpAmpBridge CRD availability", "availability", opAvl)
+
+	nativeSidecarSupport, err := autoDetect.NativeSidecarSupport()
+	if err != nil {
+		logger.V(2).Info("failed to detect native sidecar support", "reason", err)
+		return err
+	}
+	c.Internal.NativeSidecarSupport = nativeSidecarSupport
+	logger.V(2).Info("determined native sidecar support", "availability", c.Internal.NativeSidecarSupport)
 
 	return nil
 }
