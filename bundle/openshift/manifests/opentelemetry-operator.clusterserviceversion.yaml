@@ -531,7 +531,7 @@ spec:
                 - --openshift-create-dashboard=true
                 - --enable-cr-metrics=true
                 - --create-sm-operator-metrics=true
-                - --feature-gates=operator.sidecarcontainers.native,operator.networkpolicy
+                - --feature-gates=operator.networkpolicy
                 env:
                 - name: SERVICE_ACCOUNT_NAME
                   valueFrom:

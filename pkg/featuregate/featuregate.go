@@ -31,7 +31,7 @@ var (
 	// https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/#feature-gates-for-alpha-or-beta-features
 	EnableNativeSidecarContainers = featuregate.GlobalRegistry().MustRegister(
 		"operator.sidecarcontainers.native",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("controls whether the operator supports sidecar containers as init containers. Should only be enabled on k8s v1.29+"),
 		featuregate.WithRegisterFromVersion("v0.111.0"),
 	)
