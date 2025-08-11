@@ -240,11 +240,7 @@ func main() {
 		}
 	}
 
-	if cfg.Internal.NativeSidecarSupport {
-		setupLog.Info("Native Sidecar is enabled")
-	} else {
-		setupLog.Info("Native Sidecar is disabled")
-	}
+	setupLog.Info("Native sidecar", cfg.Internal.NativeSidecarSupport)
 
 	if cfg.AnnotationsFilter != nil {
 		for _, basePattern := range cfg.AnnotationsFilter {

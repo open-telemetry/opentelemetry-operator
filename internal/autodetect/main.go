@@ -339,6 +339,7 @@ func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger
 	nativeSidecarSupport, err := autoDetect.NativeSidecarSupport()
 	if err != nil {
 		logger.V(2).Info("failed to detect native sidecar support", "reason", err)
+		return err
 	}
 	c.Internal.NativeSidecarSupport = nativeSidecarSupport
 	logger.V(2).Info("determined native sidecar support", "availability", c.Internal.NativeSidecarSupport)
