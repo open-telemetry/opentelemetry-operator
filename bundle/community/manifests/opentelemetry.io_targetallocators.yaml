@@ -1174,6 +1174,8 @@ spec:
                 default: 30s
                 format: duration
                 type: string
+              dnsPolicy:
+                type: string
               env:
                 items:
                   properties:
