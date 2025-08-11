@@ -1,0 +1,21 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: sidecar-for-my-app
+spec:
+  mode: sidecar
+  config: |
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+    processors:
+
+    exporters:
+      debug:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          exporters: [debug]
