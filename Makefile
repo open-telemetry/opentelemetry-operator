@@ -332,6 +332,13 @@ e2e: chainsaw
 e2e-native-sidecar: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-native-sidecar --report-name e2e-native-sidecar
 
+# e2e-sidecar
+# NOTE: make sure the operator featuregate "operator.sidecarcontainers.native" is disabled or
+# the k8s version is < 1.29.
+.PHONY: e2e-native-sidecar
+e2e-sidecar: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-sidecar --report-name e2e-sidecar
+
 # end-to-end-test for testing automatic RBAC creation
 .PHONY: e2e-automatic-rbac
 e2e-automatic-rbac: chainsaw
