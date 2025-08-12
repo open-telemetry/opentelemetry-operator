@@ -9,9 +9,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -52,6 +54,7 @@ import (
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	openshiftDashboards "github.com/open-telemetry/opentelemetry-operator/internal/openshift/dashboards"
 	operatormetrics "github.com/open-telemetry/opentelemetry-operator/internal/operator-metrics"
+	"github.com/open-telemetry/opentelemetry-operator/internal/operatornetworkpolicy"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
@@ -194,6 +197,13 @@ func main() {
 			setupLog.Error(dashErr, "failed to create the OpenShift dashboards")
 		}
 	}
+	if featuregate.EnableOperatorNetworkPolicy.IsEnabled() {
+		errNetworkPolicy := enableOperatorNetworkPolicy(cfg, clientset, mgr)
+		if errNetworkPolicy != nil {
+			setupLog.Error(errNetworkPolicy, "failed to create the Operator network policies")
+			os.Exit(1)
+		}
+	}
 
 	reviewer := rbac.NewReviewer(clientset)
 
@@ -239,6 +249,9 @@ func main() {
 			os.Exit(1)
 		}
 	}
+
+	setupLog.Info("Native sidecar", cfg.Internal.NativeSidecarSupport)
+
 	if cfg.AnnotationsFilter != nil {
 		for _, basePattern := range cfg.AnnotationsFilter {
 			_, compileErr := regexp.Compile(basePattern)
@@ -407,6 +420,36 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interface, mgr ctrl.Manager) error {
+	operatorNamespace := os.Getenv("NAMESPACE")
+	if operatorNamespace == "" {
+		return fmt.Errorf("NAMESPACE environment variable is not set, it is rquired for the Operator Network Policy to work")
+	}
+	var policyOpts []operatornetworkpolicy.Option
+	policyOpts = append(policyOpts, operatornetworkpolicy.WithOperatorNamespace(operatorNamespace))
+
+	if cfg.EnableWebhooks {
+		//nolint:gosec // disable G115
+		policyOpts = append(policyOpts, operatornetworkpolicy.WithWebhookPort(int32(cfg.WebhookPort)))
+	}
+	if cfg.MetricsAddr != "" {
+		_, portStr, errParse := net.SplitHostPort(cfg.MetricsAddr)
+		if errParse != nil {
+			return fmt.Errorf("failed to parse port from metrics address: %w", errParse)
+		}
+		metricsPort, errParse := strconv.ParseInt(portStr, 10, 32)
+		if errParse != nil {
+			return fmt.Errorf("failed to parse port for the metrics address :%w", errParse)
+		}
+		policyOpts = append(policyOpts, operatornetworkpolicy.WithMetricsPort(int32(metricsPort)))
+	}
+	operatorNetworkPoliciesErr := mgr.Add(operatornetworkpolicy.NewOperatorNetworkPolicy(clientset, mgr.GetScheme(), policyOpts...))
+	if operatorNetworkPoliciesErr != nil {
+		return fmt.Errorf("failed to create the Operator network policies: %w", operatorNetworkPoliciesErr)
+	}
+	return nil
 }
 
 func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config) error {

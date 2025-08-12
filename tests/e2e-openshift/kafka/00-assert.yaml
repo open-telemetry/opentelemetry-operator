@@ -27,7 +27,7 @@ status:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: my-cluster-kafka-0
+  name: my-cluster-broker-0
   namespace: chainsaw-kafka
 status:
   phase: Running
@@ -36,7 +36,7 @@ status:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: my-cluster-zookeeper-0
+  name: my-cluster-controller-1
   namespace: chainsaw-kafka
 status:
   phase: Running
@@ -119,62 +119,3 @@ spec:
     strimzi.io/kind: Kafka
     strimzi.io/name: my-cluster-kafka
 
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/instance: my-cluster
-    app.kubernetes.io/managed-by: strimzi-cluster-operator
-    app.kubernetes.io/name: zookeeper
-    app.kubernetes.io/part-of: strimzi-my-cluster
-    strimzi.io/cluster: my-cluster
-    strimzi.io/component-type: zookeeper
-    strimzi.io/kind: Kafka
-    strimzi.io/name: my-cluster-zookeeper
-  name: my-cluster-zookeeper-client
-  namespace: chainsaw-kafka
-spec:
-  ports:
-  - name: tcp-clients
-    port: 2181
-    protocol: TCP
-    targetPort: 2181
-  selector:
-    strimzi.io/cluster: my-cluster
-    strimzi.io/kind: Kafka
-    strimzi.io/name: my-cluster-zookeeper
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/instance: my-cluster
-    app.kubernetes.io/managed-by: strimzi-cluster-operator
-    app.kubernetes.io/name: zookeeper
-    app.kubernetes.io/part-of: strimzi-my-cluster
-    strimzi.io/cluster: my-cluster
-    strimzi.io/component-type: zookeeper
-    strimzi.io/kind: Kafka
-    strimzi.io/name: my-cluster-zookeeper
-  name: my-cluster-zookeeper-nodes
-  namespace: chainsaw-kafka
-spec:
-  ports:
-  - name: tcp-clients
-    port: 2181
-    protocol: TCP
-    targetPort: 2181
-  - name: tcp-clustering
-    port: 2888
-    protocol: TCP
-    targetPort: 2888
-  - name: tcp-election
-    port: 3888
-    protocol: TCP
-    targetPort: 3888
-  selector:
-    strimzi.io/cluster: my-cluster
-    strimzi.io/kind: Kafka
-    strimzi.io/name: my-cluster-zookeeper
