@@ -17,7 +17,7 @@ func Deployment(params Params) (*appsv1.Deployment, error) {
 	name := naming.TargetAllocator(params.TargetAllocator.Name)
 
 	image := params.TargetAllocator.Spec.Image
-	if len(image) == 0 {
+	if image == "" {
 		image = params.Config.TargetAllocatorImage
 	}
 	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, image, ComponentOpenTelemetryTargetAllocator, nil)

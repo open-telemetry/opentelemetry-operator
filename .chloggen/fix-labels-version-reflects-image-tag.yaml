@@ -2,7 +2,7 @@
 change_type: bug_fix
 
 # The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
-component: labels
+component: collector, targetallocator, opamp
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
 note: "fix labels: ensure app.kubernetes.io/version reflects image tag on workloads"

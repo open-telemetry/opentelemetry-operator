@@ -18,7 +18,7 @@ func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 	name := naming.Collector(params.OtelCol.Name)
 
 	image := params.OtelCol.Spec.Image
-	if len(image) == 0 {
+	if image == "" {
 		image = params.Config.CollectorImage
 	}
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)

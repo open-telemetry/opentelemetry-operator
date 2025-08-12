@@ -18,7 +18,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 	name := naming.OpAMPBridge(params.OpAMPBridge.Name)
 
 	image := params.OpAMPBridge.Spec.Image
-	if len(image) == 0 {
+	if image == "" {
 		image = params.Config.OperatorOpAMPBridgeImage
 	}
 	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, image, ComponentOpAMPBridge, params.Config.LabelsFilter)
