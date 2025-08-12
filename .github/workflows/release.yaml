@@ -39,7 +39,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
       with:
-        go-version: "~1.24.6"
+        go-version: "~1.25.0"
 
     - name: "generate release resources"
       run: make release-artifacts IMG_PREFIX="ghcr.io/open-telemetry/opentelemetry-operator" VERSION=${DESIRED_VERSION}
