@@ -15,7 +15,7 @@ import (
 )
 
 func NetworkPolicy(params manifests.Params) (*networkingv1.NetworkPolicy, error) {
-	if !params.OtelCol.Spec.NetworkPolicy.Enabled {
+	if params.OtelCol.Spec.NetworkPolicy.Enabled == nil || *params.OtelCol.Spec.NetworkPolicy.Enabled == false {
 		return nil, nil
 	}
 

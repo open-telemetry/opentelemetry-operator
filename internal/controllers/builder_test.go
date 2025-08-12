@@ -85,6 +85,7 @@ service:
 	goodConfigHash = goodConfigHash[:8]
 
 	one := int32(1)
+	trueVal := true
 	tcp := corev1.ProtocolTCP
 	type args struct {
 		instance v1beta1.OpenTelemetryCollector
@@ -111,7 +112,7 @@ service:
 						Mode:   "deployment",
 						Config: goodConfig,
 						NetworkPolicy: v1beta1.NetworkPolicy{
-							Enabled: true,
+							Enabled: &trueVal,
 						},
 					},
 				},

@@ -6959,7 +6959,6 @@ spec:
               networkPolicy:
                 properties:
                   enabled:
-                    default: true
                     type: boolean
                 type: object
               nodeSelector:

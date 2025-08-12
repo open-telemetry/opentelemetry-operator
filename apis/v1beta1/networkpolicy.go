@@ -6,8 +6,8 @@ package v1beta1
 // NetworkPolicy defines the configuration for NetworkPolicy.
 type NetworkPolicy struct {
 	// Enable enables the NetworkPolicy.
+	// The default value is taken from the operator feature-gate `--feature-gates=+collector.networkpolicy`.
 	// +optional
-	// +kubebuilder:default:=true
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable NetworkPolicy"
-	Enabled bool `json:"enabled,omitempty"`
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable NetworkPolicy for collector"
+	Enabled *bool `json:"enabled,omitempty"`
 }

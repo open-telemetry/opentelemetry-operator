@@ -22,6 +22,7 @@ import (
 )
 
 func TestNetworkPolicy(t *testing.T) {
+	trueValue := true
 	t.Run("should return network policy with metrics port even when no receivers configured", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
@@ -34,7 +35,7 @@ func TestNetworkPolicy(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: v1beta1.Config{},
 					NetworkPolicy: v1beta1.NetworkPolicy{
-						Enabled: true,
+						Enabled: &trueValue,
 					},
 				},
 			},
@@ -69,7 +70,7 @@ func TestNetworkPolicy(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: cfg,
 					NetworkPolicy: v1beta1.NetworkPolicy{
-						Enabled: true,
+						Enabled: &trueValue,
 					},
 				},
 			},

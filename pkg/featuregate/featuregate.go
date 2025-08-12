@@ -72,6 +72,13 @@ var (
 		featuregate.WithRegisterDescription("enables the operator to create network policies for the operator"),
 		featuregate.WithRegisterFromVersion("v0.132.0"),
 	)
+	// EnableCollectorNetworkPolicy is the feature gate that enables the operator to create network policies for the collector.
+	EnableCollectorNetworkPolicy = featuregate.GlobalRegistry().MustRegister(
+		"collector.networkpolicy",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables the operator to create network policies for the collector"),
+		featuregate.WithRegisterFromVersion("v0.132.0"),
+	)
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.
