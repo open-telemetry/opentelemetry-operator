@@ -83,10 +83,10 @@ func TestNetworkPolicy(t *testing.T) {
 		tcp := corev1.ProtocolTCP
 		expected := &networkingv1.NetworkPolicy{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        naming.NetworkPolicy(params.OtelCol.Name),
+				Name:        naming.CollectorNetworkPolicy(params.OtelCol.Name),
 				Namespace:   params.OtelCol.Namespace,
 				Annotations: map[string]string{},
-				Labels:      manifestutils.Labels(params.OtelCol.ObjectMeta, naming.NetworkPolicy(params.OtelCol.Name), params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter),
+				Labels:      manifestutils.Labels(params.OtelCol.ObjectMeta, naming.CollectorNetworkPolicy(params.OtelCol.Name), params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter),
 			},
 			Spec: networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{

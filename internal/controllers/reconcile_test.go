@@ -709,7 +709,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 // TestOpenTelemetryCollectorReconciler_RemoveDisabled starts off with optional resources enabled, and then disables
 // them one by one to ensure they're actually deleted.
 func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
-	expectedStartingResourceCount := 8
+	expectedStartingResourceCount := 7
 	startingCollector := &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "placeholder",

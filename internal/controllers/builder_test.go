@@ -369,13 +369,13 @@ service:
 				},
 				&networkingv1.NetworkPolicy{
 					ObjectMeta: v1.ObjectMeta{
-						Name:      "test-networkpolicy",
+						Name:      "test-collector-networkpolicy",
 						Namespace: "test",
 						Labels: map[string]string{
 							"app.kubernetes.io/component":  "opentelemetry-collector",
 							"app.kubernetes.io/instance":   "test.test",
 							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-networkpolicy",
+							"app.kubernetes.io/name":       "test-collector-networkpolicy",
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},

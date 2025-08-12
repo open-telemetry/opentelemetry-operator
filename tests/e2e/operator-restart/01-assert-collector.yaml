@@ -4,3 +4,22 @@ metadata:
   name: otel-collector
 status:
   readyReplicas: 1
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: otel-collector-collector-networkpolicy
+spec:
+  ingress:
+    - ports:
+        - port: 8888
+          protocol: TCP
+        - port: 4317
+          protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+  policyTypes:
+    - Ingress

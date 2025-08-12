@@ -15,11 +15,11 @@ import (
 )
 
 func NetworkPolicy(params manifests.Params) (*networkingv1.NetworkPolicy, error) {
-	if params.OtelCol.Spec.NetworkPolicy.Enabled == nil || *params.OtelCol.Spec.NetworkPolicy.Enabled == false {
+	if params.OtelCol.Spec.NetworkPolicy.Enabled == nil || !*params.OtelCol.Spec.NetworkPolicy.Enabled {
 		return nil, nil
 	}
 
-	name := naming.NetworkPolicy(params.OtelCol.Name)
+	name := naming.CollectorNetworkPolicy(params.OtelCol.Name)
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)
 	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {
