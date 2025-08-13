@@ -28,17 +28,7 @@ func NetworkPolicy(params manifests.Params) (*networkingv1.NetworkPolicy, error)
 
 	ports := getContainerPorts(params.Log, params.OtelCol)
 
-	// if we have no ports, we don't need an ingress entry
-	if len(ports) == 0 {
-		params.Log.V(1).Info(
-			"the instance's configuration didn't yield any ports to open, skipping network policy",
-			"instance.name", params.OtelCol.Name,
-			"instance.namespace", params.OtelCol.Namespace,
-		)
-		return nil, nil
-	}
 	var ingressPorts []intstr.IntOrString
-
 	for _, port := range ports {
 		ingressPorts = append(ingressPorts, intstr.FromInt32(port.ContainerPort))
 	}
