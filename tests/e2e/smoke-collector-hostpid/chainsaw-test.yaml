@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: smoke-collector-hostpid
+spec:
+  steps:
+  - name: Enable operator hostPID
+    try:
+    - command:
+        entrypoint: kubectl
+        args:
+        - get
+        - pods
+        - -A
+        - -l control-plane=controller-manager
+        - -l app.kubernetes.io/name=opentelemetry-operator
+        - -o 
+        - jsonpath={.items[0].metadata.namespace}
+        outputs:
+        - name: OTEL_NAMESPACE
+          value: ($stdout)
+    - command:
+        env:
+          - name: otelnamespace
+            value: ($OTEL_NAMESPACE)
+        entrypoint: kubectl
+        args:
+          - patch
+          - deployment
+          - opentelemetry-operator-controller-manager
+          - -n
+          - $otelnamespace
+          - --type=json
+          - -p
+          - '[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--feature-gates=+operator.security.hostpid"}]'
+    # Adding 30s sleep here cause statefulset seems to not like when it is lower than 20s
+    - sleep:
+        duration: 30s 
+  - name: step-00-daemonset
+    try:
+    - apply:
+        file: 00-install-daemonset.yaml
+    - assert:
+        file: 00-assert-daemonset.yaml
+  - name: step-01-deployment
+    try:
+    - apply:
+        file: 01-install-deployment.yaml
+    - assert:
+        file: 01-assert-deployment.yaml
+  - name: step-02-statefulset
+    try:
+    - apply:
+        file: 02-install-statefulset.yaml
+    - assert:
+        file: 02-assert-statefulset.yaml
