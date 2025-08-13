@@ -11,6 +11,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
@@ -46,7 +47,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.Factory(Ingress),
 	}...)
 
-	if featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() {
+	if params.Config.TargetAllocatorAvailability == targetallocator.Available && featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() {
 		manifestFactories = append(manifestFactories, manifests.Factory(TargetAllocator))
 	}
 

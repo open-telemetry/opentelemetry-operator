@@ -26,6 +26,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	autodetectta "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
@@ -955,7 +956,7 @@ service:
 				Config:  cfg,
 				OtelCol: tt.args.instance,
 			}
-			got, err := BuildCollector(params)
+			got, err := BuildCollector(autodetectta.Available, params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("BuildAll() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -1737,6 +1738,7 @@ service:
 				TargetAllocatorImage:          "default-ta-allocator",
 				CollectorConfigMapEntry:       "collector.yaml",
 				TargetAllocatorConfigMapEntry: "targetallocator.yaml",
+				TargetAllocatorAvailability:   autodetectta.Available,
 			}
 			params := manifests.Params{
 				Log:     logr.Discard(),
@@ -1761,7 +1763,7 @@ service:
 					require.NoError(t, setErr)
 				})
 			}
-			got, err := BuildCollector(params)
+			got, err := BuildCollector(autodetectta.Available, params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("BuildAll() error = %v, wantErr %v", err, tt.wantErr)
 				return
