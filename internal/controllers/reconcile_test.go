@@ -43,6 +43,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	autodetectta "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/controllers"
@@ -618,6 +619,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 				PrometheusCRAvailability:      prometheus.Available,
 				TargetAllocatorConfigMapEntry: "remoteconfiguration.yaml",
 				CollectorConfigMapEntry:       "collector.yaml",
+				TargetAllocatorAvailability:   autodetectta.Available,
 			}
 			reconciler := createTestReconciler(t, testCtx, cfg)
 
@@ -787,6 +789,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 		CollectorConfigMapEntry:     "collector.yaml",
 		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
 		PrometheusCRAvailability:    prometheus.Available,
+		TargetAllocatorAvailability: autodetectta.Available,
 	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
 

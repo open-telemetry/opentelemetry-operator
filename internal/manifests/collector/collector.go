@@ -11,6 +11,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 )
 
@@ -44,8 +45,11 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.Factory(ExtensionService),
 		manifests.Factory(Ingress),
 		manifests.Factory(NetworkPolicy),
-		manifests.Factory(TargetAllocator),
 	}...)
+
+	if params.Config.TargetAllocatorAvailability == targetallocator.Available {
+		manifestFactories = append(manifestFactories, manifests.Factory(TargetAllocator))
+	}
 
 	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
 		if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
