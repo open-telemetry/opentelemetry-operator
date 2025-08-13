@@ -1,0 +1,20 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: deployment
+spec:
+  hostPID: true
+  mode: deployment
+  config: |
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+    processors:
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          exporters: [debug]

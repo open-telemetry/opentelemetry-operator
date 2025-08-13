@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	colfg "go.opentelemetry.io/collector/featuregate"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,6 +17,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 func TestDaemonSetNewDefault(t *testing.T) {
@@ -659,4 +661,104 @@ func TestDaemonSetTerminationGracePeriodSeconds(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
 	assert.Equal(t, gracePeriodSec, *d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
+}
+
+func TestDaemonSetHostPIDIgnoredWhenFeatureFlagDisabled(t *testing.T) {
+	require.NoError(t, colfg.GlobalRegistry().Set(featuregate.EnableAllowHostPIDSupport.ID(), false))
+	assert.False(t, featuregate.EnableAllowHostPIDSupport.IsEnabled())
+
+	// Test the case where hostPID is not set, should default to false
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
+	assert.False(t, d1.Spec.Template.Spec.HostPID)
+
+	// Test the case where hostPID is set to true
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-terminationGracePeriodSeconds",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				HostPID: true,
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
+	assert.NotNil(t, d2.Spec.Template.Spec.HostPID)
+	// The featureflag is not enabled so this should be false
+	assert.False(t, d2.Spec.Template.Spec.HostPID)
+
+}
+
+func TestDaemonSetHostPIDOnlyWhenFeatureFlagEnabled(t *testing.T) {
+	require.NoError(t, colfg.GlobalRegistry().Set(featuregate.EnableAllowHostPIDSupport.ID(), true))
+	assert.True(t, featuregate.EnableAllowHostPIDSupport.IsEnabled())
+
+	// Test the case where hostPID is not set, should default to false
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
+	assert.False(t, d1.Spec.Template.Spec.HostPID)
+
+	// Test the case where hostPID is set to true
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-terminationGracePeriodSeconds",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				HostPID: true,
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
+	assert.NotNil(t, d2.Spec.Template.Spec.HostPID)
+	assert.True(t, d2.Spec.Template.Spec.HostPID)
 }
