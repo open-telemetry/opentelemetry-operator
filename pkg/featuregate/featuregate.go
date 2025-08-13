@@ -57,6 +57,7 @@ var (
 		"operand.networkpolicy",
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("enables the operator to create network policies for operands,  collector and target allocator are supported"),
+	)
 	// EnableAllowHostPIDSupport is the feature gate that enables the usage of spec.hostPID. If enabled the hostPID field is respected, if disabled the hostPID will be set to false.
 	EnableAllowHostPIDSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.security.hostpid",
