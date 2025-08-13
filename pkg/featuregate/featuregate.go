@@ -72,21 +72,18 @@ var (
 		featuregate.WithRegisterDescription("enables the operator to create network policies for the operator"),
 		featuregate.WithRegisterFromVersion("v0.132.0"),
 	)
-<<<<<<< HEAD
 	// EnableOperandNetworkPolicy is the feature gate that enables the operator to create network policies for the collector.
 	EnableOperandNetworkPolicy = featuregate.GlobalRegistry().MustRegister(
 		"operand.networkpolicy",
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("enables the operator to create network policies for operands,  collector and target allocator are supported"),
-||||||| parent of d30a645e (feat(collector): adds spec.hostPID for all collector modes)
-=======
+	)
 	// EnableAllowHostPIDSupport is the feature gate that enables the usage of spec.hostPID. If enabled the hostPID field is respected, if disabled the hostPID will be set to false.
 	EnableAllowHostPIDSupport = featuregate.GlobalRegistry().MustRegister(
 		"operator.security.hostpid",
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("enables the usage of spec.hostPID field. If enabled the field is respected (user specified value), if disabled the field is ignored (always false)"),
 		featuregate.WithRegisterFromVersion("v0.114.0"),
->>>>>>> d30a645e (feat(collector): adds spec.hostPID for all collector modes)
 	)
 )
 
