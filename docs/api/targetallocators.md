@@ -179,6 +179,13 @@ For more info, see https://prometheus.io/docs/prometheus/latest/configuration/co
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>hostPID</b></td>
+        <td>boolean</td>
+        <td>
+          HostPID indicates if the pod should have access to the host process ID namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
