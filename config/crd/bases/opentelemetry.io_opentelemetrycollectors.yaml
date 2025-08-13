@@ -1513,6 +1513,8 @@ spec:
                 type: array
               hostNetwork:
                 type: boolean
+              hostPID:
+                type: boolean
               image:
                 type: string
               imagePullPolicy:
@@ -6286,6 +6288,8 @@ spec:
                   type: object
                 type: array
               hostNetwork:
+                type: boolean
+              hostPID:
                 type: boolean
               image:
                 type: string
