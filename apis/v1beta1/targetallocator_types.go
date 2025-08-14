@@ -4,6 +4,7 @@
 package v1beta1
 
 import (
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,6 +26,9 @@ type TargetAllocatorPrometheusCR struct {
 	// +kubebuilder:default:="30s"
 	// +kubebuilder:validation:Format:=duration
 	ScrapeInterval *metav1.Duration `json:"scrapeInterval,omitempty"`
+	// ScrapeClasses to be referenced by PodMonitors and ServiceMonitors to include common configuration.
+	// +optional
+	ScrapeClasses []*monitoringv1.ScrapeClass `json:"scrapeClasses,omitempty"`
 	// PodMonitors to be selected for target discovery.
 	// A label selector is a label query over a set of resources. The result of matchLabels and
 	// matchExpressions are ANDed. An empty label selector matches all objects. A null
