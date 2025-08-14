@@ -9,7 +9,6 @@ spec:
       otlp:
         protocols:
           grpc: {}
-          http: {}
     processors:
       batch:
         timeout: 10s

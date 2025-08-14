@@ -105,6 +105,9 @@ type OpenTelemetryCollectorSpec struct {
 	// Valid modes are: deployment, daemonset and statefulset.
 	// +optional
 	Ingress Ingress `json:"ingress,omitempty"`
+	// NetworkPolicy defines the network policy to be applied to the OpenTelemetry Collector pods.
+	// +optional
+	NetworkPolicy NetworkPolicy `json:"networkPolicy,omitempty"`
 	// Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional

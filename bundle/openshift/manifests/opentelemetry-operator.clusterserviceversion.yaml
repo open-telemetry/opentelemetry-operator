@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2025-08-11T12:05:15Z"
+    createdAt: "2025-08-12T12:56:03Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -531,7 +531,7 @@ spec:
                 - --openshift-create-dashboard=true
                 - --enable-cr-metrics=true
                 - --create-sm-operator-metrics=true
-                - --feature-gates=operator.sidecarcontainers.native,operator.networkpolicy
+                - --feature-gates=operator.sidecarcontainers.native,operator.networkpolicy,collector.networkpolicy
                 env:
                 - name: SERVICE_ACCOUNT_NAME
                   valueFrom:
