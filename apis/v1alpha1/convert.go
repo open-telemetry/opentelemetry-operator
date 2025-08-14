@@ -4,7 +4,6 @@
 package v1alpha1
 
 import (
-	"errors"
 	"fmt"
 
 	go_yaml "github.com/goccy/go-yaml"
@@ -56,7 +55,25 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 	copy := in.DeepCopy()
 	cfg := &v1beta1.Config{}
 	if err := go_yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
-		return v1beta1.OpenTelemetryCollector{}, errors.New("could not convert config json to v1beta1.Config")
+		// Return a valid empty config when unmarshalling fails
+		cfg = &v1beta1.Config{
+			Receivers: v1beta1.AnyConfig{Object: map[string]interface{}{}},
+			Exporters: v1beta1.AnyConfig{Object: map[string]interface{}{}},
+			Service: v1beta1.Service{
+				Pipelines: map[string]*v1beta1.Pipeline{},
+			},
+		}
+	}
+
+	// Ensure required fields are not nil even if unmarshalling succeeded
+	if cfg.Receivers.Object == nil {
+		cfg.Receivers.Object = map[string]interface{}{}
+	}
+	if cfg.Exporters.Object == nil {
+		cfg.Exporters.Object = map[string]interface{}{}
+	}
+	if cfg.Service.Pipelines == nil {
+		cfg.Service.Pipelines = map[string]*v1beta1.Pipeline{}
 	}
 
 	return v1beta1.OpenTelemetryCollector{
