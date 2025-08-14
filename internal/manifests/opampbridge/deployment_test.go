@@ -89,7 +89,7 @@ func TestDeploymentNewDefault(t *testing.T) {
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/name":       "my-instance-opamp-bridge",
 		"app.kubernetes.io/part-of":    "opentelemetry",
-		"app.kubernetes.io/version":    "latest",
+		"app.kubernetes.io/version":    "0.0.0",
 	}
 	assert.Equal(t, expectedLabels, d.Spec.Template.Labels)
 
@@ -105,6 +105,87 @@ func TestDeploymentNewDefault(t *testing.T) {
 	for k, v := range d.Spec.Selector.MatchLabels {
 		assert.Equal(t, v, d.Spec.Template.Labels[k])
 	}
+}
+
+func TestDeploymentVersionLabelFromSpec(t *testing.T) {
+	// prepare
+	opAmpBridge := v1alpha1.OpAMPBridge{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.OpAMPBridgeSpec{
+			Image: "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.129.1",
+		},
+	}
+	cfg := config.New()
+
+	params := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opAmpBridge,
+		Log:         logger,
+	}
+
+	// test
+	d := Deployment(params)
+
+	// verify
+	assert.Equal(t, "my-instance-opamp-bridge", d.Name)
+	assert.Equal(t, "0.129.1", d.Spec.Template.Labels["app.kubernetes.io/version"])
+	assert.Equal(t, "0.129.1", d.Labels["app.kubernetes.io/version"])
+}
+
+func TestDeploymentVersionLabelFromConfig(t *testing.T) {
+	// prepare
+	opAmpBridge := v1alpha1.OpAMPBridge{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.OpAMPBridgeSpec{},
+	}
+	cfg := config.New()
+	cfg.OperatorOpAMPBridgeImage = "ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:0.130.0"
+
+	params := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opAmpBridge,
+		Log:         logger,
+	}
+
+	// test
+	d := Deployment(params)
+
+	// verify
+	assert.Equal(t, "my-instance-opamp-bridge", d.Name)
+	assert.Equal(t, "0.130.0", d.Spec.Template.Labels["app.kubernetes.io/version"])
+	assert.Equal(t, "0.130.0", d.Labels["app.kubernetes.io/version"])
+}
+
+func TestDeploymentVersionLabelLatest(t *testing.T) {
+	// prepare
+	opAmpBridge := v1alpha1.OpAMPBridge{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.OpAMPBridgeSpec{},
+	}
+	cfg := config.Config{}
+
+	params := manifests.Params{
+		Config:      cfg,
+		OpAMPBridge: opAmpBridge,
+		Log:         logger,
+	}
+
+	// test
+	d := Deployment(params)
+
+	// verify
+	assert.Equal(t, "my-instance-opamp-bridge", d.Name)
+	assert.Equal(t, "latest", d.Spec.Template.Labels["app.kubernetes.io/version"])
+	assert.Equal(t, "latest", d.Labels["app.kubernetes.io/version"])
 }
 
 func TestDeploymentPodAnnotations(t *testing.T) {
