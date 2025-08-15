@@ -21,5 +21,5 @@ subtext: |
     networkPolicy:
       enabled: true
   ```
-  By default it is disabled, however the default value is configured with a feature gate `--feature-gates=collector.networkpolicy`.
+  By default it is disabled, however the default value is configured with a feature gate `--feature-gates=operand.networkpolicy`.
   The feature gate will be enabled in the future releases.

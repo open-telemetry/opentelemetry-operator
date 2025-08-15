@@ -170,8 +170,8 @@ spec:
         version: v1
       specDescriptors:
       - description: Enable enables the NetworkPolicy. The default value is taken
-          from the operator feature-gate `--feature-gates=+collector.networkpolicy`.
-        displayName: Enable NetworkPolicy for collector
+          from the operator feature-gate `--feature-gates=+operand.networkpolicy`.
+        displayName: Enable NetworkPolicy
         path: networkPolicy.enabled
       - description: ObservabilitySpec defines how telemetry data gets handled.
         displayName: Observability

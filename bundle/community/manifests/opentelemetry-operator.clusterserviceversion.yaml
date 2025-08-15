@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2025-08-15T13:04:11Z"
+    createdAt: "2025-08-15T13:11:29Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -258,8 +258,8 @@ spec:
         version: v1
       specDescriptors:
       - description: Enable enables the NetworkPolicy. The default value is taken
-          from the operator feature-gate `--feature-gates=+collector.networkpolicy`.
-        displayName: Enable NetworkPolicy for collector
+          from the operator feature-gate `--feature-gates=+operand.networkpolicy`.
+        displayName: Enable NetworkPolicy
         path: networkPolicy.enabled
       - description: ObservabilitySpec defines how telemetry data gets handled.
         displayName: Observability
