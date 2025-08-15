@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -18,6 +17,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
