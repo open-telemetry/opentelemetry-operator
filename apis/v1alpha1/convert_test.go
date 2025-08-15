@@ -71,7 +71,6 @@ func Test_tov1beta1_config(t *testing.T) {
 		cfgV2, err := tov1beta1(cfgV1)
 		assert.Nil(t, err)
 		assert.NotNil(t, cfgV2)
-		// Should return an empty valid config
 		assert.NotNil(t, cfgV2.Spec.Config.Receivers.Object)
 		assert.NotNil(t, cfgV2.Spec.Config.Exporters.Object)
 		assert.NotNil(t, cfgV2.Spec.Config.Service.Pipelines)
@@ -90,7 +89,6 @@ func Test_tov1beta1_config(t *testing.T) {
 		cfgV2, err := tov1beta1(cfgV1)
 		assert.Nil(t, err)
 		assert.NotNil(t, cfgV2)
-		// Should return an empty valid config
 		assert.NotNil(t, cfgV2.Spec.Config.Receivers.Object)
 		assert.NotNil(t, cfgV2.Spec.Config.Exporters.Object)
 		assert.NotNil(t, cfgV2.Spec.Config.Service.Pipelines)
@@ -109,7 +107,6 @@ func Test_tov1beta1_config(t *testing.T) {
 		cfgV2, err := tov1beta1(cfgV1)
 		assert.Nil(t, err)
 		assert.NotNil(t, cfgV2)
-		// Should return an empty valid config
 		assert.NotNil(t, cfgV2.Spec.Config.Receivers.Object)
 		assert.NotNil(t, cfgV2.Spec.Config.Exporters.Object)
 		assert.NotNil(t, cfgV2.Spec.Config.Service.Pipelines)
