@@ -30,6 +30,7 @@ func Build(params Params) ([]client.Object, error) {
 		manifests.FactoryWithoutError(ServiceAccount),
 		manifests.FactoryWithoutError(Service),
 		manifests.Factory(PodDisruptionBudget),
+		manifests.Factory(NetworkPolicy),
 	}
 
 	if params.TargetAllocator.Spec.Observability.Metrics.EnableMetrics {
