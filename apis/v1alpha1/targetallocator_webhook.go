@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -91,6 +92,10 @@ func (w TargetAllocatorWebhook) defaulter(ta *TargetAllocator) error {
 				IntVal: 1,
 			},
 		}
+	}
+	if featuregate.EnableOperandNetworkPolicy.IsEnabled() && ta.Spec.NetworkPolicy.Enabled == nil {
+		trueVal := true
+		ta.Spec.NetworkPolicy.Enabled = &trueVal
 	}
 
 	return nil
