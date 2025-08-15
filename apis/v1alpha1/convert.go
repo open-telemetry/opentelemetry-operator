@@ -4,7 +4,6 @@
 package v1alpha1
 
 import (
-	"errors"
 	"fmt"
 
 	go_yaml "github.com/goccy/go-yaml"
@@ -56,7 +55,27 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 	copy := in.DeepCopy()
 	cfg := &v1beta1.Config{}
 	if err := go_yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
-		return v1beta1.OpenTelemetryCollector{}, errors.New("could not convert config json to v1beta1.Config")
+		// It is critical that the conversion does not fail!
+		// See https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#response
+		// Thus, if unmarshalling fails, we return a valid, empty config.
+		cfg = &v1beta1.Config{
+			Receivers: v1beta1.AnyConfig{Object: map[string]any{}},
+			Exporters: v1beta1.AnyConfig{Object: map[string]any{}},
+			Service: v1beta1.Service{
+				Pipelines: map[string]*v1beta1.Pipeline{},
+			},
+		}
+	}
+
+	// Ensure required fields are not nil even if unmarshalling succeeded.
+	if cfg.Receivers.Object == nil {
+		cfg.Receivers.Object = map[string]any{}
+	}
+	if cfg.Exporters.Object == nil {
+		cfg.Exporters.Object = map[string]any{}
+	}
+	if cfg.Service.Pipelines == nil {
+		cfg.Service.Pipelines = map[string]*v1beta1.Pipeline{}
 	}
 
 	return v1beta1.OpenTelemetryCollector{
