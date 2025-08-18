@@ -70,6 +70,7 @@ jobs:
          - e2e-opampbridge
          - e2e-pdb
          - e2e-prometheuscr
+         - e2e-sidecar
          - e2e-targetallocator
          - e2e-targetallocator-cr
          - e2e-upgrade
@@ -93,12 +94,6 @@ jobs:
            setup: "add-operator-arg OPERATOR_ARG='--feature-gates=operator.targetallocator.mtls' add-certmanager-permissions prepare-e2e"
          - group: e2e-automatic-rbac
            setup: "add-rbac-permissions-to-operator prepare-e2e"
-         - group: e2e-native-sidecar
-           setup: "prepare-e2e"
-           kube-version: "1.29" # NOTE: Native sidecars are enabled.
-         - group: e2e-sidecar
-           setup: "prepare-e2e"
-           kube-version: "1.28" # NOTE: Native sidecars are disabled.
 
     steps:
     - name: Check out code into the Go module directory
