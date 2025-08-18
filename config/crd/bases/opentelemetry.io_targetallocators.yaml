@@ -2092,6 +2092,11 @@ spec:
                 - managed
                 - unmanaged
                 type: string
+              networkPolicy:
+                properties:
+                  enabled:
+                    type: boolean
+                type: object
               nodeSelector:
                 additionalProperties:
                   type: string
