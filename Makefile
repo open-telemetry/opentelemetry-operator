@@ -325,17 +325,9 @@ generate: controller-gen
 e2e: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e --report-name e2e
 
-# NOTE: When testing native sidecars, make sure the k8s featuregate "SidecarContainers" is set
-# to true. Also make sure the operator featuregate "operator.sidecarcontainers.native" is enabled (default).
 .PHONY: e2e-sidecar
 e2e-sidecar: chainsaw
-	@if awk 'BEGIN {exit !($(KUBE_VERSION) >= 1.29)}'; then \
-		echo "Running native sidecar e2e tests (KUBE_VERSION=$(KUBE_VERSION))"; \
-		$(CHAINSAW) test --test-dir ./tests/e2e-native-sidecar --report-name e2e-native-sidecar; \
-	else \
-		echo "Running legacy sidecar e2e tests (KUBE_VERSION=$(KUBE_VERSION))"; \
-		$(CHAINSAW) test --test-dir ./tests/e2e-sidecar --report-name e2e-sidecar; \
-	fi
+	$(CHAINSAW) test --test-dir ./tests/e2e-sidecar --report-name e2e-sidecar
 
 # end-to-end-test for testing automatic RBAC creation
 .PHONY: e2e-automatic-rbac

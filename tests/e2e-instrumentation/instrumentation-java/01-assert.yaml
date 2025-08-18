@@ -55,9 +55,20 @@ spec:
       readOnly: true
     - mountPath: /otel-auto-instrumentation-java-myapp
       name: opentelemetry-auto-instrumentation-java
-  - args:
+  # Check for non-native sidecar mode (otc-container in containers)
+  (containers[?name == 'otc-container']):
+  - name: otc-container
+    args:
     - --config=env:OTEL_CONFIG
-    name: otc-container
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+  # Check for native sidecar mode (otc-container in initContainers)
+  (initContainers[?name == 'otc-container']):
+  - name: otc-container
+    restartPolicy: Always
+    args:
+    - --config=env:OTEL_CONFIG
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
@@ -68,9 +79,15 @@ status:
   - name: myapp
     ready: true
     started: true
+  # Check for non-native sidecar status (otc-container in containerStatuses)
+  (containerStatuses[?name == 'otc-container']):
   - name: otc-container
     ready: true
     started: true
+  # Check for native sidecar status (otc-container in initContainerStatuses)
+  (initContainerStatuses[?name == 'otc-container']):
+  - name: otc-container
+    ready: true
   initContainerStatuses:
   - name: opentelemetry-auto-instrumentation-java
     ready: true
