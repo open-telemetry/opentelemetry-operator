@@ -10,12 +10,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
 	defaultAPIServerPort = 6443
+	defaultHTTPPort      = 8080
+	defaultHTTPSPort     = 8443
 )
 
 func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
@@ -57,7 +61,7 @@ func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
 		},
 	}
 
-	ports := getContainerPorts(params.TargetAllocator)
+	ports := getContainerPorts(params.TargetAllocator, params)
 	var ingressPorts []intstr.IntOrString
 	for _, port := range ports {
 		ingressPorts = append(ingressPorts, intstr.FromInt32(port.ContainerPort))
@@ -72,13 +76,13 @@ func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
 	return np, nil
 }
 
-func getContainerPorts(instance v1alpha1.TargetAllocator) []corev1.ContainerPort {
+func getContainerPorts(instance v1alpha1.TargetAllocator, params Params) []corev1.ContainerPort {
 	ports := make([]corev1.ContainerPort, 0)
 
 	// Default http port
 	ports = append(ports, corev1.ContainerPort{
 		Name:          "http",
-		ContainerPort: 8080,
+		ContainerPort: defaultHTTPPort,
 		Protocol:      corev1.ProtocolTCP,
 	})
 
@@ -91,9 +95,13 @@ func getContainerPorts(instance v1alpha1.TargetAllocator) []corev1.ContainerPort
 		})
 	}
 
-	// Add https port if mTLS is enabled
-	// This checks if cert-manager is available and mTLS is enabled
-	// but we'll keep it simple for now and let the container logic handle it
+	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+		ports = append(ports, corev1.ContainerPort{
+			Name:          "https",
+			ContainerPort: defaultHTTPSPort,
+			Protocol:      corev1.ProtocolTCP,
+		})
+	}
 
 	return ports
 }
