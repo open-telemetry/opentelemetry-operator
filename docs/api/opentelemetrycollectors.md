@@ -29387,7 +29387,7 @@ NetworkPolicy defines the network policy to be applied to the OpenTelemetry Coll
         <td>boolean</td>
         <td>
           Enable enables the NetworkPolicy.
-The default value is taken from the operator feature-gate `--feature-gates=+collector.networkpolicy`.<br/>
+The default value is taken from the operator feature-gate `--feature-gates=+operand.networkpolicy`.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
