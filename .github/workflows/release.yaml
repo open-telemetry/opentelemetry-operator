@@ -8,7 +8,7 @@ on:
       - 'versions.txt'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   get-versions:
@@ -27,6 +27,8 @@ jobs:
           echo "current_version=$(git describe --tags --abbrev=0 | sed 's/^v//')" >> $GITHUB_OUTPUT
 
   release:
+    permissions:
+      contents: write # required for creating GitHub releases
     runs-on: ubuntu-latest
     needs: get-versions
     if: needs.get-versions.outputs.desired_version != needs.get-versions.outputs.current_version
