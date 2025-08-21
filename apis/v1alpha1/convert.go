@@ -21,10 +21,7 @@ func (src *OpenTelemetryCollector) ConvertTo(dstRaw conversion.Hub) error {
 	switch t := dstRaw.(type) {
 	case *v1beta1.OpenTelemetryCollector:
 		dst := dstRaw.(*v1beta1.OpenTelemetryCollector)
-		convertedSrc, err := tov1beta1(*src)
-		if err != nil {
-			return fmt.Errorf("failed to convert to v1beta1: %w", err)
-		}
+		convertedSrc := tov1beta1(*src)
 		dst.ObjectMeta = convertedSrc.ObjectMeta
 		dst.Spec = convertedSrc.Spec
 		dst.Status = convertedSrc.Status
@@ -51,7 +48,7 @@ func (dst *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
 	return nil
 }
 
-func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
+func tov1beta1(in OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
 	copy := in.DeepCopy()
 	cfg := &v1beta1.Config{}
 	if err := go_yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
@@ -152,7 +149,7 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 				RollingUpdate: copy.Spec.DeploymentUpdateStrategy.RollingUpdate,
 			},
 		},
-	}, nil
+	}
 }
 
 func tov1beta1Ports(in []PortsSpec) []v1beta1.PortsSpec {

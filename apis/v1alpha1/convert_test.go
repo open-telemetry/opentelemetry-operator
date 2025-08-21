@@ -51,8 +51,7 @@ func Test_tov1beta1_config(t *testing.T) {
 			},
 		}
 
-		cfgV2, err := tov1beta1(cfgV1)
-		assert.Nil(t, err)
+		cfgV2 := tov1beta1(cfgV1)
 		assert.NotNil(t, cfgV2)
 		assert.Equal(t, cfgV1.Spec.Args, cfgV2.Spec.Args)
 
@@ -68,8 +67,7 @@ func Test_tov1beta1_config(t *testing.T) {
 			},
 		}
 
-		cfgV2, err := tov1beta1(cfgV1)
-		assert.Nil(t, err)
+		cfgV2 := tov1beta1(cfgV1)
 		assert.NotNil(t, cfgV2)
 		assert.NotNil(t, cfgV2.Spec.Config.Receivers.Object)
 		assert.NotNil(t, cfgV2.Spec.Config.Exporters.Object)
@@ -86,8 +84,7 @@ func Test_tov1beta1_config(t *testing.T) {
 			},
 		}
 
-		cfgV2, err := tov1beta1(cfgV1)
-		assert.Nil(t, err)
+		cfgV2 := tov1beta1(cfgV1)
 		assert.NotNil(t, cfgV2)
 		assert.NotNil(t, cfgV2.Spec.Config.Receivers.Object)
 		assert.NotNil(t, cfgV2.Spec.Config.Exporters.Object)
@@ -104,8 +101,7 @@ func Test_tov1beta1_config(t *testing.T) {
 			},
 		}
 
-		cfgV2, err := tov1beta1(cfgV1)
-		assert.Nil(t, err)
+		cfgV2 := tov1beta1(cfgV1)
 		assert.NotNil(t, cfgV2)
 		assert.NotNil(t, cfgV2.Spec.Config.Receivers.Object)
 		assert.NotNil(t, cfgV2.Spec.Config.Exporters.Object)
@@ -343,8 +339,7 @@ func Test_tov1beta1AndBack(t *testing.T) {
 		},
 	}
 
-	colbeta1, err := tov1beta1(*colalpha1)
-	require.NoError(t, err)
+	colbeta1 := tov1beta1(*colalpha1)
 	colalpha1Converted, err := tov1alpha1(colbeta1)
 	require.NoError(t, err)
 
