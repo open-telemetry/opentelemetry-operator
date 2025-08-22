@@ -269,6 +269,14 @@ func WithTLSConfig(caFile, certFile, keyFile, taServiceName string) TAOption {
 	}
 }
 
+// WithCollectorTargetReloadInterval adds the collector target reload interval to the target allocator configuration.
+func WithCollectorTargetReloadInterval(interval string) TAOption {
+	return func(targetAllocatorCfg map[interface{}]interface{}) error {
+		targetAllocatorCfg["interval"] = interval
+		return nil
+	}
+}
+
 // AddTAConfigToPromConfig adds or updates the target_allocator configuration in the Prometheus configuration.
 // If the `EnableTargetAllocatorRewrite` feature flag for the target allocator is enabled, this function
 // removes the existing scrape_configs from the collector's Prometheus configuration as it's not required.

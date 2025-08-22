@@ -30783,6 +30783,17 @@ The default is 30s, which means that if a collector becomes not Ready, the targe
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>collectorTargetReloadInterval</b></td>
+        <td>string</td>
+        <td>
+          CollectorTargetReloadInterval defines the interval at which the Prometheus receiver will reload targets from the target allocator.
+The default is 30s.<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+            <i>Default</i>: 30s<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
