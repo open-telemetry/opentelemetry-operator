@@ -51,8 +51,7 @@ func Test_tov1beta1_config(t *testing.T) {
 			},
 		}
 
-		cfgV2, err := tov1beta1(cfgV1)
-		assert.Nil(t, err)
+		cfgV2 := tov1beta1(cfgV1)
 		assert.NotNil(t, cfgV2)
 		assert.Equal(t, cfgV1.Spec.Args, cfgV2.Spec.Args)
 
@@ -68,8 +67,48 @@ func Test_tov1beta1_config(t *testing.T) {
 			},
 		}
 
-		_, err := tov1beta1(cfgV1)
-		assert.ErrorContains(t, err, "could not convert config json to v1beta1.Config")
+		cfgV2 := tov1beta1(cfgV1)
+		assert.NotNil(t, cfgV2)
+		assert.NotNil(t, cfgV2.Spec.Config.Receivers.Object)
+		assert.NotNil(t, cfgV2.Spec.Config.Exporters.Object)
+		assert.NotNil(t, cfgV2.Spec.Config.Service.Pipelines)
+		assert.Equal(t, 0, len(cfgV2.Spec.Config.Receivers.Object))
+		assert.Equal(t, 0, len(cfgV2.Spec.Config.Exporters.Object))
+		assert.Equal(t, 0, len(cfgV2.Spec.Config.Service.Pipelines))
+	})
+	t.Run("null config", func(t *testing.T) {
+		config := "null\n"
+		cfgV1 := OpenTelemetryCollector{
+			Spec: OpenTelemetryCollectorSpec{
+				Config: config,
+			},
+		}
+
+		cfgV2 := tov1beta1(cfgV1)
+		assert.NotNil(t, cfgV2)
+		assert.NotNil(t, cfgV2.Spec.Config.Receivers.Object)
+		assert.NotNil(t, cfgV2.Spec.Config.Exporters.Object)
+		assert.NotNil(t, cfgV2.Spec.Config.Service.Pipelines)
+		assert.Equal(t, 0, len(cfgV2.Spec.Config.Receivers.Object))
+		assert.Equal(t, 0, len(cfgV2.Spec.Config.Exporters.Object))
+		assert.Equal(t, 0, len(cfgV2.Spec.Config.Service.Pipelines))
+	})
+	t.Run("empty config", func(t *testing.T) {
+		config := ""
+		cfgV1 := OpenTelemetryCollector{
+			Spec: OpenTelemetryCollectorSpec{
+				Config: config,
+			},
+		}
+
+		cfgV2 := tov1beta1(cfgV1)
+		assert.NotNil(t, cfgV2)
+		assert.NotNil(t, cfgV2.Spec.Config.Receivers.Object)
+		assert.NotNil(t, cfgV2.Spec.Config.Exporters.Object)
+		assert.NotNil(t, cfgV2.Spec.Config.Service.Pipelines)
+		assert.Equal(t, 0, len(cfgV2.Spec.Config.Receivers.Object))
+		assert.Equal(t, 0, len(cfgV2.Spec.Config.Exporters.Object))
+		assert.Equal(t, 0, len(cfgV2.Spec.Config.Service.Pipelines))
 	})
 }
 
@@ -300,8 +339,7 @@ func Test_tov1beta1AndBack(t *testing.T) {
 		},
 	}
 
-	colbeta1, err := tov1beta1(*colalpha1)
-	require.NoError(t, err)
+	colbeta1 := tov1beta1(*colalpha1)
 	colalpha1Converted, err := tov1alpha1(colbeta1)
 	require.NoError(t, err)
 
@@ -511,7 +549,7 @@ func TestConvertTo(t *testing.T) {
 	colbeta1 := v1beta1.OpenTelemetryCollector{}
 	err := col.ConvertTo(&colbeta1)
 	require.NoError(t, err)
-	assert.Equal(t, v1beta1.OpenTelemetryCollector{
+	expected := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "otel",
 		},
@@ -525,11 +563,19 @@ func TestConvertTo(t *testing.T) {
 					ServiceMonitorSelector: &metav1.LabelSelector{},
 				},
 			},
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{Object: map[string]interface{}{}},
+				Exporters: v1beta1.AnyConfig{Object: map[string]interface{}{}},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{},
+				},
+			},
 		},
 		Status: v1beta1.OpenTelemetryCollectorStatus{
 			Image: "otel/col",
 		},
-	}, colbeta1)
+	}
+	assert.Equal(t, expected, colbeta1)
 }
 
 func TestConvertFrom(t *testing.T) {
