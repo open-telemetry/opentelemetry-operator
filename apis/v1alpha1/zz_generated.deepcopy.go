@@ -973,6 +973,11 @@ func (in *OpenTelemetryCollectorSpec) DeepCopyInto(out *OpenTelemetryCollectorSp
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.TrafficDistribution != nil {
+		in, out := &in.TrafficDistribution, &out.TrafficDistribution
+		*out = new(string)
+		**out = **in
+	}
 	if in.AdditionalContainers != nil {
 		in, out := &in.AdditionalContainers, &out.AdditionalContainers
 		*out = make([]v1.Container, len(*in))
