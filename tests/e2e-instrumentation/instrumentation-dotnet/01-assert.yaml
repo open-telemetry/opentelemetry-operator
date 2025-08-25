@@ -65,9 +65,17 @@ spec:
       readOnly: true
     - mountPath: /otel-auto-instrumentation-dotnet
       name: opentelemetry-auto-instrumentation-dotnet
-  - args:
+  # Check for non-native sidecar mode (otc-container in containers)
+  (containers[?name == 'otc-container']):
+  - name: otc-container
+    args:
     - --config=env:OTEL_CONFIG
-    name: otc-container
+  # Check for native sidecar mode (otc-container in initContainers)
+  (initContainers[?name == 'otc-container']):
+  - name: otc-container
+    restartPolicy: Always
+    args:
+    - --config=env:OTEL_CONFIG
   initContainers:
   - name: opentelemetry-auto-instrumentation-dotnet
 status:
