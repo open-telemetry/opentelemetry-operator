@@ -149,6 +149,97 @@ func TestDeploymentNewDefault(t *testing.T) {
 	assert.Subset(t, d.Spec.Template.Labels, d.Spec.Selector.MatchLabels)
 }
 
+func TestDeploymentVersionLabelFromSpec(t *testing.T) {
+	// prepare
+	targetAllocator := v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.TargetAllocatorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.129.1",
+			},
+		},
+	}
+	otelcol := collectorInstance()
+
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          config.New(),
+		Log:             logger,
+	}
+
+	// test
+	d, err := Deployment(params)
+	require.NoError(t, err)
+
+	// verify
+	assert.Equal(t, "my-instance-targetallocator", d.Name)
+	assert.Equal(t, "0.129.1", d.Spec.Template.Labels["app.kubernetes.io/version"])
+	assert.Equal(t, "0.129.1", d.Labels["app.kubernetes.io/version"])
+}
+
+func TestDeploymentVersionLabelFromConfig(t *testing.T) {
+	// prepare
+	targetAllocator := v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.TargetAllocatorSpec{},
+	}
+	otelcol := collectorInstance()
+	cfg := config.New()
+	cfg.TargetAllocatorImage = "ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:0.130.0"
+
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          cfg,
+		Log:             logger,
+	}
+
+	// test
+	d, err := Deployment(params)
+	require.NoError(t, err)
+
+	// verify
+	assert.Equal(t, "my-instance-targetallocator", d.Name)
+	assert.Equal(t, "0.130.0", d.Spec.Template.Labels["app.kubernetes.io/version"])
+	assert.Equal(t, "0.130.0", d.Labels["app.kubernetes.io/version"])
+}
+
+func TestDeploymentVersionLabelLatest(t *testing.T) {
+	// prepare
+	targetAllocator := v1alpha1.TargetAllocator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.TargetAllocatorSpec{},
+	}
+	otelcol := collectorInstance()
+	cfg := config.Config{}
+
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          cfg,
+		Log:             logger,
+	}
+
+	// test
+	d, err := Deployment(params)
+	require.NoError(t, err)
+
+	// verify
+	assert.Equal(t, "my-instance-targetallocator", d.Name)
+	assert.Equal(t, "latest", d.Spec.Template.Labels["app.kubernetes.io/version"])
+	assert.Equal(t, "latest", d.Labels["app.kubernetes.io/version"])
+}
+
 func TestDeploymentPodAnnotations(t *testing.T) {
 	// prepare
 	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}
