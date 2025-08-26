@@ -859,9 +859,7 @@ func TestStatefulSetHostPIDIgnoredWhenFeatureFlagDisabled(t *testing.T) {
 			Name: "my-instance-HostPID",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-				HostPID: true,
-			},
+			HostPID: true,
 		},
 	}
 
@@ -908,9 +906,7 @@ func TestStatefulSetHostPIDOnlyWhenFeatureFlagEnabled(t *testing.T) {
 			Name: "my-instance-HostPID",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-				HostPID: true,
-			},
+			HostPID: true,
 		},
 	}
 

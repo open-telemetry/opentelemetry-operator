@@ -692,9 +692,7 @@ func TestDaemonSetHostPIDIgnoredWhenFeatureFlagDisabled(t *testing.T) {
 			Name: "my-instance-terminationGracePeriodSeconds",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-				HostPID: true,
-			},
+			HostPID: true,
 		},
 	}
 
@@ -743,9 +741,7 @@ func TestDaemonSetHostPIDOnlyWhenFeatureFlagEnabled(t *testing.T) {
 			Name: "my-instance-terminationGracePeriodSeconds",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-				HostPID: true,
-			},
+			HostPID: true,
 		},
 	}
 

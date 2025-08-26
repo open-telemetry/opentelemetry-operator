@@ -186,9 +186,6 @@ type OpenTelemetryCommonFields struct {
 	// HostNetwork indicates if the pod should run in the host networking namespace.
 	// +optional
 	HostNetwork bool `json:"hostNetwork,omitempty"`
-	// HostPID indicates if the pod should have access to the host process ID namespace.
-	// +optional
-	HostPID bool `json:"hostPID,omitempty"`
 	// ShareProcessNamespace indicates if the pod's containers should share process namespace.
 	// +optional
 	ShareProcessNamespace bool `json:"shareProcessNamespace,omitempty"`

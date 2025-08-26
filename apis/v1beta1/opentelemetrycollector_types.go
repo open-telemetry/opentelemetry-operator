@@ -143,6 +143,9 @@ type OpenTelemetryCollectorSpec struct {
 	// If not specified, it will default to "<name>-headless".
 	// +optional
 	ServiceName string `json:"serviceName,omitempty"`
+	// HostPID indicates if the pod should have access to the host process ID namespace.
+	// +optional
+	HostPID bool `json:"hostPID,omitempty"`
 }
 
 // TargetAllocatorEmbedded defines the configuration for the Prometheus target allocator, embedded in the
