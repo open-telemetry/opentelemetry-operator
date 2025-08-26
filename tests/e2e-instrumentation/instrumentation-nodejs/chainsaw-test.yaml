@@ -37,7 +37,7 @@ spec:
         file: 01-assert.yaml
     catch:
       - podLogs:
-          selector: app=my-nodejs
+          selector: app.kubernetes.io/name=deployment-collector
   - name: Make a request to the app
     try:
       - command:
@@ -66,7 +66,7 @@ spec:
     - script:
         env:
           - name: LABEL_SELECTOR
-            value: "app=my-nodejs"
+            value: "app.kubernetes.io/name=deployment-collector"
           - name: CONTAINER_NAME
             value: "otc-container" 
           - name: RETRY_TIMEOUT
@@ -89,7 +89,7 @@ spec:
             - -n
             - ${NAMESPACE}
             - -l
-            - app=my-nodejs
+            - app.kubernetes.io/name=deployment-collector
             - -o
             - jsonpath={.items[0].metadata.name}
           outputs:
@@ -116,5 +116,5 @@ spec:
             ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_metric_points_total'].value | [0] > `1`): true
     catch:
       - podLogs:
-          selector: app=my-nodejs
+          selector: app.kubernetes.io/name=deployment-collector
           container: otc-container

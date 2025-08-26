@@ -13,7 +13,6 @@ spec:
       labels:
         app: my-nginx-multi
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-nginx: "true"
         instrumentation.opentelemetry.io/container-names: "myapp"
     spec:

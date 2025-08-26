@@ -12,7 +12,6 @@ spec:
       labels:
         app: my-python-multi
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-python: "true"
         instrumentation.opentelemetry.io/container-names: "myapp,myrabbit"
         instrumentation.opentelemetry.io/otel-python-platform: "musl"
