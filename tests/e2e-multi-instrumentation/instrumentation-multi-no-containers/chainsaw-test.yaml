@@ -40,3 +40,5 @@ spec:
     catch:
       - podLogs:
           selector: app=pod-multi-instr-no-containers
+      - podLogs:
+          selector: app.kubernetes.io/name=deployment-collector
