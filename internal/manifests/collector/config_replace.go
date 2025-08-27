@@ -58,6 +58,12 @@ func ReplaceConfig(otelcol v1beta1.OpenTelemetryCollector, targetAllocator *v1al
 		return "", validateCfgPromErr
 	}
 
+	// Use the interval from CRD (which has a default of 30s if not specified)
+	if otelcol.Spec.TargetAllocator.CollectorTargetReloadInterval != nil {
+		interval := otelcol.Spec.TargetAllocator.CollectorTargetReloadInterval.Duration.String()
+		options = append(options, ta.WithCollectorTargetReloadInterval(interval))
+	}
+
 	// To avoid issues caused by Prometheus validation logic, which fails regex validation when it encounters
 	// $$ in the prom config, we update the YAML file directly without marshaling and unmarshalling.
 	updPromCfgMap, getCfgPromErr := ta.AddTAConfigToPromConfig(promCfgMap, naming.TAService(targetAllocator.Name), options...)
