@@ -2578,6 +2578,8 @@ spec:
                   - whenUnsatisfiable
                   type: object
                 type: array
+              trafficDistribution:
+                type: string
               volumeMounts:
                 items:
                   properties:
