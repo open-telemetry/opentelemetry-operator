@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: kuttl-otel-sidecar-other-namespace
+  annotations:
+    sidecar.opentelemetry.io/inject: "kuttl-otel-sidecar-other-namespace/sidecar-for-my-app"
+  labels:
+    app: my-pod-with-sidecar
+spec:
+  containers:
+  - name: myapp
+  initContainers:
+  - name: otc-container
+    restartPolicy: Always
+    env:
+    - name: POD_NAME
+    - name: OTEL_CONFIG
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_UID
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+    - name: OTEL_RESOURCE_ATTRIBUTES
+status:
+  phase: Running

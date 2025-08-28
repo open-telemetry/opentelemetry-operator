@@ -3,7 +3,7 @@ apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
   creationTimestamp: null
-  name: create-pm-prometheus-exporters
+  name: smoke-sidecar-other-namespace
   labels:
     sidecar: legacy
 spec:
@@ -23,7 +23,7 @@ apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
 metadata:
   creationTimestamp: null
-  name: create-pm-prometheus-exporters-native
+  name: smoke-sidecar-other-namespace-native
   labels:
     sidecar: native
 spec:
