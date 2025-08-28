@@ -184,6 +184,13 @@ These can then in certain cases be consumed in the config file for the Collector
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>hostPID</b></td>
+        <td>boolean</td>
+        <td>
+          HostPID indicates if the pod should have access to the host process ID namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
@@ -19541,6 +19548,13 @@ This is only applicable to Deployment mode.<br/>
         <td>boolean</td>
         <td>
           HostNetwork indicates if the pod should run in the host networking namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>hostPID</b></td>
+        <td>boolean</td>
+        <td>
+          HostPID indicates if the pod should have access to the host process ID namespace.<br/>
         </td>
         <td>false</td>
       </tr><tr>

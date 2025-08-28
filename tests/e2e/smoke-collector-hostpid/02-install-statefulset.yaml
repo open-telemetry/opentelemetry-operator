@@ -1,0 +1,19 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: stateful
+spec:
+  hostPID: true
+  mode: statefulset
+  config:
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+    exporters:
+      debug:
+    service:
+      pipelines:
+        traces:
+          receivers: [jaeger]
+          exporters: [debug]
