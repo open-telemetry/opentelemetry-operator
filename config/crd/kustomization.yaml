@@ -23,6 +23,6 @@ kind: Kustomization
 # - patches/webhook_in_opampbridges.yaml
 patches:
 - path: patches/cainjection_in_opentelemetrycollectors.yaml
-- path: patches/cainjection_in_opampbridges.yaml
+#- path: patches/cainjection_in_opampbridges.yaml
 - path: patches/webhook_in_opentelemetrycollectors.yaml
-- path: patches/cainjection_in_targetallocators.yaml
+#- path: patches/cainjection_in_targetallocators.yaml

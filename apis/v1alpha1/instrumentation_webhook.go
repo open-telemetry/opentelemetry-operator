@@ -81,6 +81,7 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	if r.Labels == nil {
 		r.Labels = map[string]string{}
 	}
+	fmt.Println("---> Setting default labels")
 	if r.Spec.Java.Image == "" {
 		r.Spec.Java.Image = w.cfg.AutoInstrumentationJavaImage
 	}
