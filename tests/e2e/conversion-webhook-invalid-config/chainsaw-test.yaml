@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: conversion-webhook-invalid-config
+spec:
+  steps:
+    - name: step-00
+      description: create v1alpha1 opentelemetrycollector with invalid config and verify conversion webhook handles it gracefully
+      try:
+        - apply:
+            file: 00-create-invalid-config.yaml
+        - assert:
+            file: 00-assert-created.yaml
+
+    - name: step-01
+      description: verify collector deployment is created with valid empty config (conversion webhook successful)
+      try:
+        - assert:
+            file: 01-assert-deployment-created.yaml
