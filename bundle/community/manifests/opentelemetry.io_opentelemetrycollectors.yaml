@@ -7974,6 +7974,243 @@ spec:
                             type: object
                         type: object
                         x-kubernetes-map-type: atomic
+                      scrapeClasses:
+                        items:
+                          properties:
+                            attachMetadata:
+                              properties:
+                                node:
+                                  type: boolean
+                              type: object
+                            authorization:
+                              properties:
+                                credentials:
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      default: ""
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  required:
+                                  - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                credentialsFile:
+                                  type: string
+                                type:
+                                  type: string
+                              type: object
+                            default:
+                              type: boolean
+                            fallbackScrapeProtocol:
+                              enum:
+                              - PrometheusProto
+                              - OpenMetricsText0.0.1
+                              - OpenMetricsText1.0.0
+                              - PrometheusText0.0.4
+                              - PrometheusText1.0.0
+                              type: string
+                            metricRelabelings:
+                              items:
+                                properties:
+                                  action:
+                                    default: replace
+                                    enum:
+                                    - replace
+                                    - Replace
+                                    - keep
+                                    - Keep
+                                    - drop
+                                    - Drop
+                                    - hashmod
+                                    - HashMod
+                                    - labelmap
+                                    - LabelMap
+                                    - labeldrop
+                                    - LabelDrop
+                                    - labelkeep
+                                    - LabelKeep
+                                    - lowercase
+                                    - Lowercase
+                                    - uppercase
+                                    - Uppercase
+                                    - keepequal
+                                    - KeepEqual
+                                    - dropequal
+                                    - DropEqual
+                                    type: string
+                                  modulus:
+                                    format: int64
+                                    type: integer
+                                  regex:
+                                    type: string
+                                  replacement:
+                                    type: string
+                                  separator:
+                                    type: string
+                                  sourceLabels:
+                                    items:
+                                      pattern: ^[a-zA-Z_][a-zA-Z0-9_]*$
+                                      type: string
+                                    type: array
+                                  targetLabel:
+                                    type: string
+                                type: object
+                              type: array
+                            name:
+                              minLength: 1
+                              type: string
+                            relabelings:
+                              items:
+                                properties:
+                                  action:
+                                    default: replace
+                                    enum:
+                                    - replace
+                                    - Replace
+                                    - keep
+                                    - Keep
+                                    - drop
+                                    - Drop
+                                    - hashmod
+                                    - HashMod
+                                    - labelmap
+                                    - LabelMap
+                                    - labeldrop
+                                    - LabelDrop
+                                    - labelkeep
+                                    - LabelKeep
+                                    - lowercase
+                                    - Lowercase
+                                    - uppercase
+                                    - Uppercase
+                                    - keepequal
+                                    - KeepEqual
+                                    - dropequal
+                                    - DropEqual
+                                    type: string
+                                  modulus:
+                                    format: int64
+                                    type: integer
+                                  regex:
+                                    type: string
+                                  replacement:
+                                    type: string
+                                  separator:
+                                    type: string
+                                  sourceLabels:
+                                    items:
+                                      pattern: ^[a-zA-Z_][a-zA-Z0-9_]*$
+                                      type: string
+                                    type: array
+                                  targetLabel:
+                                    type: string
+                                type: object
+                              type: array
+                            tlsConfig:
+                              properties:
+                                ca:
+                                  properties:
+                                    configMap:
+                                      properties:
+                                        key:
+                                          type: string
+                                        name:
+                                          default: ""
+                                          type: string
+                                        optional:
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    secret:
+                                      properties:
+                                        key:
+                                          type: string
+                                        name:
+                                          default: ""
+                                          type: string
+                                        optional:
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                  type: object
+                                caFile:
+                                  type: string
+                                cert:
+                                  properties:
+                                    configMap:
+                                      properties:
+                                        key:
+                                          type: string
+                                        name:
+                                          default: ""
+                                          type: string
+                                        optional:
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    secret:
+                                      properties:
+                                        key:
+                                          type: string
+                                        name:
+                                          default: ""
+                                          type: string
+                                        optional:
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                  type: object
+                                certFile:
+                                  type: string
+                                insecureSkipVerify:
+                                  type: boolean
+                                keyFile:
+                                  type: string
+                                keySecret:
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      default: ""
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  required:
+                                  - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                maxVersion:
+                                  enum:
+                                  - TLS10
+                                  - TLS11
+                                  - TLS12
+                                  - TLS13
+                                  type: string
+                                minVersion:
+                                  enum:
+                                  - TLS10
+                                  - TLS11
+                                  - TLS12
+                                  - TLS13
+                                  type: string
+                                serverName:
+                                  type: string
+                              type: object
+                          required:
+                          - name
+                          type: object
+                        type: array
                       scrapeConfigSelector:
                         properties:
                           matchExpressions:
