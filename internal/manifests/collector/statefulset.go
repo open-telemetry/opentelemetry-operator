@@ -11,7 +11,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 // StatefulSet builds the statefulset for the given instance.
@@ -59,7 +58,7 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 					DNSPolicy:                     manifestutils.GetDNSPolicy(params.OtelCol.Spec.HostNetwork, params.OtelCol.Spec.PodDNSConfig),
 					DNSConfig:                     &params.OtelCol.Spec.PodDNSConfig,
 					HostNetwork:                   params.OtelCol.Spec.HostNetwork,
-					HostPID:                       params.OtelCol.Spec.HostPID && featuregate.EnableAllowHostPIDSupport.IsEnabled(),
+					HostPID:                       params.OtelCol.Spec.HostPID,
 					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
 					Tolerations:                   params.OtelCol.Spec.Tolerations,
 					NodeSelector:                  params.OtelCol.Spec.NodeSelector,

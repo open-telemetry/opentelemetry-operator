@@ -11,7 +11,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 // DaemonSet builds the deployment for the given instance.
@@ -53,7 +52,7 @@ func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 					Tolerations:                   params.OtelCol.Spec.Tolerations,
 					NodeSelector:                  params.OtelCol.Spec.NodeSelector,
 					HostNetwork:                   params.OtelCol.Spec.HostNetwork,
-					HostPID:                       params.OtelCol.Spec.HostPID && featuregate.EnableAllowHostPIDSupport.IsEnabled(),
+					HostPID:                       params.OtelCol.Spec.HostPID,
 					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
 					DNSPolicy:                     manifestutils.GetDNSPolicy(params.OtelCol.Spec.HostNetwork, params.OtelCol.Spec.PodDNSConfig),
 					DNSConfig:                     &params.OtelCol.Spec.PodDNSConfig,

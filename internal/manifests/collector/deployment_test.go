@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	colfg "go.opentelemetry.io/collector/featuregate"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,7 +17,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var testTolerationValues = []v1.Toleration{
@@ -811,56 +809,7 @@ func int32Ptr(i int32) *int32 {
 	return &i
 }
 
-func TestDeploymentHostPIDIgnoredWhenFeatureFlagDisabled(t *testing.T) {
-	require.NoError(t, colfg.GlobalRegistry().Set(featuregate.EnableAllowHostPIDSupport.ID(), false))
-	assert.False(t, featuregate.EnableAllowHostPIDSupport.IsEnabled())
-
-	// Test default
-	otelcol1 := v1beta1.OpenTelemetryCollector{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-instance",
-		},
-	}
-
-	cfg := config.New()
-
-	params1 := manifests.Params{
-		Config:  cfg,
-		OtelCol: otelcol1,
-		Log:     testLogger,
-	}
-
-	d1, err := Deployment(params1)
-	require.NoError(t, err)
-
-	assert.False(t, d1.Spec.Template.Spec.HostPID)
-
-	// Test hostPID=true
-	otelcol2 := v1beta1.OpenTelemetryCollector{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-instance-hostnetwork",
-		},
-		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			HostPID: true,
-		},
-	}
-
-	cfg = config.New()
-
-	params2 := manifests.Params{
-		Config:  cfg,
-		OtelCol: otelcol2,
-		Log:     testLogger,
-	}
-
-	d2, err := Deployment(params2)
-	require.NoError(t, err)
-	assert.False(t, d2.Spec.Template.Spec.HostPID)
-}
-
-func TestDeploymentHostPIDOnlyWhenFeatureFlagEnabled(t *testing.T) {
-	require.NoError(t, colfg.GlobalRegistry().Set(featuregate.EnableAllowHostPIDSupport.ID(), true))
-	assert.True(t, featuregate.EnableAllowHostPIDSupport.IsEnabled())
+func TestDeploymentHostPIDCanBeSet(t *testing.T) {
 
 	// Test default
 	otelcol1 := v1beta1.OpenTelemetryCollector{
