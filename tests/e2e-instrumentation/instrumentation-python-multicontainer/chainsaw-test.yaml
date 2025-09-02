@@ -67,7 +67,7 @@ spec:
     - script:
         env:
           - name: LABEL_SELECTOR
-            value: "app=my-python-multi"
+            value: "app.kubernetes.io/name=deployment-collector"
           - name: CONTAINER_NAME
             value: "otc-container" 
           - name: RETRY_TIMEOUT
@@ -90,7 +90,7 @@ spec:
             - -n
             - ${NAMESPACE}
             - -l
-            - app=my-python-multi
+            - app.kubernetes.io/name=deployment-collector
             - -o
             - jsonpath={.items[0].metadata.name}
           outputs:
@@ -117,7 +117,7 @@ spec:
             ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_metric_points_total'].value | [0] > `1`): true
     catch:
       - podLogs:
-          selector: app=my-python-multi
+          selector: app.kubernetes.io/name=deployment-collector
           container: otc-container
   - name: step-02
     try:
@@ -177,7 +177,7 @@ spec:
     - script:
         env:
           - name: LABEL_SELECTOR
-            value: "app=my-python-multi"
+            value: "app.kubernetes.io/name=deployment-collector"
           - name: CONTAINER_NAME
             value: "otc-container" 
           - name: RETRY_TIMEOUT
@@ -200,7 +200,7 @@ spec:
             - -n
             - ${NAMESPACE}
             - -l
-            - app=my-python-multi
+            - app.kubernetes.io/name=deployment-collector
             - -o
             - jsonpath={.items[0].metadata.name}
           outputs:
@@ -227,5 +227,5 @@ spec:
             ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_metric_points_total'].value | [0] > `1`): true
     catch:
       - podLogs:
-          selector: app=my-python-multi
+          selector: app.kubernetes.io/name=deployment-collector
           container: otc-container

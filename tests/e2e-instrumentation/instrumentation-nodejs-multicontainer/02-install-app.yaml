@@ -12,7 +12,6 @@ spec:
       labels:
         app: my-nodejs-multi
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-nodejs: "true"
         instrumentation.opentelemetry.io/container-names: "myapp"
     spec:

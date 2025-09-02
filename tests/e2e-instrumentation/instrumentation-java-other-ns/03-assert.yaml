@@ -3,7 +3,6 @@ kind: Pod
 metadata:
   annotations:
     instrumentation.opentelemetry.io/inject-java: my-other-ns/java
-    sidecar.opentelemetry.io/inject: "true"
   labels:
     app: my-java-other-ns
 spec:
@@ -32,7 +31,7 @@ spec:
     - name: OTEL_SERVICE_NAME
       value: my-java-other-ns
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4318
+      value: http://deployment-collector:4318
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
       valueFrom:
         fieldRef:
@@ -55,12 +54,6 @@ spec:
       readOnly: true
     - mountPath: /otel-auto-instrumentation-java-myapp
       name: opentelemetry-auto-instrumentation-java
-  - args:
-    - --config=env:OTEL_CONFIG
-    name: otc-container
-    volumeMounts:
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
   initContainers:
   - name: opentelemetry-auto-instrumentation-java
 status:
@@ -68,10 +61,27 @@ status:
   - name: myapp
     ready: true
     started: true
-  - name: otc-container
-    ready: true
-    started: true
   initContainerStatuses:
   - name: opentelemetry-auto-instrumentation-java
     ready: true
   phase: Running
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: deployment-collector
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: deployment-collector

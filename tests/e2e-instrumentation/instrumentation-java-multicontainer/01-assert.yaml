@@ -4,7 +4,6 @@ metadata:
   annotations:
     instrumentation.opentelemetry.io/container-names: myapp,myrabbit
     instrumentation.opentelemetry.io/inject-java: "true"
-    sidecar.opentelemetry.io/inject: "true"
   labels:
     app: my-java-multi
 spec:
@@ -33,7 +32,7 @@ spec:
     - name: OTEL_SERVICE_NAME
       value: my-java-multi
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4318
+      value: http://deployment-collector:4318
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
       valueFrom:
         fieldRef:
@@ -77,7 +76,7 @@ spec:
     - name: OTEL_SERVICE_NAME
       value: my-java-multi
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4318
+      value: http://deployment-collector:4318
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
       valueFrom:
         fieldRef:
@@ -97,12 +96,6 @@ spec:
       readOnly: true
     - mountPath: /otel-auto-instrumentation-java-myrabbit
       name: opentelemetry-auto-instrumentation-java
-  - args:
-    - --config=env:OTEL_CONFIG
-    name: otc-container
-    volumeMounts:
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
   initContainers:
   - name: opentelemetry-auto-instrumentation-java
 status:
@@ -113,10 +106,43 @@ status:
   - name: myrabbit
     ready: true
     started: true
-  - name: otc-container
-    ready: true
-    started: true
   initContainerStatuses:
   - name: opentelemetry-auto-instrumentation-java
     ready: true
   phase: Running
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: deployment-collector
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: deployment-collector
+spec:
+  ports:
+  - appProtocol: grpc
+    name: otlp-grpc
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - appProtocol: http
+    name: otlp-http
+    port: 4318
+    protocol: TCP
+    targetPort: 4318

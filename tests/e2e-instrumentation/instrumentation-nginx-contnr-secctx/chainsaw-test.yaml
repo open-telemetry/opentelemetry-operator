@@ -65,7 +65,7 @@ spec:
     - script:
         env:
           - name: LABEL_SELECTOR
-            value: "app=my-nginx-contnr-secctx"
+            value: "app.kubernetes.io/name=deployment-collector"
           - name: CONTAINER_NAME
             value: "otc-container" 
           - name: RETRY_TIMEOUT
@@ -88,7 +88,7 @@ spec:
             - -n
             - ${NAMESPACE}
             - -l
-            - app=my-nginx-contnr-secctx
+            - app.kubernetes.io/name=deployment-collector
             - -o
             - jsonpath={.items[0].metadata.name}
           outputs:

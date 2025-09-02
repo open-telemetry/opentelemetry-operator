@@ -12,7 +12,7 @@ ENV GOPATH=/tmp/go
 ENV GOBIN=/tmp/go/bin
 ENV GOCACHE=/tmp/.cache/go-build
 ENV PATH=$PATH:$GOBIN
-ENV CHAINSAW_VERSION=v0.2.12
+ENV CHAINSAW_VERSION=v0.2.13
 
 # Create the /tmp/go/bin and build cache directories, and grant read and write permissions to all users
 RUN mkdir -p /tmp/go/bin $GOCACHE \

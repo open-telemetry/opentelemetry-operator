@@ -20,7 +20,7 @@ spec:
     - name: OTEL_LOGS_EXPORTER
       value: none
   exporter:
-    endpoint: http://localhost:4318
+    endpoint: http://deployment-collector:4318
   propagators:
     - jaeger
     - b3

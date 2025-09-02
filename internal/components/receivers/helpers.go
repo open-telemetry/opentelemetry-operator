@@ -94,10 +94,6 @@ var (
 		components.NewSinglePortParserBuilder("influxdb", 8086).
 			WithTargetPort(8086).
 			MustBuild(),
-		components.NewSinglePortParserBuilder("opencensus", 55678).
-			WithAppProtocol(nil).
-			WithTargetPort(55678).
-			MustBuild(),
 		components.NewSinglePortParserBuilder("sapm", 7276).
 			WithTargetPort(7276).
 			MustBuild(),

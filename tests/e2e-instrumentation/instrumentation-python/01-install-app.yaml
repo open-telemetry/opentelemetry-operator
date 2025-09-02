@@ -12,7 +12,6 @@ spec:
       labels:
         app: my-python
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-python: "true"
     spec:
       securityContext:

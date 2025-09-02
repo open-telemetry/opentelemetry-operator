@@ -10,6 +10,7 @@ patches:
     version: v1
 - path: metrics_service_tls_patch.yaml
 - path: manager_auth_proxy_tls_patch.yaml
+- path: remove-cert-manager-annotations.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

@@ -12,7 +12,6 @@ spec:
       labels:
         app: my-java-other-ns
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-java: "my-other-ns/java"
     spec:
       securityContext:

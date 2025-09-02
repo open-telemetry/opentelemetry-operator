@@ -2483,6 +2483,58 @@ func TestMutateStatefulSetLabelChange(t *testing.T) {
 	}
 }
 
+func TestMutateIngress(t *testing.T) {
+	existing := &networkingv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-ingress",
+			Annotations: map[string]string{
+				"test":                "test123",
+				"external.annotation": "should-be-preserved",
+			},
+			Labels: map[string]string{
+				"external.label": "should-be-preserved",
+			},
+		},
+		Spec: networkingv1.IngressSpec{
+			Rules: []networkingv1.IngressRule{
+				{
+					Host: "old.example.com",
+				},
+			},
+		},
+	}
+
+	desired := &networkingv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-ingress",
+			Annotations: map[string]string{
+				"opentelemetry.annotation": "operator-managed",
+			},
+			Labels: map[string]string{
+				"opentelemetry.label": "operator-managed",
+			},
+		},
+		Spec: networkingv1.IngressSpec{
+			Rules: []networkingv1.IngressRule{
+				{
+					Host: "new.example.com",
+				},
+			},
+		},
+	}
+
+	mutateFn := MutateFuncFor(existing, desired)
+	err := mutateFn()
+	require.NoError(t, err)
+
+	assert.Equal(t, "test123", existing.Annotations["test"])
+	assert.Equal(t, "should-be-preserved", existing.Annotations["external.annotation"])
+	assert.Equal(t, "operator-managed", existing.Annotations["opentelemetry.annotation"])
+	assert.Equal(t, "should-be-preserved", existing.Labels["external.label"])
+	assert.Equal(t, "operator-managed", existing.Labels["opentelemetry.label"])
+	assert.Equal(t, "new.example.com", existing.Spec.Rules[0].Host)
+}
+
 func TestGetMutateFunc_MutateNetworkPolicy(t *testing.T) {
 	got := &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{

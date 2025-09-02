@@ -40,3 +40,5 @@ spec:
     catch:
       - podLogs:
           selector: app=pod-single-instr-first-container
+      - podLogs:
+          selector: app.kubernetes.io/name=deployment-collector

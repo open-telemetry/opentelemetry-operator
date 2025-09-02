@@ -250,8 +250,8 @@ func mutatePolicyV1PDB(existing, desired *policyV1.PodDisruptionBudget) {
 }
 
 func mutateIngress(existing, desired *networkingv1.Ingress) {
-	existing.Labels = desired.Labels
-	existing.Annotations = desired.Annotations
+	// NOTE: Do not overwrite labels and annotations:
+	// https://github.com/open-telemetry/opentelemetry-operator/issues/4322
 	existing.Spec.DefaultBackend = desired.Spec.DefaultBackend
 	existing.Spec.Rules = desired.Spec.Rules
 	existing.Spec.TLS = desired.Spec.TLS

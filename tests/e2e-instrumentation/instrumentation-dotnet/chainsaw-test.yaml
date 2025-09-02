@@ -66,7 +66,7 @@ spec:
     - script:
         env:
           - name: LABEL_SELECTOR
-            value: "app=my-dotnet"
+            value: "app.kubernetes.io/name=deployment-collector"
           - name: CONTAINER_NAME
             value: "otc-container" 
           - name: RETRY_TIMEOUT
@@ -89,7 +89,7 @@ spec:
             - -n
             - ${NAMESPACE}
             - -l
-            - app=my-dotnet
+            - app.kubernetes.io/name=deployment-collector
             - -o
             - jsonpath={.items[0].metadata.name}
           outputs:

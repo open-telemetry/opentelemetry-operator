@@ -16,7 +16,6 @@ metadata:
     instrumentation.opentelemetry.io/container-names: myapp
     instrumentation.opentelemetry.io/inject-python: "true"
     instrumentation.opentelemetry.io/otel-python-platform: musl
-    sidecar.opentelemetry.io/inject: "true"
   labels:
     app: my-python-multi
 spec:
@@ -37,7 +36,7 @@ spec:
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4318
+      value: http://deployment-collector:4318
     - name: PYTHONPATH
       value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
     - name: OTEL_EXPORTER_OTLP_PROTOCOL
@@ -81,9 +80,6 @@ spec:
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
-  - args:
-    - --config=env:OTEL_CONFIG
-    name: otc-container
   initContainers:
   - name: opentelemetry-auto-instrumentation-python
 status:
@@ -94,10 +90,27 @@ status:
   - name: myrabbit
     ready: true
     started: true
-  - name: otc-container
-    ready: true
-    started: true
   initContainerStatuses:
   - name: opentelemetry-auto-instrumentation-python
     ready: true
   phase: Running
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: deployment-collector
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: deployment-collector

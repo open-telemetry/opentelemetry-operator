@@ -12,7 +12,6 @@ spec:
       labels:
         app: my-apache
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-apache-httpd: "true"
     spec:
       securityContext:

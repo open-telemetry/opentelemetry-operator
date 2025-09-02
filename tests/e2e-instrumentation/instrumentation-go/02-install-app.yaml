@@ -12,7 +12,6 @@ spec:
       labels:
         app: my-golang
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-go: "true"
         instrumentation.opentelemetry.io/otel-go-auto-target-exe: /rolldice
     spec:

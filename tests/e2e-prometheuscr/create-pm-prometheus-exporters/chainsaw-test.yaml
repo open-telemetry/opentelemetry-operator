@@ -4,6 +4,8 @@ kind: Test
 metadata:
   creationTimestamp: null
   name: create-pm-prometheus-exporters
+  labels:
+    sidecar: legacy
 spec:
   steps:
   - name: step-00
@@ -16,3 +18,23 @@ spec:
         file: 01-install-app.yaml
     - assert:
         file: 01-assert.yaml
+---
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: create-pm-prometheus-exporters-native
+  labels:
+    sidecar: native
+spec:
+  steps:
+  - name: step-00
+    try:
+    - apply:
+        file: 00-install.yaml
+  - name: step-01
+    try:
+    - apply:
+        file: 01-install-app.yaml
+    - assert:
+        file: 01-assert-native.yaml

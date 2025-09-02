@@ -3,7 +3,6 @@ kind: Pod
 metadata:
   annotations:
     instrumentation.opentelemetry.io/inject-dotnet: "true"
-    sidecar.opentelemetry.io/inject: "true"
   labels:
     app: my-dotnet
 spec:
@@ -42,7 +41,7 @@ spec:
     - name: OTEL_SERVICE_NAME
       value: my-dotnet
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4318
+      value: http://deployment-collector:4318
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
       valueFrom:
         fieldRef:
@@ -65,9 +64,6 @@ spec:
       readOnly: true
     - mountPath: /otel-auto-instrumentation-dotnet
       name: opentelemetry-auto-instrumentation-dotnet
-  - args:
-    - --config=env:OTEL_CONFIG
-    name: otc-container
   initContainers:
   - name: opentelemetry-auto-instrumentation-dotnet
 status:
@@ -75,10 +71,43 @@ status:
   - name: myapp
     ready: true
     started: true
-  - name: otc-container
-    ready: true
-    started: true
   initContainerStatuses:
   - name: opentelemetry-auto-instrumentation-dotnet
     ready: true
   phase: Running
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: deployment-collector
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: deployment-collector
+spec:
+  ports:
+  - appProtocol: grpc
+    name: otlp-grpc
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - appProtocol: http
+    name: otlp-http
+    port: 4318
+    protocol: TCP
+    targetPort: 4318

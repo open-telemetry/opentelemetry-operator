@@ -95,7 +95,7 @@ spec:
             value: (($instrumentationMajorVersion < `2` && 'process.runtime.jvm.memory.usage') || 'jvm.memory.used')
         env:
           - name: LABEL_SELECTOR
-            value: "app=my-java-other-ns"
+            value: "app.kubernetes.io/name=deployment-collector"
           - name: CONTAINER_NAME
             value: "otc-container" 
           - name: RETRY_TIMEOUT
@@ -116,7 +116,7 @@ spec:
             - -n
             - ${NAMESPACE}
             - -l
-            - app=my-java-other-ns
+            - app.kubernetes.io/name=deployment-collector
             - -o
             - jsonpath={.items[0].metadata.name}
           outputs:

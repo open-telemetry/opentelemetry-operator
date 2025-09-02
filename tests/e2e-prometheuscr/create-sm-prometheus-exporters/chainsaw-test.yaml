@@ -4,6 +4,8 @@ kind: Test
 metadata:
   creationTimestamp: null
   name: create-sm-prometheus-exporters
+  labels:
+    sidecar: legacy
 spec:
   steps:
   - name: step-00

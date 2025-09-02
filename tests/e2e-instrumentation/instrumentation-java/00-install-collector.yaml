@@ -1,7 +1,7 @@
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
-  name: sidecar
+  name: deployment
 spec:
   config:
     receivers:
@@ -24,4 +24,4 @@ spec:
         metrics:
           receivers: [otlp]
           exporters: [debug]
-  mode: sidecar
+  mode: deployment
