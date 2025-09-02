@@ -21,6 +21,7 @@ kind: Service
 metadata:
   name: smoke-ports-collector
 spec:
+  trafficDistribution: PreferClose
   ports:
   - appProtocol: http
     name: custom-port
