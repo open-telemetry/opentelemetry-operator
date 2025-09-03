@@ -3,11 +3,6 @@ kind: OpenTelemetryCollector
 metadata:
   name: deployment
 spec:
-  # NOTE: Skip v0.133.0 comes with otlp metrics unmarshal issues.
-  # See for details:
-  # https://github.com/open-telemetry/opentelemetry-dotnet/issues/6464
-  # https://github.com/open-telemetry/opentelemetry-collector/issues/13727
-  image: otel/opentelemetry-collector:0.134.0-nightly.202508310234
   config:
     receivers:
       otlp:
