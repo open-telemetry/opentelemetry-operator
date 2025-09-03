@@ -107,6 +107,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+				pod = i.injectDefaultEnvVars(pod, index, getDefaultPythonEnvVars()...)
 				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, pythonInitContainerName)
 			}
 		}
@@ -274,6 +275,12 @@ func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod 
 			container.Env = append(container.Env, env)
 		}
 	}
+	return pod
+}
+
+func (i *sdkInjector) injectDefaultEnvVars(pod corev1.Pod, index int, defaultEnvVars ...corev1.EnvVar) corev1.Pod {
+	container := &pod.Spec.Containers[index]
+	container.Env = appendIfNotSet(container.Env, defaultEnvVars...)
 	return pod
 }
 
