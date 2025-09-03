@@ -2,6 +2,24 @@
 
 <!-- next version -->
 
+## 0.133.0
+
+### ⚠️ Skip Release ⚠️
+
+  - `operator`: Skipped OpenTelemetry Operator release due to an issue on the collectors protobuf parsing that caused HTTP 400 errors for metric submissions. In case of expecitly using the collector v0.133.0 this behavior can be by passed by disabling the collector feature gate `pdata.useCustomProtoEncoding`.
+  For more details see: (opentelemetry-collector#13727)[https://github.com/open-telemetry/opentelemetry-collector/issues/13727]
+
+  ```yaml
+  apiVersion: opentelemetry.io/v1beta1
+  kind: OpenTelemetryCollector
+  metadata:
+    name: my-collector
+  spec:
+    image: otel/opentelemetry-collector:0.133.0
+    args:
+      - --feature-gates=-pdata.useCustomProtoEncoding
+  ```
+
 ## 0.132.0
 
 ### 🚩 Deprecations 🚩
