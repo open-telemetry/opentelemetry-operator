@@ -37,13 +37,7 @@ spec:
       value: http://deployment-collector:4318
     - name: PYTHONPATH
       value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
-    - name: OTEL_EXPORTER_OTLP_PROTOCOL
-      value: http/protobuf
     - name: OTEL_TRACES_EXPORTER
-      value: otlp
-    - name: OTEL_METRICS_EXPORTER
-      value: otlp
-    - name: OTEL_LOGS_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
       value: "20"
@@ -66,6 +60,12 @@ spec:
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
     - name: OTEL_RESOURCE_ATTRIBUTES
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_METRICS_EXPORTER
+      value: otlp
+    - name: OTEL_LOGS_EXPORTER
+      value: otlp
     name: pythonapp
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount

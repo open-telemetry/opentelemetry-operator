@@ -1373,10 +1373,6 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
 									Value: "20",
 								},
@@ -1415,6 +1411,11 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "k8s.container.name=app,k8s.namespace.name=python,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=python.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=python",
+								},
+
+								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -1584,10 +1585,6 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
 									Value: "20",
 								},
@@ -1626,6 +1623,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "k8s.container.name=app1,k8s.namespace.name=python-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=python-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app1,service.namespace=python-multiple-containers",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -1679,10 +1680,6 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
 									Value: "20",
 								},
@@ -1721,6 +1718,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "k8s.container.name=app2,k8s.namespace.name=python-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=python-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app2,service.namespace=python-multiple-containers",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -4160,22 +4161,6 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
-									Name:  "OTEL_TRACES_EXPORTER",
-									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_METRICS_EXPORTER",
-									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_LOGS_EXPORTER",
-									Value: "otlp",
-								},
-								{
 									Name:  "OTEL_SERVICE_NAME",
 									Value: "python1",
 								},
@@ -4202,6 +4187,22 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "k8s.container.name=python1,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).python1,service.namespace=multi-instrumentation-multi-containers",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_LOGS_EXPORTER",
+									Value: "otlp",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -4239,22 +4240,6 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
-									Name:  "OTEL_TRACES_EXPORTER",
-									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_METRICS_EXPORTER",
-									Value: "otlp",
-								},
-								{
-									Name:  "OTEL_LOGS_EXPORTER",
-									Value: "otlp",
-								},
-								{
 									Name:  "OTEL_SERVICE_NAME",
 									Value: "python2",
 								},
@@ -4281,6 +4266,22 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
 									Value: "k8s.container.name=python2,k8s.namespace.name=multi-instrumentation-multi-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=multi-instrumentation-multi-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).python2,service.namespace=multi-instrumentation-multi-containers",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_LOGS_EXPORTER",
+									Value: "otlp",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
