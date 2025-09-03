@@ -4,7 +4,7 @@ metadata:
   name: smoke-ports
 spec:
   mode: daemonset
-  trafficDistribution: "PreferClose"
+  trafficDistribution: PreferClose
   ports:
   - appProtocol: http
     name: custom-port
