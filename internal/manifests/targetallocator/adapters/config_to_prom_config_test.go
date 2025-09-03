@@ -549,3 +549,40 @@ func TestAddTAConfigToPromConfigWithTLSConfig(t *testing.T) {
 		assert.Equal(t, expectedResult, result)
 	})
 }
+
+func TestAddTAConfigToPromConfigWithCollectorTargetReloadInterval(t *testing.T) {
+	t.Run("should return expected prom config map with TA config and collector target reload interval", func(t *testing.T) {
+		cfg := map[interface{}]interface{}{
+			"config": map[interface{}]interface{}{
+				"scrape_configs": []interface{}{
+					map[interface{}]interface{}{
+						"job_name": "test_job",
+						"static_configs": []interface{}{
+							map[interface{}]interface{}{
+								"targets": []interface{}{
+									"localhost:9090",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		taServiceName := "test-targetallocator"
+
+		expectedResult := map[interface{}]interface{}{
+			"config": map[interface{}]interface{}{},
+			"target_allocator": map[interface{}]interface{}{
+				"endpoint":     "http://test-targetallocator:80",
+				"interval":     "10s",
+				"collector_id": "${POD_NAME}",
+			},
+		}
+
+		result, err := ta.AddTAConfigToPromConfig(cfg, taServiceName, ta.WithCollectorTargetReloadInterval("10s"))
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedResult, result)
+	})
+}

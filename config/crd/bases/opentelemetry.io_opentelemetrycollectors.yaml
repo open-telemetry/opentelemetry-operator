@@ -7710,6 +7710,10 @@ spec:
                     default: 30s
                     format: duration
                     type: string
+                  collectorTargetReloadInterval:
+                    default: 30s
+                    format: duration
+                    type: string
                   enabled:
                     type: boolean
                   env:
