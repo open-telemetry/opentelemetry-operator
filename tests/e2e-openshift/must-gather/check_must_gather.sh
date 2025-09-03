@@ -26,12 +26,13 @@ REQUIRED_ITEMS=(
   *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/statefulset-stateful-collector.yaml
   *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/opentelemetrycollector-stateful.yaml
   *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/serviceaccount-stateful-collector.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/service-sidecar-collector.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/opentelemetrycollector-sidecar.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/service-sidecar-collector-monitoring.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/configmap-sidecar-collector-*.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/serviceaccount-sidecar-collector.yaml
-  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/sidecar/service-sidecar-collector-headless.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/gather/service-gather-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/gather/opentelemetrycollector-gather.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/gather/service-gather-collector-monitoring.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/gather/configmap-gather-collector-*.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/gather/serviceaccount-gather-collector.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/gather/service-gather-collector-headless.yaml
+  *-must-gather-sha256-*/namespaces/chainsaw-must-gather/gather/deployment-gather-collector.yaml
   *-must-gather-sha256-*/chainsaw-must-gather/instrumentation-nodejs.yaml
   *-must-gather-sha256-*/opentelemetry-operator-controller-manager-*
   *-must-gather-sha256-*/deployment-opentelemetry-operator-controller-manager.yaml
