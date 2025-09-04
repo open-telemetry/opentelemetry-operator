@@ -20,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	autodetectta "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/opampbridge"
@@ -37,7 +38,7 @@ func isNamespaceScoped(obj client.Object) bool {
 }
 
 // BuildCollector returns the generation and collected errors of all manifests for a given instance.
-func BuildCollector(params manifests.Params) ([]client.Object, error) {
+func BuildCollector(availability autodetectta.Availability, params manifests.Params) ([]client.Object, error) {
 	builders := []manifests.Builder[manifests.Params]{
 		collector.Build,
 	}
@@ -52,7 +53,7 @@ func BuildCollector(params manifests.Params) ([]client.Object, error) {
 	// If we're not building a TargetAllocator CRD, then we need to separately invoke its builder
 	// to directly build the manifests. This is what used to happen before the TargetAllocator CRD
 	// was introduced.
-	if !featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() {
+	if availability != autodetectta.Available || !featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() {
 		if params.TargetAllocator != nil {
 			taParams := targetallocator.Params{
 				Client:          params.Client,
