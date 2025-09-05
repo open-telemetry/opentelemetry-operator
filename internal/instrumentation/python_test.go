@@ -790,9 +790,7 @@ func TestInjectPythonSDK(t *testing.T) {
 			if test.simulateDefaults {
 				pod = injector.injectCommonEnvVar(test.inst, pod, 0)
 			}
-
-			pod = injector.injectDefaultEnvVars(pod, 0, getDefaultPythonEnvVars()...)
-
+			pod = injector.injectDefaultPythonEnvVars(pod, 0)
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})

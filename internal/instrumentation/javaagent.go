@@ -36,21 +36,6 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int, instSpec
 	// Create unique mount path for this container
 	containerMountPath := fmt.Sprintf("%s-%s", javaInstrMountPath, container.Name)
 
-	javaJVMArgument := fmt.Sprintf(" -javaagent:%s/javaagent.jar", containerMountPath)
-	if len(javaSpec.Extensions) > 0 {
-		javaJVMArgument = javaJVMArgument + fmt.Sprintf(" -Dotel.javaagent.extensions=%s/extensions", containerMountPath)
-	}
-
-	idx := getIndexOfEnv(container.Env, envJavaToolsOptions)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envJavaToolsOptions,
-			Value: javaJVMArgument,
-		})
-	} else {
-		container.Env[idx].Value = container.Env[idx].Value + javaJVMArgument
-	}
-
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
 		MountPath: containerMountPath,
@@ -85,4 +70,36 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int, instSpec
 		}
 	}
 	return pod, err
+}
+
+func getDefaultJavaEnvVars(pod corev1.Pod, index int, javaSpec v1alpha1.Java) []corev1.EnvVar {
+	container := &pod.Spec.Containers[index]
+	containerMountPath := fmt.Sprintf("%s-%s", javaInstrMountPath, container.Name)
+
+	javaJVMArgument := fmt.Sprintf(" -javaagent:%s/javaagent.jar", containerMountPath)
+	if len(javaSpec.Extensions) > 0 {
+		javaJVMArgument = javaJVMArgument + fmt.Sprintf(" -Dotel.javaagent.extensions=%s/extensions", containerMountPath)
+	}
+
+	idx := getIndexOfEnv(container.Env, envJavaToolsOptions)
+	if idx == -1 {
+		return []corev1.EnvVar{
+			{
+				Name:  envJavaToolsOptions,
+				Value: javaJVMArgument,
+			},
+		}
+	} else {
+		// Don't modify JAVA_TOOL_OPTIONS if it uses ValueFrom
+		if container.Env[idx].ValueFrom != nil {
+			return []corev1.EnvVar{}
+		}
+		// JAVA_TOOL_OPTIONS present, append our argument to its value
+		return []corev1.EnvVar{
+			{
+				Name:  envJavaToolsOptions,
+				Value: container.Env[idx].Value + javaJVMArgument,
+			},
+		}
+	}
 }

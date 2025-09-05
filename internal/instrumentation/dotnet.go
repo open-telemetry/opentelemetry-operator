@@ -62,38 +62,12 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 	if getIndexOfEnv(dotNetSpec.Env, envDotNetOTelAutoHome) > -1 {
 		return pod, errors.New("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec")
 	}
-
-	coreClrProfilerPath := ""
-	switch runtime {
-	case "", dotNetRuntimeLinuxGlibc:
-		coreClrProfilerPath = dotNetCoreClrProfilerGlibcPath
-	case dotNetRuntimeLinuxMusl:
-		coreClrProfilerPath = dotNetCoreClrProfilerMuslPath
-	default:
+	if runtime != "" && runtime != dotNetRuntimeLinuxGlibc && runtime != dotNetRuntimeLinuxMusl {
 		return pod, fmt.Errorf("provided instrumentation.opentelemetry.io/dotnet-runtime annotation value '%s' is not supported", runtime)
 	}
 
 	// inject .NET instrumentation spec env vars.
 	container.Env = appendIfNotSet(container.Env, dotNetSpec.Env...)
-
-	const (
-		doNotConcatEnvValues = false
-		concatEnvValues      = true
-	)
-
-	setDotNetEnvVar(container, envDotNetCoreClrEnableProfiling, dotNetCoreClrEnableProfilingEnabled, doNotConcatEnvValues)
-
-	setDotNetEnvVar(container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerID, doNotConcatEnvValues)
-
-	setDotNetEnvVar(container, envDotNetCoreClrProfilerPath, coreClrProfilerPath, doNotConcatEnvValues)
-
-	setDotNetEnvVar(container, envDotNetStartupHook, dotNetStartupHookPath, concatEnvValues)
-
-	setDotNetEnvVar(container, envDotNetAdditionalDeps, dotNetAdditionalDepsPath, concatEnvValues)
-
-	setDotNetEnvVar(container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, doNotConcatEnvValues)
-
-	setDotNetEnvVar(container, envDotNetSharedStore, dotNetSharedStorePath, concatEnvValues)
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
@@ -118,6 +92,30 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 	return pod, nil
 }
 
+func injectDefaultDotNetEnvVars(container *corev1.Container, runtime string) {
+	coreClrProfilerPath := ""
+	switch runtime {
+	case "", dotNetRuntimeLinuxGlibc:
+		coreClrProfilerPath = dotNetCoreClrProfilerGlibcPath
+	case dotNetRuntimeLinuxMusl:
+		coreClrProfilerPath = dotNetCoreClrProfilerMuslPath
+	}
+
+	setDotNetEnvVar(container, envDotNetCoreClrEnableProfiling, dotNetCoreClrEnableProfilingEnabled, false)
+
+	setDotNetEnvVar(container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerID, false)
+
+	setDotNetEnvVar(container, envDotNetCoreClrProfilerPath, coreClrProfilerPath, false)
+
+	setDotNetEnvVar(container, envDotNetStartupHook, dotNetStartupHookPath, true)
+
+	setDotNetEnvVar(container, envDotNetAdditionalDeps, dotNetAdditionalDepsPath, true)
+
+	setDotNetEnvVar(container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, false)
+
+	setDotNetEnvVar(container, envDotNetSharedStore, dotNetSharedStorePath, true)
+}
+
 // setDotNetEnvVar function sets env var to the container if not exist already.
 // value of concatValues should be set to true if the env var supports multiple values separated by :.
 // If it is set to false, the original container's env var value has priority.
@@ -128,6 +126,10 @@ func setDotNetEnvVar(container *corev1.Container, envVarName string, envVarValue
 			Name:  envVarName,
 			Value: envVarValue,
 		})
+		return
+	}
+	// Don't modify env var if it uses ValueFrom
+	if container.Env[idx].ValueFrom != nil {
 		return
 	}
 	if concatValues {

@@ -326,6 +326,7 @@ func TestInjectJavaagent(t *testing.T) {
 		},
 	}
 
+	injector := sdkInjector{}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			pod := test.pod
@@ -333,8 +334,11 @@ func TestInjectJavaagent(t *testing.T) {
 			for i := range pod.Spec.Containers {
 				pod, err = injectJavaagent(test.Java, pod, i, v1alpha1.InstrumentationSpec{})
 			}
-			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
+			for i := range pod.Spec.Containers {
+				injector.injectDefaultJavaEnvVars(pod, i, test.Java)
+			}
+			assert.Equal(t, test.expected, pod)
 		})
 	}
 }

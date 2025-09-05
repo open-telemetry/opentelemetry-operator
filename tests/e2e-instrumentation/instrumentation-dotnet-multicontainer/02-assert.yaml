@@ -6,7 +6,6 @@ status:
   availableReplicas: 1
   readyReplicas: 1
   replicas: 1
-  updatedReplicas: 1
 
 ---
 apiVersion: v1
@@ -19,81 +18,80 @@ metadata:
     app: my-dotnet-multi
 spec:
   containers:
-  - env:
-    - name: OTEL_NODE_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.hostIP
-    - name: OTEL_POD_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.podIP
-    - name: ASPNETCORE_URLS
-      value: http://+:8080
-    - name: OTEL_METRIC_EXPORT_INTERVAL
-      value: "30000"
-    - name: CORECLR_ENABLE_PROFILING
-      value: "1"
-    - name: CORECLR_PROFILER
-      value: '{918728DD-259F-4A6A-AC2B-B85E1B658318}'
-    - name: CORECLR_PROFILER_PATH
-      value: /otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
-    - name: DOTNET_STARTUP_HOOKS
-      value: /otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
-    - name: DOTNET_ADDITIONAL_DEPS
-      value: /otel-auto-instrumentation-dotnet/AdditionalDeps
-    - name: OTEL_DOTNET_AUTO_HOME
-      value: /otel-auto-instrumentation-dotnet
-    - name: DOTNET_SHARED_STORE
-      value: /otel-auto-instrumentation-dotnet/store
-    - name: OTEL_TRACES_SAMPLER
-      value: always_on
-    - name: OTEL_SERVICE_NAME
-      value: my-dotnet-multi
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://deployment-collector:4318
-    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: metadata.name
-    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: spec.nodeName
-    - name: OTEL_PROPAGATORS
-      value: b3multi
-    - name: OTEL_RESOURCE_ATTRIBUTES
-    name: myapp
-    ports:
-    - containerPort: 8080
-      protocol: TCP
-    volumeMounts:
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
-    - mountPath: /otel-auto-instrumentation-dotnet
-      name: opentelemetry-auto-instrumentation-dotnet
-  - image: rabbitmq:3
-    name: myrabbit
-    volumeMounts:
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
+    - env:
+        - name: OTEL_NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: OTEL_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: ASPNETCORE_URLS
+          value: http://+:8080
+        - name: OTEL_METRIC_EXPORT_INTERVAL
+          value: "30000"
+        - name: OTEL_TRACES_SAMPLER
+          value: always_on
+        - name: CORECLR_ENABLE_PROFILING
+          value: "1"
+        - name: CORECLR_PROFILER
+          value: '{918728DD-259F-4A6A-AC2B-B85E1B658318}'
+        - name: CORECLR_PROFILER_PATH
+          value: /otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+        - name: DOTNET_STARTUP_HOOKS
+          value: /otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
+        - name: DOTNET_ADDITIONAL_DEPS
+          value: /otel-auto-instrumentation-dotnet/AdditionalDeps
+        - name: OTEL_DOTNET_AUTO_HOME
+          value: /otel-auto-instrumentation-dotnet
+        - name: DOTNET_SHARED_STORE
+          value: /otel-auto-instrumentation-dotnet/store
+        - name: OTEL_SERVICE_NAME
+          value: my-dotnet-multi
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://deployment-collector:4318
+        - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: OTEL_PROPAGATORS
+          value: b3multi
+        - name: OTEL_RESOURCE_ATTRIBUTES
+      ports:
+        - containerPort: 8080
+          protocol: TCP
+      volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+        - mountPath: /otel-auto-instrumentation-dotnet
+          name: opentelemetry-auto-instrumentation-dotnet
+    - image: rabbitmq:3
+      name: myrabbit
+      volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
   initContainers:
-  - name: opentelemetry-auto-instrumentation-dotnet
+    - name: opentelemetry-auto-instrumentation-dotnet
 status:
   containerStatuses:
-  - name: myapp
-    ready: true
-    started: true
-  - name: myrabbit
-    ready: true
-    started: true
+    - name: myapp
+      ready: true
+      started: true
+    - name: myrabbit
+      ready: true
+      started: true
   initContainerStatuses:
-  - name: opentelemetry-auto-instrumentation-dotnet
-    ready: true
+    - name: opentelemetry-auto-instrumentation-dotnet
+      ready: true
   phase: Running
 ---
 apiVersion: apps/v1
@@ -105,6 +103,10 @@ metadata:
     app.kubernetes.io/name: deployment-collector
     app.kubernetes.io/part-of: opentelemetry
   name: deployment-collector
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
 ---
 apiVersion: v1
 kind: Service
@@ -115,3 +117,15 @@ metadata:
     app.kubernetes.io/name: deployment-collector
     app.kubernetes.io/part-of: opentelemetry
   name: deployment-collector
+spec:
+  ports:
+  - appProtocol: grpc
+    name: otlp-grpc
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - appProtocol: http
+    name: otlp-http
+    port: 4318
+    protocol: TCP
+    targetPort: 4318

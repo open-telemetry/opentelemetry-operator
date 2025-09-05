@@ -47,6 +47,12 @@ spec:
       value: "0.85"
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_METRICS_EXPORTER
+      value: otlp
+    - name: OTEL_LOGS_EXPORTER
+      value: otlp
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
       valueFrom:
         fieldRef:
@@ -60,12 +66,6 @@ spec:
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
     - name: OTEL_RESOURCE_ATTRIBUTES
-    - name: OTEL_EXPORTER_OTLP_PROTOCOL
-      value: http/protobuf
-    - name: OTEL_METRICS_EXPORTER
-      value: otlp
-    - name: OTEL_LOGS_EXPORTER
-      value: otlp
     name: pythonapp
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
