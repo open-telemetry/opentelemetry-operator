@@ -107,7 +107,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
-				pod = i.injectDefaultEnvVars(pod, index, getDefaultPythonEnvVars()...)
+				pod = i.injectDefaultEnvVars("python", pod, index, "")
 				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, pythonInitContainerName)
 			}
 		}
@@ -129,6 +129,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+				pod = i.injectDefaultEnvVars("dotnet", pod, index, insts.DotNet.AdditionalAnnotations[annotationDotNetRuntime])
 				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, dotnetInitContainerName)
 			}
 		}
@@ -278,10 +279,23 @@ func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod 
 	return pod
 }
 
-func (i *sdkInjector) injectDefaultEnvVars(pod corev1.Pod, index int, defaultEnvVars ...corev1.EnvVar) corev1.Pod {
-	container := &pod.Spec.Containers[index]
-	container.Env = appendIfNotSet(container.Env, defaultEnvVars...)
-	return pod
+func (i *sdkInjector) injectDefaultEnvVars(language string, pod corev1.Pod, index int, runtime string) corev1.Pod {
+	switch language {
+	case "python":
+		container := &pod.Spec.Containers[index]
+		container.Env = appendIfNotSet(container.Env, getDefaultPythonEnvVars()...)
+		return pod
+	case "dotnet":
+		container := &pod.Spec.Containers[index]
+		envs := injectDefaultDotNetEnvVars(pod, runtime, index)
+		// Append dotnet-specific defaults only if they are not already present.
+		// This preserves previously injected OTEL_* env vars and their ordering
+		// (OTEL_RESOURCE_ATTRIBUTES must be after the env vars it references).
+		container.Env = appendIfNotSet(container.Env, envs...)
+		return pod
+	default:
+		return pod
+	}
 }
 
 // injectCommonSDKConfig adds common SDK configuration environment variables to the necessary pod
