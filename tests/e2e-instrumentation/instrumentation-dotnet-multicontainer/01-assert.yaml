@@ -23,20 +23,6 @@ spec:
       value: http://+:8080
     - name: OTEL_METRIC_EXPORT_INTERVAL
       value: "30000"
-    - name: CORECLR_ENABLE_PROFILING
-      value: "1"
-    - name: CORECLR_PROFILER
-      value: '{918728DD-259F-4A6A-AC2B-B85E1B658318}'
-    - name: CORECLR_PROFILER_PATH
-      value: /otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
-    - name: DOTNET_STARTUP_HOOKS
-      value: /otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
-    - name: DOTNET_ADDITIONAL_DEPS
-      value: /otel-auto-instrumentation-dotnet/AdditionalDeps
-    - name: OTEL_DOTNET_AUTO_HOME
-      value: /otel-auto-instrumentation-dotnet
-    - name: DOTNET_SHARED_STORE
-      value: /otel-auto-instrumentation-dotnet/store
     - name: OTEL_TRACES_SAMPLER
       value: always_on
     - name: OTEL_SERVICE_NAME
@@ -56,6 +42,20 @@ spec:
     - name: OTEL_PROPAGATORS
       value: b3multi
     - name: OTEL_RESOURCE_ATTRIBUTES
+    - name: CORECLR_ENABLE_PROFILING
+      value: "1"
+    - name: CORECLR_PROFILER
+      value: '{918728DD-259F-4A6A-AC2B-B85E1B658318}'
+    - name: CORECLR_PROFILER_PATH
+      value: /otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+    - name: DOTNET_STARTUP_HOOKS
+      value: /otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
+    - name: DOTNET_ADDITIONAL_DEPS
+      value: /otel-auto-instrumentation-dotnet/AdditionalDeps
+    - name: OTEL_DOTNET_AUTO_HOME
+      value: /otel-auto-instrumentation-dotnet
+    - name: DOTNET_SHARED_STORE
+      value: /otel-auto-instrumentation-dotnet/store
     name: myapp
     ports:
     - containerPort: 8080
@@ -78,20 +78,6 @@ spec:
           fieldPath: status.podIP
     - name: OTEL_METRIC_EXPORT_INTERVAL
       value: "30000"
-    - name: CORECLR_ENABLE_PROFILING
-      value: "1"
-    - name: CORECLR_PROFILER
-      value: '{918728DD-259F-4A6A-AC2B-B85E1B658318}'
-    - name: CORECLR_PROFILER_PATH
-      value: /otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
-    - name: DOTNET_STARTUP_HOOKS
-      value: /otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
-    - name: DOTNET_ADDITIONAL_DEPS
-      value: /otel-auto-instrumentation-dotnet/AdditionalDeps
-    - name: OTEL_DOTNET_AUTO_HOME
-      value: /otel-auto-instrumentation-dotnet
-    - name: DOTNET_SHARED_STORE
-      value: /otel-auto-instrumentation-dotnet/store
     - name: OTEL_TRACES_SAMPLER
       value: always_on
     - name: OTEL_SERVICE_NAME
@@ -111,6 +97,20 @@ spec:
     - name: OTEL_PROPAGATORS
       value: b3multi
     - name: OTEL_RESOURCE_ATTRIBUTES
+    - name: CORECLR_ENABLE_PROFILING
+      value: "1"
+    - name: CORECLR_PROFILER
+      value: '{918728DD-259F-4A6A-AC2B-B85E1B658318}'
+    - name: CORECLR_PROFILER_PATH
+      value: /otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+    - name: DOTNET_STARTUP_HOOKS
+      value: /otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
+    - name: DOTNET_ADDITIONAL_DEPS
+      value: /otel-auto-instrumentation-dotnet/AdditionalDeps
+    - name: OTEL_DOTNET_AUTO_HOME
+      value: /otel-auto-instrumentation-dotnet
+    - name: DOTNET_SHARED_STORE
+      value: /otel-auto-instrumentation-dotnet/store
     name: myrabbit
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount

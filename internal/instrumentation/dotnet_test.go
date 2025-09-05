@@ -184,20 +184,17 @@ func TestInjectDotNetSDK(t *testing.T) {
 								},
 								{
 									Name:  envDotNetStartupHook,
-									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetStartupHookPath),
+									Value: "/foo:/bar:/otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll",
 								},
 								{
 									Name:  envDotNetAdditionalDeps,
-									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetAdditionalDepsPath),
+									Value: "/foo:/bar:/otel-auto-instrumentation-dotnet/AdditionalDeps",
 								},
 								{
 									Name:  envDotNetSharedStore,
-									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetSharedStorePath),
+									Value: "/foo:/bar:/otel-auto-instrumentation-dotnet/store",
 								},
-								{
-									Name:  envDotNetOTelAutoHome,
-									Value: dotNetOTelAutoHomePath,
-								},
+								{Name: envDotNetOTelAutoHome, Value: dotNetOTelAutoHomePath},
 							},
 						},
 					},
@@ -537,11 +534,18 @@ func TestInjectDotNetSDK(t *testing.T) {
 		},
 	}
 
+	injector := sdkInjector{}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			pod, err := injectDotNetSDK(test.DotNet, test.pod, 0, test.runtime, v1alpha1.InstrumentationSpec{})
-			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
+			if err == nil {
+				pod = injector.injectDefaultEnvVars("dotnet", pod, 0, test.runtime)
+				assert.Equal(t, test.expected, pod)
+				assert.Equal(t, test.err, err)
+			} else {
+				assert.Equal(t, test.expected, pod)
+			}
 		})
 	}
 }
