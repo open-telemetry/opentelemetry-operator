@@ -1227,22 +1227,6 @@ func TestInjectPython(t *testing.T) {
 							Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 						},
 						{
-							Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
-							Value: "http/protobuf",
-						},
-						{
-							Name:  "OTEL_TRACES_EXPORTER",
-							Value: "otlp",
-						},
-						{
-							Name:  "OTEL_METRICS_EXPORTER",
-							Value: "otlp",
-						},
-						{
-							Name:  "OTEL_LOGS_EXPORTER",
-							Value: "otlp",
-						},
-						{
 							Name:  "OTEL_SERVICE_NAME",
 							Value: "app",
 						},
@@ -1269,6 +1253,22 @@ func TestInjectPython(t *testing.T) {
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
 							Value: "k8s.container.name=app,k8s.namespace.name=ns,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ns.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=ns,service.version=latest",
+						},
+						{
+							Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+							Value: "http/protobuf",
+						},
+						{
+							Name:  "OTEL_TRACES_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_METRICS_EXPORTER",
+							Value: "otlp",
+						},
+						{
+							Name:  "OTEL_LOGS_EXPORTER",
+							Value: "otlp",
 						},
 					},
 				},
