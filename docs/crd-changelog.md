@@ -30,16 +30,13 @@ spec:
          config:
             scrape_configs: []
     processors:
-      batch:
-        send_batch_size: 1000
-        timeout: 10s
     exporters:
       debug: {}
     service:
       pipelines:
         traces:
           receivers: [prometheus]
-          processors: [batch]
+          processors: []
           exporters: [debug]
 ```
 
@@ -59,16 +56,13 @@ spec:
          config:
             scrape_configs: []
     processors:
-      batch:
-        send_batch_size: 1000
-        timeout: 10s
     exporters:
       debug: {}
     service:
       pipelines:
         traces:
           receivers: [prometheus]
-          processors: [batch]
+          processors: []
           exporters: [debug]
 ---
 apiVersion: opentelemetry.io/v1alpha1
@@ -139,9 +133,6 @@ spec:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
-      batch:
-        send_batch_size: 10000
-        timeout: 10s
 
     exporters:
       debug:
@@ -150,7 +141,7 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [memory_limiter, batch]
+          processors: [memory_limiter]
           exporters: [debug]
 ```
 
@@ -173,16 +164,13 @@ spec:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
-      batch:
-        send_batch_size: 10000
-        timeout: 10s
     exporters:
       debug: {}
     service:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [memory_limiter, batch]
+          processors: [memory_limiter]
           exporters: [debug]
 ```
 
