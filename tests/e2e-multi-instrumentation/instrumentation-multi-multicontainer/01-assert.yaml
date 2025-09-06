@@ -18,428 +18,428 @@ metadata:
     app: pod-with-multi-instrumentation
 spec:
   containers:
-  - env:
-    - name: OTEL_NODE_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.hostIP
-    - name: OTEL_POD_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.podIP
-    - name: ASPNETCORE_URLS
-      value: http://+:8083
-    - name: OTEL_SERVICE_NAME
-      value: dotnetapp
-    - name: CORECLR_ENABLE_PROFILING
-      value: "1"
-    - name: CORECLR_PROFILER
-      value: '{918728DD-259F-4A6A-AC2B-B85E1B658318}'
-    - name: CORECLR_PROFILER_PATH
-      value: /otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
-    - name: DOTNET_STARTUP_HOOKS
-      value: /otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
-    - name: DOTNET_ADDITIONAL_DEPS
-      value: /otel-auto-instrumentation-dotnet/AdditionalDeps
-    - name: OTEL_DOTNET_AUTO_HOME
-      value: /otel-auto-instrumentation-dotnet
-    - name: DOTNET_SHARED_STORE
-      value: /otel-auto-instrumentation-dotnet/store
-    - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://deployment-collector:4317
-    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: metadata.name
-    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: spec.nodeName
-    - name: OTEL_PROPAGATORS
-      value: jaeger,b3
-    - name: OTEL_RESOURCE_ATTRIBUTES
-    name: dotnetapp
-    volumeMounts:
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
-    - mountPath: /otel-auto-instrumentation-dotnet
-      name: opentelemetry-auto-instrumentation-dotnet
-  - env:
-    - name: OTEL_NODE_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.hostIP
-    - name: OTEL_POD_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.podIP
-    - name: SERVER_PORT
-      value: "8086"
-    - name: OTEL_SERVICE_NAME
-      value: javaapp
-    - name: JAVA_TOOL_OPTIONS
-      value: ' -javaagent:/otel-auto-instrumentation-java-javaapp/javaagent.jar'
-    - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://deployment-collector:4317
-    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: metadata.name
-    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: spec.nodeName
-    - name: OTEL_PROPAGATORS
-      value: jaeger,b3
-    - name: OTEL_RESOURCE_ATTRIBUTES
-    name: javaapp
-    volumeMounts:
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
-    - mountPath: /otel-auto-instrumentation-java-javaapp
-      name: opentelemetry-auto-instrumentation-java
-  - env:
-    - name: OTEL_NODE_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.hostIP
-    - name: OTEL_POD_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.podIP
-    - name: NODE_PATH
-      value: /usr/local/lib/node_modules
-    - name: OTEL_SERVICE_NAME
-      value: nodejsapp
-    - name: NODE_OPTIONS
-      value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
-    - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://deployment-collector:4317
-    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: metadata.name
-    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: spec.nodeName
-    - name: OTEL_PROPAGATORS
-      value: jaeger,b3
-    - name: OTEL_RESOURCE_ATTRIBUTES
-    name: nodejsapp
-    volumeMounts:
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
-    - mountPath: /otel-auto-instrumentation-nodejs
-      name: opentelemetry-auto-instrumentation-nodejs
-  - command:
-    - flask
-    - run
-    - -p
-    - "8087"
-    env:
-    - name: OTEL_NODE_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.hostIP
-    - name: OTEL_POD_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.podIP
-    - name: OTEL_SERVICE_NAME
-      value: pythonapp
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://deployment-collector:4318
-    - name: PYTHONPATH
-      value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
-    - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
-    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: metadata.name
-    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: spec.nodeName
-    - name: OTEL_PROPAGATORS
-      value: jaeger,b3
-    - name: OTEL_RESOURCE_ATTRIBUTES
-    - name: OTEL_EXPORTER_OTLP_PROTOCOL
-      value: http/protobuf
-    - name: OTEL_TRACES_EXPORTER
-      value: otlp
-    - name: OTEL_METRICS_EXPORTER
-      value: otlp
-    - name: OTEL_LOGS_EXPORTER
-      value: otlp
-    name: pythonapp
-    volumeMounts:
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
-    - mountPath: /otel-auto-instrumentation-python
-      name: opentelemetry-auto-instrumentation-python
-  - command:
-    - flask
-    - run
-    - -p
-    - "8088"
-    env:
-    - name: OTEL_NODE_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.hostIP
-    - name: OTEL_POD_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.podIP
-    - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
-    - name: OTEL_SERVICE_NAME
-      value: deployment-with-multi-instrumentation
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://deployment-collector:4317
-    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: metadata.name
-    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: spec.nodeName
-    - name: OTEL_PROPAGATORS
-      value: jaeger,b3
-    - name: OTEL_RESOURCE_ATTRIBUTES
-    name: sdkapp
-    volumeMounts:
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
-  - env:
-    - name: OTEL_NODE_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.hostIP
-    - name: OTEL_POD_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.podIP
-    - name: OTEL_SERVICE_NAME
-      value: apache-httpd-app
-    - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://deployment-collector:4317
-    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: metadata.name
-    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: spec.nodeName
-    - name: OTEL_PROPAGATORS
-      value: jaeger,b3
-    - name: OTEL_RESOURCE_ATTRIBUTES
-    name: apache-httpd-app
-    volumeMounts:
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
-    - mountPath: /opt/opentelemetry-webserver/agent
-      name: otel-apache-agent
-    - mountPath: /usr/local/apache2/conf
-      name: otel-apache-conf-dir
-  - env:
-    - name: LD_LIBRARY_PATH
-      value: /opt
-    - name: NGINX_PORT
-      value: "8765"
-    lifecycle:
-      postStart:
-        exec:
-          command:
-          - /bin/sh
-          - -c
-          - echo Hello from the postStart handler
-    name: nginxapp
-    volumeMounts:
-    - mountPath: /etc/nginx/conf.d
-      name: nginx-conf
-      readOnly: true
-      subPath: default.conf
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
+    - env:
+        - name: OTEL_NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: OTEL_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: ASPNETCORE_URLS
+          value: http://+:8083
+        - name: OTEL_SERVICE_NAME
+          value: dotnetapp
+        - name: OTEL_TRACES_SAMPLER
+          value: parentbased_traceidratio
+        - name: OTEL_TRACES_SAMPLER_ARG
+          value: "0.85"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://deployment-collector:4317
+        - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: OTEL_PROPAGATORS
+          value: jaeger,b3
+        - name: OTEL_RESOURCE_ATTRIBUTES
+        - name: CORECLR_ENABLE_PROFILING
+          value: "1"
+        - name: CORECLR_PROFILER
+          value: "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
+        - name: CORECLR_PROFILER_PATH
+          value: /otel-auto-instrumentation-dotnet/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+        - name: DOTNET_STARTUP_HOOKS
+          value: /otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
+        - name: DOTNET_ADDITIONAL_DEPS
+          value: /otel-auto-instrumentation-dotnet/AdditionalDeps
+        - name: OTEL_DOTNET_AUTO_HOME
+          value: /otel-auto-instrumentation-dotnet
+        - name: DOTNET_SHARED_STORE
+          value: /otel-auto-instrumentation-dotnet/store
+      name: dotnetapp
+      volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+        - mountPath: /otel-auto-instrumentation-dotnet
+          name: opentelemetry-auto-instrumentation-dotnet
+    - env:
+        - name: OTEL_NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: OTEL_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: SERVER_PORT
+          value: "8086"
+        - name: OTEL_SERVICE_NAME
+          value: javaapp
+        - name: JAVA_TOOL_OPTIONS
+          value: " -javaagent:/otel-auto-instrumentation-java-javaapp/javaagent.jar"
+        - name: OTEL_TRACES_SAMPLER
+          value: parentbased_traceidratio
+        - name: OTEL_TRACES_SAMPLER_ARG
+          value: "0.85"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://deployment-collector:4317
+        - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: OTEL_PROPAGATORS
+          value: jaeger,b3
+        - name: OTEL_RESOURCE_ATTRIBUTES
+      name: javaapp
+      volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+        - mountPath: /otel-auto-instrumentation-java-javaapp
+          name: opentelemetry-auto-instrumentation-java
+    - env:
+        - name: OTEL_NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: OTEL_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: NODE_PATH
+          value: /usr/local/lib/node_modules
+        - name: OTEL_SERVICE_NAME
+          value: nodejsapp
+        - name: NODE_OPTIONS
+          value: " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js"
+        - name: OTEL_TRACES_SAMPLER
+          value: parentbased_traceidratio
+        - name: OTEL_TRACES_SAMPLER_ARG
+          value: "0.85"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://deployment-collector:4317
+        - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: OTEL_PROPAGATORS
+          value: jaeger,b3
+        - name: OTEL_RESOURCE_ATTRIBUTES
+      name: nodejsapp
+      volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+        - mountPath: /otel-auto-instrumentation-nodejs
+          name: opentelemetry-auto-instrumentation-nodejs
+    - command:
+        - flask
+        - run
+        - -p
+        - "8087"
+      env:
+        - name: OTEL_NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: OTEL_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: OTEL_SERVICE_NAME
+          value: pythonapp
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://deployment-collector:4318
+        - name: PYTHONPATH
+          value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
+        - name: OTEL_TRACES_SAMPLER
+          value: parentbased_traceidratio
+        - name: OTEL_TRACES_SAMPLER_ARG
+          value: "0.85"
+        - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: OTEL_PROPAGATORS
+          value: jaeger,b3
+        - name: OTEL_RESOURCE_ATTRIBUTES
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: http/protobuf
+        - name: OTEL_TRACES_EXPORTER
+          value: otlp
+        - name: OTEL_METRICS_EXPORTER
+          value: otlp
+        - name: OTEL_LOGS_EXPORTER
+          value: otlp
+      name: pythonapp
+      volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+        - mountPath: /otel-auto-instrumentation-python
+          name: opentelemetry-auto-instrumentation-python
+    - command:
+        - flask
+        - run
+        - -p
+        - "8088"
+      env:
+        - name: OTEL_NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: OTEL_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: OTEL_TRACES_SAMPLER
+          value: parentbased_traceidratio
+        - name: OTEL_TRACES_SAMPLER_ARG
+          value: "0.85"
+        - name: OTEL_SERVICE_NAME
+          value: deployment-with-multi-instrumentation
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://deployment-collector:4317
+        - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: OTEL_PROPAGATORS
+          value: jaeger,b3
+        - name: OTEL_RESOURCE_ATTRIBUTES
+      name: sdkapp
+      volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+    - env:
+        - name: OTEL_NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: OTEL_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: OTEL_SERVICE_NAME
+          value: apache-httpd-app
+        - name: OTEL_TRACES_SAMPLER
+          value: parentbased_traceidratio
+        - name: OTEL_TRACES_SAMPLER_ARG
+          value: "0.85"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://deployment-collector:4317
+        - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: OTEL_PROPAGATORS
+          value: jaeger,b3
+        - name: OTEL_RESOURCE_ATTRIBUTES
+      name: apache-httpd-app
+      volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+        - mountPath: /opt/opentelemetry-webserver/agent
+          name: otel-apache-agent
+        - mountPath: /usr/local/apache2/conf
+          name: otel-apache-conf-dir
+    - env:
+        - name: LD_LIBRARY_PATH
+          value: /opt
+        - name: NGINX_PORT
+          value: "8765"
+      lifecycle:
+        postStart:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - echo Hello from the postStart handler
+      name: nginxapp
+      volumeMounts:
+        - mountPath: /etc/nginx/conf.d
+          name: nginx-conf
+          readOnly: true
+          subPath: default.conf
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
   initContainers:
-  - command:
-    - cp
-    - /javaagent.jar
-    - /otel-auto-instrumentation-java/javaagent.jar
-    name: opentelemetry-auto-instrumentation-java
-    volumeMounts:
-    - mountPath: /otel-auto-instrumentation-java
+    - command:
+        - cp
+        - /javaagent.jar
+        - /otel-auto-instrumentation-java/javaagent.jar
       name: opentelemetry-auto-instrumentation-java
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
-  - command:
-    - cp
-    - -r
-    - /autoinstrumentation/.
-    - /otel-auto-instrumentation-nodejs
-    name: opentelemetry-auto-instrumentation-nodejs
-    volumeMounts:
-    - mountPath: /otel-auto-instrumentation-nodejs
+      volumeMounts:
+        - mountPath: /otel-auto-instrumentation-java
+          name: opentelemetry-auto-instrumentation-java
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+    - command:
+        - cp
+        - -r
+        - /autoinstrumentation/.
+        - /otel-auto-instrumentation-nodejs
       name: opentelemetry-auto-instrumentation-nodejs
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
-  - command:
-    - cp
-    - -r
-    - /autoinstrumentation/.
-    - /otel-auto-instrumentation-python
-    name: opentelemetry-auto-instrumentation-python
-    volumeMounts:
-    - mountPath: /otel-auto-instrumentation-python
+      volumeMounts:
+        - mountPath: /otel-auto-instrumentation-nodejs
+          name: opentelemetry-auto-instrumentation-nodejs
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+    - command:
+        - cp
+        - -r
+        - /autoinstrumentation/.
+        - /otel-auto-instrumentation-python
       name: opentelemetry-auto-instrumentation-python
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
-  - command:
-    - cp
-    - -r
-    - /autoinstrumentation/.
-    - /otel-auto-instrumentation-dotnet
-    name: opentelemetry-auto-instrumentation-dotnet
-    volumeMounts:
-    - mountPath: /otel-auto-instrumentation-dotnet
+      volumeMounts:
+        - mountPath: /otel-auto-instrumentation-python
+          name: opentelemetry-auto-instrumentation-python
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+    - command:
+        - cp
+        - -r
+        - /autoinstrumentation/.
+        - /otel-auto-instrumentation-dotnet
       name: opentelemetry-auto-instrumentation-dotnet
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
-  - args:
-    - cp -r /usr/local/apache2/conf/* /opt/opentelemetry-webserver/source-conf
-    command:
-    - /bin/sh
-    - -c
-    env:
-    - name: OTEL_SERVICE_NAME
-      value: apache-httpd-app
-    name: otel-agent-source-container-clone
-    volumeMounts:
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
-    - mountPath: /opt/opentelemetry-webserver/source-conf
-      name: otel-apache-conf-dir
-  - command:
-    - /bin/sh
-    - -c
-    env:
-    - name: OTEL_APACHE_AGENT_CONF
-    - name: APACHE_SERVICE_INSTANCE_ID
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: metadata.name
-    name: otel-agent-attach-apache
-    volumeMounts:
-    - mountPath: /opt/opentelemetry-webserver/agent
-      name: otel-apache-agent
-    - mountPath: /opt/opentelemetry-webserver/source-conf
-      name: otel-apache-conf-dir
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      readOnly: true
+      volumeMounts:
+        - mountPath: /otel-auto-instrumentation-dotnet
+          name: opentelemetry-auto-instrumentation-dotnet
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+    - args:
+        - cp -r /usr/local/apache2/conf/* /opt/opentelemetry-webserver/source-conf
+      command:
+        - /bin/sh
+        - -c
+      env:
+        - name: OTEL_SERVICE_NAME
+          value: apache-httpd-app
+      name: otel-agent-source-container-clone
+      volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+        - mountPath: /opt/opentelemetry-webserver/source-conf
+          name: otel-apache-conf-dir
+    - command:
+        - /bin/sh
+        - -c
+      env:
+        - name: OTEL_APACHE_AGENT_CONF
+        - name: APACHE_SERVICE_INSTANCE_ID
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+      name: otel-agent-attach-apache
+      volumeMounts:
+        - mountPath: /opt/opentelemetry-webserver/agent
+          name: otel-apache-agent
+        - mountPath: /opt/opentelemetry-webserver/source-conf
+          name: otel-apache-conf-dir
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
 status:
   containerStatuses:
-  - name: apache-httpd-app
-    ready: true
-    started: true
-  - name: dotnetapp
-    ready: true
-    started: true
-  - name: javaapp
-    ready: true
-    started: true
-  - name: nginxapp
-    ready: true
-    started: true
-  - name: nodejsapp
-    ready: true
-    started: true
-  - name: pythonapp
-    ready: true
-    started: true
-  - name: sdkapp
-    ready: true
-    started: true
+    - name: apache-httpd-app
+      ready: true
+      started: true
+    - name: dotnetapp
+      ready: true
+      started: true
+    - name: javaapp
+      ready: true
+      started: true
+    - name: nginxapp
+      ready: true
+      started: true
+    - name: nodejsapp
+      ready: true
+      started: true
+    - name: pythonapp
+      ready: true
+      started: true
+    - name: sdkapp
+      ready: true
+      started: true
   initContainerStatuses:
-  - name: opentelemetry-auto-instrumentation-java
-    ready: true
-    state:
-      terminated:
-        reason: Completed
-  - name: opentelemetry-auto-instrumentation-nodejs
-    ready: true
-    state:
-      terminated:
-        reason: Completed
-  - name: opentelemetry-auto-instrumentation-python
-    ready: true
-    state:
-      terminated:
-        reason: Completed
-  - name: opentelemetry-auto-instrumentation-dotnet
-    ready: true
-    state:
-      terminated:
-        reason: Completed
-  - name: otel-agent-source-container-clone
-    ready: true
-    state:
-      terminated:
-        reason: Completed
-  - name: otel-agent-attach-apache
-    ready: true
-    state:
-      terminated:
-        reason: Completed
+    - name: opentelemetry-auto-instrumentation-java
+      ready: true
+      state:
+        terminated:
+          reason: Completed
+    - name: opentelemetry-auto-instrumentation-nodejs
+      ready: true
+      state:
+        terminated:
+          reason: Completed
+    - name: opentelemetry-auto-instrumentation-python
+      ready: true
+      state:
+        terminated:
+          reason: Completed
+    - name: opentelemetry-auto-instrumentation-dotnet
+      ready: true
+      state:
+        terminated:
+          reason: Completed
+    - name: otel-agent-source-container-clone
+      ready: true
+      state:
+        terminated:
+          reason: Completed
+    - name: otel-agent-attach-apache
+      ready: true
+      state:
+        terminated:
+          reason: Completed
   phase: Running
 ---
 apiVersion: apps/v1
@@ -467,13 +467,13 @@ metadata:
   name: deployment-collector
 spec:
   ports:
-  - appProtocol: grpc
-    name: otlp-grpc
-    port: 4317
-    protocol: TCP
-    targetPort: 4317
-  - appProtocol: http
-    name: otlp-http
-    port: 4318
-    protocol: TCP
-    targetPort: 4318
+    - appProtocol: grpc
+      name: otlp-grpc
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - appProtocol: http
+      name: otlp-http
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
