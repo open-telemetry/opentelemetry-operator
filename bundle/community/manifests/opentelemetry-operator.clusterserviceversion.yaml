@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2025-10-27T18:11:36Z"
+    createdAt: "2025-11-03T16:15:22Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -111,6 +111,9 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+    - kind: ClusterObservability
+      name: clusterobservabilities.opentelemetry.io
+      version: v1alpha1
     - description: Instrumentation is the spec for OpenTelemetry instrumentation.
       displayName: OpenTelemetry Instrumentation
       kind: Instrumentation
@@ -429,18 +432,10 @@ spec:
         - apiGroups:
           - opentelemetry.io
           resources:
+          - clusterobservabilities
           - instrumentations
-          - opentelemetrycollectors
-          verbs:
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - opentelemetry.io
-          resources:
           - opampbridges
+          - opentelemetrycollectors
           - targetallocators
           - targetallocators/finalizers
           verbs:
@@ -454,12 +449,14 @@ spec:
         - apiGroups:
           - opentelemetry.io
           resources:
+          - clusterobservabilities/finalizers
           - opampbridges/finalizers
           verbs:
           - update
         - apiGroups:
           - opentelemetry.io
           resources:
+          - clusterobservabilities/status
           - opampbridges/status
           - opentelemetrycollectors/finalizers
           - opentelemetrycollectors/status
@@ -485,6 +482,18 @@ spec:
           resources:
           - routes
           - routes/custom-host
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - security.openshift.io
+          resources:
+          - securitycontextconstraints
           verbs:
           - create
           - delete
