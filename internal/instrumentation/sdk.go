@@ -285,7 +285,7 @@ func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod 
 // injectDefaultJavaEnvVars injects default environment variables for Java.
 func (i *sdkInjector) injectDefaultJavaEnvVars(pod corev1.Pod, index int, javaSpec v1alpha1.Java) corev1.Pod {
 	container := &pod.Spec.Containers[index]
-	container.Env = appendIfNotSet(container.Env, getDefaultJavaEnvVars(pod, index, javaSpec)...)
+	container.Env = appendOrReplace(container.Env, getDefaultJavaEnvVars(pod, index, javaSpec)...)
 	return pod
 }
 
@@ -293,7 +293,7 @@ func (i *sdkInjector) injectDefaultJavaEnvVars(pod corev1.Pod, index int, javaSp
 func (i *sdkInjector) injectDefaultNodeJSEnvVars(pod corev1.Pod, index int) corev1.Pod {
 	container := &pod.Spec.Containers[index]
 	envVars := getDefaultNodeJSEnvVars(pod, index)
-	container.Env = appendIfNotSet(container.Env, envVars...)
+	container.Env = appendOrReplace(container.Env, envVars...)
 	return pod
 }
 
@@ -732,6 +732,23 @@ func appendIfNotSet(envs []corev1.EnvVar, newEnvVars ...corev1.EnvVar) []corev1.
 		if _, ok := keys[envVar.Name]; !ok {
 			envs = append(envs, envVar)
 			keys[envVar.Name] = struct{}{}
+		}
+	}
+	return envs
+}
+
+// appendOrReplace appends new environment variables or replaces existing ones.
+// This is used for instrumentation where we need to modify existing environment variables
+// (e.g., adding javaagent to existing JAVA_TOOL_OPTIONS).
+func appendOrReplace(envs []corev1.EnvVar, newEnvVars ...corev1.EnvVar) []corev1.EnvVar {
+	for _, newEnvVar := range newEnvVars {
+		idx := getIndexOfEnv(envs, newEnvVar.Name)
+		if idx == -1 {
+			// Environment variable doesn't exist, append it
+			envs = append(envs, newEnvVar)
+		} else {
+			// Environment variable exists, replace it
+			envs[idx] = newEnvVar
 		}
 	}
 	return envs
