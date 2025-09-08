@@ -64,7 +64,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 				i.logger.Info("Skipping javaagent injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
-				pod = i.injectDefaultEnvVars("java", pod, index, "", otelinst.Spec.Java)
+				pod = i.injectDefaultJavaEnvVars(pod, index, otelinst.Spec.Java)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, javaInitContainerName)
 			}
@@ -86,7 +86,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 				i.logger.Info("Skipping NodeJS SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
-				pod = i.injectDefaultEnvVars("nodejs", pod, index, "")
+				pod = i.injectDefaultNodeJSEnvVars(pod, index)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, nodejsInitContainerName)
 			}
@@ -108,7 +108,7 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 				i.logger.Info("Skipping Python SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
-				pod = i.injectDefaultEnvVars("python", pod, index, "")
+				pod = i.injectDefaultPythonEnvVars(pod, index)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, pythonInitContainerName)
 			}
@@ -130,7 +130,8 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 				i.logger.Info("Skipping DotNet SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
 			} else {
 				pod = i.injectCommonEnvVar(otelinst, pod, index)
-				pod = i.injectDefaultEnvVars("dotnet", pod, index, insts.DotNet.AdditionalAnnotations[annotationDotNetRuntime])
+				// pod = i.injectDefaultEnvVars("dotnet", pod, index, insts.DotNet.AdditionalAnnotations[annotationDotNetRuntime])
+				pod = i.injectDefaultDotNetEnvVarsWrapper(pod, index, insts.DotNet.AdditionalAnnotations[annotationDotNetRuntime])
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
 				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, dotnetInitContainerName)
 			}
@@ -154,7 +155,6 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		} else {
 			// Common env vars and config need to be applied to the agent contain.
 			pod = i.injectCommonEnvVar(otelinst, pod, len(pod.Spec.Containers)-1)
-			pod = i.injectDefaultEnvVars("go", pod, len(pod.Spec.Containers)-1, "")
 			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, len(pod.Spec.Containers)-1, index)
 
 			// Ensure that after all the env var coalescing we have a value for OTEL_GO_AUTO_TARGET_EXE
@@ -282,32 +282,33 @@ func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, pod 
 	return pod
 }
 
-func (i *sdkInjector) injectDefaultEnvVars(language string, pod corev1.Pod, index int, runtime string, javaSpec ...v1alpha1.Java) corev1.Pod {
-	switch language {
-	case "java":
-		container := &pod.Spec.Containers[index]
-		var spec v1alpha1.Java
-		if len(javaSpec) > 0 {
-			spec = javaSpec[0]
-		}
-		container.Env = appendIfNotSet(container.Env, getDefaultJavaEnvVars(pod, index, spec)...)
-		return pod
-	case "nodejs":
-		container := &pod.Spec.Containers[index]
-		envVars := getDefaultNodeJSEnvVars(pod, index)
-		container.Env = appendIfNotSet(container.Env, envVars...)
-		return pod
-	case "python":
-		container := &pod.Spec.Containers[index]
-		container.Env = appendIfNotSet(container.Env, getDefaultPythonEnvVars()...)
-		return pod
-	case "dotnet":
-		container := &pod.Spec.Containers[index]
-		injectDefaultDotNetEnvVars(container, runtime)
-		return pod
-	default:
-		return pod
-	}
+// injectDefaultJavaEnvVars injects default environment variables for Java.
+func (i *sdkInjector) injectDefaultJavaEnvVars(pod corev1.Pod, index int, javaSpec v1alpha1.Java) corev1.Pod {
+	container := &pod.Spec.Containers[index]
+	container.Env = appendIfNotSet(container.Env, getDefaultJavaEnvVars(pod, index, javaSpec)...)
+	return pod
+}
+
+// injectDefaultNodeJSEnvVars injects default environment variables for Node.js.
+func (i *sdkInjector) injectDefaultNodeJSEnvVars(pod corev1.Pod, index int) corev1.Pod {
+	container := &pod.Spec.Containers[index]
+	envVars := getDefaultNodeJSEnvVars(pod, index)
+	container.Env = appendIfNotSet(container.Env, envVars...)
+	return pod
+}
+
+// injectDefaultPythonEnvVars injects default environment variables for Python.
+func (i *sdkInjector) injectDefaultPythonEnvVars(pod corev1.Pod, index int) corev1.Pod {
+	container := &pod.Spec.Containers[index]
+	container.Env = appendIfNotSet(container.Env, getDefaultPythonEnvVars()...)
+	return pod
+}
+
+// injectDefaultDotNetEnvVarsWrapper injects default environment variables for .NET.
+func (i *sdkInjector) injectDefaultDotNetEnvVarsWrapper(pod corev1.Pod, index int, runtime string) corev1.Pod {
+	container := &pod.Spec.Containers[index]
+	injectDefaultDotNetEnvVars(container, runtime)
+	return pod
 }
 
 // injectCommonSDKConfig adds common SDK configuration environment variables to the necessary pod

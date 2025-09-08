@@ -336,7 +336,7 @@ func TestInjectJavaagent(t *testing.T) {
 			}
 			assert.Equal(t, test.err, err)
 			for i := range pod.Spec.Containers {
-				injector.injectDefaultEnvVars("java", pod, i, "", test.Java)
+				injector.injectDefaultJavaEnvVars(pod, i, test.Java)
 			}
 			assert.Equal(t, test.expected, pod)
 		})

@@ -540,7 +540,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 			pod, err := injectDotNetSDK(test.DotNet, test.pod, 0, test.runtime, v1alpha1.InstrumentationSpec{})
 			assert.Equal(t, test.err, err)
 			if err == nil {
-				pod = injector.injectDefaultEnvVars("dotnet", pod, 0, test.runtime)
+				pod = injector.injectDefaultDotNetEnvVarsWrapper(pod, 0, test.runtime)
 				assert.Equal(t, test.expected, pod)
 				assert.Equal(t, test.err, err)
 			} else {

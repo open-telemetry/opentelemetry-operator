@@ -175,7 +175,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			pod, err := injectNodeJSSDK(test.NodeJS, test.pod, 0, v1alpha1.InstrumentationSpec{})
 			assert.Equal(t, test.err, err)
-			injector.injectDefaultEnvVars("nodejs", pod, 0, "")
+			injector.injectDefaultNodeJSEnvVars(pod, 0)
 			assert.Equal(t, test.expected, pod)
 		})
 	}

@@ -83,17 +83,23 @@ func getDefaultJavaEnvVars(pod corev1.Pod, index int, javaSpec v1alpha1.Java) []
 
 	idx := getIndexOfEnv(container.Env, envJavaToolsOptions)
 	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envJavaToolsOptions,
-			Value: javaJVMArgument,
-		})
+		return []corev1.EnvVar{
+			{
+				Name:  envJavaToolsOptions,
+				Value: javaJVMArgument,
+			},
+		}
 	} else {
 		// Don't modify JAVA_TOOL_OPTIONS if it uses ValueFrom
 		if container.Env[idx].ValueFrom != nil {
 			return []corev1.EnvVar{}
 		}
-		container.Env[idx].Value = container.Env[idx].Value + javaJVMArgument
-		return []corev1.EnvVar{}
+		// JAVA_TOOL_OPTIONS present, append our argument to its value
+		return []corev1.EnvVar{
+			{
+				Name:  envJavaToolsOptions,
+				Value: container.Env[idx].Value + javaJVMArgument,
+			},
+		}
 	}
-	return container.Env
 }
