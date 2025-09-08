@@ -1,0 +1,73 @@
+# Base configuration for agent collectors (DaemonSet) 
+# Collects kubelet stats, container logs, and OTLP data from auto-instrumentation
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+  kubeletstats:
+    collection_interval: 30s
+    auth_type: serviceAccount
+    endpoint: "https://${env:K8S_NODE_NAME}:10250"
+    metric_groups:
+      - container
+      - pod  
+      - node
+      - volume
+  filelog:
+    include:
+      - "/var/log/pods/*/*/*.log"
+    exclude:
+      - "/var/log/pods/*/otc-container/*.log"
+    start_at: end
+    include_file_path: true
+    include_file_name: false
+    operators:
+      - type: router
+        id: get-format
+        routes:
+          - output: parser-docker
+            expr: 'body matches "^\\{"'
+          - output: parser-crio  
+            expr: 'body matches "^[^ Z]+ "'
+          - output: parser-containerd
+            expr: 'body matches "^[^ Z]+Z"'
+
+processors:
+  batch: {}
+  resourcedetection:
+    detectors: ["env", "system", "k8snode"] 
+    timeout: 2s
+  k8sattributes:
+    auth_type: serviceAccount
+    passthrough: false
+    filter:
+      node_from_env_var: K8S_NODE_NAME
+    extract:
+      metadata:
+        - "k8s.namespace.name"
+        - "k8s.deployment.name" 
+        - "k8s.statefulset.name"
+        - "k8s.daemonset.name"
+        - "k8s.cronjob.name"
+        - "k8s.job.name"
+        - "k8s.node.name"
+        - "k8s.pod.name"
+        - "k8s.pod.uid"
+        - "k8s.pod.start_time"
+    pod_association:
+      - sources:
+          - from: resource_attribute
+            name: "k8s.pod.ip"
+      - sources:
+          - from: resource_attribute
+            name: "k8s.pod.uid"
+      - sources:
+          - from: connection
+
+exporters: {} # Will be populated by controller
+
+service:
+  pipelines: {} # Will be populated by controller based on enabled signals

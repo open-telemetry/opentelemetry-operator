@@ -99,7 +99,15 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+<<<<<<< HEAD
     createdAt: "2026-01-26T15:18:00Z"
+=======
+<<<<<<< HEAD
+    createdAt: "2025-11-04T20:46:50Z"
+=======
+    createdAt: "2025-11-03T16:15:22Z"
+>>>>>>> 96ac3daa (initial commit for clusterobservability CRD)
+>>>>>>> a0c490e0 (initial commit for clusterobservability CRD)
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -111,6 +119,9 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+    - kind: ClusterObservability
+      name: clusterobservabilities.opentelemetry.io
+      version: v1alpha1
     - description: Instrumentation is the spec for OpenTelemetry instrumentation.
       displayName: OpenTelemetry Instrumentation
       kind: Instrumentation
@@ -429,18 +440,10 @@ spec:
         - apiGroups:
           - opentelemetry.io
           resources:
+          - clusterobservabilities
           - instrumentations
-          - opentelemetrycollectors
-          verbs:
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - opentelemetry.io
-          resources:
           - opampbridges
+          - opentelemetrycollectors
           - targetallocators
           - targetallocators/finalizers
           verbs:
@@ -454,12 +457,14 @@ spec:
         - apiGroups:
           - opentelemetry.io
           resources:
+          - clusterobservabilities/finalizers
           - opampbridges/finalizers
           verbs:
           - update
         - apiGroups:
           - opentelemetry.io
           resources:
+          - clusterobservabilities/status
           - opampbridges/status
           - opentelemetrycollectors/finalizers
           - opentelemetrycollectors/status
@@ -485,6 +490,18 @@ spec:
           resources:
           - routes
           - routes/custom-host
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - security.openshift.io
+          resources:
+          - securitycontextconstraints
           verbs:
           - create
           - delete
