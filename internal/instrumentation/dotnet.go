@@ -95,7 +95,7 @@ func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runt
 	return pod, nil
 }
 
-func injectDefaultDotNetEnvVars(pod corev1.Pod, runtime string, index int) []corev1.EnvVar {
+func injectDefaultDotNetEnvVars(container *corev1.Container, runtime string) {
 	coreClrProfilerPath := ""
 	switch runtime {
 	case "", dotNetRuntimeLinuxGlibc:
@@ -104,23 +104,19 @@ func injectDefaultDotNetEnvVars(pod corev1.Pod, runtime string, index int) []cor
 		coreClrProfilerPath = dotNetCoreClrProfilerMuslPath
 	}
 
-	container := pod.Spec.Containers[index] // copy the container
+	setDotNetEnvVar(container, envDotNetCoreClrEnableProfiling, dotNetCoreClrEnableProfilingEnabled, false)
 
-	setDotNetEnvVar(&container, envDotNetCoreClrEnableProfiling, dotNetCoreClrEnableProfilingEnabled, false)
+	setDotNetEnvVar(container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerID, false)
 
-	setDotNetEnvVar(&container, envDotNetCoreClrProfiler, dotNetCoreClrProfilerID, false)
+	setDotNetEnvVar(container, envDotNetCoreClrProfilerPath, coreClrProfilerPath, false)
 
-	setDotNetEnvVar(&container, envDotNetCoreClrProfilerPath, coreClrProfilerPath, false)
+	setDotNetEnvVar(container, envDotNetStartupHook, dotNetStartupHookPath, true)
 
-	setDotNetEnvVar(&container, envDotNetStartupHook, dotNetStartupHookPath, true)
+	setDotNetEnvVar(container, envDotNetAdditionalDeps, dotNetAdditionalDepsPath, true)
 
-	setDotNetEnvVar(&container, envDotNetAdditionalDeps, dotNetAdditionalDepsPath, true)
+	setDotNetEnvVar(container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, false)
 
-	setDotNetEnvVar(&container, envDotNetOTelAutoHome, dotNetOTelAutoHomePath, false)
-
-	setDotNetEnvVar(&container, envDotNetSharedStore, dotNetSharedStorePath, true)
-
-	return container.Env
+	setDotNetEnvVar(container, envDotNetSharedStore, dotNetSharedStorePath, true)
 }
 
 // setDotNetEnvVar function sets env var to the container if not exist already.
@@ -133,6 +129,10 @@ func setDotNetEnvVar(container *corev1.Container, envVarName string, envVarValue
 			Name:  envVarName,
 			Value: envVarValue,
 		})
+		return
+	}
+	// Don't modify env var if it uses ValueFrom
+	if container.Env[idx].ValueFrom != nil {
 		return
 	}
 	if concatValues {
