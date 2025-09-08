@@ -33,6 +33,8 @@ spec:
         fieldRef:
           apiVersion: v1
           fieldPath: status.podIP
+    - name: OTEL_LOG_LEVEL
+      value: debug
     - name: OTEL_GO_AUTO_TARGET_EXE
       value: /rolldice
     - name: OTEL_TRACES_EXPORTER
@@ -45,6 +47,12 @@ spec:
       value: always_on
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_METRICS_EXPORTER
+      value: otlp
+    - name: OTEL_LOGS_EXPORTER
+      value: otlp
     - name: OTEL_SERVICE_NAME
       value: my-golang
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
@@ -60,6 +68,7 @@ spec:
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
     - name: OTEL_RESOURCE_ATTRIBUTES
+      value: service.name=my-golang
     name: opentelemetry-auto-instrumentation
     volumeMounts:
     - mountPath: /sys/kernel/debug

@@ -29,6 +29,8 @@ spec:
       value: none
     - name: OTEL_LOGS_EXPORTER
       value: none
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
     - name: OTEL_SERVICE_NAME
       value: my-python-specenv
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
@@ -42,8 +44,6 @@ spec:
           apiVersion: v1
           fieldPath: spec.nodeName
     - name: OTEL_RESOURCE_ATTRIBUTES
-    - name: OTEL_EXPORTER_OTLP_PROTOCOL
-      value: http/protobuf
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
       readOnly: true
