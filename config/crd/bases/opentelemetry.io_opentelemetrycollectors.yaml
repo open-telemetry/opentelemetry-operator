@@ -6956,17 +6956,17 @@ spec:
                 - sidecar
                 - statefulset
                 type: string
-              networkPolicy:
-                properties:
-                  enabled:
-                    type: boolean
-                type: object
               monitoringService:
                 properties:
                   enabled:
                     type: boolean
                   name:
                     type: string
+                type: object
+              networkPolicy:
+                properties:
+                  enabled:
+                    type: boolean
                 type: object
               nodeSelector:
                 additionalProperties:
