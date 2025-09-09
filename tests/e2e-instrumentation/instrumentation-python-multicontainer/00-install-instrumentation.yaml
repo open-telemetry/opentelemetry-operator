@@ -11,7 +11,7 @@ spec:
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
   exporter:
-    endpoint: http://localhost:4317
+    endpoint: http://deployment-collector:4317
   propagators:
     - jaeger
     - b3
@@ -25,4 +25,4 @@ spec:
       - name: OTEL_TRACES_EXPORTER
         value: otlp
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: http://localhost:4318
+        value: http://deployment-collector:4318

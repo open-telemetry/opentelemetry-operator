@@ -120,9 +120,14 @@ func Ingress(otelcol string) string {
 	return DNSName(Truncate("%s-ingress", 63, otelcol))
 }
 
-// NetworkPolicy builds the network policy name based on the instance.
-func NetworkPolicy(otelcol string) string {
-	return DNSName(Truncate("%s-networkpolicy", 63, otelcol))
+// CollectorNetworkPolicy builds the network policy name based on the instance.
+func CollectorNetworkPolicy(otelcol string) string {
+	return DNSName(Truncate("%s-collector-networkpolicy", 63, otelcol))
+}
+
+// TargetAllocatorNetworkPolicy builds the network policy name based on the instance.
+func TargetAllocatorNetworkPolicy(otelcol string) string {
+	return DNSName(Truncate("%s-targetallocator-networkpolicy", 63, otelcol))
 }
 
 // Route builds the route name based on the instance.

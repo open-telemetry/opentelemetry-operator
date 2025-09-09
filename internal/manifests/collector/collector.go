@@ -40,6 +40,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.Factory(HorizontalPodAutoscaler),
 		manifests.Factory(ServiceAccount),
 		manifests.Factory(Ingress),
+		manifests.Factory(NetworkPolicy),
 	}...)
 	if params.OtelCol.Spec.Service.IsEnabled() {
 		manifestFactories = append(manifestFactories, manifests.Factory(Service))

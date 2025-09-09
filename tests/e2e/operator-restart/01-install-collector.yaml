@@ -3,13 +3,25 @@ kind: OpenTelemetryCollector
 metadata:
   name: otel
 spec:
-  mode: "deployment"
+  mode: "statefulset"
+  targetAllocator:
+    enabled: true
+    prometheusCR:
+      enabled: true
+      serviceMonitorSelector: { }
+      podMonitorSelector: { }
   config:
     receivers:
       otlp:
         protocols:
           grpc: {}
-          http: {}
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: otel-collector
+              scrape_interval: 10s
+              static_configs:
+                - targets: ["0.0.0.0:8888"]
     processors:
       batch:
         timeout: 10s
@@ -21,3 +33,76 @@ spec:
           receivers: [otlp]
           processors: [batch]
           exporters: [debug]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ta-role
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/metrics
+      - services
+      - endpoints
+      - pods
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    verbs: ["get"]
+  - apiGroups:
+      - discovery.k8s.io
+    resources:
+      - endpointslices
+    verbs: ["get", "list", "watch"]
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs: ["get", "list", "watch"]
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ta-role
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ta-role
+subjects:
+  - kind: ServiceAccount
+    name: ta-role
+    namespace: ($namespace)
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ta-cr-role
+rules:
+  - apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - servicemonitors
+      - podmonitors
+    verbs:
+      - '*'
+  - apiGroups: [""]
+    resources:
+      - namespaces
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ta-cr-role
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ta-cr-role
+subjects:
+  - kind: ServiceAccount
+    name: otel-targetallocator
+    namespace: ($namespace)

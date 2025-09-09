@@ -239,6 +239,13 @@ Default is managed.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#targetallocatorspecnetworkpolicy">networkPolicy</a></b></td>
+        <td>object</td>
+        <td>
+          NetworkPolicy defines the network policy to be applied to the Target Allocator pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
         <td>
@@ -8750,6 +8757,34 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.networkPolicy
+<sup><sup>[↩ Parent](#targetallocatorspec)</sup></sup>
+
+
+
+NetworkPolicy defines the network policy to be applied to the Target Allocator pods.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enable enables the NetworkPolicy.
+The default value is taken from the operator feature-gate `--feature-gates=+operand.networkpolicy`.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

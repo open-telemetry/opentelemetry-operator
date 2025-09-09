@@ -1,6 +1,54 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: otel-collector
 status:
   readyReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-targetallocator
+status:
+  readyReplicas: 1
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: otel-collector-networkpolicy
+spec:
+  ingress:
+    - ports:
+        - port: 8888
+          protocol: TCP
+        - port: 4317
+          protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+  policyTypes:
+    - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: otel-targetallocator-networkpolicy
+spec:
+  ingress:
+    - ports:
+        - port: 8080
+          protocol: TCP
+  egress:
+    - ports:
+        - port: 6443
+          protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-targetallocator
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+  policyTypes:
+    - Ingress
+    - Egress

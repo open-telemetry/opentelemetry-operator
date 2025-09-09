@@ -473,7 +473,7 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 					"otlp": struct{}{},
 				},
 				KindProcessor: {
-					"batch": struct{}{},
+					"memory_limiter": struct{}{},
 				},
 				KindExporter: {
 					"debug":      struct{}{},

@@ -22,7 +22,9 @@ exporters:
       insecure: true
 
 processors:
-  batch:
+  memory_limiter:
+    limit_percentage: 75
+    spike_limit_percentage: 15
 
 extensions:
   health_check:
@@ -44,9 +46,9 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch]
+      processors: [memory_limiter]
       exporters: [debug, zipkin, otlp]
     metrics:
       receivers: [otlp]
-      processors: [batch]
+      processors: [memory_limiter]
       exporters: [debug, prometheus]

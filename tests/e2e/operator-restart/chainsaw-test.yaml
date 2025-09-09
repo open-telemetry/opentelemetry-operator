@@ -34,7 +34,7 @@ spec:
           - $otelnamespace
           - --type=json
           - -p
-          - '[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--feature-gates=+operator.networkpolicy"}]'
+          - '[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--feature-gates=operator.networkpolicy,operand.networkpolicy"}]'
     # Adding 10s sleep here cause sometimes the pod will be in running state for a while but can fail later if there is any issue with the component startup.
     - sleep:
         duration: 10s

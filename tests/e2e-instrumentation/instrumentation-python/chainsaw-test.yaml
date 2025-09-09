@@ -7,6 +7,8 @@ spec:
   bindings:
     - name: LABEL_SELECTOR
       value: app=my-python
+    - name: COLLECTOR_LABEL_SELECTOR
+      value: app.kubernetes.io/name=deployment-collector
   steps:
   - name: Add OpenShift namespace annotations
     use:
@@ -49,6 +51,8 @@ spec:
   bindings:
     - name: LABEL_SELECTOR
       value: app=my-python
+    - name: COLLECTOR_LABEL_SELECTOR
+      value: app.kubernetes.io/name=deployment-collector
   steps:
     - name: Add OpenShift namespace annotations
       use:
