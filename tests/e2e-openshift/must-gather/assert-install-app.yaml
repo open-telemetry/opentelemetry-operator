@@ -3,7 +3,6 @@ kind: Pod
 metadata:
   annotations:
     instrumentation.opentelemetry.io/inject-nodejs: "true"
-    sidecar.opentelemetry.io/inject: "true"
   labels:
     app: my-nodejs
 spec:
@@ -26,7 +25,7 @@ spec:
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4317
+      value: http://gather-collector:4317
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
       value: "20"
     - name: OTEL_TRACES_SAMPLER
@@ -58,17 +57,11 @@ spec:
       readOnly: true
     - mountPath: /otel-auto-instrumentation-nodejs
       name: opentelemetry-auto-instrumentation-nodejs
-  - args:
-    - --config=env:OTEL_CONFIG
-    name: otc-container
   initContainers:
   - name: opentelemetry-auto-instrumentation-nodejs
 status:
   containerStatuses:
   - name: myapp
-    ready: true
-    started: true
-  - name: otc-container
     ready: true
     started: true
   initContainerStatuses:

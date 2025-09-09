@@ -2,6 +2,142 @@
 
 <!-- next version -->
 
+## 0.133.0
+
+### ⚠️ Skip Release ⚠️
+
+  - `operator`: Skipped OpenTelemetry Operator release due to an issue on the collectors protobuf parsing that caused HTTP 400 errors for metric submissions. In case of expecitly using the collector v0.133.0 this behavior can be by passed by disabling the collector feature gate `pdata.useCustomProtoEncoding`.
+  For more details see: (opentelemetry-collector#13727)[https://github.com/open-telemetry/opentelemetry-collector/issues/13727]
+
+  ```yaml
+  apiVersion: opentelemetry.io/v1beta1
+  kind: OpenTelemetryCollector
+  metadata:
+    name: my-collector
+  spec:
+    image: otel/opentelemetry-collector:0.133.0
+    args:
+      - --feature-gates=-pdata.useCustomProtoEncoding
+  ```
+
+## 0.132.0
+
+### 🚩 Deprecations 🚩
+
+- `collector`: Remove opencensus receiver from parsing logic as it is no longer supported in OpenTelemetry Collector (#4239)
+  The opencensus receiver has been removed from the operator's receiver parsing logic.
+  Since 2025-02-14 its no longer supported and got removed from the [Collector Distributions](https://github.com/open-telemetry/opentelemetry-collector-releases/pull/1056#pullrequestreview-3079408414).
+
+
+### 💡 Enhancements 💡
+
+- `collector`: enable native sidecar on OpenShift 4.16+ with k8s version newer then v1.29 by default. (#4247)
+- `collector`: Use native sidecar on k8s 1.29+ (#3356)
+  The operator will automatically use native sidecars whenever a Kubernetes
+  version 1.29 or higher is discovered.
+  The usage of native sidecars can be disabled with `--feature-gates=-sidecarcontainers.native`.
+  See: https://kubernetes.io/blog/2023/08/25/native-sidecar-containers/
+
+- `collector`: Add network policy for the collector. (#4231)
+  This change adds a network policy to the collector to allow traffic to all collector receivers and egress traffic from the collector pod.
+  The collector network policy can be enabled in the collector CR.
+  ```yaml
+  spec:
+    networkPolicy:
+      enabled: true
+  ```
+  By default it is disabled, however the default value is configured with a feature gate `--feature-gates=operand.networkpolicy`.
+  The feature gate will be enabled in the future releases.
+
+- `operator`: Operator now creates a NetworkPolicy to restrict access to the operator pod. (#4230)
+  The operator network policy can be enabled with `--feature-gates=+operator.networkpolicy`.
+  The feature gate is disabled by default and it will be enabled in the future releases.
+  Following APIs are allowe: ingress on port 9443 (webhook), 8080 (metrics port), 8443 (metrics RBAC proxy) and egress on port 6443 (API server).
+
+- `target allocator`: Add network policy for the target allocator. (#4231)
+  This change adds a network policy to the target allocator which allows traffic to the port `8080` and outgoing traffic to the API server.
+  The target allocator network policy can be enabled in the target allocator CR.
+  ```yaml
+  spec:
+    networkPolicy:
+      enabled: true
+  ```
+  By default it is disabled, however the default value is configured with a feature gate `--feature-gates=operand.networkpolicy`.
+  The feature gate will be enabled in the future releases.
+
+- `opamp`: Correlates the OpAMP data from the proxy server with the bridge's own OpAMP data. (#3837)
+- `collector`: k8sattributes: Add automatic RBAC for new service.name resource attribute generator (#4131)
+  The k8sattributes processor recently added support for automatic service.name resource attribute generation.
+  This change ensures that when service.name is configured in the k8sattributes processor, the operator
+  automatically adds the necessary RBAC rules for replicasets access, which is required for extracting
+  k8s.deployment.name.
+
+### 🧰 Bug fixes 🧰
+
+- `opamp`: fixes a bug where the bridge deployment wouldn't rollout on a config change. (#4020)
+- `collector`: Fix a Deployment restart issue caused when the HPA settings changed, the webhook would modify spec.replicas. (#2585)
+- `collector`: Operator no longer overwrites ingress annoations on change (#4322)
+  The operator now respects external manipulations of the Ingress object — instead of
+  overwriting annotations it respects existing to prevent annotation-overwrite issues
+  that caused reconciliation loops with external controllers (e.g., Rancher).
+
+- `collector, target allocator, opamp`: Remove unnecessary cert-manager CA annotation from CRDs (#4321)
+  Remove annotation `cert-manager.io/inject-ca-from` from all OpenShift CRD manifests. The CRDs on OpenShift are installed via OLM which handles the CA injection.
+  The annotation is also not needed for non-OpenShift installations on CRDs that do not have a conversion webhook.
+
+### Components
+
+* [OpenTelemetry Collector - v0.132.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.132.0)
+* [OpenTelemetry Contrib - v0.132.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.132.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.62.2](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.62.2)
+* [Python - v0.57b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.57b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.131.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: Drop support for Kubernetes 1.23 and 1.24 (#4104)
+
+### 💡 Enhancements 💡
+
+- `collector`: Add support for extraLabels in ServiceMonitor creation (#4138)
+  Added extraLabels field to MetricsConfigSpec in v1beta1 API to allow custom labels on ServiceMonitor resources.
+  This enables users to add additional labels to ServiceMonitors created by the operator for better organization and filtering.
+  
+- `manager, target-allocator, opamp-bridge, must-gather`: add -trimpath when building binaries (#4078)
+- `collector, targer allocator,  opamp`: Require Go 1.24+ to build the collector, target allocator, and opamp. (#4173)
+- `collector`: Added RBAC permissions for config.extensions.k8s_observer. (#4113)
+  Generating RBAC rules for the k8s_observer extension in the OpenTelemetry Collector when used in the operator.
+  The change addresses the issue where the collector lacked necessary permissions to list and watch Kubernetes resources.
+  
+- `auto-instrumentation`: Upgrade urllib3 upper limit following Python 3.8 support drop (#3712)
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: added check for maxReplica when minReplica is set in autoscaler (#4160)
+  When using the AutoScaler, maxReplica must be set when minReplica is set.
+- `target allocator`: check CRD availability before registering informers (#3987)
+- `target allocator`: Allow collector to use TLS Config from Target Allocator with ScrapeConfig (#3724)
+  This change allows the target allocator to configure TLS Config for a collector using the ScrapeConfig.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.131.1](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.131.1)
+* [OpenTelemetry Contrib - v0.131.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.131.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.62.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.62.0)
+* [Python - v0.57b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.57b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.129.1
 
 ### 🛑 Breaking changes 🛑

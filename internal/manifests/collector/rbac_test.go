@@ -48,6 +48,54 @@ func TestDesiredClusterRoles(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc:       "k8s_observer extension - all resources enabled",
+			configPath: "testdata/rbac_k8sobserver_extension.yaml",
+			expectedRules: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"pods"},
+					Verbs:     []string{"list", "watch"},
+				},
+				{
+					APIGroups: []string{""},
+					Resources: []string{"services"},
+					Verbs:     []string{"list", "watch"},
+				},
+				{
+					APIGroups: []string{""},
+					Resources: []string{"nodes"},
+					Verbs:     []string{"list", "watch"},
+				},
+			},
+		},
+		{
+			desc:       "k8s_observer extension - only pods enabled",
+			configPath: "testdata/rbac_k8sobserver_partial.yaml",
+			expectedRules: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"pods"},
+					Verbs:     []string{"list", "watch"},
+				},
+			},
+		},
+		{
+			desc:       "k8sattributes processor - service.name metadata",
+			configPath: "testdata/rbac_k8sattributes_service_name.yaml",
+			expectedRules: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"pods", "namespaces"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+				{
+					APIGroups: []string{"apps"},
+					Resources: []string{"replicasets"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {

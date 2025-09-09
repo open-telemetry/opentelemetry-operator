@@ -25,6 +25,10 @@ var registry = map[string]components.Parser{
 		MustBuild(),
 	"jaeger_query": NewJaegerQueryExtensionParserBuilder().
 		MustBuild(),
+	"k8s_observer": components.NewBuilder[k8sobserverConfig]().
+		WithName("k8s_observer").
+		WithRbacGen(generatek8sobserverRbacRules).
+		MustBuild(),
 }
 
 // ParserFor returns a parser builder for the given exporter name.

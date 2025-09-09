@@ -57,7 +57,6 @@ func TestDownstreamParsers(t *testing.T) {
 		listenAddrParser bool
 	}{
 		{"zipkin", "zipkin", "__zipkin", 9411, false},
-		{"opencensus", "opencensus", "__opencensus", 55678, false},
 
 		// contrib receivers
 		{"carbon", "carbon", "__carbon", 2003, false},

@@ -85,6 +85,8 @@ service:
 	goodConfigHash = goodConfigHash[:8]
 
 	one := int32(1)
+	trueVal := true
+	tcp := corev1.ProtocolTCP
 	type args struct {
 		instance v1beta1.OpenTelemetryCollector
 	}
@@ -109,6 +111,9 @@ service:
 						},
 						Mode:   "deployment",
 						Config: goodConfig,
+						NetworkPolicy: v1beta1.NetworkPolicy{
+							Enabled: &trueVal,
+						},
 					},
 				},
 			},
@@ -360,6 +365,46 @@ service:
 							},
 						},
 						Selector: selectorLabels,
+					},
+				},
+				&networkingv1.NetworkPolicy{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "test-collector-networkpolicy",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-collector",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-collector-networkpolicy",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: map[string]string{},
+					},
+					Spec: networkingv1.NetworkPolicySpec{
+						PodSelector: metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/component":  "opentelemetry-collector",
+								"app.kubernetes.io/instance":   "test.test",
+								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/part-of":    "opentelemetry",
+							},
+						},
+						Ingress: []networkingv1.NetworkPolicyIngressRule{
+							{
+								Ports: []networkingv1.NetworkPolicyPort{
+									{
+										Protocol: &tcp,
+										Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 12345},
+									},
+									{
+										Protocol: &tcp,
+										Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 8888},
+									},
+								},
+							},
+						},
+						PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress},
 					},
 				},
 			},
@@ -1021,9 +1066,7 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: map[string]string{
-							"opentelemetry-opampbridge-config/hash": "05e1dc681267a9bc28fc2877ab464a98b9bd043843f14ffc0b4a394b5c86ba9f",
-						},
+						Annotations: map[string]string{},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Replicas: &one,
@@ -1039,6 +1082,9 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 									"app.kubernetes.io/name":       "test-opamp-bridge",
 									"app.kubernetes.io/part-of":    "opentelemetry",
 									"app.kubernetes.io/version":    "latest",
+								},
+								Annotations: map[string]string{
+									"opentelemetry-opampbridge-config/hash": "05e1dc681267a9bc28fc2877ab464a98b9bd043843f14ffc0b4a394b5c86ba9f",
 								},
 							},
 							Spec: corev1.PodSpec{

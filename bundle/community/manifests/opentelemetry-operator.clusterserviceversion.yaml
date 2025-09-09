@@ -99,13 +99,13 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2025-07-15T11:00:03Z"
+    createdAt: "2025-09-03T14:59:23Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.129.1
+  name: opentelemetry-operator.v0.132.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -257,6 +257,10 @@ spec:
         name: ""
         version: v1
       specDescriptors:
+      - description: Enable enables the NetworkPolicy. The default value is taken
+          from the operator feature-gate `--feature-gates=+operand.networkpolicy`.
+        displayName: Enable NetworkPolicy
+        path: networkPolicy.enabled
       - description: ObservabilitySpec defines how telemetry data gets handled.
         displayName: Observability
         path: observability
@@ -292,6 +296,10 @@ spec:
     spec:
       clusterPermissions:
       - rules:
+        - nonResourceURLs:
+          - /version
+          verbs:
+          - get
         - apiGroups:
           - ""
           resources:
@@ -334,6 +342,15 @@ spec:
           - delete
           - get
           - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments/finalizers
+          verbs:
+          - get
           - patch
           - update
           - watch
@@ -400,6 +417,7 @@ spec:
           - networking.k8s.io
           resources:
           - ingresses
+          - networkpolicies
           verbs:
           - create
           - delete
@@ -518,7 +536,11 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.129.1
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.132.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -626,7 +648,7 @@ spec:
   minKubeVersion: 1.25.0
   provider:
     name: OpenTelemetry Community
-  version: 0.129.1
+  version: 0.132.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1alpha1

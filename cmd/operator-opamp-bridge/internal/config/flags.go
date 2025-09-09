@@ -17,10 +17,10 @@ import (
 // Flag names.
 const (
 	opampBridgeName           = "opamp-bridge"
-	defaultServerListenAddr   = ":8080"
 	defaultConfigFilePath     = "/conf/remoteconfiguration.yaml"
 	configFilePathFlagName    = "config-file"
 	listenAddrFlagName        = "listen-addr"
+	defaultServerListenAddr   = ":8080"
 	kubeConfigPathFlagName    = "kubeconfig-path"
 	heartbeatIntervalFlagName = "heartbeat-interval"
 	nameFlagName              = "name"

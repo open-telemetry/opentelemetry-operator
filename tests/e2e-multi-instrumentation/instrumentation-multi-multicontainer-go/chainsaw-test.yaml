@@ -44,3 +44,5 @@ spec:
     catch:
       - podLogs:
           selector: app=my-golang
+      - podLogs:
+          selector: app.kubernetes.io/name=deployment-collector

@@ -12,7 +12,6 @@ spec:
       labels:
         app: my-dotnet-multi
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-dotnet: "true"
         instrumentation.opentelemetry.io/container-names: "myrabbit,myapp"
     spec:

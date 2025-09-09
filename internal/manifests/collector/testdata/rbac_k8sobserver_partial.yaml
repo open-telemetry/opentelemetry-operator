@@ -1,0 +1,20 @@
+extensions:
+  k8s_observer:
+    observe_pods: true
+    observe_services: false
+    observe_nodes: false
+receivers:
+  receiver_creator/logs:
+    watch_observers: [k8s_observer]
+    discovery:
+      enabled: true
+processors: {}
+exporters:
+  debug:
+    verbosity: basic
+service:
+  pipelines:
+    logs:
+      receivers: [receiver_creator/logs]
+      exporters: [debug]
+  extensions: [k8s_observer]

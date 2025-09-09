@@ -44,5 +44,5 @@ spec:
       pipelines:
         traces:
           receivers: [jaeger]
-          processors: [batch]
+          processors: []
           exporters: [otlp]

@@ -49,9 +49,6 @@ spec:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
-      batch:
-        send_batch_size: 10000
-        timeout: 10s
 
     exporters:
       debug: {}
@@ -60,7 +57,7 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [memory_limiter, batch]
+          processors: [memory_limiter]
           exporters: [debug]
 EOF
 ```
@@ -861,6 +858,7 @@ For more information about the maintainer role, see the [community repository](h
 
 ### Approvers
 
+- [Antoine Toulme](https://github.com/atoulme), Splunk
 - [Israel Blancas](https://github.com/iblancasa), Coralogix
 - [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), OllyGarden
@@ -868,8 +866,6 @@ For more information about the maintainer role, see the [community repository](h
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
 
 ### Triagers
-
-- [Antoine Toulme](https://github.com/atoulme), Splunk
 
 For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#triager).
 

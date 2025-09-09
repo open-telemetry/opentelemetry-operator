@@ -31,7 +31,7 @@ var (
 	// https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/#feature-gates-for-alpha-or-beta-features
 	EnableNativeSidecarContainers = featuregate.GlobalRegistry().MustRegister(
 		"operator.sidecarcontainers.native",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("controls whether the operator supports sidecar containers as init containers. Should only be enabled on k8s v1.29+"),
 		featuregate.WithRegisterFromVersion("v0.111.0"),
 	)
@@ -64,6 +64,19 @@ var (
 		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("enables the operator to default the endpoint for known components"),
 		featuregate.WithRegisterFromVersion("v0.110.0"),
+	)
+	// EnableOperatorNetworkPolicy is the feature gate that enables the operator to create network policies for the operator.
+	EnableOperatorNetworkPolicy = featuregate.GlobalRegistry().MustRegister(
+		"operator.networkpolicy",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables the operator to create network policies for the operator"),
+		featuregate.WithRegisterFromVersion("v0.132.0"),
+	)
+	// EnableOperandNetworkPolicy is the feature gate that enables the operator to create network policies for the collector.
+	EnableOperandNetworkPolicy = featuregate.GlobalRegistry().MustRegister(
+		"operand.networkpolicy",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables the operator to create network policies for operands,  collector and target allocator are supported"),
 	)
 )
 

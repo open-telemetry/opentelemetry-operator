@@ -7,7 +7,7 @@ spec:
   - script:
       env:
         - name: LABEL_SELECTOR
-          value: ($LABEL_SELECTOR)
+          value: ($COLLECTOR_LABEL_SELECTOR)
         - name: CONTAINER_NAME
           value: "otc-container"
         - name: RETRY_TIMEOUT

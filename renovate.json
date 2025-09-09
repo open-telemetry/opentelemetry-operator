@@ -105,8 +105,8 @@
       "groupName": "OpenTelemetry Python packages",
       "group": {
         "commitMessageTopic": "OpenTelemetry python agent version to {{ upgrades.0.newVersion }}"
-      }
-
+      },
+      "ignoreUnstable": false
     }
   ]
 }

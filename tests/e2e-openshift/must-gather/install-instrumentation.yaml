@@ -7,7 +7,7 @@ spec:
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4317
+      value: http://gather-collector:4317
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
       value: "20"
     - name: OTEL_TRACES_SAMPLER
@@ -19,7 +19,7 @@ spec:
     - name: OTEL_METRICS_EXPORTER
       value: prometheus
   exporter:
-    endpoint: http://localhost:4317
+    endpoint: http://gather-collector:4317
   propagators:
     - jaeger
     - b3

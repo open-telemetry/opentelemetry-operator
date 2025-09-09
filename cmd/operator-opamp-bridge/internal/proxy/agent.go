@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/open-telemetry/opamp-go/server/types"
+	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -154,4 +155,19 @@ func (a *Agent) GetConfiguration() *protobufs.EffectiveConfig {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
 	return a.effectiveConfig
+}
+
+func (a *Agent) GetHostname() string {
+	a.mux.RLock()
+	defer a.mux.RUnlock()
+
+	hostName := ""
+	if a.Status != nil && a.Status.AgentDescription != nil {
+		for _, kv := range a.Status.AgentDescription.GetNonIdentifyingAttributes() {
+			if kv.Key == string(semconv.HostNameKey) {
+				hostName = kv.Value.GetStringValue()
+			}
+		}
+	}
+	return hostName
 }
