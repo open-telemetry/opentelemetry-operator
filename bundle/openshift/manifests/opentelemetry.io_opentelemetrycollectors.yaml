@@ -6062,6 +6062,20 @@ spec:
                       x-kubernetes-map-type: atomic
                   type: object
                 type: array
+              extensionService:
+                properties:
+                  enabled:
+                    type: boolean
+                  name:
+                    type: string
+                type: object
+              headlessService:
+                properties:
+                  enabled:
+                    type: boolean
+                  name:
+                    type: string
+                type: object
               hostNetwork:
                 type: boolean
               image:
@@ -6960,6 +6974,13 @@ spec:
                   enabled:
                     type: boolean
                 type: object
+              monitoringService:
+                properties:
+                  enabled:
+                    type: boolean
+                  name:
+                    type: string
+                type: object
               nodeSelector:
                 additionalProperties:
                   type: string
@@ -7264,6 +7285,13 @@ spec:
                       runAsUserName:
                         type: string
                     type: object
+                type: object
+              service:
+                properties:
+                  enabled:
+                    type: boolean
+                  name:
+                    type: string
                 type: object
               serviceAccount:
                 type: string
