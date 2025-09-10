@@ -41,9 +41,11 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCol
 	if cfg.Internal.NativeSidecarSupport {
 		policy := corev1.ContainerRestartPolicyAlways
 		container.RestartPolicy = &policy
-		// NOTE: Use ReadinessProbe as startup probe.
+		// NOTE: Use StartupProbe if available, otherwise fallback to ReadinessProbe as startup probe.
 		// See https://github.com/open-telemetry/opentelemetry-operator/pull/2801#discussion_r1547571121
-		container.StartupProbe = container.ReadinessProbe
+		if container.StartupProbe == nil {
+			container.StartupProbe = container.ReadinessProbe
+		}
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, container)
 	} else {
 		pod.Spec.Containers = append(pod.Spec.Containers, container)

@@ -398,6 +398,26 @@ func (c *Config) GetReadinessProbe(logger logr.Logger) (*corev1.Probe, error) {
 	return nil, nil
 }
 
+// GetStartupProbe gets the first enabled startup probe. There should only ever be one extension enabled
+// that provides the hinting for the startup probe.
+func (c *Config) GetStartupProbe(logger logr.Logger) (*corev1.Probe, error) {
+	if c.Extensions == nil {
+		return nil, nil
+	}
+
+	enabledComponents := c.GetEnabledComponents()
+	for componentName := range enabledComponents[KindExtension] {
+		// TODO: Clean up the naming here and make it simpler to use a retriever.
+		parser := extensions.ParserFor(componentName)
+		if probe, err := parser.GetStartupProbe(logger, c.Extensions.Object[componentName]); err != nil {
+			return nil, err
+		} else if probe != nil {
+			return probe, nil
+		}
+	}
+	return nil, nil
+}
+
 // Yaml encodes the current object and returns it as a string.
 func (c *Config) Yaml() (string, error) {
 	var buf bytes.Buffer

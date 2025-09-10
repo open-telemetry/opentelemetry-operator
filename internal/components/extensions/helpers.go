@@ -19,6 +19,7 @@ var registry = map[string]components.Parser{
 		WithDefaultRecAddress(components.DefaultRecAddress).
 		WithReadinessGen(healthCheckV1Probe).
 		WithLivenessGen(healthCheckV1Probe).
+		WithStartupGen(healthCheckV1Probe).
 		WithPortParser(func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config healthcheckV1Config) ([]corev1.ServicePort, error) {
 			return components.ParseSingleEndpointSilent(logger, name, defaultPort, &config.SingleEndpointConfig)
 		}).
