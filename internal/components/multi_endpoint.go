@@ -101,6 +101,10 @@ func (m *MultiPortReceiver) GetReadinessProbe(logger logr.Logger, config interfa
 	return nil, nil
 }
 
+func (m *MultiPortReceiver) GetStartupProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+	return nil, nil
+}
+
 func (m *MultiPortReceiver) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.PolicyRule, error) {
 	return nil, nil
 }
