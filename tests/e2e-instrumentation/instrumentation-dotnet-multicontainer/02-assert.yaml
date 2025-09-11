@@ -18,6 +18,7 @@ metadata:
   labels:
     app: my-dotnet-multi
 spec:
+  automountServiceAccountToken: false
   containers:
   - env:
     - name: OTEL_NODE_IP

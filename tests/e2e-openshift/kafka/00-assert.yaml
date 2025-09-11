@@ -58,6 +58,7 @@ metadata:
   name: my-cluster-kafka-bootstrap
   namespace: chainsaw-kafka
 spec:
+  automountServiceAccountToken: false
   ports:
   - name: tcp-replication
     port: 9091
@@ -92,6 +93,7 @@ metadata:
   name: my-cluster-kafka-brokers
   namespace: chainsaw-kafka
 spec:
+  automountServiceAccountToken: false
   ports:
   - name: tcp-ctrlplane
     port: 9090

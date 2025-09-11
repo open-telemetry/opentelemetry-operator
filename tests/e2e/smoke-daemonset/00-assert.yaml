@@ -3,6 +3,7 @@ kind: DaemonSet
 metadata:
   name: daemonset-test-collector
 spec:
+  automountServiceAccountToken: false
   updateStrategy:
     rollingUpdate:
       maxSurge: 0

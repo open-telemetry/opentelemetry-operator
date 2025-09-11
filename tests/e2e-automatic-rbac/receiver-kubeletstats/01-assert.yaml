@@ -38,6 +38,7 @@ metadata:
     app.kubernetes.io/version: latest
   namespace: chainsaw-kubeletstats
 spec:
+  automountServiceAccountToken: false
   containers:
   - name: otc-container
     env:

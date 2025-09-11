@@ -6,6 +6,7 @@ metadata:
   labels:
     app: my-apache
 spec:
+  automountServiceAccountToken: false
   containers:
   - env:
     - name: OTEL_NODE_IP

@@ -19,6 +19,7 @@ metadata:
   labels:
     app: my-python-multi
 spec:
+  automountServiceAccountToken: false
   containers:
   - env:
     - name: OTEL_NODE_IP

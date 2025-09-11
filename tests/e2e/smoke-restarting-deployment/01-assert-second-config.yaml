@@ -10,6 +10,7 @@ status:
 apiVersion: v1
 kind: Pod
 spec:
+  automountServiceAccountToken: false
   containers:
   - name: otc-container
 status:
@@ -22,6 +23,7 @@ kind: Service
 metadata:
   name: restarting-collector
 spec:
+  automountServiceAccountToken: false
   ports:
   - targetPort: 14250
   - targetPort: 4317

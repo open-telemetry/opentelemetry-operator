@@ -78,6 +78,7 @@ metadata:
     app.kubernetes.io/component: opentelemetry-targetallocator
     app.kubernetes.io/managed-by: opentelemetry-operator
 spec:
+  automountServiceAccountToken: false
   containers:
   - name: ta-container
     ports:

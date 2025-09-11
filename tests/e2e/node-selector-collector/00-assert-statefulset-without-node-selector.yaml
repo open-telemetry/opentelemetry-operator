@@ -8,4 +8,5 @@ metadata:
     app.kubernetes.io/part-of: opentelemetry
     node-selector-mode: without
 spec:
+  automountServiceAccountToken: false
   (nodeSelector == null): true

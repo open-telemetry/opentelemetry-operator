@@ -7,6 +7,7 @@ metadata:
     app: pod-with-sidecar
   namespace: create-pm-prometheus
 spec:
+  automountServiceAccountToken: false
   containers:
     - name: myapp
     - name: otc-container
@@ -30,6 +31,7 @@ metadata:
   name: simplest-collector
   namespace: create-pm-prometheus
 spec:
+  automountServiceAccountToken: false
   jobLabel: "app.kubernetes.io/instance"
   podMetricsEndpoints:
     - port: monitoring

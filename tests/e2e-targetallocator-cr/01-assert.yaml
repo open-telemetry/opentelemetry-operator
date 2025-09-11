@@ -11,6 +11,7 @@ metadata:
     app.kubernetes.io/version: latest
   name: cr-targetallocator
 spec:
+  automountServiceAccountToken: false
   replicas: 1
   selector:
     matchLabels:
@@ -111,6 +112,7 @@ metadata:
     app.kubernetes.io/version: latest
   name: cr-targetallocator
 spec:
+  automountServiceAccountToken: false
   ports:
     - name: targetallocation
       port: 80
@@ -139,6 +141,7 @@ metadata:
     app.kubernetes.io/version: latest
   name: cr-targetallocator
 spec:
+  automountServiceAccountToken: false
   selector:
     matchLabels:
       app.kubernetes.io/component: opentelemetry-targetallocator
