@@ -23,6 +23,7 @@ spec:
       labels:
         app: metrics-app
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: metrics-app
         image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-metrics-basic-auth:main

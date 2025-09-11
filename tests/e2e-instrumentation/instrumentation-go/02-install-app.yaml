@@ -16,6 +16,7 @@ spec:
         instrumentation.opentelemetry.io/otel-go-auto-target-exe: /rolldice
     spec:
       serviceAccountName: otel-instrumentation-go
+      automountServiceAccountToken: false
       securityContext:
         runAsUser: 0
         runAsGroup: 3000

@@ -17,6 +17,7 @@ metadata:
 spec:
   template:
     spec:
+      automountServiceAccountToken: false
       restartPolicy: OnFailure
       containers:
         - name: check-metrics
@@ -38,6 +39,7 @@ metadata:
 spec:
   template:
     spec:
+      automountServiceAccountToken: false
       restartPolicy: OnFailure
       containers:
         - name: check-metrics
@@ -54,6 +56,7 @@ metadata:
 spec:
   template:
     spec:
+      automountServiceAccountToken: false
       restartPolicy: OnFailure
       containers:
         - name: check-metrics

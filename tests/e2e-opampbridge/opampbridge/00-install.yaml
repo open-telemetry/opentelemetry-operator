@@ -12,6 +12,7 @@ spec:
       labels:
         app: e2e-test-app-bridge-server
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: e2e-test-app-bridge-server
           image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-bridge-server:ve2e

@@ -28,6 +28,7 @@ spec:
         app.kubernetes.io/part-of: opentelemetry
         app.kubernetes.io/version: latest
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: otc-container
         args:
