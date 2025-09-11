@@ -94,6 +94,10 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			prometheusCRConfig["scrape_interval"] = taSpec.PrometheusCR.ScrapeInterval.Duration
 		}
 
+		if taSpec.PrometheusCR.ScrapeClasses != nil {
+			prometheusCRConfig["scrape_classes"] = taSpec.PrometheusCR.ScrapeClasses
+		}
+
 		if taSpec.PrometheusCR.AllowNamespaces != nil {
 			prometheusCRConfig["allow_namespaces"] = taSpec.PrometheusCR.AllowNamespaces
 		}
