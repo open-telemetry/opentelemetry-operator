@@ -104,6 +104,9 @@ type Parser interface {
 	// GetReadinessProbe returns a readiness probe set for the collector
 	GetReadinessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)
 
+	// GetStartupProbe returns a startup probe set for the collector
+	GetStartupProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)
+
 	// ParserType returns the type of this parser
 	ParserType() string
 

@@ -353,6 +353,9 @@ func TestMultiPortReceiver_Ports(t *testing.T) {
 			readinessProbe, readinessErr := s.GetReadinessProbe(logr.Discard(), tt.args.config)
 			assert.NoError(t, readinessErr)
 			assert.Nil(t, readinessProbe)
+			startupProbe, startupErr := s.GetStartupProbe(logr.Discard(), tt.args.config)
+			assert.NoError(t, startupErr)
+			assert.Nil(t, startupProbe)
 		})
 	}
 }
