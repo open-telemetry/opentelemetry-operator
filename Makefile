@@ -606,7 +606,7 @@ KIND_VERSION ?= v0.30.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
 CHAINSAW_VERSION ?= v0.2.13
 # renovate: datasource=go depName=gotest.tools/gotestsum
-GOTESTSUM_VERSION ?= v1.12.3
+GOTESTSUM_VERSION ?= v1.13.0
 
 .PHONY: install-tools
 install-tools: kustomize golangci-lint kind controller-gen envtest crdoc operator-sdk chainsaw gotestsum
