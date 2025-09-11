@@ -23,7 +23,6 @@ metadata:
   name: opentelemetry-operator-controller-manager-metrics-service
   namespace: ($otelnamespace)
 spec:
-  automountServiceAccountToken: false
   ports:
   - name: https
     port: 8443

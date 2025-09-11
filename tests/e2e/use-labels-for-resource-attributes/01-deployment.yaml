@@ -17,6 +17,7 @@ spec:
         instrumentation.opentelemetry.io/inject-sdk: "true"
         resource.opentelemetry.io/foo: "bar"
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: myapp
         image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
