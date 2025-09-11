@@ -467,7 +467,6 @@ metadata:
     app.kubernetes.io/part-of: opentelemetry
   name: deployment-collector
 spec:
-  automountServiceAccountToken: false
   ports:
   - appProtocol: grpc
     name: otlp-grpc
