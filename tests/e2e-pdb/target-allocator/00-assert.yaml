@@ -3,7 +3,6 @@ kind: PodDisruptionBudget
 metadata:
   name: pdb-targetallocator
 spec:
-  automountServiceAccountToken: false
   selector:
     matchLabels:
       app.kubernetes.io/component: opentelemetry-targetallocator

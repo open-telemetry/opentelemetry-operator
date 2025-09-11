@@ -18,7 +18,6 @@ metadata:
   name: simplest-targetallocator
   namespace: ($namespace)
 spec:
-  automountServiceAccountToken: false
   ports:
     - name: targetallocation
       port: 80

@@ -31,7 +31,6 @@ metadata:
   name: simplest-collector
   namespace: create-pm-prometheus
 spec:
-  automountServiceAccountToken: false
   jobLabel: "app.kubernetes.io/instance"
   podMetricsEndpoints:
     - port: monitoring

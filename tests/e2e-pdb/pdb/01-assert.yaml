@@ -3,7 +3,6 @@ kind: PodDisruptionBudget
 metadata:
   name: pdb-collector
 spec:
-  automountServiceAccountToken: false
   selector:
     matchLabels:
       app.kubernetes.io/component: opentelemetry-collector
