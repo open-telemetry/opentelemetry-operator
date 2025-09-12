@@ -11,6 +11,7 @@ metadata:
       kind: Job
       name: my-job
 spec:
+  automountServiceAccountToken: false
   (containers[?name == 'myapp']):
     - name: myapp
       env:

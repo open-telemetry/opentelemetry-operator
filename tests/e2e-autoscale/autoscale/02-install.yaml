@@ -5,6 +5,7 @@ metadata:
 spec:
   template:
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: telemetrygen
           image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.92.0

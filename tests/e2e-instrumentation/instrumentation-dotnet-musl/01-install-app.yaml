@@ -15,6 +15,7 @@ spec:
         instrumentation.opentelemetry.io/inject-dotnet: "true"
         instrumentation.opentelemetry.io/otel-dotnet-auto-runtime: "linux-musl-x64"
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsUser: 1000
         runAsGroup: 3000

@@ -7,6 +7,7 @@ metadata:
   labels:
     app: my-golang
 spec:
+  automountServiceAccountToken: false
   containers:
   - name: myapp
     ports:

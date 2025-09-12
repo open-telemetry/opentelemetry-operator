@@ -15,6 +15,7 @@ spec:
       annotations:
         sidecar.opentelemetry.io/inject: "kuttl-otel-sidecar-other-namespace/sidecar-for-my-app"
     spec:
+      automountServiceAccountToken: false
       containers:
       - name: myapp
         image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
