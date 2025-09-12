@@ -15,11 +15,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
 func TestUpdateCollectorStatusUnsupported(t *testing.T) {
 	ctx := context.TODO()
 	cli := client.Client(fake.NewFakeClient())
+	cfg := config.Config{}
 
 	changed := &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
@@ -31,7 +33,7 @@ func TestUpdateCollectorStatusUnsupported(t *testing.T) {
 		},
 	}
 
-	err := updateCollectorStatus(ctx, cli, changed)
+	err := updateCollectorStatus(ctx, cli, changed, cfg)
 	assert.NoError(t, err)
 
 	assert.Equal(t, int32(0), changed.Status.Scale.Replicas, "expected replicas to be 0")
@@ -67,6 +69,7 @@ func createMockKubernetesClientDeployment() client.Client {
 func TestUpdateCollectorStatusDeploymentMode(t *testing.T) {
 	ctx := context.TODO()
 	cli := createMockKubernetesClientDeployment()
+	cfg := config.Config{}
 
 	changed := &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
@@ -78,7 +81,7 @@ func TestUpdateCollectorStatusDeploymentMode(t *testing.T) {
 		},
 	}
 
-	err := updateCollectorStatus(ctx, cli, changed)
+	err := updateCollectorStatus(ctx, cli, changed, cfg)
 	assert.NoError(t, err)
 
 	assert.Equal(t, int32(1), changed.Status.Scale.Replicas, "expected replicas to be 1")
@@ -115,6 +118,7 @@ func createMockKubernetesClientStatefulset() client.Client {
 func TestUpdateCollectorStatusStatefulset(t *testing.T) {
 	ctx := context.TODO()
 	cli := createMockKubernetesClientStatefulset()
+	cfg := config.Config{}
 
 	changed := &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
@@ -126,7 +130,7 @@ func TestUpdateCollectorStatusStatefulset(t *testing.T) {
 		},
 	}
 
-	err := updateCollectorStatus(ctx, cli, changed)
+	err := updateCollectorStatus(ctx, cli, changed, cfg)
 	assert.NoError(t, err)
 
 	assert.Equal(t, int32(1), changed.Status.Scale.Replicas, "expected replicas to be 1")
@@ -163,6 +167,7 @@ func createMockKubernetesClientDaemonset() client.Client {
 func TestUpdateCollectorStatusDaemonsetMode(t *testing.T) {
 	ctx := context.TODO()
 	cli := createMockKubernetesClientDaemonset()
+	cfg := config.Config{}
 
 	changed := &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
@@ -177,11 +182,79 @@ func TestUpdateCollectorStatusDaemonsetMode(t *testing.T) {
 		},
 	}
 
-	err := updateCollectorStatus(ctx, cli, changed)
+	err := updateCollectorStatus(ctx, cli, changed, cfg)
 	assert.NoError(t, err)
 
 	assert.Equal(t, int32(1), changed.Status.Scale.Replicas, "expected replicas to be 1")
 	assert.Equal(t, "1/1", changed.Status.Scale.StatusReplicas, "expected status replicas to be 1/1")
 	assert.Contains(t, changed.Status.Scale.Selector, "customLabel=customValue", "expected selector to contain customlabel=customValue")
 	assert.Equal(t, "app:latest", changed.Status.Image, "expected image to be app:latest")
+}
+
+func TestUpdateCollectorStatusVersionLabelFromSpec(t *testing.T) {
+	ctx := context.TODO()
+	cli := createMockKubernetesClientDeployment()
+	cfg := config.Config{}
+
+	changed := &v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-deployment",
+			Namespace: "default",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: v1beta1.ModeDeployment,
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.129.1",
+			},
+		},
+	}
+
+	err := updateCollectorStatus(ctx, cli, changed, cfg)
+	assert.NoError(t, err)
+
+	assert.Contains(t, changed.Status.Scale.Selector, "app.kubernetes.io/version=0.129.1", "expected selector to contain version label from spec")
+}
+
+func TestUpdateCollectorStatusVersionLabelFromConfig(t *testing.T) {
+	ctx := context.TODO()
+	cli := createMockKubernetesClientDeployment()
+	cfg := config.Config{
+		CollectorImage: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.130.0",
+	}
+
+	changed := &v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-deployment",
+			Namespace: "default",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: v1beta1.ModeDeployment,
+		},
+	}
+
+	err := updateCollectorStatus(ctx, cli, changed, cfg)
+	assert.NoError(t, err)
+
+	assert.Contains(t, changed.Status.Scale.Selector, "app.kubernetes.io/version=0.130.0", "expected selector to contain version label from config")
+}
+
+func TestUpdateCollectorStatusVersionLabelLatest(t *testing.T) {
+	ctx := context.TODO()
+	cli := createMockKubernetesClientDeployment()
+	cfg := config.Config{}
+
+	changed := &v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-deployment",
+			Namespace: "default",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: v1beta1.ModeDeployment,
+		},
+	}
+
+	err := updateCollectorStatus(ctx, cli, changed, cfg)
+	assert.NoError(t, err)
+
+	assert.Contains(t, changed.Status.Scale.Selector, "app.kubernetes.io/version=latest", "expected selector to contain latest version label")
 }

@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
     app.kubernetes.io/name: cr-targetallocator
     app.kubernetes.io/part-of: opentelemetry
-    app.kubernetes.io/version: latest
+    app.kubernetes.io/version: ve2e
   name: cr-targetallocator
 spec:
   replicas: 1
@@ -25,7 +25,7 @@ spec:
         app.kubernetes.io/managed-by: opentelemetry-operator
         app.kubernetes.io/name: cr-targetallocator
         app.kubernetes.io/part-of: opentelemetry
-        app.kubernetes.io/version: latest
+        app.kubernetes.io/version: ve2e
     spec:
       containers:
         - env:
