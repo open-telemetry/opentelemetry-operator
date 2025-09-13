@@ -26,18 +26,18 @@ spec:
       value: http://deployment-collector:4318
     - name: PYTHONPATH
       value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
-    - name: OTEL_EXPORTER_OTLP_PROTOCOL
-      value: http/protobuf
-    - name: OTEL_METRICS_EXPORTER
-      value: otlp
-    - name: OTEL_LOGS_EXPORTER
-      value: otlp
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
       value: "20000"
     - name: OTEL_TRACES_SAMPLER
       value: always_on
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_METRICS_EXPORTER
+      value: otlp
+    - name: OTEL_LOGS_EXPORTER
+      value: otlp
     - name: OTEL_SERVICE_NAME
       value: my-python-multi
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
@@ -81,18 +81,18 @@ spec:
       value: http://deployment-collector:4318
     - name: PYTHONPATH
       value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
-    - name: OTEL_EXPORTER_OTLP_PROTOCOL
-      value: http/protobuf
-    - name: OTEL_METRICS_EXPORTER
-      value: otlp
-    - name: OTEL_LOGS_EXPORTER
-      value: otlp
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
       value: "20000"
     - name: OTEL_TRACES_SAMPLER
       value: always_on
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_METRICS_EXPORTER
+      value: otlp
+    - name: OTEL_LOGS_EXPORTER
+      value: otlp
     - name: OTEL_SERVICE_NAME
       value: my-python-multi
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
