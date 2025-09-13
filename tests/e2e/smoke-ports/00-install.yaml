@@ -4,6 +4,7 @@ metadata:
   name: smoke-ports
 spec:
   mode: daemonset
+  trafficDistribution: PreferClose
   ports:
   - appProtocol: grpc
     name: otlp-grpc

@@ -404,6 +404,15 @@ This only works with the following OpenTelemetryCollector mode's: statefulset, a
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>trafficDistribution</b></td>
+        <td>string</td>
+        <td>
+          TrafficDistribution specifies how traffic to this service is routed.
+https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution
+This is only applicable to Service resources.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#targetallocatorspecvolumemountsindex">volumeMounts</a></b></td>
         <td>[]object</td>
         <td>
