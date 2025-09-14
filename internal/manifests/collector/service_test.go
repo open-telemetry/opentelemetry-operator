@@ -586,3 +586,21 @@ func TestServiceWithIpFamily(t *testing.T) {
 		assert.Equal(t, actual.Spec.IPFamilyPolicy, params.OtelCol.Spec.IpFamilyPolicy)
 	})
 }
+
+func TestServiceWithTrafficDistribution(t *testing.T) {
+	t.Run("should set TrafficDistribution when specified", func(t *testing.T) {
+		params := deploymentParams()
+		trafficDistribution := "PreferClose"
+		params.OtelCol.Spec.TrafficDistribution = &trafficDistribution
+		actual, err := Service(params)
+		assert.NoError(t, err)
+		assert.Equal(t, &trafficDistribution, actual.Spec.TrafficDistribution)
+	})
+
+	t.Run("should not set TrafficDistribution when not specified", func(t *testing.T) {
+		params := deploymentParams()
+		actual, err := Service(params)
+		assert.NoError(t, err)
+		assert.Nil(t, actual.Spec.TrafficDistribution)
+	})
+}
