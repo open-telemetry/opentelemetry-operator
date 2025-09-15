@@ -10,12 +10,13 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
 var (
@@ -247,7 +248,6 @@ func TestApply(t *testing.T) {
 		relabelCfg[key] = nil
 	}
 
-	// cfg = createMockConfig(relabelCfg)
 	allocatorPrehook.SetConfig(relabelCfg)
 	remainingItems = allocatorPrehook.Apply(targets)
 	// relabelCfg is empty so targets should be unfiltered
@@ -379,8 +379,6 @@ func TestDistinctTarget(t *testing.T) {
 	// The deduplicated result after otel-allocator processing.
 	allocatorPrehook.SetConfig(relabelCfg)
 	remainingItems := allocatorPrehook.Apply(duplicatedTargets)
-	assert.Less(t, len(remainingItems), len(duplicatedTargets), "The remainingItems should be less than the duplicated targets")
-
 	remainingItemsMap := make(map[target.ItemHash]*target.Item)
 	for _, item := range remainingItems {
 		remainingItemsMap[item.Hash()] = item

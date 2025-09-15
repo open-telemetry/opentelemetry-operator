@@ -1,0 +1,148 @@
+# Metrics consistency verification Pod 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metrics-consistency-script
+data:
+  main.py: |
+    import json
+    import time
+    import urllib.request
+    import sys
+    from prometheus_client.parser import text_string_to_metric_families
+
+    TA_BASE = "http://ta-distributed-targetallocator"
+    COLLECTOR_ENDPOINTS = [
+        "http://direct-scrape-collector:8889/metrics",
+        "http://ta-distributed-collector-0.ta-distributed-collector-headless:8889/metrics",
+        "http://ta-distributed-collector-1.ta-distributed-collector-headless:8889/metrics",
+    ]
+
+    def http_get(url, timeout=10):
+        with urllib.request.urlopen(url, timeout=timeout) as r:
+            if r.status != 200 :
+                raise RuntimeError(f"HTTP {r.status} for {url}")
+            content = r.read()
+            if len(content) == 0:
+                raise RuntimeError(f"Response body is empty for {url}")
+            return content.decode("utf-8", errors="ignore")
+
+    def wait_ready(timeout_sec=60, interval_sec=5):
+        end = time.time() + timeout_sec
+        while time.time() < end:
+            ok = True
+            try:
+                http_get(f"{TA_BASE}/jobs")
+            except Exception:
+                ok = False
+            for ep in COLLECTOR_ENDPOINTS:
+                try:
+                    http_get(ep)
+                except Exception:
+                    ok = False
+                    break
+            if ok:
+                return True
+            time.sleep(interval_sec)
+        return False
+
+    def parse_up_labels(text):
+        label_fingerprints = set()
+        for fam in text_string_to_metric_families(text):
+            if fam.name != 'up':
+                continue
+            for s in fam.samples:
+                parts = [f"{k}={repr(v)}" for k, v in sorted(s.labels.items())]
+                label_fingerprint = '|'.join(parts)
+                label_fingerprints.add(label_fingerprint)
+        return label_fingerprints
+
+    def compare_collectors():
+        datas = []
+        for ep in COLLECTOR_ENDPOINTS:
+            try:
+                datas.append(http_get(ep))
+            except Exception as e:
+                print(f"Failed to fetch metrics from {ep}: {e}")
+                return False
+        direct = parse_up_labels(datas[0])
+        dist_a = parse_up_labels(datas[1])
+        dist_b = parse_up_labels(datas[2])
+        # Dedup verification: before union, ensure A and B have no overlapping labels
+        duplicated = sorted(list(dist_a & dist_b))
+        if duplicated:
+            print("Found duplicated targets between distributed collectors (dedup not effective):")
+            for s in duplicated:
+                print("duplicated:  ", s)
+            return False
+        
+        # Compare the results
+        distributed = dist_a | dist_b
+        only_direct = sorted(list(direct - distributed))
+        only_distributed = sorted(list(distributed - direct))
+
+        print("--------------------------------")
+        print("direct: ", direct)
+        print("--------------------------------")
+        print("dist_a: ", dist_a)
+        print("--------------------------------")
+        print("dist_b: ", dist_b)
+        print("--------------------------------")
+
+        if not only_direct and not only_distributed:
+            return True
+        if only_direct:
+            print("Missing in distributed:")
+            for s in only_direct:
+                print("only_direct:  ", s)
+        if only_distributed:
+            print("Extra in distributed:")
+            for s in only_distributed:
+                print("only_distributed:  ", s)
+        return False
+
+    def main():
+        if not wait_ready():
+            print("Services not ready in time")
+            sys.exit(1)
+        if not compare_collectors():
+            print("Collector metrics consistency failed")
+            sys.exit(1)
+        print("All checks passed")
+        sys.exit(0)
+
+    if __name__ == '__main__':
+        main()
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: metrics-consistency-check
+  labels:
+    app: metrics-consistency-check
+spec:
+  restartPolicy: Never
+  containers:
+  - name: consistency-check
+    image: python:3.11-alpine
+    command: ["/bin/sh"]
+    args:
+    - -c
+    - |
+      pip install --no-cache-dir -q prometheus-client && python /app/main.py
+    workingDir: /app
+    volumeMounts:
+    - name: script
+      mountPath: /app
+      readOnly: true
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 5m
+        memory: 64Mi
+  volumes:
+  - name: script
+    configMap:
+      name: metrics-consistency-script

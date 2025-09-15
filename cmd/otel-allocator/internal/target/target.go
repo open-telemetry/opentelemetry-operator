@@ -4,13 +4,11 @@
 package target
 
 import (
-	"strconv"
-
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/cespare/xxhash/v2"
-
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
 )

@@ -10,11 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
 func CompareTargetsMap(a, b map[target.ItemHash]*target.Item) bool {
@@ -86,7 +87,7 @@ func PopulateLabels(lb *labels.Builder, cfg *config.ScrapeConfig) (res, orig lab
 
 	addr := lb.Get(model.AddressLabel)
 
-	if err := config.CheckTargetAddress(model.LabelValue(addr)); err != nil {
+	if err = config.CheckTargetAddress(model.LabelValue(addr)); err != nil {
 		return labels.EmptyLabels(), labels.EmptyLabels(), err
 	}
 
