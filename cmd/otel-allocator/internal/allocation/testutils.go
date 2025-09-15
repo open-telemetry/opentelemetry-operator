@@ -38,6 +38,44 @@ func MakeNNewTargets(n int, numCollectors int, startingIndex int) []*target.Item
 	return toReturn
 }
 
+func MakeNNewUnevenTargets(n int, numCollectors int, startingIndex int, max, min, maxCnt int) []*target.Item {
+	toReturn := []*target.Item{}
+	sampleCnts := generateInts(n, max, min, maxCnt)
+	for i := startingIndex; i < n+startingIndex; i++ {
+		collector := fmt.Sprintf("collector-%d", colIndex(i, numCollectors))
+		label := labels.Labels{
+			{Name: "i", Value: strconv.Itoa(i)},
+			{Name: "total", Value: strconv.Itoa(n + startingIndex)},
+		}
+		newTarget := target.NewItem(fmt.Sprintf("test-job-%d", i), fmt.Sprintf("test-url-%d", i), label, collector)
+		newTarget.SampleCount = sampleCnts[i-startingIndex]
+		toReturn = append(toReturn, newTarget)
+	}
+	return toReturn
+}
+
+func generateInts(n, max, min, maxCnt int) []int {
+	if n <= 0 {
+		return []int{}
+	}
+
+	if n == 1 {
+		return []int{max}
+	}
+
+	toReturn := make([]int, n)
+
+	for i := range toReturn {
+		if i < maxCnt {
+			toReturn[i] = max
+		} else {
+			toReturn[i] = min
+		}
+	}
+
+	return toReturn
+}
+
 func MakeNCollectors(n int, startingIndex int) map[string]*Collector {
 	toReturn := map[string]*Collector{}
 	for i := startingIndex; i < n+startingIndex; i++ {
