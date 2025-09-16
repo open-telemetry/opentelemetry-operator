@@ -115,6 +115,7 @@ func tov1beta1(in OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
 				PriorityClassName:             copy.Spec.PriorityClassName,
 				InitContainers:                copy.Spec.InitContainers,
 				AdditionalContainers:          copy.Spec.AdditionalContainers,
+				TrafficDistribution:           copy.Spec.TrafficDistribution,
 			},
 			StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
 				VolumeClaimTemplates: copy.Spec.VolumeClaimTemplates,
@@ -371,6 +372,7 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			ConfigMaps:                tov1alpha1ConfigMaps(copy.Spec.ConfigMaps),
 			UpdateStrategy:            copy.Spec.DaemonSetUpdateStrategy,
 			DeploymentUpdateStrategy:  copy.Spec.DeploymentUpdateStrategy,
+			TrafficDistribution:       copy.Spec.TrafficDistribution,
 		},
 	}, nil
 }
