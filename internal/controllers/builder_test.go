@@ -285,6 +285,46 @@ service:
 						Annotations: map[string]string{},
 					},
 				},
+				&networkingv1.NetworkPolicy{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      "test-collector-networkpolicy",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/component":  "opentelemetry-collector",
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-collector-networkpolicy",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: map[string]string{},
+					},
+					Spec: networkingv1.NetworkPolicySpec{
+						PodSelector: metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"app.kubernetes.io/component":  "opentelemetry-collector",
+								"app.kubernetes.io/instance":   "test.test",
+								"app.kubernetes.io/managed-by": "opentelemetry-operator",
+								"app.kubernetes.io/part-of":    "opentelemetry",
+							},
+						},
+						Ingress: []networkingv1.NetworkPolicyIngressRule{
+							{
+								Ports: []networkingv1.NetworkPolicyPort{
+									{
+										Protocol: &tcp,
+										Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 12345},
+									},
+									{
+										Protocol: &tcp,
+										Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 8888},
+									},
+								},
+							},
+						},
+						PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress},
+					},
+				},
 				&corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-collector",
@@ -365,46 +405,6 @@ service:
 							},
 						},
 						Selector: selectorLabels,
-					},
-				},
-				&networkingv1.NetworkPolicy{
-					ObjectMeta: v1.ObjectMeta{
-						Name:      "test-collector-networkpolicy",
-						Namespace: "test",
-						Labels: map[string]string{
-							"app.kubernetes.io/component":  "opentelemetry-collector",
-							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-collector-networkpolicy",
-							"app.kubernetes.io/part-of":    "opentelemetry",
-							"app.kubernetes.io/version":    "latest",
-						},
-						Annotations: map[string]string{},
-					},
-					Spec: networkingv1.NetworkPolicySpec{
-						PodSelector: metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app.kubernetes.io/component":  "opentelemetry-collector",
-								"app.kubernetes.io/instance":   "test.test",
-								"app.kubernetes.io/managed-by": "opentelemetry-operator",
-								"app.kubernetes.io/part-of":    "opentelemetry",
-							},
-						},
-						Ingress: []networkingv1.NetworkPolicyIngressRule{
-							{
-								Ports: []networkingv1.NetworkPolicyPort{
-									{
-										Protocol: &tcp,
-										Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 12345},
-									},
-									{
-										Protocol: &tcp,
-										Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 8888},
-									},
-								},
-							},
-						},
-						PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress},
 					},
 				},
 			},
@@ -603,6 +603,48 @@ service:
 						Annotations: map[string]string{},
 					},
 				},
+				&networkingv1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-ingress",
+						Namespace: "test",
+						Labels: map[string]string{
+							"app.kubernetes.io/instance":   "test.test",
+							"app.kubernetes.io/managed-by": "opentelemetry-operator",
+							"app.kubernetes.io/name":       "test-ingress",
+							"app.kubernetes.io/component":  "opentelemetry-collector",
+							"app.kubernetes.io/part-of":    "opentelemetry",
+							"app.kubernetes.io/version":    "latest",
+						},
+						Annotations: map[string]string{
+							"something": "true",
+						},
+					},
+					Spec: networkingv1.IngressSpec{
+						Rules: []networkingv1.IngressRule{
+							{
+								Host: "example.com",
+								IngressRuleValue: networkingv1.IngressRuleValue{
+									HTTP: &networkingv1.HTTPIngressRuleValue{
+										Paths: []networkingv1.HTTPIngressPath{
+											{
+												Path:     "/examplereceiver",
+												PathType: &pathTypePrefix,
+												Backend: networkingv1.IngressBackend{
+													Service: &networkingv1.IngressServiceBackend{
+														Name: "test-collector",
+														Port: networkingv1.ServiceBackendPort{
+															Name: "examplereceiver",
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 				&corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-collector",
@@ -683,48 +725,6 @@ service:
 							},
 						},
 						Selector: selectorLabels,
-					},
-				},
-				&networkingv1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-ingress",
-						Namespace: "test",
-						Labels: map[string]string{
-							"app.kubernetes.io/instance":   "test.test",
-							"app.kubernetes.io/managed-by": "opentelemetry-operator",
-							"app.kubernetes.io/name":       "test-ingress",
-							"app.kubernetes.io/component":  "opentelemetry-collector",
-							"app.kubernetes.io/part-of":    "opentelemetry",
-							"app.kubernetes.io/version":    "latest",
-						},
-						Annotations: map[string]string{
-							"something": "true",
-						},
-					},
-					Spec: networkingv1.IngressSpec{
-						Rules: []networkingv1.IngressRule{
-							{
-								Host: "example.com",
-								IngressRuleValue: networkingv1.IngressRuleValue{
-									HTTP: &networkingv1.HTTPIngressRuleValue{
-										Paths: []networkingv1.HTTPIngressPath{
-											{
-												Path:     "/examplereceiver",
-												PathType: &pathTypePrefix,
-												Backend: networkingv1.IngressBackend{
-													Service: &networkingv1.IngressServiceBackend{
-														Name: "test-collector",
-														Port: networkingv1.ServiceBackendPort{
-															Name: "examplereceiver",
-														},
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
 					},
 				},
 			},

@@ -30,7 +30,10 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 
 	serviceName := params.OtelCol.Spec.ServiceName
 	if serviceName == "" {
-		serviceName = naming.HeadlessService(params.OtelCol.Name)
+		serviceName = params.OtelCol.Spec.HeadlessService.Name
+		if serviceName == "" {
+			serviceName = naming.HeadlessService(params.OtelCol.Name)
+		}
 	}
 
 	return &appsv1.StatefulSet{
