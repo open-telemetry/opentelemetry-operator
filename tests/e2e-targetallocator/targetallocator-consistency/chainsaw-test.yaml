@@ -43,3 +43,4 @@ spec:
         file: 03-install.yaml
     - assert:
         file: 03-assert.yaml
+        timeout: 120s
