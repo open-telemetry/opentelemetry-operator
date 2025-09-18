@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 
@@ -18,13 +19,39 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
-func CompareTargetsMap(a, b map[target.ItemHash]*target.Item) bool {
-	if len(a) != len(b) {
+func normalizeTargetItem(item *target.Item) {
+	item.Hash()
+	slices.SortFunc(item.Labels, func(a, b labels.Label) int { return strings.Compare(a.Name, b.Name) })
+}
+
+func CompareTargetSlice(expected, actual []*target.Item) bool {
+	if len(expected) != len(actual) {
+		return false
+	}
+	for i, expectedItem := range expected {
+		normalizeTargetItem(expectedItem)
+		normalizeTargetItem(actual[i])
+		if !reflect.DeepEqual(expectedItem, actual[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func CompareTargetMap(expected, actual map[target.ItemHash]*target.Item) bool {
+	if len(expected) != len(actual) {
 		return false
 	}
 
-	for k, v := range a {
-		if v2, ok := b[k]; !ok || !reflect.DeepEqual(v, v2) {
+	for k, v := range expected {
+		v2, ok := actual[k]
+		if !ok {
+			return false
+		}
+
+		normalizeTargetItem(v)
+		normalizeTargetItem(v2)
+		if !reflect.DeepEqual(v, v2) {
 			return false
 		}
 	}
@@ -46,7 +73,7 @@ func MakeTargetFromProm(rCfgs []*relabel.Config, rawTarget *target.Item) (*targe
 		return nil, nil
 	}
 
-	newTarget := target.NewItem(rawTarget.JobName, lset.Get(model.AddressLabel), lset, rawTarget.CollectorName, target.WithReservedLabelMatching(origLabels))
+	newTarget := target.NewItem(rawTarget.JobName, lset.Get(model.AddressLabel), lset, rawTarget.CollectorName, target.WithReservedLabelAppending(origLabels))
 	return newTarget, nil
 }
 

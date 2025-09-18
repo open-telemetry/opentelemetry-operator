@@ -241,7 +241,7 @@ func TestApply(t *testing.T) {
 	allocatorPrehook.SetConfig(relabelCfg)
 	remainingItems := allocatorPrehook.Apply(targets)
 	assert.Len(t, remainingItems, numRemaining)
-	assert.Equal(t, remainingItems, expectedTargetMap)
+	assert.True(t, CompareTargetSlice(remainingItems, expectedTargetMap), "The remaining items should match the expected target map")
 
 	// clear out relabelCfg to test with empty values
 	for key := range relabelCfg {
@@ -252,7 +252,7 @@ func TestApply(t *testing.T) {
 	remainingItems = allocatorPrehook.Apply(targets)
 	// relabelCfg is empty so targets should be unfiltered
 	assert.Len(t, remainingItems, len(targets))
-	assert.Equal(t, remainingItems, targets)
+	assert.True(t, CompareTargetSlice(remainingItems, targets), "The remaining items should match the expected target map")
 }
 
 func TestApplyHashmodAction(t *testing.T) {
@@ -266,7 +266,7 @@ func TestApplyHashmodAction(t *testing.T) {
 	allocatorPrehook.SetConfig(relabelCfg)
 	remainingItems := allocatorPrehook.Apply(targets)
 	assert.Len(t, remainingItems, numRemaining)
-	assert.Equal(t, remainingItems, expectedTargetMap)
+	assert.True(t, CompareTargetSlice(remainingItems, expectedTargetMap), "The remaining items should match the expected target map")
 }
 
 func TestApplyEmptyRelabelCfg(t *testing.T) {
@@ -282,7 +282,7 @@ func TestApplyEmptyRelabelCfg(t *testing.T) {
 	remainingItems := allocatorPrehook.Apply(targets)
 	// relabelCfg is empty so targets should be unfiltered
 	assert.Len(t, remainingItems, len(targets))
-	assert.Equal(t, remainingItems, targets)
+	assert.True(t, CompareTargetSlice(remainingItems, targets), "The remaining items should match the expected target map")
 }
 
 func TestSetConfig(t *testing.T) {
@@ -328,7 +328,7 @@ func TestRemoveRelabelConfigs(t *testing.T) {
 	}
 
 	assert.Len(t, expectedTarget1, len(expectedTarget2))
-	assert.Equal(t, expectedTarget1, expectedTarget2)
+	assert.True(t, CompareTargetSlice(expectedTarget1, expectedTarget2), "The expected target map should match the expected target map")
 }
 
 func TestDistinctTarget(t *testing.T) {
@@ -374,7 +374,7 @@ func TestDistinctTarget(t *testing.T) {
 	}
 
 	assert.Len(t, promTargetMap, len(expectedTargetMap))
-	assert.True(t, CompareTargetsMap(promTargetMap, expectedTargetMap), "The Prometheus relabeled targets should match the expected target map")
+	assert.True(t, CompareTargetMap(promTargetMap, expectedTargetMap), "The Prometheus relabeled targets should match the expected target map")
 
 	// The deduplicated result after otel-allocator processing.
 	allocatorPrehook.SetConfig(relabelCfg)
@@ -385,5 +385,5 @@ func TestDistinctTarget(t *testing.T) {
 	}
 
 	assert.Len(t, remainingItemsMap, len(expectedTargetMap))
-	assert.True(t, CompareTargetsMap(remainingItemsMap, expectedTargetMap), "The remaining items should match the expected target map")
+	assert.True(t, CompareTargetMap(remainingItemsMap, expectedTargetMap), "The remaining items should match the expected target map")
 }

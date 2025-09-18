@@ -65,7 +65,7 @@ func (tf *relabelConfigTargetFilter) Apply(targets []*target.Item) []*target.Ite
 				tf.log.V(2).Info("Dropping target because it has no __address__ label", "target", tItem)
 				continue
 			}
-			targets[writeIndex] = target.NewItem(tItem.JobName, address, lset, tItem.CollectorName, target.WithReservedLabelMatching(tItem.Labels), target.WithFilterMetaLabels())
+			targets[writeIndex] = target.NewItem(tItem.JobName, address, lset, tItem.CollectorName, target.WithReservedLabelAppending(tItem.Labels))
 			writeIndex++
 		}
 	}
