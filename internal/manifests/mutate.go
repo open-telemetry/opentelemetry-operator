@@ -348,6 +348,9 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 		if hasVolumeClaimsTemplatesChanged(existing, desired) {
 			return &ImmutableFieldChangeErr{Field: "Spec.VolumeClaimTemplates"}
 		}
+		if !apiequality.Semantic.DeepEqual(desired.Spec.ServiceName, existing.Spec.ServiceName) {
+			return &ImmutableFieldChangeErr{Field: "Spec.ServiceName"}
+		}
 	}
 
 	existing.Spec.MinReadySeconds = desired.Spec.MinReadySeconds
