@@ -1983,6 +1983,70 @@ func TestMutateStatefulSetError(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "modified immutable serviceName in statefulset",
+			existing: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					CreationTimestamp: metav1.Now(),
+					Name:              "statefulset",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					ServiceName: "service-name",
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/component": "opentelemetry-collector",
+							"app.kubernetes.io/instance":  "default.statefulset",
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/component": "opentelemetry-collector",
+								"app.kubernetes.io/instance":  "default.statefulset",
+							},
+						},
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "statefulset",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					ServiceName: "changed",
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/component": "opentelemetry-collector",
+							"app.kubernetes.io/instance":  "default.statefulset",
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/component": "opentelemetry-collector",
+								"app.kubernetes.io/instance":  "default.statefulset",
+							},
+						},
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
