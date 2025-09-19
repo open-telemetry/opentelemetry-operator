@@ -261,6 +261,7 @@ func (a *allocator) addTargetToTargetItems(tg *target.Item) error {
 	tg.CollectorName = colOwner.Name
 	a.addCollectorTargetItemMapping(tg)
 	a.collectors[colOwner.Name].NumTargets++
+	a.collectors[colOwner.Name].NumSamples += tg.SampleCount
 	a.targetsPerCollector.Record(context.Background(), int64(a.collectors[colOwner.String()].NumTargets), metric.WithAttributes(attribute.String("collector_name", colOwner.String()), attribute.String("strategy", a.strategy.GetName())))
 	return nil
 }
@@ -276,6 +277,7 @@ func (a *allocator) unassignTargetItem(item *target.Item) {
 		return
 	}
 	c.NumTargets--
+	c.NumSamples -= item.SampleCount
 	a.targetsPerCollector.Record(context.Background(), int64(c.NumTargets), metric.WithAttributes(attribute.String("collector_name", item.CollectorName), attribute.String("strategy", a.strategy.GetName())))
 	delete(a.targetItemsPerJobPerCollector[item.CollectorName][item.JobName], item.Hash())
 	if len(a.targetItemsPerJobPerCollector[item.CollectorName][item.JobName]) == 0 {

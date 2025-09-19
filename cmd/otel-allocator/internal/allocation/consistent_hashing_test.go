@@ -4,6 +4,8 @@
 package allocation
 
 import (
+	"fmt"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,6 +16,7 @@ func TestRelativelyEvenDistribution(t *testing.T) {
 	numItems := 10000
 	cols := MakeNCollectors(numCols, 0)
 	var expectedPerCollector = float64(numItems / numCols)
+	fmt.Println("expectedPerCollector", expectedPerCollector)
 	expectedDelta := (expectedPerCollector * 1.5) - expectedPerCollector
 	c, _ := New("consistent-hashing", logger)
 	c.SetCollectors(cols)
@@ -23,8 +26,39 @@ func TestRelativelyEvenDistribution(t *testing.T) {
 	actualCollectors := c.Collectors()
 	assert.Len(t, actualCollectors, numCols)
 	for _, col := range actualCollectors {
+		fmt.Println("col.NumTargets", col.NumTargets)
 		assert.InDelta(t, col.NumTargets, expectedPerCollector, expectedDelta)
 	}
+}
+
+
+func TestUnevenDistribution(t *testing.T) {
+	numCols := 15
+	numItems := 10000
+	cols := MakeNCollectors(numCols, 0)
+	var expectedPerCollector = float64(numItems / numCols)
+	fmt.Println("expectedPerCollector", expectedPerCollector)
+	expectedDelta := (expectedPerCollector * 1.5) - expectedPerCollector
+	c, _ := New("consistent-hashing", logger)
+	c.SetCollectors(cols)
+	c.SetTargets(MakeNNewUnevenTargets(numItems, 0, 0, 10000, 10, 10))
+	actualTargetItems := c.TargetItems()
+	assert.Len(t, actualTargetItems, numItems)
+	actualCollectors := c.Collectors()
+	assert.Len(t, actualCollectors, numCols)
+	var maxSamples, minSamples int = 0, math.MaxInt
+	for _, col := range actualCollectors {
+		fmt.Println("col.NumTargets", col.NumTargets, "col.NumSamples", col.NumSamples)
+		assert.InDelta(t, col.NumTargets, expectedPerCollector, expectedDelta)
+		if col.NumSamples > maxSamples {
+			maxSamples = col.NumSamples
+		}
+		if col.NumSamples < minSamples {
+			minSamples = col.NumSamples
+		}
+	}
+
+	fmt.Println("maxSamples", maxSamples, "minSamples", minSamples, "max/min", maxSamples/minSamples)
 }
 
 func TestFullReallocation(t *testing.T) {
