@@ -17,10 +17,12 @@ func TestInjectPythonSDK(t *testing.T) {
 	tests := []struct {
 		name string
 		v1alpha1.Python
-		pod      corev1.Pod
-		platform string
-		expected corev1.Pod
-		err      error
+		pod              corev1.Pod
+		platform         string
+		expected         corev1.Pod
+		err              error
+		inst             v1alpha1.Instrumentation
+		simulateDefaults bool
 	}{
 		{
 			name:   "PYTHONPATH not defined",
@@ -88,6 +90,108 @@ func TestInjectPythonSDK(t *testing.T) {
 							},
 						},
 					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "spec.env overrides defaults",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{}},
+				},
+			},
+			platform:         "glibc",
+			inst:             v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{Env: []corev1.EnvVar{{Name: "OTEL_METRICS_EXPORTER", Value: "none"}}}},
+			simulateDefaults: true,
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{{
+						Name: pythonVolumeName,
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{SizeLimit: &defaultVolumeLimitSize},
+						},
+					}},
+					InitContainers: []corev1.Container{{
+						Name:         "opentelemetry-auto-instrumentation-python",
+						Image:        "foo/bar:1",
+						Command:      []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+						VolumeMounts: []corev1.VolumeMount{{Name: pythonVolumeName, MountPath: "/otel-auto-instrumentation-python"}},
+					}},
+					Containers: []corev1.Container{{
+						VolumeMounts: []corev1.VolumeMount{{Name: pythonVolumeName, MountPath: "/otel-auto-instrumentation-python"}},
+						Env: []corev1.EnvVar{
+							{
+								Name: "OTEL_NODE_IP",
+								ValueFrom: &corev1.EnvVarSource{
+									FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.hostIP"},
+								},
+							},
+							{
+								Name: "OTEL_POD_IP",
+								ValueFrom: &corev1.EnvVarSource{
+									FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.podIP"},
+								},
+							},
+							{Name: "PYTHONPATH", Value: fmt.Sprintf("%s:%s", "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation", "/otel-auto-instrumentation-python")},
+							{Name: "OTEL_METRICS_EXPORTER", Value: "none"},
+							{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+							{Name: "OTEL_TRACES_EXPORTER", Value: "otlp"},
+							{Name: "OTEL_LOGS_EXPORTER", Value: "otlp"},
+						},
+					}},
+				},
+			},
+			err: nil,
+		},
+		{
+			name:   "defaults applied when no spec.env",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{}},
+				},
+			},
+			platform:         "glibc",
+			inst:             v1alpha1.Instrumentation{},
+			simulateDefaults: true,
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{{
+						Name: pythonVolumeName,
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{SizeLimit: &defaultVolumeLimitSize},
+						},
+					}},
+					InitContainers: []corev1.Container{{
+						Name:         "opentelemetry-auto-instrumentation-python",
+						Image:        "foo/bar:1",
+						Command:      []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+						VolumeMounts: []corev1.VolumeMount{{Name: pythonVolumeName, MountPath: "/otel-auto-instrumentation-python"}},
+					}},
+					Containers: []corev1.Container{{
+						VolumeMounts: []corev1.VolumeMount{{Name: pythonVolumeName, MountPath: "/otel-auto-instrumentation-python"}},
+						Env: []corev1.EnvVar{
+							{
+								Name: "OTEL_NODE_IP",
+								ValueFrom: &corev1.EnvVarSource{
+									FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.hostIP"},
+								},
+							},
+							{
+								Name: "OTEL_POD_IP",
+								ValueFrom: &corev1.EnvVarSource{
+									FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.podIP"},
+								},
+							},
+							{Name: "PYTHONPATH", Value: fmt.Sprintf("%s:%s", "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation", "/otel-auto-instrumentation-python")},
+							{Name: "OTEL_EXPORTER_OTLP_PROTOCOL", Value: "http/protobuf"},
+							{Name: "OTEL_TRACES_EXPORTER", Value: "otlp"},
+							{Name: "OTEL_METRICS_EXPORTER", Value: "otlp"},
+							{Name: "OTEL_LOGS_EXPORTER", Value: "otlp"},
+						},
+					}},
 				},
 			},
 			err: nil,
@@ -673,9 +777,20 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 	}
 
+	injector := sdkInjector{}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			pod, err := injectPythonSDK(test.Python, test.pod, 0, test.platform, v1alpha1.InstrumentationSpec{})
+			if err != nil {
+				assert.Equal(t, test.expected, pod)
+				assert.Equal(t, test.err, err)
+				return
+			}
+
+			if test.simulateDefaults {
+				pod = injector.injectCommonEnvVar(test.inst, pod, 0)
+			}
+			pod = injector.injectDefaultPythonEnvVars(pod, 0)
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})

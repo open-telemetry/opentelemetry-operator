@@ -170,11 +170,13 @@ func TestInjectNodeJSSDK(t *testing.T) {
 		},
 	}
 
+	injector := sdkInjector{}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			pod, err := injectNodeJSSDK(test.NodeJS, test.pod, 0, v1alpha1.InstrumentationSpec{})
-			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
+			injector.injectDefaultNodeJSEnvVars(pod, 0)
+			assert.Equal(t, test.expected, pod)
 		})
 	}
 }
