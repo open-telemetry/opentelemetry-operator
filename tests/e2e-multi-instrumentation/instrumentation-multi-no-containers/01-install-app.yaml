@@ -16,6 +16,7 @@ spec:
         instrumentation.opentelemetry.io/inject-python: "true"
         sidecar.opentelemetry.io/inject: "true"
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsUser: 1000
         runAsGroup: 3000

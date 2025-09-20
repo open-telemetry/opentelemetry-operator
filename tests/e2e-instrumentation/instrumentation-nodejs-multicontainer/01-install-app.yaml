@@ -15,6 +15,7 @@ spec:
         instrumentation.opentelemetry.io/inject-nodejs: "true"
         instrumentation.opentelemetry.io/container-names: "myapp,myrabbit"
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsUser: 1000
         runAsGroup: 3000

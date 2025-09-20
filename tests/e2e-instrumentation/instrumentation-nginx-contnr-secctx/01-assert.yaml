@@ -6,6 +6,7 @@ metadata:
   labels:
     app: my-nginx-contnr-secctx
 spec:
+  automountServiceAccountToken: false
   containers:
   - env:
     - name: OTEL_NODE_IP
@@ -105,6 +106,7 @@ metadata:
     app.kubernetes.io/part-of: opentelemetry
   name: deployment-collector
 spec:
+  automountServiceAccountToken: false
   ports:
   - appProtocol: grpc
     name: otlp-grpc

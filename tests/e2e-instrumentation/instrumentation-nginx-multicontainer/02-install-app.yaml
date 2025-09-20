@@ -16,6 +16,7 @@ spec:
         instrumentation.opentelemetry.io/inject-nginx: "true"
         instrumentation.opentelemetry.io/container-names: "myapp"
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsUser: 1000
         runAsGroup: 3000

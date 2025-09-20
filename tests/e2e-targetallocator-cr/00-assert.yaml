@@ -120,6 +120,7 @@ metadata:
       kind: TargetAllocator
       name: cr
 spec:
+  automountServiceAccountToken: false
   ports:
   - name: targetallocation
     port: 80

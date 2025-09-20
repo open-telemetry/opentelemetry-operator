@@ -15,6 +15,7 @@ spec:
         instrumentation.opentelemetry.io/inject-python: "true"
         instrumentation.opentelemetry.io/otel-python-platform: "musl"
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsUser: 1000
         runAsGroup: 3000
