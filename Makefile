@@ -600,13 +600,13 @@ KUSTOMIZE_VERSION ?= v5.7.1
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
 CONTROLLER_TOOLS_VERSION ?= v0.19.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION ?= v2.4.0
+GOLANGCI_LINT_VERSION ?= v2.5.0
 # renovate: datasource=go depName=sigs.k8s.io/kind
 KIND_VERSION ?= v0.30.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
 CHAINSAW_VERSION ?= v0.2.13
 # renovate: datasource=go depName=gotest.tools/gotestsum
-GOTESTSUM_VERSION ?= v1.12.3
+GOTESTSUM_VERSION ?= v1.13.0
 
 .PHONY: install-tools
 install-tools: kustomize golangci-lint kind controller-gen envtest crdoc operator-sdk chainsaw gotestsum

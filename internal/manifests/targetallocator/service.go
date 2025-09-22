@@ -39,10 +39,11 @@ func Service(params Params) *corev1.Service {
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
-			Selector:       selector,
-			Ports:          ports,
-			IPFamilies:     params.TargetAllocator.Spec.IpFamilies,
-			IPFamilyPolicy: params.TargetAllocator.Spec.IpFamilyPolicy,
+			Selector:            selector,
+			Ports:               ports,
+			IPFamilies:          params.TargetAllocator.Spec.IpFamilies,
+			IPFamilyPolicy:      params.TargetAllocator.Spec.IpFamilyPolicy,
+			TrafficDistribution: params.TargetAllocator.Spec.TrafficDistribution,
 		},
 	}
 }

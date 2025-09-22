@@ -224,6 +224,11 @@ type OpenTelemetryCommonFields struct {
 	// +kubebuilder:default:=SingleStack
 	// +optional
 	IpFamilyPolicy *v1.IPFamilyPolicy `json:"ipFamilyPolicy,omitempty"`
+	// TrafficDistribution specifies how traffic to this service is routed.
+	// https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution
+	// This is only applicable to Service resources.
+	// +optional
+	TrafficDistribution *string `json:"trafficDistribution,omitempty"`
 }
 
 type StatefulSetCommonFields struct {

@@ -2,6 +2,49 @@
 
 <!-- next version -->
 
+## 0.135.0
+
+### 💡 Enhancements 💡
+
+- `collector, target allocator`: Add TrafficDistribution support for OpenTelemetryCollector and TargetAllocator Services (#4285)
+  The TrafficDistribution field is now available in OpenTelemetryCollector and TargetAllocator.
+  This field allows setting the traffic distribution policy for Kubernetes Services.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.135.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.135.0)
+* [OpenTelemetry Contrib - v0.135.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.135.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.63.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.63.0)
+* [Python - v0.58b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.58b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.134.0
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Add CollectorTargetReloadInterval option to configure the interval at which the Prometheus receiver reloads targets from the target allocator (#4095)
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Always return a valid OpenTelemetryCollector configuration during v1beta1 conversion. (#4288)
+
+### Components
+
+* [OpenTelemetry Collector - v0.134.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.134.0)
+* [OpenTelemetry Contrib - v0.134.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.134.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.63.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.63.0)
+* [Python - v0.58b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.58b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.133.0
 
 ### ⚠️ Skip Release ⚠️
