@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-after-cert-renewal
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-ta
+          image: curlimages/curl
+          volumeMounts:
+            - name: tls-secret
+              mountPath: /etc/tls
+              readOnly: true
+          args:
+            - /bin/sh
+            - -c
+            - |
+              # Certificate renewal was triggered by the patch command in chainsaw
+              # The ownership watcher fix should ensure the controller gets notified
+              # and the TA continues serving with the renewed certificate
+              sleep 10
+
+              # Test that TA is still serving over HTTPS with renewed certificates
+              # WITHOUT requiring manual Secret deletion
+              curl -s \
+                --cert /etc/tls/tls.crt \
+                --key /etc/tls/tls.key \
+                --cacert /etc/tls/ca.crt \
+                https://prometheus-cr-targetallocator:443
+
+              # Also test that scrape_configs endpoint is working
+              curl -s \
+                --cert /etc/tls/tls.crt \
+                --key /etc/tls/tls.key \
+                --cacert /etc/tls/ca.crt \
+                https://prometheus-cr-targetallocator:443/scrape_configs
+      volumes:
+        - name: tls-secret
+          secret:
+            secretName: prometheus-cr-ta-client-cert
