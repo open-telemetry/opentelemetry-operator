@@ -32,3 +32,24 @@ spec:
     catch:
     - podLogs:
         selector: app.kubernetes.io/managed-by=opentelemetry-operator
+  - name: step-03
+    try:
+    - command:
+        entrypoint: kubectl
+        args:
+          - patch
+          - certificate
+          - prometheus-cr-ta-server-cert
+          - --type=json
+          - -p
+          - '[{"op": "add", "path": "/metadata/annotations/cert-manager.io~1force-renewal", "value": "'$(date +%s)'"}]'
+    - sleep:
+        duration: 30s
+    - apply:
+        template: true
+        file: 03-install.yaml
+    - assert:
+        file: 03-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/managed-by=opentelemetry-operator
