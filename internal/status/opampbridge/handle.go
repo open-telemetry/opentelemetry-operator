@@ -32,10 +32,8 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifest
 		return ctrl.Result{}, err
 	}
 	changed := params.OpAMPBridge.DeepCopy()
+	changed.Status.Version = version.OperatorOpAMPBridge()
 
-	if changed.Status.Version == "" {
-		changed.Status.Version = version.OperatorOpAMPBridge()
-	}
 	statusPatch := client.MergeFrom(&params.OpAMPBridge)
 	if err := params.Client.Status().Patch(ctx, changed, statusPatch); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to apply status changes to the OpenTelemetry CR: %w", err)
