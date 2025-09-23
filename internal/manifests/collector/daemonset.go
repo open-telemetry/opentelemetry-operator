@@ -59,6 +59,7 @@ func DaemonSet(params manifests.Params) (*appsv1.DaemonSet, error) {
 					PriorityClassName:             params.OtelCol.Spec.PriorityClassName,
 					Affinity:                      params.OtelCol.Spec.Affinity,
 					TerminationGracePeriodSeconds: params.OtelCol.Spec.TerminationGracePeriodSeconds,
+					ImagePullSecrets:              params.OtelCol.Spec.ImagePullSecrets,
 				},
 			},
 			UpdateStrategy: params.OtelCol.Spec.DaemonSetUpdateStrategy,

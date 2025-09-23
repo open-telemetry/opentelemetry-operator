@@ -660,3 +660,60 @@ func TestDaemonSetTerminationGracePeriodSeconds(t *testing.T) {
 	assert.NotNil(t, d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
 	assert.Equal(t, gracePeriodSec, *d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
 }
+
+func TestDaemonSetImagePullSecrets(t *testing.T) {
+	// Test default (no ImagePullSecrets)
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	ds1, err := DaemonSet(params1)
+	require.NoError(t, err)
+	assert.Empty(t, ds1.Spec.Template.Spec.ImagePullSecrets)
+
+	// Test with ImagePullSecrets
+	testImagePullSecrets := []v1.LocalObjectReference{
+		{
+			Name: "my-registry-secret",
+		},
+		{
+			Name: "another-registry-secret",
+		},
+	}
+
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-with-imagepullsecrets",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ImagePullSecrets: testImagePullSecrets,
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	ds2, err := DaemonSet(params2)
+	require.NoError(t, err)
+	assert.Equal(t, testImagePullSecrets, ds2.Spec.Template.Spec.ImagePullSecrets)
+	assert.Len(t, ds2.Spec.Template.Spec.ImagePullSecrets, 2)
+	assert.Equal(t, "my-registry-secret", ds2.Spec.Template.Spec.ImagePullSecrets[0].Name)
+	assert.Equal(t, "another-registry-secret", ds2.Spec.Template.Spec.ImagePullSecrets[1].Name)
+}
