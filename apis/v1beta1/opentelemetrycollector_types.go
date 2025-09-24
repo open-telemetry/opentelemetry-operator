@@ -185,6 +185,10 @@ type TargetAllocatorEmbedded struct {
 	// If specified, indicates the pod's scheduling constraints
 	// +optional
 	Affinity *v1.Affinity `json:"affinity,omitempty"`
+	// PriorityClassName specifies the pod priority class.
+	// The pod priority will be default or zero if there is no default and this is not set.
+	// +optional
+	PriorityClassName string `json:"priorityClassName,omitempty"`
 	// PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 )  retrieval.
 	// All CR instances which the ServiceAccount has access to will be retrieved. This includes other namespaces.
 	// +optional
