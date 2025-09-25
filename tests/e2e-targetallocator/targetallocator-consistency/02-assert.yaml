@@ -1,0 +1,8 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: direct-scrape-collector
+status:
+  readyReplicas: 1
+  replicas: 1
+ 

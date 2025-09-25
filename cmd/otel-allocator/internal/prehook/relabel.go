@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/relabel"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
@@ -41,6 +42,15 @@ func (tf *relabelConfigTargetFilter) Apply(targets []*target.Item) []*target.Ite
 		keepTarget := true
 		lset := tItem.Labels
 		for _, cfg := range tf.relabelCfg[tItem.JobName] {
+			// These labels are typically required for correct scraping behavior and are expected to be retained after relabeling.:
+			//   - job
+			//   - __scrape_interval__
+			//   - __scrape_timeout__
+			//   - __scheme__
+			//   - __metrics_path__
+			// Prometheus adds these labels by default. Removing them via relabel_configs is considered invalid and is therefore ignored.
+			// For details, see:
+			// https://github.com/prometheus/prometheus/blob/e6cfa720fbe6280153fab13090a483dbd40bece3/scrape/target.go#L429
 			lset, keepTarget = relabel.Process(lset, cfg)
 			if !keepTarget {
 				break // inner loop
@@ -48,7 +58,14 @@ func (tf *relabelConfigTargetFilter) Apply(targets []*target.Item) []*target.Ite
 		}
 
 		if keepTarget {
-			targets[writeIndex] = tItem
+			// Only if the key model.AddressLabel remains after relabeling is the value considered valid.
+			// For detail, see https://github.com/prometheus/prometheus/blob/e6cfa720fbe6280153fab13090a483dbd40bece3/scrape/target.go#L457
+			address := lset.Get(model.AddressLabel)
+			if len(address) == 0 {
+				tf.log.V(2).Info("Dropping target because it has no __address__ label", "target", tItem)
+				continue
+			}
+			targets[writeIndex] = target.NewItem(tItem.JobName, address, lset, tItem.CollectorName, target.WithReservedLabelAppending(tItem.Labels))
 			writeIndex++
 		}
 	}
