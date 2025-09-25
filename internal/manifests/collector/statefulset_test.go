@@ -826,3 +826,60 @@ func TestStatefulSetServiceName(t *testing.T) {
 		})
 	}
 }
+
+func TestStatefulSetImagePullSecrets(t *testing.T) {
+	// Test default (no ImagePullSecrets)
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     testLogger,
+	}
+
+	ss1, err := StatefulSet(params1)
+	require.NoError(t, err)
+	assert.Empty(t, ss1.Spec.Template.Spec.ImagePullSecrets)
+
+	// Test with ImagePullSecrets
+	testImagePullSecrets := []corev1.LocalObjectReference{
+		{
+			Name: "my-registry-secret",
+		},
+		{
+			Name: "another-registry-secret",
+		},
+	}
+
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-with-imagepullsecrets",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				ImagePullSecrets: testImagePullSecrets,
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     testLogger,
+	}
+
+	ss2, err := StatefulSet(params2)
+	require.NoError(t, err)
+	assert.Equal(t, testImagePullSecrets, ss2.Spec.Template.Spec.ImagePullSecrets)
+	assert.Len(t, ss2.Spec.Template.Spec.ImagePullSecrets, 2)
+	assert.Equal(t, "my-registry-secret", ss2.Spec.Template.Spec.ImagePullSecrets[0].Name)
+	assert.Equal(t, "another-registry-secret", ss2.Spec.Template.Spec.ImagePullSecrets[1].Name)
+}

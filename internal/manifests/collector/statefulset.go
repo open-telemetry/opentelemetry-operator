@@ -66,6 +66,7 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 					Affinity:                      params.OtelCol.Spec.Affinity,
 					TopologySpreadConstraints:     params.OtelCol.Spec.TopologySpreadConstraints,
 					TerminationGracePeriodSeconds: params.OtelCol.Spec.TerminationGracePeriodSeconds,
+					ImagePullSecrets:              params.OtelCol.Spec.ImagePullSecrets,
 				},
 			},
 			Replicas:                             manifestutils.GetInitialReplicas(params.OtelCol),
