@@ -42,7 +42,7 @@ spec:
           - prometheus-cr-ta-server-cert
           - --type=json
           - -p
-          - '[{"op": "add", "path": "/metadata/annotations/cert-manager.io~1force-renewal", "value": "'$(date +%s)'"}]'
+          - "[{\"op\": \"add\", \"path\": \"/metadata/annotations/cert-manager.io~1force-renewal\", \"value\": \"'$(date +%s)'\"}]"
     - sleep:
         duration: 30s
     - apply:
