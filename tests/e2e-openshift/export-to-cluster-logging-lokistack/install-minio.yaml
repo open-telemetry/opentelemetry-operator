@@ -29,6 +29,7 @@ spec:
       labels:
         app.kubernetes.io/name: minio
     spec:
+      automountServiceAccountToken: false
       containers:
         - command:
             - /bin/sh

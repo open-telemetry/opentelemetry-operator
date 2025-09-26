@@ -8,6 +8,7 @@ spec:
       labels:
         checker: "true"
     spec:
+      automountServiceAccountToken: false
       restartPolicy: OnFailure
       containers:
         - name: check-metrics
@@ -27,6 +28,7 @@ spec:
       labels:
         checker: "true"
     spec:
+      automountServiceAccountToken: false
       restartPolicy: OnFailure
       containers:
         - name: check-metrics

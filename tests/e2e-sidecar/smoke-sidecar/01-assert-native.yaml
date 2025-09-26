@@ -6,6 +6,7 @@ metadata:
   labels:
     app: my-pod-with-sidecar
 spec:
+  automountServiceAccountToken: false
   containers:
   - name: myapp
   initContainers:

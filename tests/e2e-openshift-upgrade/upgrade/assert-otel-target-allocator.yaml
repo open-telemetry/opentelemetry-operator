@@ -41,6 +41,7 @@ metadata:
   name: simplest-targetallocator
   namespace: chainsaw-upgrade
 spec:
+  automountServiceAccountToken: false
   ports:
     - name: targetallocation
       port: 80
