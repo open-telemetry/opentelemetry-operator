@@ -15,11 +15,11 @@ operator-opamp-bridge=0.135.0
 
 # Represents the current release of Java instrumentation.
 # Should match autoinstrumentation/java/version.txt
-autoinstrumentation-java=1.33.6
+autoinstrumentation-java=2.20.1
 
 # Represents the current release of NodeJS instrumentation.
 # Should match value in autoinstrumentation/nodejs/package.json
-autoinstrumentation-nodejs=0.63.0
+autoinstrumentation-nodejs=0.64.1
 
 # Represents the current release of Python instrumentation.
 # Should match value in autoinstrumentation/python/requirements.txt
@@ -27,7 +27,7 @@ autoinstrumentation-python=0.58b0
 
 # Represents the current release of DotNet instrumentation.
 # Should match autoinstrumentation/dotnet/version.txt
-autoinstrumentation-dotnet=1.2.0
+autoinstrumentation-dotnet=1.12.0
 
 # Represents the current release of Go instrumentation.
 autoinstrumentation-go=v0.22.1
