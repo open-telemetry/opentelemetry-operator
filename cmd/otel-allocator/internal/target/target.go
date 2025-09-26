@@ -38,7 +38,10 @@ type Item struct {
 	Labels        labels.Labels
 	CollectorName string
 	hash          ItemHash
+
+	SampleCount int
 }
+
 
 func (t *Item) Hash() ItemHash {
 	if t.hash == 0 {
