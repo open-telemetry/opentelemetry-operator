@@ -5,7 +5,6 @@ kind: Kustomization
 images:
 - name: controller
   newName: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-  newTag: latest
 patches:
 - patch: '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--target-allocator-image=ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:"}]'
   target:

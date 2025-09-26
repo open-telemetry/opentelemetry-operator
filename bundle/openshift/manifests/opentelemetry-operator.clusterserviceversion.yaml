@@ -545,7 +545,11 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
+<<<<<<< HEAD
                 image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.136.0
+=======
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+>>>>>>> 09711426 (add bundle)
                 livenessProbe:
                   httpGet:
                     path: /healthz
