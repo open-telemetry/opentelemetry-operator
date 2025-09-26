@@ -104,6 +104,12 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 	} else {
 		defaultProbeSettings(readinessProbe, otelcol.Spec.ReadinessProbe)
 	}
+	startupProbe, startupProbeErr := otelcol.Spec.Config.GetStartupProbe(logger)
+	if startupProbeErr != nil {
+		logger.Error(startupProbeErr, "cannot create startup probe.")
+	} else {
+		defaultProbeSettings(startupProbe, otelcol.Spec.StartupProbe)
+	}
 
 	return corev1.Container{
 		Name:            naming.Container(),
@@ -118,6 +124,7 @@ func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTeleme
 		SecurityContext: otelcol.Spec.SecurityContext,
 		LivenessProbe:   livenessProbe,
 		ReadinessProbe:  readinessProbe,
+		StartupProbe:    startupProbe,
 		Lifecycle:       otelcol.Spec.Lifecycle,
 	}
 }

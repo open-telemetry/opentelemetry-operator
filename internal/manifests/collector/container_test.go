@@ -724,6 +724,14 @@ service:
 				FailureThreshold:              &failureThreshold,
 				TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
 			},
+			StartupProbe: &v1beta1.Probe{
+				InitialDelaySeconds:           &initialDelaySeconds,
+				TimeoutSeconds:                &timeoutSeconds,
+				PeriodSeconds:                 &periodSeconds,
+				SuccessThreshold:              &successThreshold,
+				FailureThreshold:              &failureThreshold,
+				TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
+			},
 		},
 	}
 	cfg := config.New()
@@ -755,6 +763,18 @@ service:
 	assert.Equal(t, successThreshold, c.ReadinessProbe.SuccessThreshold)
 	assert.Equal(t, failureThreshold, c.ReadinessProbe.FailureThreshold)
 	assert.Equal(t, terminationGracePeriodSeconds, *c.ReadinessProbe.TerminationGracePeriodSeconds)
+
+	// startup
+	assert.Equal(t, "/", c.StartupProbe.HTTPGet.Path)
+	assert.Equal(t, int32(13133), c.StartupProbe.HTTPGet.Port.IntVal)
+	assert.Equal(t, "", c.StartupProbe.HTTPGet.Host)
+
+	assert.Equal(t, initialDelaySeconds, c.StartupProbe.InitialDelaySeconds)
+	assert.Equal(t, timeoutSeconds, c.StartupProbe.TimeoutSeconds)
+	assert.Equal(t, periodSeconds, c.StartupProbe.PeriodSeconds)
+	assert.Equal(t, successThreshold, c.StartupProbe.SuccessThreshold)
+	assert.Equal(t, failureThreshold, c.StartupProbe.FailureThreshold)
+	assert.Equal(t, terminationGracePeriodSeconds, *c.StartupProbe.TerminationGracePeriodSeconds)
 }
 
 func TestContainerProbeEmptyConfig(t *testing.T) {
@@ -768,6 +788,7 @@ service:
   extensions: [health_check]`),
 			LivenessProbe:  &v1beta1.Probe{},
 			ReadinessProbe: &v1beta1.Probe{},
+			StartupProbe:   &v1beta1.Probe{},
 		},
 	}
 	cfg := config.New()
@@ -784,6 +805,10 @@ service:
 	assert.Equal(t, "/", c.ReadinessProbe.HTTPGet.Path)
 	assert.Equal(t, int32(13133), c.ReadinessProbe.HTTPGet.Port.IntVal)
 	assert.Equal(t, "", c.ReadinessProbe.HTTPGet.Host)
+	// startup
+	assert.Equal(t, "/", c.StartupProbe.HTTPGet.Path)
+	assert.Equal(t, int32(13133), c.StartupProbe.HTTPGet.Port.IntVal)
+	assert.Equal(t, "", c.StartupProbe.HTTPGet.Host)
 }
 
 func TestContainerProbeNoConfig(t *testing.T) {

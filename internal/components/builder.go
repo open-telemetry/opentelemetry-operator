@@ -26,6 +26,7 @@ type Settings[ComponentConfigType any] struct {
 	rbacGen         RBACRuleGenerator[ComponentConfigType]
 	livenessGen     ProbeGenerator[ComponentConfigType]
 	readinessGen    ProbeGenerator[ComponentConfigType]
+	startupGen      ProbeGenerator[ComponentConfigType]
 	defaultsApplier Defaulter[ComponentConfigType]
 	envVarGen       EnvVarGenerator[ComponentConfigType]
 }
@@ -114,6 +115,12 @@ func (b Builder[ComponentConfigType]) WithReadinessGen(readinessGen ProbeGenerat
 		o.readinessGen = readinessGen
 	})
 }
+
+func (b Builder[ComponentConfigType]) WithStartupGen(startupGen ProbeGenerator[ComponentConfigType]) Builder[ComponentConfigType] {
+	return append(b, func(o *Settings[ComponentConfigType]) {
+		o.startupGen = startupGen
+	})
+}
 func (b Builder[ComponentConfigType]) WithEnvVarGen(envVarGen EnvVarGenerator[ComponentConfigType]) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.envVarGen = envVarGen
@@ -138,6 +145,7 @@ func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigTyp
 		envVarGen:       o.envVarGen,
 		livenessGen:     o.livenessGen,
 		readinessGen:    o.readinessGen,
+		startupGen:      o.startupGen,
 		defaultsApplier: o.defaultsApplier,
 		settings:        o,
 	}, nil
