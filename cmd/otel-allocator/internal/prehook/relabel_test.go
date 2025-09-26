@@ -300,6 +300,64 @@ func TestSetConfig(t *testing.T) {
 	assert.Equal(t, relabelCfg, allocatorPrehook.GetConfig())
 }
 
+func TestDistinctTarget(t *testing.T) {
+	allocatorPrehook := New("relabel-config", logger)
+	assert.NotNil(t, allocatorPrehook)
+
+	targets, _, expectedTarget, relabelCfg, err := makeNNewTargets(relabelConfigs, 10, defaultNumCollectors, defaultStartIndex)
+	assert.NoError(t, err)
+
+	duplicatedTargets := make([]*target.Item, 0, 2*len(targets))
+	for _, item := range targets {
+		ls := item.Labels.Copy()
+		ls = append(ls, labels.Label{
+			Name:  checkDistinctConfigLabel,
+			Value: "check-distinct-label-value",
+		})
+
+		duplItem := target.NewItem(item.JobName, item.TargetURL, ls, item.CollectorName)
+		duplicatedTargets = append(duplicatedTargets, duplItem)
+	}
+	// Append original targets after duplicated ones to preserve original labels after deduplication.
+	duplicatedTargets = append(duplicatedTargets, targets...)
+
+	for k, cfg := range relabelCfg {
+		cfg = append(cfg, &CheckDistinctConfig)
+		relabelCfg[k] = cfg
+	}
+
+	// The expected result after deduplication.
+	expectedTargetMap := make(map[target.ItemHash]*target.Item)
+	for _, item := range expectedTarget {
+		expectedTargetMap[item.Hash()] = item
+	}
+
+	// The deduplicated result after Prometheus relabeling.
+	promTargetMap := make(map[target.ItemHash]*target.Item)
+	for _, item := range targets {
+		tfp, err := MakeTargetFromProm(relabelCfg[item.JobName], item)
+		assert.NoError(t, err)
+		// If the target is dropped by Prometheus, it will be nil.
+		if tfp != nil {
+			promTargetMap[tfp.Hash()] = tfp
+		}
+	}
+
+	assert.Len(t, promTargetMap, len(expectedTargetMap))
+	assert.Equal(t, promTargetMap, expectedTargetMap)
+
+	// The deduplicated result after otel-allocator processing.
+	allocatorPrehook.SetConfig(relabelCfg)
+	remainingItems := allocatorPrehook.Apply(duplicatedTargets)
+	remainingItemsMap := make(map[target.ItemHash]*target.Item)
+	for _, item := range remainingItems {
+		remainingItemsMap[item.Hash()] = item
+	}
+
+	assert.Len(t, remainingItemsMap, len(expectedTargetMap))
+	assert.Equal(t, remainingItemsMap, expectedTargetMap)
+}
+
 func MakeTargetFromProm(rCfgs []*relabel.Config, rawTarget *target.Item) (*target.Item, error) {
 	lb := labels.NewBuilder(rawTarget.Labels)
 	cfg := &config.ScrapeConfig{
