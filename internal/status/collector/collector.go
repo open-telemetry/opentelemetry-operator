@@ -13,13 +13,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
-func updateCollectorStatus(ctx context.Context, cli client.Client, changed *v1beta1.OpenTelemetryCollector) error {
+func updateCollectorStatus(ctx context.Context, cli client.Client, changed *v1beta1.OpenTelemetryCollector, cfg config.Config) error {
 	if changed.Status.Version == "" {
 		// a version is not set, otherwise let the upgrade mechanism take care of it!
 		changed.Status.Version = version.OpenTelemetryCollector()
@@ -36,7 +37,11 @@ func updateCollectorStatus(ctx context.Context, cli client.Client, changed *v1be
 	name := naming.Collector(changed.Name)
 
 	// Set the scale selector
-	labels := manifestutils.Labels(changed.ObjectMeta, name, changed.Spec.Image, collector.ComponentOpenTelemetryCollector, []string{})
+	image := changed.Spec.Image
+	if image == "" {
+		image = cfg.CollectorImage
+	}
+	labels := manifestutils.Labels(changed.ObjectMeta, name, image, collector.ComponentOpenTelemetryCollector, cfg.LabelsFilter)
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
 	if err != nil {
 		return fmt.Errorf("failed to get selector for labelSelector: %w", err)
