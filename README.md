@@ -350,6 +350,12 @@ OpenTelemetry SDK environment variables only:
 instrumentation.opentelemetry.io/inject-sdk: "true"
 ```
 
+OpenTelemetry environment variables only (alternative annotation name):
+
+```bash
+instrumentation.opentelemetry.io/inject-env: "true"
+```
+
 The possible values for the annotation can be
 
 - `"true"` - inject and `Instrumentation` resource from the namespace.

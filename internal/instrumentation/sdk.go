@@ -215,6 +215,21 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		}
 	}
 
+	if insts.Env.Instrumentation != nil {
+		otelinst := *insts.Env.Instrumentation
+		i.logger.V(1).Info("injecting env-only instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+
+		if len(insts.Env.Containers) == 0 {
+			insts.Env.Containers = []string{pod.Spec.Containers[0].Name}
+		}
+
+		for _, container := range insts.Env.Containers {
+			index := getContainerIndex(container, pod)
+			pod = i.injectCommonEnvVar(otelinst, pod, index)
+			pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
+		}
+	}
+
 	return pod
 }
 
