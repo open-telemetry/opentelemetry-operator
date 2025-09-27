@@ -28,6 +28,8 @@ const (
 	annotationGoExecPath                      = "instrumentation.opentelemetry.io/otel-go-auto-target-exe"
 	annotationInjectSdk                       = "instrumentation.opentelemetry.io/inject-sdk"
 	annotationInjectSdkContainersName         = "instrumentation.opentelemetry.io/sdk-container-names"
+	annotationInjectEnv                       = "instrumentation.opentelemetry.io/inject-env"
+	annotationInjectEnvContainersName         = "instrumentation.opentelemetry.io/env-container-names"
 	annotationInjectApacheHttpd               = "instrumentation.opentelemetry.io/inject-apache-httpd"
 	annotationInjectApacheHttpdContainersName = "instrumentation.opentelemetry.io/apache-httpd-container-names"
 	annotationInjectNginx                     = "instrumentation.opentelemetry.io/inject-nginx"

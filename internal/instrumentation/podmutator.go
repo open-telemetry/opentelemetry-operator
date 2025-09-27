@@ -50,6 +50,7 @@ type languageInstrumentations struct {
 	Nginx       instrumentationWithContainers
 	Go          instrumentationWithContainers
 	Sdk         instrumentationWithContainers
+	Env         instrumentationWithContainers
 }
 
 // Check if specific containers are provided for configured instrumentation.
@@ -124,6 +125,14 @@ func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bo
 			instrumentationWithNoContainers = true
 		}
 	}
+	if langInsts.Env.Instrumentation != nil {
+		instrWithContainers += isInstrWithContainers(langInsts.Env)
+		instrWithoutContainers += isInstrWithoutContainers(langInsts.Env)
+		allContainers = append(allContainers, langInsts.Env.Containers...)
+		if len(langInsts.Env.Containers) == 0 {
+			instrumentationWithNoContainers = true
+		}
+	}
 
 	// Look for duplicated containers.
 	containerDuplicates := findDuplicatedContainers(allContainers)
@@ -192,6 +201,9 @@ func (langInsts *languageInstrumentations) setCommonInstrumentedContainers(ns co
 	if langInsts.Sdk.Instrumentation != nil {
 		langInsts.Sdk.Containers = containers
 	}
+	if langInsts.Env.Instrumentation != nil {
+		langInsts.Env.Containers = containers
+	}
 	return nil
 }
 
@@ -231,6 +243,10 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns meta
 		{
 			iwc:        &langInsts.Sdk,
 			annotation: annotationInjectSdkContainersName,
+		},
+		{
+			iwc:        &langInsts.Env,
+			annotation: annotationInjectEnvContainersName,
 		},
 	}
 
@@ -372,10 +388,17 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 	insts.Sdk.Instrumentation = inst
 
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectEnv); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	insts.Env.Instrumentation = inst
+
 	if insts.Java.Instrumentation == nil && insts.NodeJS.Instrumentation == nil && insts.Python.Instrumentation == nil &&
 		insts.DotNet.Instrumentation == nil && insts.Go.Instrumentation == nil && insts.ApacheHttpd.Instrumentation == nil &&
 		insts.Nginx.Instrumentation == nil &&
-		insts.Sdk.Instrumentation == nil {
+		insts.Sdk.Instrumentation == nil && insts.Env.Instrumentation == nil {
 
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
 		return pod, nil
@@ -469,6 +492,7 @@ func (pm *instPodMutator) validateInstrumentations(ctx context.Context, inst lan
 		{inst.ApacheHttpd.Instrumentation},
 		{inst.Nginx.Instrumentation},
 		{inst.Sdk.Instrumentation},
+		{inst.Env.Instrumentation},
 	}
 	var errs []error
 	for _, i := range instrumentations {

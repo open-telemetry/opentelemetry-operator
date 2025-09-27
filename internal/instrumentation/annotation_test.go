@@ -129,3 +129,122 @@ func TestEffectiveAnnotationValue(t *testing.T) {
 		})
 	}
 }
+
+func TestEffectiveAnnotationValueForEnv(t *testing.T) {
+	for _, tt := range []struct {
+		desc     string
+		expected string
+		pod      corev1.Pod
+		ns       corev1.Namespace
+	}{
+		{
+			"pod-true-overrides-ns-for-env",
+			"true",
+			corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectEnv: "true",
+					},
+				},
+			},
+			corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectEnv: "false",
+					},
+				},
+			},
+		},
+
+		{
+			"ns-has-concrete-instance-for-env",
+			"some-instance",
+			corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectEnv: "true",
+					},
+				},
+			},
+			corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectEnv: "some-instance",
+					},
+				},
+			},
+		},
+
+		{
+			"pod-has-concrete-instance-for-env",
+			"some-instance-from-pod",
+			corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectEnv: "some-instance-from-pod",
+					},
+				},
+			},
+			corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectEnv: "some-instance",
+					},
+				},
+			},
+		},
+
+		{
+			"pod-has-explicit-false-for-env",
+			"false",
+			corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectEnv: "false",
+					},
+				},
+			},
+			corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectEnv: "some-instance",
+					},
+				},
+			},
+		},
+
+		{
+			"pod-has-no-annotations-for-env",
+			"some-instance",
+			corev1.Pod{},
+			corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectEnv: "some-instance",
+					},
+				},
+			},
+		},
+
+		{
+			"ns-has-no-annotations-for-env",
+			"true",
+			corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectEnv: "true",
+					},
+				},
+			},
+			corev1.Namespace{},
+		},
+	} {
+		t.Run(tt.desc, func(t *testing.T) {
+			// test
+			annValue := annotationValue(tt.ns.ObjectMeta, tt.pod.ObjectMeta, annotationInjectEnv)
+
+			// verify
+			assert.Equal(t, tt.expected, annValue)
+		})
+	}
+}
