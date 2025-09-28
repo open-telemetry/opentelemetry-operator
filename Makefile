@@ -301,10 +301,11 @@ test: envtest gotestsum
 .PHONY: precommit
 precommit: fmt vet lint test ensure-update-is-noop
 
-# Run go fmt against code
+# Run formatters
 .PHONY: fmt
-fmt:
+fmt: golangci-lint
 	go fmt ./...
+	$(GOLANGCI_LINT) run --fix
 
 # Run go vet against code
 .PHONY: vet
