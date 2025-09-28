@@ -371,8 +371,8 @@ func TestExtensionService(t *testing.T) {
 							Extensions: &v1beta1.AnyConfig{
 								Object: map[string]interface{}{
 									"jaeger_query": map[string]interface{}{
-										"http": map[string]interface{}{
-											"endpoint": "0.0.0.0:16686",
+										"grpc": map[string]interface{}{
+											"endpoint": "0.0.0.0:17685",
 										},
 									},
 								},
@@ -382,13 +382,8 @@ func TestExtensionService(t *testing.T) {
 				},
 			},
 			expectedPorts: []v1.ServicePort{
-				{
-					Name: "jaeger-query",
-					Port: 16686,
-					TargetPort: intstr.IntOrString{
-						IntVal: 16686,
-					},
-				},
+				{Name: "jaeger-query", Port: 16686, TargetPort: intstr.IntOrString{IntVal: 16686}},
+				{Name: "jq-grpc", Port: 17685, TargetPort: intstr.IntOrString{IntVal: 17685}},
 			},
 		},
 		{
@@ -409,10 +404,10 @@ func TestExtensionService(t *testing.T) {
 								Object: map[string]interface{}{
 									"jaeger_query": map[string]interface{}{
 										"http": map[string]interface{}{
-											"endpoint": "0.0.0.0:16686",
+											"endpoint": "0.0.0.0:17686",
 										},
 										"grpc": map[string]interface{}{
-											"endpoint": "0.0.0.0:16686",
+											"endpoint": "0.0.0.0:17685",
 										},
 									},
 								},
@@ -422,13 +417,8 @@ func TestExtensionService(t *testing.T) {
 				},
 			},
 			expectedPorts: []v1.ServicePort{
-				{
-					Name: "jaeger-query",
-					Port: 16686,
-					TargetPort: intstr.IntOrString{
-						IntVal: 16686,
-					},
-				},
+				{Name: "jaeger-query", Port: 17686, TargetPort: intstr.IntOrString{IntVal: 17686}},
+				{Name: "jq-grpc", Port: 17685, TargetPort: intstr.IntOrString{IntVal: 17685}},
 			},
 		},
 		{
