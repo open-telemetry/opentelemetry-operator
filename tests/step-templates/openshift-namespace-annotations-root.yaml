@@ -1,7 +1,7 @@
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: StepTemplate
 metadata:
-  name: openshift-namespace-annotations
+  name: openshift-namespace-annotations-root
 spec:
   try:
     # In OpenShift, when a namespace is created, all necessary SCC annotations are automatically added.
@@ -14,7 +14,7 @@ spec:
           - annotate
           - namespace
           - ${NAMESPACE}
-          - openshift.io/sa.scc.uid-range=1000/1000
+          - openshift.io/sa.scc.uid-range=0/0
           - --overwrite
     - command:
         entrypoint: kubectl
