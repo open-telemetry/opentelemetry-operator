@@ -1,0 +1,26 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest-custom-names
+spec:
+  service:
+    name: my-custom-service
+  headlessService:
+    name: my-custom-headless
+  monitoringService:
+    name: my-custom-monitoring
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+
+    exporters:
+      debug:
+
+    service:
+      pipelines:
+        traces:
+          receivers: [ otlp ]
+          exporters: [ debug ]

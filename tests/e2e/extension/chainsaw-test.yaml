@@ -20,3 +20,10 @@ spec:
             file: 01-install-health-check-extension.yaml
         - assert:
             file: 01-assert-health-check-extension.yaml
+    - name: step-02
+      description: health check extension
+      try:
+        - apply:
+            file: 02-install-jaeger-extension-disable-service.yaml
+        - assert:
+            file: 02-assert-jaeger-extension-disable-service.yaml

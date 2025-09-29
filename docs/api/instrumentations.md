@@ -45,7 +45,7 @@ Instrumentation is the spec for OpenTelemetry instrumentation.
       <td>true</td>
       </tr>
       <tr>
-      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#objectmeta-v1-meta">metadata</a></b></td>
       <td>object</td>
       <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
       <td>true</td>
@@ -167,6 +167,8 @@ Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.<br/>
           Propagators defines inter-process context propagation configuration.
 Values in this list will be set in the OTEL_PROPAGATORS env var.
 Enum=tracecontext;baggage;b3;b3multi;jaeger;xray;ottrace;none<br/>
+          <br/>
+            <i>Enum</i>: tracecontext, baggage, b3, b3multi, jaeger, xray, ottrace, none<br/>
         </td>
         <td>false</td>
       </tr><tr>

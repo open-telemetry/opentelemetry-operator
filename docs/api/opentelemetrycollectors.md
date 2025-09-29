@@ -46,7 +46,7 @@ OpenTelemetryCollector is the Schema for the opentelemetrycollectors API.
       <td>true</td>
       </tr>
       <tr>
-      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#objectmeta-v1-meta">metadata</a></b></td>
       <td>object</td>
       <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
       <td>true</td>
@@ -19409,7 +19409,7 @@ OpenTelemetryCollector is the Schema for the opentelemetrycollectors API.
       <td>true</td>
       </tr>
       <tr>
-      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#objectmeta-v1-meta">metadata</a></b></td>
       <td>object</td>
       <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
       <td>true</td>
@@ -19418,6 +19418,8 @@ OpenTelemetryCollector is the Schema for the opentelemetrycollectors API.
         <td>object</td>
         <td>
           OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.<br/>
+          <br/>
+            <i>Validations</i>:<li>!(self.mode == 'sidecar' && size(self.tolerations) > 0) || !has(self.tolerations): the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'</li><li>!(self.mode == 'sidecar' && self.priorityClassName != '') || !has(self.priorityClassName): the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'</li><li>!(self.mode == 'sidecar' && self.affinity != null) || !has(self.affinity): the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'</li><li>!(self.mode == 'sidecar' && size(self.additionalContainers) > 0) || !has(self.additionalContainers): the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'</li>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19546,6 +19548,20 @@ This is only applicable to Deployment mode.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecextensionservice">extensionService</a></b></td>
+        <td>object</td>
+        <td>
+          ExtensionService to override configuration of the generated Collector ExtensionService.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecheadlessservice">headlessService</a></b></td>
+        <td>object</td>
+        <td>
+          HeadlessService to override configuration of the generated Collector HeadlessService.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>hostNetwork</b></td>
         <td>boolean</td>
         <td>
@@ -19636,6 +19652,13 @@ Default is managed.<br/>
           Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)<br/>
           <br/>
             <i>Enum</i>: daemonset, deployment, sidecar, statefulset<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecmonitoringservice">monitoringService</a></b></td>
+        <td>object</td>
+        <td>
+          MonitoringService to override configuration of the generated Collector MonitoringService.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19759,6 +19782,13 @@ container.
 
 In sidecar mode, this controls the security context for the
 injected sidecar container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecservice">service</a></b></td>
+        <td>object</td>
+        <td>
+          Service to override configuration of the generated Collector Service.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -25708,6 +25738,76 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 </table>
 
 
+### OpenTelemetryCollector.spec.extensionService
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+ExtensionService to override configuration of the generated Collector ExtensionService.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled indicates whether the Service should be created.
+nil means not set (defaults to enabled for backward compatibility)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name to override the default Service name<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.headlessService
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+HeadlessService to override configuration of the generated Collector HeadlessService.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled indicates whether the Service should be created.
+nil means not set (defaults to enabled for backward compatibility)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name to override the default Service name<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpenTelemetryCollector.spec.ingress
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
 
@@ -29412,6 +29512,41 @@ The default value is taken from the operator feature-gate `--feature-gates=+oper
 </table>
 
 
+### OpenTelemetryCollector.spec.monitoringService
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+MonitoringService to override configuration of the generated Collector MonitoringService.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled indicates whether the Service should be created.
+nil means not set (defaults to enabled for backward compatibility)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name to override the default Service name<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpenTelemetryCollector.spec.observability
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
 
@@ -30747,6 +30882,41 @@ In addition, if HostProcess is true then HostNetwork must also be set to true.<b
 Defaults to the user specified in image metadata if unspecified.
 May also be set in PodSecurityContext. If set in both SecurityContext and
 PodSecurityContext, the value specified in SecurityContext takes precedence.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.service
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+Service to override configuration of the generated Collector Service.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled indicates whether the Service should be created.
+nil means not set (defaults to enabled for backward compatibility)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name to override the default Service name<br/>
         </td>
         <td>false</td>
       </tr></tbody>

@@ -143,6 +143,22 @@ type OpenTelemetryCollectorSpec struct {
 	// If not specified, it will default to "<name>-headless".
 	// +optional
 	ServiceName string `json:"serviceName,omitempty"`
+
+	// Service to override configuration of the generated Collector Service.
+	// +optional
+	Service ServiceSpec `json:"service,omitempty"`
+
+	// HeadlessService to override configuration of the generated Collector HeadlessService.
+	// +optional
+	HeadlessService ServiceSpec `json:"headlessService,omitempty"`
+
+	// MonitoringService to override configuration of the generated Collector MonitoringService.
+	// +optional
+	MonitoringService ServiceSpec `json:"monitoringService,omitempty"`
+
+	// ExtensionService to override configuration of the generated Collector ExtensionService.
+	// +optional
+	ExtensionService ServiceSpec `json:"extensionService,omitempty"`
 }
 
 // TargetAllocatorEmbedded defines the configuration for the Prometheus target allocator, embedded in the
@@ -333,4 +349,21 @@ type ConfigMapsSpec struct {
 	// Configmap defines name and path where the configMaps should be mounted.
 	Name      string `json:"name"`
 	MountPath string `json:"mountpath"`
+}
+
+type ServiceSpec struct {
+	// Enabled indicates whether the Service should be created.
+	// nil means not set (defaults to enabled for backward compatibility)
+	// +optional
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Name to override the default Service name
+	// +optional
+	Name string `json:"name,omitempty"`
+}
+
+// IsEnabled returns true if the service should be created.
+// nil (not set) defaults to true for backward compatibility.
+func (s *ServiceSpec) IsEnabled() bool {
+	return s.Enabled == nil || *s.Enabled
 }
