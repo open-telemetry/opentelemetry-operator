@@ -19773,8 +19773,9 @@ the operator will not automatically create a ServiceAccount.<br/>
         <td><b>serviceName</b></td>
         <td>string</td>
         <td>
-          ServiceName is the name of the Service to be used.
-If not specified, it will default to "<name>-headless".<br/>
+          ServiceName sets the serviceName of the StatefulSet.
+If not specified, it will default to "<name>-headless".
+Note that the custom service name is not created by the operator.<br/>
         </td>
         <td>false</td>
       </tr><tr>

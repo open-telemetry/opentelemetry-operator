@@ -242,4 +242,10 @@ type StatefulSetCommonFields struct {
 	// This only works with the following OpenTelemetryCollector modes: statefulset.
 	// +optional
 	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
+
+	// ServiceName sets the serviceName of the StatefulSet.
+	// If not specified, it will default to "<name>-headless".
+	// Note that the custom service name is not created by the operator.
+	// +optional
+	ServiceName string `json:"serviceName,omitempty"`
 }
