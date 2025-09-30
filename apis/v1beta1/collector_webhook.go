@@ -227,7 +227,7 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	}
 	ports, errPorts := r.Spec.Config.GetAllPorts(c.logger)
 	if errPorts != nil {
-		return warnings, fmt.Errorf("the OpenTelemetry config is incorrect. The port numbers are invalid: %v", errPorts)
+		return warnings, fmt.Errorf("the OpenTelemetry config is incorrect. The port numbers are invalid: %w", errPorts)
 	}
 	for _, p := range ports {
 		nameErrs := validation.IsValidPortName(p.Name)
