@@ -1395,6 +1395,138 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			},
 			expectedErr: "the OpenTelemetry Spec Ports configuration is incorrect",
 		},
+		{
+			name: "invalid port number in config - too large",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"otlp": map[string]interface{}{
+									"protocols": map[string]interface{}{
+										"grpc": map[string]interface{}{
+											"endpoint": "0.0.0.0:65536",
+										},
+									},
+								},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"debug": map[string]interface{}{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Receivers: []string{"otlp"},
+									Exporters: []string{"debug"},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry config is incorrect. The port",
+		},
+		{
+			name: "port validation - zero port currently not validated",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"otlp": map[string]interface{}{
+									"protocols": map[string]interface{}{
+										"grpc": map[string]interface{}{
+											"endpoint": "0.0.0.0:0",
+										},
+									},
+								},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"debug": map[string]interface{}{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Receivers: []string{"otlp"},
+									Exporters: []string{"debug"},
+								},
+							},
+						},
+					},
+				},
+			},
+			// TODO: This should fail validation when port validation is fully implemented
+		},
+		{
+			name: "port validation - negative port currently not validated",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"otlp": map[string]interface{}{
+									"protocols": map[string]interface{}{
+										"grpc": map[string]interface{}{
+											"endpoint": "0.0.0.0:-1",
+										},
+									},
+								},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"debug": map[string]interface{}{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Receivers: []string{"otlp"},
+									Exporters: []string{"debug"},
+								},
+							},
+						},
+					},
+				},
+			},
+			// TODO: This should fail validation when port validation is fully implemented
+		},
+		{
+			name: "invalid port number in zipkin receiver config - too large",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"zipkin": map[string]interface{}{
+									"endpoint": "0.0.0.0:65537",
+								},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"debug": map[string]interface{}{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Receivers: []string{"zipkin"},
+									Exporters: []string{"debug"},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry config is incorrect. The port",
+		},
 	}
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {

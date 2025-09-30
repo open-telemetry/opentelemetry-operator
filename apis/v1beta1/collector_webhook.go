@@ -225,6 +225,17 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	if err := ValidatePorts(r.Spec.Ports); err != nil {
 		return warnings, err
 	}
+	ports, errPorts := r.Spec.Config.GetAllPorts(c.logger)
+	if errPorts != nil {
+		return warnings, fmt.Errorf("the OpenTelemetry config is incorrect. The port numbers are invalid: %v", errPorts)
+	}
+	for _, p := range ports {
+		nameErrs := validation.IsValidPortName(p.Name)
+		numErrs := validation.IsValidPortNum(int(p.Port))
+		if len(nameErrs) > 0 || len(numErrs) > 0 {
+			return warnings, fmt.Errorf("the OpenTelemetry config is incorrect. The port name '%s' errors: %s, num '%d' errors: %s", p.Name, nameErrs, p.Port, numErrs)
+		}
+	}
 
 	var maxReplicas *int32
 	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil {
