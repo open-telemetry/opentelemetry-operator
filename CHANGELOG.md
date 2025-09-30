@@ -2,6 +2,30 @@
 
 <!-- next version -->
 
+## 0.136.0
+
+### 🧰 Bug fixes 🧰
+
+- `target-allocator`: Fixes the incorrect k8s version for the traffic distribution feature. (#4394)
+- `collector`: Fix statefulset serviceName field change handling. (#4371)
+  The Operator 0.129.1 introduced a new feature which allows setting the serviceName of the collector statefulset ([#4041](https://github.com/open-telemetry/opentelemetry-operator/pull/4041)).
+  This feature introduced two issues:
+  1. upgrade failure because the default stateful serviceName changed
+  2. the statefulset serviceName field is mutable, therefore a change of the collector serviceName field is not applied
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.136.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.136.0)
+* [OpenTelemetry Contrib - v0.136.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.136.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.64.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.64.1)
+* [Python - v0.58b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.58b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.135.0
 
 ### 💡 Enhancements 💡
