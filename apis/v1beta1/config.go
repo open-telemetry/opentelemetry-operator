@@ -471,7 +471,7 @@ func (s *Service) ApplyDefaults(logger logr.Logger, recorder record.EventRecorde
 	tel := s.GetTelemetry(logger)
 
 	if tel == nil {
-		logger.V(1).Info("no telemetry configuration parsed, creating default")
+		logger.V(2).Info("no telemetry configuration parsed, creating default")
 		tel = &Telemetry{}
 		s.Telemetry = &AnyConfig{
 			Object: map[string]interface{}{},
