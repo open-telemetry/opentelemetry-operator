@@ -109,6 +109,18 @@ func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bo
 		return false, fmt.Errorf("instrumentation configuration not provided")
 	}
 
+	// Look for mixed multiple instrumentations with and without container names.
+	if instrWithoutContainers > 0 && instrWithContainers > 0 {
+		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
+	}
+
+	// Look for multiple instrumentations without container names.
+	// When multiple instrumentations are specified without container names, they would all try to
+	// instrument the first container, which is ambiguous and likely not what the user wants.
+	if instrWithoutContainers > 1 {
+		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
+	}
+
 	return true, nil
 }
 
