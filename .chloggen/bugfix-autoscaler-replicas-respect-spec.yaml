@@ -1,0 +1,6 @@
+change_type: bug_fix
+component: collector
+note: "Fix autoscaler not scaling above minReplicas; replicas now respect the scale subresource and never fall below autoscaler.minReplicas."
+issues: [4400]
+subtext: |
+  Also rename helper `GetInitialReplicas` to `GetDesiredReplicas` to reflect reconcile-time behavior.
