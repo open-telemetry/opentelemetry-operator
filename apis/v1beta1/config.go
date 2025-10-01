@@ -449,7 +449,7 @@ const (
 // In cases which the port itself is a variable, i.e. "${env:POD_IP}:${env:PORT}", this returns an error. This happens
 // because the port is used to generate Service objects and mappings.
 func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
-	telemetry := s.GetTelemetry(&logger)
+	telemetry := s.GetTelemetry(logger)
 	if telemetry == nil {
 		return defaultServiceHost, defaultServicePort, nil
 	}
@@ -468,7 +468,7 @@ func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
 
 // ApplyDefaults inserts configuration defaults if it has not been set.
 func (s *Service) ApplyDefaults(logger logr.Logger, recorder record.EventRecorder, obj runtime.Object) error {
-	tel := s.GetTelemetry(&logger)
+	tel := s.GetTelemetry(logger)
 
 	if tel == nil {
 		logger.V(1).Info("no telemetry configuration parsed, creating default")
@@ -486,7 +486,7 @@ func (s *Service) ApplyDefaults(logger logr.Logger, recorder record.EventRecorde
 		return nil
 	}
 
-	logger.Info("no telemetry readers configuration found, applying default Prometheus endpoint")
+	logger.V(2).Info("no telemetry readers configuration found, applying default Prometheus endpoint")
 
 	host, port, err := s.MetricsEndpoint(logger)
 	if err != nil {
@@ -588,7 +588,7 @@ func AddPrometheusMetricsEndpoint(host string, port int32) otelConfig.MetricRead
 
 // GetTelemetry serves as a helper function to access the fields we care about in the underlying telemetry struct.
 // This exists to avoid needing to worry extra fields in the telemetry struct.
-func (s *Service) GetTelemetry(logger *logr.Logger) *Telemetry {
+func (s *Service) GetTelemetry(logger logr.Logger) *Telemetry {
 	if s.Telemetry == nil {
 		logger.V(2).Info("no spec.service.telemetry configuration found")
 		return nil

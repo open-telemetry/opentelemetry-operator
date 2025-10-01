@@ -209,7 +209,7 @@ func TestGetTelemetryFromYAML(t *testing.T) {
 		},
 	}
 	logger := logr.Discard()
-	assert.Equal(t, telemetry, cfg.Service.GetTelemetry(&logger))
+	assert.Equal(t, telemetry, cfg.Service.GetTelemetry(logger))
 }
 
 func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
@@ -220,7 +220,7 @@ func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
 	err = go_yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
 	logger := logr.Discard()
-	assert.Nil(t, cfg.Service.GetTelemetry(&logger))
+	assert.Nil(t, cfg.Service.GetTelemetry(logger))
 }
 
 func TestConfigMetricsEndpoint(t *testing.T) {
@@ -1143,7 +1143,7 @@ func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 	require.NoError(t, err)
 
 	logger := logr.Discard()
-	telemetry := cfg.Service.GetTelemetry(&logger)
+	telemetry := cfg.Service.GetTelemetry(logger)
 	require.NotNil(t, telemetry)
 	require.Equal(t, expected, cfg)
 }
@@ -1177,7 +1177,7 @@ func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
 	require.NoError(t, err)
 
 	logger := logr.Discard()
-	telemetry := cfg.Service.GetTelemetry(&logger)
+	telemetry := cfg.Service.GetTelemetry(logger)
 	require.NotNil(t, telemetry)
 
 	require.Len(t, telemetry.Metrics.Readers, 1)
