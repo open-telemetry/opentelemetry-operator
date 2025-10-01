@@ -32,7 +32,12 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifest
 		return ctrl.Result{}, err
 	}
 	changed := params.OpAMPBridge.DeepCopy()
-	changed.Status.Version = version.OperatorOpAMPBridge()
+
+	// If the user provided a custom image we don't set the version.
+	// There is no guarantee that the custom image version matches the intended version.
+	if changed.Spec.Image == "" {
+		changed.Status.Version = version.OperatorOpAMPBridge()
+	}
 
 	statusPatch := client.MergeFrom(&params.OpAMPBridge)
 	if err := params.Client.Status().Patch(ctx, changed, statusPatch); err != nil {

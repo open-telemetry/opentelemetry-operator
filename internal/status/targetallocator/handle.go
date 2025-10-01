@@ -32,7 +32,12 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params targetal
 		return ctrl.Result{}, err
 	}
 	changed := params.TargetAllocator.DeepCopy()
-	changed.Status.Version = version.TargetAllocator()
+
+	// If the user provided a custom image we don't set the version.
+	// There is no guarantee that the custom image version matches the intended version.
+	if changed.Spec.Image == "" {
+		changed.Status.Version = version.TargetAllocator()
+	}
 
 	statusPatch := client.MergeFrom(&params.TargetAllocator)
 	if err := params.Client.Status().Patch(ctx, changed, statusPatch); err != nil {
