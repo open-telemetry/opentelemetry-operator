@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: my-python-multiannotation-ns
+  annotations:
+    sidecar.opentelemetry.io/inject: "true"
+  labels:
+    app: my-sdk-from-namespace
+spec:
+  containers:
+  - env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp
+    - name: OTEL_EXPORTER_OTLP_TIMEOUT
+      value: "20"
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.85"
+    - name: OTEL_SERVICE_NAME
+      value: my-sdk-from-namespace
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://localhost:4317
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: OTEL_PROPAGATORS
+      value: jaeger,b3multi
+    - name: OTEL_RESOURCE_ATTRIBUTES
+    name: my-sdk
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+  - args:
+    - --config=env:OTEL_CONFIG
+    name: otc-container
+status:
+  containerStatuses:
+  - name: my-sdk
+    ready: true
+    started: true
+  - name: otc-container
+    ready: true
+    started: true
+  phase: Running
