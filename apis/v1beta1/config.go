@@ -264,8 +264,8 @@ func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, co
 }
 
 // applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
-func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) error {
-	if err := c.Service.ApplyDefaults(logger, nil, nil); err != nil {
+func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, recorder record.EventRecorder, obj runtime.Object, componentKinds ...ComponentKind) error {
+	if err := c.Service.ApplyDefaults(logger, recorder, obj); err != nil {
 		return err
 	}
 	enabledComponents := c.GetEnabledComponents()
@@ -346,8 +346,8 @@ func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error
 	return c.getRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor, KindExtension)
 }
 
-func (c *Config) ApplyDefaults(logger logr.Logger) error {
-	return c.applyDefaultForComponentKinds(logger, KindReceiver, KindExtension)
+func (c *Config) ApplyDefaults(logger logr.Logger, recorder record.EventRecorder, obj runtime.Object) error {
+	return c.applyDefaultForComponentKinds(logger, recorder, obj, KindReceiver, KindExtension)
 }
 
 // GetLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled

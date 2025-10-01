@@ -104,6 +104,7 @@ func TestValidate(t *testing.T) {
 			cfg,
 			getReviewer(test.shouldFailSar),
 			nil,
+			nil,
 			bv,
 			nil,
 		)
@@ -542,6 +543,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				testScheme,
 				cfg,
 				getReviewer(test.shouldFailSar),
+				nil,
 				nil,
 				bv,
 				nil,
@@ -1429,6 +1431,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				cfg,
 				getReviewer(test.shouldFailSar),
 				nil,
+				nil,
 				bv,
 				nil,
 			)
@@ -1497,6 +1500,7 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 				testScheme,
 				cfg,
 				getReviewer(test.shouldFailSar),
+				nil,
 				nil,
 				bv,
 				nil,
