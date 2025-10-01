@@ -91,8 +91,9 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 				Name: "monitoring",
 				Port: metricsPort,
 			}},
-			IPFamilies:     params.OtelCol.Spec.IpFamilies,
-			IPFamilyPolicy: params.OtelCol.Spec.IpFamilyPolicy,
+			IPFamilies:          params.OtelCol.Spec.IpFamilies,
+			IPFamilyPolicy:      params.OtelCol.Spec.IpFamilyPolicy,
+			TrafficDistribution: params.OtelCol.Spec.TrafficDistribution,
 		},
 	}, nil
 }
@@ -124,8 +125,9 @@ func ExtensionService(params manifests.Params) (*corev1.Service, error) {
 			Annotations: annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Ports:    ports,
-			Selector: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
+			Ports:               ports,
+			Selector:            manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
+			TrafficDistribution: params.OtelCol.Spec.TrafficDistribution,
 		},
 	}, nil
 }
@@ -199,6 +201,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 			Ports:                 ports,
 			IPFamilies:            params.OtelCol.Spec.IpFamilies,
 			IPFamilyPolicy:        params.OtelCol.Spec.IpFamilyPolicy,
+			TrafficDistribution:   params.OtelCol.Spec.TrafficDistribution,
 		},
 	}, nil
 }

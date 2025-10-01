@@ -12,7 +12,6 @@ spec:
       labels:
         app: my-python-musl
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-python: "true"
         instrumentation.opentelemetry.io/otel-python-platform: "musl"
     spec:

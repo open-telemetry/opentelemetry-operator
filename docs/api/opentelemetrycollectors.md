@@ -412,6 +412,15 @@ This is only relevant to statefulset, and deployment mode<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>trafficDistribution</b></td>
+        <td>string</td>
+        <td>
+          TrafficDistribution specifies how traffic to this service is routed.
+https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution
+This is only applicable to Service resources.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecupdatestrategy">updateStrategy</a></b></td>
         <td>object</td>
         <td>
@@ -19630,6 +19639,13 @@ Default is managed.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecnetworkpolicy">networkPolicy</a></b></td>
+        <td>object</td>
+        <td>
+          NetworkPolicy defines the network policy to be applied to the OpenTelemetry Collector pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
         <td>
@@ -19757,8 +19773,9 @@ the operator will not automatically create a ServiceAccount.<br/>
         <td><b>serviceName</b></td>
         <td>string</td>
         <td>
-          ServiceName is the name of the Service to be used.
-If not specified, it will default to "<name>-headless".<br/>
+          ServiceName sets the serviceName of the StatefulSet.
+If not specified, it will default to "<name>-headless".
+Note that the custom service name is not created by the operator.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19801,6 +19818,15 @@ controls how pods are spread across your cluster among failure-domains
 such as regions, zones, nodes, and other user-defined topology domains
 https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 This only works with the following OpenTelemetryCollector mode's: statefulset, and deployment.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>trafficDistribution</b></td>
+        <td>string</td>
+        <td>
+          TrafficDistribution specifies how traffic to this service is routed.
+https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution
+This is only applicable to Service resources.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -29359,6 +29385,34 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
 </table>
 
 
+### OpenTelemetryCollector.spec.networkPolicy
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+NetworkPolicy defines the network policy to be applied to the OpenTelemetry Collector pods.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enable enables the NetworkPolicy.
+The default value is taken from the operator feature-gate `--feature-gates=+operand.networkpolicy`.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpenTelemetryCollector.spec.observability
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
 
@@ -30742,6 +30796,17 @@ WARNING: The per-node strategy currently ignores targets without a Node, like co
         <td>
           CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
 The default is 30s, which means that if a collector becomes not Ready, the target allocator will wait for 30 seconds before reassigning its targets. The assumption is that the state is temporary, and an expensive target reallocation should be avoided if possible.<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+            <i>Default</i>: 30s<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>collectorTargetReloadInterval</b></td>
+        <td>string</td>
+        <td>
+          CollectorTargetReloadInterval defines the interval at which the Prometheus receiver will reload targets from the target allocator.
+The default is 30s.<br/>
           <br/>
             <i>Format</i>: duration<br/>
             <i>Default</i>: 30s<br/>

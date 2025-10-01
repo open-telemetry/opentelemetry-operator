@@ -238,6 +238,11 @@ type OpenTelemetryCollectorSpec struct {
 	// If not specified, it will default to "<name>-headless".
 	// +optional
 	ServiceName string `json:"serviceName,omitempty"`
+	// TrafficDistribution specifies how traffic to this service is routed.
+	// https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution
+	// This is only applicable to Service resources.
+	// +optional
+	TrafficDistribution *string `json:"trafficDistribution,omitempty"`
 
 	// AdditionalContainers allows injecting additional containers into the Collector's pod definition.
 	// These sidecar containers can be used for authentication proxies, log shipping sidecars, agents for shipping

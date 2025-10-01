@@ -5,16 +5,37 @@ metadata:
   creationTimestamp: null
   name: smoke-ports
 spec:
+  bindings:
+    - name: version
+      value: (x_k8s_server_version($config))
+    - name: minorVersion
+      value: (to_number($version.minor))
   steps:
-  - name: step-00
-    try:
-    - apply:
-        file: 00-install.yaml
-    - assert:
-        file: 00-assert.yaml
-  - name: step-01
-    try:
-    - apply:
-        file: 01-install.yaml
-    - assert:
-        file: 01-assert.yaml
+    - name: step-00
+      try:
+        - apply:
+            file: 00-install.yaml
+        - assert:
+            file: 00-assert.yaml
+        - script:
+            content: kubectl get svc smoke-ports-collector -n $NAMESPACE -o jsonpath='{.spec.trafficDistribution}' || echo ""
+            outputs:
+              - name: trafficDistribution
+                value: ($stdout)
+        - assert:
+            resource:
+              (($minorVersion >= `31` && $trafficDistribution == 'PreferClose') || ($minorVersion < `30` && $trafficDistribution == '')): true
+    - name: step-01
+      try:
+        - apply:
+            file: 01-install.yaml
+        - assert:
+            file: 01-assert.yaml
+        - script:
+            content: kubectl get svc smoke-ports-collector -n $NAMESPACE -o jsonpath='{.spec.trafficDistribution}' || echo ""
+            outputs:
+              - name: trafficDistribution
+                value: ($stdout)
+        - assert:
+            resource:
+              (($minorVersion >= `31` && $trafficDistribution == 'PreferClose') || ($minorVersion < `31` && $trafficDistribution == '')): true

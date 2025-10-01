@@ -5,25 +5,11 @@ metadata:
   name: instrumentation-java
 spec:
   steps:
+  - name: Add OpenShift namespace annotations
+    use:
+      template: ../../step-templates/openshift-namespace-annotations.yaml
   - name: step-00
     try:
-    # In OpenShift, when a namespace is created, all necessary SCC annotations are automatically added. However, if a namespace is created using a resource file with only selected SCCs, the other auto-added SCCs are not included. Therefore, the UID-range and supplemental groups SCC annotations must be set after the namespace is created.
-    - command:
-        entrypoint: kubectl
-        args:
-        - annotate
-        - namespace
-        - ${NAMESPACE}
-        - openshift.io/sa.scc.uid-range=1000/1000
-        - --overwrite
-    - command:
-        entrypoint: kubectl
-        args:
-        - annotate
-        - namespace
-        - ${NAMESPACE}
-        - openshift.io/sa.scc.supplemental-groups=3000/3000
-        - --overwrite
     - apply:
         file: 00-install-collector.yaml
     - apply:
@@ -85,7 +71,7 @@ spec:
             value: (($instrumentationMajorVersion < `2` && 'process.runtime.jvm.memory.usage') || 'jvm.memory.used')
         env:
           - name: LABEL_SELECTOR
-            value: "app=my-java"
+            value: "app.kubernetes.io/name=deployment-collector"
           - name: CONTAINER_NAME
             value: "otc-container" 
           - name: RETRY_TIMEOUT
@@ -106,7 +92,7 @@ spec:
             - -n
             - ${NAMESPACE}
             - -l
-            - app=my-java
+            - app.kubernetes.io/name=deployment-collector
             - -o
             - jsonpath={.items[0].metadata.name}
           outputs:

@@ -1,0 +1,9 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: invalid-config-collector-collector
+spec:
+  template:
+    spec:
+      containers:
+      - name: otc-container

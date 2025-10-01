@@ -80,6 +80,22 @@ func TestDesiredClusterRoles(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc:       "k8sattributes processor - service.name metadata",
+			configPath: "testdata/rbac_k8sattributes_service_name.yaml",
+			expectedRules: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"pods", "namespaces"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+				{
+					APIGroups: []string{"apps"},
+					Resources: []string{"replicasets"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {

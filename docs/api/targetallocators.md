@@ -239,6 +239,13 @@ Default is managed.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#targetallocatorspecnetworkpolicy">networkPolicy</a></b></td>
+        <td>object</td>
+        <td>
+          NetworkPolicy defines the network policy to be applied to the Target Allocator pods.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>nodeSelector</b></td>
         <td>map[string]string</td>
         <td>
@@ -394,6 +401,15 @@ controls how pods are spread across your cluster among failure-domains
 such as regions, zones, nodes, and other user-defined topology domains
 https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 This only works with the following OpenTelemetryCollector mode's: statefulset, and deployment.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>trafficDistribution</b></td>
+        <td>string</td>
+        <td>
+          TrafficDistribution specifies how traffic to this service is routed.
+https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution
+This is only applicable to Service resources.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -8750,6 +8766,34 @@ Name must be an IANA_SVC_NAME.<br/>
         <td>string</td>
         <td>
           Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.networkPolicy
+<sup><sup>[↩ Parent](#targetallocatorspec)</sup></sup>
+
+
+
+NetworkPolicy defines the network policy to be applied to the Target Allocator pods.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enable enables the NetworkPolicy.
+The default value is taken from the operator feature-gate `--feature-gates=+operand.networkpolicy`.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

@@ -99,6 +99,7 @@ START_KIND_CLUSTER ?= true
 KUBE_VERSION ?= 1.33
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 KIND_CLUSTER_NAME ?= "otel-operator"
+CHAINSAW_SELECTOR := $(shell [ "$(shell printf '%s\n' "$(KUBE_VERSION)" "1.29" | sort -V | head -n1)" = "1.29" ] && echo "--selector sidecar=native" || echo "--selector sidecar=legacy")
 
 OPERATOR_SDK_VERSION ?= 1.29.0
 
@@ -300,10 +301,11 @@ test: envtest gotestsum
 .PHONY: precommit
 precommit: fmt vet lint test ensure-update-is-noop
 
-# Run go fmt against code
+# Run formatters
 .PHONY: fmt
-fmt:
+fmt: golangci-lint
 	go fmt ./...
+	$(GOLANGCI_LINT) run --fix
 
 # Run go vet against code
 .PHONY: vet
@@ -325,12 +327,9 @@ generate: controller-gen
 e2e: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e --report-name e2e
 
-# e2e-native-sidecar
-# NOTE: make sure the k8s featuregate "SidecarContainers" is set to true.
-# NOTE: make sure the operator featuregate "operator.sidecarcontainers.native" is enabled.
-.PHONY: e2e-native-sidecar
-e2e-native-sidecar: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-native-sidecar --report-name e2e-native-sidecar
+.PHONY: e2e-sidecar
+e2e-sidecar: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-sidecar --report-name e2e-sidecar $(CHAINSAW_SELECTOR)
 
 # end-to-end-test for testing automatic RBAC creation
 .PHONY: e2e-automatic-rbac
@@ -380,7 +379,7 @@ e2e-pdb: chainsaw
 # end-to-end-test for PrometheusCR E2E tests
 .PHONY: e2e-prometheuscr
 e2e-prometheuscr: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-prometheuscr --report-name e2e-prometheuscr
+	$(CHAINSAW) test --test-dir ./tests/e2e-prometheuscr --report-name e2e-prometheuscr $(CHAINSAW_SELECTOR)
 
 # Target allocator end-to-tests
 .PHONY: e2e-targetallocator
@@ -600,67 +599,68 @@ GOTESTSUM ?= $(LOCALBIN)/gotestsum
 # renovate: datasource=go depName=sigs.k8s.io/kustomize/kustomize/v5
 KUSTOMIZE_VERSION ?= v5.7.1
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
-CONTROLLER_TOOLS_VERSION ?= v0.18.0
+CONTROLLER_TOOLS_VERSION ?= v0.19.0
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION ?= v2.3.1
+GOLANGCI_LINT_VERSION ?= v2.5.0
 # renovate: datasource=go depName=sigs.k8s.io/kind
-KIND_VERSION ?= v0.29.0
+KIND_VERSION ?= v0.30.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
-CHAINSAW_VERSION ?= v0.2.12
+CHAINSAW_VERSION ?= v0.2.13
 # renovate: datasource=go depName=gotest.tools/gotestsum
-GOTESTSUM_VERSION ?= v1.12.3
+GOTESTSUM_VERSION ?= v1.13.0
 
 .PHONY: install-tools
 install-tools: kustomize golangci-lint kind controller-gen envtest crdoc operator-sdk chainsaw gotestsum
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
+	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
 
 .PHONY: golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
-	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 
 .PHONY: kind
 kind: ## Download kind locally if necessary.
-	$(call go-get-tool,$(KIND),sigs.k8s.io/kind,$(KIND_VERSION))
+	$(call go-install-tool,$(KIND),sigs.k8s.io/kind,$(KIND_VERSION))
 
 .PHONY: controller-gen
-controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
-$(CONTROLLER_GEN): $(LOCALBIN)
-	$(call go-get-tool,$(CONTROLLER_GEN), sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_TOOLS_VERSION))
+controller-gen: ## Download controller-gen locally if necessary.
+	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_TOOLS_VERSION))
 
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	$(call go-get-tool,$(ENVTEST), sigs.k8s.io/controller-runtime/tools/setup-envtest,latest)
+	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,latest)
 
 CRDOC = $(shell pwd)/bin/crdoc
 .PHONY: crdoc
 crdoc: ## Download crdoc locally if necessary.
-	$(call go-get-tool,$(CRDOC), fybrik.io/crdoc,v0.5.2)
+	$(call go-install-tool,$(CRDOC),fybrik.io/crdoc,v0.5.2)
 
 .PHONY: chainsaw
 chainsaw: ## Find or download chainsaw
-	$(call go-get-tool,$(CHAINSAW), github.com/kyverno/chainsaw,$(CHAINSAW_VERSION))
+	$(call go-install-tool,$(CHAINSAW),github.com/kyverno/chainsaw,$(CHAINSAW_VERSION))
 
 .PHONY: gotestsum
 gotestsum: ## Find or download gotestsum
-	$(call go-get-tool,$(GOTESTSUM), gotest.tools/gotestsum,$(GOTESTSUM_VERSION))
+	$(call go-install-tool,$(GOTESTSUM),gotest.tools/gotestsum,$(GOTESTSUM_VERSION))
 
-# go-get-tool will 'go get' any package $2 and install it to $1.
+# go-install-tool will 'go install' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
-define go-get-tool
-@[ -f $(1) ] || { \
-set -e ;\
-TMP_DIR=$$(mktemp -d) ;\
-cd $$TMP_DIR ;\
-go mod init tmp ;\
-echo "Downloading $(2)" ;\
-go get $(2)@$(3) ;\
-GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
-rm -rf $$TMP_DIR ;\
-}
+define go-install-tool
+@set -e ; \
+BIN="$(1)"; PKG="$(2)"; VER="$(3)"; \
+DIR="$$(dirname "$$BIN")"; mkdir -p "$$DIR"; \
+if [ -x "$$BIN" ] && [ "$$VER" != "latest" ]; then \
+  CUR=$$(go version -m "$$BIN" 2>/dev/null | awk '$$1=="mod"{print $$3; exit}'); \
+  if [ "$$CUR" = "$$VER" ]; then \
+    exit 0; \
+  fi; \
+  echo "Current version of $$PKG is $$CUR, expected $$VER. Reinstalling..."; \
+fi; \
+echo "Installing $$PKG@$$VER -> $$BIN"; \
+GOBIN="$$DIR" go install "$$PKG@$$VER"
 endef
 
 OPERATOR_SDK = $(shell pwd)/bin/operator-sdk

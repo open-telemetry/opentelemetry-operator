@@ -142,6 +142,7 @@ func (m *mockReviewer) CanAccess(ctx context.Context, serviceAccount, serviceAcc
 
 func TestBuild(t *testing.T) {
 	logger := logr.Discard()
+	trueVal := true
 	tests := []struct {
 		name            string
 		params          manifests.Params
@@ -155,11 +156,14 @@ func TestBuild(t *testing.T) {
 				OtelCol: v1beta1.OpenTelemetryCollector{
 					Spec: v1beta1.OpenTelemetryCollectorSpec{
 						Mode: v1beta1.ModeDeployment,
+						NetworkPolicy: v1beta1.NetworkPolicy{
+							Enabled: &trueVal,
+						},
 					},
 				},
 				Config: config.New(),
 			},
-			expectedObjects: 5,
+			expectedObjects: 6,
 			wantErr:         false,
 		},
 		{

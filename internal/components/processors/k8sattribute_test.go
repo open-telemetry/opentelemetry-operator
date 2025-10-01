@@ -126,6 +126,31 @@ func TestGenerateK8SAttrRbacRules(t *testing.T) {
 			},
 			wantErr: assert.NoError,
 		},
+		{
+			name: "config with service.name metadata",
+			args: args{
+				config: map[string]interface{}{
+					"extract": map[string]interface{}{
+						"metadata":    []string{"service.name"},
+						"labels":      []interface{}{},
+						"annotations": []interface{}{},
+					},
+				},
+			},
+			want: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"pods", "namespaces"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+				{
+					APIGroups: []string{"apps"},
+					Resources: []string{"replicasets"},
+					Verbs:     []string{"get", "watch", "list"},
+				},
+			},
+			wantErr: assert.NoError,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

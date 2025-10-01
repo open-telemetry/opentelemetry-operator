@@ -803,8 +803,10 @@ func TestStatefulSetServiceName(t *testing.T) {
 					Name: "my-instance",
 				},
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					Mode:        v1beta1.ModeStatefulSet,
-					ServiceName: "custom-headless",
+					Mode: v1beta1.ModeStatefulSet,
+					StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
+						ServiceName: "custom-headless",
+					},
 				},
 			},
 			expectedServiceName: "custom-headless",

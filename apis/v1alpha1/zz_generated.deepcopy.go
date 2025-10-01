@@ -973,6 +973,11 @@ func (in *OpenTelemetryCollectorSpec) DeepCopyInto(out *OpenTelemetryCollectorSp
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.TrafficDistribution != nil {
+		in, out := &in.TrafficDistribution, &out.TrafficDistribution
+		*out = new(string)
+		**out = **in
+	}
 	if in.AdditionalContainers != nil {
 		in, out := &in.AdditionalContainers, &out.AdditionalContainers
 		*out = make([]v1.Container, len(*in))
@@ -1388,6 +1393,7 @@ func (in *TargetAllocatorSpec) DeepCopyInto(out *TargetAllocatorSpec) {
 	}
 	in.PrometheusCR.DeepCopyInto(&out.PrometheusCR)
 	in.Observability.DeepCopyInto(&out.Observability)
+	in.NetworkPolicy.DeepCopyInto(&out.NetworkPolicy)
 	if in.CollectorNotReadyGracePeriod != nil {
 		in, out := &in.CollectorNotReadyGracePeriod, &out.CollectorNotReadyGracePeriod
 		*out = new(metav1.Duration)

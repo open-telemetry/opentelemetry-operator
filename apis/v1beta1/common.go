@@ -224,6 +224,11 @@ type OpenTelemetryCommonFields struct {
 	// +kubebuilder:default:=SingleStack
 	// +optional
 	IpFamilyPolicy *v1.IPFamilyPolicy `json:"ipFamilyPolicy,omitempty"`
+	// TrafficDistribution specifies how traffic to this service is routed.
+	// https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution
+	// This is only applicable to Service resources.
+	// +optional
+	TrafficDistribution *string `json:"trafficDistribution,omitempty"`
 }
 
 type StatefulSetCommonFields struct {
@@ -237,4 +242,10 @@ type StatefulSetCommonFields struct {
 	// This only works with the following OpenTelemetryCollector modes: statefulset.
 	// +optional
 	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
+
+	// ServiceName sets the serviceName of the StatefulSet.
+	// If not specified, it will default to "<name>-headless".
+	// Note that the custom service name is not created by the operator.
+	// +optional
+	ServiceName string `json:"serviceName,omitempty"`
 }
