@@ -48,7 +48,7 @@ func (tf *relabelConfigTargetFilter) Apply(targets []*target.Item) []*target.Ite
 		}
 
 		if keepTarget {
-			targets[writeIndex] = tItem
+			targets[writeIndex] = target.NewItem(tItem.JobName, tItem.TargetURL, tItem.Labels, tItem.CollectorName, target.WithRelabeledLabels(lset))
 			writeIndex++
 		}
 	}
