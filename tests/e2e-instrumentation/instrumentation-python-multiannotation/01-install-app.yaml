@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-python-with-pod-annotation
+  namespace: my-python-multiannotation-ns
+spec:
+  selector:
+    matchLabels:
+      app: my-python-with-pod-annotation
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-python-with-pod-annotation
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "true"
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 3000
+      containers:
+      - name: my-python
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
