@@ -68,7 +68,7 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 					TerminationGracePeriodSeconds: params.OtelCol.Spec.TerminationGracePeriodSeconds,
 				},
 			},
-			Replicas:                             manifestutils.GetInitialReplicas(params.OtelCol),
+			Replicas:                             manifestutils.GetDesiredReplicas(params.OtelCol),
 			PodManagementPolicy:                  "Parallel",
 			VolumeClaimTemplates:                 VolumeClaimTemplates(params.OtelCol),
 			PersistentVolumeClaimRetentionPolicy: params.OtelCol.Spec.PersistentVolumeClaimRetentionPolicy,
