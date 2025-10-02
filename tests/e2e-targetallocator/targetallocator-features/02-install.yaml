@@ -4,4 +4,6 @@ metadata:
   name: stateful
   labels:
     app.kubernetes.io/name: test
+  annotations:
+    e2e-test-annotation: "true"
   
