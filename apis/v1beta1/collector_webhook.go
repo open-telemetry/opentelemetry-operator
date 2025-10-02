@@ -23,6 +23,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
+const (
+	maxPortLen = 15
+)
+
 var (
 	_ admission.CustomValidator = &CollectorWebhook{}
 	_ admission.CustomDefaulter = &CollectorWebhook{}
@@ -224,6 +228,21 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	// validate port config
 	if err := ValidatePorts(r.Spec.Ports); err != nil {
 		return warnings, err
+	}
+	ports, errPorts := r.Spec.Config.GetAllPorts(c.logger)
+	if errPorts != nil {
+		return warnings, fmt.Errorf("the OpenTelemetry config is incorrect. The port numbers are invalid: %w", errPorts)
+	}
+	for _, p := range ports {
+		truncName := naming.Truncate(p.Name, maxPortLen)
+		if truncName != p.Name {
+			warnings = append(warnings, fmt.Sprintf("the OpenTelemetry config port name '%s' exceeds the maximum length of 15 characters and has been truncated to '%s'", p.Name, truncName))
+		}
+		nameErrs := validation.IsValidPortName(truncName)
+		numErrs := validation.IsValidPortNum(int(p.Port))
+		if len(nameErrs) > 0 || len(numErrs) > 0 {
+			return warnings, fmt.Errorf("the OpenTelemetry config is incorrect. The port name '%s' errors: %s, num '%d' errors: %s", p.Name, nameErrs, p.Port, numErrs)
+		}
 	}
 
 	var maxReplicas *int32
