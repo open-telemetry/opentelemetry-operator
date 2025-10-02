@@ -22,7 +22,7 @@ func Deployment(params Params) (*appsv1.Deployment, error) {
 		params.Log.Info("failed to construct target allocator config map for annotations")
 		configMap = nil
 	}
-	annotations := Annotations(params.TargetAllocator, configMap, params.Config.AnnotationsFilter)
+	podAnnotations := PodAnnotations(params.TargetAllocator, configMap, params.Config.AnnotationsFilter)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -38,7 +38,7 @@ func Deployment(params Params) (*appsv1.Deployment, error) {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
-					Annotations: annotations,
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            ServiceAccountName(params.TargetAllocator),
