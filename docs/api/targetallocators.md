@@ -138,6 +138,13 @@ The default is 30s, which means that if a collector becomes not Ready, the targe
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>dnsPolicy</b></td>
+        <td>string</td>
+        <td>
+          DNSPolicy defines how a pod's DNS will be configured.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#targetallocatorspecenvindex">env</a></b></td>
         <td>[]object</td>
         <td>

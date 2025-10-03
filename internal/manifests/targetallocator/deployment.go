@@ -45,7 +45,7 @@ func Deployment(params Params) (*appsv1.Deployment, error) {
 					InitContainers:                params.TargetAllocator.Spec.InitContainers,
 					Containers:                    append(params.TargetAllocator.Spec.AdditionalContainers, Container(params.Config, params.Log, params.TargetAllocator)),
 					Volumes:                       Volumes(params.Config, params.TargetAllocator),
-					DNSPolicy:                     manifestutils.GetDNSPolicy(params.TargetAllocator.Spec.HostNetwork, params.TargetAllocator.Spec.PodDNSConfig),
+					DNSPolicy:                     manifestutils.GetDNSPolicy(params.TargetAllocator.Spec.HostNetwork, params.TargetAllocator.Spec.PodDNSConfig, nil),
 					DNSConfig:                     &params.TargetAllocator.Spec.PodDNSConfig,
 					HostNetwork:                   params.TargetAllocator.Spec.HostNetwork,
 					ShareProcessNamespace:         &params.TargetAllocator.Spec.ShareProcessNamespace,
