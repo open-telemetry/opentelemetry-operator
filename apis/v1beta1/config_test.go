@@ -77,7 +77,7 @@ func TestNullObjects_issue_3445(t *testing.T) {
 	err = json.Unmarshal(collectorJson, cfg)
 	require.NoError(t, err)
 
-	err = cfg.ApplyDefaults(logr.Discard(), nil, nil)
+	_, err = cfg.ApplyDefaults(logr.Discard())
 	require.NoError(t, err)
 	assert.Empty(t, cfg.nullObjects())
 }
@@ -1139,7 +1139,7 @@ func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 		},
 	}
 
-	err := cfg.Service.ApplyDefaults(logr.Discard(), nil, nil)
+	_, err := cfg.Service.ApplyDefaults(logr.Discard())
 	require.NoError(t, err)
 
 	logger := logr.Discard()
@@ -1173,7 +1173,7 @@ func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
 		},
 	}
 
-	err := cfg.Service.ApplyDefaults(logr.Discard(), nil, nil)
+	_, err := cfg.Service.ApplyDefaults(logr.Discard())
 	require.NoError(t, err)
 
 	logger := logr.Discard()

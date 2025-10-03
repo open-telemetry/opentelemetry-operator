@@ -15,8 +15,6 @@ import (
 	otelConfig "go.opentelemetry.io/contrib/otelconf/v0.3.0"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/components/exporters"
@@ -36,6 +34,13 @@ const (
 
 func (c ComponentKind) String() string {
 	return [...]string{"receiver", "exporter", "processor", "extension"}[c]
+}
+
+// EventInfo represents an event to be recorded.
+type EventInfo struct {
+	Type    string
+	Reason  string
+	Message string
 }
 
 // AnyConfig represent parts of the config.
@@ -264,9 +269,11 @@ func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, co
 }
 
 // applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
-func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, recorder record.EventRecorder, obj runtime.Object, componentKinds ...ComponentKind) error {
-	if err := c.Service.ApplyDefaults(logger, recorder, obj); err != nil {
-		return err
+// Returns a list of events that should be recorded by the caller.
+func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]EventInfo, error) {
+	events, err := c.Service.ApplyDefaults(logger)
+	if err != nil {
+		return events, err
 	}
 	enabledComponents := c.GetEnabledComponents()
 	for _, componentKind := range componentKinds {
@@ -292,7 +299,7 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, recorder reco
 			componentConf := cfg.Object[componentName]
 			newCfg, err := parser.GetDefaultConfig(logger, componentConf)
 			if err != nil {
-				return err
+				return events, err
 			}
 
 			// We need to ensure we don't remove any fields in defaulting.
@@ -309,13 +316,13 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, recorder reco
 				componentConf = map[string]interface{}{}
 			}
 			if err := mergo.Merge(&mappedCfg, componentConf); err != nil {
-				return err
+				return events, err
 			}
 			cfg.Object[componentName] = mappedCfg
 		}
 	}
 
-	return nil
+	return events, nil
 }
 
 func (c *Config) GetReceiverPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
@@ -346,8 +353,8 @@ func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error
 	return c.getRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor, KindExtension)
 }
 
-func (c *Config) ApplyDefaults(logger logr.Logger, recorder record.EventRecorder, obj runtime.Object) error {
-	return c.applyDefaultForComponentKinds(logger, recorder, obj, KindReceiver, KindExtension)
+func (c *Config) ApplyDefaults(logger logr.Logger) ([]EventInfo, error) {
+	return c.applyDefaultForComponentKinds(logger, KindReceiver, KindExtension)
 }
 
 // GetLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled
@@ -467,7 +474,9 @@ func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
 }
 
 // ApplyDefaults inserts configuration defaults if it has not been set.
-func (s *Service) ApplyDefaults(logger logr.Logger, recorder record.EventRecorder, obj runtime.Object) error {
+// Returns a list of events that should be recorded by the caller.
+func (s *Service) ApplyDefaults(logger logr.Logger) ([]EventInfo, error) {
+	var events []EventInfo
 	tel := s.GetTelemetry(logger)
 
 	if tel == nil {
@@ -483,7 +492,7 @@ func (s *Service) ApplyDefaults(logger logr.Logger, recorder record.EventRecorde
 		logger.V(1).Info("telemetry configuration already provided by user, skipping defaults",
 			"metricsAddress", tel.Metrics.Address,
 			"readersCount", len(tel.Metrics.Readers))
-		return nil
+		return events, nil
 	}
 
 	logger.V(2).Info("no telemetry readers configuration found, applying default Prometheus endpoint")
@@ -491,26 +500,27 @@ func (s *Service) ApplyDefaults(logger logr.Logger, recorder record.EventRecorde
 	host, port, err := s.MetricsEndpoint(logger)
 	if err != nil {
 		logger.Error(err, "failed to determine metrics endpoint for default configuration")
-		return err
+		return events, err
 	}
 
 	reader := AddPrometheusMetricsEndpoint(host, port)
 	tel.Metrics.Readers = append(tel.Metrics.Readers, reader)
 
-	if recorder != nil && obj != nil {
-		recorder.Event(obj, corev1.EventTypeNormal, "Spec.Service.Telemetry.DefaultsApplied",
-			fmt.Sprintf("Applied default Prometheus telemetry configuration (host: %s, port: %d)", host, port))
-	}
+	events = append(events, EventInfo{
+		Type:    corev1.EventTypeNormal,
+		Reason:  "Spec.Service.Telemetry.DefaultsApplied",
+		Message: fmt.Sprintf("Applied default Prometheus telemetry configuration (host: %s, port: %d)", host, port),
+	})
 
 	telConfig, err := tel.ToAnyConfig()
 	if err != nil {
-		return err
+		return events, err
 	}
 
 	if err := mergo.Merge(&s.Telemetry.Object, telConfig.Object); err != nil {
-		return err
+		return events, err
 	}
-	return nil
+	return events, nil
 }
 
 // MetricsConfig comes from the collector.

@@ -100,7 +100,16 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 		trueVal := true
 		otelcol.Spec.NetworkPolicy.Enabled = &trueVal
 	}
-	return otelcol.Spec.Config.ApplyDefaults(c.logger, c.recorder, otelcol)
+	events, err := otelcol.Spec.Config.ApplyDefaults(c.logger)
+	if err != nil {
+		return err
+	}
+	for _, event := range events {
+		if c.recorder != nil {
+			c.recorder.Event(otelcol, event.Type, event.Reason, event.Message)
+		}
+	}
+	return nil
 }
 
 func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
