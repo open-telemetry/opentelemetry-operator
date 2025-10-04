@@ -102,6 +102,12 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 	if err != nil {
 		return err
 	}
+
+	if m.hook != nil {
+		m.hook.SetConfig(relabelCfg)
+		m.removeRelabelConfigs(jobToScrapeConfig)
+	}
+
 	// If the hash has changed, updated stored hash and send the new config.
 	// Otherwise, skip updating scrape configs.
 	if m.scrapeConfigsUpdater != nil && m.scrapeConfigsHash != hash {
@@ -113,10 +119,14 @@ func (m *Discoverer) ApplyConfig(source allocatorWatcher.EventSource, scrapeConf
 		m.scrapeConfigsHash = hash
 	}
 
-	if m.hook != nil {
-		m.hook.SetConfig(relabelCfg)
-	}
 	return m.manager.ApplyConfig(discoveryCfg)
+}
+
+// removeRelabelConfigs removes all relabel_configs from the scrape configurations.
+func (m *Discoverer) removeRelabelConfigs(jobToScrapeConfig map[string]*promconfig.ScrapeConfig) {
+	for _, cfg := range jobToScrapeConfig {
+		cfg.RelabelConfigs = []*relabel.Config{}
+	}
 }
 
 func (m *Discoverer) Run() error {

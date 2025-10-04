@@ -5,8 +5,10 @@ package target
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/cespare/xxhash/v2"
+	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
 )
 
@@ -40,9 +42,37 @@ type Item struct {
 	hash          ItemHash
 }
 
+type ItemOption func(*Item)
+
+func WithReservedLabelAppending(lbs labels.Labels) ItemOption {
+	return func(i *Item) {
+		// There are some "__meta_" labels added to the resource by default in OTel.
+		// The original values should be retrieved for further processing.
+		// Preserves all __meta_* labels to insulate the operator from OTel changes and guarantee availability.
+		// For details, see https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/prometheusreceiver/internal/prom_to_otlp.go#L89.
+		for _, l := range lbs {
+			if strings.HasPrefix(l.Name, model.MetaLabelPrefix) && i.Labels.Get(l.Name) == "" {
+				// 1. Restores potentially dropped "__meta_" labels to ensure OTel access.
+				// 2. If relabel_configs modifies "__meta_" labels(which is not a recommended practice), provides the modified values to OTel (as relabel_configs is removed).
+				i.Labels = append(i.Labels, l)
+			}
+		}
+	}
+}
+
 func (t *Item) Hash() ItemHash {
 	if t.hash == 0 {
-		t.hash = ItemHash(LabelsHashWithJobName(t.Labels, t.JobName))
+		// filterMetaLabels is the labels after removing labels with the MetaLabelPrefix to prevent them from being used in hash calculation.
+		// In Prometheus, labels with the MetaLabelPrefix are discarded after relabeling and are not used in hash calculation.
+		// For details, see https://github.com/prometheus/prometheus/blob/e6cfa720fbe6280153fab13090a483dbd40bece3/scrape/target.go#L534.
+		filterMetaLabels := labels.Labels{}
+		for _, l := range t.Labels {
+			if !strings.HasPrefix(l.Name, model.MetaLabelPrefix) {
+				filterMetaLabels = append(filterMetaLabels, l)
+			}
+		}
+
+		t.hash = ItemHash(LabelsHashWithJobName(filterMetaLabels, t.JobName))
 	}
 	return t.hash
 }
@@ -71,13 +101,17 @@ func (t *Item) GetEndpointSliceName() string {
 // NewItem Creates a new target item.
 // INVARIANTS:
 // * Item fields must not be modified after creation.
-func NewItem(jobName string, targetURL string, labels labels.Labels, collectorName string) *Item {
-	return &Item{
+func NewItem(jobName string, targetURL string, labels labels.Labels, collectorName string, opts ...ItemOption) *Item {
+	item := &Item{
 		JobName:       jobName,
 		TargetURL:     targetURL,
 		Labels:        labels,
 		CollectorName: collectorName,
 	}
+	for _, opt := range opts {
+		opt(item)
+	}
+	return item
 }
 
 // LabelsHashWithJobName computes a hash of the labels and the job name.
