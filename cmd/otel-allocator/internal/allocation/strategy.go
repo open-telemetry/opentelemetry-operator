@@ -12,7 +12,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
-type AllocatorProvider func(log logr.Logger, opts ...Option) Allocator
 
 var (
 	strategies = map[string]Strategy{
@@ -70,6 +69,7 @@ type Allocator interface {
 }
 
 type Strategy interface {
+	// 关键方法
 	GetCollectorForTarget(map[string]*Collector, *target.Item) (*Collector, error)
 	// SetCollectors exists for strategies where changing the collector set is potentially an expensive operation.
 	// The caller must guarantee that the collectors map passed in GetCollectorForTarget is consistent with the latest
@@ -89,6 +89,8 @@ type Collector struct {
 	Name       string
 	NodeName   string
 	NumTargets int
+
+	NumSamples int
 }
 
 func (c Collector) Hash() string {
