@@ -31,7 +31,7 @@ func HandleReconcileStatus(ctx context.Context, log logr.Logger, params manifest
 	}
 
 	changed := otelcol.DeepCopy()
-	statusErr := updateCollectorStatus(ctx, params.Client, changed)
+	statusErr := updateCollectorStatus(ctx, params.Client, changed, params.Config)
 
 	if statusErr != nil {
 		params.Recorder.Event(changed, corev1.EventTypeWarning, reasonStatusFailure, statusErr.Error())

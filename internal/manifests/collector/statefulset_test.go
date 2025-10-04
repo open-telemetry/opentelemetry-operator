@@ -66,7 +66,7 @@ func TestStatefulSetNewDefault(t *testing.T) {
 		"app.kubernetes.io/managed-by": "opentelemetry-operator",
 		"app.kubernetes.io/name":       "my-instance-collector",
 		"app.kubernetes.io/part-of":    "opentelemetry",
-		"app.kubernetes.io/version":    "latest",
+		"app.kubernetes.io/version":    "0.0.0",
 	}
 	assert.Equal(t, expectedLabels, ss.Spec.Template.Labels)
 
@@ -202,6 +202,97 @@ func TestStatefulSetPeristentVolumeRetentionPolicy(t *testing.T) {
 	// assert correct WhenScaled value
 	assert.Equal(t, ss.Spec.PersistentVolumeClaimRetentionPolicy.WhenScaled, appsv1.DeletePersistentVolumeClaimRetentionPolicyType)
 
+}
+
+func TestStatefulSetVersionLabelFromSpec(t *testing.T) {
+	// prepare
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: v1beta1.ModeStatefulSet,
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Image: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.129.1",
+			},
+		},
+	}
+	cfg := config.New()
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
+	// test
+	s, err := StatefulSet(params)
+	require.NoError(t, err)
+
+	// verify
+	assert.Equal(t, "my-instance-collector", s.Name)
+	assert.Equal(t, "0.129.1", s.Spec.Template.Labels["app.kubernetes.io/version"])
+	assert.Equal(t, "0.129.1", s.Labels["app.kubernetes.io/version"])
+}
+
+func TestStatefulSetVersionLabelFromConfig(t *testing.T) {
+	// prepare
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: v1beta1.ModeStatefulSet,
+		},
+	}
+	cfg := config.New()
+	cfg.CollectorImage = "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.130.0"
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
+	// test
+	s, err := StatefulSet(params)
+	require.NoError(t, err)
+
+	// verify
+	assert.Equal(t, "my-instance-collector", s.Name)
+	assert.Equal(t, "0.130.0", s.Spec.Template.Labels["app.kubernetes.io/version"])
+	assert.Equal(t, "0.130.0", s.Labels["app.kubernetes.io/version"])
+}
+
+func TestStatefulSetVersionLabelLatest(t *testing.T) {
+	// prepare
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: v1beta1.ModeStatefulSet,
+		},
+	}
+	cfg := config.Config{}
+
+	params := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol,
+		Log:     testLogger,
+	}
+
+	// test
+	s, err := StatefulSet(params)
+	require.NoError(t, err)
+
+	// verify
+	assert.Equal(t, "my-instance-collector", s.Name)
+	assert.Equal(t, "latest", s.Spec.Template.Labels["app.kubernetes.io/version"])
+	assert.Equal(t, "latest", s.Labels["app.kubernetes.io/version"])
 }
 
 func TestStatefulSetPodAnnotations(t *testing.T) {
