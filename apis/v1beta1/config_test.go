@@ -77,7 +77,7 @@ func TestNullObjects_issue_3445(t *testing.T) {
 	err = json.Unmarshal(collectorJson, cfg)
 	require.NoError(t, err)
 
-	err = cfg.ApplyDefaults(logr.Discard())
+	_, err = cfg.ApplyDefaults(logr.Discard())
 	require.NoError(t, err)
 	assert.Empty(t, cfg.nullObjects())
 }
@@ -208,7 +208,8 @@ func TestGetTelemetryFromYAML(t *testing.T) {
 			Address: "0.0.0.0:8888",
 		},
 	}
-	assert.Equal(t, telemetry, cfg.Service.GetTelemetry())
+	logger := logr.Discard()
+	assert.Equal(t, telemetry, cfg.Service.GetTelemetry(logger))
 }
 
 func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
@@ -218,7 +219,8 @@ func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
 	cfg := &Config{}
 	err = go_yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
-	assert.Nil(t, cfg.Service.GetTelemetry())
+	logger := logr.Discard()
+	assert.Nil(t, cfg.Service.GetTelemetry(logger))
 }
 
 func TestConfigMetricsEndpoint(t *testing.T) {
@@ -1137,10 +1139,51 @@ func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 		},
 	}
 
-	err := cfg.Service.ApplyDefaults(logr.Discard())
+	_, err := cfg.Service.ApplyDefaults(logr.Discard())
 	require.NoError(t, err)
 
-	telemetry := cfg.Service.GetTelemetry()
+	logger := logr.Discard()
+	telemetry := cfg.Service.GetTelemetry(logger)
 	require.NotNil(t, telemetry)
 	require.Equal(t, expected, cfg)
+}
+
+func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
+	cfg := &Config{
+		Service: Service{
+			Telemetry: &AnyConfig{
+				Object: map[string]interface{}{
+					"metrics": map[string]interface{}{
+						"level": "basic",
+						"readers": []interface{}{
+							map[string]interface{}{
+								"periodic": map[string]interface{}{
+									"exporter": map[string]interface{}{
+										"otlp": map[string]interface{}{
+											"endpoint": "otlp_host:4317",
+											// Missing protocol - makes this invalid
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := cfg.Service.ApplyDefaults(logr.Discard())
+	require.NoError(t, err)
+
+	logger := logr.Discard()
+	telemetry := cfg.Service.GetTelemetry(logger)
+	require.NotNil(t, telemetry)
+
+	require.Len(t, telemetry.Metrics.Readers, 1)
+
+	require.NotNil(t, telemetry.Metrics.Readers[0].Pull)
+	require.NotNil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus)
+	require.Equal(t, "0.0.0.0", *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Host)
+	require.Equal(t, 8888, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Port)
 }

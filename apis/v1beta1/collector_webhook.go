@@ -12,6 +12,7 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -45,6 +46,7 @@ type CollectorWebhook struct {
 	metrics  *Metrics
 	bv       BuildValidator
 	fips     fips.FIPSCheck
+	recorder record.EventRecorder
 }
 
 func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
@@ -102,7 +104,16 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 		trueVal := true
 		otelcol.Spec.NetworkPolicy.Enabled = &trueVal
 	}
-	return otelcol.Spec.Config.ApplyDefaults(c.logger)
+	events, err := otelcol.Spec.Config.ApplyDefaults(c.logger)
+	if err != nil {
+		return err
+	}
+	for _, event := range events {
+		if c.recorder != nil {
+			c.recorder.Event(otelcol, event.Type, event.Reason, event.Message)
+		}
+	}
+	return nil
 }
 
 func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
@@ -463,6 +474,7 @@ func NewCollectorWebhook(
 	scheme *runtime.Scheme,
 	cfg config.Config,
 	reviewer *rbac.Reviewer,
+	recorder record.EventRecorder,
 	metrics *Metrics,
 	bv BuildValidator,
 	fips fips.FIPSCheck,
@@ -472,6 +484,7 @@ func NewCollectorWebhook(
 		scheme:   scheme,
 		cfg:      cfg,
 		reviewer: reviewer,
+		recorder: recorder,
 		metrics:  metrics,
 		bv:       bv,
 		fips:     fips,
@@ -479,7 +492,7 @@ func NewCollectorWebhook(
 }
 
 func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
-	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, metrics, bv, fipsCheck)
+	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, mgr.GetEventRecorderFor("opentelemetry-operator"), metrics, bv, fipsCheck)
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&OpenTelemetryCollector{}).
 		WithValidator(cvw).

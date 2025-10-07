@@ -104,6 +104,7 @@ func TestValidate(t *testing.T) {
 			cfg,
 			getReviewer(test.shouldFailSar),
 			nil,
+			nil,
 			bv,
 			nil,
 		)
@@ -543,13 +544,15 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				cfg,
 				getReviewer(test.shouldFailSar),
 				nil,
+				nil,
 				bv,
 				nil,
 			)
 			ctx := context.Background()
 			err := cvw.Default(ctx, &test.otelcol)
 			if test.expected.Spec.Config.Service.Telemetry == nil {
-				assert.NoError(t, test.expected.Spec.Config.Service.ApplyDefaults(logr.Discard()), "could not apply defaults")
+				_, applyErr := test.expected.Spec.Config.Service.ApplyDefaults(logr.Discard())
+				assert.NoError(t, applyErr, "could not apply defaults")
 			}
 			assert.NoError(t, err)
 			if diff := cmp.Diff(test.expected, test.otelcol); diff != "" {
@@ -1561,6 +1564,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				cfg,
 				getReviewer(test.shouldFailSar),
 				nil,
+				nil,
 				bv,
 				nil,
 			)
@@ -1629,6 +1633,7 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 				testScheme,
 				cfg,
 				getReviewer(test.shouldFailSar),
+				nil,
 				nil,
 				bv,
 				nil,
