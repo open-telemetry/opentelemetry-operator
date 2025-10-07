@@ -40,6 +40,8 @@ spec:
           - patch
           - certificate
           - prometheus-cr-ta-server-cert
+          - -n
+          - ${NAMESPACE}
           - --type=json
           - -p
           - "[{\"op\": \"add\", \"path\": \"/metadata/annotations/cert-manager.io~1force-renewal\", \"value\": \"'$(date +%s)'\"}]"
