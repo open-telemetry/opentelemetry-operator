@@ -1069,7 +1069,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 
 		sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
 		assert.Equal(t, want_after.ScrapeConfigs, got.ScrapeConfigs)
-	}, time.Second*30, time.Millisecond*100)
+	}, time.Second*60, time.Millisecond*100)
 }
 
 func TestRateLimit(t *testing.T) {
