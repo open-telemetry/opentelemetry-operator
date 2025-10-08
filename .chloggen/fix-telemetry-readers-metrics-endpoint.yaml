@@ -1,0 +1,7 @@
+change_type: bug_fix
+component: collector
+note: "Respect telemetry metrics readers when deriving the internal metrics endpoint."
+issues: [4049, 4233]
+subtext: |
+  - Fixes monitoring Service and container port mismatches when `.spec.config.service.telemetry.metrics.readers[].pull.exporter.prometheus.port` is set.
+  - Defaults remain `0.0.0.0:8888` when neither address nor a Prometheus reader is configured.

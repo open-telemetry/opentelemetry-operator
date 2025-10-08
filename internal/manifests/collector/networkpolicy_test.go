@@ -97,12 +97,8 @@ func TestNetworkPolicy(t *testing.T) {
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
 								Protocol: &tcp,
-								Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 8888},
+								Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 3333},
 							},
-							// TODO uncomment once https://github.com/open-telemetry/opentelemetry-operator/issues/4233 is fixed
-							//	Protocol: &tcp,
-							//	Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 3333},
-							//},
 							{
 								Protocol: &tcp,
 								Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 12345},

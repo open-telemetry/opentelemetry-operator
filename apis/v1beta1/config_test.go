@@ -410,11 +410,138 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc:         "derive from readers prometheus host+port",
+			expectedAddr: "0.0.0.0",
+			expectedPort: 8889,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"level": "detailed",
+							"readers": []interface{}{
+								map[string]interface{}{
+									"pull": map[string]interface{}{
+										"exporter": map[string]interface{}{
+											"prometheus": map[string]interface{}{
+												"host": "0.0.0.0",
+												"port": 8889,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:         "derive from readers prometheus port only (default host)",
+			expectedAddr: "0.0.0.0",
+			expectedPort: 8899,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"readers": []interface{}{
+								map[string]interface{}{
+									"pull": map[string]interface{}{
+										"exporter": map[string]interface{}{
+											"prometheus": map[string]interface{}{
+												"port": 8899,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:         "derive from readers prometheus host only (default port)",
+			expectedAddr: "127.0.0.1",
+			expectedPort: 8888,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"readers": []interface{}{
+								map[string]interface{}{
+									"pull": map[string]interface{}{
+										"exporter": map[string]interface{}{
+											"prometheus": map[string]interface{}{
+												"host": "127.0.0.1",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:         "readers takes precedence over address",
+			expectedAddr: "0.0.0.0",
+			expectedPort: 8889,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "1.2.3.4:4567",
+							"readers": []interface{}{
+								map[string]interface{}{
+									"pull": map[string]interface{}{
+										"exporter": map[string]interface{}{
+											"prometheus": map[string]interface{}{
+												"host": "0.0.0.0",
+												"port": 8889,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:         "readers present but no prometheus -> defaults",
+			expectedAddr: "0.0.0.0",
+			expectedPort: 8888,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"readers": []interface{}{
+								map[string]interface{}{
+									"pull": map[string]interface{}{
+										"exporter": map[string]interface{}{
+											"otlp": map[string]interface{}{
+												"protocols": map[string]interface{}{
+													"http": map[string]interface{}{
+														"endpoint": "0.0.0.0:19001",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
-			logger := logr.Discard()
 			// these are acceptable failures, we return to the collector's default metric port
-			addr, port, err := tt.config.MetricsEndpoint(logger)
+			addr, port, err := tt.config.MetricsEndpoint(logr.Discard())
 			if tt.expectedErr {
 				assert.Error(t, err)
 			} else {

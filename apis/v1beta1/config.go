@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 
 	"dario.cat/mergo"
@@ -467,6 +468,28 @@ func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
 			return "", 0, err
 		}
 
+		return host, port, nil
+	}
+
+	for _, r := range telemetry.Metrics.Readers {
+		if r.Pull == nil {
+			continue
+		}
+		prom := r.Pull.Exporter.Prometheus
+		if prom == nil {
+			continue
+		}
+		host := defaultServiceHost
+		if prom.Host != nil && *prom.Host != "" {
+			host = *prom.Host
+		}
+		port := defaultServicePort
+		if prom.Port != nil && *prom.Port != 0 {
+			if *prom.Port < 0 || *prom.Port > math.MaxUint16 {
+				return "", 0, fmt.Errorf("invalid prometheus metrics port: %d", *prom.Port)
+			}
+			port = int32(*prom.Port)
+		}
 		return host, port, nil
 	}
 
