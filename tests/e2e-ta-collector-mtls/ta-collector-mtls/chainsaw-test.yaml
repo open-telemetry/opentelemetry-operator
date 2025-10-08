@@ -35,16 +35,12 @@ spec:
   - name: step-03
     try:
     - command:
-        entrypoint: kubectl
-        args:
-          - patch
-          - certificate
-          - prometheus-cr-ta-server-cert
-          - -n
-          - ${NAMESPACE}
-          - --type=json
-          - -p
-          - "[{\"op\": \"add\", \"path\": \"/metadata/annotations/cert-manager.io~1force-renewal\", \"value\": \"$(date +%s)\"}]"
+      entrypoint: bin/cmctl                                        
+      args:                                                        
+        - renew                                                    
+        - prometheus-cr-ta-server-cert                             
+        - -n                                                       
+        - ${NAMESPACE}
     - sleep:
         duration: 30s
     - apply:
