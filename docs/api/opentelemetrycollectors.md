@@ -33435,6 +33435,13 @@ label selector matches no objects.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindex">scrapeClasses</a></b></td>
+        <td>[]object</td>
+        <td>
+          ScrapeClasses to be referenced by PodMonitors and ServiceMonitors to include common configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeconfigselector">scrapeConfigSelector</a></b></td>
         <td>object</td>
         <td>
@@ -33635,6 +33642,829 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
 the values array must be empty. This array is replaced during a strategic
 merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeClasses[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscr-1)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the scrape class.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindexattachmetadata">attachMetadata</a></b></td>
+        <td>object</td>
+        <td>
+          AttachMetadata configures additional metadata to the discovered targets.
+When the scrape object defines its own configuration, it takes
+precedence over the scrape class configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindexauthorization">authorization</a></b></td>
+        <td>object</td>
+        <td>
+          Authorization section for the ScrapeClass.
+It will only apply if the scrape resource doesn't specify any Authorization.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>default</b></td>
+        <td>boolean</td>
+        <td>
+          Default indicates that the scrape applies to all scrape objects that
+don't configure an explicit scrape class name.
+
+Only one scrape class can be set as the default.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>fallbackScrapeProtocol</b></td>
+        <td>enum</td>
+        <td>
+          The protocol to use if a scrape returns blank, unparseable, or otherwise invalid Content-Type.
+It will only apply if the scrape resource doesn't specify any FallbackScrapeProtocol
+
+It requires Prometheus >= v3.0.0.<br/>
+          <br/>
+            <i>Enum</i>: PrometheusProto, OpenMetricsText0.0.1, OpenMetricsText1.0.0, PrometheusText0.0.4, PrometheusText1.0.0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindexmetricrelabelingsindex">metricRelabelings</a></b></td>
+        <td>[]object</td>
+        <td>
+          MetricRelabelings configures the relabeling rules to apply to all samples before ingestion.
+
+The Operator adds the scrape class metric relabelings defined here.
+Then the Operator adds the target-specific metric relabelings defined in ServiceMonitors, PodMonitors, Probes and ScrapeConfigs.
+Then the Operator adds namespace enforcement relabeling rule, specified in '.spec.enforcedNamespaceLabel'.
+
+More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindexrelabelingsindex">relabelings</a></b></td>
+        <td>[]object</td>
+        <td>
+          Relabelings configures the relabeling rules to apply to all scrape targets.
+
+The Operator automatically adds relabelings for a few standard Kubernetes fields
+like `__meta_kubernetes_namespace` and `__meta_kubernetes_service_name`.
+Then the Operator adds the scrape class relabelings defined here.
+Then the Operator adds the target-specific relabelings defined in the scrape object.
+
+More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfig">tlsConfig</a></b></td>
+        <td>object</td>
+        <td>
+          TLSConfig defines the TLS settings to use for the scrape. When the
+scrape objects define their own CA, certificate and/or key, they take
+precedence over the corresponding scrape class fields.
+
+For now only the `caFile`, `certFile` and `keyFile` fields are supported.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeClasses[index].attachMetadata
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindex)</sup></sup>
+
+
+
+AttachMetadata configures additional metadata to the discovered targets.
+When the scrape object defines its own configuration, it takes
+precedence over the scrape class configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>node</b></td>
+        <td>boolean</td>
+        <td>
+          When set to true, Prometheus attaches node metadata to the discovered
+targets.
+
+The Prometheus service account must have the `list` and `watch`
+permissions on the `Nodes` objects.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeClasses[index].authorization
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindex)</sup></sup>
+
+
+
+Authorization section for the ScrapeClass.
+It will only apply if the scrape resource doesn't specify any Authorization.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindexauthorizationcredentials">credentials</a></b></td>
+        <td>object</td>
+        <td>
+          Selects a key of a Secret in the namespace that contains the credentials for authentication.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>credentialsFile</b></td>
+        <td>string</td>
+        <td>
+          File to read a secret from, mutually exclusive with `credentials`.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Defines the authentication type. The value is case-insensitive.
+
+"Basic" is not a supported value.
+
+Default: "Bearer"<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeClasses[index].authorization.credentials
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindexauthorization)</sup></sup>
+
+
+
+Selects a key of a Secret in the namespace that contains the credentials for authentication.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeClasses[index].metricRelabelings[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindex)</sup></sup>
+
+
+
+RelabelConfig allows dynamic rewriting of the label set for targets, alerts,
+scraped samples and remote write samples.
+
+More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>action</b></td>
+        <td>enum</td>
+        <td>
+          Action to perform based on the regex matching.
+
+`Uppercase` and `Lowercase` actions require Prometheus >= v2.36.0.
+`DropEqual` and `KeepEqual` actions require Prometheus >= v2.41.0.
+
+Default: "Replace"<br/>
+          <br/>
+            <i>Enum</i>: replace, Replace, keep, Keep, drop, Drop, hashmod, HashMod, labelmap, LabelMap, labeldrop, LabelDrop, labelkeep, LabelKeep, lowercase, Lowercase, uppercase, Uppercase, keepequal, KeepEqual, dropequal, DropEqual<br/>
+            <i>Default</i>: replace<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>modulus</b></td>
+        <td>integer</td>
+        <td>
+          Modulus to take of the hash of the source label values.
+
+Only applicable when the action is `HashMod`.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>regex</b></td>
+        <td>string</td>
+        <td>
+          Regular expression against which the extracted value is matched.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>replacement</b></td>
+        <td>string</td>
+        <td>
+          Replacement value against which a Replace action is performed if the
+regular expression matches.
+
+Regex capture groups are available.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>separator</b></td>
+        <td>string</td>
+        <td>
+          Separator is the string between concatenated SourceLabels.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>sourceLabels</b></td>
+        <td>[]string</td>
+        <td>
+          The source labels select values from existing labels. Their content is
+concatenated using the configured Separator and matched against the
+configured regular expression.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>targetLabel</b></td>
+        <td>string</td>
+        <td>
+          Label to which the resulting string is written in a replacement.
+
+It is mandatory for `Replace`, `HashMod`, `Lowercase`, `Uppercase`,
+`KeepEqual` and `DropEqual` actions.
+
+Regex capture groups are available.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeClasses[index].relabelings[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindex)</sup></sup>
+
+
+
+RelabelConfig allows dynamic rewriting of the label set for targets, alerts,
+scraped samples and remote write samples.
+
+More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>action</b></td>
+        <td>enum</td>
+        <td>
+          Action to perform based on the regex matching.
+
+`Uppercase` and `Lowercase` actions require Prometheus >= v2.36.0.
+`DropEqual` and `KeepEqual` actions require Prometheus >= v2.41.0.
+
+Default: "Replace"<br/>
+          <br/>
+            <i>Enum</i>: replace, Replace, keep, Keep, drop, Drop, hashmod, HashMod, labelmap, LabelMap, labeldrop, LabelDrop, labelkeep, LabelKeep, lowercase, Lowercase, uppercase, Uppercase, keepequal, KeepEqual, dropequal, DropEqual<br/>
+            <i>Default</i>: replace<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>modulus</b></td>
+        <td>integer</td>
+        <td>
+          Modulus to take of the hash of the source label values.
+
+Only applicable when the action is `HashMod`.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>regex</b></td>
+        <td>string</td>
+        <td>
+          Regular expression against which the extracted value is matched.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>replacement</b></td>
+        <td>string</td>
+        <td>
+          Replacement value against which a Replace action is performed if the
+regular expression matches.
+
+Regex capture groups are available.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>separator</b></td>
+        <td>string</td>
+        <td>
+          Separator is the string between concatenated SourceLabels.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>sourceLabels</b></td>
+        <td>[]string</td>
+        <td>
+          The source labels select values from existing labels. Their content is
+concatenated using the configured Separator and matched against the
+configured regular expression.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>targetLabel</b></td>
+        <td>string</td>
+        <td>
+          Label to which the resulting string is written in a replacement.
+
+It is mandatory for `Replace`, `HashMod`, `Lowercase`, `Uppercase`,
+`KeepEqual` and `DropEqual` actions.
+
+Regex capture groups are available.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeClasses[index].tlsConfig
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindex)</sup></sup>
+
+
+
+TLSConfig defines the TLS settings to use for the scrape. When the
+scrape objects define their own CA, certificate and/or key, they take
+precedence over the corresponding scrape class fields.
+
+For now only the `caFile`, `certFile` and `keyFile` fields are supported.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfigca">ca</a></b></td>
+        <td>object</td>
+        <td>
+          Certificate authority used when verifying server certificates.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>caFile</b></td>
+        <td>string</td>
+        <td>
+          Path to the CA cert in the Prometheus container to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfigcert">cert</a></b></td>
+        <td>object</td>
+        <td>
+          Client certificate to present when doing client-authentication.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>certFile</b></td>
+        <td>string</td>
+        <td>
+          Path to the client cert file in the Prometheus container for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>insecureSkipVerify</b></td>
+        <td>boolean</td>
+        <td>
+          Disable target certificate validation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>keyFile</b></td>
+        <td>string</td>
+        <td>
+          Path to the client key file in the Prometheus container for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfigkeysecret">keySecret</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing the client key file for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxVersion</b></td>
+        <td>enum</td>
+        <td>
+          Maximum acceptable TLS version.
+
+It requires Prometheus >= v2.41.0.<br/>
+          <br/>
+            <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minVersion</b></td>
+        <td>enum</td>
+        <td>
+          Minimum acceptable TLS version.
+
+It requires Prometheus >= v2.35.0.<br/>
+          <br/>
+            <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>serverName</b></td>
+        <td>string</td>
+        <td>
+          Used to verify the hostname for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeClasses[index].tlsConfig.ca
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfig)</sup></sup>
+
+
+
+Certificate authority used when verifying server certificates.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfigcaconfigmap">configMap</a></b></td>
+        <td>object</td>
+        <td>
+          ConfigMap containing data to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfigcasecret">secret</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing data to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeClasses[index].tlsConfig.ca.configMap
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfigca)</sup></sup>
+
+
+
+ConfigMap containing data to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeClasses[index].tlsConfig.ca.secret
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfigca)</sup></sup>
+
+
+
+Secret containing data to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeClasses[index].tlsConfig.cert
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfig)</sup></sup>
+
+
+
+Client certificate to present when doing client-authentication.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfigcertconfigmap">configMap</a></b></td>
+        <td>object</td>
+        <td>
+          ConfigMap containing data to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfigcertsecret">secret</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing data to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeClasses[index].tlsConfig.cert.configMap
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfigcert)</sup></sup>
+
+
+
+ConfigMap containing data to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeClasses[index].tlsConfig.cert.secret
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfigcert)</sup></sup>
+
+
+
+Secret containing data to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeClasses[index].tlsConfig.keySecret
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeclassesindextlsconfig)</sup></sup>
+
+
+
+Secret containing the client key file for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
         </td>
         <td>false</td>
       </tr></tbody>

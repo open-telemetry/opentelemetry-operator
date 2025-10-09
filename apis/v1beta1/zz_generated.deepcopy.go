@@ -8,6 +8,7 @@
 package v1beta1
 
 import (
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2"
 	"k8s.io/api/core/v1"
@@ -823,6 +824,17 @@ func (in *TargetAllocatorPrometheusCR) DeepCopyInto(out *TargetAllocatorPromethe
 		in, out := &in.ScrapeInterval, &out.ScrapeInterval
 		*out = new(metav1.Duration)
 		**out = **in
+	}
+	if in.ScrapeClasses != nil {
+		in, out := &in.ScrapeClasses, &out.ScrapeClasses
+		*out = make([]*monitoringv1.ScrapeClass, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(monitoringv1.ScrapeClass)
+				(*in).DeepCopyInto(*out)
+			}
+		}
 	}
 	if in.PodMonitorSelector != nil {
 		in, out := &in.PodMonitorSelector, &out.PodMonitorSelector
