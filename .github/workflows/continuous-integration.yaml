@@ -74,6 +74,48 @@ jobs:
     - name: Lint
       run: make lint
 
+  codegen:
+    name: Generated files up-to-date
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+    - name: Set up Go
+      uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+      id: setup-go
+      with:
+        go-version: "~1.24.6"
+
+    - name: Cache tools
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      with:
+        path: bin
+        key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
+
+    - name: Install tools
+      run: make install-tools
+
+    - name: Generate code
+      run: make generate
+
+    - name: Fail if generation creates diffs
+      shell: bash
+      run: |
+        # Fail if any tracked files changed
+        if ! git diff --quiet; then
+          echo "::error::Repository changed after 'make generate'. Run 'make generate' and commit the results."
+          git --no-pager diff
+          exit 1
+        fi
+        # Fail if any untracked files were created
+        UNTRACKED=$(git ls-files --others --exclude-standard)
+        if [[ -n "$UNTRACKED" ]]; then
+          echo "::error::Untracked files created by 'make generate':"
+          echo "$UNTRACKED"
+          exit 1
+        fi
+
   security:
     permissions:
       security-events: write # for github/codeql-action/analyze to upload SARIF results
