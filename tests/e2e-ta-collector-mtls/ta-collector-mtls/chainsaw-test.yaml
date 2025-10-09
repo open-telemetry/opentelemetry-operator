@@ -35,12 +35,12 @@ spec:
   - name: step-03
     try:
     - command:
-      entrypoint: bin/cmctl                                        
-      args:                                                        
-        - renew                                                    
-        - prometheus-cr-ta-server-cert                             
-        - -n                                                       
-        - ${NAMESPACE}
+        entrypoint: bin/cmctl                                        
+        args:                                                        
+          - renew                                                    
+          - prometheus-cr-ta-server-cert                             
+          - -n                                                       
+          - ${NAMESPACE}
     - sleep:
         duration: 30s
     - apply:
