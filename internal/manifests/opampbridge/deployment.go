@@ -45,7 +45,7 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 					ServiceAccountName:        ServiceAccountName(params.OpAMPBridge),
 					Containers:                []corev1.Container{Container(params.Config, params.Log, params.OpAMPBridge)},
 					Volumes:                   Volumes(params.Config, params.OpAMPBridge),
-					DNSPolicy:                 manifestutils.GetDNSPolicy(params.OpAMPBridge.Spec.HostNetwork, params.OpAMPBridge.Spec.PodDNSConfig),
+					DNSPolicy:                 manifestutils.GetDNSPolicy(params.OpAMPBridge.Spec.HostNetwork, params.OpAMPBridge.Spec.PodDNSConfig, nil),
 					DNSConfig:                 &params.OpAMPBridge.Spec.PodDNSConfig,
 					HostNetwork:               params.OpAMPBridge.Spec.HostNetwork,
 					Tolerations:               params.OpAMPBridge.Spec.Tolerations,

@@ -465,6 +465,11 @@ func (in *OpenTelemetryCommonFields) DeepCopyInto(out *OpenTelemetryCommonFields
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.DNSPolicy != nil {
+		in, out := &in.DNSPolicy, &out.DNSPolicy
+		*out = new(v1.DNSPolicy)
+		**out = **in
+	}
 	if in.InitContainers != nil {
 		in, out := &in.InitContainers, &out.InitContainers
 		*out = make([]v1.Container, len(*in))

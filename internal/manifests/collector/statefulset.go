@@ -55,7 +55,7 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 					InitContainers:                params.OtelCol.Spec.InitContainers,
 					Containers:                    append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
 					Volumes:                       Volumes(params.Config, params.OtelCol),
-					DNSPolicy:                     manifestutils.GetDNSPolicy(params.OtelCol.Spec.HostNetwork, params.OtelCol.Spec.PodDNSConfig),
+					DNSPolicy:                     manifestutils.GetDNSPolicy(params.OtelCol.Spec.HostNetwork, params.OtelCol.Spec.PodDNSConfig, params.OtelCol.Spec.DNSPolicy),
 					DNSConfig:                     &params.OtelCol.Spec.PodDNSConfig,
 					HostNetwork:                   params.OtelCol.Spec.HostNetwork,
 					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
