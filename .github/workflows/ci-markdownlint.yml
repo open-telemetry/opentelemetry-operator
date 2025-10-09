@@ -1,0 +1,23 @@
+name: Markdown Lint Check
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  markdownlint-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # equivalent cli: markdownlint-cli2  "**/*.md" "#**/CHANGELOG.md"  --config .markdownlint.json
+      - name: "Markdown Lint Check"
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        continue-on-error: true
+        with:
+          fix: false
+          globs: |
+            **/*.md
+            !**/CHANGELOG.md
