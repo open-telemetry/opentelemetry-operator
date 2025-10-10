@@ -769,7 +769,7 @@ func TestDeploymentDNSConfig(t *testing.T) {
 	assert.Equal(t, d.Spec.Template.Spec.DNSConfig.Nameservers, []string{"8.8.8.8"})
 }
 
-func TestGetInitialReplicas(t *testing.T) {
+func TestGetDesiredReplicas(t *testing.T) {
 	tests := []struct {
 		name     string
 		otelCol  v1beta1.OpenTelemetryCollector
@@ -831,11 +831,26 @@ func TestGetInitialReplicas(t *testing.T) {
 			},
 			expected: int32Ptr(6),
 		},
+		{
+			name: "autoscaler-with-minReplicas-spec-replicas-greater",
+			otelCol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+						Replicas: int32Ptr(5),
+					},
+					Autoscaler: &v1beta1.AutoscalerSpec{
+						MinReplicas: int32Ptr(3),
+						MaxReplicas: int32Ptr(10),
+					},
+				},
+			},
+			expected: int32Ptr(5),
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := manifestutils.GetInitialReplicas(tt.otelCol)
+			result := manifestutils.GetDesiredReplicas(tt.otelCol)
 			if tt.expected == nil {
 				assert.Nil(t, result)
 			} else {
