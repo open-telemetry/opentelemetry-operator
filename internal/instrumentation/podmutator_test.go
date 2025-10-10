@@ -209,10 +209,6 @@ func TestMutatePod(t *testing.T) {
 									Value: "false",
 								},
 								{
-									Name:  "JAVA_TOOL_OPTIONS",
-									Value: " -javaagent:/otel-auto-instrumentation-java-app/javaagent.jar",
-								},
-								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
@@ -235,6 +231,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
 									Value: "true",
+								},
+								{
+									Name:  "JAVA_TOOL_OPTIONS",
+									Value: " -javaagent:/otel-auto-instrumentation-java-app/javaagent.jar",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -436,10 +436,6 @@ func TestMutatePod(t *testing.T) {
 									Value: "false",
 								},
 								{
-									Name:  "JAVA_TOOL_OPTIONS",
-									Value: " -javaagent:/otel-auto-instrumentation-java-app1/javaagent.jar",
-								},
-								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
@@ -462,6 +458,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
 									Value: "true",
+								},
+								{
+									Name:  "JAVA_TOOL_OPTIONS",
+									Value: " -javaagent:/otel-auto-instrumentation-java-app1/javaagent.jar",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -527,10 +527,6 @@ func TestMutatePod(t *testing.T) {
 									Value: "false",
 								},
 								{
-									Name:  "JAVA_TOOL_OPTIONS",
-									Value: " -javaagent:/otel-auto-instrumentation-java-app2/javaagent.jar",
-								},
-								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
@@ -553,6 +549,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
 									Value: "true",
+								},
+								{
+									Name:  "JAVA_TOOL_OPTIONS",
+									Value: " -javaagent:/otel-auto-instrumentation-java-app2/javaagent.jar",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -803,10 +803,6 @@ func TestMutatePod(t *testing.T) {
 									Value: "true",
 								},
 								{
-									Name:  "NODE_OPTIONS",
-									Value: nodeRequireArgument,
-								},
-								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
@@ -829,6 +825,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
 									Value: "true",
+								},
+								{
+									Name:  "NODE_OPTIONS",
+									Value: nodeRequireArgument,
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -994,10 +994,6 @@ func TestMutatePod(t *testing.T) {
 									Value: "true",
 								},
 								{
-									Name:  "NODE_OPTIONS",
-									Value: nodeRequireArgument,
-								},
-								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
@@ -1020,6 +1016,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
 									Value: "true",
+								},
+								{
+									Name:  "NODE_OPTIONS",
+									Value: nodeRequireArgument,
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -1077,10 +1077,6 @@ func TestMutatePod(t *testing.T) {
 									Value: "true",
 								},
 								{
-									Name:  "NODE_OPTIONS",
-									Value: nodeRequireArgument,
-								},
-								{
 									Name:  "OTEL_TRACES_EXPORTER",
 									Value: "otlp",
 								},
@@ -1103,6 +1099,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
 									Value: "true",
+								},
+								{
+									Name:  "NODE_OPTIONS",
+									Value: nodeRequireArgument,
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -1373,10 +1373,6 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
 									Value: "20",
 								},
@@ -1391,6 +1387,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
 									Value: "true",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -1584,10 +1584,6 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
 									Value: "20",
 								},
@@ -1602,6 +1598,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
 									Value: "true",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -1679,10 +1679,6 @@ func TestMutatePod(t *testing.T) {
 									Value: fmt.Sprintf("%s:%s", pythonPathPrefix, pythonPathSuffix),
 								},
 								{
-									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
-									Value: "http/protobuf",
-								},
-								{
 									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
 									Value: "20",
 								},
@@ -1697,6 +1693,10 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
 									Value: "true",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -1949,6 +1949,22 @@ func TestMutatePod(t *testing.T) {
 									Value: "http://localhost:4317",
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+									Value: "20",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.85",
+								},
+								{
+									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+									Value: "true",
+								},
+								{
 									Name:  envDotNetCoreClrEnableProfiling,
 									Value: dotNetCoreClrEnableProfilingEnabled,
 								},
@@ -1975,22 +1991,6 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  envDotNetSharedStore,
 									Value: dotNetSharedStorePath,
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
-									Value: "20",
-								},
-								{
-									Name:  "OTEL_TRACES_SAMPLER",
-									Value: "parentbased_traceidratio",
-								},
-								{
-									Name:  "OTEL_TRACES_SAMPLER_ARG",
-									Value: "0.85",
-								},
-								{
-									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
-									Value: "true",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -2147,6 +2147,22 @@ func TestMutatePod(t *testing.T) {
 									Value: "http://localhost:4317",
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+									Value: "20",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.85",
+								},
+								{
+									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+									Value: "true",
+								},
+								{
 									Name:  envDotNetCoreClrEnableProfiling,
 									Value: dotNetCoreClrEnableProfilingEnabled,
 								},
@@ -2173,22 +2189,6 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  envDotNetSharedStore,
 									Value: dotNetSharedStorePath,
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
-									Value: "20",
-								},
-								{
-									Name:  "OTEL_TRACES_SAMPLER",
-									Value: "parentbased_traceidratio",
-								},
-								{
-									Name:  "OTEL_TRACES_SAMPLER_ARG",
-									Value: "0.85",
-								},
-								{
-									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
-									Value: "true",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -2354,6 +2354,22 @@ func TestMutatePod(t *testing.T) {
 									Value: "http://localhost:4317",
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+									Value: "20",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.85",
+								},
+								{
+									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+									Value: "true",
+								},
+								{
 									Name:  envDotNetCoreClrEnableProfiling,
 									Value: dotNetCoreClrEnableProfilingEnabled,
 								},
@@ -2380,22 +2396,6 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  envDotNetSharedStore,
 									Value: dotNetSharedStorePath,
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
-									Value: "20",
-								},
-								{
-									Name:  "OTEL_TRACES_SAMPLER",
-									Value: "parentbased_traceidratio",
-								},
-								{
-									Name:  "OTEL_TRACES_SAMPLER_ARG",
-									Value: "0.85",
-								},
-								{
-									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
-									Value: "true",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
@@ -2457,6 +2457,22 @@ func TestMutatePod(t *testing.T) {
 									Value: "http://localhost:4317",
 								},
 								{
+									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+									Value: "20",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.85",
+								},
+								{
+									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
+									Value: "true",
+								},
+								{
 									Name:  envDotNetCoreClrEnableProfiling,
 									Value: dotNetCoreClrEnableProfilingEnabled,
 								},
@@ -2483,22 +2499,6 @@ func TestMutatePod(t *testing.T) {
 								{
 									Name:  envDotNetSharedStore,
 									Value: dotNetSharedStorePath,
-								},
-								{
-									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
-									Value: "20",
-								},
-								{
-									Name:  "OTEL_TRACES_SAMPLER",
-									Value: "parentbased_traceidratio",
-								},
-								{
-									Name:  "OTEL_TRACES_SAMPLER_ARG",
-									Value: "0.85",
-								},
-								{
-									Name:  "SPLUNK_TRACE_RESPONSE_HEADER_ENABLED",
-									Value: "true",
 								},
 								{
 									Name:  "OTEL_SERVICE_NAME",
