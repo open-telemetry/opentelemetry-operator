@@ -6,6 +6,9 @@ metadata:
   name: targetallocator-collector-mtls
 spec:
   steps:
+  - name: Setup Target Allocator RBAC
+    use:
+      template: ../../step-templates/target-allocator-rbac-comprehensive.yaml
   - name: step-00
     try:
     - apply:
