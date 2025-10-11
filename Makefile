@@ -843,3 +843,25 @@ endif
 	@echo "$(INSTRUMENTATION_DOTNET_IMG)" >>$(IMAGE_LIST_FILE)
 	@echo "$(INSTRUMENTATION_APACHE_HTTPD_IMG)" >>$(IMAGE_LIST_FILE)
 	xargs -x -n 50 docker save -o "$(IMAGE_ARCHIVE)" <$(IMAGE_LIST_FILE)
+
+# Check markdown files for broken links using linkspector
+.PHONY: markdown-link-check
+markdown-link-check:
+	@command -v linkspector >/dev/null 2>&1 || { \
+		echo "Install: npm install -g @umbrelladocs/linkspector"; \
+		exit 1; \
+	}
+	linkspector check
+
+# Lint markdown files using markdownlint-cli2
+.PHONY: markdown-lint
+markdown-lint:
+	@command -v markdownlint-cli2 >/dev/null 2>&1 || { \
+		echo "Install: npm install -g markdownlint-cli2"; \
+		exit 1; \
+	}
+	markdownlint-cli2 "**/*.md" "#**/CHANGELOG.md" --config .markdownlint.json
+
+# Run both markdown link checking and linting
+.PHONY: markdown-check
+markdown-check: markdown-lint markdown-link-check
