@@ -1226,6 +1226,174 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 	}
 }
 
+func TestConfig_GetStartupProbe(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    *Config
+		wantProbe *v1.Probe
+		wantErr   bool
+	}{
+		{
+			name: "nil extensions should return nil",
+			config: &Config{
+				Extensions: nil,
+				Service: Service{
+					Extensions: []string{},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "nil extensions with health_check in service extensions should return nil",
+			config: &Config{
+				Extensions: nil,
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "empty extensions should return nil",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{},
+				},
+				Service: Service{
+					Extensions: []string{},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "empty extensions with health_check in service extensions should return probe",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/",
+						Port: intstr.FromInt32(13133),
+					},
+				},
+			},
+		},
+		{
+			name: "health_check extension enabled should return probe",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": map[string]interface{}{},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/",
+						Port: intstr.FromInt32(13133),
+					},
+				},
+			},
+		},
+		{
+			name: "health_check extension with custom path",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": map[string]interface{}{
+							"path": "/healthz",
+						},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/healthz",
+						Port: intstr.FromInt32(13133),
+					},
+				},
+			},
+		},
+		{
+			name: "health_check extension with custom endpoint port",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": map[string]interface{}{
+							"endpoint": "0.0.0.0:8080",
+						},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/",
+						Port: intstr.FromInt32(8080),
+					},
+				},
+			},
+		},
+		{
+			name: "extension without startup probe should return nil",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"jaeger_query": map[string]interface{}{},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"jaeger_query"},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "invalid health_check config should return error",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": func() {},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.config.GetStartupProbe(logr.Discard())
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Config.GetStartupProbe() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if diff := cmp.Diff(tt.wantProbe, got); diff != "" {
+				t.Errorf("Config.GetStartupProbe() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 	// Test case where logs configuration exists and metrics is added
 	cfg := &Config{
