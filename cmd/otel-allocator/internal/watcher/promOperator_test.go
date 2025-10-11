@@ -952,6 +952,7 @@ func TestLoadConfig(t *testing.T) {
 }
 
 func TestNamespaceLabelUpdate(t *testing.T) {
+	t.Skip("Flaky test, see https://github.com/open-telemetry/opentelemetry-operator/issues/4417")
 	var err error
 	namespace := "test"
 	portName := "web"
