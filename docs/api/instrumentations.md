@@ -7469,3 +7469,23 @@ The value can be for instance parentbased_always_on, parentbased_always_off, par
         <td>false</td>
       </tr></tbody>
 </table>
+
+---
+
+## Upgrading OpenTelemetry Operator with Auto-Instrumentation
+
+When using auto-instrumentation with the OpenTelemetry Operator, it’s important to follow proper upgrade practices to avoid disruptions.
+
+### Recommended Upgrade Steps
+
+1. **Backup Your Resources**
+   - Export your `Instrumentation` CRDs and configuration files before upgrading.
+
+2. **Review the Release Notes**
+   - Always check the [OpenTelemetry Operator releases](https://github.com/open-telemetry/opentelemetry-operator/releases) for updates or breaking changes related to auto-instrumentation.
+
+3. **Upgrade with Helm (if installed via Helm)**
+   ```bash
+   helm upgrade opentelemetry-operator open-telemetry/opentelemetry-operator \
+     --namespace <your-namespace> \
+     -f values.yaml
