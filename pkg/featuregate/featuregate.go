@@ -18,9 +18,10 @@ var (
 	// TargetAllocator CRs instead of generating the manifests for its resources directly.
 	CollectorUsesTargetAllocatorCR = featuregate.GlobalRegistry().MustRegister(
 		"operator.collector.targetallocatorcr",
-		featuregate.StageBeta,
+		featuregate.StageStable,
 		featuregate.WithRegisterDescription("causes collector reconciliation to create a target allocator CR instead of creating resources directly"),
 		featuregate.WithRegisterFromVersion("v0.112.0"),
+		featuregate.WithRegisterToVersion("v0.138.0"),
 	)
 	// EnableNativeSidecarContainers is the feature gate that controls whether a
 	// sidecar should be injected as a native sidecar or the classic way.
