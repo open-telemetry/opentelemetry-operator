@@ -165,7 +165,7 @@ SED ?= $(shell which gsed 2>/dev/null || which sed)
 ensure-update-is-noop: VERSION=$(OPERATOR_VERSION)
 ensure-update-is-noop: DOCKER_USER=open-telemetry
 ensure-update-is-noop: set-image-controller update
-	@git diff -s --exit-code apis/v1alpha1/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
+	@git diff -s --exit-code apis/**/zz_generated.*.go || (echo "Build failed: a model has been changed but the generated resources aren't up to date. Run 'make generate' and update your PR." && exit 1)
 	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code docs/api || (echo "Build failed: a model has been changed but the generated docs/api/*.md files aren't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
 
