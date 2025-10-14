@@ -116,6 +116,10 @@ type OpenTelemetryCollectorSpec struct {
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
 	ReadinessProbe *Probe `json:"readinessProbe,omitempty"`
+	// Startup config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
+	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
+	// +optional
+	StartupProbe *Probe `json:"startupProbe,omitempty"`
 
 	// ObservabilitySpec defines how telemetry data gets handled.
 	//

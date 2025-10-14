@@ -335,6 +335,11 @@ func (in *OpenTelemetryCollectorSpec) DeepCopyInto(out *OpenTelemetryCollectorSp
 		*out = new(Probe)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.StartupProbe != nil {
+		in, out := &in.StartupProbe, &out.StartupProbe
+		*out = new(Probe)
+		(*in).DeepCopyInto(*out)
+	}
 	in.Observability.DeepCopyInto(&out.Observability)
 	if in.ConfigMaps != nil {
 		in, out := &in.ConfigMaps, &out.ConfigMaps

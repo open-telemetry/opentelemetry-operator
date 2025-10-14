@@ -26,6 +26,7 @@ type GenericParser[T any] struct {
 	envVarGen       EnvVarGenerator[T]
 	livenessGen     ProbeGenerator[T]
 	readinessGen    ProbeGenerator[T]
+	startupGen      ProbeGenerator[T]
 	defaultsApplier Defaulter[T]
 }
 
@@ -65,6 +66,17 @@ func (g *GenericParser[T]) GetReadinessProbe(logger logr.Logger, config interfac
 		return nil, err
 	}
 	return g.readinessGen(logger, parsed)
+}
+
+func (g *GenericParser[T]) GetStartupProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+	if g.startupGen == nil {
+		return nil, nil
+	}
+	var parsed T
+	if err := mapstructure.Decode(config, &parsed); err != nil {
+		return nil, err
+	}
+	return g.startupGen(logger, parsed)
 }
 
 func (g *GenericParser[T]) GetRBACRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error) {
