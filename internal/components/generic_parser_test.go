@@ -222,8 +222,10 @@ func TestGenericParser_GetProbe(t *testing.T) {
 		args             args
 		livenessProbe    *corev1.Probe
 		readinessProbe   *corev1.Probe
+		startupProbe     *corev1.Probe
 		wantLivenessErr  assert.ErrorAssertionFunc
 		wantReadinessErr assert.ErrorAssertionFunc
+		wantStartupErr   assert.ErrorAssertionFunc
 	}
 	probeFunc := func(logger logr.Logger, config *components.SingleEndpointConfig) (*corev1.Probe, error) {
 		if config.Endpoint == "" && config.ListenAddress == "" {
@@ -242,7 +244,7 @@ func TestGenericParser_GetProbe(t *testing.T) {
 	tests := []testCase[*components.SingleEndpointConfig]{
 		{
 			name: "valid config with endpoint",
-			g:    components.NewSinglePortParserBuilder("test", 0).WithReadinessGen(probeFunc).WithLivenessGen(probeFunc).MustBuild(),
+			g:    components.NewSinglePortParserBuilder("test", 0).WithReadinessGen(probeFunc).WithLivenessGen(probeFunc).WithStartupGen(probeFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -265,12 +267,21 @@ func TestGenericParser_GetProbe(t *testing.T) {
 					},
 				},
 			},
+			startupProbe: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/hello",
+						Port: intstr.FromInt32(8080),
+					},
+				},
+			},
 			wantLivenessErr:  assert.NoError,
 			wantReadinessErr: assert.NoError,
+			wantStartupErr:   assert.NoError,
 		},
 		{
 			name: "valid config with listen_address",
-			g:    components.NewSinglePortParserBuilder("test", 0).WithReadinessGen(probeFunc).WithLivenessGen(probeFunc).MustBuild(),
+			g:    components.NewSinglePortParserBuilder("test", 0).WithReadinessGen(probeFunc).WithLivenessGen(probeFunc).WithStartupGen(probeFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
 				config: map[string]interface{}{
@@ -293,8 +304,17 @@ func TestGenericParser_GetProbe(t *testing.T) {
 					},
 				},
 			},
+			startupProbe: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/hello",
+						Port: intstr.FromInt32(8080),
+					},
+				},
+			},
 			wantLivenessErr:  assert.NoError,
 			wantReadinessErr: assert.NoError,
+			wantStartupErr:   assert.NoError,
 		},
 		{
 			name: "readiness invalid config with no endpoint or listen_address",
@@ -305,8 +325,10 @@ func TestGenericParser_GetProbe(t *testing.T) {
 			},
 			readinessProbe:   nil,
 			livenessProbe:    nil,
+			startupProbe:     nil,
 			wantReadinessErr: assert.Error,
 			wantLivenessErr:  assert.NoError,
+			wantStartupErr:   assert.NoError,
 		},
 		{
 			name: "liveness invalid config with no endpoint or listen_address",
@@ -317,8 +339,24 @@ func TestGenericParser_GetProbe(t *testing.T) {
 			},
 			readinessProbe:   nil,
 			livenessProbe:    nil,
+			startupProbe:     nil,
 			wantReadinessErr: assert.NoError,
 			wantLivenessErr:  assert.Error,
+			wantStartupErr:   assert.NoError,
+		},
+		{
+			name: "startup invalid config with no endpoint or listen_address",
+			g:    components.NewSinglePortParserBuilder("test", 0).WithStartupGen(probeFunc).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{},
+			},
+			readinessProbe:   nil,
+			livenessProbe:    nil,
+			startupProbe:     nil,
+			wantReadinessErr: assert.NoError,
+			wantLivenessErr:  assert.NoError,
+			wantStartupErr:   assert.Error,
 		},
 		{
 			name: "liveness failed to parse config",
@@ -329,8 +367,10 @@ func TestGenericParser_GetProbe(t *testing.T) {
 			},
 			livenessProbe:    nil,
 			readinessProbe:   nil,
+			startupProbe:     nil,
 			wantLivenessErr:  assert.Error,
 			wantReadinessErr: assert.NoError,
+			wantStartupErr:   assert.NoError,
 		},
 		{
 			name: "readiness failed to parse config",
@@ -341,8 +381,24 @@ func TestGenericParser_GetProbe(t *testing.T) {
 			},
 			livenessProbe:    nil,
 			readinessProbe:   nil,
+			startupProbe:     nil,
 			wantLivenessErr:  assert.NoError,
 			wantReadinessErr: assert.Error,
+			wantStartupErr:   assert.NoError,
+		},
+		{
+			name: "startup failed to parse config",
+			g:    components.NewSinglePortParserBuilder("test", 0).WithStartupGen(probeFunc).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: func() {},
+			},
+			livenessProbe:    nil,
+			readinessProbe:   nil,
+			startupProbe:     nil,
+			wantLivenessErr:  assert.NoError,
+			wantReadinessErr: assert.NoError,
+			wantStartupErr:   assert.Error,
 		},
 	}
 
@@ -358,6 +414,11 @@ func TestGenericParser_GetProbe(t *testing.T) {
 				return
 			}
 			assert.Equalf(t, tt.readinessProbe, readinessProbe, "GetReadinessProbe(%v, %v)", tt.args.logger, tt.args.config)
+			startupProbe, err := tt.g.GetStartupProbe(tt.args.logger, tt.args.config)
+			if !tt.wantStartupErr(t, err, fmt.Sprintf("GetStartupProbe(%v, %v)", tt.args.logger, tt.args.config)) {
+				return
+			}
+			assert.Equalf(t, tt.startupProbe, startupProbe, "GetStartupProbe(%v, %v)", tt.args.logger, tt.args.config)
 		})
 	}
 }

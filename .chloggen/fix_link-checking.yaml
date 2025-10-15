@@ -1,0 +1,7 @@
+change_type: enhancement
+component: github action
+note: Add link checking workflow to validate documentation
+issues: [3425]
+subtext: |
+  - Added ci-markdown-link.yml workflow using linkspector to check for broken links in markdown files
+  - Added .linkspector.yml configuration file
