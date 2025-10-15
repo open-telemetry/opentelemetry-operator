@@ -610,7 +610,7 @@ CHAINSAW_VERSION ?= v0.2.13
 GOTESTSUM_VERSION ?= v1.13.0
 
 .PHONY: install-tools
-install-tools: kustomize golangci-lint kind controller-gen envtest crdoc operator-sdk chainsaw gotestsum
+install-tools: kustomize golangci-lint kind controller-gen envtest crdoc operator-sdk chainsaw gotestsum cmctl
 
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
