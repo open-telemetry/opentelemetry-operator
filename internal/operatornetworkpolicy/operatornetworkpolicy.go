@@ -18,8 +18,7 @@ import (
 )
 
 const (
-	operatorName         = "opentelemetry-operator-controller-manager"
-	defaultAPIServerPort = 6443
+	operatorName = "opentelemetry-operator-controller-manager"
 )
 
 type networkPolicy struct {

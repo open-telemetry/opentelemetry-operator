@@ -12,7 +12,7 @@ metadata:
 spec:
   egress:
     - ports:
-        - port: 6443
+        - port: 443
           protocol: TCP
   ingress:
     - ports:
