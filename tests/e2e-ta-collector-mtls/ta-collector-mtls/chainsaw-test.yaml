@@ -35,12 +35,10 @@ spec:
   - name: step-03
     try:
     - command:
-        entrypoint: ./bin/cmctl
+        entrypoint: bash
         args:
-          - renew
-          - prometheus-cr-ta-server-cert
-          - -n
-          - ${NAMESPACE}
+          - -c
+          - "$(git rev-parse --show-toplevel)/bin/cmctl renew prometheus-cr-ta-server-cert -n ${NAMESPACE}"
     - sleep:
         duration: 30s
     - apply:

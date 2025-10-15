@@ -1,4 +1,4 @@
-# Certificate renewal triggered by force-renewal annotation
+# Certificate renewal triggered by cmctl in the test.
 # Testing that the ownership watcher fix allows TA to work with renewed certificates
 # WITHOUT requiring manual Secret deletion
 ---
@@ -13,8 +13,6 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: prometheus-cr-ta-server-cert
-  annotations:
-    cert-manager.io/force-renewal: (exists)
 status:
   conditions:
   - type: Ready
