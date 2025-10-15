@@ -27,6 +27,7 @@ type networkPolicy struct {
 	scheme    *runtime.Scheme
 
 	operatorNamespace          string
+	apiServerPort              int32
 	webhookPort                int32
 	metricsPort                int32
 	apiServerPodSelector       *metav1.LabelSelector
@@ -54,6 +55,13 @@ type Option func(policy *networkPolicy)
 func WithOperatorNamespace(operatorNamespace string) Option {
 	return func(s *networkPolicy) {
 		s.operatorNamespace = operatorNamespace
+	}
+}
+
+// WithAPIServerPort sets the port of the API server and enables it in the network policy.
+func WithAPIServerPort(apiServerPort int32) Option {
+	return func(s *networkPolicy) {
+		s.apiServerPort = apiServerPort
 	}
 }
 
@@ -87,7 +95,7 @@ func WithAPISererNamespaceLabelSelector(selector *metav1.LabelSelector) Option {
 
 func (n *networkPolicy) Start(ctx context.Context) error {
 	tcp := corev1.ProtocolTCP
-	apiServerPort := intstr.FromInt32(defaultAPIServerPort)
+	apiServerPort := intstr.FromInt32(n.apiServerPort)
 
 	np := &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
