@@ -19,7 +19,6 @@ import (
 
 const (
 	operatorName         = "opentelemetry-operator-controller-manager"
-	defaultAPIServerPort = 6443
 	defaultRBACProxyPort = 8443
 )
 
