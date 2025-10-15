@@ -1,0 +1,27 @@
+name: Markdown Link Check
+
+on:
+  pull_request:
+    paths:
+      - '**/*.md'
+  schedule:
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  markdown-link-check:
+    permissions:
+      pull-requests: write # required for posting review comments
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # equivalent cli: linkspector check
+      - name: Run linkspector
+        uses: umbrelladocs/action-linkspector@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
