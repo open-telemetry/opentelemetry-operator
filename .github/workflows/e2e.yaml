@@ -12,3 +12,21 @@ permissions:
 jobs:
   run-e2e-tests:
     uses: ./.github/workflows/e2e-reusable.yaml
+  
+  # This job is here to ensure the check has the right name we have set in Github's required checks.
+  e2e-tests-check:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [ run-e2e-tests ]
+    steps:
+      - name: Print result
+        run: echo ${{ needs.run-e2e-tests.result }}
+      - name: Interpret result
+        run: |
+          if [[ success == ${{ needs.run-e2e-tests.result }} ]]
+          then
+            echo "All matrix jobs passed!"
+          else
+            echo "One or more matrix jobs failed."
+            false
+          fi
