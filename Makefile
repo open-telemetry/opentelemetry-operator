@@ -227,6 +227,10 @@ add-operator-arg: manifests kustomize
 add-image-targetallocator:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--target-allocator-image=$(TARGETALLOCATOR_IMG)
 
+.PHONY: add-image-collector
+add-image-collector:
+	@$(MAKE) add-operator-arg OPERATOR_ARG=--collector-image=$(COLLECTOR_IMG)
+
 .PHONY: add-image-instrumentation
 add-instrumentation-images:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-java-image=$(INSTRUMENTATION_JAVA_IMG)
