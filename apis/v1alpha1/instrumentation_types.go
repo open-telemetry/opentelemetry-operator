@@ -163,7 +163,8 @@ type Java struct {
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
-	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
+	// Deprecated: use spec.<lang>.volume.size instead. This field will be removed in a future release.
+	VolumeSizeLimit *resource.Quantity `json:"volumeSizeLimit,omitempty"`
 
 	// Env defines java specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
@@ -201,7 +202,8 @@ type NodeJS struct {
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
-	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
+	// Deprecated: use spec.<lang>.volume.size instead. This field will be removed in a future release.
+	VolumeSizeLimit *resource.Quantity `json:"volumeSizeLimit,omitempty"`
 
 	// Env defines nodejs specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
@@ -226,7 +228,8 @@ type Python struct {
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
-	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
+	// Deprecated: use spec.<lang>.volume.size instead. This field will be removed in a future release.
+	VolumeSizeLimit *resource.Quantity `json:"volumeSizeLimit,omitempty"`
 
 	// Env defines python specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
@@ -251,7 +254,8 @@ type DotNet struct {
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
-	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
+	// Deprecated: use spec.<lang>.volume.size instead. This field will be removed in a future release.
+	VolumeSizeLimit *resource.Quantity `json:"volumeSizeLimit,omitempty"`
 
 	// Env defines DotNet specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
@@ -274,7 +278,8 @@ type Go struct {
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
-	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
+	// Deprecated: use spec.<lang>.volume.size instead. This field will be removed in a future release.
+	VolumeSizeLimit *resource.Quantity `json:"volumeSizeLimit,omitempty"`
 
 	// Env defines Go specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
@@ -299,7 +304,8 @@ type ApacheHttpd struct {
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
-	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
+	// Deprecated: use spec.<lang>.volume.size instead. This field will be removed in a future release.
+	VolumeSizeLimit *resource.Quantity `json:"volumeSizeLimit,omitempty"`
 
 	// Env defines Apache HTTPD specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
@@ -339,7 +345,8 @@ type Nginx struct {
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
-	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
+	// Deprecated: use spec.<lang>.volume.size instead. This field will be removed in a future release.
+	VolumeSizeLimit *resource.Quantity `json:"volumeSizeLimit,omitempty"`
 
 	// Env defines Nginx specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
