@@ -952,7 +952,6 @@ func TestLoadConfig(t *testing.T) {
 }
 
 func TestNamespaceLabelUpdate(t *testing.T) {
-	t.Skip("Flaky test, see https://github.com/open-telemetry/opentelemetry-operator/issues/4417")
 	var err error
 	namespace := "test"
 	portName := "web"
@@ -1066,10 +1065,10 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 
 	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 		got, err = w.LoadConfig(context.Background())
-		assert.NoError(t, err)
+		assert.NoError(collect, err)
 
 		sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
-		assert.Equal(t, want_after.ScrapeConfigs, got.ScrapeConfigs)
+		assert.Equal(collect, want_after.ScrapeConfigs, got.ScrapeConfigs)
 	}, time.Second*60, time.Millisecond*100)
 }
 
