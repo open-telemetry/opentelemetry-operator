@@ -266,11 +266,12 @@ If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>volumeLimitSize</b></td>
+        <td><b>volumeSizeLimit</b></td>
         <td>int or string</td>
         <td>
           VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-The default size is 200Mi.<br/>
+The default size is 200Mi.
+Deprecated: use spec.<lang>.volume.size instead. This field will be removed in a future release.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1449,11 +1450,12 @@ If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>volumeLimitSize</b></td>
+        <td><b>volumeSizeLimit</b></td>
         <td>int or string</td>
         <td>
           VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-The default size is 200Mi.<br/>
+The default size is 200Mi.
+Deprecated: use spec.<lang>.volume.size instead. This field will be removed in a future release.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2704,11 +2706,12 @@ If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>volumeLimitSize</b></td>
+        <td><b>volumeSizeLimit</b></td>
         <td>int or string</td>
         <td>
           VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-The default size is 200Mi.<br/>
+The default size is 200Mi.
+Deprecated: use spec.<lang>.volume.size instead. This field will be removed in a future release.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3594,11 +3597,12 @@ If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>volumeLimitSize</b></td>
+        <td><b>volumeSizeLimit</b></td>
         <td>int or string</td>
         <td>
           VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-The default size is 200Mi.<br/>
+The default size is 200Mi.
+Deprecated: use spec.<lang>.volume.size instead. This field will be removed in a future release.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4527,11 +4531,12 @@ If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>volumeLimitSize</b></td>
+        <td><b>volumeSizeLimit</b></td>
         <td>int or string</td>
         <td>
           VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-The default size is 200Mi.<br/>
+The default size is 200Mi.
+Deprecated: use spec.<lang>.volume.size instead. This field will be removed in a future release.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5679,11 +5684,12 @@ If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>volumeLimitSize</b></td>
+        <td><b>volumeSizeLimit</b></td>
         <td>int or string</td>
         <td>
           VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-The default size is 200Mi.<br/>
+The default size is 200Mi.
+Deprecated: use spec.<lang>.volume.size instead. This field will be removed in a future release.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -6561,11 +6567,12 @@ If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>volumeLimitSize</b></td>
+        <td><b>volumeSizeLimit</b></td>
         <td>int or string</td>
         <td>
           VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
-The default size is 200Mi.<br/>
+The default size is 200Mi.
+Deprecated: use spec.<lang>.volume.size instead. This field will be removed in a future release.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
