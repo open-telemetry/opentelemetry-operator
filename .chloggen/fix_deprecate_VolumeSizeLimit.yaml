@@ -14,5 +14,6 @@ issues: [3382]
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
 subtext: |
-  - The volumeSizeLimit field in instrumentation_types.go is now marked as deprecated.
-  - Validating webhook has been implemented to generate warnings whenever a user attempts to apply an Instrumentation resource that still uses the deprecated volumeSizeLimit field.
+  - The `volumeSizeLimit` field is deprecated.
+  - Use `spec.<lang>.volume.size` instead of `spec.<lang>.volumeSizeLimit`.
+  - The validating webhook emits a warning when `volumeSizeLimit` is used.
