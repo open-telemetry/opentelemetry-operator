@@ -259,6 +259,29 @@ func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings
 
 	warnings = append(warnings, validateExporter(r.Spec.Exporter)...)
 
+	// Deprecated field warnings: spec.<lang>.volumeSizeLimit
+	if r.Spec.Java.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.java.volumeSizeLimit is deprecated and will be removed in a future release; use spec.java.volume.size instead")
+	}
+	if r.Spec.NodeJS.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.nodejs.volumeSizeLimit is deprecated and will be removed in a future release; use spec.nodejs.volume.size instead")
+	}
+	if r.Spec.Python.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.python.volumeSizeLimit is deprecated and will be removed in a future release; use spec.python.volume.size instead")
+	}
+	if r.Spec.DotNet.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.dotnet.volumeSizeLimit is deprecated and will be removed in a future release; use spec.dotnet.volume.size instead")
+	}
+	if r.Spec.Go.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.go.volumeSizeLimit is deprecated and will be removed in a future release; use spec.go.volume.size instead")
+	}
+	if r.Spec.ApacheHttpd.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.apachehttpd.volumeSizeLimit is deprecated and will be removed in a future release; use spec.apachehttpd.volume.size instead")
+	}
+	if r.Spec.Nginx.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.nginx.volumeSizeLimit is deprecated and will be removed in a future release; use spec.nginx.volume.size instead")
+	}
+
 	return warnings, nil
 }
 
