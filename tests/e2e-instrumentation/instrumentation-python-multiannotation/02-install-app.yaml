@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-sdk-from-namespace
+  namespace: my-python-multiannotation-ns
+spec:
+  selector:
+    matchLabels:
+      app: my-sdk-from-namespace
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-sdk-from-namespace
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 3000
+      containers:
+      - name: my-sdk
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main

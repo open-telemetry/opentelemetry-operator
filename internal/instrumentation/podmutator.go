@@ -52,77 +52,51 @@ type languageInstrumentations struct {
 	Sdk         instrumentationWithContainers
 }
 
-// Check if specific containers are provided for configured instrumentation.
 func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bool, error) {
 	var instrWithoutContainers int
 	var instrWithContainers int
 	var allContainers []string
-	var instrumentationWithNoContainers bool
 
 	// Check for instrumentations with and without containers.
 	if langInsts.Java.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.Java)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.Java)
 		allContainers = append(allContainers, langInsts.Java.Containers...)
-		if len(langInsts.Java.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
 	}
 	if langInsts.NodeJS.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.NodeJS)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.NodeJS)
 		allContainers = append(allContainers, langInsts.NodeJS.Containers...)
-		if len(langInsts.NodeJS.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
 	}
 	if langInsts.Python.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.Python)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.Python)
 		allContainers = append(allContainers, langInsts.Python.Containers...)
-		if len(langInsts.Python.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
 	}
 	if langInsts.DotNet.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.DotNet)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.DotNet)
 		allContainers = append(allContainers, langInsts.DotNet.Containers...)
-		if len(langInsts.DotNet.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
 	}
 	if langInsts.ApacheHttpd.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.ApacheHttpd)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.ApacheHttpd)
 		allContainers = append(allContainers, langInsts.ApacheHttpd.Containers...)
-		if len(langInsts.ApacheHttpd.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
 	}
 	if langInsts.Nginx.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.Nginx)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.Nginx)
 		allContainers = append(allContainers, langInsts.Nginx.Containers...)
-		if len(langInsts.Nginx.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
 	}
 	if langInsts.Go.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.Go)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.Go)
 		allContainers = append(allContainers, langInsts.Go.Containers...)
-		if len(langInsts.Go.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
 	}
 	if langInsts.Sdk.Instrumentation != nil {
 		instrWithContainers += isInstrWithContainers(langInsts.Sdk)
 		instrWithoutContainers += isInstrWithoutContainers(langInsts.Sdk)
 		allContainers = append(allContainers, langInsts.Sdk.Containers...)
-		if len(langInsts.Sdk.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
 	}
 
 	// Look for duplicated containers.
@@ -131,23 +105,19 @@ func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bo
 		return false, containerDuplicates
 	}
 
+	if instrWithoutContainers == 0 && instrWithContainers == 0 {
+		return false, fmt.Errorf("instrumentation configuration not provided")
+	}
+
 	// Look for mixed multiple instrumentations with and without container names.
 	if instrWithoutContainers > 0 && instrWithContainers > 0 {
 		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
 	}
 
 	// Look for multiple instrumentations without container names.
-	if instrWithoutContainers > 1 && instrWithContainers == 0 {
-		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
-	}
-
-	if instrWithoutContainers == 0 && instrWithContainers == 0 {
-		return false, fmt.Errorf("instrumentation configuration not provided")
-	}
-
-	enabledInstrumentations := instrWithContainers + instrWithoutContainers
-
-	if enabledInstrumentations > 1 && instrumentationWithNoContainers {
+	// When multiple instrumentations are specified without container names, they would all try to
+	// instrument the first container, which is ambiguous and likely not what the user wants.
+	if instrWithoutContainers > 1 {
 		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
 	}
 
@@ -397,8 +367,6 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		if err != nil {
 			return pod, err
 		}
-
-		// We check if provided annotations and instrumentations are valid
 		ok, msg := insts.areInstrumentedContainersCorrect()
 		if !ok {
 			logger.V(1).Error(msg, "skipping instrumentation injection")
