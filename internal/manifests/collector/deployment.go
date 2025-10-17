@@ -61,6 +61,7 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 					Affinity:                      params.OtelCol.Spec.Affinity,
 					TerminationGracePeriodSeconds: params.OtelCol.Spec.TerminationGracePeriodSeconds,
 					TopologySpreadConstraints:     params.OtelCol.Spec.TopologySpreadConstraints,
+					ImagePullSecrets:              params.OtelCol.Spec.ImagePullSecrets,
 				},
 			},
 		},
