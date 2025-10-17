@@ -1,0 +1,18 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: breaking
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: auto-instrumentation
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Deprecate VolumeSizeLimit in the Instrumentation CRD
+
+# One or more tracking issues related to the change
+issues: [3382]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  - The volumeSizeLimit field in instrumentation_types.go is now marked as deprecated.
+  - Validating webhook has been implemented to generate warnings whenever a user attempts to apply an Instrumentation resource that still uses the deprecated volumeSizeLimit field.
