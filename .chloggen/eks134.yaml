@@ -5,7 +5,7 @@ change_type: 'enhancement'
 component: operator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Support for Kubernetes `1.34`  version.
+note: Support for Kubernetes `1.34` version.
 
 # One or more tracking issues related to the change
 issues: [4415]
