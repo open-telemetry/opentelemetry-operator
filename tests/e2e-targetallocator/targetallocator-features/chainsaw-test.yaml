@@ -9,6 +9,13 @@ spec:
   - name: Add OpenShift namespace annotations
     use:
       template: ../../step-templates/openshift-namespace-annotations.yaml
+  - name: Setup Target Allocator RBAC
+    use:
+      template: ../../step-templates/target-allocator-rbac-comprehensive.yaml
+      with:
+        bindings:
+        - name: clusterRoleName
+          value: targetallocator-features
   - name: step-00
     try:
     - apply:
