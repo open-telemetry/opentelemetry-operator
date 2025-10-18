@@ -98,8 +98,9 @@ func NewPrometheusCRWatcher(
 	store := assets.NewStoreBuilder(client.CoreV1(), client.CoreV1())
 	promRegisterer := prometheusgoclient.NewRegistry()
 	operatorMetrics := operator.NewMetrics(promRegisterer)
-	eventRecorderFactory := operator.NewEventRecorderFactory(false)
-	eventRecorder := eventRecorderFactory(client, "target-allocator")
+	eventRecorderFactoryFactory := operator.NewEventRecorderFactory(false)
+	eventRecorderFactory := eventRecorderFactoryFactory(client, "target-allocator")
+	eventRecorder := eventRecorderFactory(prom)
 
 	var nsMonInf cache.SharedIndexInformer
 	getNamespaceInformerErr := retry.OnError(retry.DefaultRetry,
@@ -458,38 +459,38 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 
 		// Get ServiceMonitors if the informer exists
 		if informer, ok := w.informers[monitoringv1.ServiceMonitorName]; ok {
-			instances, err := w.resourceSelector.SelectServiceMonitors(ctx, informer.ListAllByNamespace)
+			selection, err := w.resourceSelector.SelectServiceMonitors(ctx, informer.ListAllByNamespace)
 			if err != nil {
 				return nil, err
 			}
-			serviceMonitorInstances = instances
+			serviceMonitorInstances = selection.ValidResources()
 		}
 
 		// Get PodMonitors if the informer exists
 		if informer, ok := w.informers[monitoringv1.PodMonitorName]; ok {
-			instances, err := w.resourceSelector.SelectPodMonitors(ctx, informer.ListAllByNamespace)
+			selection, err := w.resourceSelector.SelectPodMonitors(ctx, informer.ListAllByNamespace)
 			if err != nil {
 				return nil, err
 			}
-			podMonitorInstances = instances
+			podMonitorInstances = selection.ValidResources()
 		}
 
 		// Get Probes if the informer exists
 		if informer, ok := w.informers[monitoringv1.ProbeName]; ok {
-			instances, err := w.resourceSelector.SelectProbes(ctx, informer.ListAllByNamespace)
+			selection, err := w.resourceSelector.SelectProbes(ctx, informer.ListAllByNamespace)
 			if err != nil {
 				return nil, err
 			}
-			probeInstances = instances
+			probeInstances = selection.ValidResources()
 		}
 
 		// Get ScrapeConfigs if the informer exists
 		if informer, ok := w.informers[promv1alpha1.ScrapeConfigName]; ok {
-			instances, err := w.resourceSelector.SelectScrapeConfigs(ctx, informer.ListAllByNamespace)
+			selection, err := w.resourceSelector.SelectScrapeConfigs(ctx, informer.ListAllByNamespace)
 			if err != nil {
 				return nil, err
 			}
-			scrapeConfigInstances = instances
+			scrapeConfigInstances = selection.ValidResources()
 		}
 
 		generatedConfig, err := w.configGenerator.GenerateServerConfiguration(
