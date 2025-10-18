@@ -5,7 +5,6 @@ package target
 
 import (
 	"encoding/binary"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -52,15 +51,9 @@ func WithRelabeledLabels(lbs labels.Labels) ItemOption {
 	return func(i *Item) {
 		// In Prometheus, labels with the MetaLabelPrefix are discarded after relabeling, which means they are not used in hash calculation.
 		// For details, see https://github.com/prometheus/prometheus/blob/e6cfa720fbe6280153fab13090a483dbd40bece3/scrape/target.go#L534.
-		writeIndex := 0
-		relabeledLabels := make(labels.Labels, len(lbs))
-		for _, l := range lbs {
-			if !strings.HasPrefix(l.Name, model.MetaLabelPrefix) {
-				relabeledLabels[writeIndex] = l
-				writeIndex++
-			}
-		}
-		i.relabeledLabels = slices.Clip(relabeledLabels[:writeIndex])
+		i.relabeledLabels = lbs.DropReserved(func(name string) bool {
+			return strings.HasPrefix(name, model.MetaLabelPrefix)
+		})
 	}
 }
 
