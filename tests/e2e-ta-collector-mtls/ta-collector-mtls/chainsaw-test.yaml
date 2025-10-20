@@ -32,3 +32,20 @@ spec:
     catch:
     - podLogs:
         selector: app.kubernetes.io/managed-by=opentelemetry-operator
+  - name: step-03
+    try:
+    - command:
+        entrypoint: bash
+        args:
+          - -c
+          - "$(git rev-parse --show-toplevel)/bin/cmctl renew prometheus-cr-ta-server-cert -n ${NAMESPACE}"
+    - sleep:
+        duration: 30s
+    - apply:
+        template: true
+        file: 03-install.yaml
+    - assert:
+        file: 03-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/managed-by=opentelemetry-operator
