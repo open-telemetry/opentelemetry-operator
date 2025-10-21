@@ -4,6 +4,13 @@ metadata:
   name: targetallocator-metrics
 spec:
   steps:
+    - name: Setup Target Allocator RBAC
+      use:
+        template: ../../step-templates/target-allocator-rbac-comprehensive.yaml
+        with:
+          bindings:
+            - name: clusterRoleName
+              value: simplest-targetallocator-create-sm-prometheus
     - name: Install OpenTelemetryCollector with Target Allocator enabled
       try:
         - apply:

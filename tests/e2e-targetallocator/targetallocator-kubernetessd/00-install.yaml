@@ -2,64 +2,7 @@ apiVersion: v1
 automountServiceAccountToken: true
 kind: ServiceAccount
 metadata:
-  name: ta
----
-apiVersion: v1
-automountServiceAccountToken: true
-kind: ServiceAccount
-metadata:
   name: collector
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: targetallocator-kubernetessd
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  - nodes
-  - services
-  - endpoints
-  - configmaps
-  - secrets
-  - namespaces
-  verbs:
-  - get
-  - watch
-  - list
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets
-  - daemonsets
-  - services
-  - endpoints
-  verbs:
-  - get
-  - watch
-  - list
-- apiGroups:
-  - discovery.k8s.io
-  resources:
-  - endpointslices
-  verbs:
-  - get
-  - watch
-  - list
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - ingresses
-  verbs:
-  - get
-  - watch
-  - list
-- nonResourceURLs:
-  - /metrics
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -91,19 +34,6 @@ rules:
   - /metrics/cadvisor
   verbs:
   - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: (join('-', ['ta', $namespace]))
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: targetallocator-kubernetessd
-subjects:
-- kind: ServiceAccount
-  name: ta
-  namespace: ($namespace)
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
