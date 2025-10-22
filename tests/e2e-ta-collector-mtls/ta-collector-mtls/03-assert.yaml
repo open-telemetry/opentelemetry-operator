@@ -1,0 +1,29 @@
+# Certificate renewal triggered by cmctl in the test.
+# Testing that the ownership watcher fix allows TA to work with renewed certificates
+# WITHOUT requiring manual Secret deletion
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-after-cert-renewal
+status:
+  succeeded: 1
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: prometheus-cr-ta-server-cert
+status:
+  conditions:
+  - type: Ready
+    status: "True"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-cr-targetallocator
+spec:
+  replicas: 1
+status:
+  readyReplicas: 1
+  replicas: 1

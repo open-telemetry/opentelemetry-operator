@@ -6,6 +6,9 @@ metadata:
   name: targetallocator-collector-mtls
 spec:
   steps:
+  - name: Setup Target Allocator RBAC
+    use:
+      template: ../../step-templates/target-allocator-rbac-comprehensive.yaml
   - name: step-00
     try:
     - apply:
@@ -29,6 +32,23 @@ spec:
         file: 02-install.yaml
     - assert:
         file: 02-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/managed-by=opentelemetry-operator
+  - name: step-03
+    try:
+    - command:
+        entrypoint: bash
+        args:
+          - -c
+          - "$(git rev-parse --show-toplevel)/bin/cmctl renew prometheus-cr-ta-server-cert -n ${NAMESPACE}"
+    - sleep:
+        duration: 30s
+    - apply:
+        template: true
+        file: 03-install.yaml
+    - assert:
+        file: 03-assert.yaml
     catch:
     - podLogs:
         selector: app.kubernetes.io/managed-by=opentelemetry-operator

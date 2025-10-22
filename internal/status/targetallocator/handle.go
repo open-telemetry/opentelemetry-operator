@@ -26,16 +26,19 @@ const (
 
 // HandleReconcileStatus handles updating the status of the CRDs managed by the operator.
 func HandleReconcileStatus(ctx context.Context, log logr.Logger, params targetallocator.Params, err error) (ctrl.Result, error) {
-	log.V(2).Info("updating opampbridge status")
+	log.V(2).Info("updating target allocator status")
 	if err != nil {
 		params.Recorder.Event(&params.TargetAllocator, eventTypeWarning, reasonError, err.Error())
 		return ctrl.Result{}, err
 	}
 	changed := params.TargetAllocator.DeepCopy()
 
-	if changed.Status.Version == "" {
+	// If the user provided a custom image we don't set the version.
+	// There is no guarantee that the custom image version matches the intended version.
+	if changed.Spec.Image == "" {
 		changed.Status.Version = version.TargetAllocator()
 	}
+
 	statusPatch := client.MergeFrom(&params.TargetAllocator)
 	if err := params.Client.Status().Patch(ctx, changed, statusPatch); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to apply status changes to the OpenTelemetry CR: %w", err)

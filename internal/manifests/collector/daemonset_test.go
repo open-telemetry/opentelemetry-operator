@@ -120,6 +120,45 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
 
+func TestDaemonsetDNSPolicy(t *testing.T) {
+	params1 := manifests.Params{
+		Config: config.New(),
+		OtelCol: v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-instance",
+				Namespace: "my-namespace",
+			},
+			Spec: v1beta1.OpenTelemetryCollectorSpec{},
+		},
+		Log: testLogger,
+	}
+	// test default
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
+	assert.Equal(t, d1.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirst)
+
+	// verify custom DNSPolicy
+	dnsPolicy := v1.DNSDefault
+	params2 := manifests.Params{
+		Config: config.New(),
+		OtelCol: v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-instance-dns-policy-default",
+				Namespace: "my-namespace",
+			},
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+					DNSPolicy: &dnsPolicy,
+				},
+			},
+		},
+		Log: testLogger,
+	}
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
+	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSDefault)
+}
+
 func TestDaemonsetPodAnnotations(t *testing.T) {
 	// prepare
 	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}

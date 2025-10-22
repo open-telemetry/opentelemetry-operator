@@ -116,6 +116,10 @@ type OpenTelemetryCollectorSpec struct {
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
 	ReadinessProbe *Probe `json:"readinessProbe,omitempty"`
+	// Startup config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
+	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
+	// +optional
+	StartupProbe *Probe `json:"startupProbe,omitempty"`
 
 	// ObservabilitySpec defines how telemetry data gets handled.
 	//
@@ -138,11 +142,6 @@ type OpenTelemetryCollectorSpec struct {
 	// This is only applicable to Deployment mode.
 	// +optional
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
-
-	// ServiceName is the name of the Service to be used.
-	// If not specified, it will default to "<name>-headless".
-	// +optional
-	ServiceName string `json:"serviceName,omitempty"`
 }
 
 // TargetAllocatorEmbedded defines the configuration for the Prometheus target allocator, embedded in the

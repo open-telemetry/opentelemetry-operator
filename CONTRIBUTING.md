@@ -69,8 +69,8 @@ make install run
 
 When running `make run`, the webhooks aren't effective as it starts the manager in the local machine instead of in-cluster. To test the webhooks, you'll need to:
 
-1. configure a proxy between the Kubernetes API server and your host, so that it can contact the webhook in your local machine
-1. create the TLS certificates and place them, by default, on `/tmp/k8s-webhook-server/serving-certs/tls.crt`. The Kubernetes API server has also to be configured to trust the CA used to generate those certs.
+1. Configure a proxy between the Kubernetes API server and your host, so that it can contact the webhook in your local machine
+1. Create the TLS certificates and place them, by default, on `/tmp/k8s-webhook-server/serving-certs/tls.crt`. The Kubernetes API server has also to be configured to trust the CA used to generate those certs.
 
 In general, it's just easier to deploy the operator in a Kubernetes cluster instead. For that, you'll need the `cert-manager` installed. You can install it by running:
 

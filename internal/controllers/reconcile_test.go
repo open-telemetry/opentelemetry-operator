@@ -647,7 +647,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					actual := &v1beta1.OpenTelemetryCollector{}
 					err := reconciler.Get(testContext, nsn, actual)
 					assert.NoError(collect, err)
-					assert.NotNil(t, actual.GetDeletionTimestamp())
+					assert.NotNil(collect, actual.GetDeletionTimestamp())
 				}, time.Second*30, time.Millisecond*100)
 			}
 			req := k8sreconcile.Request{

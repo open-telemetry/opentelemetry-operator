@@ -4,7 +4,10 @@ metadata:
   name: openshift-namespace-annotations
 spec:
   try:
-    # In OpenShift, when a namespace is created, all necessary SCC annotations are automatically added. However, if a namespace is created using a resource file with only selected SCCs, the other auto-added SCCs are not included. Therefore, the UID-range and supplemental groups SCC annotations must be set after the namespace is created.
+    # In OpenShift, when a namespace is created, all necessary SCC annotations are automatically added.
+    # However, if a namespace is created using a resource file with only selected SCCs, the other auto-added SCCs are not included.
+    # Therefore, the UID-range and supplemental groups SCC annotations must be set after the namespace is created.
+    # Some instrumentation requires root privileges (uid=0) for proper functionality.
     - command:
         entrypoint: kubectl
         args:

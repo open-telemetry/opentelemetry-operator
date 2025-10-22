@@ -2,6 +2,73 @@
 
 <!-- next version -->
 
+## 0.137.0
+
+### 🛑 Breaking changes 🛑
+
+- `target allocator`: Promote the operator.collector.targetallocatorcr feature flag to Stable (#2422)
+  The flag can no longer be disabled. It will be completely removed in 0.138.0.
+
+### 💡 Enhancements 💡
+
+- `collector`: Add logs when the Operator finds an issue during the unmarshall process for spec.service.telemetry section. (#4111)
+- `collector`: Add spec.dnsPolicy field to the OpenTelemetryCollector to allow users to specify the DNS policy for the collector pods. (#4265)
+- `github action`: Add link checking workflow to validate documentation (#3425)
+  - Added ci-markdown-link.yml workflow using linkspector to check for broken links in markdown files
+  - Added .linkspector.yml configuration file
+- `collector`: add startup probe to the collector CRD (#4347)
+- `collector`: Validate collector ports from the config to ensure they are within the valid range (1-65535). (#4399)
+  - This change adds validation for collector ports specified in the configuration file.
+  - Ports must be within the range of 1 to 65535; otherwise, an error will be raised during CR creation.
+  - This helps prevent misconfigurations that could lead to runtime errors.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Respect telemetry metrics readers when deriving the internal metrics endpoint. (#4049, #4233)
+  - Fixes monitoring Service and container port mismatches when `.spec.config.service.telemetry.metrics.readers[].pull.exporter.prometheus.port` is set.
+  - Defaults remain `0.0.0.0:8888` when neither address nor a Prometheus reader is configured.
+  
+- `target allocator, opamp`: Fix version not being updated after version upgrade. (#4378)
+- `target-allocator`: Fixed potential duplicate scrape targets caused by Prometheus relabeling. (#3617)
+- `auto-instrumentation`: Fix nginxCloneScriptTemplate for old shells (#3651)
+
+### Components
+
+* [OpenTelemetry Collector - v0.137.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.137.0)
+* [OpenTelemetry Contrib - v0.137.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.137.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.64.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.64.1)
+* [Python - v0.59b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.59b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.136.0
+
+### 🧰 Bug fixes 🧰
+
+- `target-allocator`: Fixes the incorrect k8s version for the traffic distribution feature. (#4394)
+- `collector`: Fix statefulset serviceName field change handling. (#4371)
+  The Operator 0.129.1 introduced a new feature which allows setting the serviceName of the collector statefulset ([#4041](https://github.com/open-telemetry/opentelemetry-operator/pull/4041)).
+  This feature introduced two issues:
+  1. upgrade failure because the default stateful serviceName changed
+  2. the statefulset serviceName field is mutable, therefore a change of the collector serviceName field is not applied
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.136.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.136.0)
+* [OpenTelemetry Contrib - v0.136.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.136.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.64.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.64.1)
+* [Python - v0.58b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.58b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.135.0
 
 ### 💡 Enhancements 💡
