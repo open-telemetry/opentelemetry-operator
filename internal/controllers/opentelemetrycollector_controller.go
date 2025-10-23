@@ -43,7 +43,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const resourceOwnerKey = ".metadata.owner"
@@ -97,10 +96,6 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 		switch objectType.(type) {
 		case *corev1.ConfigMap:
 			for _, object := range objs {
-				if !featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() && object.GetLabels()["app.kubernetes.io/component"] != "opentelemetry-collector" {
-					// we only apply this to collector ConfigMaps
-					continue
-				}
 				configMap := object.(*corev1.ConfigMap)
 				collectorConfigMaps = append(collectorConfigMaps, configMap)
 			}
@@ -367,6 +362,7 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 		&networkingv1.NetworkPolicy{},
 		&autoscalingv2.HorizontalPodAutoscaler{},
 		&policyV1.PodDisruptionBudget{},
+		&v1alpha1.TargetAllocator{},
 	}
 
 	if r.config.CreateRBACPermissions == rbac.Available {
@@ -381,10 +377,6 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 
 	if r.config.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
 		ownedResources = append(ownedResources, &routev1.Route{})
-	}
-
-	if featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() {
-		ownedResources = append(ownedResources, &v1alpha1.TargetAllocator{})
 	}
 
 	return ownedResources
