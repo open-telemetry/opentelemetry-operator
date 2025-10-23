@@ -329,7 +329,7 @@ spec:
                     required:
                     - spec
                     type: object
-                  volumeSizeLimit:
+                  volumeLimitSize:
                     anyOf:
                     - type: integer
                     - type: string
@@ -556,7 +556,7 @@ spec:
                     required:
                     - spec
                     type: object
-                  volumeSizeLimit:
+                  volumeLimitSize:
                     anyOf:
                     - type: integer
                     - type: string
@@ -862,7 +862,7 @@ spec:
                     required:
                     - spec
                     type: object
-                  volumeSizeLimit:
+                  volumeLimitSize:
                     anyOf:
                     - type: integer
                     - type: string
@@ -1098,7 +1098,7 @@ spec:
                     required:
                     - spec
                     type: object
-                  volumeSizeLimit:
+                  volumeLimitSize:
                     anyOf:
                     - type: integer
                     - type: string
@@ -1388,7 +1388,7 @@ spec:
                     required:
                     - spec
                     type: object
-                  volumeSizeLimit:
+                  volumeLimitSize:
                     anyOf:
                     - type: integer
                     - type: string
@@ -1610,7 +1610,7 @@ spec:
                     required:
                     - spec
                     type: object
-                  volumeSizeLimit:
+                  volumeLimitSize:
                     anyOf:
                     - type: integer
                     - type: string
@@ -1845,7 +1845,7 @@ spec:
                     required:
                     - spec
                     type: object
-                  volumeSizeLimit:
+                  volumeLimitSize:
                     anyOf:
                     - type: integer
                     - type: string

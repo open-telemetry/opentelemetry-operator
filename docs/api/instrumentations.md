@@ -266,7 +266,7 @@ If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>volumeSizeLimit</b></td>
+        <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
           VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
@@ -1450,7 +1450,7 @@ If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>volumeSizeLimit</b></td>
+        <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
           VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
@@ -2706,7 +2706,7 @@ If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>volumeSizeLimit</b></td>
+        <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
           VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
@@ -3597,7 +3597,7 @@ If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>volumeSizeLimit</b></td>
+        <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
           VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
@@ -4531,7 +4531,7 @@ If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>volumeSizeLimit</b></td>
+        <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
           VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
@@ -5684,7 +5684,7 @@ If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>volumeSizeLimit</b></td>
+        <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
           VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
@@ -6567,7 +6567,7 @@ If omitted, an emptyDir is used with size limit VolumeSizeLimit<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>volumeSizeLimit</b></td>
+        <td><b>volumeLimitSize</b></td>
         <td>int or string</td>
         <td>
           VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
