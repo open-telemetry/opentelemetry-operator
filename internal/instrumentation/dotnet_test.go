@@ -194,10 +194,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 									Name:  envDotNetSharedStore,
 									Value: fmt.Sprintf("%s:%s", "/foo:/bar", dotNetSharedStorePath),
 								},
-								{
-									Name:  envDotNetOTelAutoHome,
-									Value: dotNetOTelAutoHomePath,
-								},
+								{Name: envDotNetOTelAutoHome, Value: dotNetOTelAutoHomePath},
 							},
 						},
 					},
@@ -537,11 +534,18 @@ func TestInjectDotNetSDK(t *testing.T) {
 		},
 	}
 
+	injector := sdkInjector{}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			pod, err := injectDotNetSDK(test.DotNet, test.pod, 0, test.runtime, v1alpha1.InstrumentationSpec{})
-			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
+			if err == nil {
+				pod = injector.injectDefaultDotNetEnvVarsWrapper(pod, 0, test.runtime)
+				assert.Equal(t, test.expected, pod)
+				assert.Equal(t, test.err, err)
+			} else {
+				assert.Equal(t, test.expected, pod)
+			}
 		})
 	}
 }

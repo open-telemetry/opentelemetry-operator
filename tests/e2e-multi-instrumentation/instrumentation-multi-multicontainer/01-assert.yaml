@@ -33,6 +33,10 @@ spec:
       value: http://+:8083
     - name: OTEL_SERVICE_NAME
       value: dotnetapp
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.85"
     - name: CORECLR_ENABLE_PROFILING
       value: "1"
     - name: CORECLR_PROFILER
@@ -47,10 +51,6 @@ spec:
       value: /otel-auto-instrumentation-dotnet
     - name: DOTNET_SHARED_STORE
       value: /otel-auto-instrumentation-dotnet/store
-    - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://deployment-collector:4317
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
@@ -87,12 +87,12 @@ spec:
       value: "8086"
     - name: OTEL_SERVICE_NAME
       value: javaapp
-    - name: JAVA_TOOL_OPTIONS
-      value: ' -javaagent:/otel-auto-instrumentation-java-javaapp/javaagent.jar'
     - name: OTEL_TRACES_SAMPLER
       value: parentbased_traceidratio
     - name: OTEL_TRACES_SAMPLER_ARG
       value: "0.85"
+    - name: JAVA_TOOL_OPTIONS
+      value: ' -javaagent:/otel-auto-instrumentation-java-javaapp/javaagent.jar'
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://deployment-collector:4317
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
@@ -129,12 +129,12 @@ spec:
       value: /usr/local/lib/node_modules
     - name: OTEL_SERVICE_NAME
       value: nodejsapp
-    - name: NODE_OPTIONS
-      value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
     - name: OTEL_TRACES_SAMPLER
       value: parentbased_traceidratio
     - name: OTEL_TRACES_SAMPLER_ARG
       value: "0.85"
+    - name: NODE_OPTIONS
+      value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://deployment-collector:4317
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
@@ -178,6 +178,10 @@ spec:
       value: http://deployment-collector:4318
     - name: PYTHONPATH
       value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARG
+      value: "0.85"
     - name: OTEL_EXPORTER_OTLP_PROTOCOL
       value: http/protobuf
     - name: OTEL_TRACES_EXPORTER
@@ -186,10 +190,6 @@ spec:
       value: otlp
     - name: OTEL_LOGS_EXPORTER
       value: otlp
-    - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
       valueFrom:
         fieldRef:
