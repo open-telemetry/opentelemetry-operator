@@ -2,6 +2,37 @@
 
 <!-- next version -->
 
+## 0.138.0
+
+### 🛑 Breaking changes 🛑
+
+- `target allocator`: Remove the operator.collector.targetallocatorcr feature flag (#2422)
+  This behavior has been enabled by default since version 0.127.0.
+
+### 🚩 Deprecations 🚩
+
+- `auto-instrumentation`: Deprecate VolumeSizeLimit in the Instrumentation CRD (#3382)
+  - The `volumeSizeLimit` field is deprecated.
+  - Use `spec.<lang>.volume.size` instead of `spec.<lang>.volumeSizeLimit`.
+  - The validating webhook emits a warning when `volumeSizeLimit` is used.
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: Add missing TA ownership watches to cert-manager Certificate and Issuer (#4368)
+- `collector`: Set the log level to 4 when default pdb is created. ()
+
+### Components
+
+* [OpenTelemetry Collector - v0.138.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.138.0)
+* [OpenTelemetry Contrib - v0.138.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.138.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.64.1](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.64.1)
+* [Python - v0.59b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.59b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.137.0
 
 ### 🛑 Breaking changes 🛑

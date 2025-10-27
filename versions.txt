@@ -5,13 +5,13 @@
 opentelemetry-collector=0.138.0
 
 # Represents the current release of the OpenTelemetry Operator.
-operator=0.137.0
+operator=0.138.0
 
 # Represents the current release of the Target Allocator.
-targetallocator=0.137.0
+targetallocator=0.138.0
 
 # Represents the current release of the Operator OpAMP Bridge.
-operator-opamp-bridge=0.137.0
+operator-opamp-bridge=0.138.0
 
 # Represents the current release of Java instrumentation.
 # Should match autoinstrumentation/java/version.txt
