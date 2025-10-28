@@ -12,7 +12,6 @@ spec:
       labels:
         app: my-python
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-python: "true"
     spec:
       securityContext:
@@ -23,7 +22,7 @@ spec:
       - name: myapp
         ports:
         - containerPort: 8080
-        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
+        image: ($APP_IMAGE)
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

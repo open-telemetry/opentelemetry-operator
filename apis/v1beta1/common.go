@@ -186,6 +186,9 @@ type OpenTelemetryCommonFields struct {
 	// HostNetwork indicates if the pod should run in the host networking namespace.
 	// +optional
 	HostNetwork bool `json:"hostNetwork,omitempty"`
+	// DNSPolicy defines how a pod's DNS will be configured.
+	// +optional
+	DNSPolicy *v1.DNSPolicy `json:"dnsPolicy,omitempty"`
 	// ShareProcessNamespace indicates if the pod's containers should share process namespace.
 	// +optional
 	ShareProcessNamespace bool `json:"shareProcessNamespace,omitempty"`
@@ -224,6 +227,11 @@ type OpenTelemetryCommonFields struct {
 	// +kubebuilder:default:=SingleStack
 	// +optional
 	IpFamilyPolicy *v1.IPFamilyPolicy `json:"ipFamilyPolicy,omitempty"`
+	// TrafficDistribution specifies how traffic to this service is routed.
+	// https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution
+	// This is only applicable to Service resources.
+	// +optional
+	TrafficDistribution *string `json:"trafficDistribution,omitempty"`
 }
 
 type StatefulSetCommonFields struct {
@@ -237,4 +245,10 @@ type StatefulSetCommonFields struct {
 	// This only works with the following OpenTelemetryCollector modes: statefulset.
 	// +optional
 	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
+
+	// ServiceName sets the serviceName of the StatefulSet.
+	// If not specified, it will default to "<name>-headless".
+	// Note that the custom service name is not created by the operator.
+	// +optional
+	ServiceName string `json:"serviceName,omitempty"`
 }

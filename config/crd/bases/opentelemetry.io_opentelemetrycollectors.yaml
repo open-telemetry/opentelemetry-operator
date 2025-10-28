@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: opentelemetrycollectors.opentelemetry.io
 spec:
   group: opentelemetry.io
@@ -3486,6 +3486,8 @@ spec:
                   - whenUnsatisfiable
                   type: object
                 type: array
+              trafficDistribution:
+                type: string
               updateStrategy:
                 properties:
                   rollingUpdate:
@@ -5958,6 +5960,8 @@ spec:
                   type:
                     type: string
                 type: object
+              dnsPolicy:
+                type: string
               env:
                 items:
                   properties:
@@ -6942,6 +6946,11 @@ spec:
                 - sidecar
                 - statefulset
                 type: string
+              networkPolicy:
+                properties:
+                  enabled:
+                    type: boolean
+                type: object
               nodeSelector:
                 additionalProperties:
                   type: string
@@ -6954,6 +6963,10 @@ spec:
                         type: boolean
                       enableMetrics:
                         type: boolean
+                      extraLabels:
+                        additionalProperties:
+                          type: string
+                        type: object
                     type: object
                 type: object
               persistentVolumeClaimRetentionPolicy:
@@ -7249,6 +7262,27 @@ spec:
                 type: string
               shareProcessNamespace:
                 type: boolean
+              startupProbe:
+                properties:
+                  failureThreshold:
+                    format: int32
+                    type: integer
+                  initialDelaySeconds:
+                    format: int32
+                    type: integer
+                  periodSeconds:
+                    format: int32
+                    type: integer
+                  successThreshold:
+                    format: int32
+                    type: integer
+                  terminationGracePeriodSeconds:
+                    format: int64
+                    type: integer
+                  timeoutSeconds:
+                    format: int32
+                    type: integer
+                type: object
               targetAllocator:
                 properties:
                   affinity:
@@ -7701,6 +7735,10 @@ spec:
                     default: 30s
                     format: duration
                     type: string
+                  collectorTargetReloadInterval:
+                    default: 30s
+                    format: duration
+                    type: string
                   enabled:
                     type: boolean
                   env:
@@ -7789,6 +7827,10 @@ spec:
                             type: boolean
                           enableMetrics:
                             type: boolean
+                          extraLabels:
+                            additionalProperties:
+                              type: string
+                            type: object
                         type: object
                     type: object
                   podDisruptionBudget:
@@ -8258,6 +8300,8 @@ spec:
                   - whenUnsatisfiable
                   type: object
                 type: array
+              trafficDistribution:
+                type: string
               upgradeStrategy:
                 enum:
                 - automatic

@@ -60,4 +60,4 @@ data:
                                   port: 8888
 kind: ConfigMap
 metadata:
-  name: stateful-collector-5a741df8
+  (starts_with(name, 'stateful-collector-')): true

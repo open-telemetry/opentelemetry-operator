@@ -15,7 +15,7 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: prometheus-kubernetessd-collector-45af7c16
+  (starts_with(name, 'prometheus-kubernetessd-collector-')): true
 data:
   collector.yaml: |
     exporters:

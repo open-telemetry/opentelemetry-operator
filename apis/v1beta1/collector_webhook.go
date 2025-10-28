@@ -12,6 +12,7 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -21,6 +22,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+)
+
+const (
+	maxPortLen = 15
 )
 
 var (
@@ -41,6 +46,7 @@ type CollectorWebhook struct {
 	metrics  *Metrics
 	bv       BuildValidator
 	fips     fips.FIPSCheck
+	recorder record.EventRecorder
 }
 
 func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
@@ -94,7 +100,20 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 	if !featuregate.EnableConfigDefaulting.IsEnabled() {
 		return nil
 	}
-	return otelcol.Spec.Config.ApplyDefaults(c.logger)
+	if featuregate.EnableOperandNetworkPolicy.IsEnabled() && otelcol.Spec.NetworkPolicy.Enabled == nil {
+		trueVal := true
+		otelcol.Spec.NetworkPolicy.Enabled = &trueVal
+	}
+	events, err := otelcol.Spec.Config.ApplyDefaults(c.logger)
+	if err != nil {
+		return err
+	}
+	for _, event := range events {
+		if c.recorder != nil {
+			c.recorder.Event(otelcol, event.Type, event.Reason, event.Message)
+		}
+	}
+	return nil
 }
 
 func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
@@ -221,6 +240,21 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	if err := ValidatePorts(r.Spec.Ports); err != nil {
 		return warnings, err
 	}
+	ports, errPorts := r.Spec.Config.GetAllPorts(c.logger)
+	if errPorts != nil {
+		return warnings, fmt.Errorf("the OpenTelemetry config is incorrect. The port numbers are invalid: %w", errPorts)
+	}
+	for _, p := range ports {
+		truncName := naming.Truncate(p.Name, maxPortLen)
+		if truncName != p.Name {
+			warnings = append(warnings, fmt.Sprintf("the OpenTelemetry config port name '%s' exceeds the maximum length of 15 characters and has been truncated to '%s'", p.Name, truncName))
+		}
+		nameErrs := validation.IsValidPortName(truncName)
+		numErrs := validation.IsValidPortNum(int(p.Port))
+		if len(nameErrs) > 0 || len(numErrs) > 0 {
+			return warnings, fmt.Errorf("the OpenTelemetry config is incorrect. The port name '%s' errors: %s, num '%d' errors: %s", p.Name, nameErrs, p.Port, numErrs)
+		}
+	}
 
 	var maxReplicas *int32
 	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil {
@@ -230,6 +264,11 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MinReplicas != nil {
 		minReplicas = r.Spec.Autoscaler.MinReplicas
 	}
+
+	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MinReplicas != nil && r.Spec.Autoscaler.MaxReplicas == nil {
+		return warnings, fmt.Errorf("spec.maxReplica must be set when spec.minReplica is set")
+	}
+
 	// check deprecated .Spec.MinReplicas if minReplicas is not set
 	if minReplicas == nil {
 		minReplicas = r.Spec.Replicas
@@ -435,6 +474,7 @@ func NewCollectorWebhook(
 	scheme *runtime.Scheme,
 	cfg config.Config,
 	reviewer *rbac.Reviewer,
+	recorder record.EventRecorder,
 	metrics *Metrics,
 	bv BuildValidator,
 	fips fips.FIPSCheck,
@@ -444,6 +484,7 @@ func NewCollectorWebhook(
 		scheme:   scheme,
 		cfg:      cfg,
 		reviewer: reviewer,
+		recorder: recorder,
 		metrics:  metrics,
 		bv:       bv,
 		fips:     fips,
@@ -451,7 +492,7 @@ func NewCollectorWebhook(
 }
 
 func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
-	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, metrics, bv, fipsCheck)
+	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, mgr.GetEventRecorderFor("opentelemetry-operator"), metrics, bv, fipsCheck)
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&OpenTelemetryCollector{}).
 		WithValidator(cvw).

@@ -237,6 +237,10 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - configmaps: [get]",
 				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - discovery.k8s.io/endpointslices: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /metrics: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /api: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /api/*: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /apis: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:test-ta-targetallocator - nonResourceURL: /apis/*: [get]",
 			},
 		},
 		{

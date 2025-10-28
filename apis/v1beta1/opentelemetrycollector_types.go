@@ -105,6 +105,9 @@ type OpenTelemetryCollectorSpec struct {
 	// Valid modes are: deployment, daemonset and statefulset.
 	// +optional
 	Ingress Ingress `json:"ingress,omitempty"`
+	// NetworkPolicy defines the network policy to be applied to the OpenTelemetry Collector pods.
+	// +optional
+	NetworkPolicy NetworkPolicy `json:"networkPolicy,omitempty"`
 	// Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
@@ -113,6 +116,10 @@ type OpenTelemetryCollectorSpec struct {
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
 	ReadinessProbe *Probe `json:"readinessProbe,omitempty"`
+	// Startup config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
+	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
+	// +optional
+	StartupProbe *Probe `json:"startupProbe,omitempty"`
 
 	// ObservabilitySpec defines how telemetry data gets handled.
 	//
@@ -135,11 +142,6 @@ type OpenTelemetryCollectorSpec struct {
 	// This is only applicable to Deployment mode.
 	// +optional
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
-
-	// ServiceName is the name of the Service to be used.
-	// If not specified, it will default to "<name>-headless".
-	// +optional
-	ServiceName string `json:"serviceName,omitempty"`
 }
 
 // TargetAllocatorEmbedded defines the configuration for the Prometheus target allocator, embedded in the
@@ -227,6 +229,13 @@ type TargetAllocatorEmbedded struct {
 	// +kubebuilder:default:="30s"
 	// +kubebuilder:validation:Format:=duration
 	CollectorNotReadyGracePeriod *metav1.Duration `json:"collectorNotReadyGracePeriod,omitempty"`
+	// CollectorTargetReloadInterval defines the interval at which the Prometheus receiver will reload targets from the target allocator.
+	// The default is 30s.
+	//
+	// +optional
+	// +kubebuilder:default:="30s"
+	// +kubebuilder:validation:Format:=duration
+	CollectorTargetReloadInterval *metav1.Duration `json:"collectorTargetReloadInterval,omitempty"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config.
@@ -285,6 +294,12 @@ type MetricsConfigSpec struct {
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Create ServiceMonitors for OpenTelemetry Collector"
 	EnableMetrics bool `json:"enableMetrics,omitempty"`
+	// ExtraLabels are additional labels to be added to the ServiceMonitor
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	ExtraLabels map[string]string `json:"extraLabels,omitempty"`
+
 	// DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations
 	// ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
 	//

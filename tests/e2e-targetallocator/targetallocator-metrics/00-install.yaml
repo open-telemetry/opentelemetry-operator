@@ -1,84 +1,3 @@
-apiVersion: v1
-automountServiceAccountToken: true
-kind: ServiceAccount
-metadata:
-  name: ta
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: create-sm-prometheus
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - pods
-      - nodes/metrics
-      - services
-      - endpoints
-      - configmaps
-      - secrets
-      - namespaces
-    verbs:
-      - get
-      - watch
-      - list
-  - apiGroups:
-      - apps
-    resources:
-      - statefulsets
-      - services
-      - endpoints
-    verbs:
-      - get
-      - watch
-      - list
-  - apiGroups:
-      - discovery.k8s.io
-    resources:
-      - endpointslices
-    verbs:
-      - get
-      - watch
-      - list
-  - apiGroups:
-      - networking.k8s.io
-    resources:
-      - ingresses
-    verbs:
-      - get
-      - watch
-      - list
-  - apiGroups:
-      - monitoring.coreos.com
-    resources:
-      - servicemonitors
-      - podmonitors
-      - scrapeconfigs
-      - probes
-    verbs:
-      - "*"
-      - get
-      - watch
-      - list
-  - nonResourceURLs:
-      - /metrics
-    verbs:
-      - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: simplest-targetallocator-create-sm-prometheus
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: create-sm-prometheus
-subjects:
-  - kind: ServiceAccount
-    name: ta
-    namespace: ($namespace)
----
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
@@ -89,11 +8,14 @@ spec:
       prometheus:
         config:
           scrape_configs: []
-    processors:
     exporters:
       prometheus:
         endpoint: 0.0.0.0:9090
+    extensions:
+      health_check:
     service:
+      extensions:
+      - health_check
       pipelines:
         metrics:
           receivers: [prometheus]
@@ -111,5 +33,5 @@ spec:
       serviceMonitorSelector:
         matchLabels:
           app.kubernetes.io/name: simplest-targetallocator
-      podMonitorSelector:
+      podMonitorSelector: {}
 

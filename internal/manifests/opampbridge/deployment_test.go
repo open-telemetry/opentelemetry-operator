@@ -109,7 +109,10 @@ func TestDeploymentNewDefault(t *testing.T) {
 
 func TestDeploymentPodAnnotations(t *testing.T) {
 	// prepare
-	testPodAnnotationValues := map[string]string{"annotation-key": "annotation-value"}
+	testPodAnnotationValues := map[string]string{
+		"annotation-key":                        "annotation-value",
+		"opentelemetry-opampbridge-config/hash": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+	}
 	opampBridge := v1alpha1.OpAMPBridge{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
@@ -130,7 +133,7 @@ func TestDeploymentPodAnnotations(t *testing.T) {
 	d := Deployment(params)
 
 	// verify
-	assert.Len(t, d.Spec.Template.Annotations, 1)
+	assert.Len(t, d.Spec.Template.Annotations, 2)
 	assert.Equal(t, "my-instance-opamp-bridge", d.Name)
 	assert.Equal(t, testPodAnnotationValues, d.Spec.Template.Annotations)
 }
@@ -271,9 +274,12 @@ func TestDeploymentFilterAnnotations(t *testing.T) {
 
 	d := Deployment(params)
 
-	assert.Len(t, d.ObjectMeta.Annotations, 2)
+	assert.Len(t, d.ObjectMeta.Annotations, 1)
 	assert.NotContains(t, d.ObjectMeta.Annotations, "foo")
 	assert.NotContains(t, d.ObjectMeta.Annotations, "app.foo.bar")
+	assert.Len(t, d.Spec.Template.ObjectMeta.Annotations, 2)
+	assert.NotContains(t, d.Spec.Template.ObjectMeta.Annotations, "foo")
+	assert.NotContains(t, d.Spec.Template.ObjectMeta.Annotations, "app.foo.bar")
 }
 
 func TestDeploymentNodeSelector(t *testing.T) {

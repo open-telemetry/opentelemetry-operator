@@ -49,9 +49,6 @@ spec:
         check_interval: 1s
         limit_percentage: 75
         spike_limit_percentage: 15
-      batch:
-        send_batch_size: 10000
-        timeout: 10s
 
     exporters:
       debug: {}
@@ -60,7 +57,7 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [memory_limiter, batch]
+          processors: [memory_limiter]
           exporters: [debug]
 EOF
 ```
@@ -861,36 +858,35 @@ For more information about the maintainer role, see the [community repository](h
 
 ### Approvers
 
+- [Antoine Toulme](https://github.com/atoulme), Splunk
+- [Israel Blancas](https://github.com/iblancasa), Coralogix
 - [Tyler Helmuth](https://github.com/TylerHelmuth), Honeycomb
 - [Yuri Oliveira Sa](https://github.com/yuriolisa), OllyGarden
-- [Israel Blancas](https://github.com/iblancasa), Coralogix
 
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
 
 ### Triagers
 
-- [Antoine Toulme](https://github.com/atoulme), Splunk
-
 For more information about the triager role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#triager).
 
 ### Emeritus Maintainers
 
-- [Alex Boten](https://github.com/codeboten), Lightstep
-- [Bogdan Drutu](https://github.com/BogdanDrutu), Splunk
-- [Juraci Paixão Kröhling](https://github.com/jpkrohling), Grafana Labs
-- [Tigran Najaryan](https://github.com/tigrannajaryan), Splunk
-- [Vineeth Pothulapati](https://github.com/VineethReddy02), Timescale
+- [Alex Boten](https://github.com/codeboten)
+- [Bogdan Drutu](https://github.com/BogdanDrutu)
+- [Juraci Paixão Kröhling](https://github.com/jpkrohling)
+- [Tigran Najaryan](https://github.com/tigrannajaryan)
+- [Vineeth Pothulapati](https://github.com/VineethReddy02)
 
 For more information about the emeritus role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#emeritus-maintainerapprovertriager).
 
 ### Emeritus Approvers
 
-- [Anthony Mirabella](https://github.com/Aneurysm9), AWS
-- [Dmitrii Anoshin](https://github.com/dmitryax), Splunk
-- [Jay Camp](https://github.com/jrcamp), Splunk
-- [James Bebbington](https://github.com/james-bebbington), Google
-- [Owais Lone](https://github.com/owais), Splunk
-- [Pablo Baeyens](https://github.com/mx-psi), DataDog
+- [Anthony Mirabella](https://github.com/Aneurysm9)
+- [Dmitrii Anoshin](https://github.com/dmitryax)
+- [James Bebbington](https://github.com/james-bebbington)
+- [Jay Camp](https://github.com/jrcamp)
+- [Owais Lone](https://github.com/owais)
+- [Pablo Baeyens](https://github.com/mx-psi)
 
 For more information about the emeritus role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#emeritus-maintainerapprovertriager).
 

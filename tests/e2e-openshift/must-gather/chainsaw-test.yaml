@@ -15,27 +15,15 @@ spec:
     catch:
     - podLogs:
         selector: app.kubernetes.io/component=opentelemetry-targetallocator
-  - name: Create instrumentation CR and sidecar collector instance
+  - name: Add OpenShift namespace annotations
+    use:
+      template: ../../step-templates/openshift-namespace-annotations.yaml
+  - name: Create instrumentation CR and gather collector instance
     try:
-    # In OpenShift, when a namespace is created, all necessary SCC annotations are automatically added. However, if a namespace is created using a resource file with only selected SCCs, the other auto-added SCCs are not included. Therefore, the UID-range and supplemental groups SCC annotations must be set after the namespace is created.
-    - command:
-        entrypoint: kubectl
-        args:
-        - annotate
-        - namespace
-        - ${NAMESPACE}
-        - openshift.io/sa.scc.uid-range=1000/1000
-        - --overwrite
-    - command:
-        entrypoint: kubectl
-        args:
-        - annotate
-        - namespace
-        - ${NAMESPACE}
-        - openshift.io/sa.scc.supplemental-groups=3000/3000
-        - --overwrite
     - apply:
-        file: install-collector-sidecar.yaml
+        file: install-collector-gather.yaml
+    - assert:
+        file: assert-install-collector-gather.yaml
     - apply:
         file: install-instrumentation.yaml
   - name: Install app

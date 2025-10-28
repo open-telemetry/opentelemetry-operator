@@ -77,7 +77,7 @@ func TestNullObjects_issue_3445(t *testing.T) {
 	err = json.Unmarshal(collectorJson, cfg)
 	require.NoError(t, err)
 
-	err = cfg.ApplyDefaults(logr.Discard())
+	_, err = cfg.ApplyDefaults(logr.Discard())
 	require.NoError(t, err)
 	assert.Empty(t, cfg.nullObjects())
 }
@@ -208,7 +208,8 @@ func TestGetTelemetryFromYAML(t *testing.T) {
 			Address: "0.0.0.0:8888",
 		},
 	}
-	assert.Equal(t, telemetry, cfg.Service.GetTelemetry())
+	logger := logr.Discard()
+	assert.Equal(t, telemetry, cfg.Service.GetTelemetry(logger))
 }
 
 func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
@@ -218,7 +219,8 @@ func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
 	cfg := &Config{}
 	err = go_yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
-	assert.Nil(t, cfg.Service.GetTelemetry())
+	logger := logr.Discard()
+	assert.Nil(t, cfg.Service.GetTelemetry(logger))
 }
 
 func TestConfigMetricsEndpoint(t *testing.T) {
@@ -408,11 +410,138 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc:         "derive from readers prometheus host+port",
+			expectedAddr: "0.0.0.0",
+			expectedPort: 8889,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"level": "detailed",
+							"readers": []interface{}{
+								map[string]interface{}{
+									"pull": map[string]interface{}{
+										"exporter": map[string]interface{}{
+											"prometheus": map[string]interface{}{
+												"host": "0.0.0.0",
+												"port": 8889,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:         "derive from readers prometheus port only (default host)",
+			expectedAddr: "0.0.0.0",
+			expectedPort: 8899,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"readers": []interface{}{
+								map[string]interface{}{
+									"pull": map[string]interface{}{
+										"exporter": map[string]interface{}{
+											"prometheus": map[string]interface{}{
+												"port": 8899,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:         "derive from readers prometheus host only (default port)",
+			expectedAddr: "127.0.0.1",
+			expectedPort: 8888,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"readers": []interface{}{
+								map[string]interface{}{
+									"pull": map[string]interface{}{
+										"exporter": map[string]interface{}{
+											"prometheus": map[string]interface{}{
+												"host": "127.0.0.1",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:         "readers takes precedence over address",
+			expectedAddr: "0.0.0.0",
+			expectedPort: 8889,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"address": "1.2.3.4:4567",
+							"readers": []interface{}{
+								map[string]interface{}{
+									"pull": map[string]interface{}{
+										"exporter": map[string]interface{}{
+											"prometheus": map[string]interface{}{
+												"host": "0.0.0.0",
+												"port": 8889,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc:         "readers present but no prometheus -> defaults",
+			expectedAddr: "0.0.0.0",
+			expectedPort: 8888,
+			config: Service{
+				Telemetry: &AnyConfig{
+					Object: map[string]interface{}{
+						"metrics": map[string]interface{}{
+							"readers": []interface{}{
+								map[string]interface{}{
+									"pull": map[string]interface{}{
+										"exporter": map[string]interface{}{
+											"otlp": map[string]interface{}{
+												"protocols": map[string]interface{}{
+													"http": map[string]interface{}{
+														"endpoint": "0.0.0.0:19001",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	} {
 		t.Run(tt.desc, func(t *testing.T) {
-			logger := logr.Discard()
 			// these are acceptable failures, we return to the collector's default metric port
-			addr, port, err := tt.config.MetricsEndpoint(logger)
+			addr, port, err := tt.config.MetricsEndpoint(logr.Discard())
 			if tt.expectedErr {
 				assert.Error(t, err)
 			} else {
@@ -473,7 +602,7 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 					"otlp": struct{}{},
 				},
 				KindProcessor: {
-					"batch": struct{}{},
+					"memory_limiter": struct{}{},
 				},
 				KindExporter: {
 					"debug":      struct{}{},
@@ -1097,6 +1226,174 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 	}
 }
 
+func TestConfig_GetStartupProbe(t *testing.T) {
+	tests := []struct {
+		name      string
+		config    *Config
+		wantProbe *v1.Probe
+		wantErr   bool
+	}{
+		{
+			name: "nil extensions should return nil",
+			config: &Config{
+				Extensions: nil,
+				Service: Service{
+					Extensions: []string{},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "nil extensions with health_check in service extensions should return nil",
+			config: &Config{
+				Extensions: nil,
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "empty extensions should return nil",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{},
+				},
+				Service: Service{
+					Extensions: []string{},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "empty extensions with health_check in service extensions should return probe",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/",
+						Port: intstr.FromInt32(13133),
+					},
+				},
+			},
+		},
+		{
+			name: "health_check extension enabled should return probe",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": map[string]interface{}{},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/",
+						Port: intstr.FromInt32(13133),
+					},
+				},
+			},
+		},
+		{
+			name: "health_check extension with custom path",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": map[string]interface{}{
+							"path": "/healthz",
+						},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/healthz",
+						Port: intstr.FromInt32(13133),
+					},
+				},
+			},
+		},
+		{
+			name: "health_check extension with custom endpoint port",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": map[string]interface{}{
+							"endpoint": "0.0.0.0:8080",
+						},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantProbe: &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/",
+						Port: intstr.FromInt32(8080),
+					},
+				},
+			},
+		},
+		{
+			name: "extension without startup probe should return nil",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"jaeger_query": map[string]interface{}{},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"jaeger_query"},
+				},
+			},
+			wantProbe: nil,
+		},
+		{
+			name: "invalid health_check config should return error",
+			config: &Config{
+				Extensions: &AnyConfig{
+					Object: map[string]interface{}{
+						"health_check": func() {},
+					},
+				},
+				Service: Service{
+					Extensions: []string{"health_check"},
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.config.GetStartupProbe(logr.Discard())
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Config.GetStartupProbe() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if diff := cmp.Diff(tt.wantProbe, got); diff != "" {
+				t.Errorf("Config.GetStartupProbe() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 	// Test case where logs configuration exists and metrics is added
 	cfg := &Config{
@@ -1137,10 +1434,51 @@ func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 		},
 	}
 
-	err := cfg.Service.ApplyDefaults(logr.Discard())
+	_, err := cfg.Service.ApplyDefaults(logr.Discard())
 	require.NoError(t, err)
 
-	telemetry := cfg.Service.GetTelemetry()
+	logger := logr.Discard()
+	telemetry := cfg.Service.GetTelemetry(logger)
 	require.NotNil(t, telemetry)
 	require.Equal(t, expected, cfg)
+}
+
+func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
+	cfg := &Config{
+		Service: Service{
+			Telemetry: &AnyConfig{
+				Object: map[string]interface{}{
+					"metrics": map[string]interface{}{
+						"level": "basic",
+						"readers": []interface{}{
+							map[string]interface{}{
+								"periodic": map[string]interface{}{
+									"exporter": map[string]interface{}{
+										"otlp": map[string]interface{}{
+											"endpoint": "otlp_host:4317",
+											// Missing protocol - makes this invalid
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := cfg.Service.ApplyDefaults(logr.Discard())
+	require.NoError(t, err)
+
+	logger := logr.Discard()
+	telemetry := cfg.Service.GetTelemetry(logger)
+	require.NotNil(t, telemetry)
+
+	require.Len(t, telemetry.Metrics.Readers, 1)
+
+	require.NotNil(t, telemetry.Metrics.Readers[0].Pull)
+	require.NotNil(t, telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus)
+	require.Equal(t, "0.0.0.0", *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Host)
+	require.Equal(t, 8888, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Port)
 }

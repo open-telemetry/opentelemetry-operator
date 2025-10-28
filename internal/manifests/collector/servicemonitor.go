@@ -49,6 +49,8 @@ func createServiceMonitor(name string, params manifests.Params, serviceType Serv
 	var sm monitoringv1.ServiceMonitor
 
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
+	// Add extra labels to the ServiceMonitor
+	manifestutils.AddExtraLabels(&params.Log, labels, params.OtelCol.Spec.Observability.Metrics.ExtraLabels)
 	selectorLabels := manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector)
 	// This label is the one which differentiates the services
 	selectorLabels[serviceTypeLabel] = serviceType.String()

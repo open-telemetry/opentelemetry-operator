@@ -17,6 +17,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
@@ -91,6 +92,10 @@ func (w TargetAllocatorWebhook) defaulter(ta *TargetAllocator) error {
 				IntVal: 1,
 			},
 		}
+	}
+	if featuregate.EnableOperandNetworkPolicy.IsEnabled() && ta.Spec.NetworkPolicy.Enabled == nil {
+		trueVal := true
+		ta.Spec.NetworkPolicy.Enabled = &trueVal
 	}
 
 	return nil

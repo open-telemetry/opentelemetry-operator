@@ -13,7 +13,7 @@ kind: OpenTelemetryCollector
 metadata:
   name: stateful
 status:
-  (starts_with(image, 'ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector')): true
+  (image != ''): true
   (version != ''): true
   scale:
     replicas: 1

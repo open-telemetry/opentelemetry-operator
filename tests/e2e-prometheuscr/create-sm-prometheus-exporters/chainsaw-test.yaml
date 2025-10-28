@@ -4,6 +4,8 @@ kind: Test
 metadata:
   creationTimestamp: null
   name: create-sm-prometheus-exporters
+  labels:
+    sidecar: legacy
 spec:
   steps:
   - name: step-00
@@ -64,3 +66,15 @@ spec:
         file: 08-install.yaml
     - assert:
         file: 08-assert.yaml
+  - name: step-09
+    try:
+    - apply:
+        file: 09-install.yaml
+    - assert:
+        file: 09-assert.yaml
+  - name: step-10
+    try:
+    - apply:
+        file: 10-install.yaml
+    - assert:
+        file: 10-assert.yaml

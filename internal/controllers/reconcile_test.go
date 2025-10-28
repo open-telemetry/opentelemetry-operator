@@ -647,7 +647,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					actual := &v1beta1.OpenTelemetryCollector{}
 					err := reconciler.Get(testContext, nsn, actual)
 					assert.NoError(collect, err)
-					assert.NotNil(t, actual.GetDeletionTimestamp())
+					assert.NotNil(collect, actual.GetDeletionTimestamp())
 				}, time.Second*30, time.Millisecond*100)
 			}
 			req := k8sreconcile.Request{
@@ -1278,7 +1278,7 @@ service:
 		actual := &v1beta1.OpenTelemetryCollector{}
 		err := reconciler.Get(context.Background(), nsn, actual)
 		assert.NoError(collect, err)
-		assert.NotNil(t, actual.GetDeletionTimestamp())
+		assert.NotNil(collect, actual.GetDeletionTimestamp())
 	}, time.Second*30, time.Millisecond*100)
 
 	reconcile, reconcileErr = reconciler.Reconcile(context.Background(), req)
@@ -1439,16 +1439,20 @@ func TestUpgrade(t *testing.T) {
 			err := k8sClient.Create(testCtx, otelcol)
 			require.NoError(t, err)
 
-			// The status subresource must be updated separately
-			otelcol.Status = tt.input.Status
-			err = k8sClient.Status().Update(testCtx, otelcol)
-			require.NoError(t, err)
-
-			// Wait until cache refreshes
 			require.EventuallyWithT(t, func(collect *assert.CollectT) {
-				getErr := k8sClient.Get(ctx, nsn, otelcol)
-				require.NoError(t, getErr)
-				assert.Equal(t, tt.input.Status, otelcol.Status)
+				freshOtelcol := &v1beta1.OpenTelemetryCollector{}
+				getErr := k8sClient.Get(testCtx, nsn, freshOtelcol)
+				assert.NoError(collect, getErr)
+				freshOtelcol.Status = tt.input.Status
+				updateErr := k8sClient.Status().Update(testCtx, freshOtelcol)
+				assert.NoError(collect, updateErr)
+			}, time.Second*10, time.Millisecond*10)
+
+			require.EventuallyWithT(t, func(collect *assert.CollectT) {
+				freshOtelcol := &v1beta1.OpenTelemetryCollector{}
+				getErr := k8sClient.Get(testCtx, nsn, freshOtelcol)
+				assert.NoError(collect, getErr)
+				assert.Equal(collect, tt.input.Status, freshOtelcol.Status)
 			}, time.Second*10, time.Millisecond*10)
 
 			// First reconcile

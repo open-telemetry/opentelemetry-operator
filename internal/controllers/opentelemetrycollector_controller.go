@@ -43,7 +43,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/collector/upgrade"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const resourceOwnerKey = ".metadata.owner"
@@ -97,10 +96,6 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 		switch objectType.(type) {
 		case *corev1.ConfigMap:
 			for _, object := range objs {
-				if !featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() && object.GetLabels()["app.kubernetes.io/component"] != "opentelemetry-collector" {
-					// we only apply this to collector ConfigMaps
-					continue
-				}
 				configMap := object.(*corev1.ConfigMap)
 				collectorConfigMaps = append(collectorConfigMaps, configMap)
 			}
@@ -219,6 +214,8 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors;podmonitors,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=get;watch;update;patch
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes;routes/custom-host,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=config.openshift.io,resources=infrastructures;infrastructures/status,verbs=get;list;watch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=get;list;watch;update;patch
@@ -226,6 +223,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=opentelemetrycollectors/finalizers,verbs=get;update;patch
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=targetallocators,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=targetallocators/finalizers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:urls=/version,verbs=get
 
 // Reconcile the current state of an OpenTelemetry collector resource with the desired state.
 func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -361,8 +359,10 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 		&appsv1.DaemonSet{},
 		&appsv1.StatefulSet{},
 		&networkingv1.Ingress{},
+		&networkingv1.NetworkPolicy{},
 		&autoscalingv2.HorizontalPodAutoscaler{},
 		&policyV1.PodDisruptionBudget{},
+		&v1alpha1.TargetAllocator{},
 	}
 
 	if r.config.CreateRBACPermissions == rbac.Available {
@@ -377,10 +377,6 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 
 	if r.config.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
 		ownedResources = append(ownedResources, &routev1.Route{})
-	}
-
-	if featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() {
-		ownedResources = append(ownedResources, &v1alpha1.TargetAllocator{})
 	}
 
 	return ownedResources

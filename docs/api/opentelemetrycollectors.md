@@ -412,6 +412,15 @@ This is only relevant to statefulset, and deployment mode<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>trafficDistribution</b></td>
+        <td>string</td>
+        <td>
+          TrafficDistribution specifies how traffic to this service is routed.
+https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution
+This is only applicable to Service resources.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecupdatestrategy">updateStrategy</a></b></td>
         <td>object</td>
         <td>
@@ -19523,6 +19532,13 @@ This is only applicable to Deployment mode.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>dnsPolicy</b></td>
+        <td>string</td>
+        <td>
+          DNSPolicy defines how a pod's DNS will be configured.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspecenvindex-1">env</a></b></td>
         <td>[]object</td>
         <td>
@@ -19627,6 +19643,13 @@ Default is managed.<br/>
           Mode represents how the collector should be deployed (deployment, daemonset, statefulset or sidecar)<br/>
           <br/>
             <i>Enum</i>: daemonset, deployment, sidecar, statefulset<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecnetworkpolicy">networkPolicy</a></b></td>
+        <td>object</td>
+        <td>
+          NetworkPolicy defines the network policy to be applied to the OpenTelemetry Collector pods.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19757,8 +19780,9 @@ the operator will not automatically create a ServiceAccount.<br/>
         <td><b>serviceName</b></td>
         <td>string</td>
         <td>
-          ServiceName is the name of the Service to be used.
-If not specified, it will default to "<name>-headless".<br/>
+          ServiceName sets the serviceName of the StatefulSet.
+If not specified, it will default to "<name>-headless".
+Note that the custom service name is not created by the operator.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19766,6 +19790,14 @@ If not specified, it will default to "<name>-headless".<br/>
         <td>boolean</td>
         <td>
           ShareProcessNamespace indicates if the pod's containers should share process namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspecstartupprobe">startupProbe</a></b></td>
+        <td>object</td>
+        <td>
+          Startup config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
+It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -19801,6 +19833,15 @@ controls how pods are spread across your cluster among failure-domains
 such as regions, zones, nodes, and other user-defined topology domains
 https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
 This only works with the following OpenTelemetryCollector mode's: statefulset, and deployment.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>trafficDistribution</b></td>
+        <td>string</td>
+        <td>
+          TrafficDistribution specifies how traffic to this service is routed.
+https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution
+This is only applicable to Service resources.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -29359,6 +29400,34 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
 </table>
 
 
+### OpenTelemetryCollector.spec.networkPolicy
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+NetworkPolicy defines the network policy to be applied to the OpenTelemetry Collector pods.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enable enables the NetworkPolicy.
+The default value is taken from the operator feature-gate `--feature-gates=+operand.networkpolicy`.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpenTelemetryCollector.spec.observability
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
 
@@ -29415,6 +29484,13 @@ Metrics defines the metrics configuration for operands.
         <td>boolean</td>
         <td>
           EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>extraLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          ExtraLabels are additional labels to be added to the ServiceMonitor<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -30693,6 +30769,97 @@ PodSecurityContext, the value specified in SecurityContext takes precedence.<br/
 </table>
 
 
+### OpenTelemetryCollector.spec.startupProbe
+<sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
+
+
+
+Startup config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
+It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive failures for the probe to be considered failed after having succeeded.
+Defaults to 3. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after the container has started before liveness probes are initiated.
+Defaults to 0 seconds. Minimum value is 0.
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          How often (in seconds) to perform the probe.
+Default to 10 seconds. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive successes for the probe to be considered successful after having failed.
+Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationGracePeriodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
+The grace period is the duration in seconds after the processes running in the pod are sent
+a termination signal and the time when the processes are forcibly halted with a kill signal.
+Set this value longer than the expected cleanup time for your process.
+If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this
+value overrides the value provided by the pod spec.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down).
+This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
+Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after which the probe times out.
+Defaults to 1 second. Minimum value is 1.
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpenTelemetryCollector.spec.targetAllocator
 <sup><sup>[↩ Parent](#opentelemetrycollectorspec-1)</sup></sup>
 
@@ -30735,6 +30902,17 @@ WARNING: The per-node strategy currently ignores targets without a Node, like co
         <td>
           CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
 The default is 30s, which means that if a collector becomes not Ready, the target allocator will wait for 30 seconds before reassigning its targets. The assumption is that the state is temporary, and an expensive target reallocation should be avoided if possible.<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+            <i>Default</i>: 30s<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>collectorTargetReloadInterval</b></td>
+        <td>string</td>
+        <td>
+          CollectorTargetReloadInterval defines the interval at which the Prometheus receiver will reload targets from the target allocator.
+The default is 30s.<br/>
           <br/>
             <i>Format</i>: duration<br/>
             <i>Default</i>: 30s<br/>
@@ -32824,6 +33002,13 @@ Metrics defines the metrics configuration for operands.
         <td>boolean</td>
         <td>
           EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>extraLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          ExtraLabels are additional labels to be added to the ServiceMonitor<br/>
         </td>
         <td>false</td>
       </tr></tbody>

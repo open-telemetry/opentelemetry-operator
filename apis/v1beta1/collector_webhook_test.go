@@ -104,6 +104,7 @@ func TestValidate(t *testing.T) {
 			cfg,
 			getReviewer(test.shouldFailSar),
 			nil,
+			nil,
 			bv,
 			nil,
 		)
@@ -543,13 +544,15 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				cfg,
 				getReviewer(test.shouldFailSar),
 				nil,
+				nil,
 				bv,
 				nil,
 			)
 			ctx := context.Background()
 			err := cvw.Default(ctx, &test.otelcol)
 			if test.expected.Spec.Config.Service.Telemetry == nil {
-				assert.NoError(t, test.expected.Spec.Config.Service.ApplyDefaults(logr.Discard()), "could not apply defaults")
+				_, applyErr := test.expected.Spec.Config.Service.ApplyDefaults(logr.Discard())
+				assert.NoError(t, applyErr, "could not apply defaults")
 			}
 			assert.NoError(t, err)
 			if diff := cmp.Diff(test.expected, test.otelcol); diff != "" {
@@ -726,6 +729,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - configmaps: [get]",
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - discovery.k8s.io/endpointslices: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /metrics: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /api: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /api/*: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /apis: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /apis/*: [get]",
 			},
 		},
 		{
@@ -914,6 +921,17 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "maxReplicas should be defined and one or more",
+		},
+		{
+			name: "it should return error when minReplica is set but maxReplica is not set",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Autoscaler: &v1beta1.AutoscalerSpec{
+						MinReplicas: &three,
+					},
+				},
+			},
+			expectedErr: "spec.maxReplica must be set when spec.minReplica is set",
 		},
 		{
 			name: "invalid replicas, greater than max",
@@ -1380,6 +1398,138 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			},
 			expectedErr: "the OpenTelemetry Spec Ports configuration is incorrect",
 		},
+		{
+			name: "invalid port number in config - too large",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"otlp": map[string]interface{}{
+									"protocols": map[string]interface{}{
+										"grpc": map[string]interface{}{
+											"endpoint": "0.0.0.0:65536",
+										},
+									},
+								},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"debug": map[string]interface{}{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Receivers: []string{"otlp"},
+									Exporters: []string{"debug"},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry config is incorrect. The port",
+		},
+		{
+			name: "port validation - zero port currently not validated",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"otlp": map[string]interface{}{
+									"protocols": map[string]interface{}{
+										"grpc": map[string]interface{}{
+											"endpoint": "0.0.0.0:0",
+										},
+									},
+								},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"debug": map[string]interface{}{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Receivers: []string{"otlp"},
+									Exporters: []string{"debug"},
+								},
+							},
+						},
+					},
+				},
+			},
+			// TODO: This should fail validation when port validation is fully implemented
+		},
+		{
+			name: "port validation - negative port currently not validated",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"otlp": map[string]interface{}{
+									"protocols": map[string]interface{}{
+										"grpc": map[string]interface{}{
+											"endpoint": "0.0.0.0:-1",
+										},
+									},
+								},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"debug": map[string]interface{}{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Receivers: []string{"otlp"},
+									Exporters: []string{"debug"},
+								},
+							},
+						},
+					},
+				},
+			},
+			// TODO: This should fail validation when port validation is fully implemented
+		},
+		{
+			name: "invalid port number in zipkin receiver config - too large",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"zipkin": map[string]interface{}{
+									"endpoint": "0.0.0.0:65537",
+								},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"debug": map[string]interface{}{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Receivers: []string{"zipkin"},
+									Exporters: []string{"debug"},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry config is incorrect. The port",
+		},
 	}
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
@@ -1413,6 +1563,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				testScheme,
 				cfg,
 				getReviewer(test.shouldFailSar),
+				nil,
 				nil,
 				bv,
 				nil,
@@ -1482,6 +1633,7 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 				testScheme,
 				cfg,
 				getReviewer(test.shouldFailSar),
+				nil,
 				nil,
 				bv,
 				nil,

@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: opentelemetry-operator
+  namespace: ($OTEL_NAMESPACE)
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: opentelemetry-operator-controller-manager
+spec:
+  egress:
+    - ports:
+        - port: 6443
+          protocol: TCP
+  ingress:
+    - ports:
+        - port: 9443
+          protocol: TCP
+        - port: 8080
+          protocol: TCP
+        - port: 8443
+          protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-operator
+  policyTypes:
+    - Ingress
+    - Egress

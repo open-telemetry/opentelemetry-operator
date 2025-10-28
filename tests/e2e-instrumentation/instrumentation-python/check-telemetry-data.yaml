@@ -1,0 +1,56 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: StepTemplate
+metadata:
+  name: check-telemetry-data
+spec:
+  try:
+    - command:
+        entrypoint: kubectl
+        env:
+          - name: LABEL_SELECTOR
+            value: ($COLLECTOR_LABEL_SELECTOR)
+        args:
+          - get
+          - pod
+          - -n
+          - ${NAMESPACE}
+          - -l
+          - ${LABEL_SELECTOR}
+          - -o
+          - jsonpath={.items[0].metadata.name}
+        outputs:
+          - name: podName
+            value: ($stdout)
+    - script:
+        env:
+          - name: podName
+            value: ($podName)
+        timeout: 60s
+        content: |
+          #!/bin/bash
+          # Add retry logic for metrics collection to handle timing issues
+          for i in {1..12}; do
+            echo "Attempt $i: Fetching metrics from pod ${podName}..." >&2
+            if metrics_output=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/pods/${podName}:8888/proxy/metrics 2>/dev/null); then
+              echo "Successfully fetched metrics on attempt $i" >&2
+              echo "$metrics_output"
+              exit 0
+            fi
+            echo "Failed to fetch metrics, retrying in 5 seconds..." >&2
+            sleep 5
+          done
+          echo "Failed to fetch metrics after 12 attempts (60 seconds)" >&2
+          exit 1
+        outputs:
+          - name: metrics
+            value: (x_metrics_decode($stdout))
+        check:
+          ($error == null): true
+    - assert:
+        resource:
+          ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] >= `1`): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] >= `1`): true
+  catch:
+    - podLogs:
+        selector: ($COLLECTOR_LABEL_SELECTOR)
+        container: otc-container
