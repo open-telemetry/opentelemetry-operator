@@ -621,6 +621,67 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		})
 	}
 }
+func TestInstrumentationValidatingWebhook_DeprecationWarnings(t *testing.T) {
+	defaultSize := resource.MustParse("200Mi")
+
+	tests := []struct {
+		name string
+		inst Instrumentation
+		want string
+	}{
+		{
+			name: "java volumeSizeLimit deprecated",
+			inst: Instrumentation{Spec: InstrumentationSpec{Java: Java{VolumeSizeLimit: &defaultSize}}},
+			want: "spec.java.volumeSizeLimit is deprecated and will be removed in a future release; use spec.java.volume.size instead",
+		},
+		{
+			name: "nodejs volumeSizeLimit deprecated",
+			inst: Instrumentation{Spec: InstrumentationSpec{NodeJS: NodeJS{VolumeSizeLimit: &defaultSize}}},
+			want: "spec.nodejs.volumeSizeLimit is deprecated and will be removed in a future release; use spec.nodejs.volume.size instead",
+		},
+		{
+			name: "python volumeSizeLimit deprecated",
+			inst: Instrumentation{Spec: InstrumentationSpec{Python: Python{VolumeSizeLimit: &defaultSize}}},
+			want: "spec.python.volumeSizeLimit is deprecated and will be removed in a future release; use spec.python.volume.size instead",
+		},
+		{
+			name: "dotnet volumeSizeLimit deprecated",
+			inst: Instrumentation{Spec: InstrumentationSpec{DotNet: DotNet{VolumeSizeLimit: &defaultSize}}},
+			want: "spec.dotnet.volumeSizeLimit is deprecated and will be removed in a future release; use spec.dotnet.volume.size instead",
+		},
+		{
+			name: "go volumeSizeLimit deprecated",
+			inst: Instrumentation{Spec: InstrumentationSpec{Go: Go{VolumeSizeLimit: &defaultSize}}},
+			want: "spec.go.volumeSizeLimit is deprecated and will be removed in a future release; use spec.go.volume.size instead",
+		},
+		{
+			name: "apachehttpd volumeSizeLimit deprecated",
+			inst: Instrumentation{Spec: InstrumentationSpec{ApacheHttpd: ApacheHttpd{VolumeSizeLimit: &defaultSize}}},
+			want: "spec.apachehttpd.volumeSizeLimit is deprecated and will be removed in a future release; use spec.apachehttpd.volume.size instead",
+		},
+		{
+			name: "nginx volumeSizeLimit deprecated",
+			inst: Instrumentation{Spec: InstrumentationSpec{Nginx: Nginx{VolumeSizeLimit: &defaultSize}}},
+			want: "spec.nginx.volumeSizeLimit is deprecated and will be removed in a future release; use spec.nginx.volume.size instead",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			warnings, err := InstrumentationWebhook{}.ValidateCreate(context.Background(), &tt.inst)
+			assert.NoError(t, err)
+
+			found := false
+			for _, w := range warnings {
+				if w == tt.want {
+					found = true
+					break
+				}
+			}
+			assert.True(t, found, "expected warnings to contain %q, got %v", tt.want, warnings)
+		})
+	}
+}
 
 func TestInstrumentationJaegerRemote(t *testing.T) {
 	tests := []struct {

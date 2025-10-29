@@ -89,15 +89,15 @@ jobs:
         go-version: "~1.25.3"
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@16140ae1a102900babc80a33c44059580f687047 # v3.29.5
+      uses: github/codeql-action/init@4e94bd11f71e507f7f87df81788dff88d1dacbfb # v3.29.5
       with:
         languages: go
 
     - name: Autobuild
-      uses: github/codeql-action/autobuild@16140ae1a102900babc80a33c44059580f687047 # v3.29.5
+      uses: github/codeql-action/autobuild@4e94bd11f71e507f7f87df81788dff88d1dacbfb # v3.29.5
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@16140ae1a102900babc80a33c44059580f687047 # v3.29.5
+      uses: github/codeql-action/analyze@4e94bd11f71e507f7f87df81788dff88d1dacbfb # v3.29.5
 
     - name: Govulncheck
       uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee # v1.0.4
