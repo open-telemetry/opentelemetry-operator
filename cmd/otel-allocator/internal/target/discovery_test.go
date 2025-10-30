@@ -501,7 +501,7 @@ func TestProcessTargetGroups_StableLabelIterationOrder(t *testing.T) {
 	require.NoError(t, err)
 	d.processTargetGroups("test", groups, results)
 
-	for i, l := range results[0].Labels {
+	for i, l := range results[0].Labels { //nolint:gosec
 		expected := string(rune('a' + i))
 		assert.Equal(t, expected, l.Name, "unexpected label key at index %d", i)
 		assert.Equal(t, expected, l.Value, "unexpected label value at index %d", i)
