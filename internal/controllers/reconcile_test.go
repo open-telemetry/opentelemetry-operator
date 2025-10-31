@@ -1450,7 +1450,7 @@ func TestUpgrade(t *testing.T) {
 
 			require.EventuallyWithT(t, func(collect *assert.CollectT) {
 				freshOtelcol := &v1beta1.OpenTelemetryCollector{}
-				getErr := k8sClient.Get(testCtx, nsn, freshOtelcol)
+				getErr := reconciler.Get(testCtx, nsn, freshOtelcol)
 				assert.NoError(collect, getErr)
 				assert.Equal(collect, tt.input.Status, freshOtelcol.Status)
 			}, time.Second*10, time.Millisecond*10)
