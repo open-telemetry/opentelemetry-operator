@@ -276,20 +276,12 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 
 	// validate autoscale with horizontal pod autoscaler
 	if maxReplicas != nil {
-		if *maxReplicas < int32(1) {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, maxReplicas should be defined and one or more")
-		}
-
 		if r.Spec.Replicas != nil && *r.Spec.Replicas > *maxReplicas {
 			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, replicas must not be greater than maxReplicas")
 		}
 
 		if minReplicas != nil && *minReplicas > *maxReplicas {
 			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas")
-		}
-
-		if minReplicas != nil && *minReplicas < int32(1) {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas should be one or more")
 		}
 
 		if r.Spec.Autoscaler != nil {
@@ -310,16 +302,6 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	}
 	if r.Spec.Ingress.RuleType == IngressRuleTypeSubdomain && (r.Spec.Ingress.Hostname == "" || r.Spec.Ingress.Hostname == "*") {
 		return warnings, fmt.Errorf("a valid Ingress hostname has to be defined for subdomain ruleType")
-	}
-
-	// validate probes Liveness/Readiness
-	err := ValidateProbe("LivenessProbe", r.Spec.LivenessProbe)
-	if err != nil {
-		return warnings, err
-	}
-	err = ValidateProbe("ReadinessProbe", r.Spec.ReadinessProbe)
-	if err != nil {
-		return warnings, err
 	}
 
 	// validate updateStrategy for DaemonSet
@@ -388,30 +370,6 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 	return nil, nil
 }
 
-func ValidateProbe(probeName string, probe *Probe) error {
-	if probe != nil {
-		if probe.InitialDelaySeconds != nil && *probe.InitialDelaySeconds < 0 {
-			return fmt.Errorf("the OpenTelemetry Spec %s InitialDelaySeconds configuration is incorrect. InitialDelaySeconds should be greater than or equal to 0", probeName)
-		}
-		if probe.PeriodSeconds != nil && *probe.PeriodSeconds < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec %s PeriodSeconds configuration is incorrect. PeriodSeconds should be greater than or equal to 1", probeName)
-		}
-		if probe.TimeoutSeconds != nil && *probe.TimeoutSeconds < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec %s TimeoutSeconds configuration is incorrect. TimeoutSeconds should be greater than or equal to 1", probeName)
-		}
-		if probe.SuccessThreshold != nil && *probe.SuccessThreshold < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec %s SuccessThreshold configuration is incorrect. SuccessThreshold should be greater than or equal to 1", probeName)
-		}
-		if probe.FailureThreshold != nil && *probe.FailureThreshold < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec %s FailureThreshold configuration is incorrect. FailureThreshold should be greater than or equal to 1", probeName)
-		}
-		if probe.TerminationGracePeriodSeconds != nil && *probe.TerminationGracePeriodSeconds < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec %s TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1", probeName)
-		}
-	}
-	return nil
-}
-
 func ValidatePorts(ports []PortsSpec) error {
 	for _, p := range ports {
 		nameErrs := validation.IsValidPortName(p.Name)
@@ -435,12 +393,6 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 			(*autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(0) || *autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds > 3600) {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp.stabilizationWindowSeconds should be >=0 and <=3600")
 		}
-	}
-	if autoscaler.TargetCPUUtilization != nil && *autoscaler.TargetCPUUtilization < int32(1) {
-		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0")
-	}
-	if autoscaler.TargetMemoryUtilization != nil && *autoscaler.TargetMemoryUtilization < int32(1) {
-		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0")
 	}
 
 	for _, metric := range autoscaler.Metrics {

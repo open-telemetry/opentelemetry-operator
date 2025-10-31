@@ -5785,6 +5785,7 @@ spec:
                     type: object
                   maxReplicas:
                     format: int32
+                    minimum: 1
                     type: integer
                   metrics:
                     items:
@@ -5858,12 +5859,15 @@ spec:
                     type: array
                   minReplicas:
                     format: int32
+                    minimum: 1
                     type: integer
                   targetCPUUtilization:
                     format: int32
+                    minimum: 1
                     type: integer
                   targetMemoryUtilization:
                     format: int32
+                    minimum: 1
                     type: integer
                 type: object
               config:
@@ -6930,21 +6934,27 @@ spec:
                 properties:
                   failureThreshold:
                     format: int32
+                    minimum: 1
                     type: integer
                   initialDelaySeconds:
                     format: int32
+                    minimum: 0
                     type: integer
                   periodSeconds:
                     format: int32
+                    minimum: 1
                     type: integer
                   successThreshold:
                     format: int32
+                    minimum: 1
                     type: integer
                   terminationGracePeriodSeconds:
                     format: int64
+                    minimum: 1
                     type: integer
                   timeoutSeconds:
                     format: int32
+                    minimum: 1
                     type: integer
                 type: object
               managementState:
@@ -7116,6 +7126,8 @@ spec:
                       type: string
                     hostPort:
                       format: int32
+                      maximum: 65535
+                      minimum: 0
                       type: integer
                     name:
                       type: string
@@ -7144,21 +7156,27 @@ spec:
                 properties:
                   failureThreshold:
                     format: int32
+                    minimum: 1
                     type: integer
                   initialDelaySeconds:
                     format: int32
+                    minimum: 0
                     type: integer
                   periodSeconds:
                     format: int32
+                    minimum: 1
                     type: integer
                   successThreshold:
                     format: int32
+                    minimum: 1
                     type: integer
                   terminationGracePeriodSeconds:
                     format: int64
+                    minimum: 1
                     type: integer
                   timeoutSeconds:
                     format: int32
+                    minimum: 1
                     type: integer
                 type: object
               replicas:
@@ -7280,21 +7298,27 @@ spec:
                 properties:
                   failureThreshold:
                     format: int32
+                    minimum: 1
                     type: integer
                   initialDelaySeconds:
                     format: int32
+                    minimum: 0
                     type: integer
                   periodSeconds:
                     format: int32
+                    minimum: 1
                     type: integer
                   successThreshold:
                     format: int32
+                    minimum: 1
                     type: integer
                   terminationGracePeriodSeconds:
                     format: int64
+                    minimum: 1
                     type: integer
                   timeoutSeconds:
                     format: int32
+                    minimum: 1
                     type: integer
                 type: object
               targetAllocator:

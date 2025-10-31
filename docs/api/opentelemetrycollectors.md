@@ -24576,6 +24576,7 @@ in both Up and Down directions (scaleUp and scaleDown fields respectively).<br/>
           MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24594,6 +24595,7 @@ Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these 
           MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24604,6 +24606,7 @@ Use TargetCPUUtilization or TargetMemoryUtilization instead if scaling on these 
 If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -24613,6 +24616,7 @@ If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent
           TargetMemoryUtilization sets the target average memory utilization across all replicas<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -29334,6 +29338,7 @@ It is only effective when healthcheckextension is configured in the OpenTelemetr
 Defaults to 3. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -29345,6 +29350,7 @@ Defaults to 0 seconds. Minimum value is 0.
 More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -29355,6 +29361,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
 Default to 10 seconds. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -29365,6 +29372,7 @@ Default to 10 seconds. Minimum value is 1.<br/>
 Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -29383,6 +29391,7 @@ This is a beta field and requires enabling ProbeTerminationGracePeriod feature g
 Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
           <br/>
             <i>Format</i>: int64<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -29394,6 +29403,7 @@ Defaults to 1 second. Minimum value is 1.
 More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -30138,6 +30148,8 @@ mycompany.com/my-custom-protocol.<br/>
           Allows defining which port to bind to the host in the Container.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+            <i>Maximum</i>: 65535<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30221,6 +30233,7 @@ It is only effective when healthcheckextension is configured in the OpenTelemetr
 Defaults to 3. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30232,6 +30245,7 @@ Defaults to 0 seconds. Minimum value is 0.
 More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30242,6 +30256,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
 Default to 10 seconds. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30252,6 +30267,7 @@ Default to 10 seconds. Minimum value is 1.<br/>
 Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30270,6 +30286,7 @@ This is a beta field and requires enabling ProbeTerminationGracePeriod feature g
 Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
           <br/>
             <i>Format</i>: int64<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30281,6 +30298,7 @@ Defaults to 1 second. Minimum value is 1.
 More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -30794,6 +30812,7 @@ It is only effective when healthcheckextension is configured in the OpenTelemetr
 Defaults to 3. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30805,6 +30824,7 @@ Defaults to 0 seconds. Minimum value is 0.
 More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30815,6 +30835,7 @@ More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#cont
 Default to 10 seconds. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30825,6 +30846,7 @@ Default to 10 seconds. Minimum value is 1.<br/>
 Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30843,6 +30865,7 @@ This is a beta field and requires enabling ProbeTerminationGracePeriod feature g
 Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
           <br/>
             <i>Format</i>: int64<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -30854,6 +30877,7 @@ Defaults to 1 second. Minimum value is 1.
 More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
