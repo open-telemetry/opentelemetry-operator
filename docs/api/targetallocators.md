@@ -9474,6 +9474,8 @@ mycompany.com/my-custom-protocol.<br/>
           Allows defining which port to bind to the host in the Container.<br/>
           <br/>
             <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+            <i>Maximum</i>: 65535<br/>
         </td>
         <td>false</td>
       </tr><tr>
