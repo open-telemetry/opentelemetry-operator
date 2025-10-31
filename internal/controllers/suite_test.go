@@ -156,6 +156,11 @@ func (m *mockAutoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, err
 }
 
 func TestMain(m *testing.M) {
+	if os.Getenv("SKIP_ENVTEST") == "true" {
+		fmt.Println("Skipping controller envtest suite")
+		os.Exit(0)
+	}
+
 	var err error
 	ctx, cancel = context.WithCancel(context.TODO())
 	defer cancel()

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chainsaw-prometheus-receiver
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chainsaw-prometheus-workload

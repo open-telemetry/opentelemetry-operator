@@ -44,6 +44,11 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	if os.Getenv("SKIP_ENVTEST") == "true" {
+		fmt.Println("Skipping podmutation envtest suite")
+		os.Exit(0)
+	}
+
 	ctx, cancel = context.WithCancel(context.TODO())
 	defer cancel()
 	utilruntime.Must(v1alpha1.AddToScheme(testScheme))

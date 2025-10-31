@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -35,6 +36,19 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
+func newHTTPServer(t *testing.T, handler http.Handler) *httptest.Server {
+	t.Helper()
+	listener, err := net.Listen("tcp4", "127.0.0.1:0")
+	if err != nil {
+		t.Skipf("skipping test because listener could not be created: %v", err)
+	}
+	server := httptest.NewUnstartedServer(handler)
+	server.Listener = listener
+	server.Start()
+	t.Cleanup(server.Close)
+	return server
+}
+
 func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 	for _, tt := range []struct {
 		apiGroupList *metav1.APIGroupList
@@ -55,7 +69,7 @@ func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 			openshift.RoutesAvailable,
 		},
 	} {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		server := newHTTPServer(t, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			output, err := json.Marshal(tt.apiGroupList)
 			require.NoError(t, err)
 
@@ -64,7 +78,6 @@ func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 			_, err = w.Write(output)
 			require.NoError(t, err)
 		}))
-		defer server.Close()
 
 		autoDetect, err := autodetect.New(&rest.Config{Host: server.URL}, nil)
 		require.NoError(t, err)
@@ -132,7 +145,7 @@ func TestDetectPlatformBasedOnAvailableAPIGroupsPrometheus(t *testing.T) {
 			prometheus.Available,
 		},
 	} {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		server := newHTTPServer(t, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			var output []byte
 			var err error
 			if req.URL.Path == "/apis" {
@@ -147,7 +160,6 @@ func TestDetectPlatformBasedOnAvailableAPIGroupsPrometheus(t *testing.T) {
 			_, err = w.Write(output)
 			require.NoError(t, err)
 		}))
-		defer server.Close()
 
 		autoDetect, err := autodetect.New(&rest.Config{Host: server.URL}, nil)
 		require.NoError(t, err)
@@ -242,8 +254,7 @@ func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
 			t.Setenv(autodetectutils.NAMESPACE_ENV_VAR, tt.namespace)
 			t.Setenv(autodetectutils.SA_ENV_VAR, tt.serviceAccount)
 
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {}))
-			defer server.Close()
+			server := newHTTPServer(t, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {}))
 
 			r := rbac.NewReviewer(tt.clientGenerator())
 
@@ -325,7 +336,7 @@ func TestCertManagerAvailability(t *testing.T) {
 			t.Setenv(autodetectutils.NAMESPACE_ENV_VAR, tt.namespace)
 			t.Setenv(autodetectutils.SA_ENV_VAR, tt.serviceAccount)
 
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			server := newHTTPServer(t, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 				output, err := json.Marshal(tt.apiGroupList)
 				require.NoError(t, err)
 
@@ -334,7 +345,6 @@ func TestCertManagerAvailability(t *testing.T) {
 				_, err = w.Write(output)
 				require.NoError(t, err)
 			}))
-			defer server.Close()
 
 			r := rbac.NewReviewer(tt.clientGenerator())
 

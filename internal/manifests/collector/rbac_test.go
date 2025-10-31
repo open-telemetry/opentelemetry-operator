@@ -104,6 +104,7 @@ func TestDesiredClusterRoles(t *testing.T) {
 
 		cr, err := ClusterRole(params)
 		require.NoError(t, err)
+		require.NotNil(t, cr, test.desc)
 		assert.Equal(t, test.expectedRules, cr.Rules, test.desc)
 	}
 }

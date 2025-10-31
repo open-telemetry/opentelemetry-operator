@@ -174,7 +174,7 @@ func (m *MockRequest) Stream(ctx context.Context) (io.ReadCloser, error) {
 }
 
 func TestCreateOTELFolder(t *testing.T) {
-	collectionDir := "/tmp/test-dir"
+	collectionDir := t.TempDir()
 	otelCol := &v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "test-namespace",
@@ -188,15 +188,10 @@ func TestCreateOTELFolder(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedDir, outputDir)
 
-	// Clean up after the test
-	os.RemoveAll(collectionDir)
 }
 
 func TestCreateFile(t *testing.T) {
-	outputDir := "/tmp/test-dir"
-	err := os.MkdirAll(outputDir, os.ModePerm)
-	assert.NoError(t, err)
-	defer os.RemoveAll(outputDir)
+	outputDir := t.TempDir()
 
 	mockObj := &MockObject{}
 	mockObj.On("GetObjectKind").Return(schema.EmptyObjectKind)

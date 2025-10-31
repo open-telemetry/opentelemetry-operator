@@ -17,7 +17,12 @@ import (
 
 func TestOpAMPProxy_StartStop(t *testing.T) {
 	logger := logr.Discard()
-	endpoint := "localhost:4321"
+	if ln, err := net.Listen("tcp", "127.0.0.1:0"); err != nil {
+		t.Skipf("skipping test because listener could not be created: %v", err)
+	} else {
+		ln.Close()
+	}
+	endpoint := "localhost:0"
 	proxyServer := NewOpAMPProxy(logger, endpoint)
 
 	err := proxyServer.Start()
@@ -29,7 +34,7 @@ func TestOpAMPProxy_StartStop(t *testing.T) {
 
 func TestOpAMPProxy_OnMessage(t *testing.T) {
 	logger := logr.Discard()
-	endpoint := "localhost:4321"
+	endpoint := "localhost:0"
 	proxyServer := NewOpAMPProxy(logger, endpoint)
 
 	instanceId := uuid.New()
@@ -44,7 +49,7 @@ func TestOpAMPProxy_OnMessage(t *testing.T) {
 
 func TestOpAMPProxy_OnDisconnect(t *testing.T) {
 	logger := logr.Discard()
-	endpoint := "localhost:4321"
+	endpoint := "localhost:0"
 	proxyServer := NewOpAMPProxy(logger, endpoint)
 
 	instanceId := uuid.New()
@@ -61,7 +66,7 @@ func TestOpAMPProxy_OnDisconnect(t *testing.T) {
 
 func TestOpAMPProxy_GetConfigurations(t *testing.T) {
 	logger := logr.Discard()
-	endpoint := "localhost:4321"
+	endpoint := "localhost:0"
 	proxyServer := NewOpAMPProxy(logger, endpoint)
 
 	instanceId := uuid.New()
@@ -76,7 +81,7 @@ func TestOpAMPProxy_GetConfigurations(t *testing.T) {
 
 func TestOpAMPProxy_GetHealth(t *testing.T) {
 	logger := logr.Discard()
-	endpoint := "localhost:4321"
+	endpoint := "localhost:0"
 	proxyServer := NewOpAMPProxy(logger, endpoint)
 
 	instanceId := uuid.New()
@@ -91,7 +96,7 @@ func TestOpAMPProxy_GetHealth(t *testing.T) {
 
 func TestOpAMPProxy_GetAgentsByHostname(t *testing.T) {
 	logger := logr.Discard()
-	endpoint := "localhost:4321"
+	endpoint := "localhost:0"
 	proxyServer := NewOpAMPProxy(logger, endpoint)
 
 	instanceId := uuid.New()

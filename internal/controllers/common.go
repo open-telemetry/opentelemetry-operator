@@ -125,16 +125,22 @@ func reconcileDesiredObjects(ctx context.Context, kubeClient client.Client, logg
 			"object_kind", desired.GetObjectKind(),
 		)
 		if isNamespaceScoped(desired) {
-			if setErr := ctrl.SetControllerReference(owner, desired, scheme); setErr != nil {
-				l.Error(setErr, "failed to set controller owner reference to desired")
-				errs = append(errs, setErr)
-				continue
+			switch desired.(type) {
+			case *rbacv1.Role, *rbacv1.RoleBinding:
+				l.Info("skipping setting controller reference for role or rolebinding")
+			default:
+				if setErr := ctrl.SetControllerReference(owner, desired, scheme); setErr != nil {
+					l.Error(setErr, "failed to set controller owner reference to desired")
+					errs = append(errs, setErr)
+					continue
+				}
 			}
 		}
 		// existing is an object the controller runtime will hydrate for us
 		// we obtain the existing object by deep copying the desired object because it's the most convenient way
 		existing := desired.DeepCopyObject().(client.Object)
 		mutateFn := manifests.MutateFuncFor(existing, desired)
+
 		var op controllerutil.OperationResult
 		crudErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			result, createOrUpdateErr := ctrl.CreateOrUpdate(ctx, kubeClient, existing, mutateFn)

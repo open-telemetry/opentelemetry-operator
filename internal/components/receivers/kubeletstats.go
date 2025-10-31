@@ -41,8 +41,8 @@ func generateKubeletStatsEnvVars(_ logr.Logger, config kubeletStatsConfig) ([]co
 	}, nil
 }
 
-func generateKubeletStatsRbacRules(_ logr.Logger, config kubeletStatsConfig) ([]rbacv1.PolicyRule, error) {
-	// The Kubelet Stats Receiver needs the get permissions on the nodes/stats resources always.
+func generateKubeletStatsClusterRoleRules(_ logr.Logger, config kubeletStatsConfig) ([]rbacv1.PolicyRule, error) {
+	// The Kubelet Stats Receiver needs get permissions on the nodes/stats resources always.
 	prs := []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},

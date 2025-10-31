@@ -1,0 +1,29 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: simplest-test-prometheus-prometheus-role-binding
+  namespace: chainsaw-prometheus-workload
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: simplest-test-prometheus-prometheus-role
+subjects:
+- kind: ServiceAccount
+  name: simplest-collector
+  namespace: chainsaw-prometheus-receiver
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: simplest-test-prometheus-prometheus-role
+  namespace: chainsaw-prometheus-workload
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  - services
+  verbs:
+  - get
+  - watch
+  - list

@@ -9,6 +9,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
@@ -16,7 +17,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 )
 
-func Routes(params manifests.Params) ([]*routev1.Route, error) {
+func Routes(params manifests.Params) ([]client.Object, error) {
 	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeRoute || params.Config.OpenShiftRoutesAvailability != openshift.RoutesAvailable {
 		return nil, nil
 	}
@@ -86,5 +87,12 @@ func Routes(params manifests.Params) ([]*routev1.Route, error) {
 			},
 		}
 	}
-	return routes, nil
+
+	// Convert []*routev1.Route to []client.Object
+	result := make([]client.Object, len(routes))
+	for i, route := range routes {
+		result[i] = route
+	}
+
+	return result, nil
 }
