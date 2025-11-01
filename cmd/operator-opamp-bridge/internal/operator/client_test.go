@@ -159,13 +159,13 @@ func TestClient_ApplyUpdate(t *testing.T) {
 	err = yaml.Unmarshal(reportingColConfig, &reportingCol)
 	require.NoError(t, err, "Should be no error on unmarshal")
 
-	reportingCol.TypeMeta.Kind = CollectorResource
-	reportingCol.TypeMeta.APIVersion = v1beta1.GroupVersion.String()
+	setTypedMeta(&reportingCol)
 	reportingCol.ObjectMeta.Name = "simplest"
 	reportingCol.ObjectMeta.Namespace = namespace
 
 	err = fakeClient.Create(context.Background(), &reportingCol)
 	require.NoError(t, err, "Should be able to make reporting col")
+	setTypedMeta(&reportingCol) // calling client.Create() can unset this
 
 	allInstances, err := c.ListInstances()
 	require.NoError(t, err, "Should be able to list all collectors")
