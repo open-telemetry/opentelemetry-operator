@@ -19,7 +19,6 @@ import (
 
 const (
 	operatorName         = "opentelemetry-operator-controller-manager"
-	defaultAPIServerPort = 6443
 	defaultRBACProxyPort = 8443
 )
 
@@ -28,6 +27,7 @@ type networkPolicy struct {
 	scheme    *runtime.Scheme
 
 	operatorNamespace string
+	apiServerPort     int32
 	webhookPort       int32
 	metricsPort       int32
 }
@@ -56,6 +56,13 @@ func WithOperatorNamespace(operatorNamespace string) Option {
 	}
 }
 
+// WithAPIServerPort sets the port of the API server and enables it in the network policy.
+func WithAPIServerPort(apiServerPort int32) Option {
+	return func(s *networkPolicy) {
+		s.apiServerPort = apiServerPort
+	}
+}
+
 // WithWebhookPort sets the port of the webhook and enables it in the network policy.
 func WithWebhookPort(webhookPort int32) Option {
 	return func(s *networkPolicy) {
@@ -72,7 +79,7 @@ func WithMetricsPort(metricsPort int32) Option {
 
 func (n *networkPolicy) Start(ctx context.Context) error {
 	tcp := corev1.ProtocolTCP
-	apiServerPort := intstr.FromInt32(defaultAPIServerPort)
+	apiServerPort := intstr.FromInt32(n.apiServerPort)
 
 	np := &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
