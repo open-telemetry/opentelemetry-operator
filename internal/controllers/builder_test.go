@@ -1459,10 +1459,6 @@ service:
 												},
 											},
 											{
-												Name:  "SHARD",
-												Value: "0",
-											},
-											{
 												Name: "GOMEMLIMIT",
 												ValueFrom: &corev1.EnvVarSource{
 													ResourceFieldRef: &corev1.ResourceFieldSelector{
@@ -1719,10 +1715,6 @@ service:
 														FieldPath: "metadata.name",
 													},
 												},
-											},
-											{
-												Name:  "SHARD",
-												Value: "0",
 											},
 											{
 												Name: "GOMEMLIMIT",

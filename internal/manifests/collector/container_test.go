@@ -987,10 +987,6 @@ func TestGetEnvironmentVariables(t *testing.T) {
 					},
 				},
 				{
-					Name:  "SHARD",
-					Value: "0",
-				},
-				{
 					Name: "GOMEMLIMIT",
 					ValueFrom: &corev1.EnvVarSource{
 						ResourceFieldRef: &corev1.ResourceFieldSelector{

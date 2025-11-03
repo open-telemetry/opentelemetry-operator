@@ -14,6 +14,7 @@ import (
 
 const (
 	relabelConfigTargetFilterName = "relabel-config"
+	disableShardingLabelName      = "__tmp_disable_sharding"
 )
 
 type relabelConfigTargetFilter struct {
@@ -38,49 +39,39 @@ func (tf *relabelConfigTargetFilter) Apply(targets []*target.Item) []*target.Ite
 
 	writeIndex := 0
 	for _, tItem := range targets {
-		keepTarget := true
-		lset := tItem.Labels
-		for _, cfg := range tf.relabelCfg[tItem.JobName] {
-			lset, keepTarget = relabel.Process(lset, cfg)
-			if !keepTarget {
-				break // inner loop
-			}
-		}
+		newLabels, keepTarget := relabel.Process(tItem.Labels, tf.relabelCfg[tItem.JobName]...)
 
 		if keepTarget {
-			targets[writeIndex] = target.NewItem(tItem.JobName, tItem.TargetURL, tItem.Labels, tItem.CollectorName, target.WithRelabeledLabels(lset))
+			targets[writeIndex] = target.NewItem(tItem.JobName, tItem.TargetURL, tItem.Labels, tItem.CollectorName, target.WithRelabeledLabels(newLabels))
 			writeIndex++
 		}
 	}
 
 	targets = targets[:writeIndex]
 	targets = slices.Clip(targets)
-	tf.log.V(2).Info("Filtering complete", "seen", numTargets, "kept", len(targets))
+	tf.log.V(1).Info("Filtering complete", "seen", numTargets, "kept", len(targets))
 	return targets
 }
 
 func (tf *relabelConfigTargetFilter) SetConfig(cfgs map[string][]*relabel.Config) {
 	relabelCfgCopy := make(map[string][]*relabel.Config)
 	for key, val := range cfgs {
-		relabelCfgCopy[key] = tf.replaceRelabelConfig(val)
+		relabelCfgCopy[key] = addNoShardingConfig(val)
 	}
 
 	tf.relabelCfg = relabelCfgCopy
 }
 
-// See this thread [https://github.com/open-telemetry/opentelemetry-operator/pull/1124/files#r983145795]
-// for why SHARD == 0 is a necessary substitution. Otherwise the keep action that uses this env variable,
-// would not match the regex and all targets end up dropped. Also note, $(SHARD) will always be 0 and it
-// does not make sense to read from the environment because it is never set in the allocator.
-func (tf *relabelConfigTargetFilter) replaceRelabelConfig(cfg []*relabel.Config) []*relabel.Config {
-	for i := range cfg {
-		str := cfg[i].Regex.String()
-		if str == "$(SHARD)" {
-			cfg[i].Regex = relabel.MustNewRegexp("0")
-		}
-	}
-
-	return cfg
+// addNoShardingConfig adds a relabel config to disable sharding for the given job. This is needed because the.
+func addNoShardingConfig(cfg []*relabel.Config) []*relabel.Config {
+	noShardingRelabelConfig := relabel.DefaultRelabelConfig
+	noShardingRelabelConfig.Replacement = "true" // the value doesn't matter, it just needs to be non-empty
+	noShardingRelabelConfig.TargetLabel = disableShardingLabelName
+	dropTmpLabelConfig := relabel.DefaultRelabelConfig
+	dropTmpLabelConfig.Action = relabel.LabelDrop
+	dropTmpLabelConfig.Regex = relabel.MustNewRegexp(disableShardingLabelName)
+	output := append([]*relabel.Config{&noShardingRelabelConfig}, cfg...)
+	return append(output, &dropTmpLabelConfig)
 }
 
 func (tf *relabelConfigTargetFilter) GetConfig() map[string][]*relabel.Config {
