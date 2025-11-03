@@ -16,6 +16,9 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
@@ -33,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	k8sconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	runtimecluster "sigs.k8s.io/controller-runtime/pkg/cluster"
+	zaplogr "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	k8sreconcile "sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -1536,6 +1540,20 @@ func IsOwnedBy(obj metav1.Object, owner *v1beta1.OpenTelemetryCollector) bool {
 }
 
 func createTestReconcilerWithVersion(t *testing.T, ctx context.Context, cfg config.Config, v version.Version) *controllers.OpenTelemetryCollectorReconciler {
+	obsCore, obs := observer.New(zap.DebugLevel)
+	tLogger := zaplogr.New(func(options *zaplogr.Options) {
+		options.ZapOpts = append(options.ZapOpts, zap.WrapCore(func(core zapcore.Core) zapcore.Core {
+			return obsCore
+		}))
+		options.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
+	})
+	t.Cleanup(func() {
+		if t.Failed() {
+			for _, logRecord := range obs.All() {
+				t.Log(logRecord)
+			}
+		}
+	})
 	t.Helper()
 	// we need to set up caches for our reconciler
 	runtimeCluster, err := runtimecluster.New(restCfg, func(options *runtimecluster.Options) {
@@ -1550,7 +1568,7 @@ func createTestReconcilerWithVersion(t *testing.T, ctx context.Context, cfg conf
 	cacheClient := runtimeCluster.GetClient()
 	reconciler := controllers.NewReconciler(controllers.Params{
 		Client:   cacheClient,
-		Log:      logger,
+		Log:      tLogger,
 		Scheme:   testScheme,
 		Recorder: record.NewFakeRecorder(20),
 		Config:   cfg,
