@@ -6,6 +6,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"time"
@@ -20,6 +21,7 @@ import (
 	policyV1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -290,7 +292,15 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		if controllerutil.AddFinalizer(&instance, collectorFinalizer) {
 			err = r.Update(ctx, &instance)
 			if err != nil {
-				return ctrl.Result{}, fmt.Errorf("failed to add finalizer to collector %s: %w", req.NamespacedName.String(), err)
+				plainErr := fmt.Errorf("failed to add finalizer to collector %s: %w", req.NamespacedName.String(), err)
+				if k8serrors.IsConflict(err) {
+					var current v1beta1.OpenTelemetryCollector
+					if getErr := r.Get(ctx, req.NamespacedName, &current); getErr != nil {
+						return ctrl.Result{}, errors.Join(plainErr, getErr)
+					}
+					return ctrl.Result{}, fmt.Errorf("got an update conflict, submitted %v but the cluster state was %v", instance, current)
+				}
+				return ctrl.Result{}, plainErr
 			}
 		}
 	}
