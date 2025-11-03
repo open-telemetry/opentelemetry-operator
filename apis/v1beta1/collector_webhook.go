@@ -97,9 +97,6 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 	if len(otelcol.Spec.ManagementState) == 0 {
 		otelcol.Spec.ManagementState = ManagementStateManaged
 	}
-	if !featuregate.EnableConfigDefaulting.IsEnabled() {
-		return nil
-	}
 	if featuregate.EnableOperandNetworkPolicy.IsEnabled() && otelcol.Spec.NetworkPolicy.Enabled == nil {
 		trueVal := true
 		otelcol.Spec.NetworkPolicy.Enabled = &trueVal

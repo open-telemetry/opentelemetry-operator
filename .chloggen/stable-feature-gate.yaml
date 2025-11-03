@@ -5,13 +5,12 @@ change_type: enhancement
 component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: "Promote the `operator.collector.default.config` feature gate to Stable"
+note: "Remove the `operator.collector.default.config` feature gate as it has graduated to stable and is now always enabled"
 
 # One or more tracking issues related to the change
-issues: [4453]
+issues: [4453,4473]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
 subtext: |
-
