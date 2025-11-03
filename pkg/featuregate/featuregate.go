@@ -53,9 +53,10 @@ var (
 	// EnableConfigDefaulting is the feature gate that enables the operator to default the endpoint for known components.
 	EnableConfigDefaulting = featuregate.GlobalRegistry().MustRegister(
 		"operator.collector.default.config",
-		featuregate.StageBeta,
+		featuregate.StageStable,
 		featuregate.WithRegisterDescription("enables the operator to default the endpoint for known components"),
 		featuregate.WithRegisterFromVersion("v0.110.0"),
+		featuregate.WithRegisterToVersion("v0.139.0"),
 	)
 	// EnableOperatorNetworkPolicy is the feature gate that enables the operator to create network policies for the operator.
 	EnableOperatorNetworkPolicy = featuregate.GlobalRegistry().MustRegister(
