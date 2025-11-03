@@ -305,7 +305,12 @@ func TestSetConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	allocatorPrehook.SetConfig(relabelCfg)
-	assert.Equal(t, relabelCfg, allocatorPrehook.GetConfig())
+
+	for k, cfg := range relabelCfg {
+		relabelCfg[k] = addNoShardingConfig(cfg)
+	}
+	actual := allocatorPrehook.GetConfig()
+	assert.Equal(t, relabelCfg, actual)
 }
 
 func TestDistinctTarget(t *testing.T) {
