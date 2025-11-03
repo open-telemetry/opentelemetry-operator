@@ -1452,7 +1452,7 @@ func TestUpgrade(t *testing.T) {
 				freshOtelcol.Status = tt.input.Status
 				updateErr := k8sClient.Status().Update(testCtx, freshOtelcol)
 				assert.NoError(collect, updateErr)
-				require.NotEmpty(t, freshOtelcol.ObjectMeta.ResourceVersion)
+				require.NotEmpty(collect, freshOtelcol.ObjectMeta.ResourceVersion)
 				expectedResourceVersion = freshOtelcol.ObjectMeta.ResourceVersion
 			}, time.Second*10, time.Millisecond*10)
 
@@ -1461,7 +1461,7 @@ func TestUpgrade(t *testing.T) {
 				getErr := reconciler.Get(testCtx, nsn, freshOtelcol)
 				assert.NoError(collect, getErr)
 				assert.Equal(collect, tt.input.Status, freshOtelcol.Status)
-				assert.Equal(t, expectedResourceVersion, freshOtelcol.ObjectMeta.ResourceVersion)
+				assert.Equal(collect, expectedResourceVersion, freshOtelcol.ObjectMeta.ResourceVersion)
 			}, time.Second*10, time.Millisecond*10)
 
 			// First reconcile
