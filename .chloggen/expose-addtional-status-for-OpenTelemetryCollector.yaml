@@ -1,0 +1,24 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: enhancement
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: collector
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: "Added additional status information fields for OpenTelemetryCollector sidecar injection"
+
+# One or more tracking issues related to the change
+issues: [4313]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  Added new status fields to track sidecar injection state including:
+  - `SidecarInjected`: Indicates whether a sidecar has been injected
+  - `PodsInjected`: Number of pods currently containing the injected sidecar
+  - `LastInjectionTime`: Timestamp of the last successful sidecar injection
+  - `LastInjectionError`: Error message from the last failed sidecar injection
+  - `InjectionStatus`: Status of the sidecar injection process
+  - `ObservedGeneration`: Last observed generation of the OpenTelemetryCollector resource
+  - `Conditions`: Latest available observations of the OpenTelemetryCollector's current state
