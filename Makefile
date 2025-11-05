@@ -87,16 +87,17 @@ ENABLE_WEBHOOKS ?= false
 # Additional flags for go test command
 GOTEST_EXTRA_OPTS ?=
 
-# If we are running in CI, run go test in verbose mode
+# If we are running in CI, run go test in verbose mode without caching
 ifeq (,$(CI))
 GOTEST_OPTS=-race $(if $(GOTEST_EXTRA_OPTS),$(GOTEST_EXTRA_OPTS))
 else
-GOTEST_OPTS=-race -v $(if $(GOTEST_EXTRA_OPTS),$(GOTEST_EXTRA_OPTS))
+GOTEST_OPTS=-race -v -count=1 $(if $(GOTEST_EXTRA_OPTS),$(GOTEST_EXTRA_OPTS))
 endif
 
 START_KIND_CLUSTER ?= true
 
 KUBE_VERSION ?= 1.33
+MIN_KUBE_VERSION = 1.25
 KIND_CONFIG ?= kind-$(KUBE_VERSION).yaml
 KIND_CLUSTER_NAME ?= "otel-operator"
 CHAINSAW_SELECTOR := $(shell [ "$(shell printf '%s\n' "$(KUBE_VERSION)" "1.29" | sort -V | head -n1)" = "1.29" ] && echo "--selector sidecar=native" || echo "--selector sidecar=legacy")
@@ -174,7 +175,7 @@ all: manager targetallocator operator-opamp-bridge
 
 # No lint here, as CI runs it separately
 .PHONY: ci
-ci: generate fmt vet test ensure-update-is-noop
+ci: generate fmt vet test test-min-k8s ensure-update-is-noop
 
 .PHONY: update
 update: generate manifests bundle api-docs reset
@@ -296,11 +297,21 @@ release-artifacts: set-image-controller
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=${MANIFEST_DIR}
 
+# Internal target for running tests with a specific Kubernetes version
+.PHONY: run-envtest
+run-envtest: envtest gotestsum
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(TEST_K8S_VERSION) -p path)" $(GOTESTSUM) -- ${GOTEST_OPTS} ./...
+
 # Run tests
 # setup-envtest uses KUBEBUILDER_ASSETS which points to a directory with binaries (api-server, etcd and kubectl)
 .PHONY: test
-test: envtest gotestsum
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" $(GOTESTSUM) -- ${GOTEST_OPTS} ./...
+test:
+	@$(MAKE) run-envtest TEST_K8S_VERSION=$(KUBE_VERSION)
+
+# Run tests with the minimum supported Kubernetes version
+.PHONY: test-min-k8s
+test-min-k8s:
+	@$(MAKE) run-envtest TEST_K8S_VERSION=$(MIN_KUBE_VERSION)
 
 .PHONY: precommit
 precommit: fmt vet lint test ensure-update-is-noop
