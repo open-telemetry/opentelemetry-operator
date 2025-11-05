@@ -447,6 +447,32 @@ type OpenTelemetryCollectorStatus struct {
 	// +optional
 	// Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas" instead.
 	Replicas int32 `json:"replicas,omitempty"`
+
+	// SidecarInjected indicates whether a sidecar has been injected.
+	SidecarInjected bool `json:"sidecarInjected,omitempty"`
+
+	// PodsInjected is the number of pods currently containing the injected sidecar.
+	PodsInjected int32 `json:"podsInjected,omitempty"`
+
+	// LastInjectionTime is the timestamp of the last successful sidecar injection.
+	LastInjectionTime string `json:"lastInjectionTime,omitempty"`
+
+	// LastInjectionError is the error message from the last failed sidecar injection.
+	LastInjectionError string `json:"lastInjectionError,omitempty"`
+
+	// InjectionStatus indicates the status of the sidecar injection process.
+	InjectionStatus string `json:"injectionStatus,omitempty"`
+
+	// TODO :Im not sure add ObservedGeneration and Conditions help here? as Conditions can cover both?
+
+	// ObservedGeneration is the last observed generation of the OpenTelemetryCollector resource.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
+	// Conditions represent the latest available observations of the
+	// OpenTelemetryCollector's current state.
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:deprecatedversion:warning="OpenTelemetryCollector v1alpha1 is deprecated. Migrate to v1beta1."
