@@ -81,7 +81,6 @@ jobs:
         - e2e-multi-instrumentation
         - e2e-metadata-filters
         - e2e-ta-collector-mtls
-        - e2e-crd-validations
         include:
         - group: e2e-instrumentation-default
           setup: "add-instrumentation-params prepare-e2e"

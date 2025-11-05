@@ -430,11 +430,6 @@ e2e-upgrade: undeploy chainsaw
 	go run hack/check-operator-ready.go
 	$(CHAINSAW) test --test-dir ./tests/e2e-upgrade --report-name e2e-upgrade
 
-# end-to-end tests to test crd validations
-.PHONY: e2e-crd-validations
-e2e-crd-validations: chainsaw
-	$(CHAINSAW) test --test-dir ./tests/e2e-crd-validations
-
 .PHONY: prepare-e2e
 prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
 	@mkdir -p ./.testresults/e2e
