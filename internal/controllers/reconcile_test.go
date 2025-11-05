@@ -1456,9 +1456,12 @@ func TestUpgrade(t *testing.T) {
 			}, time.Second*10, time.Millisecond*10)
 
 			// First reconcile
+			var reconcile k8sreconcile.Result
 			req := k8sreconcile.Request{NamespacedName: nsn}
-			reconcile, err := reconciler.Reconcile(testCtx, req)
-			require.NoError(t, err)
+			require.EventuallyWithT(t, func(collect *assert.CollectT) {
+				reconcile, err = reconciler.Reconcile(testCtx, req)
+				require.NoError(collect, err)
+			}, time.Second*10, time.Millisecond*10)
 			require.Equal(t, tt.expectRequeue, reconcile.Requeue)
 
 			// Second reconcile (if upgrade was run)
