@@ -17,6 +17,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -282,17 +283,17 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func testCollectorWithMode(name string, mode v1alpha1.Mode) v1alpha1.OpenTelemetryCollector {
+func testCollectorWithMode(t *testing.T, name string, mode v1beta1.Mode) v1beta1.OpenTelemetryCollector {
 	replicas := int32(2)
-	return testCollectorWithModeAndReplicas(name, mode, replicas)
+	return testCollectorWithModeAndReplicas(t, name, mode, replicas)
 }
 
-func testCollectorWithModeAndReplicas(name string, mode v1alpha1.Mode, replicas int32) v1alpha1.OpenTelemetryCollector {
+func testCollectorWithModeAndReplicas(t *testing.T, name string, mode v1beta1.Mode, replicas int32) v1beta1.OpenTelemetryCollector {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
-	if err != nil {
-		fmt.Printf("Error getting yaml file: %v", err)
-	}
-	return v1alpha1.OpenTelemetryCollector{
+	require.NoError(t, err)
+	var otelConfig v1beta1.Config
+	require.NoError(t, yaml.Unmarshal(configYAML, &otelConfig))
+	return v1beta1.OpenTelemetryCollector{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "opentelemetry.io",
 			APIVersion: "v1",
@@ -301,26 +302,28 @@ func testCollectorWithModeAndReplicas(name string, mode v1alpha1.Mode, replicas 
 			Name:      name,
 			Namespace: "default",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
-			Ports: []v1alpha1.PortsSpec{{
-				ServicePort: v1.ServicePort{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}}},
-			Replicas: &replicas,
-			Config:   string(configYAML),
-			Mode:     mode,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
+				Ports: []v1beta1.PortsSpec{{
+					ServicePort: v1.ServicePort{
+						Name: "web",
+						Port: 80,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 80,
+						},
+						NodePort: 0,
+					}}},
+				Replicas: &replicas,
+			},
+			Config: otelConfig,
+			Mode:   mode,
 		},
 	}
 }
 
-func testCollectorAssertNoErr(t *testing.T, name string, taContainerImage string, file string) v1alpha1.OpenTelemetryCollector {
+func testCollectorAssertNoErr(t *testing.T, name string, taContainerImage string, file string) v1beta1.OpenTelemetryCollector {
 	p, err := testCollectorWithConfigFile(name, taContainerImage, file)
 	assert.NoError(t, err)
 	if len(taContainerImage) == 0 {
@@ -329,7 +332,7 @@ func testCollectorAssertNoErr(t *testing.T, name string, taContainerImage string
 	return p
 }
 
-func testCollectorWithConfigFile(name string, taContainerImage string, file string) (v1alpha1.OpenTelemetryCollector, error) {
+func testCollectorWithConfigFile(name string, taContainerImage string, file string) (v1beta1.OpenTelemetryCollector, error) {
 	replicas := int32(1)
 	var configYAML []byte
 	var err error
@@ -340,9 +343,15 @@ func testCollectorWithConfigFile(name string, taContainerImage string, file stri
 		configYAML, err = os.ReadFile(file)
 	}
 	if err != nil {
-		return v1alpha1.OpenTelemetryCollector{}, fmt.Errorf("Error getting yaml file: %w", err)
+		return v1beta1.OpenTelemetryCollector{}, fmt.Errorf("Error getting yaml file: %w", err)
 	}
-	return v1alpha1.OpenTelemetryCollector{
+	var otelConfig v1beta1.Config
+	err = yaml.Unmarshal(configYAML, &otelConfig)
+	if err != nil {
+		return v1beta1.OpenTelemetryCollector{}, err
+	}
+
+	return v1beta1.OpenTelemetryCollector{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "opentelemetry.io",
 			APIVersion: "v1",
@@ -351,36 +360,41 @@ func testCollectorWithConfigFile(name string, taContainerImage string, file stri
 			Name:      name,
 			Namespace: "default",
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Mode: v1alpha1.ModeStatefulSet,
-			Ports: []v1alpha1.PortsSpec{{
-				ServicePort: v1.ServicePort{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}}},
-			TargetAllocator: v1alpha1.OpenTelemetryTargetAllocator{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Ports: []v1beta1.PortsSpec{{
+					ServicePort: v1.ServicePort{
+						Name: "web",
+						Port: 80,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 80,
+						},
+						NodePort: 0,
+					}}},
+				Replicas: &replicas,
+			},
+			Mode: v1beta1.ModeStatefulSet,
+
+			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 				Enabled: true,
 				Image:   taContainerImage,
 			},
-			Replicas: &replicas,
-			Config:   string(configYAML),
+
+			Config: otelConfig,
 		},
 	}, nil
 }
 
-func testCollectorWithHPA(minReps, maxReps int32) v1alpha1.OpenTelemetryCollector {
+func testCollectorWithHPA(t *testing.T, minReps, maxReps int32) v1beta1.OpenTelemetryCollector {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
-	if err != nil {
-		fmt.Printf("Error getting yaml file: %v", err)
-	}
+	require.NoError(t, err)
+	var otelConfig v1beta1.Config
+	err = yaml.Unmarshal(configYAML, &otelConfig)
+	require.NoError(t, err)
 	cpuUtilization := int32(90)
 
-	return v1alpha1.OpenTelemetryCollector{
+	return v1beta1.OpenTelemetryCollector{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "opentelemetry.io",
 			APIVersion: "v1",
@@ -390,19 +404,22 @@ func testCollectorWithHPA(minReps, maxReps int32) v1alpha1.OpenTelemetryCollecto
 			Namespace: "default",
 			UID:       instanceUID,
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Ports: []v1alpha1.PortsSpec{{
-				ServicePort: v1.ServicePort{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}}},
-			Config: string(configYAML),
-			Autoscaler: &v1alpha1.AutoscalerSpec{
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Ports: []v1beta1.PortsSpec{{
+					ServicePort: v1.ServicePort{
+						Name: "web",
+						Port: 80,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 80,
+						},
+						NodePort: 0,
+					}}},
+			},
+
+			Config: otelConfig,
+			Autoscaler: &v1beta1.AutoscalerSpec{
 				MinReplicas:          &minReps,
 				MaxReplicas:          &maxReps,
 				TargetCPUUtilization: &cpuUtilization,
@@ -411,22 +428,21 @@ func testCollectorWithHPA(minReps, maxReps int32) v1alpha1.OpenTelemetryCollecto
 	}
 }
 
-func testCollectorWithPDB(minAvailable, maxUnavailable int32) v1alpha1.OpenTelemetryCollector {
+func testCollectorWithPDB(t *testing.T, minAvailable, maxUnavailable int32) v1beta1.OpenTelemetryCollector {
 	configYAML, err := os.ReadFile("testdata/test.yaml")
-	if err != nil {
-		fmt.Printf("Error getting yaml file: %v", err)
-	}
+	require.NoError(t, err)
+	var otelConfig v1beta1.Config
+	err = yaml.Unmarshal(configYAML, &otelConfig)
+	require.NoError(t, err)
 
 	configuration := config.Config{
 		CollectorImage:       defaultCollectorImage,
 		TargetAllocatorImage: defaultTaAllocationImage,
 	}
 	err = autodetect.ApplyAutoDetect(mockAutoDetector, &configuration, ctrl.Log.WithName("autodetect"))
-	if err != nil {
-		logger.Error(err, "configuration.autodetect failed")
-	}
+	require.NoError(t, err)
 
-	pdb := &v1alpha1.PodDisruptionBudgetSpec{}
+	pdb := &v1beta1.PodDisruptionBudgetSpec{}
 
 	if maxUnavailable > 0 && minAvailable > 0 {
 		fmt.Printf("worng configuration: %v", fmt.Errorf("minAvailable and maxUnavailable cannot be both set"))
@@ -443,7 +459,7 @@ func testCollectorWithPDB(minAvailable, maxUnavailable int32) v1alpha1.OpenTelem
 		}
 	}
 
-	return v1alpha1.OpenTelemetryCollector{
+	return v1beta1.OpenTelemetryCollector{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "opentelemetry.io",
 			APIVersion: "v1",
@@ -453,19 +469,22 @@ func testCollectorWithPDB(minAvailable, maxUnavailable int32) v1alpha1.OpenTelem
 			Namespace: "default",
 			UID:       instanceUID,
 		},
-		Spec: v1alpha1.OpenTelemetryCollectorSpec{
-			Ports: []v1alpha1.PortsSpec{{
-				ServicePort: v1.ServicePort{
-					Name: "web",
-					Port: 80,
-					TargetPort: intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 80,
-					},
-					NodePort: 0,
-				}}},
-			Config:              string(configYAML),
-			PodDisruptionBudget: pdb,
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				Ports: []v1beta1.PortsSpec{{
+					ServicePort: v1.ServicePort{
+						Name: "web",
+						Port: 80,
+						TargetPort: intstr.IntOrString{
+							Type:   intstr.Int,
+							IntVal: 80,
+						},
+						NodePort: 0,
+					}}},
+				PodDisruptionBudget: pdb,
+			},
+
+			Config: otelConfig,
 		},
 	}
 }
@@ -534,11 +553,6 @@ func populateObjectIfExists(t testing.TB, object client.Object, namespacedName t
 	return true, nil
 }
 
-func getConfigMapSHAFromString(configStr string) (string, error) {
-	var cfg v1beta1.Config
-	err := yaml.Unmarshal([]byte(configStr), &cfg)
-	if err != nil {
-		return "", err
-	}
+func getConfigMapSHAFromString(cfg v1beta1.Config) (string, error) {
 	return manifestutils.GetConfigMapSHA(cfg)
 }
