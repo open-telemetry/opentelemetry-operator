@@ -100,6 +100,24 @@ func TestAddNativeSidecar(t *testing.T) {
 				},
 			},
 			{
+				Name: "GOMEMLIMIT",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.memory",
+						ContainerName: "otc-container",
+					},
+				},
+			},
+			{
+				Name: "GOMAXPROCS",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.cpu",
+						ContainerName: "otc-container",
+					},
+				},
+			},
+			{
 				Name:  "OTEL_CONFIG",
 				Value: string(otelcolYaml),
 			},
@@ -182,6 +200,24 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 				ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{
 						FieldPath: "metadata.name",
+					},
+				},
+			},
+			{
+				Name: "GOMEMLIMIT",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.memory",
+						ContainerName: "otc-container",
+					},
+				},
+			},
+			{
+				Name: "GOMAXPROCS",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.cpu",
+						ContainerName: "otc-container",
 					},
 				},
 			},

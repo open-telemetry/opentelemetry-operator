@@ -203,6 +203,24 @@ service:
 													},
 												},
 											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "otc-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "otc-container",
+													},
+												},
+											},
 										},
 										VolumeMounts: []corev1.VolumeMount{
 											{
@@ -521,6 +539,24 @@ service:
 													},
 												},
 											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "otc-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "otc-container",
+													},
+												},
+											},
 										},
 										VolumeMounts: []corev1.VolumeMount{
 											{
@@ -835,6 +871,24 @@ service:
 													},
 												},
 											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "otc-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "otc-container",
+													},
+												},
+											},
 										},
 										VolumeMounts: []corev1.VolumeMount{
 											{
@@ -1119,6 +1173,24 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 													},
 												},
 											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "opamp-bridge-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "opamp-bridge-container",
+													},
+												},
+											},
 										},
 										VolumeMounts: []corev1.VolumeMount{
 											{
@@ -1390,6 +1462,24 @@ service:
 												Name:  "SHARD",
 												Value: "0",
 											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "otc-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "otc-container",
+													},
+												},
+											},
 										},
 										Ports: []corev1.ContainerPort{
 											{
@@ -1633,6 +1723,24 @@ service:
 											{
 												Name:  "SHARD",
 												Value: "0",
+											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "otc-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "otc-container",
+													},
+												},
 											},
 										},
 										Ports: []corev1.ContainerPort{
@@ -1981,6 +2089,24 @@ prometheus_cr:
 													},
 												},
 											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "ta-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "ta-container",
+													},
+												},
+											},
 										},
 										Ports: []corev1.ContainerPort{
 											{
@@ -2259,6 +2385,24 @@ prometheus_cr:
 												ValueFrom: &corev1.EnvVarSource{
 													FieldRef: &corev1.ObjectFieldSelector{
 														FieldPath: "metadata.namespace",
+													},
+												},
+											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "ta-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "ta-container",
 													},
 												},
 											},
@@ -2593,6 +2737,24 @@ prometheus_cr:
 													},
 												},
 											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "ta-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "ta-container",
+													},
+												},
+											},
 										},
 										Ports: []corev1.ContainerPort{
 											{
@@ -2903,6 +3065,24 @@ prometheus_cr:
 												ValueFrom: &corev1.EnvVarSource{
 													FieldRef: &corev1.ObjectFieldSelector{
 														FieldPath: "metadata.namespace",
+													},
+												},
+											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "ta-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "ta-container",
 													},
 												},
 											},
