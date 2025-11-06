@@ -9,7 +9,7 @@
 - `operator`: Promote the `operator.sidecarcontainers.native` feature flag to Stable. (#4451)
   By default, the operator will continue to use native sidecars on Kubernetes versions
   newer than 1.29. This behaviour cannot be disabled.
-  The operator flag will be removed with the release of version `0.139.0`. 
+  The operator flag will be removed with the release of version `0.140.0`.
   
 - `collector`: Promote the `operator.collector.default.config` feature gate to Stable (#4453)
 
