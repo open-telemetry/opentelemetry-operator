@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -16,22 +15,11 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var logger = logf.Log.WithName("unit-tests")
 
-func enableSidecarFeatureGate(t *testing.T) {
-	originalVal := featuregate.EnableNativeSidecarContainers.IsEnabled()
-	t.Logf("original is: %+v", originalVal)
-	require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNativeSidecarContainers.ID(), true))
-	t.Cleanup(func() {
-		require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNativeSidecarContainers.ID(), originalVal))
-	})
-}
-
 func TestAddNativeSidecar(t *testing.T) {
-	enableSidecarFeatureGate(t)
 	// prepare
 	pod := corev1.Pod{
 		Spec: corev1.PodSpec{
@@ -329,8 +317,6 @@ func TestRemoveNonExistingSidecar(t *testing.T) {
 }
 
 func TestExistsIn(t *testing.T) {
-	enableSidecarFeatureGate(t)
-
 	for _, tt := range []struct {
 		desc     string
 		pod      corev1.Pod
