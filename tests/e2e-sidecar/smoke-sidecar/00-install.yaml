@@ -1,18 +1,31 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example-config
+data:
+  config.properties: |
+    app.theme=dark
+    app.locale=en_US
+    database.host=db.local
+---
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: sidecar-for-my-app
 spec:
   mode: sidecar
-  config: |
+  configmaps:
+  - mountpath: /tmp/example-config
+    name: example-config
+  config:
     receivers:
       jaeger:
         protocols:
-          grpc:
-    processors:
+          grpc: {}
+    processors: {}
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
