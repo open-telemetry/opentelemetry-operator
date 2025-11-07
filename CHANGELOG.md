@@ -2,6 +2,29 @@
 
 <!-- next version -->
 
+## 0.139.0
+
+### 💡 Enhancements 💡
+
+- `operator`: Promote the `operator.sidecarcontainers.native` feature flag to Stable. (#4451)
+  By default, the operator will continue to use native sidecars on Kubernetes versions
+  newer than 1.29. This behaviour cannot be disabled.
+  The operator flag will be removed with the release of version `0.140.0`.
+  
+- `collector`: Promote the `operator.collector.default.config` feature gate to Stable (#4453)
+
+### Components
+
+* [OpenTelemetry Collector - v0.139.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.139.0)
+* [OpenTelemetry Contrib - v0.139.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.139.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.66.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.66.0)
+* [Python - v0.59b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.59b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.138.0
 
 

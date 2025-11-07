@@ -26,13 +26,13 @@ var (
 		featuregate.StageStable,
 		featuregate.WithRegisterDescription("controls whether the operator supports sidecar containers as init containers. Should only be enabled on k8s v1.29+"),
 		featuregate.WithRegisterFromVersion("v0.111.0"),
-		featuregate.WithRegisterToVersion("v0.139.0"),
+		featuregate.WithRegisterToVersion("v0.140.0"),
 	)
 	// SetGolangFlags is the feature gate that enables automatically setting GOMEMLIMIT and GOMAXPROCS for the
 	// collector, bridge, and target allocator.
 	SetGolangFlags = featuregate.GlobalRegistry().MustRegister(
 		"operator.golang.flags",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
 		featuregate.WithRegisterFromVersion("v0.100.0"),
 	)
