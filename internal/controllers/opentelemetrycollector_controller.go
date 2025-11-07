@@ -7,6 +7,7 @@ package controllers
 import (
 	"context"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -28,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -323,7 +325,72 @@ func (r *OpenTelemetryCollectorReconciler) SetupWithManager(mgr ctrl.Manager) er
 		builder.Owns(resource)
 	}
 
+	builder.Watches(
+		&corev1.Pod{},
+		handler.EnqueueRequestsFromMapFunc(r.findCollectorsForPod),
+	)
+
 	return builder.Complete(r)
+}
+
+// findCollectorsForPod finds all OpenTelemetryCollector pods that should reconcile.
+func (r *OpenTelemetryCollectorReconciler) findCollectorsForPod(ctx context.Context, pod client.Object) []ctrl.Request {
+	annotations := pod.GetAnnotations()
+	if annotations == nil {
+		return nil
+	}
+
+	sidecarAnnotation := "sidecar.opentelemetry.io/inject"
+	annotationValue, ok := annotations[sidecarAnnotation]
+	if !ok || annotationValue == "false" {
+		return nil
+	}
+
+	podNamespace := pod.GetNamespace()
+
+	// when annotation is true, the sidecar mutator only selects collectors in the same namespace
+	// so we should only trigger reconciliation for collectors in the pod's namespace to minimize reconciliations
+	if annotationValue == "true" {
+		collectorList := &v1beta1.OpenTelemetryCollectorList{}
+		if err := r.List(ctx, collectorList, client.InNamespace(podNamespace)); err != nil {
+			return nil
+		}
+
+		var requests []ctrl.Request
+		for _, collector := range collectorList.Items {
+			if collector.Spec.Mode == v1beta1.ModeSidecar {
+				requests = append(requests, ctrl.Request{
+					NamespacedName: types.NamespacedName{
+						Name:      collector.Name,
+						Namespace: collector.Namespace,
+					},
+				})
+			}
+		}
+		return requests
+	}
+
+	if len(annotationValue) > 0 {
+		namespace := podNamespace
+		collectorName := annotationValue
+
+		parts := strings.Split(annotationValue, "/")
+		if len(parts) == 2 {
+			namespace = parts[0]
+			collectorName = parts[1]
+		}
+
+		return []ctrl.Request{
+			{
+				NamespacedName: types.NamespacedName{
+					Name:      collectorName,
+					Namespace: namespace,
+				},
+			},
+		}
+	}
+
+	return nil
 }
 
 // SetupCaches sets up caching and indexing for our controller.

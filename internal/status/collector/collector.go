@@ -100,15 +100,12 @@ func updateCollectorStatus(ctx context.Context, cli client.Client, changed *v1be
 }
 
 // updateSidecarStatus gathers information about sidecar injection and updates the status fields.
+// It searches for pods across ALL namespaces since sidecars can be injected anywhere.
 func updateSidecarStatus(ctx context.Context, cli client.Client, otelcol *v1beta1.OpenTelemetryCollector) error {
 	otelcol.Status.ObservedGeneration = otelcol.Generation
 
 	podList := &corev1.PodList{}
-	listOpts := []client.ListOption{
-		client.InNamespace(otelcol.Namespace),
-	}
-
-	if err := cli.List(ctx, podList, listOpts...); err != nil {
+	if err := cli.List(ctx, podList); err != nil {
 		otelcol.Status.LastInjectionError = fmt.Sprintf("Failed to list pods: %v", err)
 		otelcol.Status.InjectionStatus = "Failed"
 		updateSidecarConditions(otelcol, 0)
@@ -169,7 +166,7 @@ func podRequestsSidecar(pod *corev1.Pod, otelcol *v1beta1.OpenTelemetryCollector
 
 	// Check if annotation targets as per otelcollector
 	return annValue == "true" ||
-		annValue == otelcol.Name ||
+		(annValue == otelcol.Name && pod.Namespace == otelcol.Namespace) ||
 		annValue == otelcol.Namespace+"/"+otelcol.Name
 }
 
