@@ -52,6 +52,22 @@ func add(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCol
 	}
 	pod.Spec.Volumes = append(pod.Spec.Volumes, otelcol.Spec.Volumes...)
 
+	for _, cm := range otelcol.Spec.ConfigMaps {
+		pod.Spec.Volumes = append(
+			pod.Spec.Volumes,
+			corev1.Volume{
+				Name: naming.ConfigMapExtra(cm.Name),
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: cm.Name,
+						},
+					},
+				},
+			},
+		)
+	}
+
 	if pod.Labels == nil {
 		pod.Labels = map[string]string{}
 	}

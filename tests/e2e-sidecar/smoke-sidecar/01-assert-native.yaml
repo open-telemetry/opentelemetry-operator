@@ -6,10 +6,12 @@ metadata:
   labels:
     app: my-pod-with-sidecar
 spec:
+  (length(volumes[?starts_with(name, 'configmap-example-config')]) > `0`): true
   containers:
   - name: myapp
   initContainers:
   - name: otc-container
+    (length(volumeMounts[?starts_with(name, 'configmap-example-config')]) > `0`): true
     env:
     - name: POD_NAME
     - name: GOMEMLIMIT
