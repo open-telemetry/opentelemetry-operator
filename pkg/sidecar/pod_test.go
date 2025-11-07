@@ -54,12 +54,18 @@ func TestAddNativeSidecar(t *testing.T) {
 			Namespace: "some-app",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			Mode: v1beta1.ModeSidecar,
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				InitContainers: []corev1.Container{
 					{
 						Name: "test",
 					},
+				},
+			},
+			Mode: v1beta1.ModeSidecar,
+			ConfigMaps: []v1beta1.ConfigMapsSpec{
+				{
+					Name:      "test-config",
+					MountPath: "/tmp/test",
 				},
 			},
 		},
@@ -81,15 +87,35 @@ func TestAddNativeSidecar(t *testing.T) {
 	assert.NoError(t, err)
 	require.Len(t, changed.Spec.Containers, 1)
 	require.Len(t, changed.Spec.InitContainers, 3)
-	require.Len(t, changed.Spec.Volumes, 1)
+	require.Len(t, changed.Spec.Volumes, 2)
+	assert.Equal(
+		t,
+		corev1.Volume{
+			Name: "configmap-test-config",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "test-config",
+					},
+				},
+			},
+		},
+		changed.Spec.Volumes[1],
+	)
 	assert.Equal(t, "some-app.otelcol-native-sidecar",
 		changed.Labels["sidecar.opentelemetry.io/injected"])
 	expectedPolicy := corev1.ContainerRestartPolicyAlways
 	assert.Equal(t, corev1.Container{
-		Name:          "otc-container",
-		Image:         "some-default-image",
-		Args:          []string{"--config=env:OTEL_CONFIG"},
-		RestartPolicy: &expectedPolicy,
+		Name:  "otc-container",
+		Image: "some-default-image",
+		Args:  []string{"--config=env:OTEL_CONFIG"},
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "metrics",
+				ContainerPort: 8888,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
 		Env: []corev1.EnvVar{
 			{
 				Name: "POD_NAME",
@@ -104,11 +130,11 @@ func TestAddNativeSidecar(t *testing.T) {
 				Value: string(otelcolYaml),
 			},
 		},
-		Ports: []corev1.ContainerPort{
+		RestartPolicy: &expectedPolicy,
+		VolumeMounts: []corev1.VolumeMount{
 			{
-				Name:          "metrics",
-				ContainerPort: 8888,
-				Protocol:      corev1.ProtocolTCP,
+				MountPath: "/var/conf/tmp/test/configmap-test-config",
+				Name:      "configmap-test-config",
 			},
 		},
 	}, changed.Spec.InitContainers[2])
