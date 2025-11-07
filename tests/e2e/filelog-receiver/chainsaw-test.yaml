@@ -39,9 +39,33 @@ spec:
         env:
           - name: podName
             value: ($podName)
+        timeout: 90s
         content: |
           #!/bin/bash
-          kubectl get --raw /api/v1/namespaces/${NAMESPACE}/pods/${podName}:8888/proxy/metrics
+          # Add retry logic for metrics collection to handle timing issues
+          # This is especially important on older K8s versions where sidecars are not native
+          for i in {1..18}; do
+            echo "Attempt $i: Fetching metrics from pod ${podName}..." >&2
+            if metrics_output=$(kubectl get --raw /api/v1/namespaces/$NAMESPACE/pods/${podName}:8888/proxy/metrics 2>/dev/null); then
+              # Check if we have received any log records
+              if echo "$metrics_output" | grep -q "otelcol_receiver_accepted_log_records_total"; then
+                log_count=$(echo "$metrics_output" | grep "otelcol_receiver_accepted_log_records_total" | grep -v "#" | awk '{print $2}' | head -1)
+                if [ -n "$log_count" ] && [ "$log_count" -gt 0 ] 2>/dev/null; then
+                  echo "Successfully fetched metrics on attempt $i with $log_count log records" >&2
+                  echo "$metrics_output"
+                  exit 0
+                fi
+                echo "Metrics found but no log records yet (count: ${log_count:-0}), retrying in 5 seconds..." >&2
+              else
+                echo "Metrics endpoint available but no log records metric yet, retrying in 5 seconds..." >&2
+              fi
+            else
+              echo "Failed to fetch metrics, retrying in 5 seconds..." >&2
+            fi
+            sleep 5
+          done
+          echo "Failed to fetch metrics with log records after 18 attempts (90 seconds)" >&2
+          exit 1
         outputs:
           - name: metrics
             value: (x_metrics_decode($stdout))
@@ -50,3 +74,7 @@ spec:
     - assert:
         resource:
           ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_log_records_total'].value | [0] > `0`): true
+    catch:
+    - podLogs:
+        selector: app=log-generator
+        container: otc-container

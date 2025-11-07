@@ -2,16 +2,16 @@
 # by default with the OpenTelemetry Operator. This would usually be the latest
 # stable OpenTelemetry version. When you update this file, make sure to update the
 # the docs as well.
-opentelemetry-collector=0.138.0
+opentelemetry-collector=0.139.0
 
 # Represents the current release of the OpenTelemetry Operator.
-operator=0.138.0
+operator=0.139.0
 
 # Represents the current release of the Target Allocator.
-targetallocator=0.138.0
+targetallocator=0.139.0
 
 # Represents the current release of the Operator OpAMP Bridge.
-operator-opamp-bridge=0.138.0
+operator-opamp-bridge=0.139.0
 
 # Represents the current release of Java instrumentation.
 # Should match autoinstrumentation/java/version.txt
@@ -19,7 +19,7 @@ autoinstrumentation-java=1.33.6
 
 # Represents the current release of NodeJS instrumentation.
 # Should match value in autoinstrumentation/nodejs/package.json
-autoinstrumentation-nodejs=0.64.1
+autoinstrumentation-nodejs=0.66.0
 
 # Represents the current release of Python instrumentation.
 # Should match value in autoinstrumentation/python/requirements.txt
