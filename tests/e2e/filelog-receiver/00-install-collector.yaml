@@ -18,6 +18,7 @@ spec:
       filelog:
         include:
         - /var/log/app/*.log
+        start_at: beginning
         operators:
         - type: regex_parser
           regex: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[(?P<level>\w+)\] (?P<message>.*)$'
@@ -48,8 +49,8 @@ metadata:
 data:
   generate-logs.sh: |
     #!/bin/sh
-    while true; do
-      log_line="$(date '+%Y-%m-%d %H:%M:%S') [INFO] Plain text log entry from application"
+    for i in $(seq 1 60); do
+      log_line="$(date '+%Y-%m-%d %H:%M:%S') [INFO] Plain text log entry from application (startup)"
       echo "$log_line" | tee -a /var/log/app/plaintext.log
-      sleep 5
+      sleep 1
     done
