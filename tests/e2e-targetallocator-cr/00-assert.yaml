@@ -40,6 +40,8 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+            - name: GOMEMLIMIT
+            - name: GOMAXPROCS
           livenessProbe:
             failureThreshold: 3
             httpGet:

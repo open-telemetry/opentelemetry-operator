@@ -32,7 +32,7 @@ var (
 	// collector, bridge, and target allocator.
 	SetGolangFlags = featuregate.GlobalRegistry().MustRegister(
 		"operator.golang.flags",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
 		featuregate.WithRegisterFromVersion("v0.100.0"),
 	)

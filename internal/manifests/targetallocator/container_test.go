@@ -162,6 +162,32 @@ func TestContainerHasEnvVars(t *testing.T) {
 					SecretKeyRef:     nil,
 				},
 			},
+			{
+				Name:  "GOMEMLIMIT",
+				Value: "",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: nil,
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						ContainerName: "ta-container",
+						Resource:      "limits.memory",
+					},
+					ConfigMapKeyRef: nil,
+					SecretKeyRef:    nil,
+				},
+			},
+			{
+				Name:  "GOMAXPROCS",
+				Value: "",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: nil,
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						ContainerName: "ta-container",
+						Resource:      "limits.cpu",
+					},
+					ConfigMapKeyRef: nil,
+					SecretKeyRef:    nil,
+				},
+			},
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{
@@ -229,9 +255,9 @@ func TestContainerHasProxyEnvVars(t *testing.T) {
 	c := Container(cfg, logger, targetAllocator)
 
 	// verify
-	require.Len(t, c.Env, 4)
-	assert.Equal(t, corev1.EnvVar{Name: "NO_PROXY", Value: "localhost"}, c.Env[2])
-	assert.Equal(t, corev1.EnvVar{Name: "no_proxy", Value: "localhost"}, c.Env[3])
+	require.Len(t, c.Env, 6)
+	assert.Equal(t, corev1.EnvVar{Name: "NO_PROXY", Value: "localhost"}, c.Env[4])
+	assert.Equal(t, corev1.EnvVar{Name: "no_proxy", Value: "localhost"}, c.Env[5])
 }
 
 func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
@@ -259,6 +285,32 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 			{
 				Name:  "OTELCOL_NAMESPACE",
 				Value: "test",
+			},
+			{
+				Name:  "GOMEMLIMIT",
+				Value: "",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: nil,
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						ContainerName: "ta-container",
+						Resource:      "limits.memory",
+					},
+					ConfigMapKeyRef: nil,
+					SecretKeyRef:    nil,
+				},
+			},
+			{
+				Name:  "GOMAXPROCS",
+				Value: "",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: nil,
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						ContainerName: "ta-container",
+						Resource:      "limits.cpu",
+					},
+					ConfigMapKeyRef: nil,
+					SecretKeyRef:    nil,
+				},
 			},
 		},
 		VolumeMounts: []corev1.VolumeMount{
