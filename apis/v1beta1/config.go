@@ -155,20 +155,20 @@ func (c *Config) getRbacRulesForComponentKinds(logger logr.Logger, componentKind
 		var cfg AnyConfig
 		switch componentKind {
 		case KindReceiver:
-			retriever = receivers.ReceiverFor
+			retriever = receivers.GetParser
 			cfg = c.Receivers
 		case KindExporter:
-			retriever = exporters.ParserFor
+			retriever = exporters.GetParser
 			cfg = c.Exporters
 		case KindProcessor:
-			retriever = processors.ProcessorFor
+			retriever = processors.GetParser
 			if c.Processors == nil {
 				cfg = AnyConfig{}
 			} else {
 				cfg = *c.Processors
 			}
 		case KindExtension:
-			retriever = extensions.ParserFor
+			retriever = extensions.GetParser
 			if c.Extensions == nil {
 				cfg = AnyConfig{}
 			} else {
@@ -179,7 +179,6 @@ func (c *Config) getRbacRulesForComponentKinds(logger logr.Logger, componentKind
 			continue
 		}
 		for componentName := range enabledComponents[componentKind] {
-			// TODO: Clean up the naming here and make it simpler to use a retriever.
 			parser := retriever(componentName)
 			if parsedRules, err := parser.GetRBACRules(logger, cfg.Object[componentName]); err != nil {
 				return nil, err
@@ -200,15 +199,15 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 		var cfg AnyConfig
 		switch componentKind {
 		case KindReceiver:
-			retriever = receivers.ReceiverFor
+			retriever = receivers.GetParser
 			cfg = c.Receivers
 		case KindExporter:
-			retriever = exporters.ParserFor
+			retriever = exporters.GetParser
 			cfg = c.Exporters
 		case KindProcessor:
 			continue
 		case KindExtension:
-			retriever = extensions.ParserFor
+			retriever = extensions.GetParser
 			if c.Extensions == nil {
 				cfg = AnyConfig{}
 			} else {
@@ -216,7 +215,6 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 			}
 		}
 		for componentName := range enabledComponents[componentKind] {
-			// TODO: Clean up the naming here and make it simpler to use a retriever.
 			parser := retriever(componentName)
 			if parsedPorts, err := parser.Ports(logger, componentName, cfg.Object[componentName]); err != nil {
 				return nil, err
@@ -243,7 +241,7 @@ func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, co
 
 		switch componentKind {
 		case KindReceiver:
-			retriever = receivers.ReceiverFor
+			retriever = receivers.GetParser
 			cfg = c.Receivers
 		case KindExporter:
 			continue
@@ -282,7 +280,7 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 		var cfg AnyConfig
 		switch componentKind {
 		case KindReceiver:
-			retriever = receivers.ReceiverFor
+			retriever = receivers.GetParser
 			cfg = c.Receivers
 		case KindExporter:
 			continue
@@ -292,7 +290,7 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 			if c.Extensions == nil {
 				continue
 			}
-			retriever = extensions.ParserFor
+			retriever = extensions.GetParser
 			cfg = *c.Extensions
 		}
 		for componentName := range enabledComponents[componentKind] {
@@ -367,8 +365,7 @@ func (c *Config) GetLivenessProbe(logger logr.Logger) (*corev1.Probe, error) {
 
 	enabledComponents := c.GetEnabledComponents()
 	for componentName := range enabledComponents[KindExtension] {
-		// TODO: Clean up the naming here and make it simpler to use a retriever.
-		parser := extensions.ParserFor(componentName)
+		parser := extensions.GetParser(componentName)
 		if probe, err := parser.GetLivenessProbe(logger, c.Extensions.Object[componentName]); err != nil {
 			return nil, err
 		} else if probe != nil {
@@ -387,8 +384,7 @@ func (c *Config) GetReadinessProbe(logger logr.Logger) (*corev1.Probe, error) {
 
 	enabledComponents := c.GetEnabledComponents()
 	for componentName := range enabledComponents[KindExtension] {
-		// TODO: Clean up the naming here and make it simpler to use a retriever.
-		parser := extensions.ParserFor(componentName)
+		parser := extensions.GetParser(componentName)
 		if probe, err := parser.GetReadinessProbe(logger, c.Extensions.Object[componentName]); err != nil {
 			return nil, err
 		} else if probe != nil {
@@ -407,8 +403,7 @@ func (c *Config) GetStartupProbe(logger logr.Logger) (*corev1.Probe, error) {
 
 	enabledComponents := c.GetEnabledComponents()
 	for componentName := range enabledComponents[KindExtension] {
-		// TODO: Clean up the naming here and make it simpler to use a retriever.
-		parser := extensions.ParserFor(componentName)
+		parser := extensions.GetParser(componentName)
 		if probe, err := parser.GetStartupProbe(logger, c.Extensions.Object[componentName]); err != nil {
 			return nil, err
 		} else if probe != nil {

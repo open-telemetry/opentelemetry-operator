@@ -20,7 +20,7 @@ var logger = logf.Log.WithName("unit-tests")
 func TestParseEndpoint(t *testing.T) {
 	// prepare
 	// there's no parser registered to handle "myreceiver", so, it falls back to the generic parser
-	parser := receivers.ReceiverFor("myreceiver")
+	parser := receivers.GetParser("myreceiver")
 
 	// test
 	ports, err := parser.Ports(logger, "myreceiver", map[string]interface{}{
@@ -36,7 +36,7 @@ func TestParseEndpoint(t *testing.T) {
 func TestFailedToParseEndpoint(t *testing.T) {
 	// prepare
 	// there's no parser registered to handle "myreceiver", so, it falls back to the generic parser
-	parser := receivers.ReceiverFor("myreceiver")
+	parser := receivers.GetParser("myreceiver")
 
 	// test
 	ports, err := parser.Ports(logger, "myreceiver", map[string]interface{}{
@@ -75,14 +75,14 @@ func TestDownstreamParsers(t *testing.T) {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
 				// test
-				parser := receivers.ReceiverFor(tt.receiverName)
+				parser := receivers.GetParser(tt.receiverName)
 
 				// verify
 				assert.Equal(t, tt.parserName, parser.ParserName())
 			})
 			t.Run("bad config errors", func(t *testing.T) {
 				// prepare
-				parser := receivers.ReceiverFor(tt.receiverName)
+				parser := receivers.GetParser(tt.receiverName)
 
 				// test throwing in pure junk
 				_, err := parser.Ports(logger, tt.receiverName, func() {})
@@ -93,7 +93,7 @@ func TestDownstreamParsers(t *testing.T) {
 
 			t.Run("assigns the expected port", func(t *testing.T) {
 				// prepare
-				parser := receivers.ReceiverFor(tt.receiverName)
+				parser := receivers.GetParser(tt.receiverName)
 
 				// test
 				ports, err := parser.Ports(logger, tt.receiverName, map[string]interface{}{})
@@ -111,7 +111,7 @@ func TestDownstreamParsers(t *testing.T) {
 
 			t.Run("allows port to be overridden", func(t *testing.T) {
 				// prepare
-				parser := receivers.ReceiverFor(tt.receiverName)
+				parser := receivers.GetParser(tt.receiverName)
 
 				// test
 				var ports []corev1.ServicePort
@@ -135,7 +135,7 @@ func TestDownstreamParsers(t *testing.T) {
 
 			t.Run("returns a default config", func(t *testing.T) {
 				// prepare
-				parser := receivers.ReceiverFor(tt.receiverName)
+				parser := receivers.GetParser(tt.receiverName)
 
 				// test
 				config, err := parser.GetDefaultConfig(logger, map[string]interface{}{})

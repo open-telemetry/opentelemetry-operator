@@ -23,8 +23,8 @@ func IsRegistered(name string) bool {
 	return ok
 }
 
-// ReceiverFor returns a parser builder for the given exporter name.
-func ReceiverFor(name string) components.Parser {
+// GetParser returns a parser builder for the given exporter name.
+func GetParser(name string) components.Parser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}
