@@ -1498,6 +1498,8 @@ spec:
                           x-kubernetes-int-or-string: true
                         type: object
                     type: object
+                  useImport:
+                    type: boolean
                   volumeClaimTemplate:
                     properties:
                       metadata:

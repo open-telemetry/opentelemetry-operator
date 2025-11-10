@@ -214,6 +214,11 @@ type NodeJS struct {
 	// Resources describes the compute resource requirements.
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+
+	// UseImport overrides the default injected --require flag with an --import flag.
+	// Node.js ^18.19.0 || ^20.6.0 || >=22 is required for the flag to be supported.
+	// +optional
+	UseImport bool `json:"useImport,omitempty"`
 }
 
 // Python defines Python SDK and instrumentation configuration.
