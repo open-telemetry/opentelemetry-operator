@@ -1,0 +1,88 @@
+{{/* Dashboard template for the index page */}}
+<div class="card-grid">
+    <div class="stat-card">
+        <div class="stat-label">Scrape Configs</div>
+        <div class="stat-value">{{.ScrapeConfigCount}}</div>
+        <div class="stat-description">
+            <a href="/debug/scrape_configs" style="color: white; text-decoration: underline;">View all configs</a>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Jobs</div>
+        <div class="stat-value">{{.JobCount}}</div>
+        <div class="stat-description">
+            <a href="/debug/jobs" style="color: white; text-decoration: underline;">View all jobs</a>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Targets</div>
+        <div class="stat-value">{{.TargetCount}}</div>
+        <div class="stat-description">
+            <a href="/debug/targets" style="color: white; text-decoration: underline;">View all targets</a>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Collectors</div>
+        <div class="stat-value">{{.CollectorCount}}</div>
+        <div class="stat-description">Active collector instances</div>
+    </div>
+</div>
+
+{{- if .CollectorData }}
+<div class="card">
+    <div class="card-header">Collectors Overview</div>
+    <div class="chart-container" style="margin-bottom: 2rem;">
+        <canvas id="collector-chart" width="800" height="300"></canvas>
+    </div>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th class="sortable">Collector</th>
+                    <th class="sortable">Job Count</th>
+                    <th class="sortable">Target Count</th>
+                    <th class="sortable">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            {{- range .CollectorData }}
+                <tr>
+                    <td><a href="/debug/collector?collector_id={{.Name}}">{{.Name}}</a></td>
+                    <td data-sort-value="{{.JobCount}}">{{.JobCount}}</td>
+                    <td data-sort-value="{{.TargetCount}}">{{.TargetCount}}</td>
+                    <td>
+                        <span class="badge badge-success">Active</span>
+                    </td>
+                </tr>
+            {{- end }}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// Draw collector distribution chart after DOM and scripts are loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait a bit for app.js to be fully loaded
+    function drawChart() {
+        const collectorData = [
+            {{- range $index, $collector := .CollectorData }}
+            {{- if $index}},{{end}}
+            { label: '{{$collector.Name}}', value: {{$collector.TargetCount}} }
+            {{- end }}
+        ];
+
+        if (window.TAChart && collectorData.length > 0) {
+            window.TAChart.drawBarChart('collector-chart', collectorData, {
+                color: '#425CC7'
+            });
+        } else if (!window.TAChart) {
+            // Retry after a short delay if TAChart isn't loaded yet
+            setTimeout(drawChart, 100);
+        }
+    }
+
+    drawChart();
+});
+</script>
+{{- end }}

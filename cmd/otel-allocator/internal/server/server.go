@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/http/pprof"
 	"net/url"
@@ -80,6 +81,14 @@ func (s *Server) setRouter(router *gin.Engine) {
 	router.UseRawPath = true
 	router.UnescapePathValues = false
 	router.Use(s.PrometheusMiddleware)
+
+	// Serve static files - need to create a sub-filesystem to strip the "static/" prefix
+	staticFS, err := fs.Sub(StaticFiles, "static")
+	if err != nil {
+		s.logger.Error(err, "Failed to create static file sub-filesystem")
+	} else {
+		router.StaticFS("/static", http.FS(staticFS))
+	}
 
 	router.GET("/", s.IndexHandler)
 	router.GET("/debug/collector", s.CollectorHTMLHandler)
@@ -294,35 +303,34 @@ func (s *Server) PrometheusMiddleware(c *gin.Context) {
 func (s *Server) IndexHandler(c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", "text/html")
 	WriteHTMLPageHeader(c.Writer, HeaderData{
-		Title: "OpenTelemetry Target Allocator",
+		Title: "Dashboard",
 	})
 
-	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
-		Headers: []string{"Category", "Count"},
-		Rows: [][]Cell{
-			{scrapeConfigAnchorLink(), Text(strconv.Itoa(s.getScrapeConfigCount()))},
-			{jobsAnchorLink(), Text(strconv.Itoa(s.getJobCount()))},
-			{targetsAnchorLink(), Text(strconv.Itoa(len(s.allocator.TargetItems())))},
-		},
-	})
-	WriteHTMLPropertiesTable(c.Writer, PropertiesTableData{
-		Headers: []string{"Collector", "Job Count", "Target Count"},
-		Rows: func() [][]Cell {
-			var rows [][]Cell
-			collectorNames := []string{}
-			for k := range s.allocator.Collectors() {
-				collectorNames = append(collectorNames, k)
-			}
-			sort.Strings(collectorNames)
+	// Prepare collector data
+	collectorNames := []string{}
+	for k := range s.allocator.Collectors() {
+		collectorNames = append(collectorNames, k)
+	}
+	sort.Strings(collectorNames)
 
-			for _, colName := range collectorNames {
-				jobCount := strconv.Itoa(s.getJobCountForCollector(colName))
-				targetCount := strconv.Itoa(s.getTargetCountForCollector(colName))
-				rows = append(rows, []Cell{collectorAnchorLink(colName), NewCell(jobCount), NewCell(targetCount)})
-			}
-			return rows
-		}(),
+	collectorData := []CollectorInfo{}
+	for _, colName := range collectorNames {
+		collectorData = append(collectorData, CollectorInfo{
+			Name:        colName,
+			JobCount:    s.getJobCountForCollector(colName),
+			TargetCount: s.getTargetCountForCollector(colName),
+		})
+	}
+
+	// Write dashboard
+	WriteHTMLDashboard(c.Writer, DashboardData{
+		ScrapeConfigCount: s.getScrapeConfigCount(),
+		JobCount:          s.getJobCount(),
+		TargetCount:       len(s.allocator.TargetItems()),
+		CollectorCount:    len(s.allocator.Collectors()),
+		CollectorData:     collectorData,
 	})
+
 	WriteHTMLPageFooter(c.Writer)
 }
 

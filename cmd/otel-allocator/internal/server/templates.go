@@ -4,13 +4,16 @@
 package server
 
 import (
-	_ "embed"
+	"embed"
 	"html/template"
 	"io"
 	"log"
 )
 
 var (
+	//go:embed static/*
+	StaticFiles embed.FS
+
 	templateFunctions = template.FuncMap{
 		"even": even,
 	}
@@ -26,6 +29,10 @@ var (
 	//go:embed templates/properties_table.html
 	propertiesTableBytes    []byte
 	propertiesTableTemplate = parseTemplate("properties_table", propertiesTableBytes)
+
+	//go:embed templates/dashboard.html
+	dashboardBytes    []byte
+	dashboardTemplate = parseTemplate("dashboard", dashboardBytes)
 
 	//go:embed templates/bad_request.html
 	badRequestBytes    []byte
@@ -112,6 +119,29 @@ func WriteHTMLBadRequest(w io.Writer, br BadRequestData) {
 // WriteHTMLNotFound writes the not found page.
 func WriteHTMLNotFound(w io.Writer, nf NotFoundData) {
 	if err := notFoundTemplate.Execute(w, nf); err != nil {
+		log.Printf("ta: executing template: %v", err)
+	}
+}
+
+// DashboardData contains data for the dashboard template.
+type DashboardData struct {
+	ScrapeConfigCount int
+	JobCount          int
+	TargetCount       int
+	CollectorCount    int
+	CollectorData     []CollectorInfo
+}
+
+// CollectorInfo contains information about a single collector.
+type CollectorInfo struct {
+	Name        string
+	JobCount    int
+	TargetCount int
+}
+
+// WriteHTMLDashboard writes the dashboard.
+func WriteHTMLDashboard(w io.Writer, dd DashboardData) {
+	if err := dashboardTemplate.Execute(w, dd); err != nil {
 		log.Printf("ta: executing template: %v", err)
 	}
 }
