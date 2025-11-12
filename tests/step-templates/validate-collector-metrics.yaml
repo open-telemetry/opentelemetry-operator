@@ -10,12 +10,6 @@ spec:
     - name: collectorMetricsPort
       # Port to fetch metrics from
       value: "8888"
-    - name: checkSpans
-      # Whether to check span metrics (true/false)
-      value: true
-    - name: checkMetricPoints
-      # Whether to check metric point metrics (true/false)
-      value: true
     - name: minSpanCount
       # Minimum expected span count
       value: "`1`"
@@ -26,8 +20,8 @@ spec:
       # Label selector for pods to get logs from on failure
       value: ""
     - name: catchContainer
-      # Container name to get logs from on failure (optional)
-      value: ""
+      # Container name to get logs from on failure
+      value: otc-container
   try:
     - command:
         entrypoint: kubectl
@@ -75,12 +69,11 @@ spec:
           ($error == null): true
     - assert:
         resource:
-          (($checkSpans && $metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] >= ($minSpanCount)) || !$checkSpans): true
-          (($checkSpans && $metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] >= ($minSpanCount)) || !$checkSpans): true
-          (($checkMetricPoints && $metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_metric_points_total'].value | [0] >= ($minMetricPointCount)) || !$checkMetricPoints): true
-          (($checkMetricPoints && $metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_metric_points_total'].value | [0] >= ($minMetricPointCount)) || !$checkMetricPoints): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] >= ($minSpanCount)): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] >= ($minSpanCount)): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_metric_points_total'].value | [0] >= ($minMetricPointCount)): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_metric_points_total'].value | [0] >= ($minMetricPointCount)): true
   catch:
     - podLogs:
         selector: ($catchPodLabelSelector)
         container: ($catchContainer)
-      if: ($catchPodLabelSelector != '')
