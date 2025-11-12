@@ -19,9 +19,6 @@ spec:
     - name: searchStrings
       # Strings to search for in the logs (multi-line string)
       value: ""
-    - name: scriptTimeout
-      # Timeout for the script execution
-      value: 2m
   try:
     - script:
         env:
@@ -35,5 +32,6 @@ spec:
             value: ($retrySleep)
           - name: SEARCH_STRINGS_ENV
             value: ($searchStrings)
-        timeout: ($scriptTimeout)
+        timeout: 2m
         content: ../../test-e2e-apps/scripts/check_pod_logs.sh
+
