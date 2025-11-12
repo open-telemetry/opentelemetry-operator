@@ -49,10 +49,6 @@ spec:
       template: ../../step-templates/validate-collector-metrics.yaml
       with:
         bindings:
-          - name: checkSpans
-            value: true
-          - name: checkMetricPoints
-            value: true
           - name: catchPodLabelSelector
             value: app=my-dotnet
           - name: catchContainer
