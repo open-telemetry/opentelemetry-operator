@@ -194,6 +194,19 @@ func (m *Discoverer) Reload() {
 	}
 	m.mtxScrape.Unlock()
 	wg.Wait()
+
+	// Compact the slice by removing nil entries left by deduplication
+	writeIdx := 0
+	for readIdx := 0; readIdx < targetCount; readIdx++ {
+		if targets[readIdx] != nil {
+			if writeIdx != readIdx {
+				targets[writeIdx] = targets[readIdx]
+			}
+			writeIdx++
+		}
+	}
+	targets = targets[:writeIdx]
+
 	m.processTargetsCallBack(targets)
 }
 
@@ -228,8 +241,6 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 				if key := item.GetDualStackKey(); key != "" {
 					seenServicePods[key] = true
 				}
-			} else {
-				item = nil
 			}
 		}
 	}
