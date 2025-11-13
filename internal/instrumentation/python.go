@@ -62,29 +62,6 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, plat
 		container.Env[idx].Value = fmt.Sprintf("%s:%s:%s", pythonPathPrefix, container.Env[idx].Value, pythonPathSuffix)
 	}
 
-	container.Env = appendIfNotSet(container.Env,
-		// Set OTEL_EXPORTER_OTLP_PROTOCOL to http/protobuf if not set by user because it is what our autoinstrumentation supports.
-		corev1.EnvVar{
-			Name:  envOtelExporterOTLPProtocol,
-			Value: "http/protobuf",
-		},
-		// Set OTEL_TRACES_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
-		corev1.EnvVar{
-			Name:  envOtelTracesExporter,
-			Value: "otlp",
-		},
-		// Set OTEL_METRICS_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
-		corev1.EnvVar{
-			Name:  envOtelMetricsExporter,
-			Value: "otlp",
-		},
-		// Set OTEL_LOGS_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
-		corev1.EnvVar{
-			Name:  envOtelLogsExporter,
-			Value: "otlp",
-		},
-	)
-
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
 		MountPath: pythonInstrMountPath,
@@ -106,4 +83,29 @@ func injectPythonSDK(pythonSpec v1alpha1.Python, pod corev1.Pod, index int, plat
 		})
 	}
 	return pod, nil
+}
+
+func getDefaultPythonEnvVars() []corev1.EnvVar {
+	return []corev1.EnvVar{
+		// Set OTEL_EXPORTER_OTLP_PROTOCOL to http/protobuf if not set by user because it is what our autoinstrumentation supports.
+		{
+			Name:  envOtelExporterOTLPProtocol,
+			Value: "http/protobuf",
+		},
+		// Set OTEL_TRACES_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
+		{
+			Name:  envOtelTracesExporter,
+			Value: "otlp",
+		},
+		// Set OTEL_METRICS_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
+		{
+			Name:  envOtelMetricsExporter,
+			Value: "otlp",
+		},
+		// Set OTEL_LOGS_EXPORTER to otlp exporter if not set by user because it is what our autoinstrumentation supports.
+		{
+			Name:  envOtelLogsExporter,
+			Value: "otlp",
+		},
+	}
 }

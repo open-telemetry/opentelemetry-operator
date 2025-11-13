@@ -1,0 +1,16 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: instrumentation-python-specenv
+spec:
+  steps:
+  - name: step-00
+    try:
+    - apply:
+        file: 00-install-instrumentation.yaml
+  - name: step-01
+    try:
+    - apply:
+        file: 00-install-app.yaml
+    - assert:
+        file: 01-assert.yaml
