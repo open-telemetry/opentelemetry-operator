@@ -15,10 +15,6 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - description: Observability signals
-      jsonPath: .spec.signals
-      name: Signals
-      type: string
     - description: OTLP exporter endpoint
       jsonPath: .spec.exporter.endpoint
       name: Endpoint
@@ -117,20 +113,8 @@ spec:
                     minimum: 0
                     type: integer
                 type: object
-              signals:
-                items:
-                  enum:
-                  - logs
-                  - traces
-                  - metrics
-                  - profiles
-                  type: string
-                minItems: 1
-                type: array
-                x-kubernetes-list-type: set
             required:
             - exporter
-            - signals
             type: object
           status:
             properties:
