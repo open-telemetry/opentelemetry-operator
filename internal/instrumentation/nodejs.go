@@ -31,16 +31,6 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int, inst
 	// inject NodeJS instrumentation spec env vars.
 	container.Env = appendIfNotSet(container.Env, nodeJSSpec.Env...)
 
-	idx := getIndexOfEnv(container.Env, envNodeOptions)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envNodeOptions,
-			Value: nodeRequireArgument,
-		})
-	} else if idx > -1 {
-		container.Env[idx].Value = container.Env[idx].Value + nodeRequireArgument
-	}
-
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
 		MountPath: nodejsInstrMountPath,
@@ -62,4 +52,30 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int, inst
 		})
 	}
 	return pod, nil
+}
+
+func getDefaultNodeJSEnvVars(pod corev1.Pod, index int) []corev1.EnvVar {
+	container := &pod.Spec.Containers[index]
+	idx := getIndexOfEnv(container.Env, envNodeOptions)
+	if idx == -1 {
+		return []corev1.EnvVar{
+			{
+				Name:  envNodeOptions,
+				Value: nodeRequireArgument,
+			},
+		}
+	} else if idx > -1 {
+		// Don't modify NODE_OPTIONS if it uses ValueFrom
+		if container.Env[idx].ValueFrom != nil {
+			return []corev1.EnvVar{}
+		}
+		// NODE_OPTIONS is set, append the required argument
+		return []corev1.EnvVar{
+			{
+				Name:  envNodeOptions,
+				Value: container.Env[idx].Value + nodeRequireArgument,
+			},
+		}
+	}
+	return []corev1.EnvVar{}
 }

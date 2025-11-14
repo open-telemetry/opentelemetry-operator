@@ -26,7 +26,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var _ AutoDetect = (*autoDetect)(nil)
@@ -266,14 +265,9 @@ func (a *autoDetect) FIPSEnabled(_ context.Context) bool {
 	return fips.IsFipsEnabled()
 }
 
-// CheckNativeSidecarSupport checks if native sidecars are available and enabled.
-// This requires both the operator feature gate to be enabled AND
-// Kubernetes version >= 1.29 (beta support).
+// NativeSidecarSupport checks if native sidecars are available.
+// This requires Kubernetes version >= 1.29 (when native sidecars became stable).
 func (a *autoDetect) NativeSidecarSupport() (bool, error) {
-	if !featuregate.EnableNativeSidecarContainers.IsEnabled() {
-		return false, nil
-	}
-
 	currentVersion, err := a.k8sDetector.GetKubernetesVersion()
 	if err != nil {
 		return false, err

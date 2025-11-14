@@ -14,24 +14,11 @@ const (
 )
 
 var (
-	// EnableNativeSidecarContainers is the feature gate that controls whether a
-	// sidecar should be injected as a native sidecar or the classic way.
-	// Native sidecar containers have been available since kubernetes v1.28 in
-	// alpha and v1.29 in beta.
-	// It needs to be enabled with +featureGate=SidecarContainers.
-	// See:
-	// https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/#feature-gates-for-alpha-or-beta-features
-	EnableNativeSidecarContainers = featuregate.GlobalRegistry().MustRegister(
-		"operator.sidecarcontainers.native",
-		featuregate.StageBeta,
-		featuregate.WithRegisterDescription("controls whether the operator supports sidecar containers as init containers. Should only be enabled on k8s v1.29+"),
-		featuregate.WithRegisterFromVersion("v0.111.0"),
-	)
 	// SetGolangFlags is the feature gate that enables automatically setting GOMEMLIMIT and GOMAXPROCS for the
 	// collector, bridge, and target allocator.
 	SetGolangFlags = featuregate.GlobalRegistry().MustRegister(
 		"operator.golang.flags",
-		featuregate.StageAlpha,
+		featuregate.StageBeta,
 		featuregate.WithRegisterDescription("enables feature to set GOMEMLIMIT and GOMAXPROCS automatically"),
 		featuregate.WithRegisterFromVersion("v0.100.0"),
 	)

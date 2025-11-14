@@ -426,9 +426,9 @@ func (s *Server) TargetHTMLHandler(c *gin.Context) {
 		Headers: []string{"Label", "Value"},
 		Rows: func() [][]Cell {
 			var rows [][]Cell
-			for _, l := range target.Labels {
+			target.Labels.Range(func(l labels.Label) {
 				rows = append(rows, []Cell{NewCell(l.Name), NewCell(l.Value)})
-			}
+			})
 			return rows
 		}(),
 	})

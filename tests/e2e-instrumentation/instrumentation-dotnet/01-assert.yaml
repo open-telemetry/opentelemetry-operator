@@ -22,6 +22,8 @@ spec:
       value: http://+:8080
     - name: OTEL_METRIC_EXPORT_INTERVAL
       value: "30000"
+    - name: OTEL_TRACES_SAMPLER
+      value: always_on
     - name: CORECLR_ENABLE_PROFILING
       value: "1"
     - name: CORECLR_PROFILER
@@ -36,8 +38,6 @@ spec:
       value: /otel-auto-instrumentation-dotnet
     - name: DOTNET_SHARED_STORE
       value: /otel-auto-instrumentation-dotnet/store
-    - name: OTEL_TRACES_SAMPLER
-      value: always_on
     - name: OTEL_SERVICE_NAME
       value: my-dotnet
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -55,7 +55,6 @@ spec:
     - name: OTEL_PROPAGATORS
       value: b3multi
     - name: OTEL_RESOURCE_ATTRIBUTES
-    name: myapp
     ports:
     - containerPort: 8080
       protocol: TCP
