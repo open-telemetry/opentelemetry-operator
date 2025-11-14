@@ -490,81 +490,16 @@ func (r *ClusterObservabilityReconciler) handleDeletion(ctx context.Context, log
 	return ctrl.Result{}, nil
 }
 
-// cleanupManagedResources deletes all resources managed by ClusterObservability.
+// cleanupManagedResources deletes cluster-scoped resources managed by ClusterObservability.
+// Namespace-scoped resources (OpenTelemetryCollector and Instrumentation CRs) are automatically
+// cleaned up by Kubernetes garbage collection via owner references.
 func (r *ClusterObservabilityReconciler) cleanupManagedResources(ctx context.Context, log logr.Logger, instance *v1alpha1.ClusterObservability) error {
-	// Clean up OpenTelemetryCollector CRs (both agent and cluster collectors)
-	if err := r.cleanupCollectors(ctx, log, instance); err != nil {
-		return fmt.Errorf("failed to cleanup collectors: %w", err)
-	}
-
-	// Clean up the single Instrumentation CR in operator namespace
-	if err := r.cleanupInstrumentations(ctx, log, instance); err != nil {
-		return fmt.Errorf("failed to cleanup instrumentations: %w", err)
-	}
-
-	// Clean up cluster-scoped resources (ClusterRole, ClusterRoleBinding)
+	// Only clean up cluster-scoped resources that cannot use owner references
 	if err := r.cleanupClusterScopedResources(ctx, log, instance); err != nil {
 		return fmt.Errorf("failed to cleanup cluster-scoped resources: %w", err)
 	}
 
-	log.Info("All managed resources cleaned up successfully")
-	return nil
-}
-
-// cleanupCollectors removes OpenTelemetryCollector CRs managed by ClusterObservability.
-func (r *ClusterObservabilityReconciler) cleanupCollectors(ctx context.Context, log logr.Logger, instance *v1alpha1.ClusterObservability) error {
-	// Use consistent naming pattern for collectors
-	agentCollectorName := fmt.Sprintf("%s-agent", instance.Name)
-	clusterCollectorName := fmt.Sprintf("%s-cluster", instance.Name)
-
-	collectors := []string{agentCollectorName, clusterCollectorName}
-
-	for _, name := range collectors {
-		collector := &v1beta1.OpenTelemetryCollector{}
-		key := types.NamespacedName{Name: name, Namespace: instance.Namespace}
-
-		if err := r.Get(ctx, key, collector); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue // Already deleted
-			}
-			return fmt.Errorf("failed to get collector %s: %w", name, err)
-		}
-
-		if err := r.Delete(ctx, collector); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete collector %s: %w", name, err)
-		}
-
-		log.Info("Deleted OpenTelemetryCollector", "name", name)
-	}
-
-	return nil
-}
-
-// cleanupInstrumentations removes the single Instrumentation CR managed by ClusterObservability.
-func (r *ClusterObservabilityReconciler) cleanupInstrumentations(ctx context.Context, log logr.Logger, instance *v1alpha1.ClusterObservability) error {
-	// Delete the single Instrumentation CR in the operator namespace
-	instrumentationName := "default-instrumentation"
-
-	instrumentation := &v1alpha1.Instrumentation{}
-	key := types.NamespacedName{Name: instrumentationName, Namespace: instance.Namespace}
-
-	if err := r.Get(ctx, key, instrumentation); err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil // Already deleted or never created
-		}
-		return fmt.Errorf("failed to get instrumentation %s in namespace %s: %w", instrumentationName, instance.Namespace, err)
-	}
-
-	// Check if this instrumentation is managed by our ClusterObservability instance
-	if !isOwnedByClusterObservability(instrumentation, instance) {
-		return nil // Not our resource
-	}
-
-	if err := r.Delete(ctx, instrumentation); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete instrumentation %s in namespace %s: %w", instrumentationName, instance.Namespace, err)
-	}
-
-	log.Info("Deleted Instrumentation", "name", instrumentationName, "namespace", instance.Namespace)
+	log.Info("Cluster-scoped resources cleaned up successfully")
 	return nil
 }
 
@@ -590,29 +525,6 @@ func (r *ClusterObservabilityReconciler) cleanupClusterScopedResources(ctx conte
 	}
 
 	return nil
-}
-
-// isOwnedByClusterObservability checks if a resource is managed by the given ClusterObservability instance.
-func isOwnedByClusterObservability(obj client.Object, instance *v1alpha1.ClusterObservability) bool {
-	labels := obj.GetLabels()
-	if labels == nil {
-		return false
-	}
-
-	if managedBy, ok := labels["app.kubernetes.io/managed-by"]; !ok || managedBy != "opentelemetry-operator" {
-		return false
-	}
-
-	if component, ok := labels["app.kubernetes.io/component"]; !ok || component != "cluster-observability" {
-		return false
-	}
-	for _, owner := range obj.GetOwnerReferences() {
-		if owner.UID == instance.UID {
-			return true
-		}
-	}
-
-	return false
 }
 
 // GetOwnedResourceTypes returns CRs directly created by ClusterObservability.
