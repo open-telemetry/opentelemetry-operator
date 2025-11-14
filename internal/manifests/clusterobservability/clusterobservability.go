@@ -91,7 +91,6 @@ func buildAgentCollector(params manifests.Params) (*v1beta1.OpenTelemetryCollect
 	collectorConfig, err := configLoader.LoadCollectorConfig(
 		config.AgentCollectorType,
 		distroProvider,
-		co.Spec.Signals,
 		co.Spec,
 	)
 	if err != nil {
@@ -305,7 +304,6 @@ func buildClusterCollector(params manifests.Params) (*v1beta1.OpenTelemetryColle
 	collectorConfig, err := configLoader.LoadCollectorConfig(
 		config.ClusterCollectorType,
 		distroProvider,
-		co.Spec.Signals,
 		co.Spec,
 	)
 	if err != nil {

@@ -73,7 +73,8 @@ func NewConfigLoader() *ConfigLoader {
 }
 
 // LoadCollectorConfig loads and merges collector configuration for the specified type and distro.
-func (c *ConfigLoader) LoadCollectorConfig(collectorType CollectorType, distroProvider DistroProvider, signals []v1alpha1.ObservabilitySignal, spec v1alpha1.ClusterObservabilitySpec) (v1beta1.Config, error) {
+// All signals (logs, traces, metrics, profiles) are enabled by default.
+func (c *ConfigLoader) LoadCollectorConfig(collectorType CollectorType, distroProvider DistroProvider, spec v1alpha1.ClusterObservabilitySpec) (v1beta1.Config, error) {
 	// Load base configuration
 	baseConfig, err := c.loadBaseConfig(collectorType)
 	if err != nil {
@@ -99,8 +100,14 @@ func (c *ConfigLoader) LoadCollectorConfig(collectorType CollectorType, distroPr
 	exporters := c.buildExportersConfig(spec)
 	finalConfig.Exporters = exporters
 
-	// Build pipelines based on enabled signals
-	pipelines := c.buildPipelinesWithExporters(collectorType, signals)
+	// Build pipelines with all signals enabled by default
+	allSignals := []v1alpha1.ObservabilitySignal{
+		v1alpha1.ObservabilitySignalLogs,
+		v1alpha1.ObservabilitySignalTraces,
+		v1alpha1.ObservabilitySignalMetrics,
+		v1alpha1.ObservabilitySignalProfiles,
+	}
+	pipelines := c.buildPipelinesWithExporters(collectorType, allSignals)
 
 	finalConfig.Service.Pipelines = pipelines
 
