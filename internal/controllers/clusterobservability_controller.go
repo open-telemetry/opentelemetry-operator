@@ -543,7 +543,7 @@ func (r *ClusterObservabilityReconciler) cleanupCollectors(ctx context.Context, 
 // cleanupInstrumentations removes the single Instrumentation CR managed by ClusterObservability.
 func (r *ClusterObservabilityReconciler) cleanupInstrumentations(ctx context.Context, log logr.Logger, instance *v1alpha1.ClusterObservability) error {
 	// Delete the single Instrumentation CR in the operator namespace
-	instrumentationName := "default-instrumentation"
+	instrumentationName := instance.Name
 
 	instrumentation := &v1alpha1.Instrumentation{}
 	key := types.NamespacedName{Name: instrumentationName, Namespace: instance.Namespace}
