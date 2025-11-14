@@ -20,7 +20,6 @@ metadata:
   name: cluster-observability
   namespace: opentelemetry-operator-system
 spec:
-  signals: ["metrics", "traces", "logs"]
   # OTLP HTTP exporter only
   exporter:
     endpoint: "https://otel-backend.example.com:4318"
@@ -122,11 +121,10 @@ ClusterObservability is controlled by the `operator.clusterobservability` featur
 
 ## CRD Configuration
 
-ClusterObservability has a simple spec with two main fields at present:
+ClusterObservability has a simple spec with one field at present:
 
 ```go
 type ClusterObservabilitySpec struct {
-    Signals []ObservabilitySignal  // "logs", "metrics", "traces", "profiles"
     Exporter OTLPHTTPExporter       // OTLP HTTP exporter configuration
 }
 ```
@@ -141,7 +139,6 @@ metadata:
   name: cluster-observability
   namespace: opentelemetry-operator-system
 spec:
-  signals: ["metrics", "traces"]
   exporter:
     endpoint: "https://otel.example.com:4318"
     headers:
@@ -175,9 +172,6 @@ Spec:
     Endpoint:  http://otlp-collector.opentelemetry-demo.svc.cluster.local:4317
     Headers:
       X - Deployment:      clusterobservability-test
-  Signals:
-    traces
-    metrics
 Status:
   Conditions:
     Last Transition Time:  2025-09-06T03:30:28Z
@@ -193,20 +187,6 @@ Events:
   ----     ------      ----              ----                   -------
   Normal   Info        6s (x2 over 6s)   cluster-observability  status updated - resource is conflicted
   Warning  Conflicted  4s (x25 over 6s)  cluster-observability  Multiple ClusterObservability resources detected. Only opentelemetry-operator-system/cluster-observability (oldest) is active
-```
-
-## Configuration System
-
-ClusterObservability uses an embedded YAML-based configuration system that supports different Kubernetes distributions:
-
-```
-internal/manifests/clusterobservability/config/configs/
-├── agent-collector-base.yaml      # Base agent collector config
-├── cluster-collector-base.yaml    # Base cluster collector config
-└── distros/
-    └── openshift/
-        ├── agent-collector-overrides.yaml
-        └── cluster-collector-overrides.yaml
 ```
 
 ### Agent Collector Configuration
@@ -254,9 +234,6 @@ Spec:
     metrics_endpoint:  https://ingest.us0.signalfx.com/v2/datapoint/otlp
     Timeout:           30s
     traces_endpoint:   https://ingest.us0.signalfx.com/v2/trace/otlp
-  Signals:
-    traces
-    metrics
 Status:
   Components Status:
     Agent:
@@ -309,7 +286,7 @@ spec:
     metadata:
       annotations:
         # Reference the single Instrumentation CR using namespace/name format
-        instrumentation.opentelemetry.io/inject-java: "opentelemetry-operator-system/default-instrumentation"
+        instrumentation.opentelemetry.io/inject-java: "{ObservabiilityCluster}/ObservabiilityCluster-CR-Name"
     spec:
       containers:
       - name: app

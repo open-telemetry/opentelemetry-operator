@@ -9,12 +9,6 @@ metadata:
   name: cluster-observability
   namespace: opentelemetry-operator-system
 spec:
-  # Signals to collect - must include at least one
-  signals:
-    - traces
-    - metrics
-    - logs
-
   # OTLP HTTP exporter configuration
   exporter:
     # Base endpoint for all signals (e.g., https://otel-backend.example.com:4318)
