@@ -335,7 +335,7 @@ func checkClusterCollectorStatus(ctx context.Context, cli client.Client, co *v1a
 
 // checkInstrumentationStatus checks the status of the single Instrumentation CR.
 func checkInstrumentationStatus(ctx context.Context, cli client.Client, co *v1alpha1.ClusterObservability) componentStatus {
-	instrumentationName := "default-instrumentation"
+	instrumentationName := co.Name
 
 	// Check Instrumentation CR in the same namespace as ClusterObservability
 	var instrumentation v1alpha1.Instrumentation
