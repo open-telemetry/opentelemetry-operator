@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeTesting "k8s.io/client-go/testing"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -581,7 +582,6 @@ var cfgYaml = `receivers:
 func TestOTELColValidatingWebhook(t *testing.T) {
 	minusOne := int32(-1)
 	zero := int32(0)
-	zero64 := int64(0)
 	one := int32(1)
 	three := int32(3)
 	five := int32(5)
@@ -920,7 +920,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "maxReplicas should be defined and one or more",
 		},
 		{
 			name: "it should return error when minReplica is set but maxReplica is not set",
@@ -969,7 +968,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "minReplicas should be one or more",
 		},
 		{
 			name: "invalid autoscaler scale down stablization window - <0",
@@ -1045,7 +1043,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "targetCPUUtilization should be greater than 0",
 		},
 		{
 			name: "invalid autoscaler target memory utilization",
@@ -1057,7 +1054,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "targetMemoryUtilization should be greater than 0",
 		},
 		{
 			name: "autoscaler minReplicas is less than maxReplicas",
@@ -1188,138 +1184,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: "does not support the attribute 'affinity'",
-		},
-		{
-			name: "invalid InitialDelaySeconds",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					LivenessProbe: &v1beta1.Probe{
-						InitialDelaySeconds: &minusOne,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec LivenessProbe InitialDelaySeconds configuration is incorrect",
-		},
-		{
-			name: "invalid InitialDelaySeconds readiness",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					ReadinessProbe: &v1beta1.Probe{
-						InitialDelaySeconds: &minusOne,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec ReadinessProbe InitialDelaySeconds configuration is incorrect",
-		},
-		{
-			name: "invalid PeriodSeconds",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					LivenessProbe: &v1beta1.Probe{
-						PeriodSeconds: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec LivenessProbe PeriodSeconds configuration is incorrect",
-		},
-		{
-			name: "invalid PeriodSeconds readiness",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					ReadinessProbe: &v1beta1.Probe{
-						PeriodSeconds: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec ReadinessProbe PeriodSeconds configuration is incorrect",
-		},
-		{
-			name: "invalid TimeoutSeconds",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					LivenessProbe: &v1beta1.Probe{
-						TimeoutSeconds: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec LivenessProbe TimeoutSeconds configuration is incorrect",
-		},
-		{
-			name: "invalid TimeoutSeconds readiness",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					ReadinessProbe: &v1beta1.Probe{
-						TimeoutSeconds: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec ReadinessProbe TimeoutSeconds configuration is incorrect",
-		},
-		{
-			name: "invalid SuccessThreshold",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					LivenessProbe: &v1beta1.Probe{
-						SuccessThreshold: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec LivenessProbe SuccessThreshold configuration is incorrect",
-		},
-		{
-			name: "invalid SuccessThreshold readiness",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					ReadinessProbe: &v1beta1.Probe{
-						SuccessThreshold: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec ReadinessProbe SuccessThreshold configuration is incorrect",
-		},
-		{
-			name: "invalid FailureThreshold",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					LivenessProbe: &v1beta1.Probe{
-						FailureThreshold: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec LivenessProbe FailureThreshold configuration is incorrect",
-		},
-		{
-			name: "invalid FailureThreshold readiness",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					ReadinessProbe: &v1beta1.Probe{
-						FailureThreshold: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec ReadinessProbe FailureThreshold configuration is incorrect",
-		},
-		{
-			name: "invalid TerminationGracePeriodSeconds",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					LivenessProbe: &v1beta1.Probe{
-						TerminationGracePeriodSeconds: &zero64,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect",
-		},
-		{
-			name: "invalid TerminationGracePeriodSeconds readiness",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					ReadinessProbe: &v1beta1.Probe{
-						TerminationGracePeriodSeconds: &zero64,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec ReadinessProbe TerminationGracePeriodSeconds configuration is incorrect",
 		},
 		{
 			name: "invalid AdditionalContainers",
@@ -1647,6 +1511,262 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 			}
 			assert.Equal(t, len(test.expectedWarnings), len(warnings))
 			assert.ElementsMatch(t, warnings, test.expectedWarnings)
+		})
+	}
+}
+
+func TestValidationViaCRDAnnotations(t *testing.T) {
+	name := "test-collector"
+
+	minimalCollector := func(namespace string) *v1beta1.OpenTelemetryCollector {
+		return &v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				Mode:            v1beta1.ModeDeployment,
+				UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
+				Config: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"otlp": map[string]interface{}{},
+						},
+					},
+					Exporters: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"debug": map[string]interface{}{},
+						},
+					},
+					Service: v1beta1.Service{
+						Pipelines: map[string]*v1beta1.Pipeline{
+							"traces": {
+								Receivers: []string{"otlp"},
+								Exporters: []string{"debug"},
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	cases := []struct {
+		name        string
+		collector   func(namespace string) *v1beta1.OpenTelemetryCollector
+		expectedErr string
+	}{
+		{
+			name: "Minimal collector",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				return minimalCollector(namespace)
+			},
+		},
+		{
+			name: "Valid LivenessProve",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.LivenessProbe = &v1beta1.Probe{
+					InitialDelaySeconds:           ptr.To(int32(0)),
+					TimeoutSeconds:                ptr.To(int32(1)),
+					PeriodSeconds:                 ptr.To(int32(1)),
+					SuccessThreshold:              ptr.To(int32(1)),
+					FailureThreshold:              ptr.To(int32(1)),
+					TerminationGracePeriodSeconds: ptr.To(int64(1)),
+				}
+				return c
+			},
+		},
+		{
+			name: "LivenessProve initialDelaySeconds below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.LivenessProbe = &v1beta1.Probe{
+					InitialDelaySeconds: ptr.To(int32(-1)),
+				}
+				return c
+			},
+			expectedErr: "spec.livenessProbe.initialDelaySeconds in body should be greater than or equal to 0",
+		},
+		{
+			name: "LivenessProbe timeoutSeconds below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.LivenessProbe = &v1beta1.Probe{
+					TimeoutSeconds: ptr.To(int32(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.livenessProbe.timeoutSeconds in body should be greater than or equal to 1",
+		},
+		{
+			name: "LivenessProbe periodSeconds below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.LivenessProbe = &v1beta1.Probe{
+					PeriodSeconds: ptr.To(int32(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.livenessProbe.periodSeconds in body should be greater than or equal to 1",
+		},
+		{
+			name: "LivenessProbe successThreshold below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.LivenessProbe = &v1beta1.Probe{
+					SuccessThreshold: ptr.To(int32(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.livenessProbe.successThreshold in body should be greater than or equal to 1",
+		},
+		{
+			name: "LivenessProbe failureThreshold below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.LivenessProbe = &v1beta1.Probe{
+					FailureThreshold: ptr.To(int32(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.livenessProbe.failureThreshold in body should be greater than or equal to 1",
+		},
+		{
+			name: "LivenessProbe terminationGracePeriodSeconds below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.LivenessProbe = &v1beta1.Probe{
+					TerminationGracePeriodSeconds: ptr.To(int64(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.livenessProbe.terminationGracePeriodSeconds in body should be greater than or equal to 1",
+		},
+		{
+			name: "Valid Autoscaler",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Autoscaler = &v1beta1.AutoscalerSpec{
+					MinReplicas:             ptr.To(int32(1)),
+					MaxReplicas:             ptr.To(int32(3)),
+					TargetCPUUtilization:    ptr.To(int32(80)),
+					TargetMemoryUtilization: ptr.To(int32(75)),
+				}
+				return c
+			},
+		},
+		{
+			name: "Autoscaler maxReplicas below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Autoscaler = &v1beta1.AutoscalerSpec{
+					MaxReplicas: ptr.To(int32(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.autoscaler.maxReplicas in body should be greater than or equal to 1",
+		},
+		{
+			name: "Autoscaler minReplicas below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Autoscaler = &v1beta1.AutoscalerSpec{
+					MinReplicas: ptr.To(int32(0)),
+					MaxReplicas: ptr.To(int32(1)),
+				}
+				return c
+			},
+			expectedErr: "spec.autoscaler.minReplicas in body should be greater than or equal to 1",
+		},
+		{
+			name: "Autoscaler targetCPUUtilization below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Autoscaler = &v1beta1.AutoscalerSpec{
+					MaxReplicas:          ptr.To(int32(1)),
+					TargetCPUUtilization: ptr.To(int32(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.autoscaler.targetCPUUtilization in body should be greater than or equal to 1",
+		},
+		{
+			name: "Autoscaler targetMemoryUtilization below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Autoscaler = &v1beta1.AutoscalerSpec{
+					MaxReplicas:             ptr.To(int32(1)),
+					TargetMemoryUtilization: ptr.To(int32(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.autoscaler.targetMemoryUtilization in body should be greater than or equal to 1",
+		},
+		{
+			name: "Valid Ports hostPort",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Ports = []v1beta1.PortsSpec{
+					{
+						HostPort: 1025,
+						ServicePort: v1.ServicePort{
+							Name: "otlp",
+							Port: 4317,
+						},
+					},
+				}
+				return c
+			},
+		},
+		{
+			name: "Ports hostPort below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Ports = []v1beta1.PortsSpec{
+					{
+						HostPort: -1,
+						ServicePort: v1.ServicePort{
+							Name: "otlp",
+							Port: 4317,
+						},
+					},
+				}
+				return c
+			},
+			expectedErr: "spec.ports[0].hostPort in body should be greater than or equal to 0",
+		},
+		{
+			name: "Ports hostPort above maximum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Ports = []v1beta1.PortsSpec{
+					{
+						HostPort: 65536,
+						ServicePort: v1.ServicePort{
+							Name: "otlp",
+							Port: 4317,
+						},
+					},
+				}
+				return c
+			},
+			expectedErr: "spec.ports[0].hostPort in body should be less than or equal to 65535",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			ns := prepareNamespace(t, ctx)
+
+			err := k8sClient.Create(ctx, tc.collector(ns))
+			if tc.expectedErr != "" {
+				require.Error(t, err)
+				require.ErrorContains(t, err, tc.expectedErr)
+				return
+			}
+			require.NoError(t, err)
 		})
 	}
 }

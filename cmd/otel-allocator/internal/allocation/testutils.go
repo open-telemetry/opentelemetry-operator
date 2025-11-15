@@ -28,10 +28,10 @@ func MakeNNewTargets(n int, numCollectors int, startingIndex int) []*target.Item
 	toReturn := []*target.Item{}
 	for i := startingIndex; i < n+startingIndex; i++ {
 		collector := fmt.Sprintf("collector-%d", colIndex(i, numCollectors))
-		label := labels.Labels{
-			{Name: "i", Value: strconv.Itoa(i)},
-			{Name: "total", Value: strconv.Itoa(n + startingIndex)},
-		}
+		label := labels.New(
+			labels.Label{Name: "i", Value: strconv.Itoa(i)},
+			labels.Label{Name: "total", Value: strconv.Itoa(n + startingIndex)},
+		)
 		newTarget := target.NewItem(fmt.Sprintf("test-job-%d", i), fmt.Sprintf("test-url-%d", i), label, collector)
 		toReturn = append(toReturn, newTarget)
 	}
@@ -54,11 +54,11 @@ func MakeNCollectors(n int, startingIndex int) map[string]*Collector {
 func MakeNNewTargetsWithEmptyCollectors(n int, startingIndex int) []*target.Item {
 	toReturn := []*target.Item{}
 	for i := startingIndex; i < n+startingIndex; i++ {
-		label := labels.Labels{
-			{Name: "i", Value: strconv.Itoa(i)},
-			{Name: "total", Value: strconv.Itoa(n + startingIndex)},
-			{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
-		}
+		label := labels.New(
+			labels.Label{Name: "i", Value: strconv.Itoa(i)},
+			labels.Label{Name: "total", Value: strconv.Itoa(n + startingIndex)},
+			labels.Label{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
+		)
 		newTarget := target.NewItem(fmt.Sprintf("test-job-%d", i), fmt.Sprintf("test-url-%d", i), label, "")
 		toReturn = append(toReturn, newTarget)
 	}

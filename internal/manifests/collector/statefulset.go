@@ -69,7 +69,7 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 					ImagePullSecrets:              params.OtelCol.Spec.ImagePullSecrets,
 				},
 			},
-			Replicas:                             manifestutils.GetInitialReplicas(params.OtelCol),
+			Replicas:                             manifestutils.GetDesiredReplicas(params.OtelCol),
 			PodManagementPolicy:                  "Parallel",
 			VolumeClaimTemplates:                 VolumeClaimTemplates(params.OtelCol),
 			PersistentVolumeClaimRetentionPolicy: params.OtelCol.Spec.PersistentVolumeClaimRetentionPolicy,

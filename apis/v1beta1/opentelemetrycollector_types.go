@@ -41,7 +41,7 @@ type OpenTelemetryCollector struct {
 // Hub exists to allow for conversion.
 func (*OpenTelemetryCollector) Hub() {}
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // OpenTelemetryCollectorList contains a list of OpenTelemetryCollector.
 type OpenTelemetryCollectorList struct {
@@ -244,23 +244,28 @@ type Probe struct {
 	// Defaults to 0 seconds. Minimum value is 0.
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	InitialDelaySeconds *int32 `json:"initialDelaySeconds,omitempty"`
 	// Number of seconds after which the probe times out.
 	// Defaults to 1 second. Minimum value is 1.
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
 	// How often (in seconds) to perform the probe.
 	// Default to 10 seconds. Minimum value is 1.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	PeriodSeconds *int32 `json:"periodSeconds,omitempty"`
 	// Minimum consecutive successes for the probe to be considered successful after having failed.
 	// Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	SuccessThreshold *int32 `json:"successThreshold,omitempty"`
 	// Minimum consecutive failures for the probe to be considered failed after having succeeded.
 	// Defaults to 3. Minimum value is 1.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	FailureThreshold *int32 `json:"failureThreshold,omitempty"`
 	// Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
 	// The grace period is the duration in seconds after the processes running in the pod are sent
@@ -273,6 +278,7 @@ type Probe struct {
 	// This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
 	// Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 }
 

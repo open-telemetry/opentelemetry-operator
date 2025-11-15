@@ -42,6 +42,8 @@ spec:
   - name: otc-container
     env:
     - name: POD_NAME
+    - name: GOMEMLIMIT
+    - name: GOMAXPROCS
     - name: K8S_NODE_NAME
       valueFrom:
         fieldRef:
