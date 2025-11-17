@@ -1,0 +1,180 @@
+# Example: Sample application with ServiceMonitor
+# This demonstrates how to expose metrics for the Target Allocator to discover
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metrics-app-secret
+  namespace: opentelemetry
+type: Opaque
+stringData:
+  BASIC_AUTH_USERNAME: user
+  BASIC_AUTH_PASSWORD: t0p$ecreT
+---
+# Sample metrics application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-metrics-app
+  namespace: opentelemetry
+  labels:
+    app: sample-metrics-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sample-metrics-app
+  template:
+    metadata:
+      labels:
+        app: sample-metrics-app
+    spec:
+      containers:
+        - name: metrics-app
+          image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-metrics-basic-auth:main
+          ports:
+            - name: metrics
+              containerPort: 9123
+              protocol: TCP
+          env:
+            - name: BASIC_AUTH_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: metrics-app-secret
+                  key: BASIC_AUTH_USERNAME
+            - name: BASIC_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: metrics-app-secret
+                  key: BASIC_AUTH_PASSWORD
+---
+# Service for the metrics application
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-metrics-app
+  namespace: opentelemetry
+  labels:
+    app: sample-metrics-app
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 9123
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    app: sample-metrics-app
+
+---
+# ServiceMonitor - Prometheus Operator CRD
+# The Target Allocator will discover this and configure scraping
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sample-metrics-app
+  namespace: opentelemetry
+  labels:
+    app: sample-metrics-app
+    # Add labels for filtering if using serviceMonitorSelector
+    monitoring: enabled
+spec:
+  # Selector to match the service
+  selector:
+    matchLabels:
+      app: sample-metrics-app
+
+  # Endpoints to scrape
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+      scheme: http
+
+      # Optional: Relabeling rules
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+
+      # Optional: Metric relabeling (applied after scraping)
+      metricRelabelings:
+        - action: drop
+          regex: "^go_.*"
+          sourceLabels: [__name__]
+
+      basicAuth:
+        username:
+          name: metrics-app-secret
+          key: BASIC_AUTH_USERNAME
+        password:
+          name: metrics-app-secret
+          key: BASIC_AUTH_PASSWORD
+---
+# Example: PodMonitor for direct pod scraping
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: sample-pod-monitor
+  namespace: opentelemetry
+  labels:
+    monitoring: enabled
+spec:
+  # Selector to match pods directly
+  selector:
+    matchLabels:
+      app: sample-metrics-app
+
+  # Pod metrics endpoints
+  podMetricsEndpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+
+---
+# Example: ScrapeConfig for advanced scraping
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: kubernetes-pods
+  namespace: opentelemetry
+spec:
+  # Kubernetes SD configuration
+  kubernetesSDConfigs:
+    - role: Pod
+      namespaces:
+        names:
+          - opentelemetry
+          - default
+
+  # Relabel configurations
+  relabelings:
+    # Only scrape pods with prometheus.io/scrape=true annotation
+    - sourceLabels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+      action: keep
+      regex: "true"
+
+    # Get port from prometheus.io/port annotation
+    - sourceLabels:
+        [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+      action: replace
+      regex: ([^:]+)(?::\d+)?;(\d+)
+      replacement: $1:$2
+      targetLabel: __address__
+
+    # Get path from prometheus.io/path annotation
+    - sourceLabels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+      action: replace
+      targetLabel: __metrics_path__
+      regex: (.+)
+
+    # Add namespace label
+    - sourceLabels: [__meta_kubernetes_namespace]
+      action: replace
+      targetLabel: kubernetes_namespace
+
+    # Add pod label
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      action: replace
+      targetLabel: kubernetes_pod_name

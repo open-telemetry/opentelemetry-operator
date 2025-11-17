@@ -179,6 +179,10 @@ ci: generate fmt vet test ensure-update-is-noop
 .PHONY: update
 update: generate manifests bundle api-docs reset
 
+.PHONY: update-golden-files
+update-golden-files: 
+	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) ./scripts/update-golden-files.sh
+
 # Build manager binary
 .PHONY: manager
 manager: generate

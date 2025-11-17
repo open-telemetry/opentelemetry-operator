@@ -1,0 +1,212 @@
+# OpenTelemetry Collector with Target Allocator
+# This is a production-ready configuration with target allocation enabled
+
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-collector
+  namespace: opentelemetry
+spec:
+  # Deployment mode - use statefulset for target allocator
+  mode: statefulset
+
+  # Replicas for horizontal scaling
+  replicas: 3
+
+  # Service accounts
+  serviceAccount: collector
+
+  # OpenTelemetry Collector Configuration
+  config:
+    receivers:
+      # Prometheus receiver - scrape configs will be managed by Target Allocator
+      prometheus:
+        config:
+          # Scrape configs are dynamically provided by the Target Allocator
+          # The operator will automatically configure this
+          scrape_configs: []
+
+      # OTLP receiver for traces, metrics, and logs
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      # Batch processor for performance
+      batch:
+        timeout: 10s
+        send_batch_size: 1024
+
+      # Memory limiter to prevent OOM
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+
+    exporters:
+      # Debug exporter for testing
+      debug:
+        verbosity: detailed
+        sampling_initial: 5
+        sampling_thereafter: 200
+
+      # Prometheus exporter
+      prometheus:
+        endpoint: 0.0.0.0:9090
+        namespace: otel
+        const_labels:
+          cluster: my-cluster
+
+      # OTLP exporter (configure your backend)
+      # otlp:
+      #   endpoint: your-backend:4317
+      #   tls:
+      #     insecure: false
+
+    service:
+      pipelines:
+        # Metrics pipeline
+        metrics:
+          receivers: [prometheus, otlp]
+          processors: [memory_limiter, batch]
+          exporters: [debug, prometheus]
+
+        # Traces pipeline
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [debug]
+
+        # Logs pipeline
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [debug]
+
+  # Environment variables for the collector
+  env:
+    - name: KUBE_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+
+  # Resource limits
+  resources:
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+  # Target Allocator Configuration
+  targetAllocator:
+    # Enable the target allocator
+    enabled: true
+
+    # Service account for the target allocator
+    serviceAccount: ta
+
+    # Allocation strategy
+    # Options:
+    #   - consistent-hashing (default): Distributes targets consistently across collectors
+    #   - least-weighted: Assigns targets to collectors with least load
+    #   - per-node: One collector per node (use with DaemonSet mode)
+    allocationStrategy: consistent-hashing
+
+    # Prometheus CR support - discovers ServiceMonitors and PodMonitors
+    prometheusCR:
+      enabled: true
+      # Scrape interval for discovered targets
+      scrapeInterval: 30s
+
+      # Optional: Filter which ServiceMonitors to include
+      serviceMonitorSelector: {}
+      #   matchLabels:
+      #     monitoring: enabled
+
+      # Optional: Filter which PodMonitors to include
+      podMonitorSelector: {}
+      #   matchLabels:
+      #     monitoring: enabled
+
+      # Optional: Filter which PodMonitors to include
+      scrapeConfigSelector: {}
+
+    # Resource limits for target allocator
+    resources:
+      limits:
+        memory: 512Mi
+        cpu: 500m
+      requests:
+        memory: 128Mi
+        cpu: 100m
+
+    # Security context for target allocator
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      fsGroup: 1000
+      seccompProfile:
+        type: RuntimeDefault
+
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+
+    # Optional: Node affinity
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: opentelemetry-targetallocator
+              topologyKey: kubernetes.io/hostname
+
+  # Security context for collector pods
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+
+  # Pod annotations
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8888"
+    prometheus.io/path: "/metrics"
+
+  # Volume mounts for collector (if needed)
+  # volumes:
+  #   - name: storage
+  #     emptyDir: {}
+  # volumeMounts:
+  #   - name: storage
+  #     mountPath: /data
+
+  # Optional: Persistent volume for statefulset
+  # volumeClaimTemplates:
+  #   - metadata:
+  #       name: collector-data
+  #     spec:
+  #       accessModes:
+  #         - ReadWriteOnce
+  #       resources:
+  #         requests:
+  #           storage: 10Gi

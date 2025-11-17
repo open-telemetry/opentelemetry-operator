@@ -1,0 +1,173 @@
+# RBAC Configuration for OpenTelemetry Collector with Target Allocator
+# This setup includes two service accounts:
+# 1. collector - for the OpenTelemetry Collector pods
+# 2. ta - for the Target Allocator
+
+---
+# Service Account for Target Allocator
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ta
+  namespace: opentelemetry
+automountServiceAccountToken: true
+
+---
+# Service Account for Collector
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: collector
+  namespace: opentelemetry
+automountServiceAccountToken: true
+
+---
+# ClusterRole for Target Allocator
+# Grants permissions to discover and monitor targets across the cluster
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: target-allocator
+rules:
+  # Core Kubernetes resources needed for service discovery
+  - apiGroups: [""]
+    resources:
+      - pods
+      - nodes
+      - nodes/metrics
+      - services
+      - endpoints
+      - namespaces
+      - configmaps
+      - secrets
+    verbs:
+      - get
+      - watch
+      - list
+
+  # Apps resources for StatefulSet discovery
+  - apiGroups: ["apps"]
+    resources:
+      - statefulsets
+    verbs:
+      - get
+      - watch
+      - list
+
+  # EndpointSlices for service discovery
+  - apiGroups: ["discovery.k8s.io"]
+    resources:
+      - endpointslices
+    verbs:
+      - get
+      - watch
+      - list
+
+  # Networking resources
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - watch
+      - list
+
+  # Prometheus Operator CRDs (ServiceMonitor, PodMonitor, etc.)
+  - apiGroups: ["monitoring.coreos.com"]
+    resources:
+      - servicemonitors
+      - podmonitors
+      - scrapeconfigs
+      - probes
+    verbs:
+      - "*"
+
+  # Non-resource URLs for metrics endpoints
+  - nonResourceURLs:
+      - /metrics
+      - /metrics/cadvisor
+      - /apis
+      - /apis/*
+      - /api
+      - /api/*
+    verbs:
+      - get
+
+---
+# ClusterRoleBinding for Target Allocator
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: target-allocator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: target-allocator
+subjects:
+  - kind: ServiceAccount
+    name: ta
+    namespace: opentelemetry
+
+---
+# ClusterRole for Collector
+# Grants permissions for the collector to scrape metrics
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: opentelemetry-collector
+rules:
+  # Core Kubernetes resources
+  - apiGroups: ["apps"]
+    resources:
+      - replicasets
+    verbs:
+      - get
+      - watch
+      - list
+  - apiGroups: [""]
+    resources:
+      - pods
+      - nodes
+      - nodes/metrics
+      - nodes/stats
+      - services
+      - endpoints
+      - namespaces
+    verbs:
+      - get
+      - watch
+      - list
+
+  # Networking resources
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - watch
+      - list
+
+  # Non-resource URLs for kubelet metrics
+  - nonResourceURLs:
+      - /metrics
+      - /metrics/cadvisor
+      - /metrics/resource
+      - /stats
+      - /stats/*
+    verbs:
+      - get
+
+---
+# ClusterRoleBinding for Collector
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: opentelemetry-collector
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: opentelemetry-collector
+subjects:
+  - kind: ServiceAccount
+    name: collector
+    namespace: opentelemetry

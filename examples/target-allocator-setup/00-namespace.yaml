@@ -1,0 +1,8 @@
+# Namespace for OpenTelemetry resources
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: opentelemetry
+  labels:
+    name: opentelemetry
+    monitoring: enabled

@@ -1,76 +1,99 @@
 <!DOCTYPE html>
-<html lang="en"><head>
+<html lang="en">
+<head>
     <meta charset="utf-8">
-    <title>OpenTelemetry Target Allocator - Targets</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenTelemetry Target Allocator - Targets - OpenTelemetry Target Allocator</title>
     <link rel="shortcut icon" href="https://opentelemetry.io/favicons/favicon.ico"/>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-<h1>OpenTelemetry Target Allocator - Targets</h1>
-<nav>
-    <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/debug/scrape_configs">Scrape Configs</a></li>
-        <li><a href="/debug/jobs">Jobs</a></li>
-        <li><a href="/debug/targets">Targets</a></li>
-    </ul>
-</nav>
-<table>
-    <thead>
-    <td>
-        Job
-    </td>
-    <td>
-        Target
-    </td>
-    <td>
-        Collector
-    </td>
-    <td>
-        Endpoint Slice
-    </td>
-    </thead>
-    <tr style="background: #eee">
-        <td style="vertical-align: top;">
-            <a href="/debug/job?job_id=test-job">test-job</a>
-        </td>
-        <td style="vertical-align: top;">
-            <a href="/debug/target?target_hash=5512283283146621186">test-url</a>
-        </td>
-        <td style="vertical-align: top;">
-            <a href="/debug/collector?collector_id=test-collector1">test-collector1</a>
-        </td>
-        <td style="vertical-align: top;">
-            
-        </td>
-    </tr>
-    <tr >
-        <td style="vertical-align: top;">
-            <a href="/debug/job?job_id=test-job">test-job</a>
-        </td>
-        <td style="vertical-align: top;">
-            <a href="/debug/target?target_hash=7939255050499047193">test-url2</a>
-        </td>
-        <td style="vertical-align: top;">
-            <a href="/debug/collector?collector_id=test-collector2">test-collector2</a>
-        </td>
-        <td style="vertical-align: top;">
-            
-        </td>
-    </tr>
-    <tr style="background: #eee">
-        <td style="vertical-align: top;">
-            <a href="/debug/job?job_id=test-job2">test-job2</a>
-        </td>
-        <td style="vertical-align: top;">
-            <a href="/debug/target?target_hash=13712592240399323632">test-url3</a>
-        </td>
-        <td style="vertical-align: top;">
-            <a href="/debug/collector?collector_id=test-collector1">test-collector1</a>
-        </td>
-        <td style="vertical-align: top;">
-            
-        </td>
-    </tr>
-</table>
+    <header class="header">
+        <div class="header-content">
+            <h1 class="header-title">Target Allocator</h1>
+            <nav class="nav">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/debug/scrape_configs" class="nav-link">Scrape Configs</a>
+                <a href="/debug/jobs" class="nav-link">Jobs</a>
+                <a href="/debug/targets" class="nav-link">Targets</a>
+            </nav>
+        </div>
+    </header>
+    <div class="container">
+        <h2 class="page-title">OpenTelemetry Target Allocator - Targets</h2>
+        <div class="controls-bar">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-input" class="search-input" placeholder="Search..." aria-label="Search">
+            </div>
+            <button id="auto-refresh-toggle" class="refresh-toggle" aria-label="Toggle auto-refresh">
+                <span class="refresh-indicator"></span>
+                Auto-refresh OFF
+            </button>
+            <button id="manual-refresh" class="refresh-toggle" aria-label="Refresh page" title="Refresh (r)">
+                🔄 Refresh
+            </button>
+        </div>
+        <div id="results-count" class="text-muted" style="display: none; margin-bottom: 1rem; font-size: var(--font-size-sm);"></div>
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th class="sortable">Job</th>
+                    <th class="sortable">Target</th>
+                    <th class="sortable">Collector</th>
+                    <th class="sortable">Endpoint Slice</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <a href="/debug/job?job_id=test-job">test-job</a>
+                    </td>
+                    <td>
+                        <a href="/debug/target?target_hash=5512283283146621186">test-url</a>
+                    </td>
+                    <td>
+                        <a href="/debug/collector?collector_id=test-collector1">test-collector1</a>
+                    </td>
+                    <td>
+                        
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="/debug/job?job_id=test-job">test-job</a>
+                    </td>
+                    <td>
+                        <a href="/debug/target?target_hash=7939255050499047193">test-url2</a>
+                    </td>
+                    <td>
+                        <a href="/debug/collector?collector_id=test-collector2">test-collector2</a>
+                    </td>
+                    <td>
+                        
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="/debug/job?job_id=test-job2">test-job2</a>
+                    </td>
+                    <td>
+                        <a href="/debug/target?target_hash=13712592240399323632">test-url3</a>
+                    </td>
+                    <td>
+                        <a href="/debug/collector?collector_id=test-collector1">test-collector1</a>
+                    </td>
+                    <td>
+                        
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+    </div>
+    <script src="/static/app.js"></script>
 </body>
 </html>

@@ -1,28 +1,55 @@
 <!DOCTYPE html>
-<html lang="en"><head>
+<html lang="en">
+<head>
     <meta charset="utf-8">
-    <title>OpenTelemetry Target Allocator - Jobs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenTelemetry Target Allocator - Jobs - OpenTelemetry Target Allocator</title>
     <link rel="shortcut icon" href="https://opentelemetry.io/favicons/favicon.ico"/>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-<h1>OpenTelemetry Target Allocator - Jobs</h1>
-<nav>
-    <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/debug/scrape_configs">Scrape Configs</a></li>
-        <li><a href="/debug/jobs">Jobs</a></li>
-        <li><a href="/debug/targets">Targets</a></li>
-    </ul>
-</nav>
-<table>
-    <thead>
-    <td>
-        Job
-    </td>
-    <td>
-        Target Count
-    </td>
-    </thead>
-</table>
+    <header class="header">
+        <div class="header-content">
+            <h1 class="header-title">Target Allocator</h1>
+            <nav class="nav">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/debug/scrape_configs" class="nav-link">Scrape Configs</a>
+                <a href="/debug/jobs" class="nav-link">Jobs</a>
+                <a href="/debug/targets" class="nav-link">Targets</a>
+            </nav>
+        </div>
+    </header>
+    <div class="container">
+        <h2 class="page-title">OpenTelemetry Target Allocator - Jobs</h2>
+        <div class="controls-bar">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-input" class="search-input" placeholder="Search..." aria-label="Search">
+            </div>
+            <button id="auto-refresh-toggle" class="refresh-toggle" aria-label="Toggle auto-refresh">
+                <span class="refresh-indicator"></span>
+                Auto-refresh OFF
+            </button>
+            <button id="manual-refresh" class="refresh-toggle" aria-label="Refresh page" title="Refresh (r)">
+                🔄 Refresh
+            </button>
+        </div>
+        <div id="results-count" class="text-muted" style="display: none; margin-bottom: 1rem; font-size: var(--font-size-sm);"></div>
+<div class="card">
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th class="sortable">Job</th>
+                    <th class="sortable">Target Count</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+    </div>
+    <script src="/static/app.js"></script>
 </body>
 </html>
