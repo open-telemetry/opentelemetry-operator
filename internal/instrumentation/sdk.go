@@ -219,6 +219,9 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		}
 	}
 
+	// Apply imagePullSecrets from any instrumentation that has them configured
+	pod = i.injectImagePullSecrets(insts, pod)
+
 	return pod
 }
 
@@ -226,6 +229,56 @@ func (i *sdkInjector) setInitContainerSecurityContext(pod corev1.Pod, securityCo
 	for i, initContainer := range pod.Spec.InitContainers {
 		if initContainer.Name == instrInitContainerName {
 			pod.Spec.InitContainers[i].SecurityContext = securityContext
+		}
+	}
+
+	return pod
+}
+
+func (i *sdkInjector) injectImagePullSecrets(insts languageInstrumentations, pod corev1.Pod) corev1.Pod {
+	// Collect imagePullSecrets from all instrumentation instances
+	var imagePullSecrets []corev1.LocalObjectReference
+
+	// Check each instrumentation type for imagePullSecrets
+	if insts.Java.Instrumentation != nil && len(insts.Java.Instrumentation.Spec.ImagePullSecrets) > 0 {
+		imagePullSecrets = append(imagePullSecrets, insts.Java.Instrumentation.Spec.ImagePullSecrets...)
+	}
+	if insts.NodeJS.Instrumentation != nil && len(insts.NodeJS.Instrumentation.Spec.ImagePullSecrets) > 0 {
+		imagePullSecrets = append(imagePullSecrets, insts.NodeJS.Instrumentation.Spec.ImagePullSecrets...)
+	}
+	if insts.Python.Instrumentation != nil && len(insts.Python.Instrumentation.Spec.ImagePullSecrets) > 0 {
+		imagePullSecrets = append(imagePullSecrets, insts.Python.Instrumentation.Spec.ImagePullSecrets...)
+	}
+	if insts.DotNet.Instrumentation != nil && len(insts.DotNet.Instrumentation.Spec.ImagePullSecrets) > 0 {
+		imagePullSecrets = append(imagePullSecrets, insts.DotNet.Instrumentation.Spec.ImagePullSecrets...)
+	}
+	if insts.Go.Instrumentation != nil && len(insts.Go.Instrumentation.Spec.ImagePullSecrets) > 0 {
+		imagePullSecrets = append(imagePullSecrets, insts.Go.Instrumentation.Spec.ImagePullSecrets...)
+	}
+	if insts.ApacheHttpd.Instrumentation != nil && len(insts.ApacheHttpd.Instrumentation.Spec.ImagePullSecrets) > 0 {
+		imagePullSecrets = append(imagePullSecrets, insts.ApacheHttpd.Instrumentation.Spec.ImagePullSecrets...)
+	}
+	if insts.Nginx.Instrumentation != nil && len(insts.Nginx.Instrumentation.Spec.ImagePullSecrets) > 0 {
+		imagePullSecrets = append(imagePullSecrets, insts.Nginx.Instrumentation.Spec.ImagePullSecrets...)
+	}
+	if insts.Sdk.Instrumentation != nil && len(insts.Sdk.Instrumentation.Spec.ImagePullSecrets) > 0 {
+		imagePullSecrets = append(imagePullSecrets, insts.Sdk.Instrumentation.Spec.ImagePullSecrets...)
+	}
+
+	// If we have imagePullSecrets to add, merge them with existing ones (avoiding duplicates)
+	if len(imagePullSecrets) > 0 {
+		// Create a map to track existing secrets to avoid duplicates
+		existingSecrets := make(map[string]bool)
+		for _, secret := range pod.Spec.ImagePullSecrets {
+			existingSecrets[secret.Name] = true
+		}
+
+		// Add new secrets that don't already exist
+		for _, secret := range imagePullSecrets {
+			if !existingSecrets[secret.Name] {
+				pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, secret)
+				existingSecrets[secret.Name] = true
+			}
 		}
 	}
 

@@ -2816,3 +2816,162 @@ func Test_parseServiceVersionFromImage(t *testing.T) {
 		})
 	}
 }
+
+func TestInjectImagePullSecrets(t *testing.T) {
+	tests := []struct {
+		name                 string
+		pod                  corev1.Pod
+		insts                languageInstrumentations
+		expectedSecrets      []corev1.LocalObjectReference
+		expectedSecretsCount int
+	}{
+		{
+			name: "no instrumentation",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app", Image: "foo:bar"}},
+				},
+			},
+			insts:                languageInstrumentations{},
+			expectedSecrets:      nil,
+			expectedSecretsCount: 0,
+		},
+		{
+			name: "java instrumentation with imagePullSecrets",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app", Image: "foo:bar"}},
+				},
+			},
+			insts: languageInstrumentations{
+				Java: instrumentationWithContainers{
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							ImagePullSecrets: []corev1.LocalObjectReference{
+								{Name: "my-registry-secret"},
+								{Name: "another-registry-secret"},
+							},
+						},
+					},
+				},
+			},
+			expectedSecrets: []corev1.LocalObjectReference{
+				{Name: "my-registry-secret"},
+				{Name: "another-registry-secret"},
+			},
+			expectedSecretsCount: 2,
+		},
+		{
+			name: "multiple instrumentations with imagePullSecrets",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app", Image: "foo:bar"}},
+				},
+			},
+			insts: languageInstrumentations{
+				Java: instrumentationWithContainers{
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							ImagePullSecrets: []corev1.LocalObjectReference{
+								{Name: "java-secret"},
+							},
+						},
+					},
+				},
+				NodeJS: instrumentationWithContainers{
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							ImagePullSecrets: []corev1.LocalObjectReference{
+								{Name: "nodejs-secret"},
+							},
+						},
+					},
+				},
+			},
+			expectedSecrets: []corev1.LocalObjectReference{
+				{Name: "java-secret"},
+				{Name: "nodejs-secret"},
+			},
+			expectedSecretsCount: 2,
+		},
+		{
+			name: "pod with existing imagePullSecrets and instrumentation with new ones",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app", Image: "foo:bar"}},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: "existing-secret"},
+					},
+				},
+			},
+			insts: languageInstrumentations{
+				Python: instrumentationWithContainers{
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							ImagePullSecrets: []corev1.LocalObjectReference{
+								{Name: "python-secret"},
+							},
+						},
+					},
+				},
+			},
+			expectedSecrets: []corev1.LocalObjectReference{
+				{Name: "existing-secret"},
+				{Name: "python-secret"},
+			},
+			expectedSecretsCount: 2,
+		},
+		{
+			name: "duplicate imagePullSecrets should be deduplicated",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app", Image: "foo:bar"}},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: "shared-secret"},
+					},
+				},
+			},
+			insts: languageInstrumentations{
+				Java: instrumentationWithContainers{
+					Instrumentation: &v1alpha1.Instrumentation{
+						Spec: v1alpha1.InstrumentationSpec{
+							ImagePullSecrets: []corev1.LocalObjectReference{
+								{Name: "shared-secret"}, // duplicate
+								{Name: "java-secret"},
+							},
+						},
+					},
+				},
+			},
+			expectedSecrets: []corev1.LocalObjectReference{
+				{Name: "shared-secret"},
+				{Name: "java-secret"},
+			},
+			expectedSecretsCount: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			injector := &sdkInjector{
+				logger: logr.Discard(),
+			}
+
+			result := injector.injectImagePullSecrets(tt.insts, tt.pod)
+
+			assert.Len(t, result.Spec.ImagePullSecrets, tt.expectedSecretsCount)
+
+			if tt.expectedSecrets != nil {
+				// Check that all expected secrets are present
+				secretNames := make(map[string]bool)
+				for _, secret := range result.Spec.ImagePullSecrets {
+					secretNames[secret.Name] = true
+				}
+
+				for _, expectedSecret := range tt.expectedSecrets {
+					assert.True(t, secretNames[expectedSecret.Name], "Expected secret %s not found", expectedSecret.Name)
+				}
+			}
+		})
+	}
+}
