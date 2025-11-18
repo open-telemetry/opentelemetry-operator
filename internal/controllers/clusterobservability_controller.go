@@ -499,68 +499,7 @@ func (r *ClusterObservabilityReconciler) cleanupManagedResources(ctx context.Con
 		return fmt.Errorf("failed to cleanup cluster-scoped resources: %w", err)
 	}
 
-<<<<<<< HEAD
 	log.Info("Cluster-scoped resources cleaned up successfully")
-=======
-	log.Info("All managed resources cleaned up successfully")
-	return nil
-}
-
-// cleanupCollectors removes OpenTelemetryCollector CRs managed by ClusterObservability.
-func (r *ClusterObservabilityReconciler) cleanupCollectors(ctx context.Context, log logr.Logger, instance *v1alpha1.ClusterObservability) error {
-	// Use consistent naming pattern for collectors
-	agentCollectorName := fmt.Sprintf("%s-agent", instance.Name)
-	clusterCollectorName := fmt.Sprintf("%s-cluster", instance.Name)
-
-	collectors := []string{agentCollectorName, clusterCollectorName}
-
-	for _, name := range collectors {
-		collector := &v1beta1.OpenTelemetryCollector{}
-		key := types.NamespacedName{Name: name, Namespace: instance.Namespace}
-
-		if err := r.Get(ctx, key, collector); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue // Already deleted
-			}
-			return fmt.Errorf("failed to get collector %s: %w", name, err)
-		}
-
-		if err := r.Delete(ctx, collector); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete collector %s: %w", name, err)
-		}
-
-		log.Info("Deleted OpenTelemetryCollector", "name", name)
-	}
-
-	return nil
-}
-
-// cleanupInstrumentations removes the single Instrumentation CR managed by ClusterObservability.
-func (r *ClusterObservabilityReconciler) cleanupInstrumentations(ctx context.Context, log logr.Logger, instance *v1alpha1.ClusterObservability) error {
-	// Delete the single Instrumentation CR in the operator namespace
-	instrumentationName := instance.Name
-
-	instrumentation := &v1alpha1.Instrumentation{}
-	key := types.NamespacedName{Name: instrumentationName, Namespace: instance.Namespace}
-
-	if err := r.Get(ctx, key, instrumentation); err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil // Already deleted or never created
-		}
-		return fmt.Errorf("failed to get instrumentation %s in namespace %s: %w", instrumentationName, instance.Namespace, err)
-	}
-
-	// Check if this instrumentation is managed by our ClusterObservability instance
-	if !isOwnedByClusterObservability(instrumentation, instance) {
-		return nil // Not our resource
-	}
-
-	if err := r.Delete(ctx, instrumentation); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete instrumentation %s in namespace %s: %w", instrumentationName, instance.Namespace, err)
-	}
-
-	log.Info("Deleted Instrumentation", "name", instrumentationName, "namespace", instance.Namespace)
->>>>>>> 2f953285 (algin instrumentation name to cluster observability CR name)
 	return nil
 }
 
