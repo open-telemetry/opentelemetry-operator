@@ -99,7 +99,11 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
+<<<<<<< HEAD
     createdAt: "2025-11-20T10:03:26Z"
+=======
+    createdAt: "2025-11-19T12:47:15Z"
+>>>>>>> e2b4bf22 (support gatewayApi HTTPRoute creation by v1beta1 otel CR)
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -401,6 +405,18 @@ spec:
           - list
           - update
         - apiGroups:
+          - gateway.networking.k8s.io
+          resources:
+          - httproutes
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - monitoring.coreos.com
           resources:
           - podmonitors
@@ -531,6 +547,8 @@ spec:
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
                 - --enable-nginx-instrumentation=true
+                - --target-allocator-image=ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:v0.138.0-22-g1a1d9992
+                - --operator-opamp-bridge-image=ghcr.io/open-telemetry/opentelemetry-operator/operator-opamp-bridge:v0.138.0-22-g1a1d9992
                 env:
                 - name: SERVICE_ACCOUNT_NAME
                   valueFrom:

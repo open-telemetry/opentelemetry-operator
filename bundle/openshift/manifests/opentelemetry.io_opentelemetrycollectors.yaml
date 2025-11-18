@@ -6072,6 +6072,22 @@ spec:
                 type: array
               hostNetwork:
                 type: boolean
+              httpRoute:
+                properties:
+                  enabled:
+                    type: boolean
+                  gateway:
+                    type: string
+                  gatewayNamespace:
+                    type: string
+                  hostnames:
+                    items:
+                      type: string
+                    type: array
+                required:
+                - enabled
+                - gateway
+                type: object
               image:
                 type: string
               imagePullPolicy:

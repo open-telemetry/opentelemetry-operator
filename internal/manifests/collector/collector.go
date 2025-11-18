@@ -92,6 +92,15 @@ func Build(params manifests.Params) ([]client.Object, error) {
 	for _, route := range routes {
 		resourceManifests = append(resourceManifests, route)
 	}
+
+	httpRoutes, err := HTTPRoutes(params)
+	if err != nil {
+		return nil, err
+	}
+	for _, httpRoute := range httpRoutes {
+		resourceManifests = append(resourceManifests, httpRoute)
+	}
+
 	return resourceManifests, nil
 }
 
