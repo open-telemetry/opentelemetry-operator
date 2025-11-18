@@ -99,15 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-<<<<<<< HEAD
     createdAt: "2026-01-26T15:18:00Z"
-=======
-<<<<<<< HEAD
-    createdAt: "2025-11-04T20:46:50Z"
-=======
-    createdAt: "2025-11-03T16:15:22Z"
->>>>>>> 96ac3daa (initial commit for clusterobservability CRD)
->>>>>>> a0c490e0 (initial commit for clusterobservability CRD)
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -119,9 +111,6 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - kind: ClusterObservability
-      name: clusterobservabilities.opentelemetry.io
-      version: v1alpha1
     - description: Instrumentation is the spec for OpenTelemetry instrumentation.
       displayName: OpenTelemetry Instrumentation
       kind: Instrumentation
