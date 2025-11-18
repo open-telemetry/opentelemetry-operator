@@ -26,6 +26,8 @@ var (
 	endpointSliceTargetKindLabel = "__meta_kubernetes_endpointslice_address_target_kind"
 	endpointSliceTargetNameLabel = "__meta_kubernetes_endpointslice_address_target_name"
 	endpointSliceName            = "__meta_kubernetes_endpointslice_name"
+	kubernetesPodName            = "__meta_kubernetes_pod_name"
+	kubernetesServiceName        = "__meta_kubernetes_service_name"
 	relevantLabelNames           = append(nodeLabels, endpointSliceTargetKindLabel, endpointSliceTargetNameLabel)
 )
 
@@ -108,6 +110,36 @@ func NewItem(jobName string, targetURL string, labels labels.Labels, collectorNa
 		opt(item)
 	}
 	return item
+}
+
+// GetServiceName returns the service name that this target belongs to.
+func (t *Item) GetServiceName() string {
+	return t.Labels.Get(kubernetesServiceName)
+}
+
+// GetDualStackKey returns a unique key for deduplication of dual-stack targets.
+func (t *Item) GetDualStackKey() string {
+	serviceName := t.GetServiceName()
+	if serviceName == "" {
+		return ""
+	}
+
+	podName := t.Labels.Get(kubernetesPodName)
+	if podName == "" {
+		return ""
+	}
+
+	return serviceName + ":" + podName
+}
+
+// IsDualStackDuplicate checks if this target is a duplicate from a dual-stack EndpointSlice.
+// It returns true if we've already seen a target with the same service and pod combination.
+func (t *Item) IsDualStackDuplicate(seenServicePods map[string]bool) bool {
+	key := t.GetDualStackKey()
+	if key == "" {
+		return false
+	}
+	return seenServicePods[key]
 }
 
 // LabelsHashWithJobName computes a hash of the labels and the job name.

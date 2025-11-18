@@ -194,6 +194,19 @@ func (m *Discoverer) Reload() {
 	}
 	m.mtxScrape.Unlock()
 	wg.Wait()
+
+	// Compact the slice by removing nil entries left by deduplication
+	writeIdx := 0
+	for readIdx := 0; readIdx < targetCount; readIdx++ {
+		if targets[readIdx] != nil {
+			if writeIdx != readIdx {
+				targets[writeIdx] = targets[readIdx]
+			}
+			writeIdx++
+		}
+	}
+	targets = targets[:writeIdx]
+
 	m.processTargetsCallBack(targets)
 }
 
@@ -205,6 +218,8 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 	defer func() {
 		m.processTargetGroupsDuration.Record(context.Background(), time.Since(begin).Seconds(), metric.WithAttributes(attribute.String("job.name", jobName)))
 	}()
+	// seenServicePods keeps track of service pods that have already been added to avoid dual-stack duplicates.
+	var seenServicePods = make(map[string]bool)
 	var count float64 = 0
 	index := 0
 	for _, tg := range groups {
@@ -220,10 +235,16 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 				builder.Set(string(ln), string(lv))
 			}
 			item := NewItem(jobName, string(t[model.AddressLabel]), builder.Labels(), "")
-			intoTargets[index] = item
-			index++
+			if !item.IsDualStackDuplicate(seenServicePods) {
+				intoTargets[index] = item
+				index++
+				if key := item.GetDualStackKey(); key != "" {
+					seenServicePods[key] = true
+				}
+			}
 		}
 	}
+	clear(seenServicePods)
 	m.targetsDiscovered.Record(context.Background(), count, metric.WithAttributes(attribute.String("job.name", jobName)))
 }
 
