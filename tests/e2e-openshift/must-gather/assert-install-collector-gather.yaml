@@ -38,6 +38,18 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              containerName: otc-container
+              divisor: "0"
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              containerName: otc-container
+              divisor: "0"
+              resource: limits.cpu
         ports:
         - containerPort: 8888
           name: metrics
