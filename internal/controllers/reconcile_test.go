@@ -788,6 +788,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 	cfg := config.Config{
 		CollectorImage:              "default-collector",
 		TargetAllocatorImage:        "default-ta-allocator",
+		CollectorConfigMapEntry:     "collector.yaml",
 		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
 		PrometheusCRAvailability:    prometheus.Available,
 	}
@@ -904,6 +905,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 	cfg := config.Config{
 		CollectorImage:              "default-collector",
 		TargetAllocatorImage:        "default-ta-allocator",
+		CollectorConfigMapEntry:     "collector.yaml",
 		OpenShiftRoutesAvailability: openshift.RoutesAvailable,
 	}
 	reconciler := createTestReconciler(t, testCtx, cfg)
