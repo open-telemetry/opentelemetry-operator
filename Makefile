@@ -277,6 +277,9 @@ add-rbac-permissions-to-operator: manifests kustomize
 .PHONY: deploy
 deploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	@echo "Waiting for operator webhook pods to be ready..."
+	@kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=opentelemetry-operator -n opentelemetry-operator-system --timeout=120s || true
+	@sleep 5
 	go run hack/check-operator-ready.go 300
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
@@ -425,7 +428,7 @@ e2e-crd-validations: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-crd-validations
 
 .PHONY: prepare-e2e
-prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
+prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-gateway-api-crds install-targetallocator-prometheus-crds load-image-all deploy
 	@mkdir -p ./.testresults/e2e
 
 .PHONY: scorecard-tests
@@ -521,6 +524,10 @@ endif
 .PHONY: install-metrics-server
 install-metrics-server:
 	./hack/install-metrics-server.sh
+
+.PHONY: install-gateway-api-crds
+install-gateway-api-crds:
+	./hack/install-gateway-api-crds.sh
 
 # This only installs the CRDs Target Allocator supports
 .PHONY: install-targetallocator-prometheus-crds
