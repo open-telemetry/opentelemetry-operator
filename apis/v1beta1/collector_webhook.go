@@ -202,29 +202,6 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'persistentVolumeClaimRetentionPolicy'", r.Spec.Mode)
 	}
 
-	// validate tolerations
-	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
-	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
-	}
-
-	// validate priorityClassName
-	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
-	if r.Spec.Mode == ModeSidecar && r.Spec.PriorityClassName != "" {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'priorityClassName'", r.Spec.Mode)
-	}
-
-	// validate affinity
-	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
-	if r.Spec.Mode == ModeSidecar && r.Spec.Affinity != nil {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'affinity'", r.Spec.Mode)
-	}
-
-	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
-	if r.Spec.Mode == ModeSidecar && len(r.Spec.AdditionalContainers) > 0 {
-		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
-	}
-
 	// validate target allocator configs
 	if r.Spec.TargetAllocator.Enabled {
 		taWarnings, err := c.validateTargetAllocatorConfig(ctx, r)
@@ -295,11 +272,6 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 		)
 	}
 
-	if r.Spec.Ingress.Type == IngressTypeIngress && r.Spec.Mode == ModeSidecar {
-		return warnings, fmt.Errorf("the OpenTelemetry Spec Ingress configuiration is incorrect. Ingress can only be used in combination with the modes: %s, %s, %s",
-			ModeDeployment, ModeDaemonSet, ModeStatefulSet,
-		)
-	}
 	if r.Spec.Ingress.RuleType == IngressRuleTypeSubdomain && (r.Spec.Ingress.Hostname == "" || r.Spec.Ingress.Hostname == "*") {
 		return warnings, fmt.Errorf("a valid Ingress hostname has to be defined for subdomain ruleType")
 	}

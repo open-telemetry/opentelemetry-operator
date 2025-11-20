@@ -807,18 +807,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "does not support the attribute 'persistentVolumeClaimRetentionPolicy'",
 		},
 		{
-			name: "invalid mode with tolerations",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					Mode: v1beta1.ModeSidecar,
-					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Tolerations: []v1.Toleration{{}, {}},
-					},
-				},
-			},
-			expectedErr: "does not support the attribute 'tolerations'",
-		},
-		{
 			name: "invalid mode with target allocator",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
@@ -1144,62 +1132,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				},
 			},
 			expectedErr: fmt.Sprintf("Ingress can only be used in combination with the modes: %s, %s, %s", v1beta1.ModeDeployment, v1beta1.ModeDaemonSet, v1beta1.ModeStatefulSet),
-		},
-		{
-			name: "invalid mode with priorityClassName",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					Mode: v1beta1.ModeSidecar,
-					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						PriorityClassName: "test-class",
-					},
-				},
-			},
-			expectedErr: "does not support the attribute 'priorityClassName'",
-		},
-		{
-			name: "invalid mode with affinity",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					Mode: v1beta1.ModeSidecar,
-					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						Affinity: &v1.Affinity{
-							NodeAffinity: &v1.NodeAffinity{
-								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
-									NodeSelectorTerms: []v1.NodeSelectorTerm{
-										{
-											MatchExpressions: []v1.NodeSelectorRequirement{
-												{
-													Key:      "node",
-													Operator: v1.NodeSelectorOpIn,
-													Values:   []string{"test-node"},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedErr: "does not support the attribute 'affinity'",
-		},
-		{
-			name: "invalid AdditionalContainers",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					Mode: v1beta1.ModeSidecar,
-					OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-						AdditionalContainers: []v1.Container{
-							{
-								Name: "test",
-							},
-						},
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'AdditionalContainers'",
 		},
 		{
 			name: "missing ingress hostname for subdomain ruleType",
@@ -1752,6 +1684,74 @@ func TestValidationViaCRDAnnotations(t *testing.T) {
 				return c
 			},
 			expectedErr: "spec.ports[0].hostPort in body should be less than or equal to 65535",
+		},
+		{
+			name: "Sidecar mode with tolerations",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Mode = v1beta1.ModeSidecar
+				c.Spec.Tolerations = []v1.Toleration{
+					{
+						Key:      "key",
+						Operator: v1.TolerationOpEqual,
+						Value:    "value",
+						Effect:   v1.TaintEffectNoSchedule,
+					},
+				}
+				return c
+			},
+			expectedErr: "the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'",
+		},
+		{
+			name: "Sidecar mode with priorityClassName",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Mode = v1beta1.ModeSidecar
+				c.Spec.PriorityClassName = "test-class"
+				return c
+			},
+			expectedErr: "the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'",
+		},
+		{
+			name: "Sidecar mode with affinity",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Mode = v1beta1.ModeSidecar
+				c.Spec.Affinity = &v1.Affinity{
+					NodeAffinity: &v1.NodeAffinity{
+						RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+							NodeSelectorTerms: []v1.NodeSelectorTerm{
+								{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "node",
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"test-node"},
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+				return c
+			},
+			expectedErr: "the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'",
+		},
+		{
+			name: "Sidecar mode with additionalContainers",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Mode = v1beta1.ModeSidecar
+				c.Spec.AdditionalContainers = []v1.Container{
+					{
+						Name:  "test",
+						Image: "test-image",
+					},
+				}
+				return c
+			},
+			expectedErr: "the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'",
 		},
 	}
 
