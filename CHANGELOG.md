@@ -2,6 +2,55 @@
 
 <!-- next version -->
 
+## 0.140.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: Remove native sidecar feature gate (#4451)
+  The feature gate `operator.sidecarcontainers.native` has been removed.
+  It was introduced in v0.111.0, enabled by default since v0.132.0, and marked as stable in v0.139.0.
+  Native sidecars are now automatically enabled on Kubernetes v1.29+ without requiring a feature gate.
+  If you were explicitly enabling or disabling this feature gate with `--feature-gates=+operator.sidecarcontainers.native`,
+  you must remove that flag.
+  
+
+### 💡 Enhancements 💡
+
+- `collector`: Promote the `operator.golang.flags` feature flag to Beta (#4452)
+  The operator will set the GOMEMLIMIT and GOMAXPROCS environment variables based
+  on the pod configuration of the collector container by default.
+  
+- `operator`: Use pod and namespace label selector in operator NetworkPolicy for the API server Egress on OpenShift. (#4490)
+  On OpenShift use pod (`"apiserver": "true"`) and namespace (`kubernetes.io/metadata.name": "openshift-kube-apiserver"`)
+  label selectors in API server Egress network policy.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `auto-instrumentation`: Fixes the precedence of `spec.env` in Instrumentation CR so global env vars correctly override defaults. (#4068)
+  Previously, environment variables set under `spec.env` were ignored in favor of default instrumentation config, 
+  unless duplicated in each language block. This change ensures the correct order of precedence is applied:
+  language-specific env vars > spec.env > defaults.
+  
+- `collector`: Fix mounting spec.configmaps in sidecar mode (#4489)
+  Configmaps defined in `spec.configmaps` were not properly mounted in the sidecar mode.
+  
+- `github action`: Remove unused VERSION and VERSION_DATE environment variables from publish workflows (#4470)
+  Removed the unused "Read version" step that set VERSION and VERSION_DATE environment variables in both publish-target-allocator.yaml and publish-operator-opamp-bridge.yaml workflows. These variables were never referenced anywhere in the workflows.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.140.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.140.0)
+* [OpenTelemetry Contrib - v0.140.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.140.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.66.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.66.0)
+* [Python - v0.59b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.59b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.139.0
 
 ### 💡 Enhancements 💡
