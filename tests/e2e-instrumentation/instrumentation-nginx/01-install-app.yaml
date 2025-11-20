@@ -20,7 +20,7 @@ spec:
         fsGroup: 3000
       containers:
       - name: myapp
-        image: nginxinc/nginx-unprivileged:1.25.3
+        image: docker.io/nginxinc/nginx-unprivileged:1.25.3
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false

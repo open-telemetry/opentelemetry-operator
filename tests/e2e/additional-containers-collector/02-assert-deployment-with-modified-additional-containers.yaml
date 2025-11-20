@@ -10,9 +10,9 @@ metadata:
 spec:
   template:
     spec:
-      (containers[?image == 'alpine' && name == 'alpine']):
+      (containers[?image == 'docker.io/library/alpine:latest' && name == 'alpine']):
         (length(@)): 0
-      (containers[?image == 'alpine' && name == 'alpine2']):
+      (containers[?image == 'docker.io/library/alpine:latest' && name == 'alpine2']):
         (length(@)): 0
-      (containers[?image == 'alpine' && name == 'alpine3']):
+      (containers[?image == 'docker.io/library/alpine:latest' && name == 'alpine3']):
         (length(@)): 1

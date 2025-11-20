@@ -74,7 +74,7 @@ spec:
           readOnly: true
         - mountPath: /otel-auto-instrumentation-dotnet
           name: opentelemetry-auto-instrumentation-dotnet
-    - image: rabbitmq:3
+    - image: docker.io/library/rabbitmq:3
       name: myrabbit
       volumeMounts:
         - mountPath: /var/run/secrets/kubernetes.io/serviceaccount

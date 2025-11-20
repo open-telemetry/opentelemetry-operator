@@ -78,7 +78,7 @@ spec:
       name: otel-nginx-agent
     - mountPath: /etc/nginx
       name: otel-nginx-conf-dir
-  - image: rabbitmq
+  - image: docker.io/library/rabbitmq:latest
     name: myrabbit
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount

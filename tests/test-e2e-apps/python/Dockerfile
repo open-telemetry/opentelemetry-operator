@@ -1,6 +1,6 @@
 ARG python_version=3.13
 
-FROM python:${python_version}-alpine3.22
+FROM docker.io/library/python:${python_version}-alpine3.22
 
 WORKDIR /app
 

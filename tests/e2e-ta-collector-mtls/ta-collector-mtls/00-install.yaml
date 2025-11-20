@@ -89,7 +89,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: check-ta
-          image: curlimages/curl
+          image: docker.io/curlimages/curl:latest
           volumeMounts:
             - name: tls-secret
               mountPath: /etc/tls
