@@ -2,16 +2,16 @@
 # by default with the OpenTelemetry Operator. This would usually be the latest
 # stable OpenTelemetry version. When you update this file, make sure to update the
 # the docs as well.
-opentelemetry-collector=0.139.0
+opentelemetry-collector=0.140.0
 
 # Represents the current release of the OpenTelemetry Operator.
-operator=0.139.0
+operator=0.140.0
 
 # Represents the current release of the Target Allocator.
-targetallocator=0.139.0
+targetallocator=0.140.0
 
 # Represents the current release of the Operator OpAMP Bridge.
-operator-opamp-bridge=0.139.0
+operator-opamp-bridge=0.140.0
 
 # Represents the current release of Java instrumentation.
 # Should match autoinstrumentation/java/version.txt
