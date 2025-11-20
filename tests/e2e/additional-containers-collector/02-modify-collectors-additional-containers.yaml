@@ -7,7 +7,7 @@ metadata:
 spec:
   mode: deployment
   additionalContainers:
-  - image: alpine
+  - image: docker.io/library/alpine:latest
     name: alpine3
   config:
     receivers:
@@ -35,7 +35,7 @@ metadata:
 spec:
   mode: daemonset
   additionalContainers:
-  - image: alpine
+  - image: docker.io/library/alpine:latest
     name: alpine3
   config:
     receivers:
@@ -63,7 +63,7 @@ metadata:
 spec:
   mode: statefulset
   additionalContainers:
-  - image: alpine
+  - image: docker.io/library/alpine:latest
     name: alpine3
   config:
     receivers:

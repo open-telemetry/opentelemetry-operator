@@ -144,7 +144,7 @@ spec:
           ports:
           - containerPort: 8080
         - name: nginxapp
-          image: nginxinc/nginx-unprivileged:1.26.2
+          image: docker.io/nginxinc/nginx-unprivileged:1.26.2
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

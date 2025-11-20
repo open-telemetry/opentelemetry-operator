@@ -22,7 +22,7 @@ spec:
         fsGroup: 3000
       containers:
       - name: myapp
-        image: nginxinc/nginx-unprivileged:1.25.3
+        image: docker.io/nginxinc/nginx-unprivileged:1.25.3
         imagePullPolicy: Always
         securityContext:
           runAsUser: 1000
@@ -60,7 +60,7 @@ spec:
             cpu: 100m
             memory: 100Mi
       - name: myrabbit
-        image: rabbitmq
+        image: docker.io/library/rabbitmq:latest
         securityContext:
           runAsUser: 1000
           runAsGroup: 3000

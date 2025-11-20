@@ -9,5 +9,5 @@ metadata:
 spec:
   containers:
   - name: myapp
-    image: python:3.8-slim
+    image: docker.io/library/python:3.8-slim
     command: ["python", "-c", "import time; time.sleep(3600)"]
