@@ -23,6 +23,7 @@ import (
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	"go.uber.org/zap/zapcore"
 	networkingv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -429,6 +430,19 @@ func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interfa
 	}
 	var policyOpts []operatornetworkpolicy.Option
 	policyOpts = append(policyOpts, operatornetworkpolicy.WithOperatorNamespace(operatorNamespace))
+
+	if cfg.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
+		policyOpts = append(policyOpts, operatornetworkpolicy.WithAPISererPodLabelSelector(&metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"apiserver": "true",
+			},
+		}))
+		policyOpts = append(policyOpts, operatornetworkpolicy.WithAPISererNamespaceLabelSelector(&metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"kubernetes.io/metadata.name": "openshift-kube-apiserver",
+			},
+		}))
+	}
 
 	if cfg.EnableWebhooks {
 		//nolint:gosec // disable G115

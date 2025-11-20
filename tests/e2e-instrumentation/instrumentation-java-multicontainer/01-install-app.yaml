@@ -36,4 +36,4 @@ spec:
           timeoutSeconds: 2
           failureThreshold: 3
       - name: myrabbit
-        image: rabbitmq:3
+        image: docker.io/library/rabbitmq:3

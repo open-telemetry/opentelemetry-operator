@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -16,22 +15,11 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var logger = logf.Log.WithName("unit-tests")
 
-func enableSidecarFeatureGate(t *testing.T) {
-	originalVal := featuregate.EnableNativeSidecarContainers.IsEnabled()
-	t.Logf("original is: %+v", originalVal)
-	require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNativeSidecarContainers.ID(), true))
-	t.Cleanup(func() {
-		require.NoError(t, colfeaturegate.GlobalRegistry().Set(featuregate.EnableNativeSidecarContainers.ID(), originalVal))
-	})
-}
-
 func TestAddNativeSidecar(t *testing.T) {
-	enableSidecarFeatureGate(t)
 	// prepare
 	pod := corev1.Pod{
 		Spec: corev1.PodSpec{
@@ -54,12 +42,18 @@ func TestAddNativeSidecar(t *testing.T) {
 			Namespace: "some-app",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			Mode: v1beta1.ModeSidecar,
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
 				InitContainers: []corev1.Container{
 					{
 						Name: "test",
 					},
+				},
+			},
+			Mode: v1beta1.ModeSidecar,
+			ConfigMaps: []v1beta1.ConfigMapsSpec{
+				{
+					Name:      "test-config",
+					MountPath: "/tmp/test",
 				},
 			},
 		},
@@ -81,15 +75,35 @@ func TestAddNativeSidecar(t *testing.T) {
 	assert.NoError(t, err)
 	require.Len(t, changed.Spec.Containers, 1)
 	require.Len(t, changed.Spec.InitContainers, 3)
-	require.Len(t, changed.Spec.Volumes, 1)
+	require.Len(t, changed.Spec.Volumes, 2)
+	assert.Equal(
+		t,
+		corev1.Volume{
+			Name: "configmap-test-config",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "test-config",
+					},
+				},
+			},
+		},
+		changed.Spec.Volumes[1],
+	)
 	assert.Equal(t, "some-app.otelcol-native-sidecar",
 		changed.Labels["sidecar.opentelemetry.io/injected"])
 	expectedPolicy := corev1.ContainerRestartPolicyAlways
 	assert.Equal(t, corev1.Container{
-		Name:          "otc-container",
-		Image:         "some-default-image",
-		Args:          []string{"--config=env:OTEL_CONFIG"},
-		RestartPolicy: &expectedPolicy,
+		Name:  "otc-container",
+		Image: "some-default-image",
+		Args:  []string{"--config=env:OTEL_CONFIG"},
+		Ports: []corev1.ContainerPort{
+			{
+				Name:          "metrics",
+				ContainerPort: 8888,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
 		Env: []corev1.EnvVar{
 			{
 				Name: "POD_NAME",
@@ -100,15 +114,33 @@ func TestAddNativeSidecar(t *testing.T) {
 				},
 			},
 			{
+				Name: "GOMEMLIMIT",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.memory",
+						ContainerName: "otc-container",
+					},
+				},
+			},
+			{
+				Name: "GOMAXPROCS",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.cpu",
+						ContainerName: "otc-container",
+					},
+				},
+			},
+			{
 				Name:  "OTEL_CONFIG",
 				Value: string(otelcolYaml),
 			},
 		},
-		Ports: []corev1.ContainerPort{
+		RestartPolicy: &expectedPolicy,
+		VolumeMounts: []corev1.VolumeMount{
 			{
-				Name:          "metrics",
-				ContainerPort: 8888,
-				Protocol:      corev1.ProtocolTCP,
+				MountPath: "/var/conf/tmp/test/configmap-test-config",
+				Name:      "configmap-test-config",
 			},
 		},
 	}, changed.Spec.InitContainers[2])
@@ -182,6 +214,24 @@ func TestAddSidecarWhenNoSidecarExists(t *testing.T) {
 				ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{
 						FieldPath: "metadata.name",
+					},
+				},
+			},
+			{
+				Name: "GOMEMLIMIT",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.memory",
+						ContainerName: "otc-container",
+					},
+				},
+			},
+			{
+				Name: "GOMAXPROCS",
+				ValueFrom: &corev1.EnvVarSource{
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						Resource:      "limits.cpu",
+						ContainerName: "otc-container",
 					},
 				},
 			},
@@ -267,8 +317,6 @@ func TestRemoveNonExistingSidecar(t *testing.T) {
 }
 
 func TestExistsIn(t *testing.T) {
-	enableSidecarFeatureGate(t)
-
 	for _, tt := range []struct {
 		desc     string
 		pod      corev1.Pod

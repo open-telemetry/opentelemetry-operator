@@ -103,7 +103,7 @@ spec:
     - name: OTEL_PROPAGATORS
       value: jaeger,b3
     - name: OTEL_RESOURCE_ATTRIBUTES
-    image: rabbitmq
+    image: docker.io/library/rabbitmq:latest
     name: myrabbit
     volumeMounts:
     - mountPath: /var/run/secrets/kubernetes.io/serviceaccount

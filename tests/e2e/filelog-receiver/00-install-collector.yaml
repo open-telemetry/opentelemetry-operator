@@ -1,0 +1,56 @@
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: filelog
+spec:
+  mode: sidecar
+  image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
+  volumeMounts:
+  - name: logs
+    mountPath: /var/log/app
+  ports:
+    - port: 8888
+      protocol: TCP
+      name: metrics
+  config:
+    receivers:
+      filelog:
+        include:
+        - /var/log/app/*.log
+        start_at: beginning
+        operators:
+        - type: regex_parser
+          regex: '^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[(?P<level>\w+)\] (?P<message>.*)$'
+          timestamp:
+            parse_from: attributes.timestamp
+            layout: '%Y-%m-%d %H:%M:%S'
+        - type: move
+          from: attributes.level
+          to: attributes["log.level"]
+        - type: move
+          from: attributes.message
+          to: body
+    processors: {}
+    exporters:
+      debug:
+        verbosity: detailed
+    service:
+      pipelines:
+        logs:
+          receivers: [filelog]
+          processors: []
+          exporters: [debug]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-generator-plaintext
+data:
+  generate-logs.sh: |
+    #!/bin/sh
+    for i in $(seq 1 60); do
+      log_line="$(date '+%Y-%m-%d %H:%M:%S') [INFO] Plain text log entry from application (startup)"
+      echo "$log_line" | tee -a /var/log/app/plaintext.log
+      sleep 1
+    done

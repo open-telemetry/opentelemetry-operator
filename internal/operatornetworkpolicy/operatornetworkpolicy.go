@@ -27,9 +27,11 @@ type networkPolicy struct {
 	clientset kubernetes.Interface
 	scheme    *runtime.Scheme
 
-	operatorNamespace string
-	webhookPort       int32
-	metricsPort       int32
+	operatorNamespace          string
+	webhookPort                int32
+	metricsPort                int32
+	apiServerPodSelector       *metav1.LabelSelector
+	apiServerNamespaceSelector *metav1.LabelSelector
 }
 
 var _ manager.Runnable = (*networkPolicy)(nil)
@@ -70,6 +72,20 @@ func WithMetricsPort(metricsPort int32) Option {
 	}
 }
 
+// WithAPISererPodLabelSelector sets the label selector for the pod of the API server.
+func WithAPISererPodLabelSelector(selector *metav1.LabelSelector) Option {
+	return func(s *networkPolicy) {
+		s.apiServerPodSelector = selector
+	}
+}
+
+// WithAPISererNamespaceLabelSelector sets the label selector for tbe namespace of the API server.
+func WithAPISererNamespaceLabelSelector(selector *metav1.LabelSelector) Option {
+	return func(s *networkPolicy) {
+		s.apiServerNamespaceSelector = selector
+	}
+}
+
 func (n *networkPolicy) Start(ctx context.Context) error {
 	tcp := corev1.ProtocolTCP
 	apiServerPort := intstr.FromInt32(defaultAPIServerPort)
@@ -98,6 +114,21 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 			},
 			PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress},
 		},
+	}
+
+	if n.apiServerPodSelector != nil {
+		np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
+			PodSelector: n.apiServerPodSelector,
+		})
+	}
+	if n.apiServerNamespaceSelector != nil {
+		if np.Spec.Egress[0].To == nil {
+			np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
+				NamespaceSelector: n.apiServerNamespaceSelector,
+			})
+		} else {
+			np.Spec.Egress[0].To[0].NamespaceSelector = n.apiServerNamespaceSelector
+		}
 	}
 
 	if n.webhookPort != 0 {

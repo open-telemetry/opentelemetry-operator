@@ -17,7 +17,7 @@ COPY DemoApplication.java /app/src/main/java/com/example/app/
 COPY build.gradle .
 RUN ./gradlew bootJar --no-daemon
 
-FROM eclipse-temurin:17.0.8.1_1-jre
+FROM docker.io/library/eclipse-temurin:17.0.8.1_1-jre
 
 COPY --from=builder /app/build/libs/app-0.0.1-SNAPSHOT.jar .
 ENTRYPOINT ["java", "-jar", "app-0.0.1-SNAPSHOT.jar"]

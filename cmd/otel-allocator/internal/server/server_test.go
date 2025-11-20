@@ -31,13 +31,9 @@ import (
 )
 
 var (
-	logger       = logf.Log.WithName("server-unit-tests")
-	baseLabelSet = labels.Labels{
-		{Name: "test_label", Value: "test-value"},
-	}
-	testJobLabelSetTwo = labels.Labels{
-		{Name: "test_label", Value: "test-value2"},
-	}
+	logger                  = logf.Log.WithName("server-unit-tests")
+	baseLabelSet            = labels.New(labels.Label{Name: "test_label", Value: "test-value"})
+	testJobLabelSetTwo      = labels.New(labels.Label{Name: "test_label", Value: "test-value2"})
 	baseTargetItem          = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
 	secondTargetItem        = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
 	testJobTargetItemTwo    = target.NewItem("test-job", "test-url2", testJobLabelSetTwo, "test-collector2")
@@ -101,9 +97,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
-						Labels: labels.Labels{
-							{Name: "test_label", Value: "test-value"},
-						},
+						Labels:    labels.New(labels.Label{Name: "test_label", Value: "test-value"}),
 					},
 				},
 			},
@@ -123,9 +117,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
-						Labels: labels.Labels{
-							{Name: "test_label", Value: "test-value"},
-						},
+						Labels:    labels.New(labels.Label{Name: "test_label", Value: "test-value"}),
 					},
 				},
 			},
@@ -145,15 +137,11 @@ func TestServer_TargetsHandler(t *testing.T) {
 				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
-						Labels: labels.Labels{
-							{Name: "test_label", Value: "test-value"},
-						},
+						Labels:    labels.New(labels.Label{Name: "test_label", Value: "test-value"}),
 					},
 					{
 						TargetURL: []string{"test-url2"},
-						Labels: labels.Labels{
-							{Name: "test_label", Value: "test-value2"},
-						},
+						Labels:    labels.New(labels.Label{Name: "test_label", Value: "test-value2"}),
 					},
 				},
 			},
@@ -568,7 +556,7 @@ func TestServer_JobHandler(t *testing.T) {
 		{
 			description: "one job",
 			targetItems: map[target.ItemHash]*target.Item{
-				0: target.NewItem("job1", "", labels.Labels{}, ""),
+				0: target.NewItem("job1", "", labels.New(), ""),
 			},
 			expectedCode: http.StatusOK,
 			expectedJobs: map[string]linkJSON{
@@ -578,11 +566,11 @@ func TestServer_JobHandler(t *testing.T) {
 		{
 			description: "multiple jobs",
 			targetItems: map[target.ItemHash]*target.Item{
-				0: target.NewItem("job1", "", labels.Labels{}, ""),
-				1: target.NewItem("job2", "", labels.Labels{}, ""),
-				2: target.NewItem("job3", "", labels.Labels{}, ""),
-				3: target.NewItem("job3", "", labels.Labels{}, ""),
-				4: target.NewItem("job3", "", labels.Labels{}, "")},
+				0: target.NewItem("job1", "", labels.New(), ""),
+				1: target.NewItem("job2", "", labels.New(), ""),
+				2: target.NewItem("job3", "", labels.New(), ""),
+				3: target.NewItem("job3", "", labels.New(), ""),
+				4: target.NewItem("job3", "", labels.New(), "")},
 			expectedCode: http.StatusOK,
 			expectedJobs: map[string]linkJSON{
 				"job1": newLink("job1"),
@@ -635,7 +623,7 @@ func TestServer_JobsHandler_HTML(t *testing.T) {
 		{
 			description: "one job",
 			targetItems: map[target.ItemHash]*target.Item{
-				0: target.NewItem("job1", "", labels.Labels{}, ""),
+				0: target.NewItem("job1", "", labels.New(), ""),
 			},
 			expectedCode: http.StatusOK,
 			Golden:       "jobs_one.html",
@@ -643,11 +631,11 @@ func TestServer_JobsHandler_HTML(t *testing.T) {
 		{
 			description: "multiple jobs",
 			targetItems: map[target.ItemHash]*target.Item{
-				0: target.NewItem("job1", "1.1.1.1:8080", labels.Labels{}, ""),
-				1: target.NewItem("job2", "1.1.1.2:8080", labels.Labels{}, ""),
-				2: target.NewItem("job3", "1.1.1.3:8080", labels.Labels{}, ""),
-				3: target.NewItem("job3", "1.1.1.4:8080", labels.Labels{}, ""),
-				4: target.NewItem("job3", "1.1.1.5:8080", labels.Labels{}, "")},
+				0: target.NewItem("job1", "1.1.1.1:8080", labels.New(), ""),
+				1: target.NewItem("job2", "1.1.1.2:8080", labels.New(), ""),
+				2: target.NewItem("job3", "1.1.1.3:8080", labels.New(), ""),
+				3: target.NewItem("job3", "1.1.1.4:8080", labels.New(), ""),
+				4: target.NewItem("job3", "1.1.1.5:8080", labels.New(), "")},
 			expectedCode: http.StatusOK,
 			Golden:       "jobs_multiple.html",
 		},

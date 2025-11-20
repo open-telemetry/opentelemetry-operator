@@ -512,9 +512,12 @@ func TestContainerEnvVarsOverridden(t *testing.T) {
 	c := Container(cfg, testLogger, otelcol, true)
 
 	// verify
-	assert.Len(t, c.Env, 2)
+	assert.Len(t, c.Env, 4)
 	assert.Equal(t, "foo", c.Env[0].Name)
 	assert.Equal(t, "bar", c.Env[0].Value)
+	assert.Equal(t, "POD_NAME", c.Env[1].Name)
+	assert.Equal(t, "GOMEMLIMIT", c.Env[2].Name)
+	assert.Equal(t, "GOMAXPROCS", c.Env[3].Name)
 }
 
 func TestContainerDefaultEnvVars(t *testing.T) {
@@ -528,8 +531,10 @@ func TestContainerDefaultEnvVars(t *testing.T) {
 	c := Container(cfg, testLogger, otelcol, true)
 
 	// verify
-	assert.Len(t, c.Env, 1)
+	assert.Len(t, c.Env, 3)
 	assert.Equal(t, c.Env[0].Name, "POD_NAME")
+	assert.Equal(t, c.Env[1].Name, "GOMEMLIMIT")
+	assert.Equal(t, c.Env[2].Name, "GOMAXPROCS")
 }
 
 func TestContainerProxyEnvVars(t *testing.T) {
@@ -544,10 +549,12 @@ func TestContainerProxyEnvVars(t *testing.T) {
 	c := Container(cfg, testLogger, otelcol, true)
 
 	// verify
-	require.Len(t, c.Env, 3)
+	require.Len(t, c.Env, 5)
 	assert.Equal(t, "POD_NAME", c.Env[0].Name)
-	assert.Equal(t, corev1.EnvVar{Name: "NO_PROXY", Value: "localhost"}, c.Env[1])
-	assert.Equal(t, corev1.EnvVar{Name: "no_proxy", Value: "localhost"}, c.Env[2])
+	assert.Equal(t, "GOMEMLIMIT", c.Env[1].Name)
+	assert.Equal(t, "GOMAXPROCS", c.Env[2].Name)
+	assert.Equal(t, corev1.EnvVar{Name: "NO_PROXY", Value: "localhost"}, c.Env[3])
+	assert.Equal(t, corev1.EnvVar{Name: "no_proxy", Value: "localhost"}, c.Env[4])
 }
 
 func TestContainerResourceRequirements(t *testing.T) {
@@ -941,6 +948,24 @@ func TestGetEnvironmentVariables(t *testing.T) {
 						},
 					},
 				},
+				{
+					Name: "GOMEMLIMIT",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.memory",
+							ContainerName: naming.Container(),
+						},
+					},
+				},
+				{
+					Name: "GOMAXPROCS",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.cpu",
+							ContainerName: naming.Container(),
+						},
+					},
+				},
 			},
 		},
 		{
@@ -964,6 +989,24 @@ func TestGetEnvironmentVariables(t *testing.T) {
 				{
 					Name:  "SHARD",
 					Value: "0",
+				},
+				{
+					Name: "GOMEMLIMIT",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.memory",
+							ContainerName: naming.Container(),
+						},
+					},
+				},
+				{
+					Name: "GOMAXPROCS",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.cpu",
+							ContainerName: naming.Container(),
+						},
+					},
 				},
 			},
 		},
@@ -1055,6 +1098,24 @@ func TestGetEnvironmentVariables(t *testing.T) {
 						},
 					},
 				},
+				{
+					Name: "GOMEMLIMIT",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.memory",
+							ContainerName: naming.Container(),
+						},
+					},
+				},
+				{
+					Name: "GOMAXPROCS",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.cpu",
+							ContainerName: naming.Container(),
+						},
+					},
+				},
 				{Name: "HTTP_PROXY", Value: "http://proxy.example.com"},
 				{Name: "http_proxy", Value: "http://proxy.example.com"},
 				{Name: "NO_PROXY", Value: "localhost"},
@@ -1091,6 +1152,24 @@ service:
 					ValueFrom: &corev1.EnvVarSource{
 						FieldRef: &corev1.ObjectFieldSelector{
 							FieldPath: "metadata.name",
+						},
+					},
+				},
+				{
+					Name: "GOMEMLIMIT",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.memory",
+							ContainerName: naming.Container(),
+						},
+					},
+				},
+				{
+					Name: "GOMAXPROCS",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.cpu",
+							ContainerName: naming.Container(),
 						},
 					},
 				},
@@ -1147,6 +1226,24 @@ service:
 				{
 					Name:  "K8S_NODE_NAME",
 					Value: "custom-node-name",
+				},
+				{
+					Name: "GOMEMLIMIT",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.memory",
+							ContainerName: naming.Container(),
+						},
+					},
+				},
+				{
+					Name: "GOMAXPROCS",
+					ValueFrom: &corev1.EnvVarSource{
+						ResourceFieldRef: &corev1.ResourceFieldSelector{
+							Resource:      "limits.cpu",
+							ContainerName: naming.Container(),
+						},
+					},
 				},
 			},
 		},

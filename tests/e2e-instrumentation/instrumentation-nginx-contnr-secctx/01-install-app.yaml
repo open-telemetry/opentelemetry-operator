@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: myapp
-        image: nginxinc/nginx-unprivileged:1.25.3
+        image: docker.io/nginxinc/nginx-unprivileged:1.25.3
         imagePullPolicy: Always
         securityContext:
           runAsUser: 1000
