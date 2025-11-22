@@ -46,6 +46,11 @@ type Agent struct {
 	applier             operator.ConfigApplier
 	remoteConfigEnabled bool
 
+	ownMetricsSettings *protobufs.TelemetryConnectionSettings
+	ownTracesSettings  *protobufs.TelemetryConnectionSettings
+	ownLogsSettings    *protobufs.TelemetryConnectionSettings
+	otherSettings      map[string]*protobufs.OtherConnectionSettings
+
 	done   chan struct{}
 	ticker *time.Ticker
 }
@@ -490,7 +495,39 @@ func (agent *Agent) onMessage(ctx context.Context, msg *types.MessageData) {
 
 	if msg.OwnMetricsConnSettings != nil {
 		agent.initMeter(msg.OwnMetricsConnSettings)
+		agent.ownMetricsSettings = msg.OwnMetricsConnSettings
 	}
+
+	if msg.OwnTracesConnSettings != nil {
+		agent.ownTracesSettings = msg.OwnTracesConnSettings
+	}
+
+	if msg.OwnLogsConnSettings != nil {
+		agent.ownLogsSettings = msg.OwnLogsConnSettings
+	}
+	if msg.OtherConnSettings != nil {
+		agent.otherSettings = msg.OtherConnSettings
+	}
+}
+
+// GetOwnMetricsSettings returns the telemetry connection settings for metrics
+func (agent *Agent) GetOwnMetricsSettings() *protobufs.TelemetryConnectionSettings {
+	return agent.ownMetricsSettings
+}
+
+// GetOwnTracesSettings returns the telemetry connection settings for traces
+func (agent *Agent) GetOwnTracesSettings() *protobufs.TelemetryConnectionSettings {
+	return agent.ownTracesSettings
+}
+
+// GetOwnLogsSettings returns the telemetry connection settings for logs
+func (agent *Agent) GetOwnLogsSettings() *protobufs.TelemetryConnectionSettings {
+	return agent.ownLogsSettings
+}
+
+// GetOtherConnectionSettings returns the telemetry connection settings for other connections
+func (agent *Agent) GetOtherConnectionSettings() map[string]*protobufs.OtherConnectionSettings {
+	return agent.otherSettings
 }
 
 // getCurrentTimeUnixNano returns the current time as a uint64, which the protocol expects.

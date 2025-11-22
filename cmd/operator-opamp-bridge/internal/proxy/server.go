@@ -49,6 +49,15 @@ type OpAMPProxy struct {
 	agentsByHostName map[string]uuid.UUID
 	// connections map is required because that's the only way we know to remove an agent.
 	connections map[types.Connection]map[uuid.UUID]bool
+
+	bridgeAgent BridgeAgentInterface
+}
+
+type BridgeAgentInterface interface {
+	GetOwnMetricsSettings() *protobufs.TelemetryConnectionSettings
+	GetOwnTracesSettings() *protobufs.TelemetryConnectionSettings
+	GetOwnLogsSettings() *protobufs.TelemetryConnectionSettings
+	GetOtherConnectionSettings() map[string]*protobufs.OtherConnectionSettings
 }
 
 func NewOpAMPProxy(l logr.Logger, endpoint string) *OpAMPProxy {
@@ -61,6 +70,12 @@ func NewOpAMPProxy(l logr.Logger, endpoint string) *OpAMPProxy {
 		connections:      map[types.Connection]map[uuid.UUID]bool{},
 		updatesChan:      make(chan struct{}, 1),
 	}
+}
+
+func (s *OpAMPProxy) SetBridgeAgent(bridgeAgent BridgeAgentInterface) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	s.bridgeAgent = bridgeAgent
 }
 
 func (s *OpAMPProxy) Start() error {
@@ -132,7 +147,7 @@ func (s *OpAMPProxy) onMessage(ctx context.Context, conn types.Connection, msg *
 	agentUpdated := false
 	s.mux.Lock()
 	if _, ok := s.agentsById[instanceId]; !ok {
-		s.agentsById[instanceId] = NewAgent(s.logger.WithValues("instanceId", instanceId.String()), instanceId, conn)
+		s.agentsById[instanceId] = NewAgent(s.logger.WithValues("instanceId", instanceId.String()), instanceId, conn, s.bridgeAgent)
 		// Ensure the Agent's instance id is associated with the connection.
 		if s.connections[conn] == nil {
 			s.connections[conn] = map[uuid.UUID]bool{}
