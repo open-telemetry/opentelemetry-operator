@@ -510,22 +510,22 @@ func (agent *Agent) onMessage(ctx context.Context, msg *types.MessageData) {
 	}
 }
 
-// GetOwnMetricsSettings returns the telemetry connection settings for metrics
+// GetOwnMetricsSettings returns the telemetry connection settings for metrics.
 func (agent *Agent) GetOwnMetricsSettings() *protobufs.TelemetryConnectionSettings {
 	return agent.ownMetricsSettings
 }
 
-// GetOwnTracesSettings returns the telemetry connection settings for traces
+// GetOwnTracesSettings returns the telemetry connection settings for traces.
 func (agent *Agent) GetOwnTracesSettings() *protobufs.TelemetryConnectionSettings {
 	return agent.ownTracesSettings
 }
 
-// GetOwnLogsSettings returns the telemetry connection settings for logs
+// GetOwnLogsSettings returns the telemetry connection settings for logs.
 func (agent *Agent) GetOwnLogsSettings() *protobufs.TelemetryConnectionSettings {
 	return agent.ownLogsSettings
 }
 
-// GetOtherConnectionSettings returns the telemetry connection settings for other connections
+// GetOtherConnectionSettings returns the telemetry connection settings for other connections.
 func (agent *Agent) GetOtherConnectionSettings() map[string]*protobufs.OtherConnectionSettings {
 	return agent.otherSettings
 }
