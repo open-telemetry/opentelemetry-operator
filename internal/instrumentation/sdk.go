@@ -331,15 +331,19 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 	configureExporter(otelinst.Spec.Exporter, &pod, container)
 
 	// Always retrieve the pod name from the Downward API. Ensure that the OTEL_RESOURCE_ATTRIBUTES_POD_NAME env exists.
-	container.Env = append(container.Env, corev1.EnvVar{
-		Name: constants.EnvPodName,
-		ValueFrom: &corev1.EnvVarSource{
-			FieldRef: &corev1.ObjectFieldSelector{
-				FieldPath: "metadata.name",
+	// Added this check because we add this variable when using sidecar.
+	idx = getIndexOfEnv(container.Env, constants.EnvPodName)
+	if idx == -1 {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name: constants.EnvPodName,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
 			},
-		},
-	})
-	resourceMap[string(semconv.K8SPodNameKey)] = fmt.Sprintf("$(%s)", constants.EnvPodName)
+		})
+		resourceMap[string(semconv.K8SPodNameKey)] = fmt.Sprintf("$(%s)", constants.EnvPodName)
+	}
 
 	// Some attributes might be empty, we should get them via k8s downward API
 	if otelinst.Spec.Resource.AddK8sUIDAttributes {
@@ -363,17 +367,20 @@ func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alph
 			resourceMap[string(semconv.ServiceVersionKey)] = vsn
 		}
 	}
-
-	if resourceMap[string(semconv.K8SNodeNameKey)] == "" {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name: constants.EnvNodeName,
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "spec.nodeName",
+	// Added this check because we add this variable when using sidecar.
+	idx = getIndexOfEnv(container.Env, constants.EnvNodeName)
+	if idx == -1 {
+		if resourceMap[string(semconv.K8SNodeNameKey)] == "" {
+			container.Env = append(container.Env, corev1.EnvVar{
+				Name: constants.EnvNodeName,
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: "spec.nodeName",
+					},
 				},
-			},
-		})
-		resourceMap[string(semconv.K8SNodeNameKey)] = fmt.Sprintf("$(%s)", constants.EnvNodeName)
+			})
+			resourceMap[string(semconv.K8SNodeNameKey)] = fmt.Sprintf("$(%s)", constants.EnvNodeName)
+		}
 	}
 
 	idx = getIndexOfEnv(container.Env, constants.EnvOTELResourceAttrs)
