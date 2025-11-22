@@ -28,7 +28,7 @@ var registry = map[string]components.Parser{
 		MustBuild(),
 	"k8s_observer": components.NewBuilder[k8sobserverConfig]().
 		WithName("k8s_observer").
-		WithRbacGen(generatek8sobserverRbacRules).
+		WithClusterRoleRulesGen(generatek8sobserverRbacRules).
 		MustBuild(),
 }
 

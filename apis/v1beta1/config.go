@@ -146,8 +146,8 @@ type Config struct {
 	Service    Service    `json:"service" yaml:"service"`
 }
 
-// getRbacRulesForComponentKinds gets the RBAC Rules for the given ComponentKind(s).
-func (c *Config) getRbacRulesForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]rbacv1.PolicyRule, error) {
+// getClusterRoleRbacRulesForComponentKinds gets the RBAC Rules for the given ComponentKind(s).
+func (c *Config) getClusterRoleRbacRulesForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]rbacv1.PolicyRule, error) {
 	var rules []rbacv1.PolicyRule
 	enabledComponents := c.GetEnabledComponents()
 	for _, componentKind := range componentKinds {
@@ -181,7 +181,7 @@ func (c *Config) getRbacRulesForComponentKinds(logger logr.Logger, componentKind
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.
 			parser := retriever(componentName)
-			if parsedRules, err := parser.GetRBACRules(logger, cfg.Object[componentName]); err != nil {
+			if parsedRules, err := parser.GetClusterRoleRules(logger, cfg.Object[componentName]); err != nil {
 				return nil, err
 			} else {
 				rules = append(rules, parsedRules...)
@@ -189,6 +189,68 @@ func (c *Config) getRbacRulesForComponentKinds(logger logr.Logger, componentKind
 		}
 	}
 	return rules, nil
+}
+
+// getRbacRolesForComponentKinds gets the RBAC Roles for the given ComponentKind(s).
+func (c *Config) getRbacRolesForComponentKinds(logger logr.Logger, otelCollectorName string, componentKinds ...ComponentKind) ([]*rbacv1.Role, error) {
+	var roles []*rbacv1.Role
+	enabledComponents := c.GetEnabledComponents()
+	for _, componentKind := range componentKinds {
+		var retriever components.ParserRetriever
+		var cfg AnyConfig
+		switch componentKind {
+		case KindReceiver:
+			retriever = receivers.ReceiverFor
+			cfg = c.Receivers
+		case KindExporter:
+			continue
+		case KindProcessor:
+			continue
+		case KindExtension:
+			continue
+		}
+		for componentName := range enabledComponents[componentKind] {
+			// TODO: Clean up the naming here and make it simpler to use a retriever.
+			parser := retriever(componentName)
+			if parsedRoles, err := parser.GetRbacRoles(logger, otelCollectorName, cfg.Object[componentName]); err != nil {
+				return nil, err
+			} else {
+				roles = append(roles, parsedRoles...)
+			}
+		}
+	}
+	return roles, nil
+}
+
+// getRbacRoleBindingsForComponentKinds gets the RBAC RoleBindings for the given ComponentKind(s).
+func (c *Config) getRbacRoleBindingsForComponentKinds(logger logr.Logger, serviceAccountName string, otelCollectorName string, otelCollectorNamespace string, componentKinds ...ComponentKind) ([]*rbacv1.RoleBinding, error) {
+	var roleBindings []*rbacv1.RoleBinding
+	enabledComponents := c.GetEnabledComponents()
+	for _, componentKind := range componentKinds {
+		var retriever components.ParserRetriever
+		var cfg AnyConfig
+		switch componentKind {
+		case KindReceiver:
+			retriever = receivers.ReceiverFor
+			cfg = c.Receivers
+		case KindExporter:
+			continue
+		case KindProcessor:
+			continue
+		case KindExtension:
+			continue
+		}
+		for componentName := range enabledComponents[componentKind] {
+			// TODO: Clean up the naming here and make it simpler to use a retriever.
+			parser := retriever(componentName)
+			if parsedRoleBindings, err := parser.GetRbacRoleBindings(logger, otelCollectorName, cfg.Object[componentName], serviceAccountName, otelCollectorNamespace); err != nil {
+				return nil, err
+			} else {
+				roleBindings = append(roleBindings, parsedRoleBindings...)
+			}
+		}
+	}
+	return roleBindings, nil
 }
 
 // getPortsForComponentKinds gets the ports for the given ComponentKind(s).
@@ -350,8 +412,16 @@ func (c *Config) GetEnvironmentVariables(logger logr.Logger) ([]corev1.EnvVar, e
 	return c.getEnvironmentVariablesForComponentKinds(logger, KindReceiver)
 }
 
-func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error) {
-	return c.getRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor, KindExtension)
+func (c *Config) GetAllClusterRoleRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error) {
+	return c.getClusterRoleRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor, KindExtension)
+}
+
+func (c *Config) GetAllRbacRoles(logger logr.Logger, otelCollectorName string) ([]*rbacv1.Role, error) {
+	return c.getRbacRolesForComponentKinds(logger, otelCollectorName, KindReceiver, KindExporter, KindProcessor, KindExtension)
+}
+
+func (c *Config) GetAllRbacRoleBindings(logger logr.Logger, serviceAccountName string, otelCollectorName string, otelCollectorNamespace string) ([]*rbacv1.RoleBinding, error) {
+	return c.getRbacRoleBindingsForComponentKinds(logger, serviceAccountName, otelCollectorName, otelCollectorNamespace, KindReceiver, KindExporter, KindProcessor, KindExtension)
 }
 
 func (c *Config) ApplyDefaults(logger logr.Logger) ([]EventInfo, error) {
