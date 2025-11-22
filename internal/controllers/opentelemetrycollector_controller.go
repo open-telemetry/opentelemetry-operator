@@ -6,6 +6,8 @@ package controllers
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"sort"
 	"time"
 
@@ -19,6 +21,7 @@ import (
 	policyV1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -244,7 +247,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	params, err := r.GetParams(ctx, instance)
 	if err != nil {
 		log.Error(err, "Failed to create manifest.Params")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, fmt.Errorf("failed to create manifest.Params: %w", err)
 	}
 
 	// We have a deletion, short circuit and let the deletion happen
@@ -253,7 +256,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 			// If the finalization logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
 			if err = r.finalizeCollector(ctx, params); err != nil {
-				return ctrl.Result{}, err
+				return ctrl.Result{}, fmt.Errorf("failed to finalize collector %s: %w", req.NamespacedName.String(), err)
 			}
 
 			// Once all finalizers have been
@@ -261,7 +264,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 			if controllerutil.RemoveFinalizer(&instance, collectorFinalizer) {
 				err = r.Update(ctx, &instance)
 				if err != nil {
-					return ctrl.Result{}, err
+					return ctrl.Result{}, fmt.Errorf("failed to remove finalizer from collector %s: %w", req.NamespacedName.String(), err)
 				}
 			}
 		}
@@ -278,7 +281,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	if r.upgrade.NeedsUpgrade(instance) {
 		err = r.upgrade.Upgrade(ctx, instance)
 		if err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{}, fmt.Errorf("failed to upgrade collector %s: %w", req.NamespacedName.String(), err)
 		}
 		// if the OpenTelemetryCollector CR was upgraded (modified), return here and re-queue the reconcile event.
 		return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Second}, nil
@@ -289,22 +292,33 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 		if controllerutil.AddFinalizer(&instance, collectorFinalizer) {
 			err = r.Update(ctx, &instance)
 			if err != nil {
-				return ctrl.Result{}, err
+				plainErr := fmt.Errorf("failed to add finalizer to collector %s: %w", req.NamespacedName.String(), err)
+				if k8serrors.IsConflict(err) {
+					var current v1beta1.OpenTelemetryCollector
+					if getErr := r.Get(ctx, req.NamespacedName, &current); getErr != nil {
+						return ctrl.Result{}, errors.Join(plainErr, getErr)
+					}
+					return ctrl.Result{}, fmt.Errorf("got an update conflict, submitted %v but the cluster state was %v", instance, current)
+				}
+				return ctrl.Result{}, plainErr
 			}
 		}
 	}
 
 	desiredObjects, buildErr := BuildCollector(params)
 	if buildErr != nil {
-		return ctrl.Result{}, buildErr
+		return ctrl.Result{}, fmt.Errorf("failed to build manifests for collector %s: %w", req.NamespacedName.String(), err)
 	}
 
 	ownedObjects, err := r.findOtelOwnedObjects(ctx, params)
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, fmt.Errorf("failed to find owned objects for collector %s: %w", req.NamespacedName.String(), err)
 	}
 
 	err = reconcileDesiredObjects(ctx, r.Client, log, &instance, params.Scheme, desiredObjects, ownedObjects)
+	if err != nil {
+		err = fmt.Errorf("failed to reconcile changes for collector %s: %w", req.NamespacedName.String(), err)
+	}
 	return collectorStatus.HandleReconcileStatus(ctx, log, params, instance, err)
 }
 
