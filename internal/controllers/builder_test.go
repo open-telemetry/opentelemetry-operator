@@ -5,6 +5,7 @@ package controllers
 
 import (
 	"testing"
+	"time"
 
 	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
@@ -3261,6 +3262,7 @@ prometheus_cr:
 							OrganizationalUnits: []string{"opentelemetry-operator"},
 						},
 						CommonName: "test-ca-cert",
+						Duration:   &metav1.Duration{Duration: 8760 * time.Hour},
 						IsCA:       true,
 						SecretName: "test-ca-cert",
 						IssuerRef: cmmetav1.ObjectReference{
