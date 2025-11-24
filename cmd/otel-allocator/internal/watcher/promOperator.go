@@ -65,7 +65,7 @@ func NewPrometheusCRWatcher(
 	// we want to use endpointslices by default
 	serviceDiscoveryRole := monitoringv1.ServiceDiscoveryRole("EndpointSlice")
 
-	// TODO: We should make these durations configurable
+	//no need to hardcode durations, use default if not set
 	prom := &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cfg.CollectorNamespace,
@@ -84,7 +84,7 @@ func NewPrometheusCRWatcher(
 				ServiceDiscoveryRole:            &serviceDiscoveryRole,
 				ScrapeProtocols:                 cfg.PrometheusCR.ScrapeProtocols,
 			},
-			EvaluationInterval: monitoringv1.Duration("30s"),
+			EvaluationInterval: monitoringv1.Duration(cfg.PrometheusCR.EvaluationInterval.String()),
 		},
 	}
 

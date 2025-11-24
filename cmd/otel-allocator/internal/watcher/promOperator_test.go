@@ -94,7 +94,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/simple/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -116,7 +116,7 @@ func TestLoadConfig(t *testing.T) {
 					},
 					{
 						JobName:         "podMonitor/test/simple/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -187,7 +187,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/auth/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -255,7 +255,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "podMonitor/test/bearer/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -351,7 +351,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/valid-sm/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -373,7 +373,7 @@ func TestLoadConfig(t *testing.T) {
 					},
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -462,7 +462,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/valid-sm/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -484,7 +484,7 @@ func TestLoadConfig(t *testing.T) {
 					},
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -555,7 +555,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/sm-1/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -626,7 +626,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "podMonitor/test/pm-1/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -687,7 +687,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "scrapeConfig/test/scrapeconfig-test-1",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -751,7 +751,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "probe/test/probe-test-1",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -826,7 +826,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/labellednamespace/sm-1/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -896,7 +896,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "podMonitor/labellednamespace/pm-1/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -1002,7 +1002,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		ScrapeConfigs: []*promconfig.ScrapeConfig{
 			{
 				JobName:         "podMonitor/labellednamespace/pm-1/0",
-				ScrapeInterval:  model.Duration(30 * time.Second),
+				ScrapeInterval:  model.Duration(60 * time.Second),
 				ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 				ScrapeTimeout:   model.Duration(10 * time.Second),
 				HonorTimestamps: true,
@@ -1152,6 +1152,108 @@ func TestRateLimit(t *testing.T) {
 	assert.Less(t, eventInterval, elapsedTime)
 }
 
+func TestDefaultDurations(t *testing.T) {
+	namespace := "test"
+	portName := "web"
+	tests := []struct {
+		name            string
+		serviceMonitors []*monitoringv1.ServiceMonitor
+		cfg             allocatorconfig.Config
+		expectedScrape  model.Duration
+		expectedEval    model.Duration
+	}{
+		{
+			name: "custom scrape and evaluation intervals",
+			serviceMonitors: []*monitoringv1.ServiceMonitor{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-sm",
+						Namespace: namespace,
+					},
+					Spec: monitoringv1.ServiceMonitorSpec{
+						JobLabel: "test",
+						Endpoints: []monitoringv1.Endpoint{
+							{
+								Port: portName,
+							},
+						},
+					},
+				},
+			},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ScrapeInterval:         model.Duration(120 * time.Second),
+					EvaluationInterval:     model.Duration(120 * time.Second),
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+				},
+			},
+			expectedScrape: model.Duration(120 * time.Second),
+			expectedEval:   model.Duration(120 * time.Second),
+		},
+		{
+			name: "prometheus operator applies defaults when intervals nil",
+			serviceMonitors: []*monitoringv1.ServiceMonitor{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-sm",
+						Namespace: namespace,
+					},
+					Spec: monitoringv1.ServiceMonitorSpec{
+						JobLabel: "test",
+						Endpoints: []monitoringv1.Endpoint{
+							{
+								Port: portName,
+							},
+						},
+					},
+				},
+			},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+				},
+			},
+			expectedScrape: model.Duration(60 * time.Second),
+			expectedEval:   model.Duration(60 * time.Second),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w, _ := getTestPrometheusCRWatcher(t, namespace, tt.serviceMonitors, nil, nil, nil, tt.cfg)
+			defer w.Close()
+
+			events := make(chan Event, 1)
+			eventInterval := 5 * time.Millisecond
+			w.eventInterval = eventInterval
+
+			go func() {
+				watchErr := w.Watch(events, make(chan error))
+				require.NoError(t, watchErr)
+			}()
+
+			if success := cache.WaitForNamedCacheSync("namespace", w.stopChannel, w.nsInformer.HasSynced); !success {
+				require.True(t, success)
+			}
+
+			for _, informer := range w.informers {
+				success := cache.WaitForCacheSync(w.stopChannel, informer.HasSynced)
+				require.True(t, success)
+			}
+
+			got, err := w.LoadConfig(context.Background())
+			assert.NoError(t, err)
+
+			assert.NotEmpty(t, got.ScrapeConfigs)
+
+			for _, sc := range got.ScrapeConfigs {
+				assert.Equal(t, tt.expectedScrape, sc.ScrapeInterval)
+			}
+			assert.Equal(t, tt.expectedEval, got.GlobalConfig.EvaluationInterval)
+		})
+	}
+}
+
 // getTestPrometheusCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
 // and test secrets.
 func getTestPrometheusCRWatcher(
@@ -1235,7 +1337,7 @@ func getTestPrometheusCRWatcher(
 		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-				ScrapeInterval:                  monitoringv1.Duration("30s"),
+				ScrapeInterval:                  monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
 				ServiceMonitorSelector:          cfg.PrometheusCR.ServiceMonitorSelector,
 				PodMonitorSelector:              cfg.PrometheusCR.PodMonitorSelector,
 				ServiceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
@@ -1246,7 +1348,7 @@ func getTestPrometheusCRWatcher(
 				ScrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
 				ServiceDiscoveryRole:            &serviceDiscoveryRole,
 			},
-			EvaluationInterval: monitoringv1.Duration("30s"),
+			EvaluationInterval: monitoringv1.Duration(cfg.PrometheusCR.EvaluationInterval.String()),
 		},
 	}
 
