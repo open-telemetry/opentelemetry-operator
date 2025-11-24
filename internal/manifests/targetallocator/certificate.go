@@ -5,6 +5,7 @@ package targetallocator
 
 import (
 	"fmt"
+	"time"
 
 	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
@@ -28,6 +29,10 @@ func CACertificate(params Params) *cmv1.Certificate {
 		Spec: cmv1.CertificateSpec{
 			IsCA:       true,
 			CommonName: naming.CACertificate(params.TargetAllocator.Name),
+			// Set CA certificate to 1 year (much longer than the default 90-day duration of client/server certs)
+			// to prevent renewal race conditions where client and server certificates might be signed by different
+			// CA versions during simultaneous renewal. This ensures the CA remains stable while dependent certificates renew.
+			Duration: &metav1.Duration{Duration: 8760 * time.Hour}, // 1 year
 			Subject: &cmv1.X509Subject{
 				OrganizationalUnits: []string{"opentelemetry-operator"},
 			},
