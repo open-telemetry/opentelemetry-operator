@@ -5,6 +5,7 @@ package targetallocator
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -83,6 +84,9 @@ func TestCACertificate(t *testing.T) {
 			assert.Equal(t, "Issuer", caCert.Spec.IssuerRef.Kind)
 			assert.Equal(t, []string{"opentelemetry-operator"}, caCert.Spec.Subject.OrganizationalUnits)
 			assert.Equal(t, tt.expectedLabels, caCert.Labels)
+			// Verify CA certificate has 1 year duration to prevent renewal race conditions
+			assert.NotNil(t, caCert.Spec.Duration)
+			assert.Equal(t, 8760*time.Hour, caCert.Spec.Duration.Duration)
 		})
 	}
 }
