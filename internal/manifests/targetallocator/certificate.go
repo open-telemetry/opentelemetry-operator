@@ -33,6 +33,11 @@ func CACertificate(params Params) *cmv1.Certificate {
 			// to prevent renewal race conditions where client and server certificates might be signed by different
 			// CA versions during simultaneous renewal. This ensures the CA remains stable while dependent certificates renew.
 			Duration: &metav1.Duration{Duration: 8760 * time.Hour}, // 1 year
+			// Set renewBefore to 100 days (longer than the 90-day client/server cert duration) to ensure:
+			// 1. CA renewal doesn't coincide with client/server renewal cycles (which occur every ~60 days at the 2/3 point of their 90-day lifetime)
+			// 2. The CA always has sufficient remaining validity (≥100 days) to safely issue client/server certificates with 90-day lifetimes
+			// 3. Client/server certificates can never outlive the CA certificate that signed them
+			RenewBefore: &metav1.Duration{Duration: 2400 * time.Hour}, // 100 days
 			Subject: &cmv1.X509Subject{
 				OrganizationalUnits: []string{"opentelemetry-operator"},
 			},

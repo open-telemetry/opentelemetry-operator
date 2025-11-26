@@ -87,6 +87,9 @@ func TestCACertificate(t *testing.T) {
 			// Verify CA certificate has 1 year duration to prevent renewal race conditions
 			assert.NotNil(t, caCert.Spec.Duration)
 			assert.Equal(t, 8760*time.Hour, caCert.Spec.Duration.Duration)
+			// Verify CA certificate renewBefore is set to 100 days (longer than client/server cert duration)
+			assert.NotNil(t, caCert.Spec.RenewBefore)
+			assert.Equal(t, 2400*time.Hour, caCert.Spec.RenewBefore.Duration)
 		})
 	}
 }

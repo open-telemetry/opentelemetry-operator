@@ -3261,10 +3261,11 @@ prometheus_cr:
 						Subject: &cmv1.X509Subject{
 							OrganizationalUnits: []string{"opentelemetry-operator"},
 						},
-						CommonName: "test-ca-cert",
-						Duration:   &metav1.Duration{Duration: 8760 * time.Hour},
-						IsCA:       true,
-						SecretName: "test-ca-cert",
+						CommonName:  "test-ca-cert",
+						Duration:    &metav1.Duration{Duration: 8760 * time.Hour},
+						RenewBefore: &metav1.Duration{Duration: 2400 * time.Hour},
+						IsCA:        true,
+						SecretName:  "test-ca-cert",
 						IssuerRef: cmmetav1.ObjectReference{
 							Name: "test-self-signed-issuer",
 							Kind: "Issuer",
