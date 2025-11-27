@@ -1,3 +1,7 @@
+# Run e2e tests for httpRoute
+.PHONY: e2e-httproute
+e2e-httproute: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e/httpRoute --report-name e2e-httproute
 # Current Operator version
 VERSION ?= $(shell git describe --tags | sed 's/^v//')
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
@@ -275,7 +279,7 @@ add-rbac-permissions-to-operator: manifests kustomize
 
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
-deploy: set-image-controller
+deploy: install-gateway-api-crds set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 	@echo "Waiting for operator webhook pods to be ready..."
 	@kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=opentelemetry-operator -n opentelemetry-operator-system --timeout=120s || true

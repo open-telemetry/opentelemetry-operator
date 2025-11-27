@@ -63,17 +63,17 @@ func HTTPRoutes(params manifests.Params) ([]*gatewayv1.HTTPRoute, error) {
 		name := naming.HTTPRoute(params.OtelCol.Name, port.Name)
 		labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)
 
-		// auto-generate ParentRefs from gateway name and namespace
 		gatewayNamespace := httpRouteConfig.GatewayNamespace
 		if gatewayNamespace == "" {
-			// default to collector namespace if gateway namespace is not specified or it should be default?
 			gatewayNamespace = params.OtelCol.Namespace
+			params.Log.V(1).Info("HTTPRoute GatewayNamespace not specified, using the same namespace as the OtelCol", "namespace", gatewayNamespace)
 		}
 
 		namespace := gatewayv1.Namespace(gatewayNamespace)
 		group := gatewayv1.Group("gateway.networking.k8s.io")
 		kind := gatewayv1.Kind("Gateway")
 
+		// auto-generate ParentRefs from gateway name and namespace
 		parentRefs := []gatewayv1.ParentReference{
 			{
 				Group:     &group,

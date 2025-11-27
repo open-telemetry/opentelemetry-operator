@@ -26,6 +26,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/autodetectutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -416,6 +417,7 @@ type mockAutoDetect struct {
 	CollectorAvailabilityFunc       func() (collector.Availability, error)
 	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
 	NativeSidecarSupportFunc        func() (bool, error)
+	GatewayAPIsAvailabilityFunc     func() (gatewayapi.ApiAvailability, error)
 }
 
 func (m *mockAutoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, error) {
@@ -476,4 +478,11 @@ func (m *mockAutoDetect) NativeSidecarSupport() (bool, error) {
 		return m.NativeSidecarSupportFunc()
 	}
 	return false, nil
+}
+
+func (m *mockAutoDetect) GatewayAPIsAvailability() (gatewayapi.ApiAvailability, error) {
+	if m.GatewayAPIsAvailabilityFunc != nil {
+		return m.GatewayAPIsAvailabilityFunc()
+	}
+	return gatewayapi.ApiNotAvailable, nil
 }

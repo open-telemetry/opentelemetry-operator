@@ -32,6 +32,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
@@ -365,7 +366,6 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 		&autoscalingv2.HorizontalPodAutoscaler{},
 		&policyV1.PodDisruptionBudget{},
 		&v1alpha1.TargetAllocator{},
-		&gatewayv1.HTTPRoute{},
 	}
 
 	if r.config.CreateRBACPermissions == rbac.Available {
@@ -382,7 +382,9 @@ func (r *OpenTelemetryCollectorReconciler) GetOwnedResourceTypes() []client.Obje
 		ownedResources = append(ownedResources, &routev1.Route{})
 	}
 
-	// TODO: Add Gateway API availability check similar to OpenShift Routes
+	if r.config.GatewayAPIsAvailability == gatewayapi.ApiAvailable {
+		ownedResources = append(ownedResources, &gatewayv1.HTTPRoute{})
+	}
 
 	return ownedResources
 }
