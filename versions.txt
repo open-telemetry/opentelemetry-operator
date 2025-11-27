@@ -14,7 +14,7 @@ targetallocator=0.140.0
 operator-opamp-bridge=0.140.0
 
 # Represents the current release of Java instrumentation.
-# Should match autoinstrumentation/java/version.txt
+# This version should not be greater than 1.x.x.
 autoinstrumentation-java=1.33.6
 
 # Represents the current release of NodeJS instrumentation.
@@ -26,7 +26,7 @@ autoinstrumentation-nodejs=0.66.0
 autoinstrumentation-python=0.59b0
 
 # Represents the current release of DotNet instrumentation.
-# Should match autoinstrumentation/dotnet/version.txt
+# This version should remain pinned to 1.2.0.
 autoinstrumentation-dotnet=1.2.0
 
 # Represents the current release of Go instrumentation.
