@@ -34,6 +34,7 @@ func main() {
 	opampClient := cfg.CreateClient()
 	opampProxy := proxy.NewOpAMPProxy(l.WithName("server"), cfg.ListenAddr)
 	opampAgent := agent.NewAgent(l.WithName("agent"), operatorClient, cfg, opampClient, opampProxy)
+	opampProxy.SetBridgeAgent(opampAgent)
 
 	if err := opampAgent.Start(); err != nil {
 		l.Error(err, "Cannot start OpAMP client")

@@ -4,6 +4,9 @@
 package proxy
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/gob"
 	"sync"
 
 	"github.com/go-logr/logr"
@@ -28,13 +31,16 @@ type Agent struct {
 	effectiveConfig *protobufs.EffectiveConfig
 	// Agent's current status.
 	Status *protobufs.AgentToServer
+	// Bridge agent reference to get telemetry settings
+	bridgeAgent BridgeAgentInterface
 }
 
-func NewAgent(logger logr.Logger, agentId uuid.UUID, conn types.Connection) *Agent {
+func NewAgent(logger logr.Logger, agentId uuid.UUID, conn types.Connection, bridgeAgent BridgeAgentInterface) *Agent {
 	return &Agent{
-		logger:     logger,
-		InstanceId: agentId,
-		conn:       conn,
+		logger:      logger,
+		InstanceId:  agentId,
+		conn:        conn,
+		bridgeAgent: bridgeAgent,
 	}
 }
 
@@ -129,20 +135,44 @@ func (a *Agent) UpdateStatus(newStatus *protobufs.AgentToServer, response *proto
 }
 
 func (a *Agent) calcConnectionSettings(response *protobufs.ServerToAgent) {
-	// Here we can use Agent's description to send the appropriate connection
-	// settings to the Agent.
-	// In this simple example the connection settings do not depend on the
-	// Agent description, so we just set them directly.
+	var ownMetrics, ownTraces, ownLogs *protobufs.TelemetryConnectionSettings
+	var otherSettings map[string]*protobufs.OtherConnectionSettings
+
+	if a.bridgeAgent != nil {
+		ownMetrics = a.bridgeAgent.GetOwnMetricsSettings()
+		ownTraces = a.bridgeAgent.GetOwnTracesSettings()
+		ownLogs = a.bridgeAgent.GetOwnLogsSettings()
+		otherSettings = a.bridgeAgent.GetOtherConnectionSettings()
+	}
 
 	response.ConnectionSettings = &protobufs.ConnectionSettingsOffers{
-		Hash:  nil, // TODO: calc has from settings.
-		Opamp: nil,
-		// TODO: The own settings should be sent to the gateway for leaf nodes automatically.
-		OwnMetrics:       nil,
-		OwnTraces:        nil,
-		OwnLogs:          nil,
-		OtherConnections: nil,
+		Hash:             nil,
+		Opamp:            nil,
+		OwnMetrics:       ownMetrics,
+		OwnTraces:        ownTraces,
+		OwnLogs:          ownLogs,
+		OtherConnections: otherSettings,
 	}
+
+	hash, err := calculateHashFromSettings(response.ConnectionSettings)
+	if err != nil {
+		a.logger.Error(err, "failed to calculate hash from connection settings")
+		return
+	}
+	response.ConnectionSettings.Hash = hash
+}
+
+func calculateHashFromSettings(settings *protobufs.ConnectionSettingsOffers) ([]byte, error) {
+	var b bytes.Buffer
+	encoder := gob.NewEncoder(&b)
+
+	err := encoder.Encode(settings)
+	if err != nil {
+		return nil, err
+	}
+
+	hash := sha256.Sum256(b.Bytes())
+	return hash[:], nil
 }
 
 func (a *Agent) GetHealth() *protobufs.ComponentHealth {

@@ -49,7 +49,7 @@ func TestOpAMPProxy_OnDisconnect(t *testing.T) {
 
 	instanceId := uuid.New()
 	conn := &mockConnection{}
-	proxyServer.agentsById[instanceId] = NewAgent(logger, instanceId, conn)
+	proxyServer.agentsById[instanceId] = NewAgent(logger, instanceId, conn, nil)
 	proxyServer.connections[conn] = map[uuid.UUID]bool{instanceId: true}
 
 	proxyServer.onDisconnect(conn)
@@ -66,7 +66,7 @@ func TestOpAMPProxy_GetConfigurations(t *testing.T) {
 
 	instanceId := uuid.New()
 	conn := &mockConnection{}
-	agent := NewAgent(logger, instanceId, conn)
+	agent := NewAgent(logger, instanceId, conn, nil)
 	proxyServer.agentsById[instanceId] = agent
 
 	configs := proxyServer.GetConfigurations()
@@ -81,7 +81,7 @@ func TestOpAMPProxy_GetHealth(t *testing.T) {
 
 	instanceId := uuid.New()
 	conn := &mockConnection{}
-	agent := NewAgent(logger, instanceId, conn)
+	agent := NewAgent(logger, instanceId, conn, nil)
 	proxyServer.agentsById[instanceId] = agent
 
 	healths := proxyServer.GetHealth()
