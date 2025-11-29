@@ -18,6 +18,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/fips"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/k8s"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
@@ -41,6 +42,7 @@ type AutoDetect interface {
 	OpAmpBridgeAvailablity() (opampbridge.Availability, error)
 	FIPSEnabled(ctx context.Context) bool
 	NativeSidecarSupport() (bool, error)
+	GatewayAPIsAvailability() (gatewayapi.ApiAvailability, error)
 }
 
 type k8sVersionDiscovery interface {
@@ -277,6 +279,22 @@ func (a *autoDetect) NativeSidecarSupport() (bool, error) {
 	return currentVersion.AtLeast(minimumVersion), nil
 }
 
+func (a *autoDetect) GatewayAPIsAvailability() (gatewayapi.ApiAvailability, error) {
+
+	apiList, err := a.dcl.ServerGroups()
+	if err != nil {
+		return gatewayapi.ApiNotAvailable, err
+	}
+
+	for _, group := range apiList.Groups {
+		if group.Name == "gateway.networking.k8s.io" {
+			return gatewayapi.ApiAvailable, nil
+		}
+	}
+
+	return gatewayapi.ApiNotAvailable, nil
+}
+
 // ApplyAutoDetect attempts to automatically detect relevant information for this operator.
 func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger) error {
 	logger.V(2).Info("auto-detecting the configuration based on the environment")
@@ -337,6 +355,13 @@ func ApplyAutoDetect(autoDetect AutoDetect, c *config.Config, logger logr.Logger
 	}
 	c.Internal.NativeSidecarSupport = nativeSidecarSupport
 	logger.V(2).Info("determined native sidecar support", "availability", c.Internal.NativeSidecarSupport)
+
+	gapiAvl, err := autoDetect.GatewayAPIsAvailability()
+	if err != nil {
+		return err
+	}
+	c.GatewayAPIsAvailability = gapiAvl
+	logger.V(2).Info("determined Gateway API availability", "availability", gapiAvl)
 
 	return nil
 }

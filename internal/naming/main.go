@@ -135,6 +135,11 @@ func Route(otelcol string, prefix string) string {
 	return DNSName(Truncate("%s-%s-route", 63, prefix, otelcol))
 }
 
+// HTTPRoute builds the HTTPRoute name based on the instance.
+func HTTPRoute(otelcol string, prefix string) string {
+	return DNSName(Truncate("%s-%s-httproute", 63, otelcol, prefix))
+}
+
 // ClusterRole builds the cluster role name based on the instance.
 func ClusterRole(otelcol string, namespace string) string {
 	return DNSName(Truncate("%s-%s-cluster-role", 63, otelcol, namespace))

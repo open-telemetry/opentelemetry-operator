@@ -105,6 +105,11 @@ type OpenTelemetryCollectorSpec struct {
 	// Valid modes are: deployment, daemonset and statefulset.
 	// +optional
 	Ingress Ingress `json:"ingress,omitempty"`
+	// HttpRoute is used to specify how OpenTelemetry Collector is exposed via Gateway API HTTPRoute.
+	// This functionality is only available if one of the valid modes is set.
+	// Valid modes are: deployment, daemonset and statefulset.
+	// +optional
+	HttpRoute HttpRouteConfig `json:"httpRoute,omitempty"`
 	// NetworkPolicy defines the network policy to be applied to the OpenTelemetry Collector pods.
 	// +optional
 	NetworkPolicy NetworkPolicy `json:"networkPolicy,omitempty"`
