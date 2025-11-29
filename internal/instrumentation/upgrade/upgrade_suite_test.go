@@ -25,6 +25,11 @@ var err error
 var cfg *rest.Config
 
 func TestMain(m *testing.M) {
+	if os.Getenv("SKIP_ENVTEST") == "true" {
+		fmt.Println("Skipping instrumentation upgrade envtest suite")
+		os.Exit(0)
+	}
+
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "..", "..", "config", "crd", "bases"),

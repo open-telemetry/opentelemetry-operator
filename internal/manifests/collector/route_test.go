@@ -134,9 +134,9 @@ func TestDesiredRoutes(t *testing.T) {
 		routes, err := Routes(params)
 		assert.NoError(t, err)
 		require.Equal(t, 3, len(routes))
-		assert.Equal(t, "web.example.com", routes[0].Spec.Host)
-		assert.Equal(t, "otlp-grpc.example.com", routes[1].Spec.Host)
-		assert.Equal(t, "otlp-test-grpc.example.com", routes[2].Spec.Host)
+		assert.Equal(t, "web.example.com", routes[0].(*routev1.Route).Spec.Host)
+		assert.Equal(t, "otlp-grpc.example.com", routes[1].(*routev1.Route).Spec.Host)
+		assert.Equal(t, "otlp-test-grpc.example.com", routes[2].(*routev1.Route).Spec.Host)
 	})
 	t.Run("hostname is not set", func(t *testing.T) {
 		params, err := newParams("something:tag", testFileIngress, nil)
@@ -155,9 +155,9 @@ func TestDesiredRoutes(t *testing.T) {
 		routes, err := Routes(params)
 		assert.NoError(t, err)
 		require.Equal(t, 3, len(routes))
-		assert.Equal(t, "", routes[0].Spec.Host)
-		assert.Equal(t, "", routes[1].Spec.Host)
-		assert.Equal(t, "", routes[2].Spec.Host)
+		assert.Equal(t, "", routes[0].(*routev1.Route).Spec.Host)
+		assert.Equal(t, "", routes[1].(*routev1.Route).Spec.Host)
+		assert.Equal(t, "", routes[2].(*routev1.Route).Spec.Host)
 	})
 }
 
