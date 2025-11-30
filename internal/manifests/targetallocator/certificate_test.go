@@ -5,7 +5,6 @@ package targetallocator
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,10 +85,10 @@ func TestCACertificate(t *testing.T) {
 			assert.Equal(t, tt.expectedLabels, caCert.Labels)
 			// Verify CA certificate has 1 year duration to prevent renewal race conditions
 			assert.NotNil(t, caCert.Spec.Duration)
-			assert.Equal(t, 8760*time.Hour, caCert.Spec.Duration.Duration)
+			assert.Equal(t, CACertDuration, caCert.Spec.Duration.Duration)
 			// Verify CA certificate renewBefore is set to 100 days (longer than client/server cert duration)
 			assert.NotNil(t, caCert.Spec.RenewBefore)
-			assert.Equal(t, 2400*time.Hour, caCert.Spec.RenewBefore.Duration)
+			assert.Equal(t, CACertRenewBefore, caCert.Spec.RenewBefore.Duration)
 		})
 	}
 }
@@ -151,6 +150,9 @@ func TestServingCertificate(t *testing.T) {
 			assert.ElementsMatch(t, tt.expectedDNSNames, servingCert.Spec.DNSNames)
 			assert.ElementsMatch(t, tt.expectedOrganizationUnit, servingCert.Spec.Subject.OrganizationalUnits)
 			assert.Equal(t, tt.expectedLabels, servingCert.Labels)
+			// Verify serving certificate duration is set to 90 days
+			assert.NotNil(t, servingCert.Spec.Duration)
+			assert.Equal(t, ClientCertDuration, servingCert.Spec.Duration.Duration)
 		})
 	}
 }
@@ -212,6 +214,9 @@ func TestClientCertificate(t *testing.T) {
 			assert.ElementsMatch(t, tt.expectedDNSNames, clientCert.Spec.DNSNames)
 			assert.ElementsMatch(t, tt.expectedOrganizationUnit, clientCert.Spec.Subject.OrganizationalUnits)
 			assert.Equal(t, tt.expectedLabels, clientCert.Labels)
+			// Verify client certificate duration is set to 90 days
+			assert.NotNil(t, clientCert.Spec.Duration)
+			assert.Equal(t, ClientCertDuration, clientCert.Spec.Duration.Duration)
 		})
 	}
 }
