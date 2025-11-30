@@ -23,10 +23,10 @@ const (
 
 	// CACertRenewBefore defines when the CA certificate should begin renewal (181 days before expiry).
 	// Set to 2x ClientCertDuration + 1 day to ensure:
-	// 1. CA renewal doesn't coincide with client/server renewal cycles (which occur every 60 days: day 60, 120, 180, 240, 300, 360, 420, 480, 540...)
-	// 2. Without the +1 day offset, CA would renew at day 540 (when 180 days remain), colliding with the 9th client cert renewal
-	// 3. With +1 day, CA renews at day 539 (when 181 days remain), avoiding the race condition
-	// 4. The CA always has sufficient remaining validity (≥181 days) to safely issue 90-day client/server certificates
+	// 1. CA renewal doesn't coincide with client/server renewal cycles (which occur every 60 days: day 60, 120, 180, 240, 300, 360, 420, 480, 540...).
+	// 2. Without the +1 day offset, CA would renew at day 540 (when 180 days remain), colliding with the 9th client cert renewal.
+	// 3. With +1 day, CA renews at day 539 (when 181 days remain), avoiding the race condition.
+	// 4. The CA always has sufficient remaining validity (≥181 days) to safely issue 90-day client/server certificates.
 	CACertRenewBefore = ClientCertDuration*2 + 24*time.Hour
 
 	// CACertDuration is the validity period for the CA certificate (720 days = ~2 years).
