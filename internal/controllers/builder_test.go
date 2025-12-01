@@ -3311,6 +3311,7 @@ prometheus_cr:
 						Subject: &cmv1.X509Subject{
 							OrganizationalUnits: []string{"opentelemetry-operator"},
 						},
+						Duration: &metav1.Duration{Duration: targetallocator.ClientCertDuration},
 						DNSNames: []string{
 							"test-targetallocator",
 							"test-targetallocator.test.svc",
@@ -3344,6 +3345,7 @@ prometheus_cr:
 						Subject: &cmv1.X509Subject{
 							OrganizationalUnits: []string{"opentelemetry-operator"},
 						},
+						Duration: &metav1.Duration{Duration: targetallocator.ClientCertDuration},
 						DNSNames: []string{
 							"test-targetallocator",
 							"test-targetallocator.test.svc",
