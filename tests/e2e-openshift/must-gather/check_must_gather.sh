@@ -9,10 +9,6 @@ oc adm must-gather --dest-dir=$MUST_GATHER_DIR --image=ghcr.io/open-telemetry/op
 # Define required files and directories
 REQUIRED_ITEMS=(
   event-filter.html
-  *-must-gather-sha256-*/olm/*opentelemetry-operato*.yaml
-  *-must-gather-sha256-*/olm/clusterserviceversion-opentelemetry-operator-v*.yaml
-  *-must-gather-sha256-*/olm/installplan-install-*.yaml
-  *-must-gather-sha256-*/olm/subscription-opentelemetry-operator-v*-sub.yaml
   *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-collector-headless.yaml
   *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/service-stateful-collector.yaml
   *-must-gather-sha256-*/namespaces/chainsaw-must-gather/stateful/targetallocator-stateful.yaml
@@ -39,11 +35,28 @@ REQUIRED_ITEMS=(
   timestamp
 )
 
+# Define optional OLM-related items (only present when operator is deployed via OLM)
+OPTIONAL_ITEMS=(
+  *-must-gather-sha256-*/olm/*opentelemetry-operator*.yaml
+  *-must-gather-sha256-*/olm/clusterserviceversion-opentelemetry-operator-v*.yaml
+  *-must-gather-sha256-*/olm/installplan-install-*.yaml
+  *-must-gather-sha256-*/olm/subscription-opentelemetry-*.yaml
+)
+
 # Verify each required item
 for item in "${REQUIRED_ITEMS[@]}"; do
   if ! find "$MUST_GATHER_DIR" -path "$MUST_GATHER_DIR/$item" -print -quit | grep -q .; then
     echo "Missing: $item"
     exit 1
+  else
+    echo "Found: $item"
+  fi
+done
+
+# Verify optional items (don't fail if missing)
+for item in "${OPTIONAL_ITEMS[@]}"; do
+  if ! find "$MUST_GATHER_DIR" -path "$MUST_GATHER_DIR/$item" -print -quit | grep -q .; then
+    echo "Missing optional: $item (OK - operator may not be deployed via OLM)"
   else
     echo "Found: $item"
   fi

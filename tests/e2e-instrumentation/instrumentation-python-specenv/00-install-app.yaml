@@ -7,7 +7,20 @@ metadata:
   annotations:
     instrumentation.opentelemetry.io/inject-python: "true"
 spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    seccompProfile:
+      type: RuntimeDefault
   containers:
   - name: myapp
     image: docker.io/library/python:3.8-slim
     command: ["python", "-c", "import time; time.sleep(3600)"]
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
