@@ -1,0 +1,19 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: bug_fix
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: target allocator
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Fix CA certificate renewal race condition by extending CA certificate duration to 1 year
+
+# One or more tracking issues related to the change
+issues: [4441]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  The CA certificate now has a 1-year duration (instead of the default 90 days) to prevent race conditions
+  where client and server certificates could be signed by different CA versions during simultaneous renewal.
+  This ensures the CA remains stable while dependent certificates renew regularly.
