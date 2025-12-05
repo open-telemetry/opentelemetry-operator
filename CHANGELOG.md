@@ -2,6 +2,27 @@
 
 <!-- next version -->
 
+## 0.141.0
+
+### 💡 Enhancements 💡
+
+- `collector`: Ensure the collector container is always listed first in the podspec (#4548)
+  This is so tools like kubectx logs will always default to the collector container instead of any additional containers that are configured.
+- `target allocator`: make evaluation_interval configurable for Prometheus CR watcher (#4520)
+- `operator`: Support for Kubernetes `1.34` version. (#4415)
+
+### Components
+
+* [OpenTelemetry Collector - v0.141.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.141.0)
+* [OpenTelemetry Contrib - v0.141.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.141.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.67.2](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.67.2)
+* [Python - v0.60b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.60b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.140.0
 
 ### 🛑 Breaking changes 🛑
