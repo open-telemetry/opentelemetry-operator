@@ -5,7 +5,7 @@ change_type: enhancement
 component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: adds a feature to allow setting the `spec.hostPID` field for the collector.
+note: exposes the `spec.hostPID` field for the collector.
 
 # One or more tracking issues related to the change
 issues: [4214]
@@ -14,5 +14,5 @@ issues: [4214]
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
 subtext:
-  The allowing of the operator hostPID support can be enabled with `--feature-gates=+operator.security.hostpid`.
-  The feature gate is disabled by default and it will be enabled in the future releases.
+  This will allow to set the spec.HostPID field for the collector.
+  By default this the field is false.
