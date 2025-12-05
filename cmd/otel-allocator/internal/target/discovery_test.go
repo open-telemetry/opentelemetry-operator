@@ -17,6 +17,7 @@ import (
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -501,11 +502,13 @@ func TestProcessTargetGroups_StableLabelIterationOrder(t *testing.T) {
 	require.NoError(t, err)
 	d.processTargetGroups("test", groups, results)
 
-	for i, l := range results[0].Labels { //nolint:gosec
+	i := 0
+	results[0].Labels.Range(func(l labels.Label) { //nolint:gosec
 		expected := string(rune('a' + i))
 		assert.Equal(t, expected, l.Name, "unexpected label key at index %d", i)
 		assert.Equal(t, expected, l.Value, "unexpected label value at index %d", i)
-	}
+		i += 1
+	})
 }
 
 func BenchmarkApplyScrapeConfig(b *testing.B) {

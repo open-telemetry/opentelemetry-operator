@@ -333,18 +333,6 @@ func getInferredContainerEnvVars(otelcol v1beta1.OpenTelemetryCollector, logger 
 		},
 	})
 
-	if otelcol.Spec.TargetAllocator.Enabled {
-		// We need to add a SHARD here so the collector is able to keep targets after the hashmod operation which is
-		// added by default by the Prometheus operator's config generator.
-		// All collector instances use SHARD == 0 as they only receive targets
-		// allocated to them and should not use the Prometheus hashmod-based
-		// allocation.
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  "SHARD",
-			Value: "0",
-		})
-	}
-
 	if featuregate.SetGolangFlags.IsEnabled() {
 		envVars = append(envVars,
 			corev1.EnvVar{
