@@ -691,7 +691,7 @@ func TestStatefulSetAdditionalContainers(t *testing.T) {
 	assert.Equal(t, "8888", s.Spec.Template.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", s.Spec.Template.Annotations["prometheus.io/path"])
 	assert.Len(t, s.Spec.Template.Spec.Containers, 2)
-	assert.Equal(t, corev1.Container{Name: "test"}, s.Spec.Template.Spec.Containers[0])
+	assert.Equal(t, corev1.Container{Name: "test"}, s.Spec.Template.Spec.Containers[1])
 }
 
 func TestStatefulSetShareProcessNamespace(t *testing.T) {
