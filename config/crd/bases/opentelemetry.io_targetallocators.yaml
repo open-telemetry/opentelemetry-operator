@@ -1274,6 +1274,8 @@ spec:
                 type: object
               hostNetwork:
                 type: boolean
+              hostPID:
+                type: boolean
               image:
                 type: string
               imagePullPolicy:
