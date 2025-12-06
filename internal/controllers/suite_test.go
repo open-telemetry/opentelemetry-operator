@@ -41,6 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
@@ -48,6 +49,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -97,6 +99,7 @@ type mockAutoDetect struct {
 	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
 	CollectorCRDAvailabilityFunc    func() (collector.Availability, error)
 	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
+	GatewayAPIsAvailabilityFunc     func() (gatewayapi.ApiAvailability, error)
 }
 
 func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
@@ -156,6 +159,13 @@ func (m *mockAutoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, err
 	return opampbridge.NotAvailable, nil
 }
 
+func (m *mockAutoDetect) GatewayAPIsAvailability() (gatewayapi.ApiAvailability, error) {
+	if m.GatewayAPIsAvailabilityFunc != nil {
+		return m.GatewayAPIsAvailabilityFunc()
+	}
+	return gatewayapi.ApiNotAvailable, nil
+}
+
 func TestMain(m *testing.M) {
 	var err error
 	ctx, cancel = context.WithCancel(context.TODO())
@@ -171,9 +181,11 @@ func TestMain(m *testing.M) {
 	utilruntime.Must(v1alpha1.AddToScheme(testScheme))
 	utilruntime.Must(v1beta1.AddToScheme(testScheme))
 
+	utilruntime.Must(gatewayv1.Install(testScheme))
+
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
-		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD},
+		CRDs:              []*apiextensionsv1.CustomResourceDefinition{testdata.OpenShiftRouteCRD, testdata.ServiceMonitorCRD, testdata.PodMonitorCRD, testdata.HTTPRouteCRD},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
 		},

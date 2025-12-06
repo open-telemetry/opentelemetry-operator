@@ -11,6 +11,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/gatewayapi"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
@@ -83,6 +84,8 @@ type Config struct {
 	OpenshiftCreateDashboard bool `yaml:"openshift-create-dashboard"`
 	// OpenShiftRoutesAvailability represents the availability of the OpenShift Routes API.
 	OpenShiftRoutesAvailability openshift.RoutesAvailability `yaml:"open-shift-routes-availability"`
+	// GatewayAPIsAvailability represents the availability of the Gateway APIs.
+	GatewayAPIsAvailability gatewayapi.ApiAvailability `yaml:"gateway-apis-availability"`
 	// PrometheusCRAvailability represents the availability of the Prometheus Operator CRDs.
 	PrometheusCRAvailability prometheus.Availability `yaml:"prometheus-cr-availability"`
 	// CertManagerAvailability represents the availability of the Cert-Manager.
