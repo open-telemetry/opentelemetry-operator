@@ -32,8 +32,8 @@ var registry = map[string]components.Parser{
 		MustBuild(),
 }
 
-// ParserFor returns a parser builder for the given exporter name.
-func ParserFor(name string) components.Parser {
+// GetParser returns a parser builder for the given exporter name.
+func GetParser(name string) components.Parser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}

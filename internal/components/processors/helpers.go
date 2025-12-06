@@ -19,8 +19,8 @@ func IsRegistered(name string) bool {
 	return ok
 }
 
-// ProcessorFor returns a parser builder for the given exporter name.
-func ProcessorFor(name string) components.Parser {
+// GetParser returns a parser builder for the given exporter name.
+func GetParser(name string) components.Parser {
 	if parser, ok := registry[components.ComponentType(name)]; ok {
 		return parser
 	}
