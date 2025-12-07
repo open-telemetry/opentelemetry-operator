@@ -70,5 +70,7 @@ jobs:
           platforms: ${{ inputs.platforms }}
           build-args: ${{ inputs.build-args }}
           push: ${{ github.event_name == 'push' }}
+          provenance: false
+          sbom: false
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache

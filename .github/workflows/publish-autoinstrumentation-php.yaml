@@ -34,13 +34,19 @@ jobs:
       - name: Read version
         run: echo "VERSION=$(cat autoinstrumentation/php/version.txt)" >> $GITHUB_ENV
 
-      - name: Docker meta
-        id: meta
+      - name: Docker meta for Docker Hub
+        id: meta_dockerhub
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
         with:
-          images: |
-            otel/autoinstrumentation-php
-            ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-php
+          images: otel/autoinstrumentation-php
+          tags: |
+            type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
+
+      - name: Docker meta for GHCR
+        id: meta_ghcr
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
+        with:
+          images: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-php
           tags: |
             type=match,pattern=v(.*),group=1,value=v${{ env.VERSION }}
 
@@ -73,13 +79,26 @@ jobs:
       - name: Prepare files for docker image
         run: pushd ./autoinstrumentation/php ; ./prepare_files_for_docker_image.sh --ext-ver ${{ env.VERSION }} --dest-dir ${PWD}/files_for_docker_image ; popd
 
-      - name: Build and push
+      - name: Build and push to Docker Hub
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
           context: autoinstrumentation/php
           push: ${{ github.event_name == 'push' }}
           build-args: SUB_DIR_WITH_FILES_FOR_DOCKER_IMAGE=files_for_docker_image
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta_dockerhub.outputs.tags }}
+          labels: ${{ steps.meta_dockerhub.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+
+      - name: Build and push to GHCR
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: autoinstrumentation/php
+          push: ${{ github.event_name == 'push' }}
+          build-args: SUB_DIR_WITH_FILES_FOR_DOCKER_IMAGE=files_for_docker_image
+          tags: ${{ steps.meta_ghcr.outputs.tags }}
+          labels: ${{ steps.meta_ghcr.outputs.labels }}
+          provenance: false
+          sbom: false
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
