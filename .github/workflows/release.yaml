@@ -17,7 +17,7 @@ jobs:
       current_version: ${{ steps.get-versions.outputs.current_version }}
       desired_version: ${{ steps.get-versions.outputs.desired_version }}
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
       - name: "Get versions from versions.txt"
@@ -36,7 +36,7 @@ jobs:
       CURRENT_VERSION: ${{ needs.get-versions.outputs.current_version }}
       DESIRED_VERSION: ${{ needs.get-versions.outputs.desired_version }}
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
     - name: Set up Go
       uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
