@@ -1468,7 +1468,7 @@ func TestUpgrade(t *testing.T) {
 				reconcile, err = reconciler.Reconcile(testCtx, req)
 				require.NoError(collect, err)
 			}, time.Second*10, time.Millisecond*10)
-			require.Equal(t, tt.expectRequeue, reconcile.Requeue)
+			require.Equal(t, tt.expectRequeue, reconcile.RequeueAfter.Nanoseconds() > 0)
 
 			// Second reconcile (if upgrade was run)
 			if reconcile.RequeueAfter.Nanoseconds() > 0 {
