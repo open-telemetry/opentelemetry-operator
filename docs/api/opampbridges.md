@@ -841,8 +841,7 @@ to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
 The same key is forbidden to exist in both matchLabelKeys and labelSelector.
-Also, matchLabelKeys cannot be set when labelSelector isn't set.
-This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).<br/>
+Also, matchLabelKeys cannot be set when labelSelector isn't set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -856,8 +855,7 @@ to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
 The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
-Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).<br/>
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1105,8 +1103,7 @@ to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
 The same key is forbidden to exist in both matchLabelKeys and labelSelector.
-Also, matchLabelKeys cannot be set when labelSelector isn't set.
-This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).<br/>
+Also, matchLabelKeys cannot be set when labelSelector isn't set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1120,8 +1117,7 @@ to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
 The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
-Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).<br/>
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1344,8 +1340,8 @@ a node that violates one or more of the expressions. The node that is
 most preferred is the one with the greatest sum of weights, i.e.
 for each node that meets all of the scheduling requirements (resource
 request, requiredDuringScheduling anti-affinity expressions, etc.),
-compute a sum by iterating through the elements of this field and adding
-"weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+compute a sum by iterating through the elements of this field and subtracting
+"weight" from the sum if the node has pods which matches the corresponding podAffinityTerm; the
 node(s) with the highest sum are the most preferred.<br/>
         </td>
         <td>false</td>
@@ -1449,8 +1445,7 @@ to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
 The same key is forbidden to exist in both matchLabelKeys and labelSelector.
-Also, matchLabelKeys cannot be set when labelSelector isn't set.
-This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).<br/>
+Also, matchLabelKeys cannot be set when labelSelector isn't set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1464,8 +1459,7 @@ to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
 The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
-Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).<br/>
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1713,8 +1707,7 @@ to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
 The same key is forbidden to exist in both matchLabelKeys and labelSelector.
-Also, matchLabelKeys cannot be set when labelSelector isn't set.
-This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).<br/>
+Also, matchLabelKeys cannot be set when labelSelector isn't set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1728,8 +1721,7 @@ to select the group of existing pods which pods will be taken into consideration
 for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming
 pod labels will be ignored. The default value is empty.
 The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
-Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).<br/>
+Also, mismatchLabelKeys cannot be set when labelSelector isn't set.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1974,7 +1966,8 @@ EnvVar represents an environment variable present in a Container.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the environment variable. Must be a C_IDENTIFIER.<br/>
+          Name of the environment variable.
+May consist of any printable ASCII characters except '='.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -2032,6 +2025,14 @@ Source for the environment variable's value. Cannot be used if value is not empt
         <td>
           Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
 spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opampbridgespecenvindexvaluefromfilekeyref">fileKeyRef</a></b></td>
+        <td>object</td>
+        <td>
+          FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2135,6 +2136,66 @@ spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podI
 </table>
 
 
+### OpAMPBridge.spec.env[index].valueFrom.fileKeyRef
+<sup><sup>[↩ Parent](#opampbridgespecenvindexvaluefrom)</sup></sup>
+
+
+
+FileKeyRef selects a key of the env file.
+Requires the EnvFiles feature gate to be enabled.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key within the env file. An invalid key will prevent the pod from starting.
+The keys defined within a source may consist of any printable ASCII characters except '='.
+During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          The path within the volume from which to select the file.
+Must be relative and may not contain the '..' path or start with '..'.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>volumeName</b></td>
+        <td>string</td>
+        <td>
+          The name of the volume mount containing the env file.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the file or its key must be defined. If the file or key
+does not exist, then the env var is not published.
+If optional is set to true and the specified key does not exist,
+the environment variable will not be set in the Pod's containers.
+
+If optional is set to false and the specified key does not exist,
+an error will be returned during Pod creation.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpAMPBridge.spec.env[index].valueFrom.resourceFieldRef
 <sup><sup>[↩ Parent](#opampbridgespecenvindexvaluefrom)</sup></sup>
 
@@ -2229,7 +2290,7 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 
 
 
-EnvFromSource represents the source of a set of ConfigMaps
+EnvFromSource represents the source of a set of ConfigMaps or Secrets
 
 <table>
     <thead>
@@ -2251,7 +2312,8 @@ EnvFromSource represents the source of a set of ConfigMaps
         <td><b>prefix</b></td>
         <td>string</td>
         <td>
-          An optional identifier to prepend to each key in the ConfigMap. Must be a C_IDENTIFIER.<br/>
+          Optional text to prepend to the name of each environment variable.
+May consist of any printable ASCII characters except '='.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2970,7 +3032,7 @@ Resources to set on the OpAMPBridge pods.
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-This is an alpha field and requires enabling the
+This field depends on the
 DynamicResourceAllocation feature gate.
 
 This field is immutable. It can only be set for containers.<br/>
@@ -3630,8 +3692,7 @@ when calculating pod topology spread skew. Options are:
 - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
 - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
 
-If this value is nil, the behavior is equivalent to the Honor policy.
-This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
+If this value is nil, the behavior is equivalent to the Honor policy.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3644,8 +3705,7 @@ pod topology spread skew. Options are:
 has a toleration, are included.
 - Ignore: node taints are ignored. All nodes are included.
 
-If this value is nil, the behavior is equivalent to the Ignore policy.
-This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.<br/>
+If this value is nil, the behavior is equivalent to the Ignore policy.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4012,8 +4072,7 @@ into the Pod's container.<br/>
         <td>object</td>
         <td>
           glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
-Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.
-More info: https://examples.k8s.io/volumes/glusterfs/README.md<br/>
+Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4048,7 +4107,7 @@ A failure to resolve or pull the image during pod startup will block containers 
         <td>
           iscsi represents an ISCSI Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://examples.k8s.io/volumes/iscsi/README.md<br/>
+More info: https://kubernetes.io/docs/concepts/storage/volumes/#iscsi<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4106,8 +4165,7 @@ Deprecated: Quobyte is deprecated and the in-tree quobyte type is no longer supp
         <td>object</td>
         <td>
           rbd represents a Rados Block Device mount on the host that shares a pod's lifetime.
-Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.
-More info: https://examples.k8s.io/volumes/rbd/README.md<br/>
+Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5182,15 +5240,13 @@ More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-
           volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
 If specified, the CSI driver will create or update the volume with the attributes defined
 in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
-will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
-If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
-will be set by the persistentvolume controller if it exists.
+it can be changed after the claim is created. An empty string or nil value indicates that no
+VolumeAttributesClass will be applied to the claim. If the claim enters an Infeasible error state,
+this field can be reset to its previous value (including nil) to cancel the modification.
 If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
 set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
 exists.
-More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-(Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).<br/>
+More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5826,7 +5882,6 @@ the subdirectory with the given name.<br/>
 
 glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
 Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.
-More info: https://examples.k8s.io/volumes/glusterfs/README.md
 
 <table>
     <thead>
@@ -5841,8 +5896,7 @@ More info: https://examples.k8s.io/volumes/glusterfs/README.md
         <td><b>endpoints</b></td>
         <td>string</td>
         <td>
-          endpoints is the endpoint name that details Glusterfs topology.
-More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod<br/>
+          endpoints is the endpoint name that details Glusterfs topology.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -5966,7 +6020,7 @@ container images in workload controllers like Deployments and StatefulSets.<br/>
 
 iscsi represents an ISCSI Disk resource that is attached to a
 kubelet's host machine and then exposed to the pod.
-More info: https://examples.k8s.io/volumes/iscsi/README.md
+More info: https://kubernetes.io/docs/concepts/storage/volumes/#iscsi
 
 <table>
     <thead>
@@ -6362,6 +6416,37 @@ may change the order over time.<br/>
         <td>object</td>
         <td>
           downwardAPI information about the downwardAPI data to project<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opampbridgespecvolumesindexprojectedsourcesindexpodcertificate">podCertificate</a></b></td>
+        <td>object</td>
+        <td>
+          Projects an auto-rotating credential bundle (private key and certificate
+chain) that the pod can use either as a TLS client or server.
+
+Kubelet generates a private key and uses it to send a
+PodCertificateRequest to the named signer.  Once the signer approves the
+request and issues a certificate chain, Kubelet writes the key and
+certificate chain to the pod filesystem.  The pod does not start until
+certificates have been issued for each podCertificate projected volume
+source in its spec.
+
+Kubelet will begin trying to rotate the certificate at the time indicated
+by the signer using the PodCertificateRequest.Status.BeginRefreshAt
+timestamp.
+
+Kubelet can write a single file, indicated by the credentialBundlePath
+field, or separate files, indicated by the keyPath and
+certificateChainPath fields.
+
+The credential bundle is a single file in PEM format.  The first PEM
+entry is the private key (in PKCS#8 format), and the remaining PEM
+entries are the certificate chain issued by the signer (typically,
+signers will return their certificate chain in leaf-to-root order).
+
+Prefer using the credential bundle format, since your application code
+can read it atomically.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -6807,6 +6892,133 @@ Selects a resource of the container: only resources limits and requests
 </table>
 
 
+### OpAMPBridge.spec.volumes[index].projected.sources[index].podCertificate
+<sup><sup>[↩ Parent](#opampbridgespecvolumesindexprojectedsourcesindex)</sup></sup>
+
+
+
+Projects an auto-rotating credential bundle (private key and certificate
+chain) that the pod can use either as a TLS client or server.
+
+Kubelet generates a private key and uses it to send a
+PodCertificateRequest to the named signer.  Once the signer approves the
+request and issues a certificate chain, Kubelet writes the key and
+certificate chain to the pod filesystem.  The pod does not start until
+certificates have been issued for each podCertificate projected volume
+source in its spec.
+
+Kubelet will begin trying to rotate the certificate at the time indicated
+by the signer using the PodCertificateRequest.Status.BeginRefreshAt
+timestamp.
+
+Kubelet can write a single file, indicated by the credentialBundlePath
+field, or separate files, indicated by the keyPath and
+certificateChainPath fields.
+
+The credential bundle is a single file in PEM format.  The first PEM
+entry is the private key (in PKCS#8 format), and the remaining PEM
+entries are the certificate chain issued by the signer (typically,
+signers will return their certificate chain in leaf-to-root order).
+
+Prefer using the credential bundle format, since your application code
+can read it atomically.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keyType</b></td>
+        <td>string</td>
+        <td>
+          The type of keypair Kubelet will generate for the pod.
+
+Valid values are "RSA3072", "RSA4096", "ECDSAP256", "ECDSAP384",
+"ECDSAP521", and "ED25519".<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>signerName</b></td>
+        <td>string</td>
+        <td>
+          Kubelet's generated CSRs will be addressed to this signer.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>certificateChainPath</b></td>
+        <td>string</td>
+        <td>
+          Write the certificate chain at this path in the projected volume.
+
+Most applications should use credentialBundlePath.  When using keyPath
+and certificateChainPath, your application needs to check that the key
+and leaf certificate are consistent, because it is possible to read the
+files mid-rotation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>credentialBundlePath</b></td>
+        <td>string</td>
+        <td>
+          Write the credential bundle at this path in the projected volume.
+
+The credential bundle is a single file that contains multiple PEM blocks.
+The first PEM block is a PRIVATE KEY block, containing a PKCS#8 private
+key.
+
+The remaining blocks are CERTIFICATE blocks, containing the issued
+certificate chain from the signer (leaf and any intermediates).
+
+Using credentialBundlePath lets your Pod's application code make a single
+atomic read that retrieves a consistent key and certificate chain.  If you
+project them to separate files, your application code will need to
+additionally check that the leaf certificate was issued to the key.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>keyPath</b></td>
+        <td>string</td>
+        <td>
+          Write the key at this path in the projected volume.
+
+Most applications should use credentialBundlePath.  When using keyPath
+and certificateChainPath, your application needs to check that the key
+and leaf certificate are consistent, because it is possible to read the
+files mid-rotation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxExpirationSeconds</b></td>
+        <td>integer</td>
+        <td>
+          maxExpirationSeconds is the maximum lifetime permitted for the
+certificate.
+
+Kubelet copies this value verbatim into the PodCertificateRequests it
+generates for this projection.
+
+If omitted, kube-apiserver will set it to 86400(24 hours). kube-apiserver
+will reject values shorter than 3600 (1 hour).  The maximum allowable
+value is 7862400 (91 days).
+
+The signer implementation is then free to issue a certificate with any
+lifetime *shorter* than MaxExpirationSeconds, but no shorter than 3600
+seconds (1 hour).  This constraint is enforced by kube-apiserver.
+`kubernetes.io` signers will never issue certificates with a lifetime
+longer than 24 hours.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpAMPBridge.spec.volumes[index].projected.sources[index].secret
 <sup><sup>[↩ Parent](#opampbridgespecvolumesindexprojectedsourcesindex)</sup></sup>
 
@@ -7039,7 +7251,6 @@ Defaults to serivceaccount user<br/>
 
 rbd represents a Rados Block Device mount on the host that shares a pod's lifetime.
 Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.
-More info: https://examples.k8s.io/volumes/rbd/README.md
 
 <table>
     <thead>
