@@ -15,7 +15,7 @@ var args = os.Args[1:]
 
 func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f := pflag.NewFlagSet(os.Args[0], pflag.ContinueOnError)
-	f.ParseErrorsWhitelist.UnknownFlags = true
+	f.ParseErrorsAllowlist.UnknownFlags = true
 	f.String("metrics-addr", cfg.MetricsAddr, "The address the metric endpoint binds to.")
 	f.String("health-probe-addr", cfg.ProbeAddr, "The address the probe endpoint binds to.")
 	f.String("pprof-addr", cfg.PprofAddr, "The address to expose the pprof server. Default is empty string which disables the pprof server.")

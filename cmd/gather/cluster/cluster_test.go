@@ -25,6 +25,11 @@ type MockClient struct {
 	mock.Mock
 }
 
+func (m *MockClient) Apply(ctx context.Context, obj runtime.ApplyConfiguration, _ ...client.ApplyOption) error {
+	args := m.Called(ctx, obj)
+	return args.Error(0)
+}
+
 func (m *MockClient) Get(ctx context.Context, key types.NamespacedName, obj client.Object, _ ...client.GetOption) error {
 	args := m.Called(ctx, key, obj)
 	return args.Error(0)
