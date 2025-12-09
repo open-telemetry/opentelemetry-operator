@@ -142,9 +142,6 @@ type OpenTelemetryCollectorSpec struct {
 	// This is only applicable to Deployment mode.
 	// +optional
 	DeploymentUpdateStrategy appsv1.DeploymentStrategy `json:"deploymentUpdateStrategy,omitempty"`
-	// HostPID indicates if the pod should have access to the host process ID namespace.
-	// +optional
-	HostPID bool `json:"hostPID,omitempty"`
 }
 
 // TargetAllocatorEmbedded defines the configuration for the Prometheus target allocator, embedded in the
