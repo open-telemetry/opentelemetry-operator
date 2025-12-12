@@ -299,7 +299,7 @@ func (i *sdkInjector) injectDefaultNodeJSEnvVars(pod corev1.Pod, index int) core
 // injectDefaultPythonEnvVars injects default environment variables for Python.
 func (i *sdkInjector) injectDefaultPythonEnvVars(pod corev1.Pod, index int) corev1.Pod {
 	container := &pod.Spec.Containers[index]
-	container.Env = appendIfNotSet(container.Env, getDefaultPythonEnvVars()...)
+	container.Env = appendOrReplace(container.Env, getDefaultPythonEnvVars()...)
 	return pod
 }
 
