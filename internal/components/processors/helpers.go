@@ -5,26 +5,23 @@ package processors
 
 import "github.com/open-telemetry/opentelemetry-operator/internal/components"
 
-// registry holds a record of all known receiver parsers.
-var registry = make(map[string]components.Parser)
+// Registry holds a record of all known processor parsers.
+var Registry = make(map[string]components.Parser)
 
 // Register adds a new parser builder to the list of known builders.
 func Register(name string, p components.Parser) {
-	registry[name] = p
+	Registry[name] = p
 }
 
 // IsRegistered checks whether a parser is registered with the given name.
 func IsRegistered(name string) bool {
-	_, ok := registry[components.ComponentType(name)]
+	_, ok := Registry[components.ComponentType(name)]
 	return ok
 }
 
-// GetParser returns a parser builder for the given exporter name.
+// GetParser returns a parser builder for the given processor name.
 func GetParser(name string) components.Parser {
-	if parser, ok := registry[components.ComponentType(name)]; ok {
-		return parser
-	}
-	return components.NewBuilder[any]().WithName(name).MustBuild()
+	return components.GetParser(name, Registry)
 }
 
 var componentParsers = []components.Parser{

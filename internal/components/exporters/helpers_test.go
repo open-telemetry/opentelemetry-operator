@@ -15,7 +15,7 @@ import (
 
 func TestParserForReturns(t *testing.T) {
 	const testComponentName = "test"
-	parser := GetParser(testComponentName)
+	parser := components.GetParser(testComponentName, Registry)
 	assert.Equal(t, "test", parser.ParserType())
 	assert.Equal(t, "__test", parser.ParserName())
 	ports, err := parser.Ports(logr.Discard(), testComponentName, map[string]interface{}{
@@ -27,7 +27,7 @@ func TestParserForReturns(t *testing.T) {
 
 func TestCanRegister(t *testing.T) {
 	const testComponentName = "test"
-	registry[testComponentName] = components.NewSinglePortParserBuilder(testComponentName, 9000).MustBuild()
+	Registry[testComponentName] = components.NewSinglePortParserBuilder(testComponentName, 9000).MustBuild()
 	parser := GetParser(testComponentName)
 	assert.Equal(t, "test", parser.ParserType())
 	assert.Equal(t, "__test", parser.ParserName())
@@ -47,7 +47,7 @@ func TestExporterComponentParsers(t *testing.T) {
 	} {
 		t.Run(tt.exporterName, func(t *testing.T) {
 			t.Run("is registered", func(t *testing.T) {
-				_, ok := registry[tt.exporterName]
+				_, ok := Registry[tt.exporterName]
 				assert.True(t, ok)
 			})
 			t.Run("bad config errors", func(t *testing.T) {
