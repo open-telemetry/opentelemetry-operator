@@ -244,7 +244,7 @@ func TestApply(t *testing.T) {
 	allocatorPrehook.SetConfig(relabelCfg)
 	remainingItems := allocatorPrehook.Apply(targets)
 	assert.Len(t, remainingItems, numRemaining)
-	assert.Equal(t, remainingItems, expectedTargetMap)
+	assert.Equal(t, expectedTargetMap, remainingItems)
 
 	// clear out relabelCfg to test with empty values
 	for key := range relabelCfg {
@@ -370,7 +370,15 @@ func MakeTargetFromProm(rCfgs []*relabel.Config, rawTarget *target.Item) (*targe
 		return nil, nil
 	}
 
-	newTarget := target.NewItem(rawTarget.JobName, rawTarget.TargetURL, rawTarget.Labels, rawTarget.CollectorName, target.WithRelabeledLabels(lset))
+	// Compute the hash from the builder, skipping meta labels
+	hash := target.HashFromBuilder(lb, rawTarget.JobName)
+	newTarget := target.NewItem(
+		rawTarget.JobName,
+		rawTarget.TargetURL,
+		rawTarget.Labels,
+		rawTarget.CollectorName,
+		target.WithHash(hash),
+	)
 	return newTarget, nil
 }
 
