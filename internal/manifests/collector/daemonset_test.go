@@ -727,7 +727,9 @@ func TestDaemonSetHostPIDCanBeSet(t *testing.T) {
 			Name: "my-instance-terminationGracePeriodSeconds",
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
-			HostPID: true,
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				HostPID: true,
+			},
 		},
 	}
 
