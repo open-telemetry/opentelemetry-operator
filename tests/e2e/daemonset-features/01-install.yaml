@@ -1,4 +1,4 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: daemonset
@@ -7,7 +7,7 @@ spec:
   terminationGracePeriodSeconds: 600
   hostNetwork: true
   hostPID: true
-  config: |
+  config:
     receivers:
       jaeger:
         protocols:
