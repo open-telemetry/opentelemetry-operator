@@ -30,7 +30,10 @@ ignore-missing-collector-crds: false
 labels-filter: []
 annotations-filter:
   - ^kubectl\.kubernetes\.io/last-applied-configuration$
-metrics-addr: :8080
+metrics-addr: :8443
+metrics-secure: true
+metrics-tls-cert-file: ""
+metrics-tls-key-file: ""
 health-probe-addr: :8081
 pprof-addr: ""
 enable-leader-election: false
