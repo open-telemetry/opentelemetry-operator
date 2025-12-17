@@ -22,3 +22,6 @@ subtext: |
   `metrics-secure` - enables authentication and authorization for the metrics server. If no TLS certificates are provided, self signed certificates will be generated.
   `metrics-tls-cert-file` - TLS certificate file for the metrics server
   `metrics-tls-key-file` - TLS private key file for the metrics server
+  
+  This change changes the following flags on the operator:
+  `--metrics-addr` - changes from `127.0.0.1:8080` to `:8443` which matches the operator's metrics service port.
