@@ -137,7 +137,7 @@ func (om operatorMetrics) createOperatorMetricsServiceMonitor(ctx context.Contex
 		t := true
 		tlsConfig = &monitoringv1.TLSConfig{
 			SafeTLSConfig: monitoringv1.SafeTLSConfig{
-				// kube-rbac-proxy uses a self-signed cert by default
+				// metrics server uses auto-generated self-signed cert when no certificate is provided
 				InsecureSkipVerify: &t,
 			},
 		}
