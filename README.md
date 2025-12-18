@@ -708,6 +708,7 @@ spec:
       enabled: true
       serviceMonitorSelector: {}
       podMonitorSelector: {}
+      scrapeClasses: []
   config:
     receivers:
       prometheus:
@@ -723,6 +724,9 @@ spec:
           exporters: [debug]
 EOF
 ```
+
+The `scrapeClasses` attribute refers to the ScrapeClass feature of the Prometheus Operator.
+Refer to https://prometheus-operator.dev/docs/developer/scrapeclass/ to learn more about scrape classes.
 
 ## Configure resource attributes
 

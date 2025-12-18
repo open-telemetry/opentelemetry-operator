@@ -9592,6 +9592,14 @@ label selector matches no objects.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>scrapeClasses</b></td>
+        <td>[]object</td>
+        <td>
+          ScrapeClasses to be referenced by PodMonitors and ServiceMonitors to include common configuration.
+If specified, expects an array of ScrapeClass objects as specified by https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ScrapeClass.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#targetallocatorspecprometheuscrscrapeconfigselector">scrapeConfigSelector</a></b></td>
         <td>object</td>
         <td>

@@ -3236,6 +3236,12 @@ spec:
                         additionalProperties:
                           type: string
                         type: object
+                      scrapeClasses:
+                        items:
+                          type: object
+                        type: array
+                        x-kubernetes-list-type: atomic
+                        x-kubernetes-preserve-unknown-fields: true
                       scrapeInterval:
                         default: 30s
                         format: duration
@@ -8026,6 +8032,12 @@ spec:
                             type: object
                         type: object
                         x-kubernetes-map-type: atomic
+                      scrapeClasses:
+                        items:
+                          type: object
+                        type: array
+                        x-kubernetes-list-type: atomic
+                        x-kubernetes-preserve-unknown-fields: true
                       scrapeConfigSelector:
                         properties:
                           matchExpressions:

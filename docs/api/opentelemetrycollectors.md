@@ -13478,6 +13478,14 @@ Empty or nil map matches all pod monitors.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>scrapeClasses</b></td>
+        <td>[]object</td>
+        <td>
+          ScrapeClasses to be referenced by PodMonitors and ServiceMonitors to include common configuration.
+If specified, expects an array of ScrapeClass objects as specified by https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ScrapeClass.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>scrapeInterval</b></td>
         <td>string</td>
         <td>
@@ -33555,6 +33563,14 @@ label selector matches no objects.<br/>
 A label selector is a label query over a set of resources. The result of matchLabels and
 matchExpressions are ANDed. An empty label selector matches all objects. A null
 label selector matches no objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scrapeClasses</b></td>
+        <td>[]object</td>
+        <td>
+          ScrapeClasses to be referenced by PodMonitors and ServiceMonitors to include common configuration.
+If specified, expects an array of ScrapeClass objects as specified by https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ScrapeClass.<br/>
         </td>
         <td>false</td>
       </tr><tr>

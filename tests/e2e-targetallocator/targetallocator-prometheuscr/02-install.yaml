@@ -29,6 +29,10 @@ spec:
       scrapeInterval: 1s
       scrapeConfigSelector: {}
       probeSelector: {}
+      scrapeClasses:
+        - name: tls-config
+          tlsConfig:
+            caFile: /scrapeclass-ca.pem
     serviceAccount: ta
 ---
 apiVersion: monitoring.coreos.com/v1alpha1
@@ -45,6 +49,7 @@ metadata:
   name: blackbox-exporter
 spec:
   jobName: http-get
+  scrapeClass: tls-config
   interval: 60s
   module: http_2xx
   prober:
@@ -74,6 +79,25 @@ spec:
             - /bin/sh
             - -c
             - curl -s http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "scrape-config-cr"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-scrape-config-with-scrape-class-v1beta1
+spec:
+  template:
+    metadata:
+      labels:
+        checker: "true"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-metrics
+          image: docker.io/curlimages/curl:latest
+          args:
+            - /bin/sh
+            - -c
+            - curl -s http://prometheus-cr-v1beta1-targetallocator/scrape_configs | grep "/scrapeclass-ca.pem"
 ---
 apiVersion: batch/v1
 kind: Job

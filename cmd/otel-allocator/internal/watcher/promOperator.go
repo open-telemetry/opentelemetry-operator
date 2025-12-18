@@ -83,6 +83,7 @@ func NewPrometheusCRWatcher(
 				ProbeNamespaceSelector:          cfg.PrometheusCR.ProbeNamespaceSelector,
 				ServiceDiscoveryRole:            &serviceDiscoveryRole,
 				ScrapeProtocols:                 cfg.PrometheusCR.ScrapeProtocols,
+				ScrapeClasses:                   cfg.PrometheusCR.ScrapeClasses,
 			},
 			EvaluationInterval: monitoringv1.Duration(cfg.PrometheusCR.EvaluationInterval.String()),
 		},
