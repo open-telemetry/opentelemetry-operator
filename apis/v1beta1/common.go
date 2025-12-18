@@ -195,6 +195,9 @@ type OpenTelemetryCommonFields struct {
 	// DNSPolicy defines how a pod's DNS will be configured.
 	// +optional
 	DNSPolicy *v1.DNSPolicy `json:"dnsPolicy,omitempty"`
+	// HostPID indicates if the pod should have access to the host process ID namespace.
+	// +optional
+	HostPID bool `json:"hostPID,omitempty"`
 	// ShareProcessNamespace indicates if the pod's containers should share process namespace.
 	// +optional
 	ShareProcessNamespace bool `json:"shareProcessNamespace,omitempty"`
