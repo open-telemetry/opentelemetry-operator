@@ -285,12 +285,10 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	}
 
 	// Add finalizer for this CR
-	if !controllerutil.ContainsFinalizer(&instance, collectorFinalizer) {
-		if controllerutil.AddFinalizer(&instance, collectorFinalizer) {
-			err = r.Update(ctx, &instance)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
+	if maybeAddFinalizer(params, &instance) {
+		err = r.Update(ctx, &instance)
+		if err != nil {
+			return ctrl.Result{}, err
 		}
 	}
 
@@ -394,4 +392,11 @@ func (r *OpenTelemetryCollectorReconciler) finalizeCollector(ctx context.Context
 		return deleteObjects(ctx, r.Client, r.log, objects)
 	}
 	return nil
+}
+
+func maybeAddFinalizer(params manifests.Params, instance *v1beta1.OpenTelemetryCollector) bool {
+	if params.Config.CreateRBACPermissions == rbac.Available && !controllerutil.ContainsFinalizer(instance, collectorFinalizer) {
+		return controllerutil.AddFinalizer(instance, collectorFinalizer)
+	}
+	return false
 }
