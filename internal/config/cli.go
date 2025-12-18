@@ -17,6 +17,9 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f := pflag.NewFlagSet(os.Args[0], pflag.ContinueOnError)
 	f.ParseErrorsWhitelist.UnknownFlags = true
 	f.String("metrics-addr", cfg.MetricsAddr, "The address the metric endpoint binds to.")
+	f.Bool("metrics-secure", cfg.MetricsSecure, "Enable secure serving for metrics endpoint with authentication and authorization. When enabled ano no TLS certificates are provided, the operator generates self signed certificates.")
+	f.String("metrics-tls-cert-file", cfg.MetricsTLSCertFile, "TLS certificate file for the metrics server")
+	f.String("metrics-tls-key-file", cfg.MetricsTLSKeyFile, "TLS private key file for the metrics server")
 	f.String("health-probe-addr", cfg.ProbeAddr, "The address the probe endpoint binds to.")
 	f.String("pprof-addr", cfg.PprofAddr, "The address to expose the pprof server. Default is empty string which disables the pprof server.")
 	f.Bool("enable-leader-election", cfg.EnableLeaderElection,
@@ -117,6 +120,12 @@ func ApplyCLI(cfg *Config) error {
 				cfg.OpenshiftCreateDashboard, _ = f.GetBool("openshift-create-dashboard")
 			case "metrics-addr":
 				cfg.MetricsAddr, _ = f.GetString("metrics-addr")
+			case "metrics-secure":
+				cfg.MetricsSecure, _ = f.GetBool("metrics-secure")
+			case "metrics-tls-cert-file":
+				cfg.MetricsTLSCertFile, _ = f.GetString("metrics-tls-cert-file")
+			case "metrics-tls-key-file":
+				cfg.MetricsTLSKeyFile, _ = f.GetString("metrics-tls-key-file")
 			case "health-probe-addr":
 				cfg.ProbeAddr, _ = f.GetString("health-probe-addr")
 			case "pprof-addr":

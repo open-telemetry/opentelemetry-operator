@@ -10,10 +10,8 @@ namePrefix: opentelemetry-operator-
 
 # Labels to add to all resources and selectors.
 
-
-  # Protect the /metrics endpoint by putting it behind auth.
-  # If you want your controller-manager to expose the /metrics
-  # endpoint w/o any authn/z, please comment the following line.
+# The /metrics endpoint is protected by controller-runtime's built-in
+# authentication and authorization using the FilterProvider option.
 
 
 # the following config is for teaching kustomize how to do var substitution
@@ -59,6 +57,5 @@ labels:
   pairs:
     app.kubernetes.io/name: opentelemetry-operator
 patches:
-- path: manager_auth_proxy_patch.yaml
 - path: manager_webhook_patch.yaml
 - path: webhookcainjection_patch.yaml

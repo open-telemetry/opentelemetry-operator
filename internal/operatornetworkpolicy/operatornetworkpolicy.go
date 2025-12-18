@@ -20,7 +20,6 @@ import (
 const (
 	operatorName         = "opentelemetry-operator-controller-manager"
 	defaultAPIServerPort = 6443
-	defaultRBACProxyPort = 8443
 )
 
 type networkPolicy struct {
@@ -140,15 +139,9 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 	}
 	if n.metricsPort != 0 {
 		metricsPort := intstr.FromInt32(n.metricsPort)
-		// The RBAC proxy is used to secure the metrics endpoint.
-		rbacProxyPort := intstr.FromInt32(defaultRBACProxyPort)
 		np.Spec.Ingress[0].Ports = append(np.Spec.Ingress[0].Ports, networkingv1.NetworkPolicyPort{
 			Protocol: &tcp,
 			Port:     &metricsPort,
-		})
-		np.Spec.Ingress[0].Ports = append(np.Spec.Ingress[0].Ports, networkingv1.NetworkPolicyPort{
-			Protocol: &tcp,
-			Port:     &rbacProxyPort,
 		})
 	}
 

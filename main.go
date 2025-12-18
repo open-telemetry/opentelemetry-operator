@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -34,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -157,11 +159,24 @@ func main() {
 		},
 	}
 
+	// Configure metrics server options
+	metricsOptions := metricsserver.Options{
+		BindAddress: cfg.MetricsAddr,
+	}
+	if cfg.MetricsSecure {
+		metricsOptions.SecureServing = true
+		metricsOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
+		metricsOptions.TLSOpts = optionsTlSOptsFuncs
+		if cfg.MetricsTLSCertFile != "" && cfg.MetricsTLSKeyFile != "" {
+			metricsOptions.CertDir = filepath.Dir(cfg.MetricsTLSCertFile)
+			metricsOptions.CertName = filepath.Base(cfg.MetricsTLSCertFile)
+			metricsOptions.KeyName = filepath.Base(cfg.MetricsTLSKeyFile)
+		}
+	}
+
 	mgrOptions := ctrl.Options{
-		Scheme: scheme,
-		Metrics: metricsserver.Options{
-			BindAddress: cfg.MetricsAddr,
-		},
+		Scheme:                        scheme,
+		Metrics:                       metricsOptions,
 		HealthProbeBindAddress:        cfg.ProbeAddr,
 		LeaderElection:                cfg.EnableLeaderElection,
 		LeaderElectionID:              "9f7554c3.opentelemetry.io",

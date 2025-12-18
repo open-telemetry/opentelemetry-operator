@@ -1,0 +1,27 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: breaking
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: operator
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Remove kube-rbac-proxy from operator deployment and use controller-runtime built-in auth
+
+# One or more tracking issues related to the change
+issues: [3369]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  The operator now uses controller-runtime built-in auth for the metrics server. It is disabled by default.
+  The client accessing the metrics endpoint must have the following RBAC rule `nonResourceURLs: "/metrics", verbs: get`.
+  Which didn't change from the previous approach of using kube-rbac-proxy.
+  
+  This changes adds following flags to the operator:
+  `metrics-secure` - enables authentication and authorization for the metrics server. If no TLS certificates are provided, self signed certificates will be generated.
+  `metrics-tls-cert-file` - TLS certificate file for the metrics server
+  `metrics-tls-key-file` - TLS private key file for the metrics server
+  
+  This change changes the following flags on the operator:
+  `--metrics-addr` - changes from `127.0.0.1:8080` to `:8443` which matches the operator's metrics service port.

@@ -1,7 +1,8 @@
 - op: add
   path: "/spec/template/spec/containers/0/args"
   value:
-    - --metrics-addr=127.0.0.1:8080
+    - --metrics-addr=:8443
+    - --metrics-secure=true
     - --enable-leader-election
     - --zap-log-level=info
     - --zap-time-encoding=rfc3339nano

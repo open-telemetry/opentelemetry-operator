@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2025-12-05T22:10:57Z"
+    createdAt: "2025-12-17T16:15:45Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -526,7 +526,8 @@ spec:
             spec:
               containers:
               - args:
-                - --metrics-addr=127.0.0.1:8080
+                - --metrics-addr=:8443
+                - --metrics-secure=true
                 - --enable-leader-election
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
@@ -552,6 +553,9 @@ spec:
                 - containerPort: 9443
                   name: webhook-server
                   protocol: TCP
+                - containerPort: 8443
+                  name: https
+                  protocol: TCP
                 readinessProbe:
                   httpGet:
                     path: /readyz
@@ -566,24 +570,6 @@ spec:
                 - mountPath: /tmp/k8s-webhook-server/serving-certs
                   name: cert
                   readOnly: true
-              - args:
-                - --secure-listen-address=0.0.0.0:8443
-                - --upstream=http://127.0.0.1:8080/
-                - --logtostderr=true
-                - --v=0
-                image: quay.io/brancz/kube-rbac-proxy:v0.13.1
-                name: kube-rbac-proxy
-                ports:
-                - containerPort: 8443
-                  name: https
-                  protocol: TCP
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 128Mi
-                  requests:
-                    cpu: 5m
-                    memory: 64Mi
               serviceAccountName: opentelemetry-operator-controller-manager
               terminationGracePeriodSeconds: 10
               volumes:

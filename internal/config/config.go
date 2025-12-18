@@ -101,6 +101,12 @@ type Config struct {
 	AnnotationsFilter []string `yaml:"annotations-filter"`
 	// MetricsAddr is the address the metric endpoint binds to.
 	MetricsAddr string `yaml:"metrics-addr"`
+	// MetricsSecure enables serving metrics via HTTPS with authentication and authorization.
+	MetricsSecure bool `yaml:"metrics-secure"`
+	// MetricsTLSCertFile is the TLS certificate file for the metrics server.
+	MetricsTLSCertFile string `yaml:"metrics-tls-cert-file"`
+	// MetricsTLSKeyFile is the TLS private key file for the metrics server.
+	MetricsTLSKeyFile string `yaml:"metrics-tls-key-file"`
 	// ProbeAddr is the address the probe endpoint binds to.
 	ProbeAddr string `yaml:"health-probe-addr"`
 	// PprofAddr is the address to expose the pprof server. Default is empty string which disables the pprof server.
@@ -166,7 +172,10 @@ func New() Config {
 		AnnotationsFilter:                   []string{constants.KubernetesLastAppliedConfigurationAnnotation},
 		CreateRBACPermissions:               autoRBAC.NotAvailable,
 		OpAmpBridgeAvailability:             opampbridge.NotAvailable,
-		MetricsAddr:                         ":8080",
+		MetricsAddr:                         ":8443",
+		MetricsSecure:                       true,
+		MetricsTLSCertFile:                  "",
+		MetricsTLSKeyFile:                   "",
 		ProbeAddr:                           ":8081",
 		WebhookPort:                         9443,
 		FipsDisabledComponents:              "uppercase",

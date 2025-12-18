@@ -7,9 +7,6 @@ metadata:
   namespace: ($OTEL_NAMESPACE)
 status:
   containerStatuses:
-  - name: kube-rbac-proxy
-    ready: true
-    started: true
   - name: manager
     ready: true
     started: true
