@@ -102,7 +102,19 @@ func (c Client) Apply(name string, namespace string, configmap *protobufs.AgentC
 	if instance == nil {
 		return c.create(ctx, name, namespace, updatedCollector)
 	}
+
+	
+	if instance.Spec.Mode == v1beta1.ModeDaemonSet {
+       return c.updateConfigOnly(ctx, instance, updatedCollector)
+	}
 	return c.update(ctx, instance, updatedCollector)
+}
+
+// patch ONLY spec.config on an existing CR
+func (c Client) updateConfigOnly(ctx context.Context, existing *v1beta1.OpenTelemetryCollector, desired *v1beta1.OpenTelemetryCollector) error {
+	base := existing.DeepCopy()               
+	existing.Spec.Config = desired.Spec.Config   // only mutate spec.config
+	return c.k8sClient.Patch(ctx, existing, client.MergeFrom(base))
 }
 
 func (c Client) validateComponents(collectorConfig *v1beta1.Config) error {
