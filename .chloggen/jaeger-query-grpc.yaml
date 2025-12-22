@@ -1,0 +1,6 @@
+change_type: enhancement
+component: collector
+note: "Support gRPC endpoint for jaeger_query extension and expose it when configured."
+issues: [4358]
+subtext: |
+  - HTTP remains defaulted to 16686; gRPC has no default and is exposed only when `jaeger_query.grpc.endpoint` is set.
