@@ -15,6 +15,9 @@ spec:
     - name: priorityClassErrorMessageCEL
       value: |-
         OpenTelemetryCollector.opentelemetry.io "sidecar-priorityclass" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'
+    - name: priorityClassErrorMessageCELv135
+      value: |-
+        OpenTelemetryCollector.opentelemetry.io "sidecar-priorityclass" is invalid: spec: Invalid value: the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'
     - name: priorityClassErrorMessageWebhook
       value: |-
         admission webhook "vopentelemetrycollectorcreateupdatebeta.kb.io" denied the request: the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'
@@ -24,12 +27,15 @@ spec:
         expect:
          - check:
             ($error != null): true
-            ($error): (($minorVersion > `24` && $priorityClassErrorMessageCEL) || $priorityClassErrorMessageWebhook)
+            ($error): (($minorVersion >= `35` && $priorityClassErrorMessageCELv135) || ($minorVersion > `24` && $minorVersion < `35` && $priorityClassErrorMessageCEL) || $priorityClassErrorMessageWebhook)
   - name: step-01
     bindings:
     - name: tolerationErrorMessageCEL
       value: |-
         OpenTelemetryCollector.opentelemetry.io "sidecar-tolerations" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'
+    - name: tolerationErrorMessageCELv135
+      value: |-
+        OpenTelemetryCollector.opentelemetry.io "sidecar-tolerations" is invalid: spec: Invalid value: the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'
     - name: tolerationErrorMessageWebhook
       value: |-
         admission webhook "vopentelemetrycollectorcreateupdatebeta.kb.io" denied the request: the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'
@@ -39,12 +45,15 @@ spec:
         expect:
          - check:
             ($error != null): true
-            ($error): (($minorVersion > `24` && $tolerationErrorMessageCEL) || $tolerationErrorMessageWebhook)
+            ($error): (($minorVersion >= `35` && $tolerationErrorMessageCELv135) || ($minorVersion > `24` && $minorVersion < `35` && $tolerationErrorMessageCEL) || $tolerationErrorMessageWebhook)
   - name: step-02
     bindings:
     - name: affinityErrorMessageCEL
       value: |-
         OpenTelemetryCollector.opentelemetry.io "sidecar-affinity" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'
+    - name: affinityErrorMessageCELv135
+      value: |-
+        OpenTelemetryCollector.opentelemetry.io "sidecar-affinity" is invalid: spec: Invalid value: the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'
     - name: affinityErrorMessageWebhook
       value: |-
         admission webhook "vopentelemetrycollectorcreateupdatebeta.kb.io" denied the request: the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'
@@ -54,13 +63,16 @@ spec:
         expect:
          - check:
             ($error != null): true
-            ($error): (($minorVersion > `24` && $affinityErrorMessageCEL) || $affinityErrorMessageWebhook)
+            ($error): (($minorVersion >= `35` && $affinityErrorMessageCELv135) || ($minorVersion > `24` && $minorVersion < `35` && $affinityErrorMessageCEL) || $affinityErrorMessageWebhook)
   - name: step-03
     bindings:
-    - name: affinityErrorMessageCEL
+    - name: additionalContainersErrorMessageCEL
       value: |-
         OpenTelemetryCollector.opentelemetry.io "sidecar-additional-containers" is invalid: spec: Invalid value: "object": the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'
-    - name: affinityErrorMessageWebhook
+    - name: additionalContainersErrorMessageCELv135
+      value: |-
+        OpenTelemetryCollector.opentelemetry.io "sidecar-additional-containers" is invalid: spec: Invalid value: the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'
+    - name: additionalContainersErrorMessageWebhook
       value: |-
         admission webhook "vopentelemetrycollectorcreateupdatebeta.kb.io" denied the request: the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'AdditionalContainers'
     try:
@@ -69,4 +81,4 @@ spec:
         expect:
          - check:
             ($error != null): true
-            ($error): (($minorVersion > `24` && $affinityErrorMessageCEL) || $affinityErrorMessageWebhook)
+            ($error): (($minorVersion >= `35` && $additionalContainersErrorMessageCELv135) || ($minorVersion > `24` && $minorVersion < `35` && $additionalContainersErrorMessageCEL) || $additionalContainersErrorMessageWebhook)
