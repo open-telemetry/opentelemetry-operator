@@ -37,7 +37,7 @@ func TestSDKConfigRoundTrip(t *testing.T) {
 	require.NoError(t, err, "Failed to unmarshal SDKConfig")
 
 	// Verify key fields were parsed correctly
-	assert.Equal(t, "0.4", config.FileFormat)
+	assert.Equal(t, "1.0-rc.3", config.FileFormat)
 	require.NotNil(t, config.Disabled)
 	assert.False(t, *config.Disabled)
 	require.NotNil(t, config.AttributeLimits)

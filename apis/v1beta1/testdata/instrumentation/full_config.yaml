@@ -1,4 +1,4 @@
-file_format: "0.4"
+file_format: "1.0-rc.3"
 disabled: false
 attribute_limits:
   attribute_value_length_limit: 4096
