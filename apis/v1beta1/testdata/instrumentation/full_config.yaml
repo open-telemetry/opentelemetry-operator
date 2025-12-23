@@ -1,0 +1,80 @@
+file_format: "1.0-rc.3"
+disabled: false
+attribute_limits:
+  attribute_value_length_limit: 4096
+  attribute_count_limit: 128
+resource:
+  attributes:
+    - name: service.name
+      value: my-service
+    - name: deployment.environment
+      value: production
+  schema_url: https://opentelemetry.io/schemas/1.21.0
+propagator:
+  composite:
+    - tracecontext: {}
+    - baggage: {}
+    - b3: {}
+tracer_provider:
+  processors:
+    - batch:
+        exporter:
+          otlp:
+            protocol: grpc
+            endpoint: http://localhost:4317
+            timeout: 10000
+            compression: gzip
+        schedule_delay: 5000
+        export_timeout: 30000
+        max_queue_size: 2048
+        max_export_batch_size: 512
+  limits:
+    attribute_value_length_limit: 4096
+    attribute_count_limit: 128
+    event_count_limit: 128
+    link_count_limit: 128
+  sampler:
+    parent_based:
+      root:
+        trace_id_ratio_based:
+          ratio: 0.5
+meter_provider:
+  readers:
+    - periodic:
+        exporter:
+          otlp:
+            protocol: grpc
+            endpoint: http://localhost:4317
+        interval: 60000
+        timeout: 30000
+  views:
+    - selector:
+        instrument_name: http.server.duration
+        instrument_type: histogram
+      stream:
+        aggregation:
+          explicit_bucket_histogram:
+            boundaries:
+              - 0
+              - 5
+              - 10
+              - 25
+              - 50
+              - 75
+              - 100
+              - 250
+              - 500
+              - 1000
+            record_min_max: true
+logger_provider:
+  processors:
+    - batch:
+        exporter:
+          otlp:
+            protocol: grpc
+            endpoint: http://localhost:4317
+        schedule_delay: 1000
+        max_queue_size: 2048
+  limits:
+    attribute_value_length_limit: 4096
+    attribute_count_limit: 128

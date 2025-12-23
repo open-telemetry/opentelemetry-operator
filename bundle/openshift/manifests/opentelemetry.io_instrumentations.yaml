@@ -2052,6 +2052,694 @@ spec:
             type: object
         type: object
     served: true
+    storage: false
+    subresources:
+      status: {}
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - jsonPath: .spec.config.disabled
+      name: Disabled
+      type: boolean
+    name: v1beta1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              config:
+                properties:
+                  attribute_limits:
+                    properties:
+                      attribute_count_limit:
+                        minimum: 0
+                        type: integer
+                      attribute_value_length_limit:
+                        minimum: 0
+                        type: integer
+                    type: object
+                  disabled:
+                    type: boolean
+                  file_format:
+                    type: string
+                  logger_provider:
+                    properties:
+                      limits:
+                        properties:
+                          attribute_count_limit:
+                            minimum: 0
+                            type: integer
+                          attribute_value_length_limit:
+                            minimum: 0
+                            type: integer
+                        type: object
+                      processors:
+                        items:
+                          properties:
+                            batch:
+                              properties:
+                                export_timeout:
+                                  minimum: 0
+                                  type: integer
+                                exporter:
+                                  properties:
+                                    console:
+                                      type: object
+                                    otlp:
+                                      properties:
+                                        certificate:
+                                          type: string
+                                        client_certificate:
+                                          type: string
+                                        client_key:
+                                          type: string
+                                        compression:
+                                          enum:
+                                          - gzip
+                                          - none
+                                          type: string
+                                        endpoint:
+                                          type: string
+                                        headers:
+                                          items:
+                                            properties:
+                                              name:
+                                                minLength: 1
+                                                type: string
+                                              value:
+                                                type: string
+                                            required:
+                                            - name
+                                            type: object
+                                          type: array
+                                        headers_list:
+                                          type: string
+                                        insecure:
+                                          type: boolean
+                                        protocol:
+                                          enum:
+                                          - grpc
+                                          - http/protobuf
+                                          type: string
+                                        timeout:
+                                          minimum: 0
+                                          type: integer
+                                      type: object
+                                  type: object
+                                max_export_batch_size:
+                                  minimum: 0
+                                  type: integer
+                                max_queue_size:
+                                  minimum: 0
+                                  type: integer
+                                schedule_delay:
+                                  minimum: 0
+                                  type: integer
+                              required:
+                              - exporter
+                              type: object
+                            simple:
+                              properties:
+                                exporter:
+                                  properties:
+                                    console:
+                                      type: object
+                                    otlp:
+                                      properties:
+                                        certificate:
+                                          type: string
+                                        client_certificate:
+                                          type: string
+                                        client_key:
+                                          type: string
+                                        compression:
+                                          enum:
+                                          - gzip
+                                          - none
+                                          type: string
+                                        endpoint:
+                                          type: string
+                                        headers:
+                                          items:
+                                            properties:
+                                              name:
+                                                minLength: 1
+                                                type: string
+                                              value:
+                                                type: string
+                                            required:
+                                            - name
+                                            type: object
+                                          type: array
+                                        headers_list:
+                                          type: string
+                                        insecure:
+                                          type: boolean
+                                        protocol:
+                                          enum:
+                                          - grpc
+                                          - http/protobuf
+                                          type: string
+                                        timeout:
+                                          minimum: 0
+                                          type: integer
+                                      type: object
+                                  type: object
+                              required:
+                              - exporter
+                              type: object
+                          type: object
+                          x-kubernetes-validations:
+                          - message: only one of batch or simple can be specified
+                            rule: '(has(self.batch) ? 1 : 0) + (has(self.simple) ?
+                              1 : 0) <= 1'
+                        type: array
+                    type: object
+                  meter_provider:
+                    properties:
+                      readers:
+                        items:
+                          properties:
+                            periodic:
+                              properties:
+                                exporter:
+                                  properties:
+                                    console:
+                                      type: object
+                                    otlp:
+                                      properties:
+                                        certificate:
+                                          type: string
+                                        client_certificate:
+                                          type: string
+                                        client_key:
+                                          type: string
+                                        compression:
+                                          enum:
+                                          - gzip
+                                          - none
+                                          type: string
+                                        default_histogram_aggregation:
+                                          enum:
+                                          - explicit_bucket_histogram
+                                          - base2_exponential_bucket_histogram
+                                          type: string
+                                        endpoint:
+                                          type: string
+                                        headers:
+                                          items:
+                                            properties:
+                                              name:
+                                                minLength: 1
+                                                type: string
+                                              value:
+                                                type: string
+                                            required:
+                                            - name
+                                            type: object
+                                          type: array
+                                        headers_list:
+                                          type: string
+                                        insecure:
+                                          type: boolean
+                                        protocol:
+                                          enum:
+                                          - grpc
+                                          - http/protobuf
+                                          type: string
+                                        temporality_preference:
+                                          enum:
+                                          - cumulative
+                                          - delta
+                                          - lowmemory
+                                          type: string
+                                        timeout:
+                                          minimum: 0
+                                          type: integer
+                                      type: object
+                                  type: object
+                                interval:
+                                  minimum: 0
+                                  type: integer
+                                timeout:
+                                  minimum: 0
+                                  type: integer
+                              required:
+                              - exporter
+                              type: object
+                            pull:
+                              properties:
+                                exporter:
+                                  properties:
+                                    prometheus:
+                                      properties:
+                                        host:
+                                          type: string
+                                        port:
+                                          maximum: 65535
+                                          minimum: 0
+                                          type: integer
+                                        with_resource_constant_labels:
+                                          properties:
+                                            excluded:
+                                              items:
+                                                type: string
+                                              type: array
+                                            included:
+                                              items:
+                                                type: string
+                                              type: array
+                                          type: object
+                                        without_scope_info:
+                                          type: boolean
+                                        without_type_suffix:
+                                          type: boolean
+                                        without_units:
+                                          type: boolean
+                                      type: object
+                                  type: object
+                              required:
+                              - exporter
+                              type: object
+                          type: object
+                          x-kubernetes-validations:
+                          - message: only one of pull or periodic can be specified
+                            rule: '(has(self.pull) ? 1 : 0) + (has(self.periodic)
+                              ? 1 : 0) <= 1'
+                        type: array
+                      views:
+                        items:
+                          properties:
+                            selector:
+                              properties:
+                                instrument_name:
+                                  type: string
+                                instrument_type:
+                                  enum:
+                                  - counter
+                                  - histogram
+                                  - observable_counter
+                                  - observable_gauge
+                                  - observable_up_down_counter
+                                  - up_down_counter
+                                  type: string
+                                meter_name:
+                                  type: string
+                                meter_schema_url:
+                                  type: string
+                                meter_version:
+                                  type: string
+                                unit:
+                                  type: string
+                              type: object
+                            stream:
+                              properties:
+                                aggregation:
+                                  properties:
+                                    base2_exponential_bucket_histogram:
+                                      properties:
+                                        max_scale:
+                                          default: 20
+                                          maximum: 20
+                                          minimum: -10
+                                          type: integer
+                                        max_size:
+                                          default: 160
+                                          minimum: 2
+                                          type: integer
+                                        record_min_max:
+                                          default: true
+                                          type: boolean
+                                      type: object
+                                    default:
+                                      type: object
+                                    drop:
+                                      type: object
+                                    explicit_bucket_histogram:
+                                      properties:
+                                        boundaries:
+                                          items:
+                                            type: number
+                                          type: array
+                                        record_min_max:
+                                          default: true
+                                          type: boolean
+                                      type: object
+                                    last_value:
+                                      type: object
+                                    sum:
+                                      type: object
+                                  type: object
+                                  x-kubernetes-validations:
+                                  - message: only one aggregation type can be specified
+                                    rule: '(has(self.default) ? 1 : 0) + (has(self.drop)
+                                      ? 1 : 0) + (has(self.sum) ? 1 : 0) + (has(self.last_value)
+                                      ? 1 : 0) + (has(self.explicit_bucket_histogram)
+                                      ? 1 : 0) + (has(self.base2_exponential_bucket_histogram)
+                                      ? 1 : 0) <= 1'
+                                attribute_keys:
+                                  properties:
+                                    excluded:
+                                      items:
+                                        type: string
+                                      type: array
+                                    included:
+                                      items:
+                                        type: string
+                                      type: array
+                                  type: object
+                                description:
+                                  type: string
+                                name:
+                                  type: string
+                              type: object
+                          type: object
+                        maxItems: 128
+                        type: array
+                    type: object
+                  propagator:
+                    properties:
+                      composite:
+                        items:
+                          properties:
+                            b3:
+                              type: object
+                            b3multi:
+                              type: object
+                            baggage:
+                              type: object
+                            jaeger:
+                              type: object
+                            ottrace:
+                              type: object
+                            tracecontext:
+                              type: object
+                            xray:
+                              type: object
+                          type: object
+                          x-kubernetes-validations:
+                          - message: only one propagator type should be specified
+                            rule: '(has(self.tracecontext) ? 1 : 0) + (has(self.baggage)
+                              ? 1 : 0) + (has(self.b3) ? 1 : 0) + (has(self.b3multi)
+                              ? 1 : 0) <= 1'
+                          - message: only one propagator type should be specified
+                            rule: '(has(self.jaeger) ? 1 : 0) + (has(self.ottrace)
+                              ? 1 : 0) + (has(self.xray) ? 1 : 0) <= 1'
+                          - message: only one propagator type should be specified
+                            rule: '!((has(self.tracecontext) || has(self.baggage)
+                              || has(self.b3) || has(self.b3multi)) && (has(self.jaeger)
+                              || has(self.ottrace) || has(self.xray)))'
+                        type: array
+                    type: object
+                  resource:
+                    properties:
+                      attributes:
+                        items:
+                          properties:
+                            name:
+                              minLength: 1
+                              type: string
+                            type:
+                              enum:
+                              - string
+                              - bool
+                              - int
+                              - double
+                              - string_array
+                              - bool_array
+                              - int_array
+                              - double_array
+                              type: string
+                            value:
+                              x-kubernetes-preserve-unknown-fields: true
+                          required:
+                          - name
+                          - value
+                          type: object
+                        type: array
+                      attributes_list:
+                        type: string
+                      detectors:
+                        properties:
+                          attributes:
+                            properties:
+                              excluded:
+                                items:
+                                  type: string
+                                type: array
+                              included:
+                                items:
+                                  type: string
+                                type: array
+                            type: object
+                        type: object
+                      schema_url:
+                        type: string
+                    type: object
+                  tracer_provider:
+                    properties:
+                      limits:
+                        properties:
+                          attribute_count_limit:
+                            minimum: 0
+                            type: integer
+                          attribute_value_length_limit:
+                            minimum: 0
+                            type: integer
+                          event_attribute_count_limit:
+                            minimum: 0
+                            type: integer
+                          event_count_limit:
+                            minimum: 0
+                            type: integer
+                          link_attribute_count_limit:
+                            minimum: 0
+                            type: integer
+                          link_count_limit:
+                            minimum: 0
+                            type: integer
+                        type: object
+                      processors:
+                        items:
+                          properties:
+                            batch:
+                              properties:
+                                export_timeout:
+                                  minimum: 0
+                                  type: integer
+                                exporter:
+                                  properties:
+                                    console:
+                                      type: object
+                                    otlp:
+                                      properties:
+                                        certificate:
+                                          type: string
+                                        client_certificate:
+                                          type: string
+                                        client_key:
+                                          type: string
+                                        compression:
+                                          enum:
+                                          - gzip
+                                          - none
+                                          type: string
+                                        endpoint:
+                                          type: string
+                                        headers:
+                                          items:
+                                            properties:
+                                              name:
+                                                minLength: 1
+                                                type: string
+                                              value:
+                                                type: string
+                                            required:
+                                            - name
+                                            type: object
+                                          type: array
+                                        headers_list:
+                                          type: string
+                                        insecure:
+                                          type: boolean
+                                        protocol:
+                                          enum:
+                                          - grpc
+                                          - http/protobuf
+                                          type: string
+                                        timeout:
+                                          minimum: 0
+                                          type: integer
+                                      type: object
+                                  type: object
+                                max_export_batch_size:
+                                  minimum: 0
+                                  type: integer
+                                max_queue_size:
+                                  minimum: 0
+                                  type: integer
+                                schedule_delay:
+                                  minimum: 0
+                                  type: integer
+                              required:
+                              - exporter
+                              type: object
+                            simple:
+                              properties:
+                                exporter:
+                                  properties:
+                                    console:
+                                      type: object
+                                    otlp:
+                                      properties:
+                                        certificate:
+                                          type: string
+                                        client_certificate:
+                                          type: string
+                                        client_key:
+                                          type: string
+                                        compression:
+                                          enum:
+                                          - gzip
+                                          - none
+                                          type: string
+                                        endpoint:
+                                          type: string
+                                        headers:
+                                          items:
+                                            properties:
+                                              name:
+                                                minLength: 1
+                                                type: string
+                                              value:
+                                                type: string
+                                            required:
+                                            - name
+                                            type: object
+                                          type: array
+                                        headers_list:
+                                          type: string
+                                        insecure:
+                                          type: boolean
+                                        protocol:
+                                          enum:
+                                          - grpc
+                                          - http/protobuf
+                                          type: string
+                                        timeout:
+                                          minimum: 0
+                                          type: integer
+                                      type: object
+                                  type: object
+                              required:
+                              - exporter
+                              type: object
+                          type: object
+                          x-kubernetes-validations:
+                          - message: only one of batch or simple can be specified
+                            rule: '(has(self.batch) ? 1 : 0) + (has(self.simple) ?
+                              1 : 0) <= 1'
+                        type: array
+                      sampler:
+                        properties:
+                          always_off:
+                            type: object
+                          always_on:
+                            type: object
+                          jaeger_remote:
+                            properties:
+                              endpoint:
+                                type: string
+                              initial_sampler:
+                                x-kubernetes-preserve-unknown-fields: true
+                              polling_interval:
+                                minimum: 0
+                                type: integer
+                            type: object
+                          parent_based:
+                            properties:
+                              local_parent_not_sampled:
+                                x-kubernetes-preserve-unknown-fields: true
+                              local_parent_sampled:
+                                x-kubernetes-preserve-unknown-fields: true
+                              remote_parent_not_sampled:
+                                x-kubernetes-preserve-unknown-fields: true
+                              remote_parent_sampled:
+                                x-kubernetes-preserve-unknown-fields: true
+                              root:
+                                x-kubernetes-preserve-unknown-fields: true
+                            type: object
+                          trace_id_ratio_based:
+                            properties:
+                              ratio:
+                                default: 1
+                                maximum: 1
+                                minimum: 0
+                                type: number
+                            type: object
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                        x-kubernetes-validations:
+                        - message: only one sampler type can be specified
+                          rule: '(has(self.always_on) ? 1 : 0) + (has(self.always_off)
+                            ? 1 : 0) + (has(self.trace_id_ratio_based) ? 1 : 0) +
+                            (has(self.parent_based) ? 1 : 0) + (has(self.jaeger_remote)
+                            ? 1 : 0) <= 1'
+                    type: object
+                required:
+                - file_format
+                type: object
+            required:
+            - config
+            type: object
+          status:
+            properties:
+              conditions:
+                items:
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
     storage: true
     subresources:
       status: {}

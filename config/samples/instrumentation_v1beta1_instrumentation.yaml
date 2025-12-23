@@ -1,0 +1,19 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: Instrumentation
+metadata:
+  name: instrumentation
+spec:
+  config:
+    file_format: "0.4"
+    propagator:
+      composite:
+        - tracecontext: {}
+        - baggage: {}
+    tracer_provider:
+      processors:
+        - batch:
+            exporter:
+              otlp:
+                endpoint: http://otel-collector-headless:4318
+                protocol: http/protobuf
+

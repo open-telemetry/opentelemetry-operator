@@ -69,6 +69,15 @@ spec:
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: targetAllocator.observability.metrics.enableMetrics
       version: v1beta1
+    - description: Instrumentation is the Schema for the instrumentations API.
+      displayName: OpenTelemetry Instrumentation
+      kind: Instrumentation
+      name: instrumentations.opentelemetry.io
+      resources:
+      - kind: Pod
+        name: ""
+        version: v1
+      version: v1beta1
     - description: Instrumentation is the spec for OpenTelemetry instrumentation.
       displayName: OpenTelemetry Instrumentation
       kind: Instrumentation

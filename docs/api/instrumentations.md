@@ -3,6 +3,7 @@
 Packages:
 
 - [opentelemetry.io/v1alpha1](#opentelemetryiov1alpha1)
+- [opentelemetry.io/v1beta1](#opentelemetryiov1beta1)
 
 # opentelemetry.io/v1alpha1
 
@@ -8148,6 +8149,2625 @@ The value will be set in the OTEL_TRACES_SAMPLER env var.
 The value can be for instance parentbased_always_on, parentbased_always_off, parentbased_traceidratio...<br/>
           <br/>
             <i>Enum</i>: always_on, always_off, traceidratio, parentbased_always_on, parentbased_always_off, parentbased_traceidratio, jaeger_remote, xray<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+# opentelemetry.io/v1beta1
+
+Resource Types:
+
+- [Instrumentation](#instrumentation)
+
+
+
+
+## Instrumentation
+<sup><sup>[↩ Parent](#opentelemetryiov1beta1 )</sup></sup>
+
+
+
+
+
+
+Instrumentation is the Schema for the instrumentations API.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+      <td><b>apiVersion</b></td>
+      <td>string</td>
+      <td>opentelemetry.io/v1beta1</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b>kind</b></td>
+      <td>string</td>
+      <td>Instrumentation</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td>object</td>
+      <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
+      <td>true</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspec-1">spec</a></b></td>
+        <td>object</td>
+        <td>
+          InstrumentationSpec defines the desired state of OpenTelemetry SDK configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationstatus">status</a></b></td>
+        <td>object</td>
+        <td>
+          InstrumentationStatus defines the observed state of Instrumentation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec
+<sup><sup>[↩ Parent](#instrumentation-1)</sup></sup>
+
+
+
+InstrumentationSpec defines the desired state of OpenTelemetry SDK configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfig">config</a></b></td>
+        <td>object</td>
+        <td>
+          Config defines the OpenTelemetry SDK configuration based on the OpenTelemetry Configuration Schema.
+See: https://github.com/open-telemetry/opentelemetry-configuration<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config
+<sup><sup>[↩ Parent](#instrumentationspec-1)</sup></sup>
+
+
+
+Config defines the OpenTelemetry SDK configuration based on the OpenTelemetry Configuration Schema.
+See: https://github.com/open-telemetry/opentelemetry-configuration
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>file_format</b></td>
+        <td>string</td>
+        <td>
+          FileFormat is the file format version. Represented as a string including the semver major and minor version numbers.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigattribute_limits">attribute_limits</a></b></td>
+        <td>object</td>
+        <td>
+          AttributeLimits configures general attribute limits. See also tracer_provider.limits, logger_provider.limits.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>disabled</b></td>
+        <td>boolean</td>
+        <td>
+          Disabled configures if the SDK is disabled or not. If omitted or null, false is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfiglogger_provider">logger_provider</a></b></td>
+        <td>object</td>
+        <td>
+          LoggerProvider configures the logger provider. If omitted, a noop logger provider is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_provider">meter_provider</a></b></td>
+        <td>object</td>
+        <td>
+          MeterProvider configures the meter provider. If omitted, a noop meter provider is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigpropagator">propagator</a></b></td>
+        <td>object</td>
+        <td>
+          Propagator configures text map context propagators. If omitted, a noop propagator is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigresource">resource</a></b></td>
+        <td>object</td>
+        <td>
+          Resource configures resource for all signals. If omitted, the default resource is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_provider">tracer_provider</a></b></td>
+        <td>object</td>
+        <td>
+          TracerProvider configures the tracer provider. If omitted, a noop tracer provider is used.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.attribute_limits
+<sup><sup>[↩ Parent](#instrumentationspecconfig)</sup></sup>
+
+
+
+AttributeLimits configures general attribute limits. See also tracer_provider.limits, logger_provider.limits.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>attribute_count_limit</b></td>
+        <td>integer</td>
+        <td>
+          AttributeCountLimit configures max attribute count. Value must be non-negative.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>attribute_value_length_limit</b></td>
+        <td>integer</td>
+        <td>
+          AttributeValueLengthLimit configures max attribute value size. Value must be non-negative.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.logger_provider
+<sup><sup>[↩ Parent](#instrumentationspecconfig)</sup></sup>
+
+
+
+LoggerProvider configures the logger provider. If omitted, a noop logger provider is used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfiglogger_providerlimits">limits</a></b></td>
+        <td>object</td>
+        <td>
+          Limits configures log record limits. See also attribute_limits.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfiglogger_providerprocessorsindex">processors</a></b></td>
+        <td>[]object</td>
+        <td>
+          Processors configures log record processors.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.logger_provider.limits
+<sup><sup>[↩ Parent](#instrumentationspecconfiglogger_provider)</sup></sup>
+
+
+
+Limits configures log record limits. See also attribute_limits.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>attribute_count_limit</b></td>
+        <td>integer</td>
+        <td>
+          AttributeCountLimit configures max attribute count. Value must be non-negative.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>attribute_value_length_limit</b></td>
+        <td>integer</td>
+        <td>
+          AttributeValueLengthLimit configures max attribute value size. Value must be non-negative.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.logger_provider.processors[index]
+<sup><sup>[↩ Parent](#instrumentationspecconfiglogger_provider)</sup></sup>
+
+
+
+LogRecordProcessor configures log record processor.
+Only one of batch or simple should be specified.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfiglogger_providerprocessorsindexbatch">batch</a></b></td>
+        <td>object</td>
+        <td>
+          Batch configures a batch log record processor. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfiglogger_providerprocessorsindexsimple">simple</a></b></td>
+        <td>object</td>
+        <td>
+          Simple configures a simple log record processor. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.logger_provider.processors[index].batch
+<sup><sup>[↩ Parent](#instrumentationspecconfiglogger_providerprocessorsindex)</sup></sup>
+
+
+
+Batch configures a batch log record processor. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfiglogger_providerprocessorsindexbatchexporter">exporter</a></b></td>
+        <td>object</td>
+        <td>
+          Exporter configures exporter. Property is required and must be non-null.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>export_timeout</b></td>
+        <td>integer</td>
+        <td>
+          ExportTimeout configures maximum allowed time (in milliseconds) to export data.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>max_export_batch_size</b></td>
+        <td>integer</td>
+        <td>
+          MaxExportBatchSize configures maximum batch size. Value must be positive.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>max_queue_size</b></td>
+        <td>integer</td>
+        <td>
+          MaxQueueSize configures maximum queue size. Value must be positive.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>schedule_delay</b></td>
+        <td>integer</td>
+        <td>
+          ScheduleDelay configures delay interval (in milliseconds) between two consecutive exports.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.logger_provider.processors[index].batch.exporter
+<sup><sup>[↩ Parent](#instrumentationspecconfiglogger_providerprocessorsindexbatch)</sup></sup>
+
+
+
+Exporter configures exporter. Property is required and must be non-null.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>console</b></td>
+        <td>object</td>
+        <td>
+          Console configures exporter to be console. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfiglogger_providerprocessorsindexbatchexporterotlp">otlp</a></b></td>
+        <td>object</td>
+        <td>
+          OTLP configures exporter to be OTLP. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.logger_provider.processors[index].batch.exporter.otlp
+<sup><sup>[↩ Parent](#instrumentationspecconfiglogger_providerprocessorsindexbatchexporter)</sup></sup>
+
+
+
+OTLP configures exporter to be OTLP. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>certificate</b></td>
+        <td>string</td>
+        <td>
+          Certificate configures the path to the TLS certificate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>client_certificate</b></td>
+        <td>string</td>
+        <td>
+          ClientCertificate configures the path to the TLS client certificate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>client_key</b></td>
+        <td>string</td>
+        <td>
+          ClientKey configures the path to the TLS client key.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>compression</b></td>
+        <td>enum</td>
+        <td>
+          Compression configures compression. Known values include: gzip, none.<br/>
+          <br/>
+            <i>Enum</i>: gzip, none<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>endpoint</b></td>
+        <td>string</td>
+        <td>
+          Endpoint configures endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfiglogger_providerprocessorsindexbatchexporterotlpheadersindex">headers</a></b></td>
+        <td>[]object</td>
+        <td>
+          Headers configures headers. Entries have higher priority than entries from .headers_list.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>headers_list</b></td>
+        <td>string</td>
+        <td>
+          HeadersList configures headers. Entries have lower priority than entries from .headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>insecure</b></td>
+        <td>boolean</td>
+        <td>
+          Insecure disables TLS.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>enum</td>
+        <td>
+          Protocol configures the OTLP transport protocol. Known values include: grpc, http/protobuf.<br/>
+          <br/>
+            <i>Enum</i>: grpc, http/protobuf<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeout</b></td>
+        <td>integer</td>
+        <td>
+          Timeout configures max time (in milliseconds) to wait for each export.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.logger_provider.processors[index].batch.exporter.otlp.headers[index]
+<sup><sup>[↩ Parent](#instrumentationspecconfiglogger_providerprocessorsindexbatchexporterotlp)</sup></sup>
+
+
+
+NameStringValuePair represents a name-value pair for headers.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the header name.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value is the header value.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.logger_provider.processors[index].simple
+<sup><sup>[↩ Parent](#instrumentationspecconfiglogger_providerprocessorsindex)</sup></sup>
+
+
+
+Simple configures a simple log record processor. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfiglogger_providerprocessorsindexsimpleexporter">exporter</a></b></td>
+        <td>object</td>
+        <td>
+          Exporter configures exporter. Property is required and must be non-null.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.logger_provider.processors[index].simple.exporter
+<sup><sup>[↩ Parent](#instrumentationspecconfiglogger_providerprocessorsindexsimple)</sup></sup>
+
+
+
+Exporter configures exporter. Property is required and must be non-null.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>console</b></td>
+        <td>object</td>
+        <td>
+          Console configures exporter to be console. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfiglogger_providerprocessorsindexsimpleexporterotlp">otlp</a></b></td>
+        <td>object</td>
+        <td>
+          OTLP configures exporter to be OTLP. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.logger_provider.processors[index].simple.exporter.otlp
+<sup><sup>[↩ Parent](#instrumentationspecconfiglogger_providerprocessorsindexsimpleexporter)</sup></sup>
+
+
+
+OTLP configures exporter to be OTLP. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>certificate</b></td>
+        <td>string</td>
+        <td>
+          Certificate configures the path to the TLS certificate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>client_certificate</b></td>
+        <td>string</td>
+        <td>
+          ClientCertificate configures the path to the TLS client certificate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>client_key</b></td>
+        <td>string</td>
+        <td>
+          ClientKey configures the path to the TLS client key.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>compression</b></td>
+        <td>enum</td>
+        <td>
+          Compression configures compression. Known values include: gzip, none.<br/>
+          <br/>
+            <i>Enum</i>: gzip, none<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>endpoint</b></td>
+        <td>string</td>
+        <td>
+          Endpoint configures endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfiglogger_providerprocessorsindexsimpleexporterotlpheadersindex">headers</a></b></td>
+        <td>[]object</td>
+        <td>
+          Headers configures headers. Entries have higher priority than entries from .headers_list.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>headers_list</b></td>
+        <td>string</td>
+        <td>
+          HeadersList configures headers. Entries have lower priority than entries from .headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>insecure</b></td>
+        <td>boolean</td>
+        <td>
+          Insecure disables TLS.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>enum</td>
+        <td>
+          Protocol configures the OTLP transport protocol. Known values include: grpc, http/protobuf.<br/>
+          <br/>
+            <i>Enum</i>: grpc, http/protobuf<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeout</b></td>
+        <td>integer</td>
+        <td>
+          Timeout configures max time (in milliseconds) to wait for each export.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.logger_provider.processors[index].simple.exporter.otlp.headers[index]
+<sup><sup>[↩ Parent](#instrumentationspecconfiglogger_providerprocessorsindexsimpleexporterotlp)</sup></sup>
+
+
+
+NameStringValuePair represents a name-value pair for headers.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the header name.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value is the header value.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider
+<sup><sup>[↩ Parent](#instrumentationspecconfig)</sup></sup>
+
+
+
+MeterProvider configures the meter provider. If omitted, a noop meter provider is used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerreadersindex">readers</a></b></td>
+        <td>[]object</td>
+        <td>
+          Readers configures metric readers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerviewsindex">views</a></b></td>
+        <td>[]object</td>
+        <td>
+          Views configures views. Each view has a selector which determines the instrument(s) it applies to.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.readers[index]
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_provider)</sup></sup>
+
+
+
+MetricReader configures metric reader.
+Only one of pull or periodic should be specified.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerreadersindexperiodic">periodic</a></b></td>
+        <td>object</td>
+        <td>
+          Periodic configures a periodic metric reader. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerreadersindexpull">pull</a></b></td>
+        <td>object</td>
+        <td>
+          Pull configures a pull based metric reader. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.readers[index].periodic
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_providerreadersindex)</sup></sup>
+
+
+
+Periodic configures a periodic metric reader. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerreadersindexperiodicexporter">exporter</a></b></td>
+        <td>object</td>
+        <td>
+          Exporter configures exporter. Property is required and must be non-null.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>interval</b></td>
+        <td>integer</td>
+        <td>
+          Interval configures delay interval (in milliseconds) between start of two consecutive exports.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeout</b></td>
+        <td>integer</td>
+        <td>
+          Timeout configures maximum allowed time (in milliseconds) to export data.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.readers[index].periodic.exporter
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_providerreadersindexperiodic)</sup></sup>
+
+
+
+Exporter configures exporter. Property is required and must be non-null.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>console</b></td>
+        <td>object</td>
+        <td>
+          Console configures exporter to be console. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerreadersindexperiodicexporterotlp">otlp</a></b></td>
+        <td>object</td>
+        <td>
+          OTLP configures exporter to be OTLP. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.readers[index].periodic.exporter.otlp
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_providerreadersindexperiodicexporter)</sup></sup>
+
+
+
+OTLP configures exporter to be OTLP. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>certificate</b></td>
+        <td>string</td>
+        <td>
+          Certificate is the path to the TLS certificate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>client_certificate</b></td>
+        <td>string</td>
+        <td>
+          ClientCertificate is the path to the TLS client certificate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>client_key</b></td>
+        <td>string</td>
+        <td>
+          ClientKey is the path to the TLS client key.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>compression</b></td>
+        <td>enum</td>
+        <td>
+          Compression is the compression type. Valid values: gzip, none.<br/>
+          <br/>
+            <i>Enum</i>: gzip, none<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>default_histogram_aggregation</b></td>
+        <td>enum</td>
+        <td>
+          DefaultHistogramAggregation is the default histogram aggregation.
+Valid values: explicit_bucket_histogram, base2_exponential_bucket_histogram.<br/>
+          <br/>
+            <i>Enum</i>: explicit_bucket_histogram, base2_exponential_bucket_histogram<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>endpoint</b></td>
+        <td>string</td>
+        <td>
+          Endpoint is the target URL to send telemetry to.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerreadersindexperiodicexporterotlpheadersindex">headers</a></b></td>
+        <td>[]object</td>
+        <td>
+          Headers are additional headers to send with requests.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>headers_list</b></td>
+        <td>string</td>
+        <td>
+          HeadersList is a comma-separated list of headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>insecure</b></td>
+        <td>boolean</td>
+        <td>
+          Insecure disables TLS.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>enum</td>
+        <td>
+          Protocol is the OTLP transport protocol. Valid values: grpc, http/protobuf.<br/>
+          <br/>
+            <i>Enum</i>: grpc, http/protobuf<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>temporality_preference</b></td>
+        <td>enum</td>
+        <td>
+          TemporalityPreference is the temporality preference for metrics.
+Valid values: cumulative, delta, lowmemory.<br/>
+          <br/>
+            <i>Enum</i>: cumulative, delta, lowmemory<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeout</b></td>
+        <td>integer</td>
+        <td>
+          Timeout is the export timeout in milliseconds.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.readers[index].periodic.exporter.otlp.headers[index]
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_providerreadersindexperiodicexporterotlp)</sup></sup>
+
+
+
+NameStringValuePair represents a name-value pair for headers.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the header name.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value is the header value.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.readers[index].pull
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_providerreadersindex)</sup></sup>
+
+
+
+Pull configures a pull based metric reader. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerreadersindexpullexporter">exporter</a></b></td>
+        <td>object</td>
+        <td>
+          Exporter configures exporter. Property is required and must be non-null.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.readers[index].pull.exporter
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_providerreadersindexpull)</sup></sup>
+
+
+
+Exporter configures exporter. Property is required and must be non-null.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerreadersindexpullexporterprometheus">prometheus</a></b></td>
+        <td>object</td>
+        <td>
+          Prometheus configures exporter to be prometheus. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.readers[index].pull.exporter.prometheus
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_providerreadersindexpullexporter)</sup></sup>
+
+
+
+Prometheus configures exporter to be prometheus. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host configures host. If omitted or null, localhost is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port configures port. If omitted or null, 9464 is used.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+            <i>Maximum</i>: 65535<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerreadersindexpullexporterprometheuswith_resource_constant_labels">with_resource_constant_labels</a></b></td>
+        <td>object</td>
+        <td>
+          WithResourceConstantLabels configures resource constant labels.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>without_scope_info</b></td>
+        <td>boolean</td>
+        <td>
+          WithoutScopeInfo configures Prometheus Exporter to produce metrics without a scope info metric.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>without_type_suffix</b></td>
+        <td>boolean</td>
+        <td>
+          WithoutTypeSuffix configures Prometheus Exporter to produce metrics without type suffixes.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>without_units</b></td>
+        <td>boolean</td>
+        <td>
+          WithoutUnits configures Prometheus Exporter to produce metrics without unit suffixes.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.readers[index].pull.exporter.prometheus.with_resource_constant_labels
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_providerreadersindexpullexporterprometheus)</sup></sup>
+
+
+
+WithResourceConstantLabels configures resource constant labels.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>excluded</b></td>
+        <td>[]string</td>
+        <td>
+          Excluded lists the items to exclude.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>included</b></td>
+        <td>[]string</td>
+        <td>
+          Included lists the items to include.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.views[index]
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_provider)</sup></sup>
+
+
+
+View configures a metric view.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerviewsindexselector">selector</a></b></td>
+        <td>object</td>
+        <td>
+          Selector configures view selector. Selection criteria is additive.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerviewsindexstream">stream</a></b></td>
+        <td>object</td>
+        <td>
+          Stream configures view stream.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.views[index].selector
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_providerviewsindex)</sup></sup>
+
+
+
+Selector configures view selector. Selection criteria is additive.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>instrument_name</b></td>
+        <td>string</td>
+        <td>
+          InstrumentName configures instrument name selection criteria.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>instrument_type</b></td>
+        <td>enum</td>
+        <td>
+          InstrumentType configures instrument type selection criteria.<br/>
+          <br/>
+            <i>Enum</i>: counter, histogram, observable_counter, observable_gauge, observable_up_down_counter, up_down_counter<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>meter_name</b></td>
+        <td>string</td>
+        <td>
+          MeterName configures meter name selection criteria.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>meter_schema_url</b></td>
+        <td>string</td>
+        <td>
+          MeterSchemaURL configures meter schema URL selection criteria.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>meter_version</b></td>
+        <td>string</td>
+        <td>
+          MeterVersion configures meter version selection criteria.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>unit</b></td>
+        <td>string</td>
+        <td>
+          Unit configures the instrument unit selection criteria.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.views[index].stream
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_providerviewsindex)</sup></sup>
+
+
+
+Stream configures view stream.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerviewsindexstreamaggregation">aggregation</a></b></td>
+        <td>object</td>
+        <td>
+          Aggregation configures aggregation of the resulting stream(s). If omitted, default is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerviewsindexstreamattribute_keys">attribute_keys</a></b></td>
+        <td>object</td>
+        <td>
+          AttributeKeys configures attribute keys retained in the resulting stream(s).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>description</b></td>
+        <td>string</td>
+        <td>
+          Description configures metric description of the resulting stream(s).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name configures metric name of the resulting stream(s).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.views[index].stream.aggregation
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_providerviewsindexstream)</sup></sup>
+
+
+
+Aggregation configures aggregation of the resulting stream(s). If omitted, default is used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerviewsindexstreamaggregationbase2_exponential_bucket_histogram">base2_exponential_bucket_histogram</a></b></td>
+        <td>object</td>
+        <td>
+          Base2ExponentialBucketHistogram configures the stream to collect data for the exponential histogram metric point.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>default</b></td>
+        <td>object</td>
+        <td>
+          Default configures the stream to use the instrument kind to select an aggregation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>drop</b></td>
+        <td>object</td>
+        <td>
+          Drop configures the stream to ignore/drop all instrument measurements.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigmeter_providerviewsindexstreamaggregationexplicit_bucket_histogram">explicit_bucket_histogram</a></b></td>
+        <td>object</td>
+        <td>
+          ExplicitBucketHistogram configures the stream to collect data for the histogram metric point
+using a set of explicit boundary values.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>last_value</b></td>
+        <td>object</td>
+        <td>
+          LastValue configures the stream to collect data using the last measurement.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>sum</b></td>
+        <td>object</td>
+        <td>
+          Sum configures the stream to collect the arithmetic sum of measurement values.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.views[index].stream.aggregation.base2_exponential_bucket_histogram
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_providerviewsindexstreamaggregation)</sup></sup>
+
+
+
+Base2ExponentialBucketHistogram configures the stream to collect data for the exponential histogram metric point.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>max_scale</b></td>
+        <td>integer</td>
+        <td>
+          MaxScale configures the max scale factor. If omitted or null, 20 is used.<br/>
+          <br/>
+            <i>Default</i>: 20<br/>
+            <i>Minimum</i>: -10<br/>
+            <i>Maximum</i>: 20<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>max_size</b></td>
+        <td>integer</td>
+        <td>
+          MaxSize configures the maximum number of buckets in each of the positive and negative ranges.<br/>
+          <br/>
+            <i>Default</i>: 160<br/>
+            <i>Minimum</i>: 2<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>record_min_max</b></td>
+        <td>boolean</td>
+        <td>
+          RecordMinMax configures record min and max. If omitted or null, true is used.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.views[index].stream.aggregation.explicit_bucket_histogram
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_providerviewsindexstreamaggregation)</sup></sup>
+
+
+
+ExplicitBucketHistogram configures the stream to collect data for the histogram metric point
+using a set of explicit boundary values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>boundaries</b></td>
+        <td>[]number</td>
+        <td>
+          Boundaries configures bucket boundaries.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>record_min_max</b></td>
+        <td>boolean</td>
+        <td>
+          RecordMinMax configures record min and max. If omitted or null, true is used.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.meter_provider.views[index].stream.attribute_keys
+<sup><sup>[↩ Parent](#instrumentationspecconfigmeter_providerviewsindexstream)</sup></sup>
+
+
+
+AttributeKeys configures attribute keys retained in the resulting stream(s).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>excluded</b></td>
+        <td>[]string</td>
+        <td>
+          Excluded lists the items to exclude.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>included</b></td>
+        <td>[]string</td>
+        <td>
+          Included lists the items to include.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.propagator
+<sup><sup>[↩ Parent](#instrumentationspecconfig)</sup></sup>
+
+
+
+Propagator configures text map context propagators. If omitted, a noop propagator is used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigpropagatorcompositeindex">composite</a></b></td>
+        <td>[]object</td>
+        <td>
+          Composite defines the list of propagators to use.
+Valid values include: tracecontext, baggage, b3, b3multi, jaeger, xray, ottrace.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.propagator.composite[index]
+<sup><sup>[↩ Parent](#instrumentationspecconfigpropagator)</sup></sup>
+
+
+
+TextMapPropagator defines the configuration for a text map propagator.
+Only one propagator type should be specified.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>b3</b></td>
+        <td>object</td>
+        <td>
+          B3 configures the b3 propagator. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>b3multi</b></td>
+        <td>object</td>
+        <td>
+          B3Multi configures the b3multi propagator. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>baggage</b></td>
+        <td>object</td>
+        <td>
+          Baggage configures the baggage propagator. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>jaeger</b></td>
+        <td>object</td>
+        <td>
+          Jaeger configures the jaeger propagator. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>ottrace</b></td>
+        <td>object</td>
+        <td>
+          OTTrace configures the ottrace propagator. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>tracecontext</b></td>
+        <td>object</td>
+        <td>
+          TraceContext configures the tracecontext propagator. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>xray</b></td>
+        <td>object</td>
+        <td>
+          XRay configures the xray propagator. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.resource
+<sup><sup>[↩ Parent](#instrumentationspecconfig)</sup></sup>
+
+
+
+Resource configures resource for all signals. If omitted, the default resource is used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigresourceattributesindex">attributes</a></b></td>
+        <td>[]object</td>
+        <td>
+          Attributes configures resource attributes. Entries have higher priority than entries from .resource.attributes_list.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>attributes_list</b></td>
+        <td>string</td>
+        <td>
+          AttributesList is a string containing a comma-separated list of key=value pairs.
+Entries have lower priority than entries from .resource.attributes.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigresourcedetectors">detectors</a></b></td>
+        <td>object</td>
+        <td>
+          Detectors configures resource detectors.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>schema_url</b></td>
+        <td>string</td>
+        <td>
+          SchemaURL configures resource schema URL. If omitted or null, no schema URL is used.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.resource.attributes[index]
+<sup><sup>[↩ Parent](#instrumentationspecconfigresource)</sup></sup>
+
+
+
+AttributeNameValue represents a single attribute with name, type, and value.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the attribute key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>JSON</td>
+        <td>
+          Value is the attribute value. Can be a string, number, boolean, or array.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>enum</td>
+        <td>
+          Type specifies the attribute value type. Valid values are: string, bool, int, double, string_array, bool_array, int_array, double_array.<br/>
+          <br/>
+            <i>Enum</i>: string, bool, int, double, string_array, bool_array, int_array, double_array<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.resource.detectors
+<sup><sup>[↩ Parent](#instrumentationspecconfigresource)</sup></sup>
+
+
+
+Detectors configures resource detectors.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigresourcedetectorsattributes">attributes</a></b></td>
+        <td>object</td>
+        <td>
+          Attributes specifies which attributes to include or exclude from detectors.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.resource.detectors.attributes
+<sup><sup>[↩ Parent](#instrumentationspecconfigresourcedetectors)</sup></sup>
+
+
+
+Attributes specifies which attributes to include or exclude from detectors.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>excluded</b></td>
+        <td>[]string</td>
+        <td>
+          Excluded lists the attributes to exclude.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>included</b></td>
+        <td>[]string</td>
+        <td>
+          Included lists the attributes to include.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider
+<sup><sup>[↩ Parent](#instrumentationspecconfig)</sup></sup>
+
+
+
+TracerProvider configures the tracer provider. If omitted, a noop tracer provider is used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_providerlimits">limits</a></b></td>
+        <td>object</td>
+        <td>
+          Limits configures span limits. See also attribute_limits.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_providerprocessorsindex">processors</a></b></td>
+        <td>[]object</td>
+        <td>
+          Processors configures span processors.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_providersampler">sampler</a></b></td>
+        <td>object</td>
+        <td>
+          Sampler configures the sampler. If omitted, parent based sampler with a root of always_on is used.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider.limits
+<sup><sup>[↩ Parent](#instrumentationspecconfigtracer_provider)</sup></sup>
+
+
+
+Limits configures span limits. See also attribute_limits.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>attribute_count_limit</b></td>
+        <td>integer</td>
+        <td>
+          AttributeCountLimit configures max attribute count. Value must be non-negative.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>attribute_value_length_limit</b></td>
+        <td>integer</td>
+        <td>
+          AttributeValueLengthLimit configures max attribute value size. Value must be non-negative.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>event_attribute_count_limit</b></td>
+        <td>integer</td>
+        <td>
+          EventAttributeCountLimit configures max attributes per span event. Value must be non-negative.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>event_count_limit</b></td>
+        <td>integer</td>
+        <td>
+          EventCountLimit configures max span event count. Value must be non-negative.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>link_attribute_count_limit</b></td>
+        <td>integer</td>
+        <td>
+          LinkAttributeCountLimit configures max attributes per span link. Value must be non-negative.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>link_count_limit</b></td>
+        <td>integer</td>
+        <td>
+          LinkCountLimit configures max span link count. Value must be non-negative.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider.processors[index]
+<sup><sup>[↩ Parent](#instrumentationspecconfigtracer_provider)</sup></sup>
+
+
+
+SpanProcessor configures a span processor.
+Only one of batch or simple should be specified.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_providerprocessorsindexbatch">batch</a></b></td>
+        <td>object</td>
+        <td>
+          Batch configures a batch span processor. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_providerprocessorsindexsimple">simple</a></b></td>
+        <td>object</td>
+        <td>
+          Simple configures a simple span processor. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider.processors[index].batch
+<sup><sup>[↩ Parent](#instrumentationspecconfigtracer_providerprocessorsindex)</sup></sup>
+
+
+
+Batch configures a batch span processor. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_providerprocessorsindexbatchexporter">exporter</a></b></td>
+        <td>object</td>
+        <td>
+          Exporter configures exporter. Property is required and must be non-null.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>export_timeout</b></td>
+        <td>integer</td>
+        <td>
+          ExportTimeout configures maximum allowed time (in milliseconds) to export data.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>max_export_batch_size</b></td>
+        <td>integer</td>
+        <td>
+          MaxExportBatchSize configures maximum batch size. Value must be positive.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>max_queue_size</b></td>
+        <td>integer</td>
+        <td>
+          MaxQueueSize configures maximum queue size. Value must be positive.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>schedule_delay</b></td>
+        <td>integer</td>
+        <td>
+          ScheduleDelay configures delay interval (in milliseconds) between two consecutive exports.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider.processors[index].batch.exporter
+<sup><sup>[↩ Parent](#instrumentationspecconfigtracer_providerprocessorsindexbatch)</sup></sup>
+
+
+
+Exporter configures exporter. Property is required and must be non-null.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>console</b></td>
+        <td>object</td>
+        <td>
+          Console configures exporter to be console. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_providerprocessorsindexbatchexporterotlp">otlp</a></b></td>
+        <td>object</td>
+        <td>
+          OTLP configures exporter to be OTLP. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider.processors[index].batch.exporter.otlp
+<sup><sup>[↩ Parent](#instrumentationspecconfigtracer_providerprocessorsindexbatchexporter)</sup></sup>
+
+
+
+OTLP configures exporter to be OTLP. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>certificate</b></td>
+        <td>string</td>
+        <td>
+          Certificate configures the path to the TLS certificate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>client_certificate</b></td>
+        <td>string</td>
+        <td>
+          ClientCertificate configures the path to the TLS client certificate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>client_key</b></td>
+        <td>string</td>
+        <td>
+          ClientKey configures the path to the TLS client key.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>compression</b></td>
+        <td>enum</td>
+        <td>
+          Compression configures compression. Known values include: gzip, none.<br/>
+          <br/>
+            <i>Enum</i>: gzip, none<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>endpoint</b></td>
+        <td>string</td>
+        <td>
+          Endpoint configures endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_providerprocessorsindexbatchexporterotlpheadersindex">headers</a></b></td>
+        <td>[]object</td>
+        <td>
+          Headers configures headers. Entries have higher priority than entries from .headers_list.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>headers_list</b></td>
+        <td>string</td>
+        <td>
+          HeadersList configures headers. Entries have lower priority than entries from .headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>insecure</b></td>
+        <td>boolean</td>
+        <td>
+          Insecure disables TLS.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>enum</td>
+        <td>
+          Protocol configures the OTLP transport protocol. Known values include: grpc, http/protobuf.<br/>
+          <br/>
+            <i>Enum</i>: grpc, http/protobuf<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeout</b></td>
+        <td>integer</td>
+        <td>
+          Timeout configures max time (in milliseconds) to wait for each export.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider.processors[index].batch.exporter.otlp.headers[index]
+<sup><sup>[↩ Parent](#instrumentationspecconfigtracer_providerprocessorsindexbatchexporterotlp)</sup></sup>
+
+
+
+NameStringValuePair represents a name-value pair for headers.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the header name.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value is the header value.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider.processors[index].simple
+<sup><sup>[↩ Parent](#instrumentationspecconfigtracer_providerprocessorsindex)</sup></sup>
+
+
+
+Simple configures a simple span processor. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_providerprocessorsindexsimpleexporter">exporter</a></b></td>
+        <td>object</td>
+        <td>
+          Exporter configures exporter. Property is required and must be non-null.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider.processors[index].simple.exporter
+<sup><sup>[↩ Parent](#instrumentationspecconfigtracer_providerprocessorsindexsimple)</sup></sup>
+
+
+
+Exporter configures exporter. Property is required and must be non-null.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>console</b></td>
+        <td>object</td>
+        <td>
+          Console configures exporter to be console. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_providerprocessorsindexsimpleexporterotlp">otlp</a></b></td>
+        <td>object</td>
+        <td>
+          OTLP configures exporter to be OTLP. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider.processors[index].simple.exporter.otlp
+<sup><sup>[↩ Parent](#instrumentationspecconfigtracer_providerprocessorsindexsimpleexporter)</sup></sup>
+
+
+
+OTLP configures exporter to be OTLP. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>certificate</b></td>
+        <td>string</td>
+        <td>
+          Certificate configures the path to the TLS certificate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>client_certificate</b></td>
+        <td>string</td>
+        <td>
+          ClientCertificate configures the path to the TLS client certificate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>client_key</b></td>
+        <td>string</td>
+        <td>
+          ClientKey configures the path to the TLS client key.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>compression</b></td>
+        <td>enum</td>
+        <td>
+          Compression configures compression. Known values include: gzip, none.<br/>
+          <br/>
+            <i>Enum</i>: gzip, none<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>endpoint</b></td>
+        <td>string</td>
+        <td>
+          Endpoint configures endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_providerprocessorsindexsimpleexporterotlpheadersindex">headers</a></b></td>
+        <td>[]object</td>
+        <td>
+          Headers configures headers. Entries have higher priority than entries from .headers_list.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>headers_list</b></td>
+        <td>string</td>
+        <td>
+          HeadersList configures headers. Entries have lower priority than entries from .headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>insecure</b></td>
+        <td>boolean</td>
+        <td>
+          Insecure disables TLS.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>protocol</b></td>
+        <td>enum</td>
+        <td>
+          Protocol configures the OTLP transport protocol. Known values include: grpc, http/protobuf.<br/>
+          <br/>
+            <i>Enum</i>: grpc, http/protobuf<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeout</b></td>
+        <td>integer</td>
+        <td>
+          Timeout configures max time (in milliseconds) to wait for each export.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider.processors[index].simple.exporter.otlp.headers[index]
+<sup><sup>[↩ Parent](#instrumentationspecconfigtracer_providerprocessorsindexsimpleexporterotlp)</sup></sup>
+
+
+
+NameStringValuePair represents a name-value pair for headers.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the header name.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value is the header value.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider.sampler
+<sup><sup>[↩ Parent](#instrumentationspecconfigtracer_provider)</sup></sup>
+
+
+
+Sampler configures the sampler. If omitted, parent based sampler with a root of always_on is used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>always_off</b></td>
+        <td>object</td>
+        <td>
+          AlwaysOff configures sampler to be always_off. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>always_on</b></td>
+        <td>object</td>
+        <td>
+          AlwaysOn configures sampler to be always_on. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_providersamplerjaeger_remote">jaeger_remote</a></b></td>
+        <td>object</td>
+        <td>
+          JaegerRemote configures sampler to be jaeger_remote. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_providersamplerparent_based">parent_based</a></b></td>
+        <td>object</td>
+        <td>
+          ParentBased configures sampler to be parent_based. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#instrumentationspecconfigtracer_providersamplertrace_id_ratio_based">trace_id_ratio_based</a></b></td>
+        <td>object</td>
+        <td>
+          TraceIDRatioBased configures sampler to be trace_id_ratio_based. If omitted, ignore.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider.sampler.jaeger_remote
+<sup><sup>[↩ Parent](#instrumentationspecconfigtracer_providersampler)</sup></sup>
+
+
+
+JaegerRemote configures sampler to be jaeger_remote. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>endpoint</b></td>
+        <td>string</td>
+        <td>
+          Endpoint configures the endpoint of the jaeger remote sampling service.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initial_sampler</b></td>
+        <td>JSON</td>
+        <td>
+          InitialSampler configures the initial sampler used before first configuration is fetched.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>polling_interval</b></td>
+        <td>integer</td>
+        <td>
+          PollingInterval configures the polling interval (in milliseconds) to fetch from the remote sampling service.<br/>
+          <br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider.sampler.parent_based
+<sup><sup>[↩ Parent](#instrumentationspecconfigtracer_providersampler)</sup></sup>
+
+
+
+ParentBased configures sampler to be parent_based. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>local_parent_not_sampled</b></td>
+        <td>JSON</td>
+        <td>
+          LocalParentNotSampled configures local_parent_not_sampled sampler. If omitted, always_off is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>local_parent_sampled</b></td>
+        <td>JSON</td>
+        <td>
+          LocalParentSampled configures local_parent_sampled sampler. If omitted, always_on is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>remote_parent_not_sampled</b></td>
+        <td>JSON</td>
+        <td>
+          RemoteParentNotSampled configures remote_parent_not_sampled sampler. If omitted, always_off is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>remote_parent_sampled</b></td>
+        <td>JSON</td>
+        <td>
+          RemoteParentSampled configures remote_parent_sampled sampler. If omitted, always_on is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>root</b></td>
+        <td>JSON</td>
+        <td>
+          Root configures root sampler. If omitted, always_on is used.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.spec.config.tracer_provider.sampler.trace_id_ratio_based
+<sup><sup>[↩ Parent](#instrumentationspecconfigtracer_providersampler)</sup></sup>
+
+
+
+TraceIDRatioBased configures sampler to be trace_id_ratio_based. If omitted, ignore.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>ratio</b></td>
+        <td>number</td>
+        <td>
+          Ratio configures trace_id_ratio. If omitted or null, 1.0 is used.
+Must be a value between 0.0 and 1.0.<br/>
+          <br/>
+            <i>Default</i>: 1<br/>
+            <i>Minimum</i>: 0<br/>
+            <i>Maximum</i>: 1<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.status
+<sup><sup>[↩ Parent](#instrumentation-1)</sup></sup>
+
+
+
+InstrumentationStatus defines the observed state of Instrumentation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#instrumentationstatusconditionsindex">conditions</a></b></td>
+        <td>[]object</td>
+        <td>
+          Conditions represent the latest available observations of an object's state.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Instrumentation.status.conditions[index]
+<sup><sup>[↩ Parent](#instrumentationstatus)</sup></sup>
+
+
+
+Condition contains details for one aspect of the current state of this API Resource.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>lastTransitionTime</b></td>
+        <td>string</td>
+        <td>
+          lastTransitionTime is the last time the condition transitioned from one status to another.
+This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>message</b></td>
+        <td>string</td>
+        <td>
+          message is a human readable message indicating details about the transition.
+This may be an empty string.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>reason</b></td>
+        <td>string</td>
+        <td>
+          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+Producers of specific condition types may define expected values and meanings for this field,
+and whether the values are considered a guaranteed API.
+The value should be a CamelCase string.
+This field may not be empty.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>status</b></td>
+        <td>enum</td>
+        <td>
+          status of the condition, one of True, False, Unknown.<br/>
+          <br/>
+            <i>Enum</i>: True, False, Unknown<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type of condition in CamelCase or in foo.example.com/CamelCase.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>observedGeneration</b></td>
+        <td>integer</td>
+        <td>
+          observedGeneration represents the .metadata.generation that the condition was set based upon.
+For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+with respect to the current state of the instance.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr></tbody>
