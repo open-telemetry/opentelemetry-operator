@@ -179,8 +179,64 @@ type Propagator struct {
 	// Composite defines the list of propagators to use.
 	// Valid values include: tracecontext, baggage, b3, b3multi, jaeger, xray, ottrace.
 	// +optional
-	Composite []string `json:"composite,omitempty"`
+	Composite []TextMapPropagator `json:"composite,omitempty"`
 }
+
+// TextMapPropagator defines the configuration for a text map propagator.
+// Only one propagator type should be specified.
+// +kubebuilder:validation:XValidation:rule="(has(self.tracecontext) ? 1 : 0) + (has(self.baggage) ? 1 : 0) + (has(self.b3) ? 1 : 0) + (has(self.b3multi) ? 1 : 0) <= 1",message="only one propagator type should be specified"
+// +kubebuilder:validation:XValidation:rule="(has(self.jaeger) ? 1 : 0) + (has(self.ottrace) ? 1 : 0) + (has(self.xray) ? 1 : 0) <= 1",message="only one propagator type should be specified"
+// +kubebuilder:validation:XValidation:rule="!((has(self.tracecontext) || has(self.baggage) || has(self.b3) || has(self.b3multi)) && (has(self.jaeger) || has(self.ottrace) || has(self.xray)))",message="only one propagator type should be specified"
+type TextMapPropagator struct {
+	// TraceContext configures the tracecontext propagator. If omitted, ignore.
+	// +optional
+	TraceContext *TraceContextPropagator `json:"tracecontext,omitempty"`
+
+	// Baggage configures the baggage propagator. If omitted, ignore.
+	// +optional
+	Baggage *BaggagePropagator `json:"baggage,omitempty"`
+
+	// B3 configures the b3 propagator. If omitted, ignore.
+	// +optional
+	B3 *B3Propagator `json:"b3,omitempty"`
+
+	// B3Multi configures the b3multi propagator. If omitted, ignore.
+	// +optional
+	B3Multi *B3MultiPropagator `json:"b3multi,omitempty"`
+
+	// Jaeger configures the jaeger propagator. If omitted, ignore.
+	// +optional
+	Jaeger *JaegerPropagator `json:"jaeger,omitempty"`
+
+	// OTTrace configures the ottrace propagator. If omitted, ignore.
+	// +optional
+	OTTrace *OTTracePropagator `json:"ottrace,omitempty"`
+
+	// XRay configures the xray propagator. If omitted, ignore.
+	// +optional
+	XRay *XRayPropagator `json:"xray,omitempty"`
+}
+
+// TraceContextPropagator configures the tracecontext propagator.
+type TraceContextPropagator struct{}
+
+// BaggagePropagator configures the baggage propagator.
+type BaggagePropagator struct{}
+
+// B3Propagator configures the b3 propagator.
+type B3Propagator struct{}
+
+// B3MultiPropagator configures the b3multi propagator.
+type B3MultiPropagator struct{}
+
+// JaegerPropagator configures the jaeger propagator.
+type JaegerPropagator struct{}
+
+// OTTracePropagator configures the ottrace propagator.
+type OTTracePropagator struct{}
+
+// XRayPropagator configures the xray propagator.
+type XRayPropagator struct{}
 
 // ============================================
 // TracerProvider Types
@@ -336,6 +392,9 @@ type TraceIDRatioBasedSampler struct {
 	// Ratio configures trace_id_ratio. If omitted or null, 1.0 is used.
 	// Must be a value between 0.0 and 1.0.
 	// +optional
+	// +kubebuilder:validation:Minimum=0.0
+	// +kubebuilder:validation:Maximum=1.0
+	// +kubebuilder:default=1.0
 	Ratio *float64 `json:"ratio,omitempty"`
 }
 
@@ -668,6 +727,7 @@ type ExplicitBucketHistogramAggregation struct {
 
 	// RecordMinMax configures record min and max. If omitted or null, true is used.
 	// +optional
+	// +kubebuilder:default=true
 	RecordMinMax *bool `json:"record_min_max,omitempty"`
 }
 
@@ -675,14 +735,20 @@ type ExplicitBucketHistogramAggregation struct {
 type Base2ExponentialBucketHistogramAggregation struct {
 	// MaxScale configures the max scale factor. If omitted or null, 20 is used.
 	// +optional
+	// +kubebuilder:validation:Minimum=-10
+	// +kubebuilder:validation:Maximum=20
+	// +kubebuilder:default=20
 	MaxScale *int `json:"max_scale,omitempty"`
 
 	// MaxSize configures the maximum number of buckets in each of the positive and negative ranges.
 	// +optional
+	// +kubebuilder:validation:Minimum=2
+	// +kubebuilder:default=160
 	MaxSize *int `json:"max_size,omitempty"`
 
 	// RecordMinMax configures record min and max. If omitted or null, true is used.
 	// +optional
+	// +kubebuilder:default=true
 	RecordMinMax *bool `json:"record_min_max,omitempty"`
 }
 
@@ -837,5 +903,5 @@ type NameStringValuePair struct {
 
 	// Value is the header value.
 	// +optional
-	Value *string `json:"value,omitempty"`
+	Value *string `json:"value"`
 }

@@ -1,16 +1,23 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1
+package v1beta1_test
 
 import (
+	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/santhosh-tekuri/jsonschema/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 const testdataDir = "testdata/instrumentation"
@@ -26,34 +33,72 @@ func normalizeYAML(t *testing.T, data []byte) string {
 	return string(normalized)
 }
 
+func validateAgainstSchema(t *testing.T, obj []byte) {
+	t.Helper()
+	compiler := jsonschema.NewCompiler()
+	schemaPath := filepath.Join(testdataDir, "opentelemetry_configuration-v1.0.0-rc3.json")
+	// jsonschema requires absolute path or URL for AddResource if it's referenced
+	absPath, err := filepath.Abs(schemaPath)
+	require.NoError(t, err)
+
+	f, err := os.Open(absPath)
+	require.NoError(t, err)
+	defer f.Close()
+
+	err = compiler.AddResource("schema.json", f)
+	require.NoError(t, err)
+
+	schema, err := compiler.Compile("schema.json")
+	require.NoError(t, err)
+
+	var v interface{}
+	err = yaml.Unmarshal(obj, &v)
+	require.NoError(t, err)
+
+	err = schema.Validate(v)
+	require.NoError(t, err)
+}
+
 // TestSDKConfigRoundTrip verifies that a comprehensive SDKConfig can be
 // unmarshaled from YAML and marshaled back to produce equivalent YAML.
 func TestSDKConfigRoundTrip(t *testing.T) {
 	original, err := os.ReadFile(filepath.Join(testdataDir, "full_config.yaml"))
 	require.NoError(t, err, "Failed to read testdata file")
 
-	var config SDKConfig
+	var config v1beta1.SDKConfig
 	err = yaml.Unmarshal(original, &config)
 	require.NoError(t, err, "Failed to unmarshal SDKConfig")
-
-	// Verify key fields were parsed correctly
-	assert.Equal(t, "1.0-rc.3", config.FileFormat)
-	require.NotNil(t, config.Disabled)
-	assert.False(t, *config.Disabled)
-	require.NotNil(t, config.AttributeLimits)
-	assert.Equal(t, 4096, *config.AttributeLimits.AttributeValueLengthLimit)
-	require.NotNil(t, config.Resource)
-	assert.Len(t, config.Resource.Attributes, 2)
-	require.NotNil(t, config.Propagator)
-	assert.Equal(t, []string{"tracecontext", "baggage", "b3"}, config.Propagator.Composite)
-	require.NotNil(t, config.TracerProvider)
-	require.NotNil(t, config.MeterProvider)
-	require.NotNil(t, config.LoggerProvider)
 
 	// Marshal back to YAML and compare
 	marshaled, err := yaml.Marshal(config)
 	require.NoError(t, err, "Failed to marshal SDKConfig")
 	assert.Equal(t, normalizeYAML(t, original), normalizeYAML(t, marshaled))
+
+	// Validate against JSON schema
+	validateAgainstSchema(t, marshaled)
+
+	// Integration test: Create Instrumentation CR, apply, query, and validate
+	ns := prepareNamespace(t, context.Background())
+	inst := v1beta1.Instrumentation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-instrumentation",
+			Namespace: ns,
+		},
+		Spec: v1beta1.InstrumentationSpec{
+			Config: config,
+		},
+	}
+	ctx := context.Background()
+	err = k8sClient.Create(ctx, &inst)
+	require.NoError(t, err, "Failed to create Instrumentation CR")
+
+	var fetchedInst v1beta1.Instrumentation
+	err = k8sClient.Get(ctx, types.NamespacedName{Name: inst.Name, Namespace: inst.Namespace}, &fetchedInst)
+	require.NoError(t, err, "Failed to get Instrumentation CR")
+
+	fetchedConfig, err := json.Marshal(fetchedInst.Spec.Config)
+	require.NoError(t, err, "Failed to marshal fetched config")
+	validateAgainstSchema(t, fetchedConfig)
 }
 
 // TestSamplerTypes verifies all sampler configurations can be round-tripped.
@@ -105,11 +150,213 @@ jaeger_remote:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var sampler Sampler
+			var sampler v1beta1.Sampler
 			err := yaml.Unmarshal([]byte(tt.yaml), &sampler)
 			require.NoError(t, err)
 
 			marshaled, err := yaml.Marshal(sampler)
+			require.NoError(t, err)
+
+			assert.Equal(t, normalizeYAML(t, []byte(tt.yaml)), normalizeYAML(t, marshaled))
+		})
+	}
+}
+
+// TestDefaultValues verifies that default values are applied by the API server.
+func TestDefaultValues(t *testing.T) {
+	ctx := context.Background()
+	ns := prepareNamespace(t, ctx)
+
+	otelinst := v1beta1.Instrumentation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-instrumentation-defaults",
+			Namespace: ns,
+		},
+		Spec: v1beta1.InstrumentationSpec{
+			Config: v1beta1.SDKConfig{
+				FileFormat: "1.0",
+				TracerProvider: &v1beta1.TracerProvider{
+					Sampler: &v1beta1.Sampler{
+						TraceIDRatioBased: &v1beta1.TraceIDRatioBasedSampler{
+							// Ratio is matching the default, so we can omit it.
+						},
+					},
+				},
+				MeterProvider: &v1beta1.MeterProvider{
+					Views: []v1beta1.View{
+						{
+							Stream: &v1beta1.ViewStream{
+								Aggregation: &v1beta1.ViewAggregation{
+									Base2ExponentialBucketHistogram: &v1beta1.Base2ExponentialBucketHistogramAggregation{
+										// MaxScale and MaxSize and RecordMinMax match default.
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := k8sClient.Create(ctx, &otelinst)
+	require.NoError(t, err)
+
+	var fetched v1beta1.Instrumentation
+	err = k8sClient.Get(ctx, types.NamespacedName{Name: otelinst.Name, Namespace: ns}, &fetched)
+	require.NoError(t, err)
+
+	// Verify Defaults
+	assert.NotNil(t, fetched.Spec.Config.TracerProvider.Sampler.TraceIDRatioBased.Ratio)
+	assert.Equal(t, 1.0, *fetched.Spec.Config.TracerProvider.Sampler.TraceIDRatioBased.Ratio)
+
+	agg := fetched.Spec.Config.MeterProvider.Views[0].Stream.Aggregation.Base2ExponentialBucketHistogram
+	assert.NotNil(t, agg.MaxScale)
+	assert.Equal(t, 20, *agg.MaxScale)
+	assert.NotNil(t, agg.MaxSize)
+	assert.Equal(t, 160, *agg.MaxSize)
+	assert.NotNil(t, agg.RecordMinMax)
+	assert.True(t, *agg.RecordMinMax)
+}
+
+// TestSDKConfigValidation verifies that invalid configuration is rejected by the API server.
+func TestSDKConfigValidation(t *testing.T) {
+	ctx := context.Background()
+	ns := prepareNamespace(t, ctx)
+
+	ratio := 1.5
+	maxScale := 21
+	maxSize := 1
+	protocol := "invalid"
+
+	tests := []struct {
+		name   string
+		config v1beta1.SDKConfig
+	}{
+		{
+			name: "invalid_ratio",
+			config: v1beta1.SDKConfig{
+				FileFormat: "1.0",
+				TracerProvider: &v1beta1.TracerProvider{
+					Sampler: &v1beta1.Sampler{
+						TraceIDRatioBased: &v1beta1.TraceIDRatioBasedSampler{
+							Ratio: &ratio,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "invalid_max_scale",
+			config: v1beta1.SDKConfig{
+				FileFormat: "1.0",
+				MeterProvider: &v1beta1.MeterProvider{
+					Views: []v1beta1.View{
+						{
+							Stream: &v1beta1.ViewStream{
+								Aggregation: &v1beta1.ViewAggregation{
+									Base2ExponentialBucketHistogram: &v1beta1.Base2ExponentialBucketHistogramAggregation{
+										MaxScale: &maxScale,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "invalid_max_size",
+			config: v1beta1.SDKConfig{
+				FileFormat: "1.0",
+				MeterProvider: &v1beta1.MeterProvider{
+					Views: []v1beta1.View{
+						{
+							Stream: &v1beta1.ViewStream{
+								Aggregation: &v1beta1.ViewAggregation{
+									Base2ExponentialBucketHistogram: &v1beta1.Base2ExponentialBucketHistogramAggregation{
+										MaxSize: &maxSize,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "invalid_enum_protocol",
+			config: v1beta1.SDKConfig{
+				FileFormat: "1.0",
+				TracerProvider: &v1beta1.TracerProvider{
+					Processors: []v1beta1.SpanProcessor{
+						{
+							Batch: &v1beta1.BatchSpanProcessor{
+								Exporter: v1beta1.SpanExporter{
+									OTLP: &v1beta1.OTLP{
+										Protocol: &protocol,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			otelinst := v1beta1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-instrumentation-" + tt.name,
+					Namespace: ns,
+				},
+				Spec: v1beta1.InstrumentationSpec{
+					Config: tt.config,
+				},
+			}
+			err := k8sClient.Create(ctx, &otelinst)
+			require.Error(t, err)
+		})
+	}
+}
+
+// TestOTLPHeaderRoundTrip verifies header configuration can be round-tripped.
+func TestOTLPHeaderRoundTrip(t *testing.T) {
+	tests := []struct {
+		name string
+		yaml string
+	}{
+		{
+			name: "headers_with_value",
+			yaml: `
+batch:
+  exporter:
+    otlp:
+      headers:
+        - name: Content-Type
+          value: application/json`,
+		},
+		{
+			name: "headers_with_null_value",
+			yaml: `
+batch:
+  exporter:
+    otlp:
+      headers:
+        - name: X-Custom-Header
+          value: null`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var processor v1beta1.SpanProcessor
+			err := yaml.Unmarshal([]byte(tt.yaml), &processor)
+			require.NoError(t, err)
+
+			marshaled, err := yaml.Marshal(processor)
 			require.NoError(t, err)
 
 			assert.Equal(t, normalizeYAML(t, []byte(tt.yaml)), normalizeYAML(t, marshaled))
@@ -152,7 +399,7 @@ simple:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var processor SpanProcessor
+			var processor v1beta1.SpanProcessor
 			err := yaml.Unmarshal([]byte(tt.yaml), &processor)
 			require.NoError(t, err)
 
@@ -199,7 +446,7 @@ pull:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var reader MetricReader
+			var reader v1beta1.MetricReader
 			err := yaml.Unmarshal([]byte(tt.yaml), &reader)
 			require.NoError(t, err)
 
@@ -258,7 +505,7 @@ base2_exponential_bucket_histogram:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var agg ViewAggregation
+			var agg v1beta1.ViewAggregation
 			err := yaml.Unmarshal([]byte(tt.yaml), &agg)
 			require.NoError(t, err)
 
@@ -300,7 +547,7 @@ simple:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var processor LogRecordProcessor
+			var processor v1beta1.LogRecordProcessor
 			err := yaml.Unmarshal([]byte(tt.yaml), &processor)
 			require.NoError(t, err)
 
@@ -346,19 +593,9 @@ stream:
         - 1000
       record_min_max: true`
 
-	var view View
+	var view v1beta1.View
 	err := yaml.Unmarshal([]byte(viewYAML), &view)
 	require.NoError(t, err)
-
-	// Verify key fields
-	require.NotNil(t, view.Selector)
-	assert.Equal(t, "http.*", *view.Selector.InstrumentName)
-	assert.Equal(t, "histogram", *view.Selector.InstrumentType)
-	require.NotNil(t, view.Stream)
-	assert.Equal(t, "custom_name", *view.Stream.Name)
-	require.NotNil(t, view.Stream.AttributeKeys)
-	assert.Equal(t, []string{"http.method", "http.status_code"}, view.Stream.AttributeKeys.Included)
-	assert.Equal(t, []string{"http.url"}, view.Stream.AttributeKeys.Excluded)
 
 	marshaled, err := yaml.Marshal(view)
 	require.NoError(t, err)
@@ -370,19 +607,16 @@ stream:
 func TestPropagatorRoundTrip(t *testing.T) {
 	propagatorYAML := `
 composite:
-  - tracecontext
-  - baggage
-  - b3
-  - b3multi
-  - jaeger
-  - ottrace`
+  - tracecontext: {}
+  - baggage: {}
+  - b3: {}
+  - b3multi: {}
+  - jaeger: {}
+  - ottrace: {}`
 
-	var propagator Propagator
+	var propagator v1beta1.Propagator
 	err := yaml.Unmarshal([]byte(propagatorYAML), &propagator)
 	require.NoError(t, err)
-
-	expectedPropagators := []string{"tracecontext", "baggage", "b3", "b3multi", "jaeger", "ottrace"}
-	assert.Equal(t, expectedPropagators, propagator.Composite)
 
 	marshaled, err := yaml.Marshal(propagator)
 	require.NoError(t, err)

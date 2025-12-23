@@ -12,9 +12,9 @@ resource:
   schema_url: https://opentelemetry.io/schemas/1.21.0
 propagator:
   composite:
-    - tracecontext
-    - baggage
-    - b3
+    - tracecontext: {}
+    - baggage: {}
+    - b3: {}
 tracer_provider:
   processors:
     - batch:

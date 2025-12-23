@@ -2196,10 +2196,16 @@ spec:
                                     base2_exponential_bucket_histogram:
                                       properties:
                                         max_scale:
+                                          default: 20
+                                          maximum: 20
+                                          minimum: -10
                                           type: integer
                                         max_size:
+                                          default: 160
+                                          minimum: 2
                                           type: integer
                                         record_min_max:
+                                          default: true
                                           type: boolean
                                       type: object
                                     default:
@@ -2213,6 +2219,7 @@ spec:
                                             type: number
                                           type: array
                                         record_min_max:
+                                          default: true
                                           type: boolean
                                       type: object
                                     last_value:
@@ -2251,7 +2258,34 @@ spec:
                     properties:
                       composite:
                         items:
-                          type: string
+                          properties:
+                            b3:
+                              type: object
+                            b3multi:
+                              type: object
+                            baggage:
+                              type: object
+                            jaeger:
+                              type: object
+                            ottrace:
+                              type: object
+                            tracecontext:
+                              type: object
+                            xray:
+                              type: object
+                          type: object
+                          x-kubernetes-validations:
+                          - message: only one propagator type should be specified
+                            rule: '(has(self.tracecontext) ? 1 : 0) + (has(self.baggage)
+                              ? 1 : 0) + (has(self.b3) ? 1 : 0) + (has(self.b3multi)
+                              ? 1 : 0) <= 1'
+                          - message: only one propagator type should be specified
+                            rule: '(has(self.jaeger) ? 1 : 0) + (has(self.ottrace)
+                              ? 1 : 0) + (has(self.xray) ? 1 : 0) <= 1'
+                          - message: only one propagator type should be specified
+                            rule: '!((has(self.tracecontext) || has(self.baggage)
+                              || has(self.b3) || has(self.b3multi)) && (has(self.jaeger)
+                              || has(self.ottrace) || has(self.xray)))'
                         type: array
                     type: object
                   resource:
@@ -2475,6 +2509,9 @@ spec:
                           trace_id_ratio_based:
                             properties:
                               ratio:
+                                default: 1
+                                maximum: 1
+                                minimum: 0
                                 type: number
                             type: object
                         type: object
