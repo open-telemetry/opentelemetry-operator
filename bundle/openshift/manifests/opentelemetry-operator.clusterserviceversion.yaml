@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2025-12-19T17:53:59Z"
+    createdAt: "2025-12-23T13:33:27Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -120,6 +120,9 @@ spec:
         name: ""
         version: v1
       version: v1alpha1
+    - kind: Instrumentation
+      name: instrumentations.opentelemetry.io
+      version: v1beta1
     - description: OpAMPBridge is the Schema for the opampbridges API.
       displayName: OpAMP Bridge
       kind: OpAMPBridge
