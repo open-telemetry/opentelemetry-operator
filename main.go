@@ -98,6 +98,12 @@ func main() {
 		panic(err)
 	}
 
+	err := cfg.Apply(configFile)
+	if err != nil {
+		fmt.Printf("configuration error: %v\n", err)
+		os.Exit(1)
+	}
+
 	opts.EncoderConfigOptions = append(opts.EncoderConfigOptions, func(ec *zapcore.EncoderConfig) {
 		ec.MessageKey = cfg.Zap.MessageKey
 		ec.LevelKey = cfg.Zap.LevelKey
@@ -113,12 +119,6 @@ func main() {
 	ctrl.SetLogger(logger)
 
 	configLog := ctrl.Log.WithName("config")
-
-	err := cfg.Apply(configFile)
-	if err != nil {
-		configLog.Error(err, "configuration error")
-		os.Exit(1)
-	}
 
 	v := version.Get()
 
