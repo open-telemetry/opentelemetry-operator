@@ -7,6 +7,8 @@ import (
 	"context"
 	"hash"
 	"hash/fnv"
+	"maps"
+	"slices"
 	"sync"
 	"time"
 
@@ -25,6 +27,8 @@ import (
 
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
+
+const labelBuilderPreallocSize = 100
 
 type Discoverer struct {
 	log                         logr.Logger
@@ -199,7 +203,11 @@ func (m *Discoverer) Reload() {
 
 // processTargetGroups processes the target groups and returns a map of targets.
 func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.Group, intoTargets []*Item) {
-	builder := labels.NewBuilder(labels.Labels{})
+	// the builder for group labels
+	groupBuilder := labels.NewScratchBuilder(labelBuilderPreallocSize)
+
+	// a slice for sorting target label names, we allocate it here to avoid doing it in the hot loop
+	targetLabelNames := make([]string, 0, labelBuilderPreallocSize)
 
 	begin := time.Now()
 	defer func() {
@@ -208,18 +216,32 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 	var count float64 = 0
 	index := 0
 	for _, tg := range groups {
-		builder.Reset(labels.EmptyLabels())
+		groupBuilder.Reset()
 		for ln, lv := range tg.Labels {
-			builder.Set(string(ln), string(lv))
+			groupBuilder.Add(string(ln), string(lv))
 		}
-		groupLabels := builder.Labels()
+		groupBuilder.Sort()
 		for _, t := range tg.Targets {
 			count++
-			builder.Reset(groupLabels)
-			for ln, lv := range t {
-				builder.Set(string(ln), string(lv))
+			// ScratchBuilder is a struct containing a slice of labels. By assigning to a new variable, we get a copy
+			// of the struct, with a new slice pointing to the same underlying array. As long as we don't mutate the
+			// original slice and only append to it, we can avoid copying the group labels.
+			targetBuilder := groupBuilder
+			targetLabelNames = targetLabelNames[:0]
+
+			// We can't sort the whole builder slice, because that would modify the underlying groupBuilder. Instead,
+			// we sort the labels in a separate slice. As a result, the group labels and the target labels are sorted
+			// subslices of the builder slice, which is in itself not sorted. This is fine, as we don't care what the
+			// order of labels is - just that it's consistent, so the hash is always the same.
+			for ln := range maps.Keys(t) {
+				targetLabelNames = append(targetLabelNames, string(ln))
 			}
-			item := NewItem(jobName, string(t[model.AddressLabel]), builder.Labels(), "")
+			slices.Sort(targetLabelNames)
+			for _, ln := range targetLabelNames {
+				lv := t[model.LabelName(ln)]
+				targetBuilder.Add(ln, string(lv))
+			}
+			item := NewItem(jobName, string(t[model.AddressLabel]), targetBuilder.Labels(), "")
 			intoTargets[index] = item
 			index++
 		}
