@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
@@ -36,19 +37,23 @@ func (tf *relabelConfigTargetFilter) Apply(targets []*target.Item) []*target.Ite
 		return targets
 	}
 
+	builder := labels.NewBuilder(labels.EmptyLabels())
 	writeIndex := 0
 	for _, tItem := range targets {
-		keepTarget := true
-		lset := tItem.Labels
-		for _, cfg := range tf.relabelCfg[tItem.JobName] {
-			lset, keepTarget = relabel.Process(lset, cfg)
-			if !keepTarget {
-				break // inner loop
-			}
-		}
+		builder.Reset(tItem.Labels)
+		keepTarget := relabel.ProcessBuilder(builder, tf.relabelCfg[tItem.JobName]...)
 
 		if keepTarget {
-			targets[writeIndex] = target.NewItem(tItem.JobName, tItem.TargetURL, tItem.Labels, tItem.CollectorName, target.WithRelabeledLabels(lset))
+			// Compute hash immediately while we have the builder, skipping meta labels.
+			// This avoids materializing the filtered labels.
+			hash := target.HashFromBuilder(builder, tItem.JobName)
+			targets[writeIndex] = target.NewItem(
+				tItem.JobName,
+				tItem.TargetURL,
+				tItem.Labels,
+				tItem.CollectorName,
+				target.WithHash(hash),
+			)
 			writeIndex++
 		}
 	}
