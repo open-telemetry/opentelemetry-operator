@@ -1263,7 +1263,7 @@ service:
 	}
 	reconcile, reconcileErr := reconciler.Reconcile(context.Background(), req)
 	require.NoError(t, reconcileErr)
-	require.False(t, reconcile.Requeue)
+	require.Zero(t, reconcile.RequeueAfter)
 
 	colClusterRole := &rbacv1.ClusterRole{}
 	clientErr = k8sClient.Get(context.Background(), types.NamespacedName{
@@ -1289,7 +1289,7 @@ service:
 
 	reconcile, reconcileErr = reconciler.Reconcile(context.Background(), req)
 	require.NoError(t, reconcileErr)
-	require.False(t, reconcile.Requeue)
+	require.Zero(t, reconcile.RequeueAfter)
 
 	clientErr = k8sClient.Get(context.Background(), types.NamespacedName{
 		Name: naming.ClusterRole(otelcol.Name, otelcol.Namespace),
@@ -1468,15 +1468,15 @@ func TestUpgrade(t *testing.T) {
 				reconcile, err = reconciler.Reconcile(testCtx, req)
 				require.NoError(collect, err)
 			}, time.Second*10, time.Millisecond*10)
-			require.Equal(t, tt.expectRequeue, reconcile.Requeue)
+			require.Equal(t, tt.expectRequeue, reconcile.RequeueAfter.Nanoseconds() > 0)
 
 			// Second reconcile (if upgrade was run)
-			if reconcile.Requeue {
+			if reconcile.RequeueAfter.Nanoseconds() > 0 {
 				time.Sleep(reconcile.RequeueAfter)
 
 				reconcile, err = reconciler.Reconcile(testCtx, req)
 				require.NoError(t, err)
-				require.False(t, reconcile.Requeue)
+				assert.Zero(t, reconcile.RequeueAfter)
 			}
 
 			// Compare upgraded CR with expected
