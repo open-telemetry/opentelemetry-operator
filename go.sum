@@ -473,8 +473,8 @@ github.com/openshift/api v0.0.0-20240124164020-e2ce40831f2e h1:cxgCNo/R769CO23AK
 github.com/openshift/api v0.0.0-20240124164020-e2ce40831f2e/go.mod h1:CxgbWAlvu2iQB0UmKTtRu1YfepRg1/vJ64n2DlIEVz4=
 github.com/operator-framework/api v0.37.0 h1:2XCMWitBnumtJTqzip6LQKUwpM2pXVlt3gkpdlkbaCE=
 github.com/operator-framework/api v0.37.0/go.mod h1:NZs4vB+Jiamyv3pdPDjZtuC4U7KX0eq4z2r5hKY5fUA=
-github.com/operator-framework/operator-lib v0.18.0 h1:6OaWemt/CuyrjFMkLyk4O8Vj4CPHxt/m1DMuMAmPwXo=
-github.com/operator-framework/operator-lib v0.18.0/go.mod h1:EWS6xGYBcMn04wj81j0bluAYbFHl3cJcar++poQMzqE=
+github.com/operator-framework/operator-lib v0.19.0 h1:az6ogYj21rtU0SF9uYctRLyKp2dtlqTsmpfehFy6Ce8=
+github.com/operator-framework/operator-lib v0.19.0/go.mod h1:KxycAjFnHt0DBtHmH3Jm7yHcY5sdrshPKTqM/HKAQ08=
 github.com/ovh/go-ovh v1.9.0 h1:6K8VoL3BYjVV3In9tPJUdT7qMx9h0GExN9EXx1r2kKE=
 github.com/ovh/go-ovh v1.9.0/go.mod h1:cTVDnl94z4tl8pP1uZ/8jlVxntjSIf09bNcQ5TJSC7c=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
