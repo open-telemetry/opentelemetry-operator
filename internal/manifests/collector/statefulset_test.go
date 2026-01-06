@@ -869,3 +869,50 @@ func TestStatefulSetServiceName(t *testing.T) {
 		})
 	}
 }
+
+func TestStatefulSetHostPIDCanBeSet(t *testing.T) {
+
+	// Test default
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     testLogger,
+	}
+
+	d1, err := StatefulSet(params1)
+	require.NoError(t, err)
+
+	assert.False(t, d1.Spec.Template.Spec.HostPID)
+
+	// Test HostPID=true
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-HostPID",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				HostPID: true,
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     testLogger,
+	}
+
+	d2, err := StatefulSet(params2)
+	require.NoError(t, err)
+	assert.True(t, d2.Spec.Template.Spec.HostPID)
+}

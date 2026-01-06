@@ -6301,6 +6301,8 @@ spec:
                 type: array
               hostNetwork:
                 type: boolean
+              hostPID:
+                type: boolean
               image:
                 type: string
               imagePullPolicy:

@@ -53,6 +53,7 @@ func Deployment(params manifests.Params) (*appsv1.Deployment, error) {
 					DNSPolicy:                     manifestutils.GetDNSPolicy(params.OtelCol.Spec.HostNetwork, params.OtelCol.Spec.PodDNSConfig, params.OtelCol.Spec.DNSPolicy),
 					DNSConfig:                     &params.OtelCol.Spec.PodDNSConfig,
 					HostNetwork:                   params.OtelCol.Spec.HostNetwork,
+					HostPID:                       params.OtelCol.Spec.HostPID,
 					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
 					Tolerations:                   params.OtelCol.Spec.Tolerations,
 					NodeSelector:                  params.OtelCol.Spec.NodeSelector,
