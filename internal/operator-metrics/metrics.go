@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -165,7 +166,7 @@ func (om operatorMetrics) createOperatorMetricsServiceMonitor(ctx context.Contex
 					BearerTokenFile: bearerTokenFile,
 					Interval:        "30s",
 					Path:            "/metrics",
-					Scheme:          "https",
+					Scheme:          ptr.To(monitoringv1.SchemeHTTPS),
 					ScrapeTimeout:   "10s",
 					TargetPort:      &intstr.IntOrString{IntVal: 8443},
 					TLSConfig:       tlsConfig,

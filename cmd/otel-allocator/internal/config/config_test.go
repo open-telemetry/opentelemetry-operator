@@ -69,11 +69,11 @@ func TestLoadFromFile(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:             model.Duration(60 * time.Second),
-						ScrapeProtocols:            promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:              model.Duration(10 * time.Second),
 						EvaluationInterval:         model.Duration(60 * time.Second),
 						MetricNameValidationScheme: model.UTF8Validation,
 						MetricNameEscapingScheme:   model.AllowUTF8,
+						ScrapeNativeHistograms:     ptr.Bool(false),
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
@@ -89,6 +89,7 @@ func TestLoadFromFile(t *testing.T) {
 							MetricNameEscapingScheme:       model.AllowUTF8,
 							AlwaysScrapeClassicHistograms:  ptr.Bool(false),
 							ConvertClassicHistogramsToNHCB: ptr.Bool(false),
+							ScrapeNativeHistograms:         ptr.Bool(false),
 							MetricsPath:                    "/metrics",
 							Scheme:                         "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
@@ -161,6 +162,7 @@ func TestLoadFromFile(t *testing.T) {
 						ScrapeTimeout:              model.Duration(10 * time.Second),
 						EvaluationInterval:         model.Duration(60 * time.Second),
 						MetricNameValidationScheme: model.UTF8Validation,
+						ScrapeNativeHistograms:     ptr.Bool(false),
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
@@ -176,6 +178,7 @@ func TestLoadFromFile(t *testing.T) {
 							MetricNameEscapingScheme:       model.AllowUTF8,
 							AlwaysScrapeClassicHistograms:  ptr.Bool(false),
 							ConvertClassicHistogramsToNHCB: ptr.Bool(false),
+							ScrapeNativeHistograms:         ptr.Bool(false),
 							MetricsPath:                    "/metrics",
 							Scheme:                         "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
@@ -256,11 +259,11 @@ func TestLoadFromFile(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:             model.Duration(60 * time.Second),
-						ScrapeProtocols:            promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:              model.Duration(10 * time.Second),
 						EvaluationInterval:         model.Duration(60 * time.Second),
 						MetricNameValidationScheme: model.UTF8Validation,
 						MetricNameEscapingScheme:   model.AllowUTF8,
+						ScrapeNativeHistograms:     ptr.Bool(false),
 					},
 					Runtime:    promconfig.DefaultRuntimeConfig,
 					OTLPConfig: promconfig.DefaultOTLPConfig,
@@ -276,6 +279,7 @@ func TestLoadFromFile(t *testing.T) {
 							MetricNameEscapingScheme:       model.AllowUTF8,
 							AlwaysScrapeClassicHistograms:  ptr.Bool(false),
 							ConvertClassicHistogramsToNHCB: ptr.Bool(false),
+							ScrapeNativeHistograms:         ptr.Bool(false),
 							MetricsPath:                    "/metrics",
 							Scheme:                         "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
@@ -345,8 +349,8 @@ func TestLoadFromFile(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:             model.Duration(60 * time.Second),
-						ScrapeProtocols:            promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:              model.Duration(10 * time.Second),
+						ScrapeNativeHistograms:     ptr.Bool(false),
 						EvaluationInterval:         model.Duration(60 * time.Second),
 						MetricNameValidationScheme: model.UTF8Validation,
 						MetricNameEscapingScheme:   model.AllowUTF8,
@@ -365,6 +369,7 @@ func TestLoadFromFile(t *testing.T) {
 							MetricNameEscapingScheme:       model.AllowUTF8,
 							AlwaysScrapeClassicHistograms:  ptr.Bool(false),
 							ConvertClassicHistogramsToNHCB: ptr.Bool(false),
+							ScrapeNativeHistograms:         ptr.Bool(false),
 							MetricsPath:                    "/metrics",
 							Scheme:                         "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
@@ -458,8 +463,8 @@ func TestLoadFromFile(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:             model.Duration(60 * time.Second),
-						ScrapeProtocols:            promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:              model.Duration(10 * time.Second),
+						ScrapeNativeHistograms:     ptr.Bool(false),
 						EvaluationInterval:         model.Duration(60 * time.Second),
 						MetricNameValidationScheme: model.UTF8Validation,
 						MetricNameEscapingScheme:   model.AllowUTF8,
@@ -478,6 +483,7 @@ func TestLoadFromFile(t *testing.T) {
 							MetricNameEscapingScheme:       model.AllowUTF8,
 							AlwaysScrapeClassicHistograms:  ptr.Bool(false),
 							ConvertClassicHistogramsToNHCB: ptr.Bool(false),
+							ScrapeNativeHistograms:         ptr.Bool(false),
 							MetricsPath:                    "/metrics",
 							Scheme:                         "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
@@ -571,7 +577,7 @@ func TestLoadFromFile(t *testing.T) {
 				PromConfig: &promconfig.Config{
 					GlobalConfig: promconfig.GlobalConfig{
 						ScrapeInterval:             model.Duration(60 * time.Second),
-						ScrapeProtocols:            promconfig.DefaultScrapeProtocols,
+						ScrapeNativeHistograms:     ptr.Bool(false),
 						ScrapeTimeout:              model.Duration(10 * time.Second),
 						EvaluationInterval:         model.Duration(60 * time.Second),
 						MetricNameValidationScheme: model.UTF8Validation,
@@ -585,12 +591,13 @@ func TestLoadFromFile(t *testing.T) {
 							EnableCompression:              true,
 							HonorTimestamps:                true,
 							ScrapeInterval:                 model.Duration(60 * time.Second),
-							ScrapeProtocols:                promconfig.DefaultScrapeProtocols,
 							ScrapeTimeout:                  model.Duration(10 * time.Second),
+							ScrapeProtocols:                promconfig.DefaultScrapeProtocols,
 							MetricNameValidationScheme:     model.UTF8Validation,
 							MetricNameEscapingScheme:       model.AllowUTF8,
 							AlwaysScrapeClassicHistograms:  ptr.Bool(false),
 							ConvertClassicHistogramsToNHCB: ptr.Bool(false),
+							ScrapeNativeHistograms:         ptr.Bool(false),
 							MetricsPath:                    "/metrics",
 							Scheme:                         "http",
 							HTTPClientConfig: commonconfig.HTTPClientConfig{
