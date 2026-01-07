@@ -23,7 +23,7 @@ require (
 	github.com/openshift/api v0.0.0-20240124164020-e2ce40831f2e
 	github.com/operator-framework/api v0.37.0
 	github.com/operator-framework/operator-lib v0.19.0
-	github.com/prometheus-operator/prometheus-operator v0.86.1
+	github.com/prometheus-operator/prometheus-operator v0.87.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.87.1
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.87.1
 	github.com/prometheus/client_golang v1.23.2
@@ -170,7 +170,7 @@ require (
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus-community/prom-label-proxy v0.12.1 // indirect
-	github.com/prometheus/alertmanager v0.28.1 // indirect
+	github.com/prometheus/alertmanager v0.29.0 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.35 // indirect
