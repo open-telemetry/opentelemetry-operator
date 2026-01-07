@@ -113,9 +113,9 @@ func ApplyCLI(cfg *Config) error {
 			case "auto-instrumentation-nginx-image":
 				cfg.AutoInstrumentationNginxImage, _ = f.GetString("auto-instrumentation-nginx-image")
 			case "labels-filter":
-				cfg.LabelsFilter, _ = f.GetStringSlice("labels-filter")
+				cfg.LabelsFilter, _ = f.GetStringArray("labels-filter")
 			case "annotations-filter":
-				cfg.AnnotationsFilter, _ = f.GetStringSlice("annotations-filter")
+				cfg.AnnotationsFilter, _ = f.GetStringArray("annotations-filter")
 			case "openshift-create-dashboard":
 				cfg.OpenshiftCreateDashboard, _ = f.GetBool("openshift-create-dashboard")
 			case "metrics-addr":

@@ -20,3 +20,18 @@ func TestApplyFlag(t *testing.T) {
 	require.NoError(t, ApplyCLI(&c))
 	require.True(t, c.EnableGoAutoInstrumentation)
 }
+
+func TestFilterFlags(t *testing.T) {
+	oldArgs := args
+	args = []string{
+		"--labels-filter=.*filter.out",
+		"--annotations-filter=another.*.filter",
+	}
+	t.Cleanup(func() {
+		args = oldArgs
+	})
+	c := New()
+	require.NoError(t, ApplyCLI(&c))
+	require.Equal(t, []string{".*filter.out"}, c.LabelsFilter)
+	require.Equal(t, []string{"another.*.filter"}, c.AnnotationsFilter)
+}
