@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"os"
 	"os/signal"
@@ -45,6 +46,7 @@ func main() {
 		discoveryManager *discovery.Manager
 		collectorWatcher *collector.Watcher
 		targetDiscoverer *target.Discoverer
+		certReloader     *config.CertificateReloader
 
 		discoveryCancel context.CancelFunc
 		runGroup        run.Group
@@ -96,7 +98,9 @@ func main() {
 
 	httpOptions := []server.Option{}
 	if cfg.HTTPS.Enabled {
-		tlsConfig, confErr := cfg.HTTPS.NewTLSConfig()
+		var tlsConfig *tls.Config
+		var confErr error
+		tlsConfig, certReloader, confErr = cfg.HTTPS.NewTLSConfig(log)
 		if confErr != nil {
 			setupLog.Error(confErr, "Unable to initialize TLS configuration")
 			os.Exit(1)
@@ -225,6 +229,18 @@ func main() {
 				if shutdownErr := srv.ShutdownHTTPS(ctx); shutdownErr != nil {
 					setupLog.Error(shutdownErr, "Error on HTTPS server shutdown")
 				}
+			})
+		// Start certificate watcher for hot-reload
+		certWatcherCtx, certWatcherCancel := context.WithCancel(ctx)
+		runGroup.Add(
+			func() error {
+				watchErr := certReloader.Watch(certWatcherCtx)
+				setupLog.Info("Certificate watcher exited")
+				return watchErr
+			},
+			func(_ error) {
+				setupLog.Info("Closing certificate watcher")
+				certWatcherCancel()
 			})
 	}
 	meter := otel.GetMeterProvider().Meter("targetallocator")

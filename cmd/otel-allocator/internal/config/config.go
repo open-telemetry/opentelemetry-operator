@@ -5,7 +5,6 @@ package config
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -388,27 +387,19 @@ func ValidateConfig(config *Config) error {
 	return nil
 }
 
-func (c HTTPSServerConfig) NewTLSConfig() (*tls.Config, error) {
-	cert, err := tls.LoadX509KeyPair(c.TLSCertFilePath, c.TLSKeyFilePath)
+func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *CertificateReloader, error) {
+	reloader, err := NewCertificateReloader(c.TLSCertFilePath, c.TLSKeyFilePath, c.CAFilePath, logger)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-
-	caCert, err := os.ReadFile(c.CAFilePath)
-	if err != nil {
-		return nil, err
-	}
-
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
 
 	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		ClientAuth:   tls.RequireAndVerifyClientCert,
-		ClientCAs:    caCertPool,
-		MinVersion:   tls.VersionTLS12,
+		GetCertificate: reloader.GetCertificate,
+		ClientAuth:     tls.RequireAndVerifyClientCert,
+		ClientCAs:      reloader.GetClientCAs(),
+		MinVersion:     tls.VersionTLS12,
 	}
-	return tlsConfig, nil
+	return tlsConfig, reloader, nil
 }
 
 // GetAllowDenyLists returns the allow and deny lists as maps. If the allow list is empty, it defaults to all namespaces.
