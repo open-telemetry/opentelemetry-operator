@@ -315,7 +315,7 @@ func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.
 		informersMap[promv1alpha1.ScrapeConfigName] = scrapeConfigInformer
 	}
 
-	secretInformers, err := informers.NewInformersForResourceWithTransform(metaDataInformerFactory, v1.SchemeGroupVersion.WithResource(string(v1.ResourceSecrets)), informers.PartialObjectMetadataStrip)
+	secretInformers, err := informers.NewInformersForResourceWithTransform(metaDataInformerFactory, v1.SchemeGroupVersion.WithResource(string(v1.ResourceSecrets)), informers.PartialObjectMetadataStrip(operator.SecretGVK()))
 	if err != nil {
 		return nil, err
 	}
