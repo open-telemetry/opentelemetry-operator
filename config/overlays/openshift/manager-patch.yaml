@@ -3,6 +3,8 @@
   value:
     - --metrics-addr=:8443
     - --metrics-secure=true
+    - --metrics-tls-cert-file=/var/run/tls/server/tls.crt
+    - --metrics-tls-key-file=/var/run/tls/server/tls.key
     - --enable-leader-election
     - --zap-log-level=info
     - --zap-time-encoding=rfc3339nano
