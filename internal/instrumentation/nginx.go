@@ -51,11 +51,7 @@ const (
 	6) Inject mounting of volumes / files into appropriate directories in the application container
 */
 
-func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, useLabelsForResourceAttributes bool, index int, otlpEndpoint string, resourceMap map[string]string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
-
-	// caller checks if there is at least one container
-	container := &pod.Spec.Containers[index]
-
+func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, useLabelsForResourceAttributes bool, container *corev1.Container, otlpEndpoint string, resourceMap map[string]string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
 	// inject env vars
 	container.Env = appendIfNotSet(container.Env, nginxSpec.Env...)
 
@@ -201,7 +197,7 @@ mv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR
 			Env: []corev1.EnvVar{
 				{
 					Name:  nginxAttributesEnvVar,
-					Value: getNginxOtelConfig(pod, useLabelsForResourceAttributes, nginxSpec, index, otlpEndpoint, resourceMap),
+					Value: getNginxOtelConfig(pod, useLabelsForResourceAttributes, nginxSpec, container, otlpEndpoint, resourceMap),
 				},
 				{
 					Name:  "OTEL_NGINX_I13N_SCRIPT",
@@ -227,7 +223,7 @@ mv ${NGINX_AGENT_CONF_DIR_FULL}/opentelemetry_agent.conf  ${NGINX_AGENT_CONF_DIR
 					MountPath: nginxAgentConfDirFull,
 				},
 			},
-			SecurityContext: pod.Spec.Containers[index].SecurityContext,
+			SecurityContext: container.SecurityContext,
 			ImagePullPolicy: instSpec.ImagePullPolicy,
 		})
 
@@ -262,12 +258,12 @@ func isNginxInitContainerMissing(pod corev1.Pod, containerName string) bool {
 
 // Calculate Nginx agent configuration file based on attributes provided by the injection rules
 // and by the pod values.
-func getNginxOtelConfig(pod corev1.Pod, useLabelsForResourceAttributes bool, nginxSpec v1alpha1.Nginx, index int, otelEndpoint string, resourceMap map[string]string) string {
+func getNginxOtelConfig(pod corev1.Pod, useLabelsForResourceAttributes bool, nginxSpec v1alpha1.Nginx, container *corev1.Container, otelEndpoint string, resourceMap map[string]string) string {
 
 	if otelEndpoint == "" {
 		otelEndpoint = "http://localhost:4317/"
 	}
-	serviceName := chooseServiceName(pod, useLabelsForResourceAttributes, resourceMap, index)
+	serviceName := chooseServiceName(pod, useLabelsForResourceAttributes, resourceMap, container)
 	serviceNamespace := pod.GetNamespace()
 	if len(serviceNamespace) == 0 {
 		serviceNamespace = resourceMap[string(semconv.K8SNamespaceNameKey)]

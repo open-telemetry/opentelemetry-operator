@@ -780,7 +780,7 @@ func TestInjectPythonSDK(t *testing.T) {
 	injector := sdkInjector{}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectPythonSDK(test.Python, test.pod, 0, test.platform, v1alpha1.InstrumentationSpec{})
+			pod, err := injectPythonSDK(test.Python, test.pod, &test.pod.Spec.Containers[0], test.platform, v1alpha1.InstrumentationSpec{})
 			if err != nil {
 				assert.Equal(t, test.expected, pod)
 				assert.Equal(t, test.err, err)
@@ -788,9 +788,9 @@ func TestInjectPythonSDK(t *testing.T) {
 			}
 
 			if test.simulateDefaults {
-				pod = injector.injectCommonEnvVar(test.inst, pod, 0)
+				injector.injectCommonEnvVar(test.inst, &pod.Spec.Containers[0])
 			}
-			pod = injector.injectDefaultPythonEnvVars(pod, 0)
+			injector.injectDefaultPythonEnvVars(&pod.Spec.Containers[0])
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})
