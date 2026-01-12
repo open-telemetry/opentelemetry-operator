@@ -52,6 +52,29 @@ type languageInstrumentations struct {
 	Sdk         instrumentationWithContainers
 }
 
+func instrumentationsList(langInsts *languageInstrumentations) []*instrumentationWithContainers {
+	return []*instrumentationWithContainers{
+		&langInsts.Java,
+		&langInsts.NodeJS,
+		&langInsts.Python,
+		&langInsts.DotNet,
+		&langInsts.ApacheHttpd,
+		&langInsts.Nginx,
+		&langInsts.Go,
+		&langInsts.Sdk,
+	}
+}
+
+// hasAnyInstrumentation returns true if any instrumentation is configured.
+func (langInsts *languageInstrumentations) hasAnyInstrumentation() bool {
+	for _, inst := range instrumentationsList(langInsts) {
+		if inst.Instrumentation != nil {
+			return true
+		}
+	}
+	return false
+}
+
 // Check if specific containers are provided for configured instrumentation.
 func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bool, error) {
 	var instrWithoutContainers int
@@ -60,68 +83,14 @@ func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bo
 	var instrumentationWithNoContainers bool
 
 	// Check for instrumentations with and without containers.
-	if langInsts.Java.Instrumentation != nil {
-		instrWithContainers += isInstrWithContainers(langInsts.Java)
-		instrWithoutContainers += isInstrWithoutContainers(langInsts.Java)
-		allContainers = append(allContainers, langInsts.Java.Containers...)
-		if len(langInsts.Java.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
-	}
-	if langInsts.NodeJS.Instrumentation != nil {
-		instrWithContainers += isInstrWithContainers(langInsts.NodeJS)
-		instrWithoutContainers += isInstrWithoutContainers(langInsts.NodeJS)
-		allContainers = append(allContainers, langInsts.NodeJS.Containers...)
-		if len(langInsts.NodeJS.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
-	}
-	if langInsts.Python.Instrumentation != nil {
-		instrWithContainers += isInstrWithContainers(langInsts.Python)
-		instrWithoutContainers += isInstrWithoutContainers(langInsts.Python)
-		allContainers = append(allContainers, langInsts.Python.Containers...)
-		if len(langInsts.Python.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
-	}
-	if langInsts.DotNet.Instrumentation != nil {
-		instrWithContainers += isInstrWithContainers(langInsts.DotNet)
-		instrWithoutContainers += isInstrWithoutContainers(langInsts.DotNet)
-		allContainers = append(allContainers, langInsts.DotNet.Containers...)
-		if len(langInsts.DotNet.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
-	}
-	if langInsts.ApacheHttpd.Instrumentation != nil {
-		instrWithContainers += isInstrWithContainers(langInsts.ApacheHttpd)
-		instrWithoutContainers += isInstrWithoutContainers(langInsts.ApacheHttpd)
-		allContainers = append(allContainers, langInsts.ApacheHttpd.Containers...)
-		if len(langInsts.ApacheHttpd.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
-	}
-	if langInsts.Nginx.Instrumentation != nil {
-		instrWithContainers += isInstrWithContainers(langInsts.Nginx)
-		instrWithoutContainers += isInstrWithoutContainers(langInsts.Nginx)
-		allContainers = append(allContainers, langInsts.Nginx.Containers...)
-		if len(langInsts.Nginx.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
-	}
-	if langInsts.Go.Instrumentation != nil {
-		instrWithContainers += isInstrWithContainers(langInsts.Go)
-		instrWithoutContainers += isInstrWithoutContainers(langInsts.Go)
-		allContainers = append(allContainers, langInsts.Go.Containers...)
-		if len(langInsts.Go.Containers) == 0 {
-			instrumentationWithNoContainers = true
-		}
-	}
-	if langInsts.Sdk.Instrumentation != nil {
-		instrWithContainers += isInstrWithContainers(langInsts.Sdk)
-		instrWithoutContainers += isInstrWithoutContainers(langInsts.Sdk)
-		allContainers = append(allContainers, langInsts.Sdk.Containers...)
-		if len(langInsts.Sdk.Containers) == 0 {
-			instrumentationWithNoContainers = true
+	for _, inst := range instrumentationsList(&langInsts) {
+		if inst.Instrumentation != nil {
+			instrWithContainers += isInstrWithContainers(*inst)
+			instrWithoutContainers += isInstrWithoutContainers(*inst)
+			allContainers = append(allContainers, inst.Containers...)
+			if len(inst.Containers) == 0 {
+				instrumentationWithNoContainers = true
+			}
 		}
 	}
 
@@ -168,29 +137,10 @@ func (langInsts *languageInstrumentations) setCommonInstrumentedContainers(ns co
 		containers = strings.Split(containersAnnotation, ",")
 	}
 
-	if langInsts.Java.Instrumentation != nil {
-		langInsts.Java.Containers = containers
-	}
-	if langInsts.NodeJS.Instrumentation != nil {
-		langInsts.NodeJS.Containers = containers
-	}
-	if langInsts.Python.Instrumentation != nil {
-		langInsts.Python.Containers = containers
-	}
-	if langInsts.DotNet.Instrumentation != nil {
-		langInsts.DotNet.Containers = containers
-	}
-	if langInsts.ApacheHttpd.Instrumentation != nil {
-		langInsts.ApacheHttpd.Containers = containers
-	}
-	if langInsts.Nginx.Instrumentation != nil {
-		langInsts.Nginx.Containers = containers
-	}
-	if langInsts.Go.Instrumentation != nil {
-		langInsts.Go.Containers = containers
-	}
-	if langInsts.Sdk.Instrumentation != nil {
-		langInsts.Sdk.Containers = containers
+	for _, lang := range instrumentationsList(langInsts) {
+		if lang.Instrumentation != nil {
+			lang.Containers = containers
+		}
 	}
 	return nil
 }
@@ -372,11 +322,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	}
 	insts.Sdk.Instrumentation = inst
 
-	if insts.Java.Instrumentation == nil && insts.NodeJS.Instrumentation == nil && insts.Python.Instrumentation == nil &&
-		insts.DotNet.Instrumentation == nil && insts.Go.Instrumentation == nil && insts.ApacheHttpd.Instrumentation == nil &&
-		insts.Nginx.Instrumentation == nil &&
-		insts.Sdk.Instrumentation == nil {
-
+	if !insts.hasAnyInstrumentation() {
 		logger.V(1).Info("annotation not present in deployment, skipping instrumentation injection")
 		return pod, nil
 	}
@@ -458,22 +404,10 @@ func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context
 }
 
 func (pm *instPodMutator) validateInstrumentations(ctx context.Context, inst languageInstrumentations, podNamespace string) error {
-	instrumentations := []struct {
-		instrumentation *v1alpha1.Instrumentation
-	}{
-		{inst.Java.Instrumentation},
-		{inst.Python.Instrumentation},
-		{inst.NodeJS.Instrumentation},
-		{inst.DotNet.Instrumentation},
-		{inst.Go.Instrumentation},
-		{inst.ApacheHttpd.Instrumentation},
-		{inst.Nginx.Instrumentation},
-		{inst.Sdk.Instrumentation},
-	}
 	var errs []error
-	for _, i := range instrumentations {
-		if i.instrumentation != nil {
-			if err := pm.validateInstrumentation(ctx, i.instrumentation, podNamespace); err != nil {
+	for _, i := range instrumentationsList(&inst) {
+		if i.Instrumentation != nil {
+			if err := pm.validateInstrumentation(ctx, i.Instrumentation, podNamespace); err != nil {
 				errs = append(errs, err)
 			}
 		}
