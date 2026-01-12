@@ -8,9 +8,6 @@ spec:
     spec:
       containers:
       - name: manager
-        args:
-        - "--metrics-tls-cert-file=/var/run/tls/server/tls.crt"
-        - "--metrics-tls-key-file=/var/run/tls/server/tls.key"
         ports:
         - containerPort: 8443
           name: https

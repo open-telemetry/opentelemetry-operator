@@ -166,7 +166,7 @@ func (om operatorMetrics) createOperatorMetricsServiceMonitor(ctx context.Contex
 					BearerTokenFile: bearerTokenFile,
 					Interval:        "30s",
 					Path:            "/metrics",
-					Scheme:          ptr.To(monitoringv1.SchemeHTTPS),
+					Scheme:          ptr.To(monitoringv1.Scheme("https")),
 					ScrapeTimeout:   "10s",
 					TargetPort:      &intstr.IntOrString{IntVal: 8443},
 					TLSConfig:       tlsConfig,
