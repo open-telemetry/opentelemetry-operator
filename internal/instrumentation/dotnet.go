@@ -39,12 +39,8 @@ const (
 	dotNetRuntimeLinuxMusl  = "linux-musl-x64"
 )
 
-func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, index int, runtime string, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
-
+func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, container *corev1.Container, runtime string, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
 	volume := instrVolume(dotNetSpec.VolumeClaimTemplate, dotnetVolumeName, dotNetSpec.VolumeSizeLimit)
-
-	// caller checks if there is at least one container.
-	container := &pod.Spec.Containers[index]
 
 	err := validateContainerEnv(container.Env, envDotNetStartupHook, envDotNetAdditionalDeps, envDotNetSharedStore)
 	if err != nil {
