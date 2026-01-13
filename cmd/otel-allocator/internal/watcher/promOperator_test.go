@@ -1217,6 +1217,113 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 	}, time.Second*60, time.Millisecond*100)
 }
 
+func TestServiceMonitorBasicAuthSecretUpdate(t *testing.T) {
+	namespace := "test"
+	portName := "web"
+
+	sm := &monitoringv1.ServiceMonitor{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "auth",
+			Namespace: namespace,
+		},
+		Spec: monitoringv1.ServiceMonitorSpec{
+			JobLabel: "auth",
+			Endpoints: []monitoringv1.Endpoint{
+				{
+					Port: portName,
+					BasicAuth: &monitoringv1.BasicAuth{
+						Username: v1.SecretKeySelector{
+							LocalObjectReference: v1.LocalObjectReference{
+								Name: "basic-auth",
+							},
+							Key: "username",
+						},
+						Password: v1.SecretKeySelector{
+							LocalObjectReference: v1.LocalObjectReference{
+								Name: "basic-auth",
+							},
+							Key: "password",
+						},
+					},
+				},
+			},
+			// Selector can be anything; we match all SMs via PrometheusCR.ServiceMonitorSelector below.
+			Selector: metav1.LabelSelector{},
+		},
+	}
+
+	cfg := allocatorconfig.Config{
+		PrometheusCR: allocatorconfig.PrometheusCRConfig{
+			ServiceMonitorSelector: &metav1.LabelSelector{},
+			PodMonitorSelector:     &metav1.LabelSelector{},
+		},
+	}
+
+	w, _ := getTestPrometheusCRWatcher(t, namespace, []*monitoringv1.ServiceMonitor{sm}, nil, nil, nil, cfg)
+	defer w.Close()
+
+	// Start informers and wait for sync
+	go w.nsInformer.Run(w.stopChannel)
+	for !w.nsInformer.HasSynced() {
+		time.Sleep(10 * time.Millisecond)
+	}
+	for _, inf := range w.informers {
+		inf.Start(w.stopChannel)
+	}
+	for _, inf := range w.informers {
+		for !inf.HasSynced() {
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+
+	// Initial config should reflect the original secret values set in getTestPrometheusCRWatcher.
+	got, err := w.LoadConfig(context.Background())
+	require.NoError(t, err)
+	require.NotEmpty(t, got.ScrapeConfigs)
+
+	// Find the ServiceMonitor job.
+	var smSC *promconfig.ScrapeConfig
+	for _, sc := range got.ScrapeConfigs {
+		if sc.JobName == "serviceMonitor/test/auth/0" {
+			smSC = sc
+			break
+		}
+	}
+	require.NotNil(t, smSC)
+	require.NotNil(t, smSC.HTTPClientConfig.BasicAuth)
+	assert.Equal(t, "admin", smSC.HTTPClientConfig.BasicAuth.Username)
+	assert.Equal(t, config.Secret("password"), smSC.HTTPClientConfig.BasicAuth.Password)
+
+	// Update the secret data.
+	sec, err := w.k8sClient.CoreV1().Secrets(namespace).Get(context.Background(), "basic-auth", metav1.GetOptions{})
+	require.NoError(t, err)
+	sec.Data["username"] = []byte("newadmin")
+	sec.Data["password"] = []byte("newpassword")
+	_, err = w.k8sClient.CoreV1().Secrets(namespace).Update(context.Background(), sec, metav1.UpdateOptions{})
+	require.NoError(t, err)
+
+	// Update the asset store to simulate the secrets informer behavior.
+	updatedSec, err := w.store.GetSecretClient().Secrets(namespace).Get(context.Background(), "basic-auth", metav1.GetOptions{})
+	require.NoError(t, err)
+	require.NoError(t, w.store.UpdateObject(updatedSec))
+
+	// Reload config; BasicAuth should reflect updated secret values.
+	got, err = w.LoadConfig(context.Background())
+	require.NoError(t, err)
+
+	smSC = nil
+	for _, sc := range got.ScrapeConfigs {
+		if sc.JobName == "serviceMonitor/test/auth/0" {
+			smSC = sc
+			break
+		}
+	}
+	require.NotNil(t, smSC)
+	require.NotNil(t, smSC.HTTPClientConfig.BasicAuth)
+	assert.Equal(t, "newadmin", smSC.HTTPClientConfig.BasicAuth.Username)
+	assert.Equal(t, config.Secret("newpassword"), smSC.HTTPClientConfig.BasicAuth.Password)
+}
+
 func TestRateLimit(t *testing.T) {
 	var err error
 	namespace := "test"

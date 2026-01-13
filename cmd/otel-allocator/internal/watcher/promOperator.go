@@ -415,7 +415,7 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 					})
 					if !exists || err != nil {
 						if err != nil {
-							w.logger.Error("unexpected store error when checking if secret exists, skipping update", secretName, "error", err)
+							w.logger.Error("unexpected store error when checking if secret exists, skipping update", "secret", secretName, "error", err)
 							return
 						}
 						// if the secret does not exist in the store, we skip the update
@@ -425,13 +425,12 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 					newSecret, err := w.store.GetSecretClient().Secrets(secretNamespace).Get(context.Background(), secretName, metav1.GetOptions{})
 
 					if err != nil {
-						w.logger.Error("unexpected store error when getting updated secret - ", secretName, "error", err)
+						w.logger.Error("unexpected store error when getting updated secret - ", "secret", secretName, "error", err)
 						return
 					}
-
 					w.logger.Info("Updating secret in store", "newObjName", newMeta.GetObjectMeta().GetName(), "newobjnamespace", newMeta.GetObjectMeta().GetNamespace())
 					if err := w.store.UpdateObject(newSecret); err != nil {
-						w.logger.Error("unexpected store error when updating secret  - ", newMeta.GetObjectMeta().GetName(), "error", err)
+						w.logger.Error("unexpected store error when updating secret  - ", "secret", newMeta.GetObjectMeta().GetName(), "error", err)
 					} else {
 						w.logger.Info(
 							"Successfully updated store, sending update event to notifyEvents channel",
@@ -463,7 +462,7 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 					// if the secret does not exist in the store, we skip the delete
 					if !exists || err != nil {
 						if err != nil {
-							w.logger.Error("unexpected store error when checking if secret exists, skipping delete", secretMeta.GetObjectMeta().GetName(), "error", err)
+							w.logger.Error("unexpected store error when checking if secret exists, skipping delete", "secret", secretMeta.GetObjectMeta().GetName(), "error", err)
 							return
 						}
 						// if the secret does not exist in the store, we skip the delete
@@ -473,7 +472,7 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 					// if the secret exists in the store, we delete it
 					// and send an event notification to the notifyEvents channel
 					if err := w.store.DeleteObject(secretObj); err != nil {
-						w.logger.Error("unexpected store error when deleting secret - ", secretMeta.GetObjectMeta().GetName(), "error", err)
+						w.logger.Error("unexpected store error when deleting secret - ", "secret", secretMeta.GetObjectMeta().GetName(), "error", err)
 						//return
 					} else {
 						w.logger.Info(
