@@ -537,10 +537,10 @@ func TestInjectDotNetSDK(t *testing.T) {
 	injector := sdkInjector{}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectDotNetSDK(test.DotNet, test.pod, 0, test.runtime, v1alpha1.InstrumentationSpec{})
+			pod, err := injectDotNetSDK(test.DotNet, test.pod, &test.pod.Spec.Containers[0], test.runtime, v1alpha1.InstrumentationSpec{})
 			assert.Equal(t, test.err, err)
 			if err == nil {
-				pod = injector.injectDefaultDotNetEnvVarsWrapper(pod, 0, test.runtime)
+				pod = injector.injectDefaultDotNetEnvVarsWrapper(pod, &pod.Spec.Containers[0], test.runtime)
 				assert.Equal(t, test.expected, pod)
 				assert.Equal(t, test.err, err)
 			} else {

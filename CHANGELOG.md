@@ -2,6 +2,61 @@
 
 <!-- next version -->
 
+## 0.142.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: Remove kube-rbac-proxy from operator deployment and use controller-runtime built-in auth (#3369)
+  The operator now uses controller-runtime built-in auth for the metrics server. It is disabled by default.
+  The client accessing the metrics endpoint must have the following RBAC rule `nonResourceURLs: "/metrics", verbs: get`.
+  Which didn't change from the previous approach of using kube-rbac-proxy.
+  
+  This changes adds following flags to the operator:
+  `metrics-secure` - enables authentication and authorization for the metrics server. If no TLS certificates are provided, self signed certificates will be generated.
+  `metrics-tls-cert-file` - TLS certificate file for the metrics server
+  `metrics-tls-key-file` - TLS private key file for the metrics server
+  
+  This change changes the following flags on the operator:
+  `--metrics-addr` - changes from `127.0.0.1:8080` to `:8443` which matches the operator's metrics service port.
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Add support for prometheus scrape classes (#3600)
+  Added support for configuring `scrapeClasses` when using the PrometheusCR-feature of the target allocator. The format of the `scrapeClasses` array is exactly as same as `spec.scrapeClasses` of the `Prometheus` CRD.
+- `operator`: Add support for Kubernetes 1.35 (#4575)
+- `collector`: exposes the `spec.hostPID` field for the collector. (#4214)
+  This will allow to set the spec.HostPID field for the collector. By default this the field is false.
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: Fix CA certificate race condition with client cert renewals by extending its duration and and renewal attempt. (#4441)
+  The CA certificate now has a 2-year duration (instead of the default 90 days) to prevent race conditions
+  where client and server certificates could be signed by different CA versions during simultaneous renewal.
+  This ensures the CA remains stable while dependent certificates renew regularly.
+  
+- `collector`: Add finalizers to OpenTelemetryCollector CR only when cluster roles and bindings for SA are created by Operator. (#4367)
+  Finalizer usage was restricted to cluster scoped resources only. Namespaced resources no longer receive finalizers,
+  preventing blocked namespace deletion if the operator is removed first. The change aligns finalizer behavior with
+  cluster-level RBAC availability, ensuring finalizers are applied only when the operator has the required
+  cluster scoped permissions.
+  
+- `config`: Fix manager logger initialization (#4584)
+  Apply config before setting up logger to configure it properly.
+  
+- `operator`: Fix the --annotations-filter and --labels-filter CLI flags. (#4594)
+
+### Components
+
+* [OpenTelemetry Collector - v0.142.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.142.0)
+* [OpenTelemetry Contrib - v0.142.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.142.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.67.3](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.67.3)
+* [Python - v0.60b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.60b1)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.141.0
 
 ### 💡 Enhancements 💡
