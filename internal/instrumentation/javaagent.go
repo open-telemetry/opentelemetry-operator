@@ -19,11 +19,8 @@ const (
 	javaInstrMountPath    = "/otel-auto-instrumentation-java"
 )
 
-func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
+func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, container *corev1.Container, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
 	volume := instrVolume(javaSpec.VolumeClaimTemplate, javaVolumeName, javaSpec.VolumeSizeLimit)
-
-	// caller checks if there is at least one container.
-	container := &pod.Spec.Containers[index]
 
 	err := validateContainerEnv(container.Env, envJavaToolsOptions)
 	if err != nil {
@@ -72,8 +69,7 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, index int, instSpec
 	return pod, err
 }
 
-func getDefaultJavaEnvVars(pod corev1.Pod, index int, javaSpec v1alpha1.Java) []corev1.EnvVar {
-	container := &pod.Spec.Containers[index]
+func getDefaultJavaEnvVars(container *corev1.Container, javaSpec v1alpha1.Java) []corev1.EnvVar {
 	containerMountPath := fmt.Sprintf("%s-%s", javaInstrMountPath, container.Name)
 
 	javaJVMArgument := fmt.Sprintf(" -javaagent:%s/javaagent.jar", containerMountPath)
