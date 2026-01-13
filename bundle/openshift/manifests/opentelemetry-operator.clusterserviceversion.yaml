@@ -526,8 +526,19 @@ spec:
             spec:
               containers:
               - args:
+                - --metrics-addr=:8443
+                - --metrics-secure=true
                 - --metrics-tls-cert-file=/var/run/tls/server/tls.crt
                 - --metrics-tls-key-file=/var/run/tls/server/tls.key
+                - --enable-leader-election
+                - --zap-log-level=info
+                - --zap-time-encoding=rfc3339nano
+                - --enable-nginx-instrumentation=true
+                - --enable-go-instrumentation=true
+                - --openshift-create-dashboard=true
+                - --enable-cr-metrics=true
+                - --create-sm-operator-metrics=true
+                - --feature-gates=operator.networkpolicy,operand.networkpolicy
                 env:
                 - name: SERVICE_ACCOUNT_NAME
                   valueFrom:
