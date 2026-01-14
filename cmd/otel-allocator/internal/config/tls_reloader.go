@@ -138,14 +138,22 @@ func (r *CertificateReloader) Watch(ctx context.Context) error {
 	}
 	defer watcher.Close()
 
-	// Watch the directory containing the certificates.
+	// Collect all unique directories containing certificate files.
 	// In Kubernetes, secrets are mounted as symlinks that get updated atomically,
-	// so we need to watch the directory for changes.
-	certDir := filepath.Dir(r.certPath)
-	if err := watcher.Add(certDir); err != nil {
-		return err
+	// so we need to watch the directories for changes.
+	// Certificate files may be in different directories.
+	dirs := make(map[string]struct{})
+	dirs[filepath.Dir(r.certPath)] = struct{}{}
+	dirs[filepath.Dir(r.keyPath)] = struct{}{}
+	dirs[filepath.Dir(r.caPath)] = struct{}{}
+
+	// Add each unique directory to the watcher
+	for dir := range dirs {
+		if err := watcher.Add(dir); err != nil {
+			return err
+		}
+		r.logger.Info("Watching certificate directory for changes", "directory", dir)
 	}
-	r.logger.Info("Watching certificate directory for changes", "directory", certDir)
 
 	for {
 		select {

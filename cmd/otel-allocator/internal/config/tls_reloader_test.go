@@ -542,3 +542,82 @@ func TestCertificateReloader_ConcurrentEvents(t *testing.T) {
 	cancel()
 	<-watcherDone
 }
+
+func TestCertificateReloader_DifferentDirectories(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create separate directories for cert, key, and CA
+	certDir := filepath.Join(tmpDir, "certs")
+	keyDir := filepath.Join(tmpDir, "keys")
+	caDir := filepath.Join(tmpDir, "ca")
+
+	require.NoError(t, os.Mkdir(certDir, 0755))
+	require.NoError(t, os.Mkdir(keyDir, 0755))
+	require.NoError(t, os.Mkdir(caDir, 0755))
+
+	certPath := filepath.Join(certDir, "tls.crt")
+	keyPath := filepath.Join(keyDir, "tls.key")
+	caPath := filepath.Join(caDir, "ca.crt")
+
+	// Generate and write test certificates to different directories
+	certPEM, keyPEM := generateTestCertificate(t)
+	caPEM, _ := generateTestCertificate(t)
+
+	require.NoError(t, os.WriteFile(certPath, certPEM, 0600))
+	require.NoError(t, os.WriteFile(keyPath, keyPEM, 0600))
+	require.NoError(t, os.WriteFile(caPath, caPEM, 0600))
+
+	logger := logr.Discard()
+	reloader, err := NewCertificateReloader(certPath, keyPath, caPath, logger)
+	require.NoError(t, err)
+
+	var reloadCount atomic.Int32
+	reloader.testReloadCallback = func() {
+		reloadCount.Add(1)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	watcherDone := make(chan error, 1)
+	go func() {
+		watcherDone <- reloader.Watch(ctx)
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+
+	// Trigger events in different directories
+	// 1. Create a temp file in cert directory
+	tmpCertFile := filepath.Join(certDir, "..data_tmp")
+	require.NoError(t, os.WriteFile(tmpCertFile, []byte("temp"), 0600))
+	time.Sleep(20 * time.Millisecond)
+
+	// 2. Create a temp file in key directory
+	tmpKeyFile := filepath.Join(keyDir, "..data_tmp")
+	require.NoError(t, os.WriteFile(tmpKeyFile, []byte("temp"), 0600))
+	time.Sleep(20 * time.Millisecond)
+
+	// 3. Create a temp file in CA directory
+	tmpCAFile := filepath.Join(caDir, "..data_tmp")
+	require.NoError(t, os.WriteFile(tmpCAFile, []byte("temp"), 0600))
+
+	// Wait for debounce + buffer
+	time.Sleep(200 * time.Millisecond)
+
+	// Should have exactly 1 reload despite events in 3 different directories
+	assert.Equal(t, int32(1), reloadCount.Load(), "Expected exactly 1 reload for events across multiple directories")
+
+	// Verify individual directory updates still work
+	reloadCount.Store(0)
+
+	// Simulate Kubernetes-style update in key directory
+	// Create timestamped directory and symlink
+	timestampedKeyDir := filepath.Join(keyDir, "..2026_01_15_01_00_00")
+	require.NoError(t, os.Mkdir(timestampedKeyDir, 0755))
+	time.Sleep(150 * time.Millisecond)
+
+	assert.Equal(t, int32(1), reloadCount.Load(), "Expected reload when directory created in watched key directory")
+
+	cancel()
+	<-watcherDone
+}
