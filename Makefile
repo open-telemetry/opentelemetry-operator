@@ -204,7 +204,7 @@ ensure-update-is-noop: set-image-controller update
 all: manager targetallocator operator-opamp-bridge
 
 ##@ Core Build
-# Run full CI pipeline (generate, format, vet, test, and validation)
+# Run full CI pipeline (generate, vet, test, and validation). No lint here, as CI runs it separately
 .PHONY: ci
 ci: generate fmt vet test ensure-update-is-noop
 
