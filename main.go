@@ -207,6 +207,16 @@ func main() {
 
 	ctx := ctrl.SetupSignalHandler()
 
+	// Apply feature gates from Config if set (could be from file or env vars)
+	// This must be done before checking feature gates like EnableOperatorNetworkPolicy
+	if cfg.FeatureGates != "" {
+		configLog.Info("Applying feature gates from configuration", "gates", cfg.FeatureGates)
+		if err = featuregate.ApplyFeatureGateOverrides(cfg.FeatureGates); err != nil {
+			setupLog.Error(err, "failed to apply feature gate overrides")
+			os.Exit(1)
+		}
+	}
+
 	if cfg.OpenshiftCreateDashboard {
 		dashErr := mgr.Add(openshiftDashboards.NewDashboardManagement(clientset))
 		if dashErr != nil {

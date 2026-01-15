@@ -43,6 +43,7 @@ func TestToStringMap(t *testing.T) {
 		"enable-nginx-auto-instrumentation":       "false",
 		"enable-node-js-auto-instrumentation":     "false",
 		"enable-python-auto-instrumentation":      "false",
+		"feature-gates":                           "",
 		"fips-disabled-components":                "",
 		"ignore-missing-collector-crds":           "true",
 		"metrics-addr":                            "",

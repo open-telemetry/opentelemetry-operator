@@ -1,16 +1,60 @@
 - op: add
   path: "/spec/template/spec/containers/0/args"
   value:
-    - --metrics-addr=:8443
-    - --metrics-secure=true
-    - --metrics-tls-cert-file=/var/run/tls/server/tls.crt
-    - --metrics-tls-key-file=/var/run/tls/server/tls.key
-    - --enable-leader-election
     - --zap-log-level=info
     - --zap-time-encoding=rfc3339nano
-    - --enable-nginx-instrumentation=true
-    - '--enable-go-instrumentation=true'
-    - '--openshift-create-dashboard=true'
-    - '--enable-cr-metrics=true'
-    - '--create-sm-operator-metrics=true'
-    - '--feature-gates=operator.networkpolicy,operand.networkpolicy'
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: METRICS_ADDR
+    value: ":8443"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: METRICS_SECURE
+    value: "true"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: METRICS_TLS_CERT_FILE
+    value: "/var/run/tls/server/tls.crt"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: METRICS_TLS_KEY_FILE
+    value: "/var/run/tls/server/tls.key"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: ENABLE_LEADER_ELECTION
+    value: "true"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: ENABLE_NGINX_AUTO_INSTRUMENTATION
+    value: "true"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: ENABLE_GO_AUTO_INSTRUMENTATION
+    value: "true"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: OPENSHIFT_CREATE_DASHBOARD
+    value: "true"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: ENABLE_CR_METRICS
+    value: "true"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: CREATE_SM_OPERATOR_METRICS
+    value: "true"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: FEATURE_GATES
+    value: "operator.networkpolicy,operand.networkpolicy"

@@ -1,0 +1,43 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: enhancement
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: operator
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: change operator args in bundle to env variables
+
+# One or more tracking issues related to the change
+issues: [4612]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  The default configuration in the OLM bundle has been changed from command-line arguments to environment variables,
+  making it easily overwritable when deployed using OLM's Subscription config. Command-line flags continue to work.
+  All Config struct fields now support environment variable configuration.
+
+  Configuration set via the Subscription's config section will persist and be reapplied after operator upgrades.
+
+  Example of overriding configuration via OLM Subscription:
+
+  ```yaml
+  apiVersion: operators.coreos.com/v1alpha1
+  kind: Subscription
+  metadata:
+    name: opentelemetry-operator
+  spec:
+    channel: stable
+    name: opentelemetry-operator
+    source: operatorhubio-catalog
+    sourceNamespace: olm
+    config:
+      env:
+      - name: FEATURE_GATES
+        value: "operator.networkpolicy,operand.networkpolicy"
+      - name: ENABLE_GO_AUTO_INSTRUMENTATION
+        value: "true"
+      - name: METRICS_SECURE
+        value: "false"
+  ```

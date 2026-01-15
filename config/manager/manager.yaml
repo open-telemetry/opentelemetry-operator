@@ -28,12 +28,8 @@ spec:
     spec:
       containers:
       - args:
-        - "--metrics-addr=:8443"
-        - "--metrics-secure=true"
-        - "--enable-leader-election"
         - "--zap-log-level=info"
         - "--zap-time-encoding=rfc3339nano"
-        - "--enable-nginx-instrumentation=true"
         image: controller
         name: manager
         ports:
@@ -65,5 +61,13 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          - name: METRICS_ADDR
+            value: ":8443"
+          - name: METRICS_SECURE
+            value: "true"
+          - name: ENABLE_LEADER_ELECTION
+            value: "true"
+          - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
+            value: "true"
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
