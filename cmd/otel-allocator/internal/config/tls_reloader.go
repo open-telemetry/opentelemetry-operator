@@ -29,10 +29,7 @@ type CertificateReloader struct {
 	debounceDelay time.Duration
 	reloadTimer   *time.Timer
 	timerMu       sync.Mutex
-	// testReloadCallback is an optional callback used only in tests to track reloads
-	testReloadCallback func()
-	// reloadNotify is used to signal when a debounced reload should happen
-	reloadNotify chan struct{}
+	reloadNotify  chan struct{}
 }
 
 const defaultDebounceDelay = 100 * time.Millisecond
@@ -79,11 +76,6 @@ func (r *CertificateReloader) Reload() error {
 		"certPath", r.certPath,
 		"keyPath", r.keyPath,
 		"caPath", r.caPath)
-
-	// Call test callback if set (only used in tests)
-	if r.testReloadCallback != nil {
-		r.testReloadCallback()
-	}
 
 	return nil
 }

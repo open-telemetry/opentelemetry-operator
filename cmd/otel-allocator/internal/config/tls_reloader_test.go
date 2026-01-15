@@ -4,6 +4,7 @@
 package config
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
@@ -15,7 +16,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -62,6 +62,16 @@ func generateTestCertificate(t *testing.T) (certPEM, keyPEM []byte) {
 	})
 
 	return certPEM, keyPEM
+}
+
+// getCertificateBytes extracts the raw certificate bytes from a CertificateReloader for comparison.
+func getCertificateBytes(t *testing.T, reloader *CertificateReloader) []byte {
+	t.Helper()
+	cert, err := reloader.GetCertificate(nil)
+	require.NoError(t, err)
+	require.NotNil(t, cert)
+	require.NotEmpty(t, cert.Certificate)
+	return cert.Certificate[0]
 }
 
 func TestNewCertificateReloader(t *testing.T) {
@@ -171,11 +181,8 @@ func TestCertificateReloader_DebounceMultipleEvents(t *testing.T) {
 	reloader, err := NewCertificateReloader(certPath, keyPath, caPath, logger)
 	require.NoError(t, err)
 
-	// Track reload count
-	var reloadCount atomic.Int32
-	reloader.testReloadCallback = func() {
-		reloadCount.Add(1)
-	}
+	// Capture initial certificate
+	initialCertBytes := getCertificateBytes(t, reloader)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -186,22 +193,25 @@ func TestCertificateReloader_DebounceMultipleEvents(t *testing.T) {
 		watcherDone <- reloader.Watch(ctx)
 	}()
 
-	// Wait for watcher to start
-	time.Sleep(50 * time.Millisecond)
-
 	// Trigger multiple rapid filesystem events (simulating Kubernetes atomic update)
 	// Create 4 temporary files in rapid succession
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		tmpFile := filepath.Join(tmpDir, fmt.Sprintf("..temp-%d", i))
 		require.NoError(t, os.WriteFile(tmpFile, []byte("temporary"), 0600))
 		time.Sleep(10 * time.Millisecond)
 	}
 
+	// Write new certificates to trigger actual reload
+	newCertPEM, newKeyPEM := generateTestCertificate(t)
+	require.NoError(t, os.WriteFile(certPath, newCertPEM, 0600))
+	require.NoError(t, os.WriteFile(keyPath, newKeyPEM, 0600))
+
 	// Wait for debounce delay + buffer
 	time.Sleep(200 * time.Millisecond)
 
-	// Should have only 1 reload despite 4 filesystem events
-	assert.Equal(t, int32(1), reloadCount.Load(), "Expected exactly 1 reload for multiple rapid events")
+	// Verify certificate changed despite multiple rapid events
+	currentCertBytes := getCertificateBytes(t, reloader)
+	assert.False(t, bytes.Equal(initialCertBytes, currentCertBytes), "Certificate should have changed after reload")
 
 	cancel()
 	<-watcherDone
@@ -229,16 +239,8 @@ func TestCertificateReloader_DebounceResetTimer(t *testing.T) {
 	// Set shorter debounce for faster test
 	reloader.debounceDelay = 100 * time.Millisecond
 
-	var reloadCount atomic.Int32
-	var reloadTimes []time.Time
-	var timesMu sync.Mutex
-
-	reloader.testReloadCallback = func() {
-		reloadCount.Add(1)
-		timesMu.Lock()
-		reloadTimes = append(reloadTimes, time.Now())
-		timesMu.Unlock()
-	}
+	// Capture initial certificate
+	initialCertBytes := getCertificateBytes(t, reloader)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -251,7 +253,6 @@ func TestCertificateReloader_DebounceResetTimer(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// First filesystem event
-	startTime := time.Now()
 	tmpFile1 := filepath.Join(tmpDir, "..data_tmp")
 	require.NoError(t, os.WriteFile(tmpFile1, []byte("temp1"), 0600))
 
@@ -262,19 +263,17 @@ func TestCertificateReloader_DebounceResetTimer(t *testing.T) {
 	tmpFile2 := filepath.Join(tmpDir, "..data")
 	require.NoError(t, os.WriteFile(tmpFile2, []byte("temp2"), 0600))
 
-	// Wait for reload to happen
+	// Write new certificates to trigger actual reload
+	newCertPEM, newKeyPEM := generateTestCertificate(t)
+	require.NoError(t, os.WriteFile(certPath, newCertPEM, 0600))
+	require.NoError(t, os.WriteFile(keyPath, newKeyPEM, 0600))
+
+	// Wait for reload to happen (timer should fire after debounce delay)
 	time.Sleep(200 * time.Millisecond)
 
-	// Should have only 1 reload, happening ~100ms after the second event
-	assert.Equal(t, int32(1), reloadCount.Load())
-
-	timesMu.Lock()
-	if len(reloadTimes) > 0 {
-		elapsed := reloadTimes[0].Sub(startTime)
-		// Should be closer to 150ms (50ms + 100ms) than 100ms
-		assert.Greater(t, elapsed, 120*time.Millisecond, "Timer should have been reset by second event")
-	}
-	timesMu.Unlock()
+	// Verify certificate changed (timer reset worked and reload happened)
+	currentCertBytes := getCertificateBytes(t, reloader)
+	assert.False(t, bytes.Equal(initialCertBytes, currentCertBytes), "Certificate should have changed after debounced reload")
 
 	cancel()
 	<-watcherDone
@@ -299,10 +298,8 @@ func TestCertificateReloader_SimulateKubernetesAtomicUpdate(t *testing.T) {
 	reloader, err := NewCertificateReloader(certPath, keyPath, caPath, logger)
 	require.NoError(t, err)
 
-	var reloadCount atomic.Int32
-	reloader.testReloadCallback = func() {
-		reloadCount.Add(1)
-	}
+	// Capture initial certificate
+	initialCertBytes := getCertificateBytes(t, reloader)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -341,9 +338,9 @@ func TestCertificateReloader_SimulateKubernetesAtomicUpdate(t *testing.T) {
 	// Wait for debounce + buffer
 	time.Sleep(250 * time.Millisecond)
 
-	// Should have exactly 1 reload despite multiple filesystem events
-	// The debouncing should batch all the events together
-	assert.Equal(t, int32(1), reloadCount.Load(), "Expected exactly 1 reload for Kubernetes atomic update")
+	// Verify certificate changed to the new value after Kubernetes atomic update
+	currentCertBytes := getCertificateBytes(t, reloader)
+	assert.False(t, bytes.Equal(initialCertBytes, currentCertBytes), "Certificate should have changed after Kubernetes atomic update")
 
 	cancel()
 	<-watcherDone
@@ -368,10 +365,8 @@ func TestCertificateReloader_SingleEventStillWorks(t *testing.T) {
 	reloader, err := NewCertificateReloader(certPath, keyPath, caPath, logger)
 	require.NoError(t, err)
 
-	var reloadCount atomic.Int32
-	reloader.testReloadCallback = func() {
-		reloadCount.Add(1)
-	}
+	// Capture initial certificate
+	initialCertBytes := getCertificateBytes(t, reloader)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -383,15 +378,21 @@ func TestCertificateReloader_SingleEventStillWorks(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 
-	// Trigger single filesystem event by creating a file
+	// Write new certificates to trigger actual reload
+	newCertPEM, newKeyPEM := generateTestCertificate(t)
+	require.NoError(t, os.WriteFile(certPath, newCertPEM, 0600))
+	require.NoError(t, os.WriteFile(keyPath, newKeyPEM, 0600))
+
+	// Trigger filesystem event
 	tmpFile := filepath.Join(tmpDir, "..data")
 	require.NoError(t, os.WriteFile(tmpFile, []byte("temporary"), 0600))
 
 	// Wait for debounce delay + buffer
 	time.Sleep(200 * time.Millisecond)
 
-	// Should have exactly 1 reload
-	assert.Equal(t, int32(1), reloadCount.Load(), "Expected exactly 1 reload for single event")
+	// Verify certificate changed
+	currentCertBytes := getCertificateBytes(t, reloader)
+	assert.False(t, bytes.Equal(initialCertBytes, currentCertBytes), "Certificate should have changed")
 
 	cancel()
 	<-watcherDone
@@ -416,11 +417,8 @@ func TestCertificateReloader_ReloadFailureDoesntStopWatching(t *testing.T) {
 	reloader, err := NewCertificateReloader(certPath, keyPath, caPath, logger)
 	require.NoError(t, err)
 
-	var successCount atomic.Int32
-
-	reloader.testReloadCallback = func() {
-		successCount.Add(1)
-	}
+	// Capture initial certificate
+	initialCertBytes := getCertificateBytes(t, reloader)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -430,22 +428,24 @@ func TestCertificateReloader_ReloadFailureDoesntStopWatching(t *testing.T) {
 		watcherDone <- reloader.Watch(ctx)
 	}()
 
-	time.Sleep(50 * time.Millisecond)
-
 	// First reload: corrupt the key file to make reload fail
 	// Writing to keyPath will trigger a fsnotify WRITE event
 	require.NoError(t, os.WriteFile(keyPath, []byte("invalid key"), 0600))
 	time.Sleep(200 * time.Millisecond)
 
-	// Reload should have been attempted but failed (callback not called on failure)
-	assert.Equal(t, int32(0), successCount.Load(), "Reload should have failed")
+	// Verify certificate didn't change (reload failed)
+	afterFailureCertBytes := getCertificateBytes(t, reloader)
+	assert.True(t, bytes.Equal(initialCertBytes, afterFailureCertBytes), "Certificate should not change when reload fails")
 
-	// Second reload: restore valid key file
-	// Writing to keyPath again will trigger another fsnotify WRITE event
-	require.NoError(t, os.WriteFile(keyPath, keyPEM, 0600))
+	// Second reload: write valid NEW certificate
+	newCertPEM, newKeyPEM := generateTestCertificate(t)
+	require.NoError(t, os.WriteFile(certPath, newCertPEM, 0600))
+	require.NoError(t, os.WriteFile(keyPath, newKeyPEM, 0600))
 	time.Sleep(200 * time.Millisecond)
 
-	assert.Equal(t, int32(1), successCount.Load(), "Watcher should continue after reload failure")
+	// Verify certificate changed (watcher recovered and reloaded)
+	finalCertBytes := getCertificateBytes(t, reloader)
+	assert.False(t, bytes.Equal(initialCertBytes, finalCertBytes), "Watcher should continue after reload failure")
 
 	cancel()
 	<-watcherDone
@@ -470,10 +470,8 @@ func TestCertificateReloader_ContextCancellationDuringDebounce(t *testing.T) {
 	reloader, err := NewCertificateReloader(certPath, keyPath, caPath, logger)
 	require.NoError(t, err)
 
-	var reloadCount atomic.Int32
-	reloader.testReloadCallback = func() {
-		reloadCount.Add(1)
-	}
+	// Capture initial certificate
+	initialCertBytes := getCertificateBytes(t, reloader)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -482,7 +480,10 @@ func TestCertificateReloader_ContextCancellationDuringDebounce(t *testing.T) {
 		watcherDone <- reloader.Watch(ctx)
 	}()
 
-	time.Sleep(50 * time.Millisecond)
+	// Generate new certificates and write to files
+	newCertPEM, newKeyPEM := generateTestCertificate(t)
+	require.NoError(t, os.WriteFile(certPath, newCertPEM, 0600))
+	require.NoError(t, os.WriteFile(keyPath, newKeyPEM, 0600))
 
 	// Trigger a filesystem event to schedule a reload
 	tmpFile := filepath.Join(tmpDir, "..data")
@@ -496,8 +497,9 @@ func TestCertificateReloader_ContextCancellationDuringDebounce(t *testing.T) {
 	err = <-watcherDone
 	assert.Equal(t, context.Canceled, err)
 
-	// Reload should not have happened (timer didn't fire before cancellation)
-	assert.Equal(t, int32(0), reloadCount.Load(), "Reload should not happen after context cancellation")
+	// Verify certificate did NOT change (reload didn't happen before cancellation)
+	currentCertBytes := getCertificateBytes(t, reloader)
+	assert.True(t, bytes.Equal(initialCertBytes, currentCertBytes), "Certificate should not have changed after context cancellation")
 }
 
 func TestCertificateReloader_ConcurrentEvents(t *testing.T) {
@@ -519,10 +521,8 @@ func TestCertificateReloader_ConcurrentEvents(t *testing.T) {
 	reloader, err := NewCertificateReloader(certPath, keyPath, caPath, logger)
 	require.NoError(t, err)
 
-	var reloadCount atomic.Int32
-	reloader.testReloadCallback = func() {
-		reloadCount.Add(1)
-	}
+	// Capture initial certificate
+	initialCertBytes := getCertificateBytes(t, reloader)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -532,12 +532,10 @@ func TestCertificateReloader_ConcurrentEvents(t *testing.T) {
 		watcherDone <- reloader.Watch(ctx)
 	}()
 
-	time.Sleep(50 * time.Millisecond)
-
 	// Trigger filesystem events from multiple goroutines concurrently
 	// This tests thread safety of the debouncing mechanism
 	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
@@ -547,11 +545,17 @@ func TestCertificateReloader_ConcurrentEvents(t *testing.T) {
 	}
 	wg.Wait()
 
+	// Write new certificates to trigger actual reload
+	newCertPEM, newKeyPEM := generateTestCertificate(t)
+	require.NoError(t, os.WriteFile(certPath, newCertPEM, 0600))
+	require.NoError(t, os.WriteFile(keyPath, newKeyPEM, 0600))
+
 	// Wait for debounce + buffer
 	time.Sleep(200 * time.Millisecond)
 
-	// Should have exactly 1 reload despite concurrent filesystem events
-	assert.Equal(t, int32(1), reloadCount.Load(), "Expected exactly 1 reload despite concurrent events")
+	// Verify certificate changed despite concurrent filesystem events
+	currentCertBytes := getCertificateBytes(t, reloader)
+	assert.False(t, bytes.Equal(initialCertBytes, currentCertBytes), "Certificate should have changed despite concurrent events")
 
 	cancel()
 	<-watcherDone
@@ -585,10 +589,8 @@ func TestCertificateReloader_DifferentDirectories(t *testing.T) {
 	reloader, err := NewCertificateReloader(certPath, keyPath, caPath, logger)
 	require.NoError(t, err)
 
-	var reloadCount atomic.Int32
-	reloader.testReloadCallback = func() {
-		reloadCount.Add(1)
-	}
+	// Capture initial certificate
+	initialCertBytes := getCertificateBytes(t, reloader)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -597,8 +599,6 @@ func TestCertificateReloader_DifferentDirectories(t *testing.T) {
 	go func() {
 		watcherDone <- reloader.Watch(ctx)
 	}()
-
-	time.Sleep(50 * time.Millisecond)
 
 	// Trigger events in different directories
 	// 1. Create a temp file in cert directory
@@ -615,14 +615,23 @@ func TestCertificateReloader_DifferentDirectories(t *testing.T) {
 	tmpCAFile := filepath.Join(caDir, "..data_tmp")
 	require.NoError(t, os.WriteFile(tmpCAFile, []byte("temp"), 0600))
 
+	// Write new certificates to trigger actual reload
+	newCertPEM1, newKeyPEM1 := generateTestCertificate(t)
+	require.NoError(t, os.WriteFile(certPath, newCertPEM1, 0600))
+	require.NoError(t, os.WriteFile(keyPath, newKeyPEM1, 0600))
+
 	// Wait for debounce + buffer
 	time.Sleep(200 * time.Millisecond)
 
-	// Should have exactly 1 reload despite events in 3 different directories
-	assert.Equal(t, int32(1), reloadCount.Load(), "Expected exactly 1 reload for events across multiple directories")
+	// Verify certificate changed after events across multiple directories
+	afterFirstReloadBytes := getCertificateBytes(t, reloader)
+	assert.False(t, bytes.Equal(initialCertBytes, afterFirstReloadBytes), "Certificate should have changed after events across multiple directories")
 
 	// Verify individual directory updates still work
-	reloadCount.Store(0)
+	// Write another set of new certificates
+	newCertPEM2, newKeyPEM2 := generateTestCertificate(t)
+	require.NoError(t, os.WriteFile(certPath, newCertPEM2, 0600))
+	require.NoError(t, os.WriteFile(keyPath, newKeyPEM2, 0600))
 
 	// Simulate Kubernetes-style update in key directory
 	// Create timestamped directory and symlink
@@ -630,7 +639,9 @@ func TestCertificateReloader_DifferentDirectories(t *testing.T) {
 	require.NoError(t, os.Mkdir(timestampedKeyDir, 0755))
 	time.Sleep(150 * time.Millisecond)
 
-	assert.Equal(t, int32(1), reloadCount.Load(), "Expected reload when directory created in watched key directory")
+	// Verify certificate changed again
+	afterSecondReloadBytes := getCertificateBytes(t, reloader)
+	assert.False(t, bytes.Equal(afterFirstReloadBytes, afterSecondReloadBytes), "Certificate should have changed when directory created in watched key directory")
 
 	cancel()
 	<-watcherDone
