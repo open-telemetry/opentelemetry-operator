@@ -646,3 +646,77 @@ func TestCertificateReloader_DifferentDirectories(t *testing.T) {
 	cancel()
 	<-watcherDone
 }
+
+func TestCertificateReloader_MaxDebounceWaitPreventsStarvation(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	certPath := filepath.Join(tmpDir, "cert.pem")
+	keyPath := filepath.Join(tmpDir, "key.pem")
+	caPath := filepath.Join(tmpDir, "ca.pem")
+
+	// Generate and write test certificates
+	certPEM, keyPEM := generateTestCertificate(t)
+	caPEM, _ := generateTestCertificate(t)
+
+	require.NoError(t, os.WriteFile(certPath, certPEM, 0600))
+	require.NoError(t, os.WriteFile(keyPath, keyPEM, 0600))
+	require.NoError(t, os.WriteFile(caPath, caPEM, 0600))
+
+	logger := logr.Discard()
+	reloader, err := NewCertificateReloader(certPath, keyPath, caPath, logger)
+	require.NoError(t, err)
+
+	// Set aggressive debounce for faster testing
+	reloader.debounceDelay = 100 * time.Millisecond
+	reloader.maxDebounceWait = 300 * time.Millisecond
+
+	// Capture initial certificate
+	initialCertBytes := getCertificateBytes(t, reloader)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	watcherDone := make(chan error, 1)
+	go func() {
+		watcherDone <- reloader.Watch(ctx)
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+
+	// Write new certificates
+	newCertPEM, newKeyPEM := generateTestCertificate(t)
+	require.NoError(t, os.WriteFile(certPath, newCertPEM, 0600))
+	require.NoError(t, os.WriteFile(keyPath, newKeyPEM, 0600))
+
+	// Generate continuous events faster than debounce delay
+	// This simulates a pathological case or rapid secret rotations
+	stopEvents := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(50 * time.Millisecond)
+		defer ticker.Stop()
+		counter := 0
+		for {
+			select {
+			case <-stopEvents:
+				return
+			case <-ticker.C:
+				tmpFile := filepath.Join(tmpDir, fmt.Sprintf("..event-%d", counter))
+				_ = os.WriteFile(tmpFile, []byte("trigger"), 0600)
+				counter++
+			}
+		}
+	}()
+
+	// Despite continuous events, reload should happen within maxDebounceWait
+	// Wait maxDebounceWait + small buffer
+	time.Sleep(400 * time.Millisecond)
+	close(stopEvents)
+
+	// Verify certificate changed (reload happened despite continuous events)
+	currentCertBytes := getCertificateBytes(t, reloader)
+	assert.False(t, bytes.Equal(initialCertBytes, currentCertBytes),
+		"Certificate should have changed within maxDebounceWait despite continuous events")
+
+	cancel()
+	<-watcherDone
+}

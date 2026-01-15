@@ -24,25 +24,30 @@ type CertificateReloader struct {
 	caPath        string
 	cert          *tls.Certificate
 	clientCAs     *x509.CertPool
-	mu            sync.RWMutex
-	logger        logr.Logger
-	debounceDelay time.Duration
-	reloadTimer   *time.Timer
-	timerMu       sync.Mutex
-	reloadNotify  chan struct{}
+	mu               sync.RWMutex
+	logger           logr.Logger
+	debounceDelay    time.Duration
+	maxDebounceWait  time.Duration
+	reloadTimer      *time.Timer
+	firstEventTime   *time.Time
+	timerMu          sync.Mutex
+	reloadNotify     chan struct{}
 }
 
 const defaultDebounceDelay = 100 * time.Millisecond
+const defaultMaxDebounceWait = 1 * time.Second
 
 // NewCertificateReloader creates a new CertificateReloader and loads the initial certificates.
 func NewCertificateReloader(certPath, keyPath, caPath string, logger logr.Logger) (*CertificateReloader, error) {
 	r := &CertificateReloader{
-		certPath:      certPath,
-		keyPath:       keyPath,
-		caPath:        caPath,
-		logger:        logger.WithName("cert-reloader"),
-		debounceDelay: defaultDebounceDelay,
-		reloadNotify:  make(chan struct{}, 1),
+		certPath:        certPath,
+		keyPath:         keyPath,
+		caPath:          caPath,
+		logger:          logger.WithName("cert-reloader"),
+		debounceDelay:   defaultDebounceDelay,
+		maxDebounceWait: defaultMaxDebounceWait,
+		reloadNotify:    make(chan struct{}, 1),
+		firstEventTime:  nil,
 	}
 
 	if err := r.Reload(); err != nil {
@@ -97,10 +102,39 @@ func (r *CertificateReloader) GetClientCAs() *x509.CertPool {
 
 // scheduleReload schedules a certificate reload after the debounce delay.
 // If a reload is already scheduled, it resets the timer.
+//
+// To prevent timer starvation from continuous events, this implements a
+// maximum debounce wait time. Even if events keep arriving, a reload is
+// guaranteed to happen within maxDebounceWait from the first event.
 func (r *CertificateReloader) scheduleReload() {
 	r.timerMu.Lock()
 	defer r.timerMu.Unlock()
 
+	now := time.Now()
+
+	// Track first event time if this is the start of a new debounce window
+	if r.firstEventTime == nil {
+		r.firstEventTime = &now
+	}
+
+	// Calculate how long until we must reload (max wait constraint)
+	timeSinceFirstEvent := now.Sub(*r.firstEventTime)
+	timeUntilMaxWait := r.maxDebounceWait - timeSinceFirstEvent
+
+	// Determine actual delay: use debounce delay, but cap at max wait time
+	var actualDelay time.Duration
+	if timeUntilMaxWait <= 0 {
+		// We've already waited the maximum time, reload immediately
+		actualDelay = 0
+	} else if timeUntilMaxWait < r.debounceDelay {
+		// We're close to the max wait time, use remaining time
+		actualDelay = timeUntilMaxWait
+	} else {
+		// Normal case: use standard debounce delay
+		actualDelay = r.debounceDelay
+	}
+
+	// Stop existing timer if present
 	if r.reloadTimer != nil {
 		// Stop existing timer and drain channel if it already fired
 		if !r.reloadTimer.Stop() {
@@ -111,13 +145,19 @@ func (r *CertificateReloader) scheduleReload() {
 		}
 	}
 
-	r.reloadTimer = time.AfterFunc(r.debounceDelay, func() {
+	// Schedule reload with calculated delay
+	r.reloadTimer = time.AfterFunc(actualDelay, func() {
 		// Send non-blocking notification
 		select {
 		case r.reloadNotify <- struct{}{}:
 		default:
 			// Channel already has a pending reload notification
 		}
+
+		// Reset first event time for next debounce window
+		r.timerMu.Lock()
+		r.firstEventTime = nil
+		r.timerMu.Unlock()
 	})
 }
 
