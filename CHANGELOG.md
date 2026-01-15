@@ -2,6 +2,28 @@
 
 <!-- next version -->
 
+## 0.143.0
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Fix operator ServiceMonitor not created on OpenShift (#4603)
+  Two issues prevented the operator ServiceMonitor from being created on OpenShift:
+  1. The OpenShift kustomize patches were incorrectly overwriting operator args, removing flags like `--create-sm-operator-metrics=true`.
+  2. The prometheus-operator library `SchemeHTTPS` constant uses uppercase "HTTPS" which is rejected by ServiceMonitor CRD validation.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.143.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.143.0)
+* [OpenTelemetry Contrib - v0.143.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.143.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.67.3](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.67.3)
+* [Python - v0.60b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.60b1)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.142.0
 
 ### 🛑 Breaking changes 🛑
