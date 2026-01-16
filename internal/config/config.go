@@ -127,6 +127,9 @@ type Config struct {
 	Zap ZapConfig `yaml:"zap"`
 	// EnableWebhooks enables the webhooks used by controllers.
 	EnableWebhooks bool `yaml:"enable-webhooks"`
+	// FeatureGates is a comma-separated list of feature gates to enable/disable.
+	// Format: "gate1,gate2,-gate3" where - prefix disables the gate.
+	FeatureGates string `yaml:"feature-gates"`
 	// Internal contains configuration that is propagated and cannot be accessed from the operator configuration.
 	Internal Internal `yaml:"-"`
 }

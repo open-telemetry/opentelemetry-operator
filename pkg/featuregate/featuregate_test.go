@@ -140,3 +140,75 @@ func TestFeatureGateLifecycle(t *testing.T) {
 			len(violations), strings.Join(violations, "\n\n"))
 	}
 }
+
+func TestApplyFeatureGateOverrides_EmptyString(t *testing.T) {
+	// Test that empty string is handled gracefully
+	err := ApplyFeatureGateOverrides("")
+	require.NoError(t, err)
+}
+
+func TestApplyFeatureGateOverrides_SingleGate(t *testing.T) {
+	// Test enabling a single feature gate
+	registry := featuregate.GlobalRegistry()
+
+	// Get original state
+	originalState := SetGolangFlags.IsEnabled()
+	t.Cleanup(func() {
+		// Restore original state
+		_ = registry.Set(SetGolangFlags.ID(), originalState)
+	})
+
+	// Apply feature gate
+	err := ApplyFeatureGateOverrides("operator.golang.flags")
+	require.NoError(t, err)
+
+	// Verify it was enabled
+	assert.True(t, SetGolangFlags.IsEnabled())
+}
+
+func TestApplyFeatureGateOverrides_MultipleGates(t *testing.T) {
+	// Test enabling multiple feature gates
+	registry := featuregate.GlobalRegistry()
+
+	// Get original states
+	originalGolangFlags := SetGolangFlags.IsEnabled()
+	originalMTLS := EnableTargetAllocatorMTLS.IsEnabled()
+	t.Cleanup(func() {
+		// Restore original states
+		_ = registry.Set(SetGolangFlags.ID(), originalGolangFlags)
+		_ = registry.Set(EnableTargetAllocatorMTLS.ID(), originalMTLS)
+	})
+
+	// Apply multiple feature gates
+	err := ApplyFeatureGateOverrides("operator.golang.flags,operator.targetallocator.mtls")
+	require.NoError(t, err)
+
+	// Verify both were enabled
+	assert.True(t, SetGolangFlags.IsEnabled())
+	assert.True(t, EnableTargetAllocatorMTLS.IsEnabled())
+}
+
+func TestApplyFeatureGateOverrides_MixedEnableDisable(t *testing.T) {
+	// Test enabling some gates and disabling others
+	registry := featuregate.GlobalRegistry()
+
+	// Get original states
+	originalGolangFlags := SetGolangFlags.IsEnabled()
+	originalMTLS := EnableTargetAllocatorMTLS.IsEnabled()
+	originalNetworkPolicy := EnableOperatorNetworkPolicy.IsEnabled()
+	t.Cleanup(func() {
+		// Restore original states
+		_ = registry.Set(SetGolangFlags.ID(), originalGolangFlags)
+		_ = registry.Set(EnableTargetAllocatorMTLS.ID(), originalMTLS)
+		_ = registry.Set(EnableOperatorNetworkPolicy.ID(), originalNetworkPolicy)
+	})
+
+	// Apply mixed gates: enable golang.flags and mtls, disable networkpolicy
+	err := ApplyFeatureGateOverrides("operator.golang.flags,operator.targetallocator.mtls,-operator.networkpolicy")
+	require.NoError(t, err)
+
+	// Verify states
+	assert.True(t, SetGolangFlags.IsEnabled(), "golang.flags should be enabled")
+	assert.True(t, EnableTargetAllocatorMTLS.IsEnabled(), "mtls should be enabled")
+	assert.False(t, EnableOperatorNetworkPolicy.IsEnabled(), "networkpolicy should be disabled")
+}
