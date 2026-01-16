@@ -19,19 +19,19 @@ import (
 // CertificateReloader watches certificate files and reloads them on change.
 // It provides dynamic certificate reloading for TLS servers without restart.
 type CertificateReloader struct {
-	certPath      string
-	keyPath       string
-	caPath        string
-	cert          *tls.Certificate
-	clientCAs     *x509.CertPool
-	mu               sync.RWMutex
-	logger           logr.Logger
-	debounceDelay    time.Duration
-	maxDebounceWait  time.Duration
-	reloadTimer      *time.Timer
-	firstEventTime   *time.Time
-	timerMu          sync.Mutex
-	reloadNotify     chan struct{}
+	certPath        string
+	keyPath         string
+	caPath          string
+	cert            *tls.Certificate
+	clientCAs       *x509.CertPool
+	mu              sync.RWMutex
+	logger          logr.Logger
+	debounceDelay   time.Duration
+	maxDebounceWait time.Duration
+	reloadTimer     *time.Timer
+	firstEventTime  *time.Time
+	timerMu         sync.Mutex
+	reloadNotify    chan struct{}
 }
 
 const defaultDebounceDelay = 100 * time.Millisecond
