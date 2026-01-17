@@ -24,6 +24,16 @@ var registry = map[string]components.Parser{
 			return components.ParseSingleEndpointSilent(logger, name, defaultPort, &config.SingleEndpointConfig)
 		}).
 		MustBuild(),
+	"healthcheckv2": components.NewBuilder[healthcheckV2Config]().
+		WithName("healthcheckv2").
+		WithPort(defaultHealthcheckV2Port).
+		WithDefaultsApplier(healthCheckV2AddressDefaulter).
+		WithDefaultRecAddress(components.DefaultRecAddress).
+		WithReadinessGen(healthCheckV2Probe).
+		WithLivenessGen(healthCheckV2Probe).
+		WithStartupGen(healthCheckV2Probe).
+		WithPortParser(healthCheckV2PortParser).
+		MustBuild(),
 	"jaeger_query": NewJaegerQueryExtensionParserBuilder().
 		MustBuild(),
 	"k8s_observer": components.NewBuilder[k8sobserverConfig]().
