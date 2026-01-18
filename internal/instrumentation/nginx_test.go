@@ -240,9 +240,9 @@ func TestInjectNginxSDK(t *testing.T) {
 					},
 				},
 			}},
-		// === Test Removal of probes and lifecycle =============================
+		// === Test init-container-incompatible fields not copied =============================
 		{
-			name: "Probes removed on clone init container",
+			name: "Init-container-incompatible fields not copied",
 			Nginx: v1alpha1.Nginx{
 				Image: "foo/bar:1",
 			},
@@ -257,6 +257,10 @@ func TestInjectNginxSDK(t *testing.T) {
 							StartupProbe:   &corev1.Probe{},
 							LivenessProbe:  &corev1.Probe{},
 							Lifecycle:      &corev1.Lifecycle{},
+							ResizePolicy: []corev1.ContainerResizePolicy{
+								{ResourceName: corev1.ResourceCPU, RestartPolicy: corev1.NotRequired},
+								{ResourceName: corev1.ResourceMemory, RestartPolicy: corev1.NotRequired},
+							},
 						},
 					},
 				},
@@ -342,6 +346,10 @@ func TestInjectNginxSDK(t *testing.T) {
 							StartupProbe:   &corev1.Probe{},
 							LivenessProbe:  &corev1.Probe{},
 							Lifecycle:      &corev1.Lifecycle{},
+							ResizePolicy: []corev1.ContainerResizePolicy{
+								{ResourceName: corev1.ResourceCPU, RestartPolicy: corev1.NotRequired},
+								{ResourceName: corev1.ResourceMemory, RestartPolicy: corev1.NotRequired},
+							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "LD_LIBRARY_PATH",
