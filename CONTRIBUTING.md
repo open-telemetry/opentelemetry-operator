@@ -15,13 +15,33 @@ We gratefully welcome improvements to documentation as well as to code.
 
 ### Local development cheat sheet
 
-* `make test` to run unit tests
-* `make lint` to run linters
-* `make fmt` to format Go code
-* `make vet` to run `go vet`
-* `make update` to generate code and manifests based on Go struct definitions for CRDs.
+**Essential Commands:**
+* `make test` - Run unit tests
+* `make lint` - Run golangci-lint
+* `make fmt` - Format Go code and auto-fix issues
+* `make vet` - Run go vet
+* `make update` - Generate code and manifests based on Go struct definitions for CRDs (includes generate, manifests, bundle, api-docs)
+* `make precommit` - Run all checks: fmt, vet, lint, test, ensure-update-is-noop (run before committing)
 
-`make precommit` includes all of the above.
+**Code Generation:**
+* `make generate` - Generate DeepCopy methods for API types
+* `make manifests` - Generate CRDs, RBAC, webhooks
+* `make bundle` - Generate OLM bundles (community + openshift)
+* `make api-docs` - Generate API documentation from CRDs
+
+**Building and Deployment:**
+* `make manager` - Build operator binary
+* `make container` - Build operator container image
+* `make deploy` - Deploy to connected Kubernetes cluster
+* `make cert-manager` - Install cert-manager (required for webhooks)
+
+**Testing:**
+* `make e2e` - Run general e2e tests
+* `make e2e-instrumentation` - Auto-instrumentation tests
+* `make e2e-targetallocator` - Target Allocator tests
+* `make e2e-opampbridge` - OpAMP Bridge tests
+* `make prepare-e2e` - Set up kind cluster for e2e testing
+* `make stop-kind` - Delete kind cluster
 
 ### Workflow
 
@@ -115,7 +135,7 @@ Example how to run test that use `envtest`:
 
 ```bash
 make envtest
-KUBEBUILDER_ASSETS=$(./bin/setup-envtest use -p path 1.23) go test ./pkg...
+KUBEBUILDER_ASSETS=$(./bin/setup-envtest use -p path 1.35) go test ./pkg...
 ```
 
 ### End to end tests
@@ -147,7 +167,93 @@ make undeploy
 
 ## Project Structure
 
-For a general overview of the directories from this operator and what to expect in each one of them, please check out the [official GoDoc](https://godoc.org/github.com/open-telemetry/opentelemetry-operator) or the [locally-hosted GoDoc](http://localhost:6060/pkg/github.com/open-telemetry/opentelemetry-operator/)
+### Directory Organization
+
+* `apis/` - CRD definitions (`v1alpha1` experimental, `v1beta1` stable)
+* `internal/controllers/` - Kubernetes reconciliation controllers
+* `internal/manifests/` - Resource generation logic (Deployments, Services, ConfigMaps)
+* `internal/instrumentation/` - Auto-instrumentation injection logic per language
+* `internal/webhook/podmutation/` - Pod mutation webhooks for sidecar and auto-instrumentation
+* `internal/config/` - Collector configuration parsing and manipulation
+* `cmd/otel-allocator/` - Target Allocator source code
+* `cmd/operator-opamp-bridge/` - OpAMP Bridge source code
+* `autoinstrumentation/` - Dockerfiles for instrumentation images
+* `config/` - Kubernetes deployment configurations and overlays
+* `tests/` - End-to-end test suites (Chainsaw framework)
+* `bundle/` - OLM bundle manifests (community and openshift variants)
+
+For a general overview of the API types, check out the [official GoDoc](https://godoc.org/github.com/open-telemetry/opentelemetry-operator) or the [locally-hosted GoDoc](http://localhost:6060/pkg/github.com/open-telemetry/opentelemetry-operator/)
+
+### Core Custom Resources
+
+* **OpenTelemetryCollector (v1beta1)** - Manages collector deployments in multiple modes (Deployment, DaemonSet, StatefulSet, Sidecar)
+* **Instrumentation (v1alpha1)** - Configures auto-instrumentation for workloads (Java, NodeJS, Python, .NET, Go, Apache HTTPD, Nginx)
+* **OpAMPBridge (v1alpha1)** - Enables remote configuration management via OpAMP protocol
+* **TargetAllocator (v1alpha1)** - Standalone CR for Prometheus target allocation, or embedded in OpenTelemetryCollector spec
+
+## Code Style and Conventions
+
+### Go Code Style
+
+* Follow standard Go conventions (gofmt, go vet)
+* Use golangci-lint configuration in `.golangci.yaml` - run `make golangci-lint` to check
+* Run `make fmt` before committing - it auto-fixes many issues
+* Never edit `zz_generated.*.go` files - they're auto-generated
+* Use functions in `internal/naming/` for consistent resource naming
+* Follow Kubernetes naming: lowercase, hyphens, DNS-compatible
+
+### Kubebuilder Markers
+
+When adding fields to CRD structs in `apis/`, use [kubebuilder markers](https://book.kubebuilder.io/reference/markers) for validation:
+
+```go
+type MySpec struct {
+    // +kubebuilder:validation:Required
+    // +kubebuilder:validation:MinLength=1
+    RequiredField string `json:"requiredField"`
+
+    // +optional
+    OptionalField *string `json:"optionalField,omitempty"`
+}
+```
+
+## Common Tasks
+
+### Changing API types (CRDs)
+
+1. Edit structs in `apis/v1alpha1/` or `apis/v1beta1/`
+2. Add/update kubebuilder markers for validation
+3. Run `make update` - generates manifests, bundles, docs
+4. Run `make precommit` - ensures everything is valid
+5. Verify CRD changes: `git diff config/crd/bases/`
+
+**CRITICAL:** Always run `make update` after API changes. CI will fail with "ensure-update-is-noop" if you forget.
+
+### Changing controller logic
+
+1. Modify reconciliation logic in `internal/controllers/`
+2. Update corresponding manifest generation in `internal/manifests/` if needed
+3. Add/update unit tests
+4. Run `make test` to verify
+5. For complex changes, add e2e test in appropriate `tests/e2e-*/` directory
+
+### Changing webhooks
+
+1. Modify webhook logic in `internal/webhook/`
+2. Webhooks cannot be tested with `make run` - must use `make deploy`
+3. Set up kind cluster: `make prepare-e2e`
+4. Add e2e test to verify webhook behavior
+
+### Adding new auto-instrumentation language
+
+1. Add Dockerfile in `autoinstrumentation/{language}/`
+2. Add injection logic in `internal/instrumentation/{language}.go`
+3. Add spec field to `apis/v1alpha1/instrumentation_types.go`
+4. Update webhook to handle new annotation
+5. Add feature gate flag in `main.go`
+6. Add e2e test in `tests/e2e-instrumentation/`
+7. Update `versions.txt`
+8. Run `make update`
 
 ## Contributing
 
