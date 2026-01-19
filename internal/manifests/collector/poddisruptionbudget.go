@@ -50,7 +50,7 @@ func PodDisruptionBudget(params manifests.Params) (*policyV1.PodDisruptionBudget
 			MinAvailable:   pdbSpec.MinAvailable,
 			MaxUnavailable: pdbSpec.MaxUnavailable,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: objectMeta.Labels,
+				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			},
 		},
 	}, nil

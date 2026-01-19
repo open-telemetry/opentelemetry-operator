@@ -40,11 +40,21 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("RELATED_IMAGE_AUTO_INSTRUMENTATION_NGINX"); ok {
 		cfg.AutoInstrumentationNginxImage = v
 	}
+
 	if v, ok := os.LookupEnv("OPENSHIFT_CREATE_DASHBOARD"); ok {
 		cfg.OpenshiftCreateDashboard, _ = strconv.ParseBool(v)
 	}
 	if v, ok := os.LookupEnv("METRICS_ADDR"); ok {
 		cfg.MetricsAddr = v
+	}
+	if v, ok := os.LookupEnv("METRICS_SECURE"); ok {
+		cfg.MetricsSecure, _ = strconv.ParseBool(v)
+	}
+	if v, ok := os.LookupEnv("METRICS_TLS_CERT_FILE"); ok {
+		cfg.MetricsTLSCertFile = v
+	}
+	if v, ok := os.LookupEnv("METRICS_TLS_KEY_FILE"); ok {
+		cfg.MetricsTLSKeyFile = v
 	}
 	if v, ok := os.LookupEnv("HEALTH_PROBE_ADDR"); ok {
 		cfg.ProbeAddr = v
@@ -72,6 +82,12 @@ func ApplyEnvVars(cfg *Config) {
 	}
 	if v, ok := os.LookupEnv("TLS_CIPHER_SUITES"); ok {
 		cfg.TLS.CipherSuites = strings.Split(v, ",")
+	}
+	if v, ok := os.LookupEnv("LABELS_FILTER"); ok {
+		cfg.LabelsFilter = strings.Split(v, ",")
+	}
+	if v, ok := os.LookupEnv("ANNOTATIONS_FILTER"); ok {
+		cfg.AnnotationsFilter = strings.Split(v, ",")
 	}
 	if v, ok := os.LookupEnv("ZAP_TIME_KEY"); ok {
 		cfg.Zap.TimeKey = v
@@ -111,5 +127,11 @@ func ApplyEnvVars(cfg *Config) {
 	}
 	if v, ok := os.LookupEnv("ENABLE_WEBHOOKS"); ok {
 		cfg.EnableWebhooks, _ = strconv.ParseBool(v)
+	}
+	if v, ok := os.LookupEnv("FEATURE_GATES"); ok {
+		cfg.FeatureGates = v
+	}
+	if v, ok := os.LookupEnv("ENABLE_MULTI_INSTRUMENTATION"); ok {
+		cfg.EnableMultiInstrumentation, _ = strconv.ParseBool(v)
 	}
 }
