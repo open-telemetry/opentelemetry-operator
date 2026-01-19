@@ -255,14 +255,7 @@ service:
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
 						Selector: &v1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app.kubernetes.io/component":  "opentelemetry-collector",
-								"app.kubernetes.io/instance":   "test.test",
-								"app.kubernetes.io/managed-by": "opentelemetry-operator",
-								"app.kubernetes.io/name":       "test-collector",
-								"app.kubernetes.io/part-of":    "opentelemetry",
-								"app.kubernetes.io/version":    "latest",
-							},
+							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
 							Type:   intstr.Int,
@@ -591,14 +584,7 @@ service:
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
 						Selector: &v1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app.kubernetes.io/component":  "opentelemetry-collector",
-								"app.kubernetes.io/instance":   "test.test",
-								"app.kubernetes.io/managed-by": "opentelemetry-operator",
-								"app.kubernetes.io/name":       "test-collector",
-								"app.kubernetes.io/part-of":    "opentelemetry",
-								"app.kubernetes.io/version":    "latest",
-							},
+							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
 							Type:   intstr.Int,
@@ -923,14 +909,7 @@ service:
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
 						Selector: &v1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app.kubernetes.io/component":  "opentelemetry-collector",
-								"app.kubernetes.io/instance":   "test.test",
-								"app.kubernetes.io/managed-by": "opentelemetry-operator",
-								"app.kubernetes.io/name":       "test-collector",
-								"app.kubernetes.io/part-of":    "opentelemetry",
-								"app.kubernetes.io/version":    "latest",
-							},
+							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
 							Type:   intstr.Int,
@@ -1519,14 +1498,7 @@ service:
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
 						Selector: &v1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app.kubernetes.io/component":  "opentelemetry-collector",
-								"app.kubernetes.io/instance":   "test.test",
-								"app.kubernetes.io/managed-by": "opentelemetry-operator",
-								"app.kubernetes.io/name":       "test-collector",
-								"app.kubernetes.io/part-of":    "opentelemetry",
-								"app.kubernetes.io/version":    "latest",
-							},
+							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
 							Type:   intstr.Int,
@@ -1777,14 +1749,7 @@ service:
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
 						Selector: &v1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app.kubernetes.io/component":  "opentelemetry-collector",
-								"app.kubernetes.io/instance":   "test.test",
-								"app.kubernetes.io/managed-by": "opentelemetry-operator",
-								"app.kubernetes.io/name":       "test-collector",
-								"app.kubernetes.io/part-of":    "opentelemetry",
-								"app.kubernetes.io/version":    "latest",
-							},
+							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
 							Type:   intstr.Int,
