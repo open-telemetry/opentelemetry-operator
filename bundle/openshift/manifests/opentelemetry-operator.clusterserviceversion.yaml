@@ -62,6 +62,42 @@ metadata:
         },
         {
           "apiVersion": "opentelemetry.io/v1beta1",
+          "kind": "Instrumentation",
+          "metadata": {
+            "name": "instrumentation"
+          },
+          "spec": {
+            "config": {
+              "file_format": "0.4",
+              "propagator": {
+                "composite": [
+                  {
+                    "tracecontext": {}
+                  },
+                  {
+                    "baggage": {}
+                  }
+                ]
+              },
+              "tracer_provider": {
+                "processors": [
+                  {
+                    "batch": {
+                      "exporter": {
+                        "otlp": {
+                          "endpoint": "http://otel-collector-headless:4318",
+                          "protocol": "http/protobuf"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "opentelemetry.io/v1beta1",
           "kind": "OpenTelemetryCollector",
           "metadata": {
             "name": "otel"
@@ -99,7 +135,7 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-01-15T17:19:43Z"
+    createdAt: "2026-01-19T15:30:18Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -120,6 +156,15 @@ spec:
         name: ""
         version: v1
       version: v1alpha1
+    - description: Instrumentation is the Schema for the instrumentations API.
+      displayName: OpenTelemetry Instrumentation
+      kind: Instrumentation
+      name: instrumentations.opentelemetry.io
+      resources:
+      - kind: Pod
+        name: ""
+        version: v1
+      version: v1beta1
     - description: OpAMPBridge is the Schema for the opampbridges API.
       displayName: OpAMP Bridge
       kind: OpAMPBridge

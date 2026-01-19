@@ -376,6 +376,7 @@ type InstrumentationStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=otelinst;otelinsts
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:printcolumn:name="Endpoint",type="string",JSONPath=".spec.exporter.endpoint"

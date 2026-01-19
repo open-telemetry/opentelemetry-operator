@@ -146,7 +146,7 @@ endif
 MANIFEST_DIR ?= config/crd/bases
 
 # kubectl apply does not work on large CRDs.
-CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=0"
+CRD_OPTIONS ?= "crd:generateEmbeddedObjectMeta=true,maxDescLen=0,allowDangerousTypes=true"
 
 # Choose which version to generate
 BUNDLE_VARIANT ?= community
