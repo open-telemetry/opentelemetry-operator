@@ -129,7 +129,9 @@ func (om operatorMetrics) createOperatorMetricsServiceMonitor(ctx context.Contex
 		serviceName := fmt.Sprintf("opentelemetry-operator-controller-manager-metrics-service.%s.svc", namespace)
 
 		tlsConfig = &monitoringv1.TLSConfig{
-			CAFile: prometheusCAFile,
+			TLSFilesConfig: monitoringv1.TLSFilesConfig{
+				CAFile: prometheusCAFile,
+			},
 			SafeTLSConfig: monitoringv1.SafeTLSConfig{
 				ServerName: &serviceName,
 			},
@@ -169,7 +171,11 @@ func (om operatorMetrics) createOperatorMetricsServiceMonitor(ctx context.Contex
 					Scheme:          ptr.To(monitoringv1.Scheme("https")),
 					ScrapeTimeout:   "10s",
 					TargetPort:      &intstr.IntOrString{IntVal: 8443},
-					TLSConfig:       tlsConfig,
+					HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
+						HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
+							TLSConfig: tlsConfig,
+						},
+					},
 				},
 			},
 		},

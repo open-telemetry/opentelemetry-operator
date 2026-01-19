@@ -163,18 +163,24 @@ func TestLoadConfig(t *testing.T) {
 						Endpoints: []monitoringv1.Endpoint{
 							{
 								Port: portName,
-								BasicAuth: &monitoringv1.BasicAuth{
-									Username: v1.SecretKeySelector{
-										LocalObjectReference: v1.LocalObjectReference{
-											Name: "basic-auth",
+								HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
+									HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
+										HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+											BasicAuth: &monitoringv1.BasicAuth{
+												Username: v1.SecretKeySelector{
+													LocalObjectReference: v1.LocalObjectReference{
+														Name: "basic-auth",
+													},
+													Key: "username",
+												},
+												Password: v1.SecretKeySelector{
+													LocalObjectReference: v1.LocalObjectReference{
+														Name: "basic-auth",
+													},
+													Key: "password",
+												},
+											},
 										},
-										Key: "username",
-									},
-									Password: v1.SecretKeySelector{
-										LocalObjectReference: v1.LocalObjectReference{
-											Name: "basic-auth",
-										},
-										Key: "password",
 									},
 								},
 							},
@@ -246,14 +252,18 @@ func TestLoadConfig(t *testing.T) {
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
 								Port: &portName,
-								HTTPConfig: monitoringv1.HTTPConfig{
-									Authorization: &monitoringv1.SafeAuthorization{
-										Type: "Bearer",
-										Credentials: &v1.SecretKeySelector{
-											LocalObjectReference: v1.LocalObjectReference{
-												Name: "bearer",
+								HTTPConfigWithProxy: monitoringv1.HTTPConfigWithProxy{
+									HTTPConfig: monitoringv1.HTTPConfig{
+										HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+											Authorization: &monitoringv1.SafeAuthorization{
+												Type: "Bearer",
+												Credentials: &v1.SecretKeySelector{
+													LocalObjectReference: v1.LocalObjectReference{
+														Name: "bearer",
+													},
+													Key: "token",
+												},
 											},
-											Key: "token",
 										},
 									},
 								},
