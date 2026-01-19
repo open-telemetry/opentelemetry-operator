@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: instrumentation-dotnet-initcontainer
+spec:
+  steps:
+  - name: Add OpenShift namespace annotations
+    use:
+      template: ../../step-templates/openshift-namespace-annotations.yaml
+  - name: step-00
+    try:
+    - apply:
+        file: 00-install-collector.yaml
+    - apply:
+        file: 00-install-instrumentation.yaml
+  - name: step-01
+    try:
+    - apply:
+        file: 01-install-app.yaml
+    - assert:
+        file: 01-assert.yaml
+    catch:
+      - podLogs:
+          selector: app=my-dotnet-initcontainer
+  - name: Wait for telemetry data
+    try:
+    - script:
+        env:
+          - name: LABEL_SELECTOR
+            value: "app.kubernetes.io/name=deployment-collector"
+          - name: CONTAINER_NAME
+            value: "otc-container"
+          - name: RETRY_TIMEOUT
+            value: "120"
+          - name: RETRY_SLEEP
+            value: "5"
+          - name: SEARCH_STRINGS_ENV
+            value: |
+              ScopeSpans
+              my-dotnet-initcontainer
+        timeout: 2m
+        content: ../../test-e2e-apps/scripts/check_pod_logs.sh
+  - name: Check the instrumented init container has sent the telemetry data successfully
+    try:
+      - command:
+          entrypoint: kubectl
+          args:
+            - get
+            - pod
+            - -n
+            - ${NAMESPACE}
+            - -l
+            - app.kubernetes.io/name=deployment-collector
+            - -o
+            - jsonpath={.items[0].metadata.name}
+          outputs:
+          - name: podName
+            value: ($stdout)
+      - script:
+          env:
+          - name: podName
+            value: ($podName)
+          content: |
+            #!/usr/bin/env bash
+            kubectl get --raw /api/v1/namespaces/$NAMESPACE/pods/${podName}:8888/proxy/metrics
+          outputs:
+          - name: metrics
+            value: (x_metrics_decode($stdout))
+          check:
+            ($error == null): true
+      - assert:
+          resource:
+            ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] > `1`): true
+            ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] > `1`): true
+    catch:
+      - podLogs:
+          selector: app.kubernetes.io/name=deployment-collector
+          container: otc-container

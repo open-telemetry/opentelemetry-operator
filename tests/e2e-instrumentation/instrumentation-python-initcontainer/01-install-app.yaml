@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-python-initcontainer
+  labels:
+    app: my-python-initcontainer
+  annotations:
+    instrumentation.opentelemetry.io/inject-python: "true"
+    instrumentation.opentelemetry.io/container-names: "python-init"
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 3000
+    fsGroup: 3000
+  initContainers:
+  - name: python-init
+    image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-python:main
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+    command: ["/bin/sh", "-c"]
+    # Start app, generate telemetry, wait for flush, then exit
+    args:
+      - |
+        echo "Python init container starting"
+        # Start the Flask app in the background (Alpine-based image)
+        cd /app && flask run --host=0.0.0.0 --port=8080 &
+        APP_PID=$!
+        # Wait for app to be ready
+        echo "Waiting for app to start..."
+        # Give Flask time to start
+        sleep 5
+        echo "App should be ready"
+        # Make requests to generate telemetry (even 404s generate spans)
+        echo "Making requests to generate telemetry..."
+        wget -q -O /dev/null http://127.0.0.1:8080/ 2>/dev/null || true
+        wget -q -O /dev/null http://127.0.0.1:8080/ 2>/dev/null || true
+        wget -q -O /dev/null http://127.0.0.1:8080/ 2>/dev/null || true
+        # Wait for telemetry to flush
+        echo "Waiting for telemetry flush..."
+        sleep 10
+        # Stop the app
+        kill $APP_PID 2>/dev/null || true
+        echo "Python init container completed"
+        exit 0
+  containers:
+  - name: main-app
+    image: busybox:latest
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+    command: ["sleep", "infinity"]

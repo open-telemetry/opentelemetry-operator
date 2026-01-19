@@ -19,12 +19,12 @@ const (
 	javaInstrMountPath    = "/otel-auto-instrumentation-java"
 )
 
-func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, container *corev1.Container, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
+func injectJavaagentToContainer(javaSpec v1alpha1.Java, container *corev1.Container) error {
 	volume := instrVolume(javaSpec.VolumeClaimTemplate, javaVolumeName, javaSpec.VolumeSizeLimit)
 
 	err := validateContainerEnv(container.Env, envJavaToolsOptions)
 	if err != nil {
-		return pod, err
+		return err
 	}
 
 	// inject Java instrumentation spec env vars.
@@ -37,11 +37,17 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, container *corev1.C
 		Name:      volume.Name,
 		MountPath: containerMountPath,
 	})
+	return nil
+}
+
+func injectJavaagentToPod(javaSpec v1alpha1.Java, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
+	volume := instrVolume(javaSpec.VolumeClaimTemplate, javaVolumeName, javaSpec.VolumeSizeLimit)
 
 	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod, javaInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
-		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
+
+		initContainer := corev1.Container{
 			Name:      javaInitContainerName,
 			Image:     javaSpec.Image,
 			Command:   []string{"cp", "/javaagent.jar", javaInstrMountPath + "/javaagent.jar"},
@@ -51,10 +57,12 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, container *corev1.C
 				MountPath: javaInstrMountPath,
 			}},
 			ImagePullPolicy: instSpec.ImagePullPolicy,
-		})
+		}
+
+		pod.Spec.InitContainers = insertInitContainer(&pod, initContainer, firstContainerName)
 
 		for i, extension := range javaSpec.Extensions {
-			pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
+			extContainer := corev1.Container{
 				Name:      initContainerName + fmt.Sprintf("-extension-%d", i),
 				Image:     extension.Image,
 				Command:   []string{"cp", "-r", extension.Dir + "/.", javaInstrMountPath + "/extensions"},
@@ -63,10 +71,25 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod corev1.Pod, container *corev1.C
 					Name:      volume.Name,
 					MountPath: javaInstrMountPath,
 				}},
-			})
+			}
+			pod.Spec.InitContainers = insertInitContainer(&pod, extContainer, firstContainerName)
 		}
 	}
-	return pod, err
+	return pod
+}
+
+// injectJavaagent injects Java instrumentation into the specified containers.
+// Containers must point into the provided pod and be ordered with init containers first.
+func injectJavaagent(javaSpec v1alpha1.Java, pod *corev1.Pod, containers []*corev1.Container, instSpec v1alpha1.InstrumentationSpec) error {
+	for _, container := range containers {
+		if err := injectJavaagentToContainer(javaSpec, container); err != nil {
+			return err
+		}
+	}
+	if len(containers) > 0 {
+		*pod = injectJavaagentToPod(javaSpec, *pod, containers[0].Name, instSpec)
+	}
+	return nil
 }
 
 func getDefaultJavaEnvVars(container *corev1.Container, javaSpec v1alpha1.Java) []corev1.EnvVar {

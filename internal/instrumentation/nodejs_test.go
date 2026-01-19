@@ -168,15 +168,95 @@ func TestInjectNodeJSSDK(t *testing.T) {
 			},
 			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envNodeOptions),
 		},
+		{
+			name:   "inject into init container",
+			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: "my-init",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-nodejs",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-nodejs",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-nodejs"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-nodejs",
+								MountPath: "/otel-auto-instrumentation-nodejs",
+							}},
+						},
+						{
+							Name: "my-init",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-nodejs",
+									MountPath: "/otel-auto-instrumentation-nodejs",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "NODE_OPTIONS",
+									Value: " --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
 	}
 
 	injector := sdkInjector{}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectNodeJSSDK(test.NodeJS, test.pod, &test.pod.Spec.Containers[0], v1alpha1.InstrumentationSpec{})
-			assert.Equal(t, test.err, err)
-			injector.injectDefaultNodeJSEnvVars(&pod.Spec.Containers[0])
+			pod := test.pod
+
+			// Collect all containers (regular first, then init)
+			var containers []*corev1.Container
+			for i := range pod.Spec.Containers {
+				containers = append(containers, &pod.Spec.Containers[i])
+			}
+			for i := range pod.Spec.InitContainers {
+				containers = append(containers, &pod.Spec.InitContainers[i])
+			}
+
+			err := injectNodeJSSDK(test.NodeJS, &pod, containers, v1alpha1.InstrumentationSpec{})
+			if err != nil {
+				assert.Equal(t, test.expected, pod)
+				assert.Equal(t, test.err, err)
+				return
+			}
+
+			for i := range pod.Spec.Containers {
+				injector.injectDefaultNodeJSEnvVars(&pod.Spec.Containers[i])
+			}
+			for i := range pod.Spec.InitContainers {
+				// Skip the instrumentation init container we added
+				if pod.Spec.InitContainers[i].Name == nodejsInitContainerName {
+					continue
+				}
+				injector.injectDefaultNodeJSEnvVars(&pod.Spec.InitContainers[i])
+			}
 			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.err, err)
 		})
 	}
 }

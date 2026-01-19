@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-java-initcontainer
+  labels:
+    app: my-java-initcontainer
+  annotations:
+    instrumentation.opentelemetry.io/inject-java: "true"
+    instrumentation.opentelemetry.io/container-names: "java-init"
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 3000
+    fsGroup: 3000
+  initContainers:
+  - name: java-init
+    image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+    command: ["/bin/bash", "-c"]
+    # Start app, generate telemetry, wait for flush, then exit
+    args:
+      - |
+        echo "Java init container starting"
+        # Start the Java app in the background
+        java -jar /app-0.0.1-SNAPSHOT.jar &
+        APP_PID=$!
+        # Function to make HTTP request using bash /dev/tcp
+        http_get() {
+          (exec 3<>/dev/tcp/localhost/8080 && \
+           echo -e "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 && \
+           cat <&3 && \
+           exec 3>&-) 2>/dev/null
+        }
+        # Wait for app to be ready
+        echo "Waiting for app to start..."
+        for i in $(seq 1 60); do
+          if http_get | grep -q "HTTP/1.1 200"; then
+            echo "App is ready"
+            break
+          fi
+          sleep 1
+        done
+        # Make requests to generate telemetry
+        echo "Making requests to generate telemetry..."
+        http_get >/dev/null || true
+        http_get >/dev/null || true
+        http_get >/dev/null || true
+        # Wait for telemetry to flush
+        echo "Waiting for telemetry flush..."
+        sleep 10
+        # Stop the app
+        kill $APP_PID 2>/dev/null || true
+        echo "Java init container completed"
+        exit 0
+  containers:
+  - name: main-app
+    image: busybox:latest
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+    command: ["sleep", "infinity"]

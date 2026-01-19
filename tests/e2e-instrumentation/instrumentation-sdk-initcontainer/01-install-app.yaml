@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-sdk-initcontainer
+  labels:
+    app: my-sdk-initcontainer
+  annotations:
+    instrumentation.opentelemetry.io/inject-sdk: "true"
+    instrumentation.opentelemetry.io/container-names: "sdk-init"
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 3000
+    fsGroup: 3000
+  initContainers:
+  - name: sdk-init
+    image: busybox:latest
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+    command: ["/bin/sh", "-c"]
+    # Simple init container that just logs environment and exits
+    args:
+      - |
+        echo "SDK init container starting"
+        echo "OTEL_SERVICE_NAME=$OTEL_SERVICE_NAME"
+        echo "OTEL_EXPORTER_OTLP_ENDPOINT=$OTEL_EXPORTER_OTLP_ENDPOINT"
+        echo "OTEL_PROPAGATORS=$OTEL_PROPAGATORS"
+        echo "SDK init container completed"
+        exit 0
+  containers:
+  - name: main-app
+    image: busybox:latest
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+    command: ["sleep", "infinity"]

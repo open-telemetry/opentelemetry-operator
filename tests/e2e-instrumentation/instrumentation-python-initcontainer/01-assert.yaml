@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: my-python-initcontainer
+spec:
+  initContainers:
+  # The instrumentation init container must come FIRST (before the target init container)
+  - name: opentelemetry-auto-instrumentation-python
+  # The target init container should have the Python agent env vars and volume mounts
+  - name: python-init
+    env:
+    - name: OTEL_NODE_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
+    - name: OTEL_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: OTEL_LOG_LEVEL
+      value: "debug"
+    - name: OTEL_TRACES_EXPORTER
+      value: otlp
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: http://deployment-collector:4318
+    - name: OTEL_PYTHON_DISABLED_INSTRUMENTATIONS
+      value: system_metrics
+    - name: PYTHONPATH
+      value: /otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation:/otel-auto-instrumentation-python
+    - name: OTEL_EXPORTER_OTLP_TIMEOUT
+      value: "20000"
+    - name: OTEL_TRACES_SAMPLER
+      value: always_on
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_METRICS_EXPORTER
+      value: otlp
+    - name: OTEL_LOGS_EXPORTER
+      value: otlp
+    - name: OTEL_SERVICE_NAME
+      value: my-python-initcontainer
+    - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: OTEL_RESOURCE_ATTRIBUTES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: OTEL_PROPAGATORS
+      value: jaeger,b3
+    - name: OTEL_RESOURCE_ATTRIBUTES
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      readOnly: true
+    - mountPath: /otel-auto-instrumentation-python
+      name: opentelemetry-auto-instrumentation-python
+  containers:
+  - name: main-app
+status:
+  initContainerStatuses:
+  - name: opentelemetry-auto-instrumentation-python
+    ready: true
+  - name: python-init
+    ready: true
+  containerStatuses:
+  - name: main-app
+    ready: true
+    started: true
+  phase: Running
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: deployment-collector
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+  replicas: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: deployment-collector
+    app.kubernetes.io/part-of: opentelemetry
+  name: deployment-collector
+spec:
+  ports:
+  - appProtocol: grpc
+    name: otlp-grpc
+    port: 4317
+    protocol: TCP
+    targetPort: 4317
+  - appProtocol: http
+    name: otlp-http
+    port: 4318
+    protocol: TCP
+    targetPort: 4318

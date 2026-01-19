@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-nodejs-initcontainer
+  labels:
+    app: my-nodejs-initcontainer
+  annotations:
+    instrumentation.opentelemetry.io/inject-nodejs: "true"
+    instrumentation.opentelemetry.io/container-names: "nodejs-init"
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 3000
+    fsGroup: 3000
+  initContainers:
+  - name: nodejs-init
+    image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-nodejs:main
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+    env:
+    - name: NODE_PATH
+      value: /usr/local/lib/node_modules
+    command: ["/bin/bash", "-c"]
+    # Start app, generate telemetry, wait for flush, then exit
+    args:
+      - |
+        echo "Node.js init container starting"
+        # Start the Node.js app in the background
+        node /usr/src/app/app.js &
+        APP_PID=$!
+        # Function to make HTTP request using bash /dev/tcp
+        http_get() {
+          (exec 3<>/dev/tcp/localhost/3000 && \
+           echo -e "GET /rolldice HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 && \
+           cat <&3 && \
+           exec 3>&-) 2>/dev/null
+        }
+        # Wait for app to be ready
+        echo "Waiting for app to start..."
+        for i in $(seq 1 60); do
+          if http_get | grep -q "HTTP/1.1 200"; then
+            echo "App is ready"
+            break
+          fi
+          sleep 1
+        done
+        # Make requests to generate telemetry
+        echo "Making requests to generate telemetry..."
+        http_get >/dev/null || true
+        http_get >/dev/null || true
+        http_get >/dev/null || true
+        # Wait for telemetry to flush
+        echo "Waiting for telemetry flush..."
+        sleep 10
+        # Stop the app
+        kill $APP_PID 2>/dev/null || true
+        echo "Node.js init container completed"
+        exit 0
+  containers:
+  - name: main-app
+    image: busybox:latest
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+    command: ["sleep", "infinity"]
