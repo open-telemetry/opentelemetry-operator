@@ -5,12 +5,13 @@ change_type: bug_fix
 component: auto-instrumentation
 
 # A brief description of the change.
-note: "Fix NGINX instrumentation init container creation to avoid copying init-container-incompatible fields."
+note: "Fix NGINX and Apache instrumentation init container creation to avoid copying init-container-incompatible fields."
 
 # One or more tracking issues related to the change
 issues: [3729]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 subtext: |
-  The NGINX instrumentation init container is now created from scratch instead of cloning the main container,
-  preventing probes, lifecycle hooks, and resize policies from being applied to init containers.
+  The NGINX and Apache instrumentation init containers are now created from scratch instead of 
+  cloning the main container, preventing probes, lifecycle hooks, and resize policies from being 
+  applied to init containers.
