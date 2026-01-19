@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 if [[ "$(kubectl api-resources --api-group=operator.openshift.io -o name)" ]]; then
     echo "Running the test against an OpenShift Cluster"
     echo "Creating an Service Account"
