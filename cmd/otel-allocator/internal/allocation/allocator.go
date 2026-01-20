@@ -123,7 +123,29 @@ func (a *allocator) SetTargets(targets []*target.Item) {
 		targets = a.filter.Apply(targets)
 	}
 
-	a.targetsRemaining.Record(context.Background(), int64(len(targets)))
+	// Record remaining targets grouped by job_name and namespace
+	remainingByJobNamespace := make(map[string]map[string]int)
+	for _, t := range targets {
+		namespace := t.Labels.Get("__meta_kubernetes_namespace")
+		if namespace == "" {
+			namespace = "unknown"
+		}
+		if remainingByJobNamespace[t.JobName] == nil {
+			remainingByJobNamespace[t.JobName] = make(map[string]int)
+		}
+		remainingByJobNamespace[t.JobName][namespace]++
+	}
+
+	for jobName, namespaceMap := range remainingByJobNamespace {
+		for namespace, count := range namespaceMap {
+			a.targetsRemaining.Record(context.Background(), int64(count),
+				metric.WithAttributes(
+					attribute.String("job_name", jobName),
+					attribute.String("namespace", namespace),
+				))
+		}
+	}
+
 	concurrency := runtime.NumCPU() * 2 // determined experimentally
 	targetMap := buildTargetMap(targets, concurrency)
 
