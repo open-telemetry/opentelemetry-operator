@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Create a directory to store certificates
 CERT_DIR="/tmp/chainsaw-certs"
@@ -70,4 +70,3 @@ kubectl create configmap chainsaw-certs -n chainsaw-multi-cluster-receive \
   --from-file=server.crt="$CERT_DIR/server.crt" \
   --from-file=server.key="$CERT_DIR/server.key" \
   --from-file=ca.crt="$CERT_DIR/ca.crt"
-

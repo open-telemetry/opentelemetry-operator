@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Create the directory to store must-gather
 MUST_GATHER_DIR=/tmp/otlp-metrics-traces
