@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Get the HTTP and GRPC routes from OpenTelemetry receiver collector.
 otlp_route_http=$(oc -n chainsaw-multi-cluster-receive get route otlp-http-otlp-receiver-route -o json | jq '.spec.host' -r)
@@ -16,7 +16,7 @@ spec:
   serviceAccount: chainsaw-multi-cluster
   volumes:
     - name: chainsaw-certs
-      configMap: 
+      configMap:
         name: chainsaw-certs
   volumeMounts:
     - name: chainsaw-certs
@@ -50,7 +50,7 @@ spec:
           ca_file: /certs/ca.crt
     service:
       pipelines:
-        traces:    
+        traces:
           receivers: [otlp]
           processors: [memory_limiter, batch]
           exporters: [otlphttp, otlp]
