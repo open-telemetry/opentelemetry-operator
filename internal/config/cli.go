@@ -32,6 +32,7 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.Bool("enable-dotnet-instrumentation", cfg.EnableDotNetAutoInstrumentation, "Controls whether the operator supports dotnet auto-instrumentation")
 	f.Bool("enable-go-instrumentation", cfg.EnableGoAutoInstrumentation, "Controls whether the operator supports Go auto-instrumentation")
 	f.Bool("enable-python-instrumentation", cfg.EnablePythonAutoInstrumentation, "Controls whether the operator supports python auto-instrumentation")
+	f.Bool("enable-ruby-instrumentation", cfg.EnableRubyAutoInstrumentation, "Controls whether the operator supports ruby auto-instrumentation")
 	f.Bool("enable-nginx-instrumentation", cfg.EnableNginxAutoInstrumentation, "Controls whether the operator supports nginx auto-instrumentation")
 	f.Bool("enable-nodejs-instrumentation", cfg.EnableNodeJSAutoInstrumentation, "Controls whether the operator supports nodejs auto-instrumentation")
 	f.Bool("enable-java-instrumentation", cfg.EnableJavaAutoInstrumentation, "Controls whether the operator supports java auto-instrumentation")
@@ -44,6 +45,7 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.String("auto-instrumentation-java-image", cfg.AutoInstrumentationJavaImage, "The default OpenTelemetry Java instrumentation image. This image is used when no image is specified in the CustomResource.")
 	f.String("auto-instrumentation-nodejs-image", cfg.AutoInstrumentationNodeJSImage, "The default OpenTelemetry NodeJS instrumentation image. This image is used when no image is specified in the CustomResource.")
 	f.String("auto-instrumentation-python-image", cfg.AutoInstrumentationPythonImage, "The default OpenTelemetry Python instrumentation image. This image is used when no image is specified in the CustomResource.")
+	f.String("auto-instrumentation-ruby-image", cfg.AutoInstrumentationRubyImage, "The default OpenTelemetry Ruby instrumentation image. This image is used when no image is specified in the CustomResource.")
 	f.String("auto-instrumentation-dotnet-image", cfg.AutoInstrumentationDotNetImage, "The default OpenTelemetry DotNet instrumentation image. This image is used when no image is specified in the CustomResource.")
 	f.String("auto-instrumentation-go-image", cfg.AutoInstrumentationGoImage, "The default OpenTelemetry Go instrumentation image. This image is used when no image is specified in the CustomResource.")
 	f.String("auto-instrumentation-apache-httpd-image", cfg.AutoInstrumentationApacheHttpdImage, "The default OpenTelemetry Apache HTTPD instrumentation image. This image is used when no image is specified in the CustomResource.")
@@ -84,6 +86,8 @@ func ApplyCLI(cfg *Config) error {
 				cfg.EnableGoAutoInstrumentation, _ = f.GetBool("enable-go-instrumentation")
 			case "enable-python-instrumentation":
 				cfg.EnablePythonAutoInstrumentation, _ = f.GetBool("enable-python-instrumentation")
+			case "enable-ruby-instrumentation":
+				cfg.EnableRubyAutoInstrumentation, _ = f.GetBool("enable-ruby-instrumentation")
 			case "enable-nginx-instrumentation":
 				cfg.EnableNginxAutoInstrumentation, _ = f.GetBool("enable-nginx-instrumentation")
 			case "enable-nodejs-instrumentation":
@@ -104,6 +108,8 @@ func ApplyCLI(cfg *Config) error {
 				cfg.AutoInstrumentationNodeJSImage, _ = f.GetString("auto-instrumentation-nodejs-image")
 			case "auto-instrumentation-python-image":
 				cfg.AutoInstrumentationPythonImage, _ = f.GetString("auto-instrumentation-python-image")
+			case "auto-instrumentation-ruby-image":
+				cfg.AutoInstrumentationRubyImage, _ = f.GetString("auto-instrumentation-ruby-image")
 			case "auto-instrumentation-dotnet-image":
 				cfg.AutoInstrumentationDotNetImage, _ = f.GetString("auto-instrumentation-dotnet-image")
 			case "auto-instrumentation-go-image":
