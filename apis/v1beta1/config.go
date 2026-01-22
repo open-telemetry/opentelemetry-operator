@@ -6,17 +6,14 @@ package v1beta1
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"reflect"
-	"regexp"
+	"math"
 	"sort"
-	"strconv"
-	"strings"
 
 	"dario.cat/mergo"
 	"github.com/go-logr/logr"
-	"gopkg.in/yaml.v3"
+	go_yaml "github.com/goccy/go-yaml"
+	otelConfig "go.opentelemetry.io/contrib/otelconf/v0.3.0"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
@@ -38,6 +35,13 @@ const (
 
 func (c ComponentKind) String() string {
 	return [...]string{"receiver", "exporter", "processor", "extension"}[c]
+}
+
+// EventInfo represents an event to be recorded.
+type EventInfo struct {
+	Type    string
+	Reason  string
+	Message string
 }
 
 // AnyConfig represent parts of the config.
@@ -164,6 +168,14 @@ func (c *Config) getRbacRulesForComponentKinds(logger logr.Logger, componentKind
 				cfg = *c.Processors
 			}
 		case KindExtension:
+			retriever = extensions.ParserFor
+			if c.Extensions == nil {
+				cfg = AnyConfig{}
+			} else {
+				cfg = *c.Extensions
+			}
+		default:
+			logger.V(1).Info("unknown component kind", "kind", componentKind)
 			continue
 		}
 		for componentName := range enabledComponents[componentKind] {
@@ -258,9 +270,11 @@ func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, co
 }
 
 // applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
-func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) error {
-	if err := c.Service.ApplyDefaults(logger); err != nil {
-		return err
+// Returns a list of events that should be recorded by the caller.
+func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]EventInfo, error) {
+	events, err := c.Service.ApplyDefaults(logger)
+	if err != nil {
+		return events, err
 	}
 	enabledComponents := c.GetEnabledComponents()
 	for _, componentKind := range componentKinds {
@@ -275,14 +289,18 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 		case KindProcessor:
 			continue
 		case KindExtension:
-			continue
+			if c.Extensions == nil {
+				continue
+			}
+			retriever = extensions.ParserFor
+			cfg = *c.Extensions
 		}
 		for componentName := range enabledComponents[componentKind] {
 			parser := retriever(componentName)
 			componentConf := cfg.Object[componentName]
 			newCfg, err := parser.GetDefaultConfig(logger, componentConf)
 			if err != nil {
-				return err
+				return events, err
 			}
 
 			// We need to ensure we don't remove any fields in defaulting.
@@ -299,13 +317,13 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 				componentConf = map[string]interface{}{}
 			}
 			if err := mergo.Merge(&mappedCfg, componentConf); err != nil {
-				return err
+				return events, err
 			}
 			cfg.Object[componentName] = mappedCfg
 		}
 	}
 
-	return nil
+	return events, nil
 }
 
 func (c *Config) GetReceiverPorts(logger logr.Logger) ([]corev1.ServicePort, error) {
@@ -333,16 +351,20 @@ func (c *Config) GetEnvironmentVariables(logger logr.Logger) ([]corev1.EnvVar, e
 }
 
 func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error) {
-	return c.getRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor)
+	return c.getRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor, KindExtension)
 }
 
-func (c *Config) ApplyDefaults(logger logr.Logger) error {
-	return c.applyDefaultForComponentKinds(logger, KindReceiver)
+func (c *Config) ApplyDefaults(logger logr.Logger) ([]EventInfo, error) {
+	return c.applyDefaultForComponentKinds(logger, KindReceiver, KindExtension)
 }
 
 // GetLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled
 // that provides the hinting for the liveness probe.
 func (c *Config) GetLivenessProbe(logger logr.Logger) (*corev1.Probe, error) {
+	if c.Extensions == nil {
+		return nil, nil
+	}
+
 	enabledComponents := c.GetEnabledComponents()
 	for componentName := range enabledComponents[KindExtension] {
 		// TODO: Clean up the naming here and make it simpler to use a retriever.
@@ -359,6 +381,10 @@ func (c *Config) GetLivenessProbe(logger logr.Logger) (*corev1.Probe, error) {
 // GetReadinessProbe gets the first enabled readiness probe. There should only ever be one extension enabled
 // that provides the hinting for the readiness probe.
 func (c *Config) GetReadinessProbe(logger logr.Logger) (*corev1.Probe, error) {
+	if c.Extensions == nil {
+		return nil, nil
+	}
+
 	enabledComponents := c.GetEnabledComponents()
 	for componentName := range enabledComponents[KindExtension] {
 		// TODO: Clean up the naming here and make it simpler to use a retriever.
@@ -372,11 +398,30 @@ func (c *Config) GetReadinessProbe(logger logr.Logger) (*corev1.Probe, error) {
 	return nil, nil
 }
 
+// GetStartupProbe gets the first enabled startup probe. There should only ever be one extension enabled
+// that provides the hinting for the startup probe.
+func (c *Config) GetStartupProbe(logger logr.Logger) (*corev1.Probe, error) {
+	if c.Extensions == nil {
+		return nil, nil
+	}
+
+	enabledComponents := c.GetEnabledComponents()
+	for componentName := range enabledComponents[KindExtension] {
+		// TODO: Clean up the naming here and make it simpler to use a retriever.
+		parser := extensions.ParserFor(componentName)
+		if probe, err := parser.GetStartupProbe(logger, c.Extensions.Object[componentName]); err != nil {
+			return nil, err
+		} else if probe != nil {
+			return probe, nil
+		}
+	}
+	return nil, nil
+}
+
 // Yaml encodes the current object and returns it as a string.
 func (c *Config) Yaml() (string, error) {
 	var buf bytes.Buffer
-	yamlEncoder := yaml.NewEncoder(&buf)
-	yamlEncoder.SetIndent(2)
+	yamlEncoder := go_yaml.NewEncoder(&buf, go_yaml.IndentSequence(true), go_yaml.AutoInt())
 	if err := yamlEncoder.Encode(&c); err != nil {
 		return "", err
 	}
@@ -386,24 +431,24 @@ func (c *Config) Yaml() (string, error) {
 // Returns null objects in the config.
 func (c *Config) nullObjects() []string {
 	var nullKeys []string
-	if nulls := hasNullValue(c.Receivers.Object); len(nulls) > 0 {
+	if nulls := getNullValuedKeys(c.Receivers.Object); len(nulls) > 0 {
 		nullKeys = append(nullKeys, addPrefix("receivers.", nulls)...)
 	}
-	if nulls := hasNullValue(c.Exporters.Object); len(nulls) > 0 {
+	if nulls := getNullValuedKeys(c.Exporters.Object); len(nulls) > 0 {
 		nullKeys = append(nullKeys, addPrefix("exporters.", nulls)...)
 	}
 	if c.Processors != nil {
-		if nulls := hasNullValue(c.Processors.Object); len(nulls) > 0 {
+		if nulls := getNullValuedKeys(c.Processors.Object); len(nulls) > 0 {
 			nullKeys = append(nullKeys, addPrefix("processors.", nulls)...)
 		}
 	}
 	if c.Extensions != nil {
-		if nulls := hasNullValue(c.Extensions.Object); len(nulls) > 0 {
+		if nulls := getNullValuedKeys(c.Extensions.Object); len(nulls) > 0 {
 			nullKeys = append(nullKeys, addPrefix("extensions.", nulls)...)
 		}
 	}
 	if c.Connectors != nil {
-		if nulls := hasNullValue(c.Connectors.Object); len(nulls) > 0 {
+		if nulls := getNullValuedKeys(c.Connectors.Object); len(nulls) > 0 {
 			nullKeys = append(nullKeys, addPrefix("connectors.", nulls)...)
 		}
 	}
@@ -432,66 +477,93 @@ const (
 // In cases which the port itself is a variable, i.e. "${env:POD_IP}:${env:PORT}", this returns an error. This happens
 // because the port is used to generate Service objects and mappings.
 func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
-	telemetry := s.GetTelemetry()
-	if telemetry == nil || telemetry.Metrics.Address == "" {
+	telemetry := s.GetTelemetry(logger)
+	if telemetry == nil {
 		return defaultServiceHost, defaultServicePort, nil
 	}
 
-	// The regex below matches on strings that end with a colon followed by the environment variable expansion syntax.
-	// So it should match on strings ending with: ":${env:POD_IP}" or ":${POD_IP}".
-	const portEnvVarRegex = `:\${[env:]?.*}$`
-	isPortEnvVar := regexp.MustCompile(portEnvVarRegex).MatchString(telemetry.Metrics.Address)
-	if isPortEnvVar {
-		errMsg := fmt.Sprintf("couldn't determine metrics port from configuration: %s",
-			telemetry.Metrics.Address)
-		logger.Info(errMsg)
-		return "", 0, errors.New(errMsg)
+	if telemetry.Metrics.Address != "" && len(telemetry.Metrics.Readers) == 0 {
+		host, port, err := parseAddressEndpoint(telemetry.Metrics.Address)
+		if err != nil {
+			return "", 0, err
+		}
+
+		return host, port, nil
 	}
 
-	// The regex below matches on strings that end with a colon followed by 1 or more numbers (representing the port).
-	const explicitPortRegex = `:(\d+$)`
-	explicitPortMatches := regexp.MustCompile(explicitPortRegex).FindStringSubmatch(telemetry.Metrics.Address)
-	if len(explicitPortMatches) <= 1 {
-		return telemetry.Metrics.Address, defaultServicePort, nil
+	for _, r := range telemetry.Metrics.Readers {
+		if r.Pull == nil {
+			continue
+		}
+		prom := r.Pull.Exporter.Prometheus
+		if prom == nil {
+			continue
+		}
+		host := defaultServiceHost
+		if prom.Host != nil && *prom.Host != "" {
+			host = *prom.Host
+		}
+		port := defaultServicePort
+		if prom.Port != nil && *prom.Port != 0 {
+			if *prom.Port < 0 || *prom.Port > math.MaxUint16 {
+				return "", 0, fmt.Errorf("invalid prometheus metrics port: %d", *prom.Port)
+			}
+			port = int32(*prom.Port)
+		}
+		return host, port, nil
 	}
 
-	port, err := strconv.ParseInt(explicitPortMatches[1], 10, 32)
-	if err != nil {
-		errMsg := fmt.Sprintf("couldn't determine metrics port from configuration: %s",
-			telemetry.Metrics.Address)
-		logger.Info(errMsg, "error", err)
-		return "", 0, err
-	}
-
-	host, _, _ := strings.Cut(telemetry.Metrics.Address, explicitPortMatches[0])
-	return host, int32(port), nil
+	return defaultServiceHost, defaultServicePort, nil
 }
 
 // ApplyDefaults inserts configuration defaults if it has not been set.
-func (s *Service) ApplyDefaults(logger logr.Logger) error {
-	telemetryAddr, telemetryPort, err := s.MetricsEndpoint(logger)
+// Returns a list of events that should be recorded by the caller.
+func (s *Service) ApplyDefaults(logger logr.Logger) ([]EventInfo, error) {
+	var events []EventInfo
+	tel := s.GetTelemetry(logger)
+
+	if tel == nil {
+		logger.V(2).Info("no telemetry configuration parsed, creating default")
+		tel = &Telemetry{}
+		s.Telemetry = &AnyConfig{
+			Object: map[string]interface{}{},
+		}
+	}
+
+	if tel.Metrics.Address != "" || len(tel.Metrics.Readers) != 0 {
+		// The user already set the address or the readers, so we don't need to do anything
+		logger.V(1).Info("telemetry configuration already provided by user, skipping defaults",
+			"metricsAddress", tel.Metrics.Address,
+			"readersCount", len(tel.Metrics.Readers))
+		return events, nil
+	}
+
+	logger.V(2).Info("no telemetry readers configuration found, applying default Prometheus endpoint")
+
+	host, port, err := s.MetricsEndpoint(logger)
 	if err != nil {
-		return err
+		logger.Error(err, "failed to determine metrics endpoint for default configuration")
+		return events, err
 	}
 
-	tm := &AnyConfig{
-		Object: map[string]interface{}{
-			"metrics": map[string]interface{}{
-				"address": fmt.Sprintf("%s:%d", telemetryAddr, telemetryPort),
-			},
-		},
+	reader := AddPrometheusMetricsEndpoint(host, port)
+	tel.Metrics.Readers = append(tel.Metrics.Readers, reader)
+
+	events = append(events, EventInfo{
+		Type:    corev1.EventTypeNormal,
+		Reason:  "Spec.Service.Telemetry.DefaultsApplied",
+		Message: fmt.Sprintf("Applied default Prometheus telemetry configuration (host: %s, port: %d)", host, port),
+	})
+
+	telConfig, err := tel.ToAnyConfig()
+	if err != nil {
+		return events, err
 	}
 
-	if s.Telemetry == nil {
-		s.Telemetry = tm
-		return nil
+	if err := mergo.Merge(&s.Telemetry.Object, telConfig.Object); err != nil {
+		return events, err
 	}
-	// NOTE: Merge without overwrite. If a telemetry endpoint is specified, the defaulting
-	// respects the configuration and returns an equal value.
-	if err := mergo.Merge(s.Telemetry, tm); err != nil {
-		return fmt.Errorf("telemetry config merge failed: %w", err)
-	}
-	return nil
+	return events, nil
 }
 
 // MetricsConfig comes from the collector.
@@ -505,6 +577,23 @@ type MetricsConfig struct {
 
 	// Address is the [address]:port that metrics exposition should be bound to.
 	Address string `json:"address,omitempty" yaml:"address,omitempty"`
+
+	otelConfig.MeterProvider `mapstructure:",squash"`
+}
+
+func (in *MetricsConfig) DeepCopyInto(out *MetricsConfig) {
+	*out = *in
+	out.MeterProvider = in.MeterProvider
+}
+
+// DeepCopy creates a new deepcopy of MetricsConfig.
+func (in *MetricsConfig) DeepCopy() *MetricsConfig {
+	if in == nil {
+		return nil
+	}
+	out := new(MetricsConfig)
+	in.DeepCopyInto(out)
+	return out
 }
 
 // Telemetry is an intermediary type that allows for easy access to the collector's telemetry settings.
@@ -518,50 +607,66 @@ type Telemetry struct {
 	Resource map[string]*string `json:"resource,omitempty" yaml:"resource,omitempty"`
 }
 
+// ToAnyConfig converts the Telemetry struct to an AnyConfig struct.
+func (t *Telemetry) ToAnyConfig() (*AnyConfig, error) {
+	data, err := json.Marshal(t)
+	if err != nil {
+		return nil, err
+	}
+	var result map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+
+	normalizeConfig(result)
+
+	return &AnyConfig{
+		Object: result,
+	}, nil
+}
+
+func AddPrometheusMetricsEndpoint(host string, port int32) otelConfig.MetricReader {
+	portInt := int(port)
+	return otelConfig.MetricReader{
+		Pull: &otelConfig.PullMetricReader{
+			Exporter: otelConfig.PullMetricExporter{
+				Prometheus: &otelConfig.Prometheus{
+					Host: &host,
+					Port: &portInt,
+				},
+			},
+		},
+	}
+}
+
 // GetTelemetry serves as a helper function to access the fields we care about in the underlying telemetry struct.
 // This exists to avoid needing to worry extra fields in the telemetry struct.
-func (s *Service) GetTelemetry() *Telemetry {
+func (s *Service) GetTelemetry(logger logr.Logger) *Telemetry {
 	if s.Telemetry == nil {
+		logger.V(2).Info("no spec.service.telemetry configuration found")
 		return nil
 	}
+
 	// Convert map to JSON bytes
 	jsonData, err := json.Marshal(s.Telemetry)
 	if err != nil {
+		logger.Error(err, "failed to marshal telemetry configuration to JSON", "telemetry", s.Telemetry.Object)
 		return nil
 	}
+
+	logger.V(2).Info("marshaled telemetry configuration", "json", string(jsonData))
+
 	t := &Telemetry{}
 	// Unmarshal JSON into the provided struct
 	if err := json.Unmarshal(jsonData, t); err != nil {
+		logger.Error(err, "failed to unmarshal telemetry configuration, this may indicate invalid configuration", "json", string(jsonData), "originalConfig", s.Telemetry.Object)
 		return nil
 	}
+
+	logger.V(2).Info("successfully parsed telemetry configuration",
+		"metricsLevel", t.Metrics.Level,
+		"metricsAddress", t.Metrics.Address,
+		"readersCount", len(t.Metrics.Readers))
+
 	return t
-}
-
-func hasNullValue(cfg map[string]interface{}) []string {
-	var nullKeys []string
-	for k, v := range cfg {
-		if v == nil {
-			nullKeys = append(nullKeys, fmt.Sprintf("%s:", k))
-		}
-		if reflect.ValueOf(v).Kind() == reflect.Map {
-			var nulls []string
-			val, ok := v.(map[string]interface{})
-			if ok {
-				nulls = hasNullValue(val)
-			}
-			if len(nulls) > 0 {
-				prefixed := addPrefix(k+".", nulls)
-				nullKeys = append(nullKeys, prefixed...)
-			}
-		}
-	}
-	return nullKeys
-}
-
-func addPrefix(prefix string, arr []string) []string {
-	var prefixed []string
-	for _, v := range arr {
-		prefixed = append(prefixed, fmt.Sprintf("%s%s", prefix, v))
-	}
-	return prefixed
 }

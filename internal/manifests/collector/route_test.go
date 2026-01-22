@@ -24,7 +24,7 @@ func TestDesiredRoutes(t *testing.T) {
 	t.Run("should return nil invalid ingress type", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
-			Log:    logger,
+			Log:    testLogger,
 			OtelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Ingress: v1beta1.Ingress{
@@ -42,7 +42,7 @@ func TestDesiredRoutes(t *testing.T) {
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
-			Log:    logger,
+			Log:    testLogger,
 			OtelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: v1beta1.Config{},
@@ -67,7 +67,7 @@ func TestDesiredRoutes(t *testing.T) {
 			hostname = "example.com"
 		)
 
-		params, err := newParams("something:tag", testFileIngress)
+		params, err := newParams("something:tag", testFileIngress, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -117,7 +117,7 @@ func TestDesiredRoutes(t *testing.T) {
 		}, got)
 	})
 	t.Run("hostname is set", func(t *testing.T) {
-		params, err := newParams("something:tag", testFileIngress)
+		params, err := newParams("something:tag", testFileIngress, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -139,7 +139,7 @@ func TestDesiredRoutes(t *testing.T) {
 		assert.Equal(t, "otlp-test-grpc.example.com", routes[2].Spec.Host)
 	})
 	t.Run("hostname is not set", func(t *testing.T) {
-		params, err := newParams("something:tag", testFileIngress)
+		params, err := newParams("something:tag", testFileIngress, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

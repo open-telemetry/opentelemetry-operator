@@ -1,20 +1,24 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
-  name: sidecar
+  name: deployment
 spec:
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
-    processors:
+          grpc: {}
+          http: {}
+    
+    processors: {}
+
     exporters:
       debug:
+        verbosity: detailed
+
     service:
       pipelines:
         traces:
           receivers: [otlp]
           exporters: [debug]
-  mode: sidecar
+  mode: deployment

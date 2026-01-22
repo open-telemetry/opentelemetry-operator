@@ -1,0 +1,13 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-scrape-config-v1beta1
+status:
+  succeeded: 1
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-jobs-scrape-configs-v1beta1
+status:
+  succeeded: 1

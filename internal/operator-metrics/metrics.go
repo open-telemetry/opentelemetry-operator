@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -128,7 +129,9 @@ func (om operatorMetrics) createOperatorMetricsServiceMonitor(ctx context.Contex
 		serviceName := fmt.Sprintf("opentelemetry-operator-controller-manager-metrics-service.%s.svc", namespace)
 
 		tlsConfig = &monitoringv1.TLSConfig{
-			CAFile: prometheusCAFile,
+			TLSFilesConfig: monitoringv1.TLSFilesConfig{
+				CAFile: prometheusCAFile,
+			},
 			SafeTLSConfig: monitoringv1.SafeTLSConfig{
 				ServerName: &serviceName,
 			},
@@ -137,7 +140,7 @@ func (om operatorMetrics) createOperatorMetricsServiceMonitor(ctx context.Contex
 		t := true
 		tlsConfig = &monitoringv1.TLSConfig{
 			SafeTLSConfig: monitoringv1.SafeTLSConfig{
-				// kube-rbac-proxy uses a self-signed cert by default
+				// metrics server uses auto-generated self-signed cert when no certificate is provided
 				InsecureSkipVerify: &t,
 			},
 		}
@@ -165,10 +168,14 @@ func (om operatorMetrics) createOperatorMetricsServiceMonitor(ctx context.Contex
 					BearerTokenFile: bearerTokenFile,
 					Interval:        "30s",
 					Path:            "/metrics",
-					Scheme:          "https",
+					Scheme:          ptr.To(monitoringv1.Scheme("https")),
 					ScrapeTimeout:   "10s",
 					TargetPort:      &intstr.IntOrString{IntVal: 8443},
-					TLSConfig:       tlsConfig,
+					HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
+						HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
+							TLSConfig: tlsConfig,
+						},
+					},
 				},
 			},
 		},

@@ -17,7 +17,7 @@ import (
 )
 
 func Routes(params manifests.Params) ([]*routev1.Route, error) {
-	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeRoute || params.Config.OpenShiftRoutesAvailability() != openshift.RoutesAvailable {
+	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeRoute || params.Config.OpenShiftRoutesAvailability != openshift.RoutesAvailable {
 		return nil, nil
 	}
 
@@ -42,7 +42,7 @@ func Routes(params manifests.Params) ([]*routev1.Route, error) {
 
 	ports, err := servicePortsFromCfg(params.Log, params.OtelCol)
 
-	// if we have no ports, we don't need a ingress entry
+	// if we have no ports, we don't need an ingress entry
 	if len(ports) == 0 || err != nil {
 		params.Log.V(1).Info(
 			"the instance's configuration didn't yield any ports to open, skipping ingress",

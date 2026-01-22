@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [[ "$(kubectl api-resources --api-group=operator.openshift.io -o name)" ]]; then
     kubectl apply -f scc.yaml

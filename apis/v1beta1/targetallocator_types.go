@@ -12,6 +12,12 @@ type TargetAllocatorPrometheusCR struct {
 	// Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
+	// AllowNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (allow list). This is mutually exclusive with DenyNamespaces.
+	// +optional
+	AllowNamespaces []string `json:"allowNamespaces,omitempty"`
+	// DenyNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (deny list). This is mutually exclusive with AllowNamespaces.
+	// +optional
+	DenyNamespaces []string `json:"denyNamespaces,omitempty"`
 	// Default interval between consecutive scrapes. Intervals set in ServiceMonitors and PodMonitors override it.
 	//Equivalent to the same setting on the Prometheus CR.
 	//
@@ -19,6 +25,12 @@ type TargetAllocatorPrometheusCR struct {
 	// +kubebuilder:default:="30s"
 	// +kubebuilder:validation:Format:=duration
 	ScrapeInterval *metav1.Duration `json:"scrapeInterval,omitempty"`
+	// ScrapeClasses to be referenced by PodMonitors and ServiceMonitors to include common configuration.
+	// If specified, expects an array of ScrapeClass objects as specified by https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ScrapeClass.
+	// +optional
+	// +listType=atomic
+	// +kubebuilder:pruning:PreserveUnknownFields
+	ScrapeClasses []AnyConfig `json:"scrapeClasses,omitempty"`
 	// PodMonitors to be selected for target discovery.
 	// A label selector is a label query over a set of resources. The result of matchLabels and
 	// matchExpressions are ANDed. An empty label selector matches all objects. A null

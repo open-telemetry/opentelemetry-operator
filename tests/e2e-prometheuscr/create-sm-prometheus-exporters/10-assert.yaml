@@ -1,0 +1,55 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: create-sm-prometheus.override-labels
+    app.kubernetes.io/managed-by: custom-operator
+    app.kubernetes.io/name: override-labels-monitoring-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    custom.label: value
+    team: platform
+  name: override-labels-monitoring-collector
+  namespace: create-sm-prometheus
+spec:
+  endpoints:
+  - port: monitoring
+  namespaceSelector:
+    matchNames:
+    - create-sm-prometheus
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/instance: create-sm-prometheus.override-labels
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+      operator.opentelemetry.io/collector-service-type: monitoring
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: create-sm-prometheus.override-labels
+    app.kubernetes.io/managed-by: custom-operator
+    app.kubernetes.io/name: override-labels-collector
+    app.kubernetes.io/part-of: opentelemetry
+    app.kubernetes.io/version: latest
+    custom.label: value
+    team: platform
+  name: override-labels-collector
+  namespace: create-sm-prometheus
+spec:
+  endpoints:
+  - port: prometheus-main
+  namespaceSelector:
+    matchNames:
+    - create-sm-prometheus
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/instance: create-sm-prometheus.override-labels
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+      operator.opentelemetry.io/collector-service-type: base

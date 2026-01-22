@@ -4,27 +4,14 @@ metadata:
   name: dotnet
 spec:
   env:
-    - name: OTEL_TRACES_EXPORTER
-      value: otlp
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4317
-    - name: OTEL_EXPORTER_OTLP_TIMEOUT
-      value: "20"
     - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
-    - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
-      value: "true"
+      value: always_on
   exporter:
-    endpoint: http://localhost:4317
+    endpoint: http://deployment-collector:4318
   propagators:
-    - jaeger
     - b3multi
-  sampler:
-    type: parentbased_traceidratio
-    argument: "0.25"
   dotnet:
     env:
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
+      # Make the test faster by exporting metrics sooner
+      - name: OTEL_METRIC_EXPORT_INTERVAL
+        value: "30000"

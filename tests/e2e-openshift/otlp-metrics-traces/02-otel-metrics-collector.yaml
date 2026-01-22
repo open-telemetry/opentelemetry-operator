@@ -19,7 +19,7 @@ spec:
     processors: {}
     exporters:
       otlp:
-        endpoint: jaeger-allinone-collector-headless.chainsaw-otlp-metrics.svc:4317
+        endpoint: tempo-otlpmetrics.chainsaw-otlp-metrics.svc:4317
         tls:
           insecure: true
       prometheus:

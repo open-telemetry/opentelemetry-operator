@@ -32,35 +32,33 @@ func TestAllocationPerNode(t *testing.T) {
 
 	cols := MakeNCollectors(4, 0)
 	s.SetCollectors(cols)
-	firstLabels := labels.Labels{
-		{Name: "test", Value: "test1"},
-		{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
-	}
-	secondLabels := labels.Labels{
-		{Name: "test", Value: "test2"},
-		{Name: "__meta_kubernetes_node_name", Value: "node-1"},
-	}
+	firstLabels := labels.New(
+		labels.Label{Name: "test", Value: "test1"},
+		labels.Label{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
+	)
+	secondLabels := labels.New(
+		labels.Label{Name: "test", Value: "test2"},
+		labels.Label{Name: "__meta_kubernetes_node_name", Value: "node-1"},
+	)
 	// no label, should be skipped
-	thirdLabels := labels.Labels{
-		{Name: "test", Value: "test3"},
-	}
+	thirdLabels := labels.New(labels.Label{Name: "test", Value: "test3"})
 	// endpointslice target kind and name
-	fourthLabels := labels.Labels{
-		{Name: "test", Value: "test4"},
-		{Name: "__meta_kubernetes_endpointslice_address_target_kind", Value: "Node"},
-		{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-3"},
-	}
+	fourthLabels := labels.New(
+		labels.Label{Name: "test", Value: "test4"},
+		labels.Label{Name: "__meta_kubernetes_endpointslice_address_target_kind", Value: "Node"},
+		labels.Label{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-3"},
+	)
 
 	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
 	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
 	thirdTarget := target.NewItem("sample-name", "0.0.0.0:8000", thirdLabels, "")
 	fourthTarget := target.NewItem("sample-name", "0.0.0.0:8000", fourthLabels, "")
 
-	targetList := map[string]*target.Item{
-		firstTarget.Hash():  firstTarget,
-		secondTarget.Hash(): secondTarget,
-		thirdTarget.Hash():  thirdTarget,
-		fourthTarget.Hash(): fourthTarget,
+	targetList := []*target.Item{
+		firstTarget,
+		secondTarget,
+		thirdTarget,
+		fourthTarget,
 	}
 
 	// test that targets and collectors are added properly
@@ -74,8 +72,8 @@ func TestAllocationPerNode(t *testing.T) {
 	assert.Len(t, actualItems, expectedTargetLen)
 
 	// verify allocation to nodes
-	for targetHash, item := range targetList {
-		actualItem, found := actualItems[targetHash]
+	for _, item := range targetList {
+		actualItem, found := actualItems[item.Hash()]
 		// if third target, should be skipped
 		assert.True(t, found, "target with hash %s not found", item.Hash())
 
@@ -83,7 +81,7 @@ func TestAllocationPerNode(t *testing.T) {
 		itemsForCollector := s.GetTargetsForCollectorAndJob(actualItem.CollectorName, actualItem.JobName)
 
 		// first two should be assigned one to each collector; if third target, should not be assigned
-		if targetHash == thirdTarget.Hash() {
+		if item.Hash() == thirdTarget.Hash() {
 			assert.Len(t, itemsForCollector, 0)
 			continue
 		}
@@ -99,35 +97,33 @@ func TestAllocationPerNodeUsingFallback(t *testing.T) {
 
 	cols := MakeNCollectors(4, 0)
 	s.SetCollectors(cols)
-	firstLabels := labels.Labels{
-		{Name: "test", Value: "test1"},
-		{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
-	}
-	secondLabels := labels.Labels{
-		{Name: "test", Value: "test2"},
-		{Name: "__meta_kubernetes_node_name", Value: "node-1"},
-	}
+	firstLabels := labels.New(
+		labels.Label{Name: "test", Value: "test1"},
+		labels.Label{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
+	)
+	secondLabels := labels.New(
+		labels.Label{Name: "test", Value: "test2"},
+		labels.Label{Name: "__meta_kubernetes_node_name", Value: "node-1"},
+	)
 	// no label, should be allocated by the fallback strategy
-	thirdLabels := labels.Labels{
-		{Name: "test", Value: "test3"},
-	}
+	thirdLabels := labels.New(labels.Label{Name: "test", Value: "test3"})
 	// endpointslice target kind and name
-	fourthLabels := labels.Labels{
-		{Name: "test", Value: "test4"},
-		{Name: "__meta_kubernetes_endpointslice_address_target_kind", Value: "Node"},
-		{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-3"},
-	}
+	fourthLabels := labels.New(
+		labels.Label{Name: "test", Value: "test4"},
+		labels.Label{Name: "__meta_kubernetes_endpointslice_address_target_kind", Value: "Node"},
+		labels.Label{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-3"},
+	)
 
 	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
 	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
 	thirdTarget := target.NewItem("sample-name", "0.0.0.0:8000", thirdLabels, "")
 	fourthTarget := target.NewItem("sample-name", "0.0.0.0:8000", fourthLabels, "")
 
-	targetList := map[string]*target.Item{
-		firstTarget.Hash():  firstTarget,
-		secondTarget.Hash(): secondTarget,
-		thirdTarget.Hash():  thirdTarget,
-		fourthTarget.Hash(): fourthTarget,
+	targetList := []*target.Item{
+		firstTarget,
+		secondTarget,
+		thirdTarget,
+		fourthTarget,
 	}
 
 	// test that targets and collectors are added properly
@@ -141,8 +137,8 @@ func TestAllocationPerNodeUsingFallback(t *testing.T) {
 	assert.Len(t, actualItems, expectedTargetLen)
 
 	// verify allocation to nodes
-	for targetHash, item := range targetList {
-		actualItem, found := actualItems[targetHash]
+	for _, item := range targetList {
+		actualItem, found := actualItems[item.Hash()]
 
 		assert.True(t, found, "target with hash %s not found", item.Hash())
 
@@ -151,7 +147,7 @@ func TestAllocationPerNodeUsingFallback(t *testing.T) {
 		// first two should be assigned one to each collector; if third target, it should be assigned
 		// according to the fallback strategy which may assign it to the otherwise empty collector or
 		// one of the others, depending on the strategy and collector loop order
-		if targetHash == thirdTarget.Hash() {
+		if item.Hash() == thirdTarget.Hash() {
 			assert.Empty(t, item.GetNodeName())
 			assert.NotZero(t, len(itemsForCollector))
 			continue

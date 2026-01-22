@@ -16,13 +16,14 @@ import (
 // Deployment builds the deployment for the given instance.
 func Deployment(params manifests.Params) *appsv1.Deployment {
 	name := naming.OpAMPBridge(params.OpAMPBridge.Name)
-	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, params.Config.LabelsFilter)
 	configMap, err := ConfigMap(params)
 	if err != nil {
 		params.Log.Info("failed to construct OpAMPBridge ConfigMap for annotations")
 		configMap = nil
 	}
-	annotations := Annotations(params.OpAMPBridge, configMap, params.Config.AnnotationsFilter())
+	podAnnotations := PodAnnotations(params.OpAMPBridge, configMap, params.Config.AnnotationsFilter)
+	annotations := Annotations(params.OpAMPBridge, params.Config.AnnotationsFilter)
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -38,13 +39,13 @@ func Deployment(params manifests.Params) *appsv1.Deployment {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      labels,
-					Annotations: params.OpAMPBridge.Spec.PodAnnotations,
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:        ServiceAccountName(params.OpAMPBridge),
 					Containers:                []corev1.Container{Container(params.Config, params.Log, params.OpAMPBridge)},
 					Volumes:                   Volumes(params.Config, params.OpAMPBridge),
-					DNSPolicy:                 manifestutils.GetDNSPolicy(params.OpAMPBridge.Spec.HostNetwork, params.OpAMPBridge.Spec.PodDNSConfig),
+					DNSPolicy:                 manifestutils.GetDNSPolicy(params.OpAMPBridge.Spec.HostNetwork, params.OpAMPBridge.Spec.PodDNSConfig, nil),
 					DNSConfig:                 &params.OpAMPBridge.Spec.PodDNSConfig,
 					HostNetwork:               params.OpAMPBridge.Spec.HostNetwork,
 					Tolerations:               params.OpAMPBridge.Spec.Tolerations,

@@ -12,18 +12,26 @@ spec:
       labels:
         app: my-nginx-contnr-secctx
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-nginx: "true"
     spec:
       containers:
       - name: myapp
-        image: nginxinc/nginx-unprivileged:1.25.3
+        image: docker.io/nginxinc/nginx-unprivileged:1.25.3
         imagePullPolicy: Always
         securityContext:
           runAsUser: 1000
           runAsGroup: 3000
         ports:
         - containerPort: 8765
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8765
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 3
         env:
         - name: LD_LIBRARY_PATH
           value: /opt
@@ -83,11 +91,6 @@ data:
           proxy_pass http://localhost:8383/api/vendor/;
         }
 
-        location /seznam {
-          proxy_pass http://www.seznam.cz/;
-        }
       }
 
     }
-
----

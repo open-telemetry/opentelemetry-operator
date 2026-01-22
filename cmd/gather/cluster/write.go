@@ -14,16 +14,15 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	cgocorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-func createOTELFolder(collectionDir string, otelCol *v1beta1.OpenTelemetryCollector) (string, error) {
+func createOTELFolder(collectionDir string, otelCol metav1.ObjectMeta) (string, error) {
 	outputDir := filepath.Join(collectionDir, "namespaces", otelCol.Namespace, otelCol.Name)
 	err := os.MkdirAll(outputDir, os.ModePerm)
 	if err != nil {

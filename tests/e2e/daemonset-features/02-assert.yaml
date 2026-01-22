@@ -5,7 +5,9 @@ metadata:
 spec:
   template:
     spec:
+       terminationGracePeriodSeconds: 600
        hostNetwork: true
+       hostPID: true
        containers:
        - args:
          - --config=/conf/collector.yaml

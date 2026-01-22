@@ -12,7 +12,6 @@ spec:
       labels:
         app: my-nodejs
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-nodejs: "true"
     spec:
       securityContext:

@@ -20,13 +20,18 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
 	kubeTesting "k8s.io/client-go/testing"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/autodetectutils"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
@@ -233,7 +238,7 @@ func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
 		},
 	} {
 		t.Run(tt.description, func(t *testing.T) {
-			// These settings can be get from env vars
+			// These settings can be gotten from env vars
 			t.Setenv(autodetectutils.NAMESPACE_ENV_VAR, tt.namespace)
 			t.Setenv(autodetectutils.SA_ENV_VAR, tt.serviceAccount)
 
@@ -348,4 +353,127 @@ func TestCertManagerAvailability(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestConfigChangesOnAutoDetect(t *testing.T) {
+	// prepare
+	mock := &mockAutoDetect{
+		OpenShiftRoutesAvailabilityFunc: func() (openshift.RoutesAvailability, error) {
+			return openshift.RoutesAvailable, nil
+		},
+		PrometheusCRsAvailabilityFunc: func() (prometheus.Availability, error) {
+			return prometheus.Available, nil
+		},
+		RBACPermissionsFunc: func(ctx context.Context) (autoRBAC.Availability, error) {
+			return autoRBAC.Available, nil
+		},
+		CertManagerAvailabilityFunc: func(ctx context.Context) (certmanager.Availability, error) {
+			return certmanager.Available, nil
+		},
+		TargetAllocatorAvailabilityFunc: func() (targetallocator.Availability, error) {
+			return targetallocator.Available, nil
+		},
+		OpAmpBridgeAvailabilityFunc: func() (opampbridge.Availability, error) {
+			return opampbridge.Available, nil
+		},
+		NativeSidecarSupportFunc: func() (bool, error) {
+			return true, nil
+		},
+	}
+	cfg := config.New()
+
+	// sanity check
+	require.Equal(t, openshift.RoutesNotAvailable, cfg.OpenShiftRoutesAvailability)
+	require.Equal(t, prometheus.NotAvailable, cfg.PrometheusCRAvailability)
+	require.Equal(t, autoRBAC.NotAvailable, cfg.CreateRBACPermissions)
+	require.Equal(t, certmanager.NotAvailable, cfg.CertManagerAvailability)
+	require.Equal(t, targetallocator.NotAvailable, cfg.TargetAllocatorAvailability)
+	require.Equal(t, opampbridge.NotAvailable, cfg.OpAmpBridgeAvailability)
+	require.Equal(t, false, cfg.Internal.NativeSidecarSupport)
+
+	// test
+	err := autodetect.ApplyAutoDetect(mock, &cfg, ctrl.Log.WithName("test"))
+	require.NoError(t, err)
+
+	// verify
+	assert.Equal(t, openshift.RoutesAvailable, cfg.OpenShiftRoutesAvailability)
+	require.Equal(t, prometheus.Available, cfg.PrometheusCRAvailability)
+	require.Equal(t, autoRBAC.Available, cfg.CreateRBACPermissions)
+	require.Equal(t, certmanager.Available, cfg.CertManagerAvailability)
+	require.Equal(t, targetallocator.Available, cfg.TargetAllocatorAvailability)
+	require.Equal(t, opampbridge.Available, cfg.OpAmpBridgeAvailability)
+	require.Equal(t, true, cfg.Internal.NativeSidecarSupport)
+}
+
+var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
+
+type mockAutoDetect struct {
+	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
+	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
+	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
+	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
+	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
+	CollectorAvailabilityFunc       func() (collector.Availability, error)
+	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
+	NativeSidecarSupportFunc        func() (bool, error)
+}
+
+func (m *mockAutoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, error) {
+	if m.OpAmpBridgeAvailabilityFunc != nil {
+		return m.OpAmpBridgeAvailabilityFunc()
+	}
+	return opampbridge.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) CollectorAvailability() (collector.Availability, error) {
+	if m.CollectorAvailabilityFunc != nil {
+		return m.CollectorAvailabilityFunc()
+	}
+	return collector.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
+	return false
+}
+
+func (m *mockAutoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability, error) {
+	if m.OpenShiftRoutesAvailabilityFunc != nil {
+		return m.OpenShiftRoutesAvailabilityFunc()
+	}
+	return openshift.RoutesNotAvailable, nil
+}
+
+func (m *mockAutoDetect) PrometheusCRsAvailability() (prometheus.Availability, error) {
+	if m.PrometheusCRsAvailabilityFunc != nil {
+		return m.PrometheusCRsAvailabilityFunc()
+	}
+	return prometheus.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) RBACPermissions(ctx context.Context) (autoRBAC.Availability, error) {
+	if m.RBACPermissionsFunc != nil {
+		return m.RBACPermissionsFunc(ctx)
+	}
+	return autoRBAC.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) CertManagerAvailability(ctx context.Context) (certmanager.Availability, error) {
+	if m.CertManagerAvailabilityFunc != nil {
+		return m.CertManagerAvailabilityFunc(ctx)
+	}
+	return certmanager.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) TargetAllocatorAvailability() (targetallocator.Availability, error) {
+	if m.TargetAllocatorAvailabilityFunc != nil {
+		return m.TargetAllocatorAvailabilityFunc()
+	}
+	return targetallocator.NotAvailable, nil
+}
+
+func (m *mockAutoDetect) NativeSidecarSupport() (bool, error) {
+	if m.NativeSidecarSupportFunc != nil {
+		return m.NativeSidecarSupportFunc()
+	}
+	return false, nil
 }

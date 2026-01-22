@@ -10,6 +10,8 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 // ManagementStateType defines the type for CR management states.
@@ -98,8 +100,9 @@ type OpenTelemetryCollectorSpec struct {
 	// Args is the set of arguments to pass to the OpenTelemetry Collector binary
 	// +optional
 	Args map[string]string `json:"args,omitempty"`
-	// Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if your are not using autoscaling
+	// Replicas is the number of pod instances for the underlying OpenTelemetry Collector. Set this if you are not using autoscaling
 	// +optional
+	// +kubebuilder:default:=1
 	Replicas *int32 `json:"replicas,omitempty"`
 	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
 	// +optional
@@ -232,6 +235,16 @@ type OpenTelemetryCollectorSpec struct {
 	// https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 	// +optional
 	InitContainers []v1.Container `json:"initContainers,omitempty"`
+
+	// ServiceName is the name of the Service to be used.
+	// If not specified, it will default to "<name>-headless".
+	// +optional
+	ServiceName string `json:"serviceName,omitempty"`
+	// TrafficDistribution specifies how traffic to this service is routed.
+	// https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution
+	// This is only applicable to Service resources.
+	// +optional
+	TrafficDistribution *string `json:"trafficDistribution,omitempty"`
 
 	// AdditionalContainers allows injecting additional containers into the Collector's pod definition.
 	// These sidecar containers can be used for authentication proxies, log shipping sidecars, agents for shipping
@@ -378,6 +391,12 @@ type OpenTelemetryTargetAllocatorPrometheusCR struct {
 	// +kubebuilder:default:="30s"
 	// +kubebuilder:validation:Format:=duration
 	ScrapeInterval *metav1.Duration `json:"scrapeInterval,omitempty"`
+	// ScrapeClasses to be referenced by PodMonitors and ServiceMonitors to include common configuration.
+	// If specified, expects an array of ScrapeClass objects as specified by https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ScrapeClass.
+	// +optional
+	// +listType=atomic
+	// +kubebuilder:pruning:PreserveUnknownFields
+	ScrapeClasses []v1beta1.AnyConfig `json:"scrapeClasses,omitempty"`
 	// PodMonitors to be selected for target discovery.
 	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
 	// PodMonitor's meta labels. The requirements are ANDed.
@@ -474,7 +493,7 @@ type OpenTelemetryCollectorList struct {
 
 // AutoscalerSpec defines the OpenTelemetryCollector's pod autoscaling specification.
 type AutoscalerSpec struct {
-	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
+	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
 	// +optional
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
@@ -516,7 +535,6 @@ type PodDisruptionBudgetSpec struct {
 // MetricsConfigSpec defines a metrics config.
 type MetricsConfigSpec struct {
 	// EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-	// The operator.observability.prometheus feature gate must be enabled to use this feature.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional

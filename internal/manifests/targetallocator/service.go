@@ -25,7 +25,7 @@ func Service(params Params) *corev1.Service {
 		Port:       80,
 		TargetPort: intstr.FromString("http")})
 
-	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		ports = append(ports, corev1.ServicePort{
 			Name:       "targetallocation-https",
 			Port:       443,
@@ -39,10 +39,11 @@ func Service(params Params) *corev1.Service {
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
-			Selector:       selector,
-			Ports:          ports,
-			IPFamilies:     params.TargetAllocator.Spec.IpFamilies,
-			IPFamilyPolicy: params.TargetAllocator.Spec.IpFamilyPolicy,
+			Selector:            selector,
+			Ports:               ports,
+			IPFamilies:          params.TargetAllocator.Spec.IpFamilies,
+			IPFamilyPolicy:      params.TargetAllocator.Spec.IpFamilyPolicy,
+			TrafficDistribution: params.TargetAllocator.Spec.TrafficDistribution,
 		},
 	}
 }

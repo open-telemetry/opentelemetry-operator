@@ -10,26 +10,6 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-opentelemetry-io-v1beta1-opentelemetrycollector
-  failurePolicy: Fail
-  name: mopentelemetrycollectorbeta.kb.io
-  rules:
-  - apiGroups:
-    - opentelemetry.io
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - opentelemetrycollectors
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
       path: /mutate-opentelemetry-io-v1alpha1-instrumentation
   failurePolicy: Fail
   name: minstrumentation.kb.io
@@ -70,9 +50,9 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-opentelemetry-io-v1beta1-targetallocator
+      path: /mutate-opentelemetry-io-v1beta1-opentelemetrycollector
   failurePolicy: Fail
-  name: mtargetallocatorbeta.kb.io
+  name: mopentelemetrycollectorbeta.kb.io
   rules:
   - apiGroups:
     - opentelemetry.io
@@ -82,7 +62,7 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - targetallocators
+    - opentelemetrycollectors
   sideEffects: None
 - admissionReviewVersions:
   - v1
@@ -103,21 +83,15 @@ webhooks:
     resources:
     - pods
   sideEffects: None
----
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingWebhookConfiguration
-metadata:
-  name: validating-webhook-configuration
-webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-opentelemetry-io-v1beta1-opentelemetrycollector
+      path: /mutate-opentelemetry-io-v1beta1-targetallocator
   failurePolicy: Fail
-  name: vopentelemetrycollectorcreateupdatebeta.kb.io
+  name: mtargetallocatorbeta.kb.io
   rules:
   - apiGroups:
     - opentelemetry.io
@@ -127,27 +101,14 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - opentelemetrycollectors
+    - targetallocators
   sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /validate-opentelemetry-io-v1beta1-opentelemetrycollector
-  failurePolicy: Ignore
-  name: vopentelemetrycollectordeletebeta.kb.io
-  rules:
-  - apiGroups:
-    - opentelemetry.io
-    apiVersions:
-    - v1beta1
-    operations:
-    - DELETE
-    resources:
-    - opentelemetrycollectors
-  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validating-webhook-configuration
+webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
@@ -225,6 +186,45 @@ webhooks:
     - DELETE
     resources:
     - opampbridges
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-opentelemetry-io-v1beta1-opentelemetrycollector
+  failurePolicy: Fail
+  name: vopentelemetrycollectorcreateupdatebeta.kb.io
+  rules:
+  - apiGroups:
+    - opentelemetry.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - opentelemetrycollectors
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-opentelemetry-io-v1beta1-opentelemetrycollector
+  failurePolicy: Ignore
+  name: vopentelemetrycollectordeletebeta.kb.io
+  rules:
+  - apiGroups:
+    - opentelemetry.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - DELETE
+    resources:
+    - opentelemetrycollectors
   sideEffects: None
 - admissionReviewVersions:
   - v1

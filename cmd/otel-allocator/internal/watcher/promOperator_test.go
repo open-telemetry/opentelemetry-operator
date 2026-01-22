@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
 	fcache "k8s.io/client-go/tools/cache/testing"
@@ -36,18 +37,14 @@ import (
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 )
 
-var defaultScrapeProtocols = []promconfig.ScrapeProtocol{
-	promconfig.OpenMetricsText1_0_0,
-	promconfig.OpenMetricsText0_0_1,
-	promconfig.PrometheusText0_0_4,
-}
-
 func TestLoadConfig(t *testing.T) {
-
+	namespace := "test"
+	portName := "web"
 	tests := []struct {
 		name            string
 		serviceMonitors []*monitoringv1.ServiceMonitor
 		podMonitors     []*monitoringv1.PodMonitor
+		scrapeClasses   []*monitoringv1.ScrapeClass
 		scrapeConfigs   []*promv1alpha1.ScrapeConfig
 		probes          []*monitoringv1.Probe
 		want            *promconfig.Config
@@ -60,13 +57,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -76,13 +73,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.PodMonitorSpec{
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -98,8 +95,8 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/simple/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -109,19 +106,24 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "endpointslice",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 					{
 						JobName:         "podMonitor/test/simple/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -131,14 +133,19 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "pod",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -149,25 +156,31 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "auth",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
 						JobLabel: "auth",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
-								BasicAuth: &monitoringv1.BasicAuth{
-									Username: v1.SecretKeySelector{
-										LocalObjectReference: v1.LocalObjectReference{
-											Name: "basic-auth",
+								Port: portName,
+								HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
+									HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
+										HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+											BasicAuth: &monitoringv1.BasicAuth{
+												Username: v1.SecretKeySelector{
+													LocalObjectReference: v1.LocalObjectReference{
+														Name: "basic-auth",
+													},
+													Key: "username",
+												},
+												Password: v1.SecretKeySelector{
+													LocalObjectReference: v1.LocalObjectReference{
+														Name: "basic-auth",
+													},
+													Key: "password",
+												},
+											},
 										},
-										Key: "username",
-									},
-									Password: v1.SecretKeySelector{
-										LocalObjectReference: v1.LocalObjectReference{
-											Name: "basic-auth",
-										},
-										Key: "password",
 									},
 								},
 							},
@@ -191,8 +204,8 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/auth/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -202,7 +215,7 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "endpointslice",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
@@ -216,7 +229,12 @@ func TestLoadConfig(t *testing.T) {
 								Password: "password",
 							},
 						},
-						EnableCompression: true,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -227,20 +245,26 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "bearer",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.PodMonitorSpec{
 						JobLabel: "bearer",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
-								Authorization: &monitoringv1.SafeAuthorization{
-									Type: "Bearer",
-									Credentials: &v1.SecretKeySelector{
-										LocalObjectReference: v1.LocalObjectReference{
-											Name: "bearer",
+								Port: &portName,
+								HTTPConfigWithProxy: monitoringv1.HTTPConfigWithProxy{
+									HTTPConfig: monitoringv1.HTTPConfig{
+										HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+											Authorization: &monitoringv1.SafeAuthorization{
+												Type: "Bearer",
+												Credentials: &v1.SecretKeySelector{
+													LocalObjectReference: v1.LocalObjectReference{
+														Name: "bearer",
+													},
+													Key: "token",
+												},
+											},
 										},
-										Key: "token",
 									},
 								},
 							},
@@ -259,8 +283,8 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "podMonitor/test/bearer/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -270,7 +294,7 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "pod",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
@@ -284,7 +308,12 @@ func TestLoadConfig(t *testing.T) {
 								Credentials: "bearer-token",
 							},
 						},
-						EnableCompression: true,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -295,13 +324,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "valid-sm",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -311,13 +340,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "valid-pm",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.PodMonitorSpec{
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -325,13 +354,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "invalid-pm",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.PodMonitorSpec{
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 								RelabelConfigs: []monitoringv1.RelabelConfig{
 									{
 										Action:      "keep",
@@ -355,8 +384,8 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/valid-sm/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -366,19 +395,24 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "endpointslice",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -388,14 +422,19 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "pod",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -406,13 +445,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "valid-sm",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -420,13 +459,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "invalid-sm",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 								RelabelConfigs: []monitoringv1.RelabelConfig{
 									{
 										Action:      "keep",
@@ -444,13 +483,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "valid-pm",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.PodMonitorSpec{
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -466,8 +505,8 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/valid-sm/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -477,19 +516,24 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "endpointslice",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -499,14 +543,19 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "pod",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -517,7 +566,7 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "sm-1",
-						Namespace: "test",
+						Namespace: namespace,
 						Labels: map[string]string{
 							"testsvc": "testsvc",
 						},
@@ -526,7 +575,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -537,10 +586,10 @@ func TestLoadConfig(t *testing.T) {
 						Namespace: "test",
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
-						JobLabel: "test",
+						JobLabel: namespace,
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -559,8 +608,8 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/sm-1/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -570,14 +619,19 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "endpointslice",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -588,7 +642,7 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "pm-1",
-						Namespace: "test",
+						Namespace: namespace,
 						Labels: map[string]string{
 							"testpod": "testpod",
 						},
@@ -597,7 +651,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -605,13 +659,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "pm-2",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.PodMonitorSpec{
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -630,8 +684,8 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "podMonitor/test/pm-1/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -641,14 +695,19 @@ func TestLoadConfig(t *testing.T) {
 							&kubeDiscovery.SDConfig{
 								Role: "pod",
 								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
-									Names:               []string{"test"},
+									Names:               []string{namespace},
 									IncludeOwnNamespace: false,
 								},
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -659,7 +718,7 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "scrapeconfig-test-1",
-						Namespace: "test",
+						Namespace: namespace,
 						Labels: map[string]string{
 							"testpod": "testpod",
 						},
@@ -691,8 +750,8 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "scrapeConfig/test/scrapeconfig-test-1",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -711,8 +770,13 @@ func TestLoadConfig(t *testing.T) {
 								},
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -723,7 +787,7 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "probe-test-1",
-						Namespace: "test",
+						Namespace: namespace,
 						Labels: map[string]string{
 							"testpod": "testpod",
 						},
@@ -755,8 +819,8 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "probe/test/probe-test-1",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -771,14 +835,19 @@ func TestLoadConfig(t *testing.T) {
 										},
 									},
 									Labels: map[model.LabelName]model.LabelValue{
-										"namespace": "test",
+										"namespace": model.LabelValue(namespace),
 									},
 									Source: "0",
 								},
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -795,7 +864,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -803,13 +872,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "sm-2",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.ServiceMonitorSpec{
 						JobLabel: "test",
 						Endpoints: []monitoringv1.Endpoint{
 							{
-								Port: "web",
+								Port: portName,
 							},
 						},
 					},
@@ -830,8 +899,8 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/labellednamespace/sm-1/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -847,8 +916,13 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -865,7 +939,7 @@ func TestLoadConfig(t *testing.T) {
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -873,13 +947,13 @@ func TestLoadConfig(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "pm-2",
-						Namespace: "test",
+						Namespace: namespace,
 					},
 					Spec: monitoringv1.PodMonitorSpec{
 						JobLabel: "test",
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port: "web",
+								Port: &portName,
 							},
 						},
 					},
@@ -900,8 +974,8 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "podMonitor/labellednamespace/pm-1/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
-						ScrapeProtocols: defaultScrapeProtocols,
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
 						HonorLabels:     false,
@@ -917,8 +991,80 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
+					},
+				},
+			},
+		},
+		{
+			name: "pod monitor with referenced scrape class",
+			podMonitors: []*monitoringv1.PodMonitor{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: namespace,
+					},
+					Spec: monitoringv1.PodMonitorSpec{
+						JobLabel:        "test",
+						ScrapeClassName: ptr.To("attach-node-metadata"),
+						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
+							{
+								Port: &portName,
+							},
+						},
+					},
+				},
+			},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					PodMonitorSelector: &metav1.LabelSelector{},
+					ScrapeClasses: []monitoringv1.ScrapeClass{
+						{
+							Name: "attach-node-metadata",
+							AttachMetadata: &monitoringv1.AttachMetadata{
+								Node: ptr.To(true),
+							},
+						},
+					},
+				},
+			},
+			want: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:         "podMonitor/test/simple/0",
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
+						ScrapeTimeout:   model.Duration(10 * time.Second),
+						HonorTimestamps: true,
+						HonorLabels:     false,
+						Scheme:          "http",
+						MetricsPath:     "/metrics",
+						ServiceDiscoveryConfigs: []discovery.Config{
+							&kubeDiscovery.SDConfig{
+								Role: "pod",
+								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
+									Names:               []string{namespace},
+									IncludeOwnNamespace: false,
+								},
+								HTTPClientConfig: config.DefaultHTTPClientConfig,
+								AttachMetadata: kubeDiscovery.AttachMetadataConfig{
+									Node: true, // Added by scrape-class!
+								},
+							},
+						},
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -926,7 +1072,7 @@ func TestLoadConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w, _ := getTestPrometheusCRWatcher(t, tt.serviceMonitors, tt.podMonitors, tt.probes, tt.scrapeConfigs, tt.cfg)
+			w, _ := getTestPrometheusCRWatcher(t, namespace, tt.serviceMonitors, tt.podMonitors, tt.probes, tt.scrapeConfigs, tt.cfg)
 
 			// Start namespace informers in order to populate cache.
 			go w.nsInformer.Run(w.stopChannel)
@@ -957,6 +1103,8 @@ func TestLoadConfig(t *testing.T) {
 
 func TestNamespaceLabelUpdate(t *testing.T) {
 	var err error
+	namespace := "test"
+	portName := "web"
 	podMonitors := []*monitoringv1.PodMonitor{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -967,7 +1115,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 				JobLabel: "test",
 				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 					{
-						Port: "web",
+						Port: &portName,
 					},
 				},
 			},
@@ -975,13 +1123,13 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "pm-2",
-				Namespace: "test",
+				Namespace: namespace,
 			},
 			Spec: monitoringv1.PodMonitorSpec{
 				JobLabel: "test",
 				PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 					{
-						Port: "web",
+						Port: &portName,
 					},
 				},
 			},
@@ -1004,8 +1152,8 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		ScrapeConfigs: []*promconfig.ScrapeConfig{
 			{
 				JobName:         "podMonitor/labellednamespace/pm-1/0",
-				ScrapeInterval:  model.Duration(30 * time.Second),
-				ScrapeProtocols: defaultScrapeProtocols,
+				ScrapeInterval:  model.Duration(60 * time.Second),
+				ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 				ScrapeTimeout:   model.Duration(10 * time.Second),
 				HonorTimestamps: true,
 				HonorLabels:     false,
@@ -1021,8 +1169,13 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 						HTTPClientConfig: config.DefaultHTTPClientConfig,
 					},
 				},
-				HTTPClientConfig:  config.DefaultHTTPClientConfig,
-				EnableCompression: true,
+				HTTPClientConfig:               config.DefaultHTTPClientConfig,
+				EnableCompression:              true,
+				AlwaysScrapeClassicHistograms:  ptr.To(false),
+				ConvertClassicHistogramsToNHCB: ptr.To(false),
+				MetricNameValidationScheme:     model.UTF8Validation,
+				MetricNameEscapingScheme:       model.AllowUTF8,
+				ScrapeNativeHistograms:         ptr.To(false),
 			},
 		},
 	}
@@ -1031,7 +1184,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		ScrapeConfigs: []*promconfig.ScrapeConfig{},
 	}
 
-	w, source := getTestPrometheusCRWatcher(t, nil, podMonitors, nil, nil, cfg)
+	w, source := getTestPrometheusCRWatcher(t, namespace, nil, podMonitors, nil, nil, cfg)
 	events := make(chan Event, 1)
 	eventInterval := 5 * time.Millisecond
 
@@ -1065,24 +1218,22 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		},
 	}})
 
-	select {
-	case <-events:
-	case <-time.After(5 * time.Second):
-	}
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		got, err = w.LoadConfig(context.Background())
+		assert.NoError(collect, err)
 
-	got, err = w.LoadConfig(context.Background())
-	assert.NoError(t, err)
-
-	sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
-	assert.Equal(t, want_after.ScrapeConfigs, got.ScrapeConfigs)
+		sanitizeScrapeConfigsForTest(got.ScrapeConfigs)
+		assert.Equal(collect, want_after.ScrapeConfigs, got.ScrapeConfigs)
+	}, time.Second*60, time.Millisecond*100)
 }
 
 func TestRateLimit(t *testing.T) {
 	var err error
+	namespace := "test"
 	serviceMonitor := &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
-			Namespace: "test",
+			Namespace: namespace,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			JobLabel: "test",
@@ -1097,7 +1248,7 @@ func TestRateLimit(t *testing.T) {
 	eventInterval := 500 * time.Millisecond
 	cfg := allocatorconfig.Config{}
 
-	w, _ := getTestPrometheusCRWatcher(t, nil, nil, nil, nil, cfg)
+	w, _ := getTestPrometheusCRWatcher(t, namespace, nil, nil, nil, nil, cfg)
 	defer w.Close()
 	w.eventInterval = eventInterval
 
@@ -1156,9 +1307,119 @@ func TestRateLimit(t *testing.T) {
 	assert.Less(t, eventInterval, elapsedTime)
 }
 
+func TestDefaultDurations(t *testing.T) {
+	namespace := "test"
+	portName := "web"
+	tests := []struct {
+		name            string
+		serviceMonitors []*monitoringv1.ServiceMonitor
+		cfg             allocatorconfig.Config
+		expectedScrape  model.Duration
+		expectedEval    model.Duration
+	}{
+		{
+			name: "custom scrape and evaluation intervals",
+			serviceMonitors: []*monitoringv1.ServiceMonitor{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-sm",
+						Namespace: namespace,
+					},
+					Spec: monitoringv1.ServiceMonitorSpec{
+						JobLabel: "test",
+						Endpoints: []monitoringv1.Endpoint{
+							{
+								Port: portName,
+							},
+						},
+					},
+				},
+			},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ScrapeInterval:         model.Duration(120 * time.Second),
+					EvaluationInterval:     model.Duration(120 * time.Second),
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+				},
+			},
+			expectedScrape: model.Duration(120 * time.Second),
+			expectedEval:   model.Duration(120 * time.Second),
+		},
+		{
+			name: "prometheus operator applies defaults when intervals nil",
+			serviceMonitors: []*monitoringv1.ServiceMonitor{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-sm",
+						Namespace: namespace,
+					},
+					Spec: monitoringv1.ServiceMonitorSpec{
+						JobLabel: "test",
+						Endpoints: []monitoringv1.Endpoint{
+							{
+								Port: portName,
+							},
+						},
+					},
+				},
+			},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+				},
+			},
+			expectedScrape: model.Duration(60 * time.Second),
+			expectedEval:   model.Duration(60 * time.Second),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w, _ := getTestPrometheusCRWatcher(t, namespace, tt.serviceMonitors, nil, nil, nil, tt.cfg)
+			defer w.Close()
+
+			events := make(chan Event, 1)
+			eventInterval := 5 * time.Millisecond
+			w.eventInterval = eventInterval
+
+			go func() {
+				watchErr := w.Watch(events, make(chan error))
+				require.NoError(t, watchErr)
+			}()
+
+			if success := cache.WaitForNamedCacheSync("namespace", w.stopChannel, w.nsInformer.HasSynced); !success {
+				require.True(t, success)
+			}
+
+			for _, informer := range w.informers {
+				success := cache.WaitForCacheSync(w.stopChannel, informer.HasSynced)
+				require.True(t, success)
+			}
+
+			got, err := w.LoadConfig(context.Background())
+			assert.NoError(t, err)
+
+			assert.NotEmpty(t, got.ScrapeConfigs)
+
+			for _, sc := range got.ScrapeConfigs {
+				assert.Equal(t, tt.expectedScrape, sc.ScrapeInterval)
+			}
+			assert.Equal(t, tt.expectedEval, got.GlobalConfig.EvaluationInterval)
+		})
+	}
+}
+
 // getTestPrometheusCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
 // and test secrets.
-func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.ServiceMonitor, podMonitors []*monitoringv1.PodMonitor, probes []*monitoringv1.Probe, scrapeConfigs []*promv1alpha1.ScrapeConfig, cfg allocatorconfig.Config) (*PrometheusCRWatcher, *fcache.FakeControllerSource) {
+func getTestPrometheusCRWatcher(
+	t *testing.T,
+	namespace string,
+	svcMonitors []*monitoringv1.ServiceMonitor,
+	podMonitors []*monitoringv1.PodMonitor,
+	probes []*monitoringv1.Probe,
+	scrapeConfigs []*promv1alpha1.ScrapeConfig,
+	cfg allocatorconfig.Config,
+) (*PrometheusCRWatcher, *fcache.FakeControllerSource) {
 	mClient := fakemonitoringclient.NewSimpleClientset()
 	for _, sm := range svcMonitors {
 		if sm != nil {
@@ -1217,7 +1478,8 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 	}
 
 	factory := informers.NewMonitoringInformerFactories(map[string]struct{}{v1.NamespaceAll: {}}, map[string]struct{}{}, mClient, 0, nil)
-	informers, err := getInformers(factory)
+
+	informers, err := getTestInformers(factory)
 	if err != nil {
 		t.Fatal(t, err)
 	}
@@ -1225,9 +1487,12 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 	serviceDiscoveryRole := monitoringv1.ServiceDiscoveryRole("EndpointSlice")
 
 	prom := &monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-				ScrapeInterval:                  monitoringv1.Duration("30s"),
+				ScrapeInterval:                  monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
 				ServiceMonitorSelector:          cfg.PrometheusCR.ServiceMonitorSelector,
 				PodMonitorSelector:              cfg.PrometheusCR.PodMonitorSelector,
 				ServiceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
@@ -1236,14 +1501,16 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 				ProbeNamespaceSelector:          cfg.PrometheusCR.ProbeNamespaceSelector,
 				ScrapeConfigSelector:            cfg.PrometheusCR.ScrapeConfigSelector,
 				ScrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
+				ScrapeClasses:                   cfg.PrometheusCR.ScrapeClasses,
 				ServiceDiscoveryRole:            &serviceDiscoveryRole,
 			},
+			EvaluationInterval: monitoringv1.Duration(cfg.PrometheusCR.EvaluationInterval.String()),
 		},
 	}
 
 	promOperatorLogger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
 
-	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom, prometheus.WithEndpointSliceSupport())
+	generator, err := prometheus.NewConfigGenerator(promOperatorLogger, prom, prometheus.WithEndpointSliceSupport(), prometheus.WithInlineTLSConfig())
 	if err != nil {
 		t.Fatal(t, err)
 	}
@@ -1251,8 +1518,9 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 	store := assets.NewStoreBuilder(k8sClient.CoreV1(), k8sClient.CoreV1())
 	promRegisterer := prometheusgoclient.NewRegistry()
 	operatorMetrics := operator.NewMetrics(promRegisterer)
-	recorderFactory := operator.NewEventRecorderFactory(false)
-	eventRecorder := recorderFactory(k8sClient, "target-allocator")
+	eventRecorderFactoryFactory := operator.NewEventRecorderFactory(false)
+	eventRecorderFactory := eventRecorderFactoryFactory(k8sClient, "target-allocator")
+	eventRecorder := eventRecorderFactory(prom)
 
 	source := fcache.NewFakeControllerSource()
 	source.Add(&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test"}})
@@ -1282,6 +1550,7 @@ func getTestPrometheusCRWatcher(t *testing.T, svcMonitors []*monitoringv1.Servic
 		scrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
 		resourceSelector:                resourceSelector,
 		store:                           store,
+		prometheusCR:                    prom,
 	}, source
 
 }
@@ -1292,5 +1561,121 @@ func sanitizeScrapeConfigsForTest(scs []*promconfig.ScrapeConfig) {
 	for _, sc := range scs {
 		sc.RelabelConfigs = nil
 		sc.MetricRelabelConfigs = nil
+	}
+}
+
+// getTestInformers creates informers for testing without CRD availability checks.
+func getTestInformers(factory informers.FactoriesForNamespaces) (map[string]*informers.ForResource, error) {
+	informersMap := make(map[string]*informers.ForResource)
+
+	// Create ServiceMonitor informers
+	serviceMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ServiceMonitorName))
+	if err != nil {
+		return nil, err
+	}
+	informersMap[monitoringv1.ServiceMonitorName] = serviceMonitorInformers
+
+	// Create PodMonitor informers
+	podMonitorInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.PodMonitorName))
+	if err != nil {
+		return nil, err
+	}
+	informersMap[monitoringv1.PodMonitorName] = podMonitorInformers
+
+	// Create Probe informers
+	probeInformers, err := informers.NewInformersForResource(factory, monitoringv1.SchemeGroupVersion.WithResource(monitoringv1.ProbeName))
+	if err != nil {
+		return nil, err
+	}
+	informersMap[monitoringv1.ProbeName] = probeInformers
+
+	// Create ScrapeConfig informers
+	scrapeConfigInformers, err := informers.NewInformersForResource(factory, promv1alpha1.SchemeGroupVersion.WithResource(promv1alpha1.ScrapeConfigName))
+	if err != nil {
+		return nil, err
+	}
+	informersMap[promv1alpha1.ScrapeConfigName] = scrapeConfigInformers
+
+	return informersMap, nil
+}
+
+// TestCRDAvailabilityChecks tests the CRDs' availability.
+func TestCRDAvailabilityChecks(t *testing.T) {
+	tests := []struct {
+		name          string
+		availableCRDs []string
+		expectedCRDs  []string
+	}{
+		{
+			name:          "ServiceMonitor available",
+			availableCRDs: []string{"servicemonitors"},
+			expectedCRDs:  []string{"servicemonitors"},
+		},
+		{
+			name:          "All CRDs available",
+			availableCRDs: []string{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"},
+			expectedCRDs:  []string{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"},
+		},
+		{
+			name:          "No CRDs available",
+			availableCRDs: []string{},
+			expectedCRDs:  []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create fake discovery client
+			fakeDiscovery := &fakediscovery.FakeDiscovery{
+				Fake: &fake.NewSimpleClientset().Fake,
+			}
+
+			// Set up resources
+			fakeDiscovery.Resources = []*metav1.APIResourceList{}
+
+			// Add v1 resources
+			v1Resources := &metav1.APIResourceList{
+				GroupVersion: "monitoring.coreos.com/v1",
+				APIResources: []metav1.APIResource{},
+			}
+			for _, crd := range tt.availableCRDs {
+				if crd == "servicemonitors" || crd == "podmonitors" || crd == "probes" {
+					v1Resources.APIResources = append(v1Resources.APIResources, metav1.APIResource{
+						Name: crd,
+					})
+				}
+			}
+			fakeDiscovery.Resources = append(fakeDiscovery.Resources, v1Resources)
+
+			// Add v1alpha1 resources
+			v1alpha1Resources := &metav1.APIResourceList{
+				GroupVersion: "monitoring.coreos.com/v1alpha1",
+				APIResources: []metav1.APIResource{},
+			}
+			for _, crd := range tt.availableCRDs {
+				if crd == "scrapeconfigs" {
+					v1alpha1Resources.APIResources = append(v1alpha1Resources.APIResources, metav1.APIResource{
+						Name: crd,
+					})
+				}
+			}
+			fakeDiscovery.Resources = append(fakeDiscovery.Resources, v1alpha1Resources)
+
+			// Test each CRD availability
+			for _, crd := range []string{"servicemonitors", "podmonitors", "probes", "scrapeconfigs"} {
+				available, err := checkCRDAvailability(fakeDiscovery, crd)
+				require.NoError(t, err)
+
+				expected := false
+				for _, expectedCRD := range tt.expectedCRDs {
+					if crd == expectedCRD {
+						expected = true
+						break
+					}
+				}
+
+				assert.Equal(t, expected, available, "CRD %s availability should match expectation", crd)
+			}
+		})
 	}
 }

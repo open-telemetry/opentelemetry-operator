@@ -67,7 +67,7 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 	labels[monitoringLabel] = valueExists
 	labels[serviceTypeLabel] = MonitoringServiceType.String()
 
-	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -91,8 +91,9 @@ func MonitoringService(params manifests.Params) (*corev1.Service, error) {
 				Name: "monitoring",
 				Port: metricsPort,
 			}},
-			IPFamilies:     params.OtelCol.Spec.IpFamilies,
-			IPFamilyPolicy: params.OtelCol.Spec.IpFamilyPolicy,
+			IPFamilies:          params.OtelCol.Spec.IpFamilies,
+			IPFamilyPolicy:      params.OtelCol.Spec.IpFamilyPolicy,
+			TrafficDistribution: params.OtelCol.Spec.TrafficDistribution,
 		},
 	}, nil
 }
@@ -102,7 +103,7 @@ func ExtensionService(params manifests.Params) (*corev1.Service, error) {
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[serviceTypeLabel] = ExtensionServiceType.String()
 
-	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -124,8 +125,9 @@ func ExtensionService(params manifests.Params) (*corev1.Service, error) {
 			Annotations: annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Ports:    ports,
-			Selector: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
+			Ports:               ports,
+			Selector:            manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
+			TrafficDistribution: params.OtelCol.Spec.TrafficDistribution,
 		},
 	}, nil
 }
@@ -135,7 +137,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[serviceTypeLabel] = BaseServiceType.String()
 
-	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -199,6 +201,7 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 			Ports:                 ports,
 			IPFamilies:            params.OtelCol.Spec.IpFamilies,
 			IPFamilyPolicy:        params.OtelCol.Spec.IpFamilyPolicy,
+			TrafficDistribution:   params.OtelCol.Spec.TrafficDistribution,
 		},
 	}, nil
 }
@@ -220,6 +223,11 @@ func newPortNumberKey(port int32, protocol corev1.Protocol) PortNumberKey {
 	return PortNumberKey{Port: port, Protocol: protocol}
 }
 
+// filterPort filters service ports to avoid conflicts with user-specified ports.
+// If the candidate port number is already in use, returns nil.
+// If the candidate port name conflicts with an existing name, attempts to use a fallback name of format "port-{number}".
+// If both the original name and fallback name are taken, returns nil with a warning log.
+// Otherwise returns the (potentially renamed) candidate port.
 func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers map[PortNumberKey]bool, portNames map[string]bool) *corev1.ServicePort {
 	if portNumbers[newPortNumberKey(candidate.Port, candidate.Protocol)] {
 		return nil
@@ -231,9 +239,10 @@ func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers ma
 		fallbackName := fmt.Sprintf("port-%d", candidate.Port)
 		if portNames[fallbackName] {
 			// that wasn't expected, better skip this port
-			logger.V(2).Info("a port name specified in the CR clashes with an inferred port name, and the fallback port name clashes with another port name! Skipping this port.",
+			logger.V(0).Info("a port name specified in the CR clashes with an inferred port name, and the fallback port name clashes with another port name! Skipping this port.",
 				"inferred-port-name", candidate.Name,
 				"fallback-port-name", fallbackName,
+				"type", "warning",
 			)
 			return nil
 		}

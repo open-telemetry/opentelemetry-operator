@@ -1,34 +1,28 @@
 apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
-  name: java
+  name: python-multi
 spec:
   env:
-    - name: OTEL_TRACES_EXPORTER
-      value: otlp
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: http://localhost:4317
     - name: OTEL_EXPORTER_OTLP_TIMEOUT
-      value: "20"
+      value: "20000"
     - name: OTEL_TRACES_SAMPLER
-      value: parentbased_traceidratio
-    - name: OTEL_TRACES_SAMPLER_ARG
-      value: "0.85"
+      value: always_on
     - name: SPLUNK_TRACE_RESPONSE_HEADER_ENABLED
       value: "true"
   exporter:
-    endpoint: http://localhost:4317
+    endpoint: http://deployment-collector:4317
   propagators:
     - jaeger
     - b3
   sampler:
     type: parentbased_traceidratio
     argument: "0.25"
-  java:
+  python:
     env:
-    - name: OTEL_JAVAAGENT_DEBUG
-      value: "true"
-    - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
-      value: "false"
-    - name: SPLUNK_PROFILER_ENABLED
-      value: "false"
+      - name: OTEL_LOG_LEVEL
+        value: "debug"
+      - name: OTEL_TRACES_EXPORTER
+        value: otlp
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: http://deployment-collector:4318

@@ -24,7 +24,7 @@ func TestDesiredIngresses(t *testing.T) {
 	t.Run("should return nil invalid ingress type", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
-			Log:    logger,
+			Log:    testLogger,
 			OtelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Ingress: v1beta1.Ingress{
@@ -42,7 +42,7 @@ func TestDesiredIngresses(t *testing.T) {
 	t.Run("should return nil, no ingress set", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
-			Log:    logger,
+			Log:    testLogger,
 			OtelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Mode: "Deployment",
@@ -58,7 +58,7 @@ func TestDesiredIngresses(t *testing.T) {
 	t.Run("should return nil unable to parse receiver ports", func(t *testing.T) {
 		params := manifests.Params{
 			Config: config.Config{},
-			Log:    logger,
+			Log:    testLogger,
 			OtelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: v1beta1.Config{},
@@ -81,7 +81,7 @@ func TestDesiredIngresses(t *testing.T) {
 			ingressClassName = "nginx"
 		)
 
-		params, err := newParams("something:tag", testFileIngress)
+		params, err := newParams("something:tag", testFileIngress, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -172,7 +172,7 @@ func TestDesiredIngresses(t *testing.T) {
 			ingressClassName = "nginx"
 		)
 
-		params, err := newParams("something:tag", testFileIngress)
+		params, err := newParams("something:tag", testFileIngress, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

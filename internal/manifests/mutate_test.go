@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -1982,6 +1983,70 @@ func TestMutateStatefulSetError(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "modified immutable serviceName in statefulset",
+			existing: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					CreationTimestamp: metav1.Now(),
+					Name:              "statefulset",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					ServiceName: "service-name",
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/component": "opentelemetry-collector",
+							"app.kubernetes.io/instance":  "default.statefulset",
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/component": "opentelemetry-collector",
+								"app.kubernetes.io/instance":  "default.statefulset",
+							},
+						},
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+						},
+					},
+				},
+			},
+			desired: appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "statefulset",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					ServiceName: "changed",
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/component": "opentelemetry-collector",
+							"app.kubernetes.io/instance":  "default.statefulset",
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/component": "opentelemetry-collector",
+								"app.kubernetes.io/instance":  "default.statefulset",
+							},
+						},
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Name:  "collector",
+									Image: "collector:latest",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -2480,4 +2545,98 @@ func TestMutateStatefulSetLabelChange(t *testing.T) {
 			assert.Equal(t, tt.existing.Spec, tt.desired.Spec)
 		})
 	}
+}
+
+func TestMutateIngress(t *testing.T) {
+	existing := &networkingv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-ingress",
+			Annotations: map[string]string{
+				"test":                "test123",
+				"external.annotation": "should-be-preserved",
+			},
+			Labels: map[string]string{
+				"external.label": "should-be-preserved",
+			},
+		},
+		Spec: networkingv1.IngressSpec{
+			Rules: []networkingv1.IngressRule{
+				{
+					Host: "old.example.com",
+				},
+			},
+		},
+	}
+
+	desired := &networkingv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-ingress",
+			Annotations: map[string]string{
+				"opentelemetry.annotation": "operator-managed",
+			},
+			Labels: map[string]string{
+				"opentelemetry.label": "operator-managed",
+			},
+		},
+		Spec: networkingv1.IngressSpec{
+			Rules: []networkingv1.IngressRule{
+				{
+					Host: "new.example.com",
+				},
+			},
+		},
+	}
+
+	mutateFn := MutateFuncFor(existing, desired)
+	err := mutateFn()
+	require.NoError(t, err)
+
+	assert.Equal(t, "test123", existing.Annotations["test"])
+	assert.Equal(t, "should-be-preserved", existing.Annotations["external.annotation"])
+	assert.Equal(t, "operator-managed", existing.Annotations["opentelemetry.annotation"])
+	assert.Equal(t, "should-be-preserved", existing.Labels["external.label"])
+	assert.Equal(t, "operator-managed", existing.Labels["opentelemetry.label"])
+	assert.Equal(t, "new.example.com", existing.Spec.Rules[0].Host)
+}
+
+func TestGetMutateFunc_MutateNetworkPolicy(t *testing.T) {
+	got := &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				"test": "test",
+			},
+			Annotations: map[string]string{
+				"test": "test",
+			},
+		},
+	}
+
+	want := &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				"test":  "test",
+				"other": "label",
+			},
+			Annotations: map[string]string{
+				"test":  "test",
+				"other": "annotation",
+			},
+		},
+		Spec: networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"x": "y",
+				},
+			},
+		},
+	}
+
+	f := MutateFuncFor(got, want)
+	err := f()
+	require.NoError(t, err)
+
+	// Partial mutation checks
+	require.Exactly(t, got.Labels, want.Labels)
+	require.Exactly(t, got.Annotations, want.Annotations)
+	require.Exactly(t, got.Spec, want.Spec)
 }

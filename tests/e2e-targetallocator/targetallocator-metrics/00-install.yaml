@@ -1,0 +1,37 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+spec:
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs: []
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:9090
+    extensions:
+      health_check:
+    service:
+      extensions:
+      - health_check
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          exporters: [prometheus]
+
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+    serviceAccount: ta
+    observability:
+      metrics:
+        enableMetrics: true
+    prometheusCR:
+      enabled: true
+      serviceMonitorSelector:
+        matchLabels:
+          app.kubernetes.io/name: simplest-targetallocator
+      podMonitorSelector: {}
+

@@ -101,6 +101,10 @@ func (m *MultiPortReceiver) GetReadinessProbe(logger logr.Logger, config interfa
 	return nil, nil
 }
 
+func (m *MultiPortReceiver) GetStartupProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+	return nil, nil
+}
+
 func (m *MultiPortReceiver) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.PolicyRule, error) {
 	return nil, nil
 }
@@ -112,11 +116,11 @@ func (m *MultiPortReceiver) GetEnvironmentVariables(logger logr.Logger, config i
 type MultiPortBuilder[ComponentConfigType any] []Builder[ComponentConfigType]
 
 func NewMultiPortReceiverBuilder(name string) MultiPortBuilder[*MultiProtocolEndpointConfig] {
-	return append(MultiPortBuilder[*MultiProtocolEndpointConfig]{}, NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithDefaultRecAddress("0.0.0.0"))
+	return append(MultiPortBuilder[*MultiProtocolEndpointConfig]{}, NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithDefaultRecAddress(DefaultRecAddress))
 }
 
 func NewProtocolBuilder(name string, port int32) Builder[*MultiProtocolEndpointConfig] {
-	return NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithPort(port).WithDefaultRecAddress("0.0.0.0")
+	return NewBuilder[*MultiProtocolEndpointConfig]().WithName(name).WithPort(port).WithDefaultRecAddress(DefaultRecAddress)
 }
 
 func (mp MultiPortBuilder[ComponentConfigType]) AddPortMapping(builder Builder[ComponentConfigType]) MultiPortBuilder[ComponentConfigType] {

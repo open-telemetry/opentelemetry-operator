@@ -41,7 +41,7 @@ type OpenTelemetryCollector struct {
 // Hub exists to allow for conversion.
 func (*OpenTelemetryCollector) Hub() {}
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // OpenTelemetryCollectorList contains a list of OpenTelemetryCollector.
 type OpenTelemetryCollectorList struct {
@@ -64,6 +64,11 @@ type OpenTelemetryCollectorStatus struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 }
+
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && size(self.tolerations) > 0) || !has(self.tolerations)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'tolerations'"
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && self.priorityClassName != '') || !has(self.priorityClassName)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'priorityClassName'"
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && self.affinity != null) || !has(self.affinity)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'affinity'"
+// +kubebuilder:validation:XValidation:rule="!(self.mode == 'sidecar' && size(self.additionalContainers) > 0) || !has(self.additionalContainers)",message="the OpenTelemetry Collector mode is set to sidecar, which does not support the attribute 'additionalContainers'"
 
 // OpenTelemetryCollectorSpec defines the desired state of OpenTelemetryCollector.
 type OpenTelemetryCollectorSpec struct {
@@ -100,6 +105,9 @@ type OpenTelemetryCollectorSpec struct {
 	// Valid modes are: deployment, daemonset and statefulset.
 	// +optional
 	Ingress Ingress `json:"ingress,omitempty"`
+	// NetworkPolicy defines the network policy to be applied to the OpenTelemetry Collector pods.
+	// +optional
+	NetworkPolicy NetworkPolicy `json:"networkPolicy,omitempty"`
 	// Liveness config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
@@ -108,6 +116,10 @@ type OpenTelemetryCollectorSpec struct {
 	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
 	// +optional
 	ReadinessProbe *Probe `json:"readinessProbe,omitempty"`
+	// Startup config for the OpenTelemetry Collector except the probe handler which is auto generated from the health extension of the collector.
+	// It is only effective when healthcheckextension is configured in the OpenTelemetry Collector pipeline.
+	// +optional
+	StartupProbe *Probe `json:"startupProbe,omitempty"`
 
 	// ObservabilitySpec defines how telemetry data gets handled.
 	//
@@ -210,6 +222,20 @@ type TargetAllocatorEmbedded struct {
 	//
 	// +optional
 	PodDisruptionBudget *PodDisruptionBudgetSpec `json:"podDisruptionBudget,omitempty"`
+	// CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
+	// The default is 30s, which means that if a collector becomes not Ready, the target allocator will wait for 30 seconds before reassigning its targets. The assumption is that the state is temporary, and an expensive target reallocation should be avoided if possible.
+	//
+	// +optional
+	// +kubebuilder:default:="30s"
+	// +kubebuilder:validation:Format:=duration
+	CollectorNotReadyGracePeriod *metav1.Duration `json:"collectorNotReadyGracePeriod,omitempty"`
+	// CollectorTargetReloadInterval defines the interval at which the Prometheus receiver will reload targets from the target allocator.
+	// The default is 30s.
+	//
+	// +optional
+	// +kubebuilder:default:="30s"
+	// +kubebuilder:validation:Format:=duration
+	CollectorTargetReloadInterval *metav1.Duration `json:"collectorTargetReloadInterval,omitempty"`
 }
 
 // Probe defines the OpenTelemetry's pod probe config.
@@ -218,23 +244,28 @@ type Probe struct {
 	// Defaults to 0 seconds. Minimum value is 0.
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
+	// +kubebuilder:validation:Minimum=0
 	InitialDelaySeconds *int32 `json:"initialDelaySeconds,omitempty"`
 	// Number of seconds after which the probe times out.
 	// Defaults to 1 second. Minimum value is 1.
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
 	// How often (in seconds) to perform the probe.
 	// Default to 10 seconds. Minimum value is 1.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	PeriodSeconds *int32 `json:"periodSeconds,omitempty"`
 	// Minimum consecutive successes for the probe to be considered successful after having failed.
 	// Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	SuccessThreshold *int32 `json:"successThreshold,omitempty"`
 	// Minimum consecutive failures for the probe to be considered failed after having succeeded.
 	// Defaults to 3. Minimum value is 1.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	FailureThreshold *int32 `json:"failureThreshold,omitempty"`
 	// Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
 	// The grace period is the duration in seconds after the processes running in the pod are sent
@@ -247,6 +278,7 @@ type Probe struct {
 	// This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
 	// Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 }
 
@@ -263,12 +295,17 @@ type ObservabilitySpec struct {
 // MetricsConfigSpec defines a metrics config.
 type MetricsConfigSpec struct {
 	// EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar mode) should be created for the service managed by the OpenTelemetry Operator.
-	// The operator.observability.prometheus feature gate must be enabled to use this feature.
 	//
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Create ServiceMonitors for OpenTelemetry Collector"
 	EnableMetrics bool `json:"enableMetrics,omitempty"`
+	// ExtraLabels are additional labels to be added to the ServiceMonitor
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	ExtraLabels map[string]string `json:"extraLabels,omitempty"`
+
 	// DisablePrometheusAnnotations controls the automatic addition of default Prometheus annotations
 	// ('prometheus.io/scrape', 'prometheus.io/port', and 'prometheus.io/path')
 	//

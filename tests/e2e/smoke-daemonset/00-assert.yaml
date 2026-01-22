@@ -11,3 +11,29 @@ spec:
 status:
   numberMisscheduled: 0
   (desiredNumberScheduled == numberReady): true
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: daemonset-test-collector
+status:
+  containerStatuses:
+  - ready: true
+    started: true
+  phase: Running
+
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: daemonset-test
+status:
+  (image != ''): true
+  scale:
+    (replicas >= `1`): true
+    (statusReplicas != ''): true
+  (version != ''): true

@@ -9,31 +9,46 @@ on:
       platforms:
         type: string
         required: true
+      build-args:
+        type: string
+        required: false
+        default: ''
+      tag-suffix:
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
 
 jobs:
   publish-e2e-image:
-    runs-on: ubuntu-20.04
+    permissions:
+      packages: write
+      attestations: write
+      id-token: write
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
         with:
           images: |
-            ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-${{ inputs.path }}
+            ghcr.io/${{ github.repository }}/e2e-test-app-${{ inputs.path }}
           tags: |
-            type=ref,event=branch
+            type=ref,event=branch,suffix=${{ inputs.tag-suffix }}
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - name: Cache Docker layers
-        uses: actions/cache@v4
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -41,18 +56,19 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Login to GitHub Package Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
           tags: ${{ steps.meta.outputs.tags }}
           context: tests/test-e2e-apps/${{ inputs.path }}
           platforms: ${{ inputs.platforms }}
+          build-args: ${{ inputs.build-args }}
           push: ${{ github.event_name == 'push' }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache

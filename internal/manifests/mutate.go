@@ -146,6 +146,11 @@ func MutateFuncFor(existing, desired client.Object) controllerutil.MutateFn {
 			wantIng := desired.(*networkingv1.Ingress)
 			mutateIngress(ing, wantIng)
 
+		case *networkingv1.NetworkPolicy:
+			ds := existing.(*networkingv1.NetworkPolicy)
+			wantDs := desired.(*networkingv1.NetworkPolicy)
+			mutateNetworkPolicy(ds, wantDs)
+
 		case *autoscalingv2.HorizontalPodAutoscaler:
 			existingHPA := existing.(*autoscalingv2.HorizontalPodAutoscaler)
 			desiredHPA := desired.(*autoscalingv2.HorizontalPodAutoscaler)
@@ -245,11 +250,17 @@ func mutatePolicyV1PDB(existing, desired *policyV1.PodDisruptionBudget) {
 }
 
 func mutateIngress(existing, desired *networkingv1.Ingress) {
-	existing.Labels = desired.Labels
-	existing.Annotations = desired.Annotations
+	// NOTE: Do not overwrite labels and annotations:
+	// https://github.com/open-telemetry/opentelemetry-operator/issues/4322
 	existing.Spec.DefaultBackend = desired.Spec.DefaultBackend
 	existing.Spec.Rules = desired.Spec.Rules
 	existing.Spec.TLS = desired.Spec.TLS
+}
+
+func mutateNetworkPolicy(existing, desired *networkingv1.NetworkPolicy) {
+	existing.Annotations = desired.Annotations
+	existing.Labels = desired.Labels
+	existing.Spec = desired.Spec
 }
 
 func mutateRoute(existing, desired *routev1.Route) {
@@ -336,6 +347,9 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 		}
 		if hasVolumeClaimsTemplatesChanged(existing, desired) {
 			return &ImmutableFieldChangeErr{Field: "Spec.VolumeClaimTemplates"}
+		}
+		if !apiequality.Semantic.DeepEqual(desired.Spec.ServiceName, existing.Spec.ServiceName) {
+			return &ImmutableFieldChangeErr{Field: "Spec.ServiceName"}
 		}
 	}
 

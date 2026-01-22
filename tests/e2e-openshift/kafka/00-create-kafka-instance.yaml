@@ -7,16 +7,63 @@ metadata:
 
 ---
 apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: controller
+  namespace: chainsaw-kafka
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 1
+  roles:
+    - controller
+  storage:
+    type: ephemeral
+  resources:
+    limits:
+      cpu: "1"
+      memory: 4Gi
+    requests:
+      cpu: "1"
+      memory: 4Gi
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: broker
+  namespace: chainsaw-kafka
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 1
+  roles:
+    - broker
+  storage:
+    type: ephemeral
+  resources:
+    limits:
+      cpu: "1"
+      memory: 4Gi
+    requests:
+      cpu: "1"
+      memory: 4Gi
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: my-cluster
   namespace: chainsaw-kafka
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   entityOperator:
     topicOperator:
-      reconciliationIntervalSeconds: 90
+      reconciliationIntervalMs: 90000
     userOperator:
-      reconciliationIntervalSeconds: 120
+      reconciliationIntervalMs: 120000
   kafka:
     config:
       log.message.format.version: 3.9.0
@@ -43,18 +90,4 @@ spec:
       port: 9093
       tls: true
       type: internal
-    replicas: 1
-    resources:
-      limits:
-        cpu: "1"
-        memory: 4Gi
-      requests:
-        cpu: "1"
-        memory: 4Gi
-    storage:
-      type: ephemeral
     version: 3.9.0
-  zookeeper:
-    replicas: 1
-    storage:
-      type: ephemeral

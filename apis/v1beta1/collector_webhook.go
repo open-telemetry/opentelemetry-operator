@@ -12,6 +12,7 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
@@ -21,6 +22,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
+)
+
+const (
+	maxPortLen = 15
 )
 
 var (
@@ -41,6 +46,7 @@ type CollectorWebhook struct {
 	metrics  *Metrics
 	bv       BuildValidator
 	fips     fips.FIPSCheck
+	recorder record.EventRecorder
 }
 
 func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
@@ -94,7 +100,20 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 	if !featuregate.EnableConfigDefaulting.IsEnabled() {
 		return nil
 	}
-	return otelcol.Spec.Config.ApplyDefaults(c.logger)
+	if featuregate.EnableOperandNetworkPolicy.IsEnabled() && otelcol.Spec.NetworkPolicy.Enabled == nil {
+		trueVal := true
+		otelcol.Spec.NetworkPolicy.Enabled = &trueVal
+	}
+	events, err := otelcol.Spec.Config.ApplyDefaults(c.logger)
+	if err != nil {
+		return err
+	}
+	for _, event := range events {
+		if c.recorder != nil {
+			c.recorder.Event(otelcol, event.Type, event.Reason, event.Message)
+		}
+	}
+	return nil
 }
 
 func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
@@ -184,20 +203,24 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	}
 
 	// validate tolerations
+	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.Tolerations) > 0 {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'tolerations'", r.Spec.Mode)
 	}
 
 	// validate priorityClassName
+	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
 	if r.Spec.Mode == ModeSidecar && r.Spec.PriorityClassName != "" {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'priorityClassName'", r.Spec.Mode)
 	}
 
 	// validate affinity
+	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
 	if r.Spec.Mode == ModeSidecar && r.Spec.Affinity != nil {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'affinity'", r.Spec.Mode)
 	}
 
+	// NOTE: this validation is also implemented in CRDs using CEL (Common Expression Language)
 	if r.Spec.Mode == ModeSidecar && len(r.Spec.AdditionalContainers) > 0 {
 		return warnings, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support the attribute 'AdditionalContainers'", r.Spec.Mode)
 	}
@@ -217,6 +240,21 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	if err := ValidatePorts(r.Spec.Ports); err != nil {
 		return warnings, err
 	}
+	ports, errPorts := r.Spec.Config.GetAllPorts(c.logger)
+	if errPorts != nil {
+		return warnings, fmt.Errorf("the OpenTelemetry config is incorrect. The port numbers are invalid: %w", errPorts)
+	}
+	for _, p := range ports {
+		truncName := naming.Truncate(p.Name, maxPortLen)
+		if truncName != p.Name {
+			warnings = append(warnings, fmt.Sprintf("the OpenTelemetry config port name '%s' exceeds the maximum length of 15 characters and has been truncated to '%s'", p.Name, truncName))
+		}
+		nameErrs := validation.IsValidPortName(truncName)
+		numErrs := validation.IsValidPortNum(int(p.Port))
+		if len(nameErrs) > 0 || len(numErrs) > 0 {
+			return warnings, fmt.Errorf("the OpenTelemetry config is incorrect. The port name '%s' errors: %s, num '%d' errors: %s", p.Name, nameErrs, p.Port, numErrs)
+		}
+	}
 
 	var maxReplicas *int32
 	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MaxReplicas != nil {
@@ -226,6 +264,11 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MinReplicas != nil {
 		minReplicas = r.Spec.Autoscaler.MinReplicas
 	}
+
+	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MinReplicas != nil && r.Spec.Autoscaler.MaxReplicas == nil {
+		return warnings, fmt.Errorf("spec.maxReplica must be set when spec.minReplica is set")
+	}
+
 	// check deprecated .Spec.MinReplicas if minReplicas is not set
 	if minReplicas == nil {
 		minReplicas = r.Spec.Replicas
@@ -233,20 +276,12 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 
 	// validate autoscale with horizontal pod autoscaler
 	if maxReplicas != nil {
-		if *maxReplicas < int32(1) {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, maxReplicas should be defined and one or more")
-		}
-
 		if r.Spec.Replicas != nil && *r.Spec.Replicas > *maxReplicas {
 			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, replicas must not be greater than maxReplicas")
 		}
 
 		if minReplicas != nil && *minReplicas > *maxReplicas {
 			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas")
-		}
-
-		if minReplicas != nil && *minReplicas < int32(1) {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas should be one or more")
 		}
 
 		if r.Spec.Autoscaler != nil {
@@ -267,16 +302,6 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	}
 	if r.Spec.Ingress.RuleType == IngressRuleTypeSubdomain && (r.Spec.Ingress.Hostname == "" || r.Spec.Ingress.Hostname == "*") {
 		return warnings, fmt.Errorf("a valid Ingress hostname has to be defined for subdomain ruleType")
-	}
-
-	// validate probes Liveness/Readiness
-	err := ValidateProbe("LivenessProbe", r.Spec.LivenessProbe)
-	if err != nil {
-		return warnings, err
-	}
-	err = ValidateProbe("ReadinessProbe", r.Spec.ReadinessProbe)
-	if err != nil {
-		return warnings, err
 	}
 
 	// validate updateStrategy for DaemonSet
@@ -345,30 +370,6 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 	return nil, nil
 }
 
-func ValidateProbe(probeName string, probe *Probe) error {
-	if probe != nil {
-		if probe.InitialDelaySeconds != nil && *probe.InitialDelaySeconds < 0 {
-			return fmt.Errorf("the OpenTelemetry Spec %s InitialDelaySeconds configuration is incorrect. InitialDelaySeconds should be greater than or equal to 0", probeName)
-		}
-		if probe.PeriodSeconds != nil && *probe.PeriodSeconds < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec %s PeriodSeconds configuration is incorrect. PeriodSeconds should be greater than or equal to 1", probeName)
-		}
-		if probe.TimeoutSeconds != nil && *probe.TimeoutSeconds < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec %s TimeoutSeconds configuration is incorrect. TimeoutSeconds should be greater than or equal to 1", probeName)
-		}
-		if probe.SuccessThreshold != nil && *probe.SuccessThreshold < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec %s SuccessThreshold configuration is incorrect. SuccessThreshold should be greater than or equal to 1", probeName)
-		}
-		if probe.FailureThreshold != nil && *probe.FailureThreshold < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec %s FailureThreshold configuration is incorrect. FailureThreshold should be greater than or equal to 1", probeName)
-		}
-		if probe.TerminationGracePeriodSeconds != nil && *probe.TerminationGracePeriodSeconds < 1 {
-			return fmt.Errorf("the OpenTelemetry Spec %s TerminationGracePeriodSeconds configuration is incorrect. TerminationGracePeriodSeconds should be greater than or equal to 1", probeName)
-		}
-	}
-	return nil
-}
-
 func ValidatePorts(ports []PortsSpec) error {
 	for _, p := range ports {
 		nameErrs := validation.IsValidPortName(p.Name)
@@ -392,12 +393,6 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 			(*autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(0) || *autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds > 3600) {
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp.stabilizationWindowSeconds should be >=0 and <=3600")
 		}
-	}
-	if autoscaler.TargetCPUUtilization != nil && *autoscaler.TargetCPUUtilization < int32(1) {
-		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetCPUUtilization should be greater than 0")
-	}
-	if autoscaler.TargetMemoryUtilization != nil && *autoscaler.TargetMemoryUtilization < int32(1) {
-		return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, targetMemoryUtilization should be greater than 0")
 	}
 
 	for _, metric := range autoscaler.Metrics {
@@ -431,6 +426,7 @@ func NewCollectorWebhook(
 	scheme *runtime.Scheme,
 	cfg config.Config,
 	reviewer *rbac.Reviewer,
+	recorder record.EventRecorder,
 	metrics *Metrics,
 	bv BuildValidator,
 	fips fips.FIPSCheck,
@@ -440,6 +436,7 @@ func NewCollectorWebhook(
 		scheme:   scheme,
 		cfg:      cfg,
 		reviewer: reviewer,
+		recorder: recorder,
 		metrics:  metrics,
 		bv:       bv,
 		fips:     fips,
@@ -447,7 +444,7 @@ func NewCollectorWebhook(
 }
 
 func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
-	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, metrics, bv, fipsCheck)
+	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, mgr.GetEventRecorderFor("opentelemetry-operator"), metrics, bv, fipsCheck)
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&OpenTelemetryCollector{}).
 		WithValidator(cvw).

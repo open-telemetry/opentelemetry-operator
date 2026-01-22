@@ -1,5 +1,5 @@
 ---
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: promreceiver-allocatorconfig-extra
@@ -11,7 +11,7 @@ spec:
     prometheusCR:
       enabled: true
 
-  config: |
+  config:
     receivers:
       jaeger:
           protocols:
@@ -32,8 +32,6 @@ spec:
           http_sd_config:
             refresh_interval: 10s
 
-    processors:
-
     exporters:
       debug:
     extensions:
@@ -42,7 +40,12 @@ spec:
     service:
       telemetry:
         metrics:
-          address: :8888
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
       extensions:
         - health_check
       pipelines:

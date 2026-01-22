@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [[ "$(kubectl api-resources --api-group=monitoring.coreos.com -o name)" ]]; then
     echo "Prometheus CRDs are there"

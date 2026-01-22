@@ -1,0 +1,26 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: smoke-ports
+spec:
+  mode: daemonset
+  trafficDistribution: PreferClose
+  ports:
+  - appProtocol: http
+    name: custom-port
+    port: 9090
+    protocol: TCP
+    targetPort: 9090
+    hostPort: 9090
+  config:
+    receivers:
+      nop: {}
+    processors:
+    exporters:
+      prometheus:
+        endpoint: "0.0.0.0:9090"
+    service:
+      pipelines:
+        traces:
+          receivers: [nop]
+          exporters: [prometheus]

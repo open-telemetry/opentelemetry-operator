@@ -30,13 +30,14 @@ func Build(params Params) ([]client.Object, error) {
 		manifests.FactoryWithoutError(ServiceAccount),
 		manifests.FactoryWithoutError(Service),
 		manifests.Factory(PodDisruptionBudget),
+		manifests.Factory(NetworkPolicy),
 	}
 
-	if params.TargetAllocator.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+	if params.TargetAllocator.Spec.Observability.Metrics.EnableMetrics {
 		resourceFactories = append(resourceFactories, manifests.FactoryWithoutError(ServiceMonitor))
 	}
 
-	if params.Config.CertManagerAvailability() == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
+	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
 		resourceFactories = append(resourceFactories,
 			manifests.FactoryWithoutError(SelfSignedIssuer),
 			manifests.FactoryWithoutError(CACertificate),

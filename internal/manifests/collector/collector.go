@@ -12,7 +12,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
-	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 const (
@@ -44,13 +43,11 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		manifests.Factory(MonitoringService),
 		manifests.Factory(ExtensionService),
 		manifests.Factory(Ingress),
+		manifests.Factory(NetworkPolicy),
+		manifests.Factory(TargetAllocator),
 	}...)
 
-	if featuregate.CollectorUsesTargetAllocatorCR.IsEnabled() {
-		manifestFactories = append(manifestFactories, manifests.Factory(TargetAllocator))
-	}
-
-	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics && featuregate.PrometheusOperatorIsAvailable.IsEnabled() {
+	if params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
 		if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
 			manifestFactories = append(manifestFactories, manifests.Factory(PodMonitor))
 		} else {
@@ -58,7 +55,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 		}
 	}
 
-	if params.Config.CreateRBACPermissions() == rbac.Available {
+	if params.Config.CreateRBACPermissions == rbac.Available {
 		manifestFactories = append(manifestFactories,
 			manifests.Factory(ClusterRole),
 			manifests.Factory(ClusterRoleBinding),
@@ -100,7 +97,7 @@ func Build(params manifests.Params) ([]client.Object, error) {
 
 func needsCheckSaPermissions(params manifests.Params) bool {
 	return params.ErrorAsWarning &&
-		params.Config.CreateRBACPermissions() == rbac.NotAvailable &&
+		params.Config.CreateRBACPermissions == rbac.NotAvailable &&
 		params.Reviewer != nil &&
 		params.OtelCol.Spec.ServiceAccount != ""
 }

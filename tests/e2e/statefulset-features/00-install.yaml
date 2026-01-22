@@ -4,6 +4,7 @@ metadata:
   name: stateful
 spec:
   mode: statefulset
+  terminationGracePeriodSeconds: 600
   replicas: 3
   volumes:
   - name: testvolume
@@ -12,7 +13,7 @@ spec:
     mountPath: /usr/share/testvolume
   volumeClaimTemplates:
   - metadata:
-      name: testvolume 
+      name: testvolume
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:

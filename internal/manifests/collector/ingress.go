@@ -19,14 +19,14 @@ import (
 
 func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 	name := naming.Ingress(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)
 	if params.OtelCol.Spec.Ingress.Type != v1beta1.IngressTypeIngress {
 		return nil, nil
 	}
 
 	ports, err := servicePortsFromCfg(params.Log, params.OtelCol)
 
-	// if we have no ports, we don't need a ingress entry
+	// if we have no ports, we don't need an ingress entry
 	if len(ports) == 0 || err != nil {
 		params.Log.V(1).Info(
 			"the instance's configuration didn't yield any ports to open, skipping ingress",

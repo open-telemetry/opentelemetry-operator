@@ -16,16 +16,21 @@ import (
 // StatefulSet builds the statefulset for the given instance.
 func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 	name := naming.Collector(params.OtelCol.Name)
-	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter())
+	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, params.Config.LabelsFilter)
 
-	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter())
+	annotations, err := manifestutils.Annotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {
 		return nil, err
 	}
 
-	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter())
+	podAnnotations, err := manifestutils.PodAnnotations(params.OtelCol, params.Config.AnnotationsFilter)
 	if err != nil {
 		return nil, err
+	}
+
+	serviceName := params.OtelCol.Spec.ServiceName
+	if serviceName == "" {
+		serviceName = naming.HeadlessService(params.OtelCol.Name)
 	}
 
 	return &appsv1.StatefulSet{
@@ -36,7 +41,7 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 			Annotations: annotations,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			ServiceName: naming.Service(params.OtelCol.Name),
+			ServiceName: serviceName,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: manifestutils.SelectorLabels(params.OtelCol.ObjectMeta, ComponentOpenTelemetryCollector),
 			},
@@ -46,23 +51,25 @@ func StatefulSet(params manifests.Params) (*appsv1.StatefulSet, error) {
 					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName:        ServiceAccountName(params.OtelCol),
-					InitContainers:            params.OtelCol.Spec.InitContainers,
-					Containers:                append(params.OtelCol.Spec.AdditionalContainers, Container(params.Config, params.Log, params.OtelCol, true)),
-					Volumes:                   Volumes(params.Config, params.OtelCol),
-					DNSPolicy:                 manifestutils.GetDNSPolicy(params.OtelCol.Spec.HostNetwork, params.OtelCol.Spec.PodDNSConfig),
-					DNSConfig:                 &params.OtelCol.Spec.PodDNSConfig,
-					HostNetwork:               params.OtelCol.Spec.HostNetwork,
-					ShareProcessNamespace:     &params.OtelCol.Spec.ShareProcessNamespace,
-					Tolerations:               params.OtelCol.Spec.Tolerations,
-					NodeSelector:              params.OtelCol.Spec.NodeSelector,
-					SecurityContext:           params.OtelCol.Spec.PodSecurityContext,
-					PriorityClassName:         params.OtelCol.Spec.PriorityClassName,
-					Affinity:                  params.OtelCol.Spec.Affinity,
-					TopologySpreadConstraints: params.OtelCol.Spec.TopologySpreadConstraints,
+					ServiceAccountName:            ServiceAccountName(params.OtelCol),
+					InitContainers:                params.OtelCol.Spec.InitContainers,
+					Containers:                    append([]corev1.Container{Container(params.Config, params.Log, params.OtelCol, true)}, params.OtelCol.Spec.AdditionalContainers...),
+					Volumes:                       Volumes(params.Config, params.OtelCol),
+					DNSPolicy:                     manifestutils.GetDNSPolicy(params.OtelCol.Spec.HostNetwork, params.OtelCol.Spec.PodDNSConfig, params.OtelCol.Spec.DNSPolicy),
+					DNSConfig:                     &params.OtelCol.Spec.PodDNSConfig,
+					HostNetwork:                   params.OtelCol.Spec.HostNetwork,
+					HostPID:                       params.OtelCol.Spec.HostPID,
+					ShareProcessNamespace:         &params.OtelCol.Spec.ShareProcessNamespace,
+					Tolerations:                   params.OtelCol.Spec.Tolerations,
+					NodeSelector:                  params.OtelCol.Spec.NodeSelector,
+					SecurityContext:               params.OtelCol.Spec.PodSecurityContext,
+					PriorityClassName:             params.OtelCol.Spec.PriorityClassName,
+					Affinity:                      params.OtelCol.Spec.Affinity,
+					TopologySpreadConstraints:     params.OtelCol.Spec.TopologySpreadConstraints,
+					TerminationGracePeriodSeconds: params.OtelCol.Spec.TerminationGracePeriodSeconds,
 				},
 			},
-			Replicas:                             params.OtelCol.Spec.Replicas,
+			Replicas:                             manifestutils.GetDesiredReplicas(params.OtelCol),
 			PodManagementPolicy:                  "Parallel",
 			VolumeClaimTemplates:                 VolumeClaimTemplates(params.OtelCol),
 			PersistentVolumeClaimRetentionPolicy: params.OtelCol.Spec.PersistentVolumeClaimRetentionPolicy,

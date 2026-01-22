@@ -11,9 +11,10 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	go_yaml "github.com/goccy/go-yaml"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -25,6 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeTesting "k8s.io/client-go/testing"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -74,10 +76,10 @@ func TestValidate(t *testing.T) {
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
-		cfg := config.New(
-			config.WithCollectorImage("default-collector"),
-			config.WithTargetAllocatorImage("default-ta-allocator"),
-		)
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		params := manifests.Params{
 			Log:     logr.Discard(),
 			Config:  cfg,
@@ -93,14 +95,16 @@ func TestValidate(t *testing.T) {
 
 	for _, tt := range tests {
 		test := tt
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		webhook := v1beta1.NewCollectorWebhook(
 			logr.Discard(),
 			testScheme,
-			config.New(
-				config.WithCollectorImage("collector:v0.0.0"),
-				config.WithTargetAllocatorImage("ta:v0.0.0"),
-			),
+			cfg,
 			getReviewer(test.shouldFailSar),
+			nil,
 			nil,
 			bv,
 			nil,
@@ -141,7 +145,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Config: func() v1beta1.Config {
 						const input = `{"receivers":{"otlp":{"protocols":{"grpc":null,"http":null}}},"exporters":{"debug":null},"service":{"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
-						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
+						require.NoError(t, go_yaml.Unmarshal([]byte(input), &cfg))
 						return cfg
 					}(),
 				},
@@ -158,9 +162,11 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            v1beta1.ModeDeployment,
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
 					Config: func() v1beta1.Config {
-						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317"},"http":{"endpoint":"0.0.0.0:4318"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"address":"0.0.0.0:8888"}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
+						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317"},"http":{"endpoint":"0.0.0.0:4318"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"0.0.0.0","port":8888}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
-						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
+						require.NoError(t, go_yaml.Unmarshal([]byte(input), &cfg))
+						// This is a workaround to avoid the type mismatch because how go-yaml unmarshals
+						cfg.Service.Telemetry.Object["metrics"].(map[string]interface{})["readers"].([]interface{})[0].(map[string]interface{})["pull"].(map[string]interface{})["exporter"].(map[string]interface{})["prometheus"].(map[string]interface{})["port"] = int32(8888)
 						return cfg
 					}(),
 				},
@@ -171,9 +177,9 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: func() v1beta1.Config {
-						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"address":"1.2.3.4:7654"}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
+						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"localhost","port":9999}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
-						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
+						require.NoError(t, go_yaml.Unmarshal([]byte(input), &cfg))
 						return cfg
 					}(),
 				},
@@ -190,9 +196,9 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Mode:            v1beta1.ModeDeployment,
 					UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
 					Config: func() v1beta1.Config {
-						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317","headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"address":"1.2.3.4:7654"}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
+						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317","headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"localhost","port":9999}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
-						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
+						require.NoError(t, go_yaml.Unmarshal([]byte(input), &cfg))
 						return cfg
 					}(),
 				},
@@ -509,10 +515,10 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
-		cfg := config.New(
-			config.WithCollectorImage("default-collector"),
-			config.WithTargetAllocatorImage("default-ta-allocator"),
-		)
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		params := manifests.Params{
 			Log:     logr.Discard(),
 			Config:  cfg,
@@ -529,14 +535,16 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			cfg := config.Config{
+				CollectorImage:       "collector:v0.0.0",
+				TargetAllocatorImage: "ta:v0.0.0",
+			}
 			cvw := v1beta1.NewCollectorWebhook(
 				logr.Discard(),
 				testScheme,
-				config.New(
-					config.WithCollectorImage("collector:v0.0.0"),
-					config.WithTargetAllocatorImage("ta:v0.0.0"),
-				),
+				cfg,
 				getReviewer(test.shouldFailSar),
+				nil,
 				nil,
 				bv,
 				nil,
@@ -544,10 +552,13 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 			ctx := context.Background()
 			err := cvw.Default(ctx, &test.otelcol)
 			if test.expected.Spec.Config.Service.Telemetry == nil {
-				assert.NoError(t, test.expected.Spec.Config.Service.ApplyDefaults(logr.Discard()), "could not apply defaults")
+				_, applyErr := test.expected.Spec.Config.Service.ApplyDefaults(logr.Discard())
+				assert.NoError(t, applyErr, "could not apply defaults")
 			}
 			assert.NoError(t, err)
-			assert.Equal(t, test.expected, test.otelcol)
+			if diff := cmp.Diff(test.expected, test.otelcol); diff != "" {
+				t.Errorf("v1beta1.OpenTelemetryCollector mismatch (-want +got):\n%s", diff)
+			}
 		})
 	}
 }
@@ -571,7 +582,6 @@ var cfgYaml = `receivers:
 func TestOTELColValidatingWebhook(t *testing.T) {
 	minusOne := int32(-1)
 	zero := int32(0)
-	zero64 := int64(0)
 	one := int32(1)
 	three := int32(3)
 	five := int32(5)
@@ -582,13 +592,24 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			Telemetry: &v1beta1.AnyConfig{
 				Object: map[string]interface{}{
 					"metrics": map[string]interface{}{
-						"address": "${env:POD_ID}:8888",
+						"readers": []map[string]interface{}{
+							{
+								"pull": map[string]interface{}{
+									"exporter": map[string]interface{}{
+										"prometheus": map[string]interface{}{
+											"host": "${env:POD_ID}",
+											"port": int32(8888),
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
 		},
 	}
-	err := yaml.Unmarshal([]byte(cfgYaml), &cfg)
+	err := go_yaml.Unmarshal([]byte(cfgYaml), &cfg)
 	require.NoError(t, err)
 
 	tests := []struct { //nolint:govet
@@ -708,6 +729,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - configmaps: [get]",
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - discovery.k8s.io/endpointslices: [get,list,watch]",
 				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /metrics: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /api: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /api/*: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /apis: [get]",
+				"missing the following rules for system:serviceaccount:test-ns:adm-warning-targetallocator - nonResourceURL: /apis/*: [get]",
 			},
 		},
 		{
@@ -838,7 +863,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 						Ports: []v1beta1.PortsSpec{
 							{
 								ServicePort: v1.ServicePort{
-									// this port name contains a non alphanumeric character, which is invalid.
+									// this port name contains a non-alphanumeric character, which is invalid.
 									Name:     "-test🦄port",
 									Port:     12345,
 									Protocol: v1.ProtocolTCP,
@@ -895,7 +920,17 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "maxReplicas should be defined and one or more",
+		},
+		{
+			name: "it should return error when minReplica is set but maxReplica is not set",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Autoscaler: &v1beta1.AutoscalerSpec{
+						MinReplicas: &three,
+					},
+				},
+			},
+			expectedErr: "spec.maxReplica must be set when spec.minReplica is set",
 		},
 		{
 			name: "invalid replicas, greater than max",
@@ -933,7 +968,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "minReplicas should be one or more",
 		},
 		{
 			name: "invalid autoscaler scale down stablization window - <0",
@@ -1009,7 +1043,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "targetCPUUtilization should be greater than 0",
 		},
 		{
 			name: "invalid autoscaler target memory utilization",
@@ -1021,7 +1054,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: "targetMemoryUtilization should be greater than 0",
 		},
 		{
 			name: "autoscaler minReplicas is less than maxReplicas",
@@ -1154,138 +1186,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			expectedErr: "does not support the attribute 'affinity'",
 		},
 		{
-			name: "invalid InitialDelaySeconds",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					LivenessProbe: &v1beta1.Probe{
-						InitialDelaySeconds: &minusOne,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec LivenessProbe InitialDelaySeconds configuration is incorrect",
-		},
-		{
-			name: "invalid InitialDelaySeconds readiness",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					ReadinessProbe: &v1beta1.Probe{
-						InitialDelaySeconds: &minusOne,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec ReadinessProbe InitialDelaySeconds configuration is incorrect",
-		},
-		{
-			name: "invalid PeriodSeconds",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					LivenessProbe: &v1beta1.Probe{
-						PeriodSeconds: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec LivenessProbe PeriodSeconds configuration is incorrect",
-		},
-		{
-			name: "invalid PeriodSeconds readiness",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					ReadinessProbe: &v1beta1.Probe{
-						PeriodSeconds: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec ReadinessProbe PeriodSeconds configuration is incorrect",
-		},
-		{
-			name: "invalid TimeoutSeconds",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					LivenessProbe: &v1beta1.Probe{
-						TimeoutSeconds: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec LivenessProbe TimeoutSeconds configuration is incorrect",
-		},
-		{
-			name: "invalid TimeoutSeconds readiness",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					ReadinessProbe: &v1beta1.Probe{
-						TimeoutSeconds: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec ReadinessProbe TimeoutSeconds configuration is incorrect",
-		},
-		{
-			name: "invalid SuccessThreshold",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					LivenessProbe: &v1beta1.Probe{
-						SuccessThreshold: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec LivenessProbe SuccessThreshold configuration is incorrect",
-		},
-		{
-			name: "invalid SuccessThreshold readiness",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					ReadinessProbe: &v1beta1.Probe{
-						SuccessThreshold: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec ReadinessProbe SuccessThreshold configuration is incorrect",
-		},
-		{
-			name: "invalid FailureThreshold",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					LivenessProbe: &v1beta1.Probe{
-						FailureThreshold: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec LivenessProbe FailureThreshold configuration is incorrect",
-		},
-		{
-			name: "invalid FailureThreshold readiness",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					ReadinessProbe: &v1beta1.Probe{
-						FailureThreshold: &zero,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec ReadinessProbe FailureThreshold configuration is incorrect",
-		},
-		{
-			name: "invalid TerminationGracePeriodSeconds",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					LivenessProbe: &v1beta1.Probe{
-						TerminationGracePeriodSeconds: &zero64,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec LivenessProbe TerminationGracePeriodSeconds configuration is incorrect",
-		},
-		{
-			name: "invalid TerminationGracePeriodSeconds readiness",
-			otelcol: v1beta1.OpenTelemetryCollector{
-				Spec: v1beta1.OpenTelemetryCollectorSpec{
-					ReadinessProbe: &v1beta1.Probe{
-						TerminationGracePeriodSeconds: &zero64,
-					},
-				},
-			},
-			expectedErr: "the OpenTelemetry Spec ReadinessProbe TerminationGracePeriodSeconds configuration is incorrect",
-		},
-		{
 			name: "invalid AdditionalContainers",
 			otelcol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
@@ -1362,14 +1262,146 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			},
 			expectedErr: "the OpenTelemetry Spec Ports configuration is incorrect",
 		},
+		{
+			name: "invalid port number in config - too large",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"otlp": map[string]interface{}{
+									"protocols": map[string]interface{}{
+										"grpc": map[string]interface{}{
+											"endpoint": "0.0.0.0:65536",
+										},
+									},
+								},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"debug": map[string]interface{}{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Receivers: []string{"otlp"},
+									Exporters: []string{"debug"},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry config is incorrect. The port",
+		},
+		{
+			name: "port validation - zero port currently not validated",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"otlp": map[string]interface{}{
+									"protocols": map[string]interface{}{
+										"grpc": map[string]interface{}{
+											"endpoint": "0.0.0.0:0",
+										},
+									},
+								},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"debug": map[string]interface{}{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Receivers: []string{"otlp"},
+									Exporters: []string{"debug"},
+								},
+							},
+						},
+					},
+				},
+			},
+			// TODO: This should fail validation when port validation is fully implemented
+		},
+		{
+			name: "port validation - negative port currently not validated",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"otlp": map[string]interface{}{
+									"protocols": map[string]interface{}{
+										"grpc": map[string]interface{}{
+											"endpoint": "0.0.0.0:-1",
+										},
+									},
+								},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"debug": map[string]interface{}{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Receivers: []string{"otlp"},
+									Exporters: []string{"debug"},
+								},
+							},
+						},
+					},
+				},
+			},
+			// TODO: This should fail validation when port validation is fully implemented
+		},
+		{
+			name: "invalid port number in zipkin receiver config - too large",
+			otelcol: v1beta1.OpenTelemetryCollector{
+				Spec: v1beta1.OpenTelemetryCollectorSpec{
+					Config: v1beta1.Config{
+						Receivers: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"zipkin": map[string]interface{}{
+									"endpoint": "0.0.0.0:65537",
+								},
+							},
+						},
+						Exporters: v1beta1.AnyConfig{
+							Object: map[string]interface{}{
+								"debug": map[string]interface{}{},
+							},
+						},
+						Service: v1beta1.Service{
+							Pipelines: map[string]*v1beta1.Pipeline{
+								"traces": {
+									Receivers: []string{"zipkin"},
+									Exporters: []string{"debug"},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedErr: "the OpenTelemetry config is incorrect. The port",
+		},
 	}
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
-		cfg := config.New(
-			config.WithCollectorImage("default-collector"),
-			config.WithTargetAllocatorImage("default-ta-allocator"),
-		)
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		params := manifests.Params{
 			Log:     logr.Discard(),
 			Config:  cfg,
@@ -1386,14 +1418,16 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			cfg := config.Config{
+				CollectorImage:       "default-collector",
+				TargetAllocatorImage: "default-ta-allocator",
+			}
 			cvw := v1beta1.NewCollectorWebhook(
 				logr.Discard(),
 				testScheme,
-				config.New(
-					config.WithCollectorImage("collector:v0.0.0"),
-					config.WithTargetAllocatorImage("ta:v0.0.0"),
-				),
+				cfg,
 				getReviewer(test.shouldFailSar),
+				nil,
 				nil,
 				bv,
 				nil,
@@ -1434,10 +1468,10 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 
 	bv := func(_ context.Context, collector v1beta1.OpenTelemetryCollector) admission.Warnings {
 		var warnings admission.Warnings
-		cfg := config.New(
-			config.WithCollectorImage("default-collector"),
-			config.WithTargetAllocatorImage("default-ta-allocator"),
-		)
+		cfg := config.Config{
+			CollectorImage:       "default-collector",
+			TargetAllocatorImage: "default-ta-allocator",
+		}
 		params := manifests.Params{
 			Log:     logr.Discard(),
 			Config:  cfg,
@@ -1454,14 +1488,16 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
+			cfg := config.Config{
+				CollectorImage:       "collector:v0.0.0",
+				TargetAllocatorImage: "ta:v0.0.0",
+			}
 			cvw := v1beta1.NewCollectorWebhook(
 				logr.Discard(),
 				testScheme,
-				config.New(
-					config.WithCollectorImage("collector:v0.0.0"),
-					config.WithTargetAllocatorImage("ta:v0.0.0"),
-				),
+				cfg,
 				getReviewer(test.shouldFailSar),
+				nil,
 				nil,
 				bv,
 				nil,
@@ -1475,6 +1511,262 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 			}
 			assert.Equal(t, len(test.expectedWarnings), len(warnings))
 			assert.ElementsMatch(t, warnings, test.expectedWarnings)
+		})
+	}
+}
+
+func TestValidationViaCRDAnnotations(t *testing.T) {
+	name := "test-collector"
+
+	minimalCollector := func(namespace string) *v1beta1.OpenTelemetryCollector {
+		return &v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				Mode:            v1beta1.ModeDeployment,
+				UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
+				Config: v1beta1.Config{
+					Receivers: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"otlp": map[string]interface{}{},
+						},
+					},
+					Exporters: v1beta1.AnyConfig{
+						Object: map[string]interface{}{
+							"debug": map[string]interface{}{},
+						},
+					},
+					Service: v1beta1.Service{
+						Pipelines: map[string]*v1beta1.Pipeline{
+							"traces": {
+								Receivers: []string{"otlp"},
+								Exporters: []string{"debug"},
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	cases := []struct {
+		name        string
+		collector   func(namespace string) *v1beta1.OpenTelemetryCollector
+		expectedErr string
+	}{
+		{
+			name: "Minimal collector",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				return minimalCollector(namespace)
+			},
+		},
+		{
+			name: "Valid LivenessProve",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.LivenessProbe = &v1beta1.Probe{
+					InitialDelaySeconds:           ptr.To(int32(0)),
+					TimeoutSeconds:                ptr.To(int32(1)),
+					PeriodSeconds:                 ptr.To(int32(1)),
+					SuccessThreshold:              ptr.To(int32(1)),
+					FailureThreshold:              ptr.To(int32(1)),
+					TerminationGracePeriodSeconds: ptr.To(int64(1)),
+				}
+				return c
+			},
+		},
+		{
+			name: "LivenessProve initialDelaySeconds below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.LivenessProbe = &v1beta1.Probe{
+					InitialDelaySeconds: ptr.To(int32(-1)),
+				}
+				return c
+			},
+			expectedErr: "spec.livenessProbe.initialDelaySeconds in body should be greater than or equal to 0",
+		},
+		{
+			name: "LivenessProbe timeoutSeconds below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.LivenessProbe = &v1beta1.Probe{
+					TimeoutSeconds: ptr.To(int32(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.livenessProbe.timeoutSeconds in body should be greater than or equal to 1",
+		},
+		{
+			name: "LivenessProbe periodSeconds below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.LivenessProbe = &v1beta1.Probe{
+					PeriodSeconds: ptr.To(int32(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.livenessProbe.periodSeconds in body should be greater than or equal to 1",
+		},
+		{
+			name: "LivenessProbe successThreshold below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.LivenessProbe = &v1beta1.Probe{
+					SuccessThreshold: ptr.To(int32(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.livenessProbe.successThreshold in body should be greater than or equal to 1",
+		},
+		{
+			name: "LivenessProbe failureThreshold below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.LivenessProbe = &v1beta1.Probe{
+					FailureThreshold: ptr.To(int32(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.livenessProbe.failureThreshold in body should be greater than or equal to 1",
+		},
+		{
+			name: "LivenessProbe terminationGracePeriodSeconds below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.LivenessProbe = &v1beta1.Probe{
+					TerminationGracePeriodSeconds: ptr.To(int64(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.livenessProbe.terminationGracePeriodSeconds in body should be greater than or equal to 1",
+		},
+		{
+			name: "Valid Autoscaler",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Autoscaler = &v1beta1.AutoscalerSpec{
+					MinReplicas:             ptr.To(int32(1)),
+					MaxReplicas:             ptr.To(int32(3)),
+					TargetCPUUtilization:    ptr.To(int32(80)),
+					TargetMemoryUtilization: ptr.To(int32(75)),
+				}
+				return c
+			},
+		},
+		{
+			name: "Autoscaler maxReplicas below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Autoscaler = &v1beta1.AutoscalerSpec{
+					MaxReplicas: ptr.To(int32(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.autoscaler.maxReplicas in body should be greater than or equal to 1",
+		},
+		{
+			name: "Autoscaler minReplicas below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Autoscaler = &v1beta1.AutoscalerSpec{
+					MinReplicas: ptr.To(int32(0)),
+					MaxReplicas: ptr.To(int32(1)),
+				}
+				return c
+			},
+			expectedErr: "spec.autoscaler.minReplicas in body should be greater than or equal to 1",
+		},
+		{
+			name: "Autoscaler targetCPUUtilization below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Autoscaler = &v1beta1.AutoscalerSpec{
+					MaxReplicas:          ptr.To(int32(1)),
+					TargetCPUUtilization: ptr.To(int32(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.autoscaler.targetCPUUtilization in body should be greater than or equal to 1",
+		},
+		{
+			name: "Autoscaler targetMemoryUtilization below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Autoscaler = &v1beta1.AutoscalerSpec{
+					MaxReplicas:             ptr.To(int32(1)),
+					TargetMemoryUtilization: ptr.To(int32(0)),
+				}
+				return c
+			},
+			expectedErr: "spec.autoscaler.targetMemoryUtilization in body should be greater than or equal to 1",
+		},
+		{
+			name: "Valid Ports hostPort",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Ports = []v1beta1.PortsSpec{
+					{
+						HostPort: 1025,
+						ServicePort: v1.ServicePort{
+							Name: "otlp",
+							Port: 4317,
+						},
+					},
+				}
+				return c
+			},
+		},
+		{
+			name: "Ports hostPort below minimum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Ports = []v1beta1.PortsSpec{
+					{
+						HostPort: -1,
+						ServicePort: v1.ServicePort{
+							Name: "otlp",
+							Port: 4317,
+						},
+					},
+				}
+				return c
+			},
+			expectedErr: "spec.ports[0].hostPort in body should be greater than or equal to 0",
+		},
+		{
+			name: "Ports hostPort above maximum",
+			collector: func(namespace string) *v1beta1.OpenTelemetryCollector {
+				c := minimalCollector(namespace)
+				c.Spec.Ports = []v1beta1.PortsSpec{
+					{
+						HostPort: 65536,
+						ServicePort: v1.ServicePort{
+							Name: "otlp",
+							Port: 4317,
+						},
+					},
+				}
+				return c
+			},
+			expectedErr: "spec.ports[0].hostPort in body should be less than or equal to 65535",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			ns := prepareNamespace(t, ctx)
+
+			err := k8sClient.Create(ctx, tc.collector(ns))
+			if tc.expectedErr != "" {
+				require.Error(t, err)
+				require.ErrorContains(t, err, tc.expectedErr)
+				return
+			}
+			require.NoError(t, err)
 		})
 	}
 }

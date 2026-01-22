@@ -30,15 +30,6 @@ func TestDesiredConfigMap(t *testing.T) {
 		"app.kubernetes.io/part-of":    "opentelemetry",
 		"app.kubernetes.io/version":    "0.47.0",
 	}
-	collector := collectorInstance()
-	targetAllocator := targetAllocatorInstance()
-	cfg := config.New()
-	params := Params{
-		Collector:       collector,
-		TargetAllocator: targetAllocator,
-		Config:          cfg,
-		Log:             logr.Discard(),
-	}
 
 	t.Run("should return expected target allocator config map", func(t *testing.T) {
 		expectedData := map[string]string{
@@ -61,8 +52,11 @@ config:
 filter_strategy: relabel-config
 `,
 		}
-
-		actual, err := ConfigMap(params)
+		testParams := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocatorInstance(),
+		}
+		actual, err := ConfigMap(testParams)
 		require.NoError(t, err)
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
@@ -77,16 +71,14 @@ collector_selector: null
 filter_strategy: relabel-config
 `,
 		}
-		targetAllocator = targetAllocatorInstance()
+		targetAllocator := targetAllocatorInstance()
 		targetAllocator.Spec.ScrapeConfigs = []v1beta1.AnyConfig{}
-		params.TargetAllocator = targetAllocator
 		testParams := Params{
 			Collector:       nil,
-			TargetAllocator: targetAllocator,
+			TargetAllocator: targetAllocatorInstance(),
 		}
 		actual, err := ConfigMap(testParams)
 		require.NoError(t, err)
-		params.Collector = collector
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedLabels, actual.Labels)
@@ -106,9 +98,8 @@ collector_selector:
 filter_strategy: relabel-config
 `,
 		}
-		targetAllocator = targetAllocatorInstance()
+		targetAllocator := targetAllocatorInstance()
 		targetAllocator.Spec.ScrapeConfigs = []v1beta1.AnyConfig{}
-		params.TargetAllocator = targetAllocator
 		collectorWithoutPrometheusReceiver := collectorInstance()
 		collectorWithoutPrometheusReceiver.Spec.Config.Receivers.Object["prometheus"] = map[string]any{
 			"config": map[string]any{
@@ -121,7 +112,6 @@ filter_strategy: relabel-config
 		}
 		actual, err := ConfigMap(testParams)
 		require.NoError(t, err)
-		params.Collector = collector
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedLabels, actual.Labels)
@@ -174,7 +164,7 @@ prometheus_cr:
     matchexpressions: []
 `,
 		}
-		targetAllocator = targetAllocatorInstance()
+		targetAllocator := targetAllocatorInstance()
 		targetAllocator.Spec.PrometheusCR.Enabled = true
 		targetAllocator.Spec.PrometheusCR.PodMonitorSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
@@ -199,8 +189,11 @@ prometheus_cr:
 				"scrape_protocols": []string{"PrometheusProto", "OpenMetricsText1.0.0", "OpenMetricsText0.0.1", "PrometheusText0.0.4"},
 			},
 		}
-		params.TargetAllocator = targetAllocator
-		actual, err := ConfigMap(params)
+		testParams := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+		}
+		actual, err := ConfigMap(testParams)
 		assert.NoError(t, err)
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedLabels, actual.Labels)
@@ -236,11 +229,14 @@ prometheus_cr:
 `,
 		}
 
-		targetAllocator = targetAllocatorInstance()
+		targetAllocator := targetAllocatorInstance()
 		targetAllocator.Spec.PrometheusCR.Enabled = true
 		targetAllocator.Spec.PrometheusCR.ScrapeInterval = &metav1.Duration{Duration: time.Second * 30}
-		params.TargetAllocator = targetAllocator
-		actual, err := ConfigMap(params)
+		testParams := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+		}
+		actual, err := ConfigMap(testParams)
 		assert.NoError(t, err)
 
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
@@ -249,19 +245,83 @@ prometheus_cr:
 
 	})
 
+	t.Run("should return expected target allocator config map with scrape classes set", func(t *testing.T) {
+		expectedData := map[string]string{
+			targetAllocatorFilename: `allocation_strategy: consistent-hashing
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+filter_strategy: relabel-config
+prometheus_cr:
+  enabled: true
+  pod_monitor_selector: null
+  probe_selector: null
+  scrape_classes:
+  - default: true
+    name: my-scrape-class
+    relabelings:
+    - action: labeldrop
+      regex: pod
+  scrape_config_selector: null
+  service_monitor_selector: null
+`,
+		}
+
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.PrometheusCR.Enabled = true
+		targetAllocator.Spec.PrometheusCR.ScrapeClasses = []v1beta1.AnyConfig{
+			{
+				Object: map[string]any{
+					"name":    "my-scrape-class",
+					"default": true,
+					"relabelings": []any{
+						map[string]any{
+							"action": "labeldrop",
+							"regex":  "pod",
+						},
+					},
+				},
+			},
+		}
+		testParams := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+		}
+		actual, err := ConfigMap(testParams)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, expectedLabels, actual.Labels)
+		assert.Equal(t, expectedData, actual.Data)
+	})
+
 	t.Run("should return expected target allocator config map with HTTPS configuration", func(t *testing.T) {
 		expectedLabels["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
 		expectedLabels["app.kubernetes.io/name"] = "my-instance-targetallocator"
 
-		cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+		cfg := config.Config{
+			CertManagerAvailability: certmanager.Available,
+		}
 
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
 		require.NoError(t, err)
 
 		testParams := Params{
-			Collector:       collector,
-			TargetAllocator: targetAllocator,
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocatorInstance(),
 			Config:          cfg,
 		}
 
@@ -289,13 +349,6 @@ https:
   listen_addr: :8443
   tls_cert_file_path: /tls/tls.crt
   tls_key_file_path: /tls/tls.key
-prometheus_cr:
-  enabled: true
-  pod_monitor_selector: null
-  probe_selector: null
-  scrape_config_selector: null
-  scrape_interval: 30s
-  service_monitor_selector: null
 `,
 		}
 
@@ -311,15 +364,17 @@ prometheus_cr:
 		expectedLabels["app.kubernetes.io/component"] = "opentelemetry-targetallocator"
 		expectedLabels["app.kubernetes.io/name"] = "my-instance-targetallocator"
 
-		cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+		cfg := config.Config{
+			CertManagerAvailability: certmanager.Available,
+		}
 
 		flgs := featuregate.Flags(colfg.GlobalRegistry())
 		err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.fallbackstrategy"})
 		require.NoError(t, err)
 
 		testParams := Params{
-			Collector:       collector,
-			TargetAllocator: targetAllocator,
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocatorInstance(),
 			Config:          cfg,
 		}
 
@@ -348,13 +403,6 @@ https:
   listen_addr: :8443
   tls_cert_file_path: /tls/tls.crt
   tls_key_file_path: /tls/tls.key
-prometheus_cr:
-  enabled: true
-  pod_monitor_selector: null
-  probe_selector: null
-  scrape_config_selector: null
-  scrape_interval: 30s
-  service_monitor_selector: null
 `,
 		}
 
@@ -727,4 +775,47 @@ func TestGetGlobalConfig(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestGetCollectorNotReadyGracePeriod(t *testing.T) {
+	collector := collectorInstance()
+	targetAllocator := targetAllocatorInstanceWithCollectorNotReadyGracePeriod()
+	cfg := config.New()
+	params := Params{
+		Collector:       collector,
+		TargetAllocator: targetAllocator,
+		Config:          cfg,
+		Log:             logr.Discard(),
+	}
+
+	t.Run("should return expected target allocator config map with collector_not_ready_grace_period", func(t *testing.T) {
+		expectedData := map[string]string{
+			targetAllocatorFilename: `allocation_fallback_strategy: consistent-hashing
+allocation_strategy: consistent-hashing
+collector_not_ready_grace_period: 30s
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
+config:
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+filter_strategy: relabel-config
+`,
+		}
+
+		actual, err := ConfigMap(params)
+		require.NoError(t, err)
+
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
+	})
 }

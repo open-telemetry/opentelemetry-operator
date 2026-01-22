@@ -5,6 +5,7 @@
 *.so
 *.dylib
 bin
+obj/
 vendor
 .DS_Store
 
@@ -39,8 +40,11 @@ kubeconfig
 tests/_build/
 config/rbac/extra-permissions-operator/
 config/rbac/certmanager-permissions/
+.testresults
 
 # autoinstrumentation artifacts
 build
 node_modules
 package-lock.json
+
+.tool-versions

@@ -165,19 +165,12 @@ func TestAllocationCollision(t *testing.T) {
 
 		cols := MakeNCollectors(3, 0)
 		allocator.SetCollectors(cols)
-		firstLabels := labels.Labels{
-			{Name: "test", Value: "test1"},
-		}
-		secondLabels := labels.Labels{
-			{Name: "test", Value: "test2"},
-		}
+		firstLabels := labels.New(labels.Label{Name: "test", Value: "test1"})
+		secondLabels := labels.New(labels.Label{Name: "test", Value: "test2"})
 		firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
 		secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
 
-		targetList := map[string]*target.Item{
-			firstTarget.Hash():  firstTarget,
-			secondTarget.Hash(): secondTarget,
-		}
+		targetList := []*target.Item{firstTarget, secondTarget}
 
 		// test that targets and collectors are added properly
 		allocator.SetTargets(targetList)

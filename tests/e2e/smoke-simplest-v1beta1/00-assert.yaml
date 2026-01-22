@@ -52,3 +52,14 @@ spec:
     port: 4318
     protocol: TCP
     targetPort: 4318
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: simplest
+status:
+  (image != ''): true
+  (version != ''): true
+  scale:
+    replicas: 1
+    statusReplicas: "1/1"

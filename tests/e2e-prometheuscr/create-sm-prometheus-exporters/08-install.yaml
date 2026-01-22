@@ -122,6 +122,6 @@ spec:
         - /bin/sh
         - -c
         - curl -s http://simplest-targetallocator/jobs | grep "targetallocator"
-        image: curlimages/curl
+        image: docker.io/curlimages/curl:latest
         name: check-metrics
       restartPolicy: OnFailure

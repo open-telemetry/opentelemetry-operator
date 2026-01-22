@@ -6,102 +6,24 @@ on:
   pull_request:
     branches: [ main ]
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+permissions:
+  contents: read
 
 jobs:
-  e2e-tests:
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-       # The e2e tests are run on the lowest and highest supported k8s version.
-       # All Kubernetes version in between expose the same APIs, hence the operator
-       # should be compatible with them.
-       kube-version:
-         - "1.23"
-         - "1.32"
-       group:
-         - e2e
-         - e2e-automatic-rbac
-         - e2e-autoscale
-         - e2e-instrumentation
-         - e2e-opampbridge
-         - e2e-pdb
-         - e2e-prometheuscr
-         - e2e-targetallocator
-         - e2e-targetallocator-cr
-         - e2e-upgrade
-         - e2e-multi-instrumentation
-         - e2e-metadata-filters
-         - e2e-ta-collector-mtls
-       include:
-         - group: e2e-instrumentation
-           setup: "add-instrumentation-params prepare-e2e"
-         - group: e2e-multi-instrumentation
-           setup: "add-instrumentation-params prepare-e2e"
-         - group: e2e-metadata-filters
-           setup: "add-operator-arg OPERATOR_ARG='--annotations-filter=.*filter.out --annotations-filter=config.*.gke.io.* --labels-filter=.*filter.out' prepare-e2e"
-         - group: e2e-ta-collector-mtls
-           setup: "add-operator-arg OPERATOR_ARG='--feature-gates=operator.targetallocator.mtls' add-certmanager-permissions prepare-e2e"
-         - group: e2e-automatic-rbac
-           setup: "add-rbac-permissions-to-operator prepare-e2e"
-         - group: e2e-native-sidecar
-           setup: "add-operator-arg OPERATOR_ARG='--feature-gates=operator.sidecarcontainers.native' prepare-e2e"
-           kube-version: "1.29"
-         - group: e2e-targetallocator
-           setup: "enable-targetallocator-cr prepare-e2e"
-         - group: e2e-targetallocator-cr
-           setup: "enable-targetallocator-cr prepare-e2e"
-    steps:
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v4
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      id: setup-go
-      with:
-        go-version: "~1.24.1"
-
-    - name: Cache tools
-      uses: actions/cache@v4
-      with:
-        path: bin
-        key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}
-
-    - name: Install tools
-      run: make install-tools
-
-    - name: Prepare e2e tests
-      env:
-        KUBE_VERSION: ${{ matrix.kube-version }}
-      run: |
-        set -e
-        make ${{ matrix.setup != '' && matrix.setup || 'prepare-e2e' }} KUBE_VERSION=$KUBE_VERSION VERSION=e2e
-    - name: Run e2e tests
-      env:
-        KUBE_VERSION: ${{ matrix.kube-version }}
-      run: |
-        set -e
-        make ${{ matrix.group }}
-    - name: "log operator if failed"
-      if: ${{ failure() }}
-      env:
-        KUBE_VERSION: ${{ matrix.kube-version }}
-      run: |
-        set -e
-        make e2e-log-operator KUBE_VERSION=$KUBE_VERSION
-
+  run-e2e-tests:
+    uses: ./.github/workflows/e2e-reusable.yaml
+  
+  # This job is here to ensure the check has the right name we have set in Github's required checks.
   e2e-tests-check:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: always()
-    needs: [e2e-tests]
+    needs: [ run-e2e-tests ]
     steps:
       - name: Print result
-        run: echo ${{ needs.e2e-tests.result }}
+        run: echo ${{ needs.run-e2e-tests.result }}
       - name: Interpret result
         run: |
-          if [[ success == ${{ needs.e2e-tests.result }} ]]
+          if [[ success == ${{ needs.run-e2e-tests.result }} ]]
           then
             echo "All matrix jobs passed!"
           else

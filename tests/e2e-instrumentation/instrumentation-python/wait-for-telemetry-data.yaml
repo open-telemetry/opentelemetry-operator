@@ -1,0 +1,22 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: StepTemplate
+metadata:
+  name: wait-for-telemetry-data
+spec:
+  try:
+  - script:
+      env:
+        - name: LABEL_SELECTOR
+          value: ($COLLECTOR_LABEL_SELECTOR)
+        - name: CONTAINER_NAME
+          value: "otc-container"
+        - name: RETRY_TIMEOUT
+          value: "120"
+        - name: RETRY_SLEEP
+          value: "5"
+        - name: SEARCH_STRINGS_ENV
+          value: |
+            http.method: Str(GET)
+            k8s.container.name: Str(myapp)
+      timeout: 2m
+      content: ../../test-e2e-apps/scripts/check_pod_logs.sh

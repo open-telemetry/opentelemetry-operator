@@ -12,7 +12,6 @@ spec:
       labels:
         app: my-apache-multi
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-apache-httpd: "true"
         instrumentation.opentelemetry.io/container-names: "myapp"
     spec:
@@ -26,6 +25,15 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 3
           resources:
             limits:
               cpu: "1"
@@ -38,7 +46,7 @@ spec:
             capabilities:
               drop: ["ALL"]
         - name: myrabbit
-          image: rabbitmq
+          image: docker.io/library/rabbitmq:latest
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

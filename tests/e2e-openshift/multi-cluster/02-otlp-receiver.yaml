@@ -20,7 +20,7 @@ spec:
               client_ca_file: /certs/ca.crt
     exporters:
       otlp:
-        endpoint: "jaeger-allinone-collector.chainsaw-multi-cluster-receive.svc:4317"
+        endpoint: "tempo-multicluster.chainsaw-multi-cluster-receive.svc:4317"
         tls:
           insecure: true
     service:

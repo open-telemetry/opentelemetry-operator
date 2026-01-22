@@ -12,7 +12,6 @@ spec:
       labels:
         app: my-dotnet-multi
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-dotnet: "true"
         instrumentation.opentelemetry.io/container-names: "myapp"
     spec:
@@ -22,6 +21,8 @@ spec:
         fsGroup: 3000
       containers:
       - name: myapp
+        ports:
+        - containerPort: 8080
         image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-dotnet:main
         securityContext:
           allowPrivilegeEscalation: false
@@ -30,8 +31,17 @@ spec:
         env:
         - name: ASPNETCORE_URLS
           value: "http://+:8080"
+        readinessProbe:
+          httpGet:
+            path: /rolldice
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 3
       - name: myrabbit
-        image: rabbitmq:3
+        image: docker.io/library/rabbitmq:3
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

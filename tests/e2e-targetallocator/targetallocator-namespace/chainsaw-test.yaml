@@ -1,0 +1,108 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: targetallocator-namespace
+spec:
+  bindings:
+    - name: denyNamespaces
+      value: (join('-', [$namespace, 'top-secret']))
+    - name: endpoint
+      value: "http://cr-targetallocator/scrape_configs"
+    - name: pattern
+      value: ""
+    - name: retries
+      value: "30"
+  catch:
+    - podLogs:
+        selector: app.kubernetes.io/managed-by=opentelemetry-operator
+  steps:
+    # Sets up resources in a namespace that we shouldn't be able to read from
+    - name: install-into-deny-namespace
+      bindings:
+        - name: namespace
+          value: ($denyNamespaces)
+      try:
+        - create:
+            resource:
+              apiVersion: v1
+              kind: Namespace
+              metadata:
+                name: ($denyNamespaces)
+        - apply:
+            file: resources/serviceaccounts.yaml
+        - apply:
+            file: resources/rbac.yaml
+        - apply:
+            file: resources/ta-allow-namespaces.yaml
+        - apply:
+            file: resources/otelcol.yaml
+    - name: wait-until-top-secret-install-ready
+      bindings:
+        - name: namespace
+          value: ($denyNamespaces)
+      try:
+        - assert:
+            file: assert-workloads-ready.yaml
+    # The TA should be able to discover targets from its own namespace
+    - name: check-top-secret-ta-can-discover-its-own-service-monitor
+      bindings:
+        - name: namespace
+          value: ($denyNamespaces)
+        - name: pattern
+          value: (join('/', ['serviceMonitor', $denyNamespaces, 'cr-targetallocator']))
+      try:
+        - apply:
+            file: resources/job-check-metrics.yaml
+    - name: assert-top-secret-job-succeeded
+      bindings:
+        - name: namespace
+          value: ($denyNamespaces)
+      try:
+        - assert:
+            file: assert-job-succeeded.yaml
+    # Sets up resources in the original namespace and then makes sure that we can't discover the denied namespace
+    - name: install-with-deny-namespace-set-to-top-secret-configured-earlier
+      try:
+        - apply:
+            file: resources/serviceaccounts.yaml
+        - apply:
+            file: resources/clusterrbac.yaml
+        - apply:
+            file: resources/ta-deny-namespaces.yaml
+        - apply:
+            file: resources/otelcol.yaml
+    - name: wait-until-install-with-deny-namespace-set-to-top-secret-configured-earlier-is-ready
+      try:
+        - assert:
+            file: assert-workloads-ready.yaml
+    # Make sure TA can still discover its own namespace first
+    - name: check-ta-can-discover-its-own-service-monitor
+      bindings:
+        - name: pattern
+          value: (join('/', ['serviceMonitor', $namespace, 'cr-targetallocator']))
+      try:
+        - apply:
+            file: resources/job-check-metrics.yaml
+    - name: assert-job-succeeded
+      try:
+        - assert:
+            file: assert-job-succeeded.yaml
+    - name: delete-job
+      try:
+        - delete:
+            file: resources/job-check-metrics.yaml
+    # Make sure TA can't discover the denied namespace
+    - name: check-ta-cant-discover-denied-namespace
+      bindings:
+        - name: pattern
+          value: (join('/', ['serviceMonitor', $denyNamespaces, 'cr-targetallocator']))
+        - name: retries
+          value: "5"
+      try:
+        - apply:
+            file: resources/job-check-metrics.yaml
+    - name: assert-job-failed-since-ta-cant-discover-denied-namespace
+      try:
+        - assert:
+            file: assert-job-failed.yaml

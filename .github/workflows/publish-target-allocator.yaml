@@ -3,33 +3,34 @@ name: "Publish target allocator"
 on:
   push:
     paths:
-      - 'cmd/otel-allocator/**'
-      - '.github/workflows/publish-target-allocator.yaml'
+      - "cmd/otel-allocator/**"
+      - ".github/workflows/publish-target-allocator.yaml"
     branches:
       - main
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 env:
   PLATFORMS: linux/amd64,linux/arm64,linux/s390x,linux/ppc64le
 
+permissions:
+  contents: read
+
 jobs:
   publish:
-    runs-on: ubuntu-22.04
+    permissions:
+      packages: write
+      attestations: write
+      id-token: write
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
         with:
-          go-version: '~1.24.1'
-
-      # TODO: We're currently not using this. Should we?
-      - name: Read version
-        run: |
-          echo "VERSION=$(git describe --tags | sed 's/^v//')" >> $GITHUB_ENV
-          echo "VERSION_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
+          go-version: "~1.25.6"
 
       - name: Build the binary for each supported architecture
         run: |
@@ -41,7 +42,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
         with:
           images: |
             otel/target-allocator
@@ -53,13 +54,13 @@ jobs:
             type=ref,event=branch
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - name: Cache Docker layers
-        uses: actions/cache@v4
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -67,14 +68,14 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Log into Docker.io
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         if: ${{ github.event_name == 'push' }}
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login to GitHub Package Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         if: ${{ github.event_name == 'push' }}
         with:
           registry: ghcr.io
@@ -82,7 +83,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
           context: cmd/otel-allocator
           platforms: ${{ env.PLATFORMS }}

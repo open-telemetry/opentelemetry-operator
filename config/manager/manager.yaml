@@ -28,13 +28,14 @@ spec:
     spec:
       containers:
       - args:
-        - "--metrics-addr=127.0.0.1:8080"
-        - "--enable-leader-election"
         - "--zap-log-level=info"
         - "--zap-time-encoding=rfc3339nano"
-        - "--enable-nginx-instrumentation=true"
         image: controller
         name: manager
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
         livenessProbe:
           httpGet:
             path: /healthz
@@ -56,5 +57,17 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.serviceAccountName
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: METRICS_ADDR
+            value: ":8443"
+          - name: METRICS_SECURE
+            value: "true"
+          - name: ENABLE_LEADER_ELECTION
+            value: "true"
+          - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
+            value: "true"
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10

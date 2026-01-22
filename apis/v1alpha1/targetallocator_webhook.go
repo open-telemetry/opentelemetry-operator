@@ -17,6 +17,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 )
 
 var (
@@ -92,6 +93,10 @@ func (w TargetAllocatorWebhook) defaulter(ta *TargetAllocator) error {
 			},
 		}
 	}
+	if featuregate.EnableOperandNetworkPolicy.IsEnabled() && ta.Spec.NetworkPolicy.Enabled == nil {
+		trueVal := true
+		ta.Spec.NetworkPolicy.Enabled = &trueVal
+	}
 
 	return nil
 }
@@ -115,6 +120,11 @@ func (w TargetAllocatorWebhook) validate(ctx context.Context, ta *TargetAllocato
 		warnings, err := v1beta1.CheckTargetAllocatorPrometheusCRPolicyRules(ctx, w.reviewer, ta.GetNamespace(), saname)
 		if err != nil || len(warnings) > 0 {
 			return warnings, err
+		}
+
+		// Check to see that allowNamespaces and denyNamespaces are not both set at the same time
+		if len(ta.Spec.PrometheusCR.AllowNamespaces) > 0 && len(ta.Spec.PrometheusCR.DenyNamespaces) > 0 {
+			return warnings, fmt.Errorf("allowNamespaces and denyNamespaces are mutually exclusive")
 		}
 	}
 

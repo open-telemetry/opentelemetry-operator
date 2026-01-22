@@ -2,6 +2,7 @@ apiVersion: observability.openshift.io/v1alpha1
 kind: UIPlugin
 metadata:
   name: logging
+  namespace: ($COO_NAMESPACE)
 spec:
   logging:
     logsLimit: 20

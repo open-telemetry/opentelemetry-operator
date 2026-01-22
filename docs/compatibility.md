@@ -4,7 +4,7 @@ This document details compatibility guarantees the OpenTelemetry Operator offers
 
 ## Go
 
-When productised as a go libary or custom distribution the OpenTelemetry Operator project attempts to follow the supported go versions as [defined by the Go team](https://go.dev/doc/devel/release#policy).
+When productised as a go library or custom distribution the OpenTelemetry Operator project attempts to follow the supported go versions as [defined by the Go team](https://go.dev/doc/devel/release#policy).
 
 Similar to the [opentelemetry collector](https://github.com/open-telemetry/opentelemetry-collector?tab=readme-ov-file#compatibility), removing support for an unsupported Go version is not considered a breaking change.
 
@@ -46,31 +46,33 @@ The OpenTelemetry Operator _might_ work on versions outside of the given range, 
 
 | OpenTelemetry Operator | Kubernetes     | Cert-Manager | Prometheus-Operator |
 |------------------------|----------------|--------------|---------------------|
+| v0.143.0               | v1.25 to v1.35 | v1           | v0.81.0             |
+| v0.142.0               | v1.25 to v1.35 | v1           | v0.81.0             |
+| v0.141.0               | v1.25 to v1.34 | v1           | v0.81.0             |
+| v0.140.0               | v1.25 to v1.33 | v1           | v0.81.0             |
+| v0.139.0               | v1.25 to v1.33 | v1           | v0.81.0             |
+| v0.138.0               | v1.25 to v1.33 | v1           | v0.81.0             |
+| v0.137.0               | v1.25 to v1.33 | v1           | v0.81.0             |
+| v0.136.0               | v1.25 to v1.33 | v1           | v0.81.0             |
+| v0.135.0               | v1.25 to v1.33 | v1           | v0.81.0             |
+| v0.134.0               | v1.25 to v1.33 | v1           | v0.81.0             |
+| v0.133.0  - N/A        | N/A            | N/A          | N/A                 |
+| v0.132.0               | v1.25 to v1.33 | v1           | v0.81.0             |
+| v0.131.0               | v1.25 to v1.33 | v1           | v0.81.0             |
+| v0.129.1               | v1.23 to v1.33 | v1           | v0.81.0             |
+| v0.127.0               | v1.23 to v1.32 | v1           | v0.81.0             |
+| v0.126.0               | v1.23 to v1.32 | v1           | v0.80.1             |
+| v0.125.0               | v1.23 to v1.32 | v1           | v0.80.1             |
+| v0.124.0               | v1.23 to v1.32 | v1           | v0.80.1             |
+| v0.123.0               | v1.23 to v1.32 | v1           | v0.80.1             |
+| v0.122.0               | v1.23 to v1.32 | v1           | v0.80.1             |
+| v0.121.0               | v1.23 to v1.32 | v1           | v0.78.2             |
 | v0.120.0               | v1.23 to v1.32 | v1           | v0.76.2             |
 | v0.119.0               | v1.23 to v1.32 | v1           | v0.76.2             |
 | v0.118.0               | v1.23 to v1.32 | v1           | v0.76.2             |
 | v0.117.0               | v1.23 to v1.32 | v1           | v0.76.2             |
 | v0.116.0               | v1.23 to v1.31 | v1           | v0.76.2             |
 | v0.115.0               | v1.23 to v1.31 | v1           | v0.76.0             |
-| v0.114.0               | v1.23 to v1.31 | v1           | v0.76.0             |
-| v0.113.0               | v1.23 to v1.31 | v1           | v0.76.0             |
-| v0.112.0               | v1.23 to v1.31 | v1           | v0.76.0             |
-| v0.111.0               | v1.23 to v1.31 | v1           | v0.76.0             |
-| v0.110.0               | v1.23 to v1.31 | v1           | v0.76.0             |
-| v0.109.0               | v1.23 to v1.31 | v1           | v0.76.0             |
-| v0.108.0               | v1.23 to v1.31 | v1           | v0.76.0             |
-| v0.107.0               | v1.23 to v1.30 | v1           | v0.75.0             |
-| v0.106.0               | v1.23 to v1.30 | v1           | v0.75.0             |
-| v0.105.0               | v1.23 to v1.30 | v1           | v0.74.0             |
-| v0.104.0               | v1.23 to v1.30 | v1           | v0.74.0             |
-| v0.103.0               | v1.23 to v1.30 | v1           | v0.74.0             |
-| v0.102.0               | v1.23 to v1.30 | v1           | v0.71.2             |
-| v0.101.0               | v1.23 to v1.30 | v1           | v0.71.2             |
-| v0.100.0               | v1.23 to v1.29 | v1           | v0.71.2             |
-| v0.99.0                | v1.23 to v1.29 | v1           | v0.71.2             |
-| v0.98.0                | v1.23 to v1.29 | v1           | v0.71.2             |
-| v0.97.0                | v1.23 to v1.29 | v1           | v0.71.2             |
-| v0.96.0                | v1.23 to v1.29 | v1           | v0.71.2             |
 
 [kubernetes_releases]: https://kubernetes.io/releases/
 [openshift_support]: https://access.redhat.com/support/policy/updates/openshift

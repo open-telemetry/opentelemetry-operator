@@ -1,0 +1,35 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-generator
+  labels:
+    app: log-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log-generator
+  template:
+    metadata:
+      labels:
+        app: log-generator
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+    spec:
+      containers:
+      - name: app
+        image: docker.io/library/busybox:latest
+        command: ["/bin/sh", "/scripts/generate-logs.sh"]
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+        - name: logs
+          mountPath: /var/log/app
+      volumes:
+      - name: scripts
+        configMap:
+          name: log-generator-plaintext
+          defaultMode: 0755
+      - name: logs
+        emptyDir: {}

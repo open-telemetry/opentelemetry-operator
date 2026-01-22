@@ -99,13 +99,13 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2025-03-05T15:50:41Z"
+    createdAt: "2026-01-15T17:19:43Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.120.0
+  name: opentelemetry-operator.v0.143.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -174,8 +174,6 @@ spec:
         path: observability.metrics
       - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
           mode) should be created for the service managed by the OpenTelemetry Operator.
-          The operator.observability.prometheus feature gate must be enabled to use
-          this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: observability.metrics.enableMetrics
       - description: ObservabilitySpec defines how telemetry data gets handled.
@@ -186,8 +184,6 @@ spec:
         path: targetAllocator.observability.metrics
       - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
           mode) should be created for the service managed by the OpenTelemetry Operator.
-          The operator.observability.prometheus feature gate must be enabled to use
-          this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: targetAllocator.observability.metrics.enableMetrics
       version: v1alpha1
@@ -224,8 +220,6 @@ spec:
         path: observability.metrics
       - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
           mode) should be created for the service managed by the OpenTelemetry Operator.
-          The operator.observability.prometheus feature gate must be enabled to use
-          this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: observability.metrics.enableMetrics
       - description: ObservabilitySpec defines how telemetry data gets handled.
@@ -236,8 +230,6 @@ spec:
         path: targetAllocator.observability.metrics
       - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
           mode) should be created for the service managed by the OpenTelemetry Operator.
-          The operator.observability.prometheus feature gate must be enabled to use
-          this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: targetAllocator.observability.metrics.enableMetrics
       version: v1beta1
@@ -265,6 +257,10 @@ spec:
         name: ""
         version: v1
       specDescriptors:
+      - description: Enable enables the NetworkPolicy. The default value is taken
+          from the operator feature-gate `--feature-gates=+operand.networkpolicy`.
+        displayName: Enable NetworkPolicy
+        path: networkPolicy.enabled
       - description: ObservabilitySpec defines how telemetry data gets handled.
         displayName: Observability
         path: observability
@@ -276,14 +272,10 @@ spec:
         path: observability.metrics
       - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
           mode) should be created for the service managed by the OpenTelemetry Operator.
-          The operator.observability.prometheus feature gate must be enabled to use
-          this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: observability.metrics.enableMetrics
       - description: EnableMetrics specifies if ServiceMonitor or PodMonitor(for sidecar
           mode) should be created for the service managed by the OpenTelemetry Operator.
-          The operator.observability.prometheus feature gate must be enabled to use
-          this feature.
         displayName: Create ServiceMonitors for OpenTelemetry Collector
         path: observability.metrics.enableMetrics
       version: v1alpha1
@@ -304,6 +296,10 @@ spec:
     spec:
       clusterPermissions:
       - rules:
+        - nonResourceURLs:
+          - /version
+          verbs:
+          - get
         - apiGroups:
           - ""
           resources:
@@ -346,6 +342,15 @@ spec:
           - delete
           - get
           - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments/finalizers
+          verbs:
+          - get
           - patch
           - update
           - watch
@@ -412,6 +417,7 @@ spec:
           - networking.k8s.io
           resources:
           - ingresses
+          - networkpolicies
           verbs:
           - create
           - delete
@@ -436,6 +442,7 @@ spec:
           resources:
           - opampbridges
           - targetallocators
+          - targetallocators/finalizers
           verbs:
           - create
           - delete
@@ -519,22 +526,40 @@ spec:
             spec:
               containers:
               - args:
-                - --metrics-addr=127.0.0.1:8080
-                - --enable-leader-election
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
-                - --enable-nginx-instrumentation=true
-                - --enable-go-instrumentation=true
-                - --openshift-create-dashboard=true
-                - --feature-gates=+operator.observability.prometheus
-                - --enable-cr-metrics=true
-                - --create-sm-operator-metrics=true
                 env:
                 - name: SERVICE_ACCOUNT_NAME
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.120.0
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: METRICS_ADDR
+                  value: :8443
+                - name: METRICS_SECURE
+                  value: "true"
+                - name: ENABLE_LEADER_ELECTION
+                  value: "true"
+                - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
+                  value: "true"
+                - name: METRICS_TLS_CERT_FILE
+                  value: /var/run/tls/server/tls.crt
+                - name: METRICS_TLS_KEY_FILE
+                  value: /var/run/tls/server/tls.key
+                - name: ENABLE_GO_AUTO_INSTRUMENTATION
+                  value: "true"
+                - name: OPENSHIFT_CREATE_DASHBOARD
+                  value: "true"
+                - name: ENABLE_CR_METRICS
+                  value: "true"
+                - name: CREATE_SM_OPERATOR_METRICS
+                  value: "true"
+                - name: FEATURE_GATES
+                  value: operator.networkpolicy,operand.networkpolicy
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.143.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -545,6 +570,9 @@ spec:
                 ports:
                 - containerPort: 9443
                   name: webhook-server
+                  protocol: TCP
+                - containerPort: 8443
+                  name: https
                   protocol: TCP
                 readinessProbe:
                   httpGet:
@@ -557,34 +585,12 @@ spec:
                     cpu: 100m
                     memory: 64Mi
                 volumeMounts:
+                - mountPath: /var/run/tls/server
+                  name: opentelemetry-operator-metrics-cert
+                  readOnly: true
                 - mountPath: /tmp/k8s-webhook-server/serving-certs
                   name: cert
                   readOnly: true
-              - args:
-                - --secure-listen-address=0.0.0.0:8443
-                - --upstream=http://127.0.0.1:8080/
-                - --logtostderr=true
-                - --v=0
-                - --tls-cert-file=/var/run/tls/server/tls.crt
-                - --tls-private-key-file=/var/run/tls/server/tls.key
-                - --tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_CBC_SHA256
-                - --tls-min-version=VersionTLS12
-                image: quay.io/brancz/kube-rbac-proxy:v0.13.1
-                name: kube-rbac-proxy
-                ports:
-                - containerPort: 8443
-                  name: https
-                  protocol: TCP
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 128Mi
-                  requests:
-                    cpu: 5m
-                    memory: 64Mi
-                volumeMounts:
-                - mountPath: /var/run/tls/server
-                  name: opentelemetry-operator-metrics-cert
               serviceAccountName: opentelemetry-operator-controller-manager
               terminationGracePeriodSeconds: 10
               volumes:
@@ -610,14 +616,6 @@ spec:
           - update
           - patch
           - delete
-        - apiGroups:
-          - ""
-          resources:
-          - configmaps/status
-          verbs:
-          - get
-          - update
-          - patch
         - apiGroups:
           - ""
           resources:
@@ -650,10 +648,10 @@ spec:
   - email: jpkroehling@redhat.com
     name: Juraci Paixão Kröhling
   maturity: alpha
-  minKubeVersion: 1.23.0
+  minKubeVersion: 1.25.0
   provider:
     name: OpenTelemetry Community
-  version: 0.120.0
+  version: 0.143.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1alpha1

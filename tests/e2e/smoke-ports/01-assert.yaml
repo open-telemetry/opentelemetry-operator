@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: smoke-ports-collector
+spec:
+  template:
+    spec:
+       containers:
+       - name: otc-container
+         ports:
+         - containerPort: 9090
+           hostPort: 9090
+           name: custom-port
+           protocol: TCP
+         - containerPort: 8888
+           name: metrics
+           protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smoke-ports-collector
+spec:
+  ports:
+  - appProtocol: http
+    name: custom-port
+    port: 9090
+    protocol: TCP
+    targetPort: 9090

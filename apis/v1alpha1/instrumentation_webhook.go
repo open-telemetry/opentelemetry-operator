@@ -26,7 +26,7 @@ var (
 	_                                  admission.CustomDefaulter = &InstrumentationWebhook{}
 	initContainerDefaultLimitResources                           = corev1.ResourceList{
 		corev1.ResourceCPU:    resource.MustParse("500m"),
-		corev1.ResourceMemory: resource.MustParse("128Mi"),
+		corev1.ResourceMemory: resource.MustParse("256Mi"),
 	}
 	initContainerDefaultRequestedResources = corev1.ResourceList{
 		corev1.ResourceCPU:    resource.MustParse("1m"),
@@ -82,12 +82,12 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 		r.Labels = map[string]string{}
 	}
 	if r.Spec.Java.Image == "" {
-		r.Spec.Java.Image = w.cfg.AutoInstrumentationJavaImage()
+		r.Spec.Java.Image = w.cfg.AutoInstrumentationJavaImage
 	}
 	if r.Spec.Java.Resources.Limits == nil {
 		r.Spec.Java.Resources.Limits = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("500m"),
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
 		}
 	}
 	if r.Spec.Java.Resources.Requests == nil {
@@ -97,12 +97,12 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 		}
 	}
 	if r.Spec.NodeJS.Image == "" {
-		r.Spec.NodeJS.Image = w.cfg.AutoInstrumentationNodeJSImage()
+		r.Spec.NodeJS.Image = w.cfg.AutoInstrumentationNodeJSImage
 	}
 	if r.Spec.NodeJS.Resources.Limits == nil {
 		r.Spec.NodeJS.Resources.Limits = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("500m"),
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
 		}
 	}
 	if r.Spec.NodeJS.Resources.Requests == nil {
@@ -112,12 +112,12 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 		}
 	}
 	if r.Spec.Python.Image == "" {
-		r.Spec.Python.Image = w.cfg.AutoInstrumentationPythonImage()
+		r.Spec.Python.Image = w.cfg.AutoInstrumentationPythonImage
 	}
 	if r.Spec.Python.Resources.Limits == nil {
 		r.Spec.Python.Resources.Limits = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("500m"),
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
 		}
 	}
 	if r.Spec.Python.Resources.Requests == nil {
@@ -142,12 +142,12 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 		}
 	}
 	if r.Spec.DotNet.Image == "" {
-		r.Spec.DotNet.Image = w.cfg.AutoInstrumentationDotNetImage()
+		r.Spec.DotNet.Image = w.cfg.AutoInstrumentationDotNetImage
 	}
 	if r.Spec.DotNet.Resources.Limits == nil {
 		r.Spec.DotNet.Resources.Limits = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("500m"),
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
 		}
 	}
 	if r.Spec.DotNet.Resources.Requests == nil {
@@ -157,12 +157,12 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 		}
 	}
 	if r.Spec.Go.Image == "" {
-		r.Spec.Go.Image = w.cfg.AutoInstrumentationGoImage()
+		r.Spec.Go.Image = w.cfg.AutoInstrumentationGoImage
 	}
 	if r.Spec.Go.Resources.Limits == nil {
 		r.Spec.Go.Resources.Limits = corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("500m"),
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
 		}
 	}
 	if r.Spec.Go.Resources.Requests == nil {
@@ -172,7 +172,7 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 		}
 	}
 	if r.Spec.ApacheHttpd.Image == "" {
-		r.Spec.ApacheHttpd.Image = w.cfg.AutoInstrumentationApacheHttpdImage()
+		r.Spec.ApacheHttpd.Image = w.cfg.AutoInstrumentationApacheHttpdImage
 	}
 	if r.Spec.ApacheHttpd.Resources.Limits == nil {
 		r.Spec.ApacheHttpd.Resources.Limits = initContainerDefaultLimitResources
@@ -187,7 +187,7 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 		r.Spec.ApacheHttpd.ConfigPath = "/usr/local/apache2/conf"
 	}
 	if r.Spec.Nginx.Image == "" {
-		r.Spec.Nginx.Image = w.cfg.AutoInstrumentationNginxImage()
+		r.Spec.Nginx.Image = w.cfg.AutoInstrumentationNginxImage
 	}
 	if r.Spec.Nginx.Resources.Limits == nil {
 		r.Spec.Nginx.Resources.Limits = initContainerDefaultLimitResources
@@ -278,6 +278,32 @@ func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings
 	}
 
 	warnings = append(warnings, validateExporter(r.Spec.Exporter)...)
+
+	// Deprecated field warnings: spec.<lang>.volumeSizeLimit
+	if r.Spec.Java.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.java.volumeSizeLimit is deprecated and will be removed in a future release; use spec.java.volume.size instead")
+	}
+	if r.Spec.NodeJS.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.nodejs.volumeSizeLimit is deprecated and will be removed in a future release; use spec.nodejs.volume.size instead")
+	}
+	if r.Spec.Python.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.python.volumeSizeLimit is deprecated and will be removed in a future release; use spec.python.volume.size instead")
+	}
+	if r.Spec.Ruby.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.ruby.volumeSizeLimit is deprecated and will be removed in a future release; use spec.ruby.volume.size instead")
+	}
+	if r.Spec.DotNet.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.dotnet.volumeSizeLimit is deprecated and will be removed in a future release; use spec.dotnet.volume.size instead")
+	}
+	if r.Spec.Go.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.go.volumeSizeLimit is deprecated and will be removed in a future release; use spec.go.volume.size instead")
+	}
+	if r.Spec.ApacheHttpd.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.apachehttpd.volumeSizeLimit is deprecated and will be removed in a future release; use spec.apachehttpd.volume.size instead")
+	}
+	if r.Spec.Nginx.VolumeSizeLimit != nil {
+		warnings = append(warnings, "spec.nginx.volumeSizeLimit is deprecated and will be removed in a future release; use spec.nginx.volume.size instead")
+	}
 
 	return warnings, nil
 }

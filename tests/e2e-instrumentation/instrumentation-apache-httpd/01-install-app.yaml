@@ -12,7 +12,6 @@ spec:
       labels:
         app: my-apache
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-apache-httpd: "true"
     spec:
       securityContext:
@@ -33,6 +32,15 @@ spec:
               command: [ "/bin/sh", "-c", "echo Hello from the postStart handler" ]
         ports:
         - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 3
         resources:
           limits:
             cpu: "1"

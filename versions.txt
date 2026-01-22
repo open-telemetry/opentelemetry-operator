@@ -2,48 +2,49 @@
 # by default with the OpenTelemetry Operator. This would usually be the latest
 # stable OpenTelemetry version. When you update this file, make sure to update the
 # the docs as well.
-opentelemetry-collector=0.120.0
+opentelemetry-collector=0.144.0
 
 # Represents the current release of the OpenTelemetry Operator.
-operator=0.120.0
+operator=0.143.0
 
 # Represents the current release of the Target Allocator.
-targetallocator=0.120.0
+targetallocator=0.143.0
 
 # Represents the current release of the Operator OpAMP Bridge.
-operator-opamp-bridge=0.120.0
+operator-opamp-bridge=0.143.0
 
 # Represents the current release of Java instrumentation.
-# Should match autoinstrumentation/java/version.txt
+# This version should not be greater than 1.x.x.
 autoinstrumentation-java=1.33.6
 
 # Represents the current release of NodeJS instrumentation.
 # Should match value in autoinstrumentation/nodejs/package.json
-autoinstrumentation-nodejs=0.53.0
+autoinstrumentation-nodejs=0.67.3
 
 # Represents the current release of Python instrumentation.
 # Should match value in autoinstrumentation/python/requirements.txt
-autoinstrumentation-python=0.51b0
+autoinstrumentation-python=0.60b1
 
 # Represents the current release of Ruby instrumentation.
 # Should match autoinstrumentation/ruby/version.txt
 autoinstrumentation-ruby=0.73.1
 
 # Represents the current release of DotNet instrumentation.
-# Should match autoinstrumentation/dotnet/version.txt
+# This version should remain pinned to 1.2.0.
 autoinstrumentation-dotnet=1.2.0
 
 # Represents the current release of Go instrumentation.
-autoinstrumentation-go=v0.19.0-alpha
+autoinstrumentation-go=v0.22.1
 
 # Represents the current release of PHP instrumentation.
 # Should match autoinstrumentation/php/version.txt
-autoinstrumentation-PHP=1.1.0
+# autoinstrumentation-PHP=1.1.0
 
 # Represents the current release of Apache HTTPD instrumentation.
 # Should match autoinstrumentation/apache-httpd/version.txt
 autoinstrumentation-apache-httpd=1.0.4
 
 # Represents the current release of Apache Nginx instrumentation.
+# Intentionally uses the same image and version as Apache HTTPD.
 # Should match autoinstrumentation/apache-httpd/version.txt
 autoinstrumentation-nginx=1.0.4

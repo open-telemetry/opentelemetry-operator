@@ -4,7 +4,6 @@
 package targetallocator
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +28,9 @@ var logger = logf.Log.WithName("unit-tests")
 func TestContainerNewDefault(t *testing.T) {
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{}
-	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
+	cfg := config.Config{
+		TargetAllocatorImage: "default-image",
+	}
 
 	// test
 	c := Container(cfg, logger, targetAllocator)
@@ -47,7 +48,9 @@ func TestContainerWithImageOverridden(t *testing.T) {
 			},
 		},
 	}
-	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
+	cfg := config.Config{
+		TargetAllocatorImage: "default-image",
+	}
 
 	// test
 	c := Container(cfg, logger, targetAllocator)
@@ -134,7 +137,9 @@ func TestContainerHasEnvVars(t *testing.T) {
 			},
 		},
 	}
-	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
+	cfg := config.Config{
+		TargetAllocatorImage: "default-image",
+	}
 
 	expected := corev1.Container{
 		Name:  "ta-container",
@@ -155,6 +160,32 @@ func TestContainerHasEnvVars(t *testing.T) {
 					ResourceFieldRef: nil,
 					ConfigMapKeyRef:  nil,
 					SecretKeyRef:     nil,
+				},
+			},
+			{
+				Name:  "GOMEMLIMIT",
+				Value: "",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: nil,
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						ContainerName: "ta-container",
+						Resource:      "limits.memory",
+					},
+					ConfigMapKeyRef: nil,
+					SecretKeyRef:    nil,
+				},
+			},
+			{
+				Name:  "GOMAXPROCS",
+				Value: "",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: nil,
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						ContainerName: "ta-container",
+						Resource:      "limits.cpu",
+					},
+					ConfigMapKeyRef: nil,
+					SecretKeyRef:    nil,
 				},
 			},
 		},
@@ -201,9 +232,7 @@ func TestContainerHasEnvVars(t *testing.T) {
 }
 
 func TestContainerHasProxyEnvVars(t *testing.T) {
-	err := os.Setenv("NO_PROXY", "localhost")
-	require.NoError(t, err)
-	defer os.Unsetenv("NO_PROXY")
+	t.Setenv("NO_PROXY", "localhost")
 
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{
@@ -218,15 +247,17 @@ func TestContainerHasProxyEnvVars(t *testing.T) {
 			},
 		},
 	}
-	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
+	cfg := config.Config{
+		TargetAllocatorImage: "default-image",
+	}
 
 	// test
 	c := Container(cfg, logger, targetAllocator)
 
 	// verify
-	require.Len(t, c.Env, 4)
-	assert.Equal(t, corev1.EnvVar{Name: "NO_PROXY", Value: "localhost"}, c.Env[2])
-	assert.Equal(t, corev1.EnvVar{Name: "no_proxy", Value: "localhost"}, c.Env[3])
+	require.Len(t, c.Env, 6)
+	assert.Equal(t, corev1.EnvVar{Name: "NO_PROXY", Value: "localhost"}, c.Env[4])
+	assert.Equal(t, corev1.EnvVar{Name: "no_proxy", Value: "localhost"}, c.Env[5])
 }
 
 func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
@@ -243,7 +274,9 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 			},
 		},
 	}
-	cfg := config.New(config.WithTargetAllocatorImage("default-image"))
+	cfg := config.Config{
+		TargetAllocatorImage: "default-image",
+	}
 
 	expected := corev1.Container{
 		Name:  "ta-container",
@@ -252,6 +285,32 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 			{
 				Name:  "OTELCOL_NAMESPACE",
 				Value: "test",
+			},
+			{
+				Name:  "GOMEMLIMIT",
+				Value: "",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: nil,
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						ContainerName: "ta-container",
+						Resource:      "limits.memory",
+					},
+					ConfigMapKeyRef: nil,
+					SecretKeyRef:    nil,
+				},
+			},
+			{
+				Name:  "GOMAXPROCS",
+				Value: "",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: nil,
+					ResourceFieldRef: &corev1.ResourceFieldSelector{
+						ContainerName: "ta-container",
+						Resource:      "limits.cpu",
+					},
+					ConfigMapKeyRef: nil,
+					SecretKeyRef:    nil,
+				},
 			},
 		},
 		VolumeMounts: []corev1.VolumeMount{
@@ -385,7 +444,9 @@ func TestContainerWithCertManagerAvailable(t *testing.T) {
 	err := flgs.Parse([]string{"--feature-gates=operator.targetallocator.mtls"})
 	require.NoError(t, err)
 
-	cfg := config.New(config.WithCertManagerAvailability(certmanager.Available))
+	cfg := config.Config{
+		CertManagerAvailability: certmanager.Available,
+	}
 
 	// test
 	c := Container(cfg, logger, targetAllocator)

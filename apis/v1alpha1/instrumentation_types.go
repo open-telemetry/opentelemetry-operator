@@ -72,6 +72,12 @@ type InstrumentationSpec struct {
 	// Nginx defines configuration for Nginx auto-instrumentation.
 	// +optional
 	Nginx Nginx `json:"nginx,omitempty"`
+
+	// ImagePullPolicy
+	// One of Always, Never, IfNotPresent.
+	// Defaults to Always if :latest tag is specified, or IfNotPresent otherwise.
+	// +optional
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // Resource defines the configuration for the resource attributes, as defined by the OpenTelemetry specification.
@@ -142,9 +148,10 @@ type Sampler struct {
 // Defaults defines default values for the instrumentation.
 type Defaults struct {
 	// UseLabelsForResourceAttributes defines whether to use common labels for resource attributes:
+	// Note: first entry wins:
+	//   - `app.kubernetes.io/instance` becomes `service.name`
 	//   - `app.kubernetes.io/name` becomes `service.name`
 	//   - `app.kubernetes.io/version` becomes `service.version`
-	//   - `app.kubernetes.io/part-of` becomes `service.namespace`
 	UseLabelsForResourceAttributes bool `json:"useLabelsForResourceAttributes,omitempty"`
 }
 
@@ -154,12 +161,13 @@ type Java struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
+	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines java specific env vars. There are four layers for env vars' definitions and
@@ -192,12 +200,13 @@ type NodeJS struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
+	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines nodejs specific env vars. There are four layers for env vars' definitions and
@@ -217,12 +226,13 @@ type Python struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
+	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines python specific env vars. There are four layers for env vars' definitions and
@@ -266,12 +276,13 @@ type DotNet struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
+	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines DotNet specific env vars. There are four layers for env vars' definitions and
@@ -289,12 +300,13 @@ type Go struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
+	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines Go specific env vars. There are four layers for env vars' definitions and
@@ -314,12 +326,13 @@ type ApacheHttpd struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
+	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines Apache HTTPD specific env vars. There are four layers for env vars' definitions and
@@ -354,12 +367,13 @@ type Nginx struct {
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// VolumeClaimTemplate defines an ephemeral volume used for auto-instrumentation.
 	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
 	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
+	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines Nginx specific env vars. There are four layers for env vars' definitions and

@@ -35,11 +35,13 @@ type MetricSpec struct {
 
 // AutoscalerSpec defines the OpenTelemetryCollector's pod autoscaling specification.
 type AutoscalerSpec struct {
-	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if your are using autoscaling. It must be at least 1
+	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	// +optional
 	Behavior *autoscalingv2.HorizontalPodAutoscalerBehavior `json:"behavior,omitempty"`
@@ -51,9 +53,11 @@ type AutoscalerSpec struct {
 	// TargetCPUUtilization sets the target average CPU used across all replicas.
 	// If average CPU exceeds this value, the HPA will scale up. Defaults to 90 percent.
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	TargetCPUUtilization *int32 `json:"targetCPUUtilization,omitempty"`
 	// +optional
 	// TargetMemoryUtilization sets the target average memory utilization across all replicas
+	// +kubebuilder:validation:Minimum=1
 	TargetMemoryUtilization *int32 `json:"targetMemoryUtilization,omitempty"`
 }
 
@@ -78,6 +82,8 @@ type PodDisruptionBudgetSpec struct {
 type PortsSpec struct {
 	// Allows defining which port to bind to the host in the Container.
 	// +optional
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=65535
 	HostPort int32 `json:"hostPort,omitempty"`
 
 	// Maintain previous fields in new struct
@@ -88,8 +94,6 @@ type OpenTelemetryCommonFields struct {
 	// ManagementState defines if the CR should be managed by the operator or not.
 	// Default is managed.
 	//
-	// +required
-	// +kubebuilder:validation:Required
 	// +kubebuilder:default:=managed
 	ManagementState ManagementStateType `json:"managementState,omitempty"`
 	// Resources to set on generated pods.
@@ -104,6 +108,7 @@ type OpenTelemetryCommonFields struct {
 	Args map[string]string `json:"args,omitempty"`
 	// Replicas is the number of pod instances for the underlying replicaset. Set this if you are not using autoscaling.
 	// +optional
+	// +kubebuilder:default:=1
 	Replicas *int32 `json:"replicas,omitempty"`
 	// PodDisruptionBudget specifies the pod disruption budget configuration to use
 	// for the generated workload. By default, a PDB with a MaxUnavailable of one is set.
@@ -187,6 +192,12 @@ type OpenTelemetryCommonFields struct {
 	// HostNetwork indicates if the pod should run in the host networking namespace.
 	// +optional
 	HostNetwork bool `json:"hostNetwork,omitempty"`
+	// DNSPolicy defines how a pod's DNS will be configured.
+	// +optional
+	DNSPolicy *v1.DNSPolicy `json:"dnsPolicy,omitempty"`
+	// HostPID indicates if the pod should have access to the host process ID namespace.
+	// +optional
+	HostPID bool `json:"hostPID,omitempty"`
 	// ShareProcessNamespace indicates if the pod's containers should share process namespace.
 	// +optional
 	ShareProcessNamespace bool `json:"shareProcessNamespace,omitempty"`
@@ -225,6 +236,11 @@ type OpenTelemetryCommonFields struct {
 	// +kubebuilder:default:=SingleStack
 	// +optional
 	IpFamilyPolicy *v1.IPFamilyPolicy `json:"ipFamilyPolicy,omitempty"`
+	// TrafficDistribution specifies how traffic to this service is routed.
+	// https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution
+	// This is only applicable to Service resources.
+	// +optional
+	TrafficDistribution *string `json:"trafficDistribution,omitempty"`
 }
 
 type StatefulSetCommonFields struct {
@@ -238,4 +254,10 @@ type StatefulSetCommonFields struct {
 	// This only works with the following OpenTelemetryCollector modes: statefulset.
 	// +optional
 	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
+
+	// ServiceName sets the serviceName of the StatefulSet.
+	// If not specified, it will default to "<name>-headless".
+	// Note that the custom service name is not created by the operator.
+	// +optional
+	ServiceName string `json:"serviceName,omitempty"`
 }

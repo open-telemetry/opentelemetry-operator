@@ -4,10 +4,9 @@
 package v1alpha1
 
 import (
-	"errors"
 	"fmt"
 
-	"gopkg.in/yaml.v3"
+	go_yaml "github.com/goccy/go-yaml"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,10 +21,7 @@ func (src *OpenTelemetryCollector) ConvertTo(dstRaw conversion.Hub) error {
 	switch t := dstRaw.(type) {
 	case *v1beta1.OpenTelemetryCollector:
 		dst := dstRaw.(*v1beta1.OpenTelemetryCollector)
-		convertedSrc, err := tov1beta1(*src)
-		if err != nil {
-			return fmt.Errorf("failed to convert to v1beta1: %w", err)
-		}
+		convertedSrc := tov1beta1(*src)
 		dst.ObjectMeta = convertedSrc.ObjectMeta
 		dst.Spec = convertedSrc.Spec
 		dst.Status = convertedSrc.Status
@@ -52,11 +48,31 @@ func (dst *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
 	return nil
 }
 
-func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error) {
+func tov1beta1(in OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
 	copy := in.DeepCopy()
 	cfg := &v1beta1.Config{}
-	if err := yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
-		return v1beta1.OpenTelemetryCollector{}, errors.New("could not convert config json to v1beta1.Config")
+	if err := go_yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
+		// It is critical that the conversion does not fail!
+		// See https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#response
+		// Thus, if unmarshalling fails, we return a valid, empty config.
+		cfg = &v1beta1.Config{
+			Receivers: v1beta1.AnyConfig{Object: map[string]any{}},
+			Exporters: v1beta1.AnyConfig{Object: map[string]any{}},
+			Service: v1beta1.Service{
+				Pipelines: map[string]*v1beta1.Pipeline{},
+			},
+		}
+	}
+
+	// Ensure required fields are not nil even if unmarshalling succeeded.
+	if cfg.Receivers.Object == nil {
+		cfg.Receivers.Object = map[string]any{}
+	}
+	if cfg.Exporters.Object == nil {
+		cfg.Exporters.Object = map[string]any{}
+	}
+	if cfg.Service.Pipelines == nil {
+		cfg.Service.Pipelines = map[string]*v1beta1.Pipeline{}
 	}
 
 	return v1beta1.OpenTelemetryCollector{
@@ -99,6 +115,7 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 				PriorityClassName:             copy.Spec.PriorityClassName,
 				InitContainers:                copy.Spec.InitContainers,
 				AdditionalContainers:          copy.Spec.AdditionalContainers,
+				TrafficDistribution:           copy.Spec.TrafficDistribution,
 			},
 			StatefulSetCommonFields: v1beta1.StatefulSetCommonFields{
 				VolumeClaimTemplates: copy.Spec.VolumeClaimTemplates,
@@ -133,7 +150,7 @@ func tov1beta1(in OpenTelemetryCollector) (v1beta1.OpenTelemetryCollector, error
 				RollingUpdate: copy.Spec.DeploymentUpdateStrategy.RollingUpdate,
 			},
 		},
-	}, nil
+	}
 }
 
 func tov1beta1Ports(in []PortsSpec) []v1beta1.PortsSpec {
@@ -170,6 +187,7 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 		PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 			Enabled:        in.PrometheusCR.Enabled,
 			ScrapeInterval: in.PrometheusCR.ScrapeInterval,
+			ScrapeClasses:  in.PrometheusCR.ScrapeClasses,
 			// prometheus_cr.pod_monitor_selector shouldn't be nil when selector is empty
 			PodMonitorSelector: &metav1.LabelSelector{
 				MatchLabels: in.PrometheusCR.PodMonitorSelector,
@@ -355,6 +373,7 @@ func tov1alpha1(in v1beta1.OpenTelemetryCollector) (*OpenTelemetryCollector, err
 			ConfigMaps:                tov1alpha1ConfigMaps(copy.Spec.ConfigMaps),
 			UpdateStrategy:            copy.Spec.DaemonSetUpdateStrategy,
 			DeploymentUpdateStrategy:  copy.Spec.DeploymentUpdateStrategy,
+			TrafficDistribution:       copy.Spec.TrafficDistribution,
 		},
 	}, nil
 }
@@ -440,6 +459,7 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		PrometheusCR: OpenTelemetryTargetAllocatorPrometheusCR{
 			Enabled:                in.PrometheusCR.Enabled,
 			ScrapeInterval:         in.PrometheusCR.ScrapeInterval,
+			ScrapeClasses:          in.PrometheusCR.ScrapeClasses,
 			PodMonitorSelector:     podMonitorSelector,
 			ServiceMonitorSelector: serviceMonitorSelector,
 		},

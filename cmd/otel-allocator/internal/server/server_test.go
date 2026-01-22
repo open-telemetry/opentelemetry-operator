@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
+	"gotest.tools/v3/golden"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
@@ -30,22 +31,20 @@ import (
 )
 
 var (
-	logger       = logf.Log.WithName("server-unit-tests")
-	baseLabelSet = labels.Labels{
-		{Name: "test_label", Value: "test-value"},
-	}
-	testJobLabelSetTwo = labels.Labels{
-		{Name: "test_label", Value: "test-value2"},
-	}
-	baseTargetItem       = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
-	secondTargetItem     = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
-	testJobTargetItemTwo = target.NewItem("test-job", "test-url2", testJobLabelSetTwo, "test-collector2")
+	logger                  = logf.Log.WithName("server-unit-tests")
+	baseLabelSet            = labels.New(labels.Label{Name: "test_label", Value: "test-value"})
+	testJobLabelSetTwo      = labels.New(labels.Label{Name: "test_label", Value: "test-value2"})
+	baseTargetItem          = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
+	secondTargetItem        = target.NewItem("test-job", "test-url", baseLabelSet, "test-collector")
+	testJobTargetItemTwo    = target.NewItem("test-job", "test-url2", testJobLabelSetTwo, "test-collector2")
+	testJobTwoTargetItemTwo = target.NewItem("test-job2", "test-url3", testJobLabelSetTwo, "test-collector2")
 )
 
 func TestServer_LivenessProbeHandler(t *testing.T) {
 	leastWeighted, _ := allocation.New("least-weighted", logger)
 	listenAddr := ":8080"
-	s := NewServer(logger, leastWeighted, listenAddr)
+	s, err := NewServer(logger, leastWeighted, listenAddr)
+	require.NoError(t, err)
 	request := httptest.NewRequest("GET", "/livez", nil)
 	w := httptest.NewRecorder()
 
@@ -60,7 +59,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 	type args struct {
 		collector string
 		job       string
-		cMap      map[string]*target.Item
+		targets   []*target.Item
 		allocator allocation.Allocator
 	}
 	type want struct {
@@ -77,7 +76,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap:      map[string]*target.Item{},
+				targets:   []*target.Item{},
 				allocator: leastWeighted,
 			},
 			want: want{
@@ -89,8 +88,8 @@ func TestServer_TargetsHandler(t *testing.T) {
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap: map[string]*target.Item{
-					baseTargetItem.Hash(): baseTargetItem,
+				targets: []*target.Item{
+					baseTargetItem,
 				},
 				allocator: leastWeighted,
 			},
@@ -98,9 +97,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
-						Labels: labels.Labels{
-							{Name: "test_label", Value: "test-value"},
-						},
+						Labels:    labels.New(labels.Label{Name: "test_label", Value: "test-value"}),
 					},
 				},
 			},
@@ -110,9 +107,9 @@ func TestServer_TargetsHandler(t *testing.T) {
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap: map[string]*target.Item{
-					baseTargetItem.Hash():   baseTargetItem,
-					secondTargetItem.Hash(): secondTargetItem,
+				targets: []*target.Item{
+					baseTargetItem,
+					secondTargetItem,
 				},
 				allocator: leastWeighted,
 			},
@@ -120,9 +117,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
-						Labels: labels.Labels{
-							{Name: "test_label", Value: "test-value"},
-						},
+						Labels:    labels.New(labels.Label{Name: "test_label", Value: "test-value"}),
 					},
 				},
 			},
@@ -132,9 +127,9 @@ func TestServer_TargetsHandler(t *testing.T) {
 			args: args{
 				collector: "test-collector",
 				job:       "test-job",
-				cMap: map[string]*target.Item{
-					baseTargetItem.Hash():       baseTargetItem,
-					testJobTargetItemTwo.Hash(): testJobTargetItemTwo,
+				targets: []*target.Item{
+					baseTargetItem,
+					testJobTargetItemTwo,
 				},
 				allocator: leastWeighted,
 			},
@@ -142,15 +137,11 @@ func TestServer_TargetsHandler(t *testing.T) {
 				items: []*targetJSON{
 					{
 						TargetURL: []string{"test-url"},
-						Labels: labels.Labels{
-							{Name: "test_label", Value: "test-value"},
-						},
+						Labels:    labels.New(labels.Label{Name: "test_label", Value: "test-value"}),
 					},
 					{
 						TargetURL: []string{"test-url2"},
-						Labels: labels.Labels{
-							{Name: "test_label", Value: "test-value2"},
-						},
+						Labels:    labels.New(labels.Label{Name: "test_label", Value: "test-value2"}),
 					},
 				},
 			},
@@ -159,9 +150,11 @@ func TestServer_TargetsHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, tt.args.allocator, listenAddr)
+			s, err := NewServer(logger, tt.args.allocator, listenAddr)
+			require.NoError(t, err)
+
 			tt.args.allocator.SetCollectors(map[string]*allocation.Collector{"test-collector": {Name: "test-collector"}})
-			tt.args.allocator.SetTargets(tt.args.cMap)
+			tt.args.allocator.SetTargets(tt.args.targets)
 			request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/%s/targets?collector_id=%s", tt.args.job, tt.args.collector), nil)
 			w := httptest.NewRecorder()
 
@@ -498,7 +491,8 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, nil, listenAddr, tc.serverOptions...)
+			s, err := NewServer(logger, nil, listenAddr, tc.serverOptions...)
+			require.NoError(t, err)
 			assert.NoError(t, s.UpdateScrapeConfigResponse(tc.scrapeConfigs))
 
 			request := httptest.NewRequest("GET", "/scrape_configs", nil)
@@ -543,7 +537,7 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 func TestServer_JobHandler(t *testing.T) {
 	tests := []struct {
 		description  string
-		targetItems  map[string]*target.Item
+		targetItems  map[target.ItemHash]*target.Item
 		expectedCode int
 		expectedJobs map[string]linkJSON
 	}{
@@ -555,14 +549,14 @@ func TestServer_JobHandler(t *testing.T) {
 		},
 		{
 			description:  "empty jobs",
-			targetItems:  map[string]*target.Item{},
+			targetItems:  map[target.ItemHash]*target.Item{},
 			expectedCode: http.StatusOK,
 			expectedJobs: make(map[string]linkJSON),
 		},
 		{
 			description: "one job",
-			targetItems: map[string]*target.Item{
-				"targetitem": target.NewItem("job1", "", labels.Labels{}, ""),
+			targetItems: map[target.ItemHash]*target.Item{
+				0: target.NewItem("job1", "", labels.New(), ""),
 			},
 			expectedCode: http.StatusOK,
 			expectedJobs: map[string]linkJSON{
@@ -571,12 +565,12 @@ func TestServer_JobHandler(t *testing.T) {
 		},
 		{
 			description: "multiple jobs",
-			targetItems: map[string]*target.Item{
-				"a": target.NewItem("job1", "", labels.Labels{}, ""),
-				"b": target.NewItem("job2", "", labels.Labels{}, ""),
-				"c": target.NewItem("job3", "", labels.Labels{}, ""),
-				"d": target.NewItem("job3", "", labels.Labels{}, ""),
-				"e": target.NewItem("job3", "", labels.Labels{}, "")},
+			targetItems: map[target.ItemHash]*target.Item{
+				0: target.NewItem("job1", "", labels.New(), ""),
+				1: target.NewItem("job2", "", labels.New(), ""),
+				2: target.NewItem("job3", "", labels.New(), ""),
+				3: target.NewItem("job3", "", labels.New(), ""),
+				4: target.NewItem("job3", "", labels.New(), "")},
 			expectedCode: http.StatusOK,
 			expectedJobs: map[string]linkJSON{
 				"job1": newLink("job1"),
@@ -589,7 +583,8 @@ func TestServer_JobHandler(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
 			a := &mockAllocator{targetItems: tc.targetItems}
-			s := NewServer(logger, a, listenAddr)
+			s, err := NewServer(logger, a, listenAddr)
+			require.NoError(t, err)
 			request := httptest.NewRequest("GET", "/jobs", nil)
 			w := httptest.NewRecorder()
 
@@ -606,6 +601,415 @@ func TestServer_JobHandler(t *testing.T) {
 		})
 	}
 }
+func TestServer_JobsHandler_HTML(t *testing.T) {
+	tests := []struct {
+		description  string
+		targetItems  map[target.ItemHash]*target.Item
+		expectedCode int
+		Golden       string
+	}{
+		{
+			description:  "nil jobs",
+			targetItems:  nil,
+			expectedCode: http.StatusOK,
+			Golden:       "jobs_empty.html",
+		},
+		{
+			description:  "empty jobs",
+			targetItems:  map[target.ItemHash]*target.Item{},
+			expectedCode: http.StatusOK,
+			Golden:       "jobs_empty.html",
+		},
+		{
+			description: "one job",
+			targetItems: map[target.ItemHash]*target.Item{
+				0: target.NewItem("job1", "", labels.New(), ""),
+			},
+			expectedCode: http.StatusOK,
+			Golden:       "jobs_one.html",
+		},
+		{
+			description: "multiple jobs",
+			targetItems: map[target.ItemHash]*target.Item{
+				0: target.NewItem("job1", "1.1.1.1:8080", labels.New(), ""),
+				1: target.NewItem("job2", "1.1.1.2:8080", labels.New(), ""),
+				2: target.NewItem("job3", "1.1.1.3:8080", labels.New(), ""),
+				3: target.NewItem("job3", "1.1.1.4:8080", labels.New(), ""),
+				4: target.NewItem("job3", "1.1.1.5:8080", labels.New(), "")},
+			expectedCode: http.StatusOK,
+			Golden:       "jobs_multiple.html",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			a := &mockAllocator{targetItems: tc.targetItems}
+			s, err := NewServer(logger, a, listenAddr)
+			require.NoError(t, err)
+			a.SetCollectors(map[string]*allocation.Collector{
+				"test-collector":  {Name: "test-collector"},
+				"test-collector2": {Name: "test-collector2"},
+			})
+			request := httptest.NewRequest("GET", "/debug/jobs", nil)
+			request.Header.Set("Accept", "text/html")
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, tc.expectedCode, result.StatusCode)
+			bodyBytes, err := io.ReadAll(result.Body)
+			require.NoError(t, err)
+			golden.Assert(t, string(bodyBytes), tc.Golden)
+		})
+	}
+}
+
+func TestServer_JobHandler_HTML(t *testing.T) {
+	consistentHashing, _ := allocation.New("consistent-hashing", logger)
+	type args struct {
+		job  string
+		cMap []*target.Item
+
+		allocator allocation.Allocator
+	}
+	tests := []struct {
+		name   string
+		args   args
+		Golden string
+	}{
+		{
+			name: "Empty target map",
+			args: args{
+				job:       "test-job",
+				cMap:      []*target.Item{},
+				allocator: consistentHashing,
+			},
+			Golden: "job_empty.html",
+		},
+		{
+			name: "Single entry target map",
+			args: args{
+				job: "test-job",
+				cMap: []*target.Item{
+					baseTargetItem,
+				},
+				allocator: consistentHashing,
+			},
+			Golden: "job_single.html",
+		},
+		{
+			name: "Multiple entry target map",
+			args: args{
+				job: "test-job",
+				cMap: []*target.Item{
+					baseTargetItem,
+					testJobTwoTargetItemTwo,
+				},
+				allocator: consistentHashing,
+			},
+			Golden: "job_multiple.html",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			listenAddr := ":8080"
+			s, err := NewServer(logger, tt.args.allocator, listenAddr)
+			require.NoError(t, err)
+			tt.args.allocator.SetCollectors(map[string]*allocation.Collector{
+				"test-collector":  {Name: "test-collector"},
+				"test-collector2": {Name: "test-collector2"},
+			})
+			tt.args.allocator.SetTargets(tt.args.cMap)
+			request := httptest.NewRequest("GET", fmt.Sprintf("/debug/job?job_id=%s", tt.args.job), nil)
+			request.Header.Set("Accept", "text/html")
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, http.StatusOK, result.StatusCode)
+			body := result.Body
+			bodyBytes, err := io.ReadAll(body)
+			assert.NoError(t, err)
+			golden.Assert(t, string(bodyBytes), tt.Golden)
+		})
+	}
+}
+
+func TestServer_IndexHandler(t *testing.T) {
+	allocator, _ := allocation.New("consistent-hashing", logger)
+	tests := []struct {
+		description string
+		allocator   allocation.Allocator
+		targetItems []*target.Item
+		Golden      string
+	}{
+		{
+			description: "Empty target map",
+			targetItems: []*target.Item{},
+			allocator:   allocator,
+			Golden:      "index_empty.html",
+		},
+		{
+			description: "Single entry target map",
+			targetItems: []*target.Item{
+				baseTargetItem,
+			},
+			allocator: allocator,
+			Golden:    "index_single.html",
+		},
+		{
+			description: "Multiple entry target map",
+			targetItems: []*target.Item{
+				baseTargetItem,
+				testJobTargetItemTwo,
+				testJobTwoTargetItemTwo,
+			},
+			allocator: allocator,
+			Golden:    "index_multiple.html",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			s, err := NewServer(logger, tc.allocator, listenAddr)
+			require.NoError(t, err)
+			tc.allocator.SetCollectors(map[string]*allocation.Collector{
+				"test-collector1": {Name: "test-collector1"},
+				"test-collector2": {Name: "test-collector2"},
+			})
+			tc.allocator.SetTargets(tc.targetItems)
+			request := httptest.NewRequest("GET", "/", nil)
+			request.Header.Set("Accept", "text/html")
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, http.StatusOK, result.StatusCode)
+			body := result.Body
+			bodyBytes, err := io.ReadAll(body)
+			assert.NoError(t, err)
+			golden.Assert(t, string(bodyBytes), tc.Golden)
+		})
+	}
+}
+func TestServer_TargetsHTMLHandler(t *testing.T) {
+	allocator, _ := allocation.New("consistent-hashing", logger)
+	tests := []struct {
+		description string
+		allocator   allocation.Allocator
+		targetItems []*target.Item
+		Golden      string
+	}{
+		{
+			description: "Empty target map",
+			targetItems: []*target.Item{},
+			allocator:   allocator,
+			Golden:      "targets_empty.html",
+		},
+		{
+			description: "Single entry target map",
+			targetItems: []*target.Item{
+				baseTargetItem,
+			},
+			allocator: allocator,
+			Golden:    "targets_single.html",
+		},
+		{
+			description: "Multiple entry target map",
+			targetItems: []*target.Item{
+				baseTargetItem,
+				testJobTargetItemTwo,
+				testJobTwoTargetItemTwo,
+			},
+			allocator: allocator,
+			Golden:    "targets_multiple.html",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			s, err := NewServer(logger, tc.allocator, listenAddr)
+			require.NoError(t, err)
+			tc.allocator.SetCollectors(map[string]*allocation.Collector{
+				"test-collector1": {Name: "test-collector1"},
+				"test-collector2": {Name: "test-collector2"},
+			})
+			tc.allocator.SetTargets(tc.targetItems)
+			request := httptest.NewRequest("GET", "/debug/targets", nil)
+			request.Header.Set("Accept", "text/html")
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, http.StatusOK, result.StatusCode)
+			body := result.Body
+			bodyBytes, err := io.ReadAll(body)
+			assert.NoError(t, err)
+			golden.Assert(t, string(bodyBytes), tc.Golden)
+		})
+	}
+}
+
+func TestServer_CollectorHandler(t *testing.T) {
+	allocator, _ := allocation.New("consistent-hashing", logger)
+	tests := []struct {
+		description  string
+		collectorId  string
+		allocator    allocation.Allocator
+		targetItems  []*target.Item
+		expectedCode int
+		Golden       string
+	}{
+		{
+			description:  "Empty target map",
+			collectorId:  "test-collector",
+			targetItems:  []*target.Item{},
+			allocator:    allocator,
+			expectedCode: http.StatusOK,
+			Golden:       "collector_empty.html",
+		},
+		{
+			description: "Single entry target map",
+			collectorId: "test-collector2",
+			targetItems: []*target.Item{
+				baseTargetItem,
+			},
+			allocator:    allocator,
+			expectedCode: http.StatusOK,
+			Golden:       "collector_single.html",
+		},
+		{
+			description: "Multiple entry target map",
+			collectorId: "test-collector2",
+			targetItems: []*target.Item{
+				baseTargetItem,
+				testJobTwoTargetItemTwo,
+			},
+			allocator:    allocator,
+			expectedCode: http.StatusOK,
+			Golden:       "collector_multiple.html",
+		},
+		{
+			description: "Multiple entry target map, collector id is empty",
+			collectorId: "",
+			targetItems: []*target.Item{
+				baseTargetItem,
+				testJobTwoTargetItemTwo,
+			},
+			allocator:    allocator,
+			expectedCode: http.StatusBadRequest,
+			Golden:       "collector_empty_id.html",
+		},
+		{
+			description: "Multiple entry target map, unknown collector id",
+			collectorId: "unknown-collector-1",
+			targetItems: []*target.Item{
+				baseTargetItem,
+				testJobTwoTargetItemTwo,
+			},
+			allocator:    allocator,
+			expectedCode: http.StatusNotFound,
+			Golden:       "collector_unknown_id.html",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			s, err := NewServer(logger, tc.allocator, listenAddr)
+			require.NoError(t, err)
+			tc.allocator.SetCollectors(map[string]*allocation.Collector{
+				"test-collector":  {Name: "test-collector"},
+				"test-collector2": {Name: "test-collector2"},
+			})
+			tc.allocator.SetTargets(tc.targetItems)
+			request := httptest.NewRequest("GET", "/debug/collector", nil)
+			request.Header.Set("Accept", "text/html")
+			request.URL.RawQuery = "collector_id=" + tc.collectorId
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, tc.expectedCode, result.StatusCode)
+			body := result.Body
+			bodyBytes, err := io.ReadAll(body)
+			assert.NoError(t, err)
+			golden.Assert(t, string(bodyBytes), tc.Golden)
+		})
+	}
+}
+
+func TestServer_TargetHTMLHandler(t *testing.T) {
+	allocator, _ := allocation.New("consistent-hashing", logger)
+	tests := []struct {
+		description  string
+		targetHash   target.ItemHash
+		allocator    allocation.Allocator
+		targetItems  []*target.Item
+		expectedCode int
+		Golden       string
+	}{
+		{
+			description:  "Missing target hash",
+			targetHash:   0,
+			targetItems:  []*target.Item{},
+			allocator:    allocator,
+			expectedCode: http.StatusBadRequest,
+			Golden:       "target_empty_hash.html",
+		},
+		{
+			description: "Single entry target map",
+			targetHash:  baseTargetItem.Hash(),
+			targetItems: []*target.Item{
+				baseTargetItem,
+			},
+			allocator:    allocator,
+			expectedCode: http.StatusOK,
+			Golden:       "target_single.html",
+		},
+		{
+			description: "Multiple entry target map",
+			targetHash:  testJobTwoTargetItemTwo.Hash(),
+			targetItems: []*target.Item{
+				baseTargetItem,
+				testJobTwoTargetItemTwo,
+			},
+			allocator:    allocator,
+			expectedCode: http.StatusOK,
+			Golden:       "target_multiple.html",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			listenAddr := ":8080"
+			s, err := NewServer(logger, tc.allocator, listenAddr)
+			require.NoError(t, err)
+			tc.allocator.SetCollectors(map[string]*allocation.Collector{
+				"test-collector":  {Name: "test-collector"},
+				"test-collector2": {Name: "test-collector2"},
+			})
+			tc.allocator.SetTargets(tc.targetItems)
+			request := httptest.NewRequest("GET", "/debug/target", nil)
+			request.Header.Set("Accept", "text/html")
+			request.URL.RawQuery = "target_hash=" + tc.targetHash.String()
+			w := httptest.NewRecorder()
+
+			s.server.Handler.ServeHTTP(w, request)
+			result := w.Result()
+
+			assert.Equal(t, tc.expectedCode, result.StatusCode)
+			body := result.Body
+			bodyBytes, err := io.ReadAll(body)
+			assert.NoError(t, err)
+			golden.Assert(t, string(bodyBytes), tc.Golden)
+		})
+	}
+}
+
 func TestServer_Readiness(t *testing.T) {
 	tests := []struct {
 		description   string
@@ -654,7 +1058,8 @@ func TestServer_Readiness(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, nil, listenAddr)
+			s, err := NewServer(logger, nil, listenAddr)
+			require.NoError(t, err)
 			if tc.scrapeConfigs != nil {
 				assert.NoError(t, s.UpdateScrapeConfigResponse(tc.scrapeConfigs))
 			}
@@ -670,7 +1075,7 @@ func TestServer_Readiness(t *testing.T) {
 	}
 }
 
-func TestServer_ScrapeConfigRespose(t *testing.T) {
+func TestServer_ScrapeConfigResponse(t *testing.T) {
 	tests := []struct {
 		description  string
 		filePath     string
@@ -695,10 +1100,11 @@ func TestServer_ScrapeConfigRespose(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			listenAddr := ":8080"
-			s := NewServer(logger, nil, listenAddr)
+			s, err := NewServer(logger, nil, listenAddr)
+			require.NoError(t, err)
 
 			allocCfg := allocatorconfig.CreateDefaultConfig()
-			err := allocatorconfig.LoadFromFile(tc.filePath, &allocCfg)
+			err = allocatorconfig.LoadFromFile(tc.filePath, &allocCfg)
 			require.NoError(t, err)
 
 			jobToScrapeConfig := make(map[string]*promconfig.ScrapeConfig)

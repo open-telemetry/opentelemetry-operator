@@ -12,7 +12,6 @@ spec:
       labels:
         app: my-nginx
       annotations:
-        sidecar.opentelemetry.io/inject: "true"
         instrumentation.opentelemetry.io/inject-nginx: "true"
     spec:
       securityContext:
@@ -21,7 +20,7 @@ spec:
         fsGroup: 3000
       containers:
       - name: myapp
-        image: nginxinc/nginx-unprivileged:1.25.3
+        image: docker.io/nginxinc/nginx-unprivileged:1.25.3
         imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
@@ -34,6 +33,15 @@ spec:
               command: ["/bin/sh", "-c", "echo Hello from the postStart handler"]
         ports:
         - containerPort: 8765
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8765
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 3
         env:
         - name: LD_LIBRARY_PATH
           value: /opt
@@ -93,11 +101,6 @@ data:
           proxy_pass http://localhost:8383/api/vendor/;
         }
 
-        location /seznam {
-          proxy_pass http://www.seznam.cz/;
-        }
       }
 
     }
-
----
