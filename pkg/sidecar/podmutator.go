@@ -27,18 +27,20 @@ var (
 )
 
 type sidecarPodMutator struct {
-	client client.Client
-	logger logr.Logger
-	config config.Config
+	client  client.Client
+	logger  logr.Logger
+	config  config.Config
+	metrics *podmutation.PodMutationMetrics
 }
 
 var _ podmutation.PodMutator = (*sidecarPodMutator)(nil)
 
-func NewMutator(logger logr.Logger, config config.Config, client client.Client) *sidecarPodMutator {
+func NewMutator(logger logr.Logger, config config.Config, client client.Client, metrics *podmutation.PodMutationMetrics) *sidecarPodMutator {
 	return &sidecarPodMutator{
-		config: config,
-		logger: logger,
-		client: client,
+		config:  config,
+		logger:  logger,
+		client:  client,
+		metrics: metrics,
 	}
 }
 
@@ -62,19 +64,32 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	// check whether there's a sidecar already -- return the same pod if that's the case.
 	if existsIn(p.config.Internal.NativeSidecarSupport, pod) {
 		logger.V(1).Info("pod already has sidecar in it, skipping injection")
+		p.metrics.RecordSidecarMutation(ctx, "skipped", "already_exists", ns.Name)
 		return pod, nil
 	}
 
 	// which instance should it talk to?
 	otelcol, err := p.getCollectorInstance(ctx, ns, annValue)
 	if err != nil {
-		if errors.Is(err, errMultipleInstancesPossible) || errors.Is(err, errNoInstancesAvailable) || errors.Is(err, errInstanceNotSidecar) {
-			// we still allow the pod to be created, but we log a message to the operator's logs
+
+		if errors.Is(err, errMultipleInstancesPossible) {
+			p.metrics.RecordSidecarMutation(ctx, "error", "multiple_instances", ns.Name)
+			logger.Error(err, "failed to select an OpenTelemetry Collector instance for this pod's sidecar")
+			return pod, nil
+		}
+		if errors.Is(err, errNoInstancesAvailable) {
+			p.metrics.RecordSidecarMutation(ctx, "error", "no_instances", ns.Name)
+			logger.Error(err, "failed to select an OpenTelemetry Collector instance for this pod's sidecar")
+			return pod, nil
+		}
+		if errors.Is(err, errInstanceNotSidecar) {
+			p.metrics.RecordSidecarMutation(ctx, "error", "not_sidecar_mode", ns.Name)
 			logger.Error(err, "failed to select an OpenTelemetry Collector instance for this pod's sidecar")
 			return pod, nil
 		}
 
 		// something else happened, better fail here
+		p.metrics.RecordSidecarMutation(ctx, "error", "unknown", ns.Name)
 		return pod, err
 	}
 
@@ -85,7 +100,7 @@ func (p *sidecarPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod
 	// once it's been determined that a sidecar is desired, none exists yet, and we know which instance it should talk to,
 	// we should add the sidecar.
 	logger.V(1).Info("injecting sidecar into pod", "otelcol-namespace", otelcol.Namespace, "otelcol-name", otelcol.Name)
-
+	p.metrics.RecordSidecarMutation(ctx, "success", "", ns.Name)
 	return add(p.config, p.logger, otelcol, pod, attributes)
 }
 

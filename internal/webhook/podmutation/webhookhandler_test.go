@@ -141,7 +141,7 @@ func TestShouldInjectSidecar(t *testing.T) {
 			// the webhook handler
 			cfg := config.New()
 			decoder := admission.NewDecoder(scheme.Scheme)
-			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
+			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient, nil)}, nil)
 
 			// test
 			res := injector.Handle(context.Background(), req)
@@ -360,7 +360,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 			// the webhook handler
 			cfg := config.New()
 			decoder := admission.NewDecoder(scheme.Scheme)
-			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
+			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient, nil)}, nil)
 			require.NoError(t, err)
 
 			// test
@@ -418,7 +418,7 @@ func TestFailOnInvalidRequest(t *testing.T) {
 			// prepare
 			cfg := config.New()
 			decoder := admission.NewDecoder(scheme.Scheme)
-			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient)})
+			injector := NewWebhookHandler(cfg, logger, decoder, k8sClient, []PodMutator{sidecar.NewMutator(logger, cfg, k8sClient, nil)}, nil)
 
 			// test
 			res := injector.Handle(context.Background(), tt.req)

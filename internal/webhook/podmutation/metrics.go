@@ -10,15 +10,22 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
+const (
+	meterName  = "pod-mutation-webhook"
+	metricName = "opentelemetry_operator_pod_mutations_total"
+)
+
+// PodMutationMetrics holds the metrics for the pod mutation webhook.
+// +kubebuilder:object:generate=false
 type PodMutationMetrics struct {
 	mutationsTotal metric.Int64Counter
 }
 
 func NewMetrics(meterProvider metric.MeterProvider) (*PodMutationMetrics, error) {
-	meter := meterProvider.Meter("pod-mutation-webhook")
+	meter := meterProvider.Meter(meterName)
 
 	mutationsTotal, err := meter.Int64Counter(
-		"opentelemetry_operator_pod_mutations_total",
+		metricName,
 		metric.WithDescription("Total number of pod mutation attempts"),
 	)
 	if err != nil {
@@ -31,6 +38,9 @@ func NewMetrics(meterProvider metric.MeterProvider) (*PodMutationMetrics, error)
 }
 
 func (m *PodMutationMetrics) RecordSidecarMutation(ctx context.Context, status, reason, namespace string) {
+	if m == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("mutation_type", "sidecar"),
 		attribute.String("status", status),
@@ -43,6 +53,9 @@ func (m *PodMutationMetrics) RecordSidecarMutation(ctx context.Context, status, 
 }
 
 func (m *PodMutationMetrics) RecordInstrumentationMutation(ctx context.Context, status, reason, language, namespace string) {
+	if m == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("mutation_type", "instrumentation"),
 		attribute.String("status", status),

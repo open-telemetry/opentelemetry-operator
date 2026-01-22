@@ -4958,7 +4958,7 @@ func TestMutatePod(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100), test.config)
+			mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100), test.config, nil)
 			require.NotNil(t, mutator)
 			if test.setFeatureGates != nil {
 				test.setFeatureGates(t)
