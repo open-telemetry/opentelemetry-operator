@@ -17,6 +17,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 )
 
 func TestMutatePod(t *testing.T) {
@@ -4958,7 +4959,7 @@ func TestMutatePod(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100), test.config, nil)
+			mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100), test.config, podmutation.NewNoopMetrics())
 			require.NotNil(t, mutator)
 			if test.setFeatureGates != nil {
 				test.setFeatureGates(t)
