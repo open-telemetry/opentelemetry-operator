@@ -45,17 +45,34 @@ spec:
               POD_NAME=$(kubectl get pods -n ${OPERATOR_NAMESPACE} -l app.kubernetes.io/name=opentelemetry-operator -o jsonpath='{.items[0].metadata.name}')
               echo "Using pod: ${POD_NAME}"
 
-              # Fetch metrics using kubectl get --raw via POD proxy
+              # Set up port-forward in background
+              echo "Starting port-forward..."
+              kubectl port-forward -n ${OPERATOR_NAMESPACE} pod/${POD_NAME} 8443:8443 &
+              PF_PID=$!
+              
+              # Ensure we kill the port-forward process on exit
+              cleanup() {
+                if [ -n "$PF_PID" ]; then
+                  echo "Killing port-forward (PID $PF_PID)..."
+                  kill $PF_PID || true
+                fi
+              }
+              trap cleanup EXIT
+
+              # Wait for port-forward to be ready
+              sleep 5
+
+              # Fetch metrics using curl to localhost
               echo ""
-              echo "=== Fetching metrics via kubectl get --raw (POD proxy) ==="
+              echo "=== Fetching metrics via port-forward ==="
               for i in 1 2 3 4 5 6 7 8 9 10; do
                 echo "Attempt $i to fetch metrics..."
-                # Use kubectl get --raw to access the metrics endpoint via pod proxy
-                # Note: We use https: prefix to ensure TLS is used to talk to the pod
-                METRICS=$(kubectl get --raw "/api/v1/namespaces/${OPERATOR_NAMESPACE}/pods/https:${POD_NAME}:8443/proxy/metrics" -v=1 || true)
-                if echo "$METRICS" | grep -q "opentelemetry_operator_pod_mutations_total"; then
-                  echo "Found metric!"
-                  break
+                # Access localhost:8443 with -k (skip verify) because of self-signed certs
+                if METRICS=$(curl -sk https://localhost:8443/metrics); then
+                  if echo "$METRICS" | grep -q "opentelemetry_operator_pod_mutations_total"; then
+                    echo "Found metric!"
+                    break
+                  fi
                 fi
                 sleep 3
               done
