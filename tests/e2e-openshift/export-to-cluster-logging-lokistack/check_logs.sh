@@ -4,10 +4,10 @@ TOKEN=$(oc -n openshift-logging create token otel-collector-deployment)
 LOKI_URL=$(oc -n openshift-logging get route logging-loki -o json | jq '.spec.host' -r)
 
 while true; do
-  # Fetch logs
+  # Fetch logs (capture both stdout and stderr since logcli 3.x outputs debug info to stderr)
   RAW_OUTPUT=$(logcli -o raw --tls-skip-verify \
   --bearer-token="${TOKEN}" \
-  --addr "https://${LOKI_URL}/api/logs/v1/application" query '{log_type="application"}')
+  --addr "https://${LOKI_URL}/api/logs/v1/application" query '{log_type="application"}' 2>&1)
 
   # Extract the part of the output containing the common labels
   COMMON_LABELS=$(echo "$RAW_OUTPUT" | grep "Common labels:")
