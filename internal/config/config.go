@@ -115,6 +115,8 @@ type Config struct {
 	EnableLeaderElection bool `yaml:"enable-leader-election"`
 	// EnableCRMetrics controls whether exposing the CR metrics is enabled
 	EnableCRMetrics bool `yaml:"enable-cr-metrics"`
+	// EnableWebhookMetrics controls whether exposing the pod mutation webhook metrics is enabled
+	EnableWebhookMetrics bool `yaml:"enable-webhook-metrics"`
 	// CreateServiceMonitorOperatorMetrics creates a ServiceMonitor for the operator metrics
 	CreateServiceMonitorOperatorMetrics bool `yaml:"create-service-monitor-operator-metrics"`
 	// WebhookPort is the port the webhook endpoint binds to.
