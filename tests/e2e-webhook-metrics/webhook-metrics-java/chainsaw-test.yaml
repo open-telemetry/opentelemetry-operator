@@ -57,7 +57,9 @@ spec:
               sleep 3
               
               # Fetch metrics (using insecure since it's self-signed cert in tests)
-              for i in {1..10}; do
+              
+              # Fetch metrics (using insecure since it's self-signed cert in tests)
+              for i in 1 2 3 4 5 6 7 8 9 10; do
                 echo "Attempt $i to fetch metrics..."
                 METRICS=$(curl -sk https://localhost:8443/metrics 2>/dev/null || true)
                 if echo "$METRICS" | grep -q "opentelemetry_operator_pod_mutations_total"; then
