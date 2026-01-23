@@ -428,12 +428,17 @@ func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *certw
 			opts := x509.VerifyOptions{
 				Roots:         caReloader.GetClientCAs(),
 				Intermediates: x509.NewCertPool(),
+				KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 			}
 
-			for _, cert := range cs.PeerCertificates {
-				if _, err := cert.Verify(opts); err != nil {
-					return fmt.Errorf("client certificate verification failed: %w", err)
-				}
+			// Add intermediate certificates to the pool
+			for _, cert := range cs.PeerCertificates[1:] {
+				opts.Intermediates.AddCert(cert)
+			}
+
+			// Verify only the leaf certificate
+			if _, err := cs.PeerCertificates[0].Verify(opts); err != nil {
+				return fmt.Errorf("client certificate verification failed: %w", err)
 			}
 			return nil
 		},

@@ -129,3 +129,201 @@ func TestNewTLSConfig_InvalidCertificate(t *testing.T) {
 	_, _, err := config.NewTLSConfig(logger)
 	require.Error(t, err)
 }
+
+// generateCertificateChain generates a certificate chain: root CA -> intermediate CA -> leaf cert
+func generateCertificateChain(t *testing.T) (rootCAPEM, intermediateCAPEM, leafCertPEM, leafKeyPEM []byte, rootCert, intermediateCert, leafCert *x509.Certificate) {
+	t.Helper()
+
+	// Generate root CA
+	rootKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	rootTemplate := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			Organization: []string{"Test Root CA"},
+			CommonName:   "Test Root CA",
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(24 * time.Hour),
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+		MaxPathLen:            2,
+	}
+
+	rootDER, err := x509.CreateCertificate(rand.Reader, &rootTemplate, &rootTemplate, &rootKey.PublicKey, rootKey)
+	require.NoError(t, err)
+	rootCAPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: rootDER})
+	rootCert, err = x509.ParseCertificate(rootDER)
+	require.NoError(t, err)
+
+	// Generate intermediate CA
+	intermediateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	intermediateTemplate := x509.Certificate{
+		SerialNumber: big.NewInt(2),
+		Subject: pkix.Name{
+			Organization: []string{"Test Intermediate CA"},
+			CommonName:   "Test Intermediate CA",
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(24 * time.Hour),
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign | x509.KeyUsageDigitalSignature,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+		MaxPathLen:            1,
+		MaxPathLenZero:        false,
+	}
+
+	intermediateDER, err := x509.CreateCertificate(rand.Reader, &intermediateTemplate, rootCert, &intermediateKey.PublicKey, rootKey)
+	require.NoError(t, err)
+	intermediateCAPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: intermediateDER})
+	intermediateCert, err = x509.ParseCertificate(intermediateDER)
+	require.NoError(t, err)
+
+	// Generate leaf certificate
+	leafKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	leafTemplate := x509.Certificate{
+		SerialNumber: big.NewInt(3),
+		Subject: pkix.Name{
+			Organization: []string{"Test Client"},
+			CommonName:   "client.test.local",
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(24 * time.Hour),
+		KeyUsage:              x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+		BasicConstraintsValid: true,
+	}
+
+	leafDER, err := x509.CreateCertificate(rand.Reader, &leafTemplate, intermediateCert, &leafKey.PublicKey, intermediateKey)
+	require.NoError(t, err)
+	leafCertPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: leafDER})
+	leafCert, err = x509.ParseCertificate(leafDER)
+	require.NoError(t, err)
+
+	// Encode leaf private key
+	leafKeyBytes, err := x509.MarshalECPrivateKey(leafKey)
+	require.NoError(t, err)
+	leafKeyPEM = pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: leafKeyBytes})
+
+	return rootCAPEM, intermediateCAPEM, leafCertPEM, leafKeyPEM, rootCert, intermediateCert, leafCert
+}
+
+func TestNewTLSConfig_VerifyConnection_WithIntermediateCertificates(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Generate server certificate and CA chain
+	serverCertPEM, serverKeyPEM := generateTestCertificate(t)
+	rootCAPEM, _, _, _, _, intermediateCert, leafCert := generateCertificateChain(t)
+
+	// Write server certificate and key
+	certPath := filepath.Join(tmpDir, "tls.crt")
+	keyPath := filepath.Join(tmpDir, "tls.key")
+	caPath := filepath.Join(tmpDir, "ca.crt")
+
+	require.NoError(t, os.WriteFile(certPath, serverCertPEM, 0600))
+	require.NoError(t, os.WriteFile(keyPath, serverKeyPEM, 0600))
+	require.NoError(t, os.WriteFile(caPath, rootCAPEM, 0600))
+
+	config := HTTPSServerConfig{
+		TLSCertFilePath: certPath,
+		TLSKeyFilePath:  keyPath,
+		CAFilePath:      caPath,
+	}
+
+	logger := ctrl.Log.WithName("test")
+	tlsConfig, _, err := config.NewTLSConfig(logger)
+	require.NoError(t, err)
+	require.NotNil(t, tlsConfig)
+	require.NotNil(t, tlsConfig.VerifyConnection)
+
+	tests := []struct {
+		name          string
+		peerCerts     []*x509.Certificate
+		expectError   bool
+		errorContains string
+	}{
+		{
+			name:          "no client certificate",
+			peerCerts:     []*x509.Certificate{},
+			expectError:   true,
+			errorContains: "no client certificate provided",
+		},
+		{
+			name:          "valid certificate chain with intermediate",
+			peerCerts:     []*x509.Certificate{leafCert, intermediateCert},
+			expectError:   false,
+			errorContains: "",
+		},
+		{
+			name: "leaf certificate only (missing intermediate)",
+			peerCerts: []*x509.Certificate{leafCert},
+			expectError:   true,
+			errorContains: "certificate verification failed",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cs := tls.ConnectionState{
+				PeerCertificates: tt.peerCerts,
+			}
+
+			err := tlsConfig.VerifyConnection(cs)
+			if tt.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errorContains)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestNewTLSConfig_VerifyConnection_OnlyVerifiesLeafCertificate(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Generate server certificate
+	serverCertPEM, serverKeyPEM := generateTestCertificate(t)
+	rootCAPEM, _, _, _, _, intermediateCert, leafCert := generateCertificateChain(t)
+
+	// Write server certificate and key
+	certPath := filepath.Join(tmpDir, "tls.crt")
+	keyPath := filepath.Join(tmpDir, "tls.key")
+	caPath := filepath.Join(tmpDir, "ca.crt")
+
+	require.NoError(t, os.WriteFile(certPath, serverCertPEM, 0600))
+	require.NoError(t, os.WriteFile(keyPath, serverKeyPEM, 0600))
+	require.NoError(t, os.WriteFile(caPath, rootCAPEM, 0600))
+
+	config := HTTPSServerConfig{
+		TLSCertFilePath: certPath,
+		TLSKeyFilePath:  keyPath,
+		CAFilePath:      caPath,
+	}
+
+	logger := ctrl.Log.WithName("test")
+	tlsConfig, _, err := config.NewTLSConfig(logger)
+	require.NoError(t, err)
+
+	// Test that verification succeeds with correct chain order (leaf first, then intermediate)
+	cs := tls.ConnectionState{
+		PeerCertificates: []*x509.Certificate{leafCert, intermediateCert},
+	}
+
+	err = tlsConfig.VerifyConnection(cs)
+	require.NoError(t, err, "Should verify successfully with leaf cert first and intermediate second")
+
+	// Test with multiple intermediates - verify they are all added to the intermediates pool
+	csMultipleIntermediates := tls.ConnectionState{
+		PeerCertificates: []*x509.Certificate{leafCert, intermediateCert, intermediateCert},
+	}
+
+	err = tlsConfig.VerifyConnection(csMultipleIntermediates)
+	require.NoError(t, err, "Should handle multiple intermediate certificates correctly")
+}
