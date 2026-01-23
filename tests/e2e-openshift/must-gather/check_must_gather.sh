@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Create a temporary directory to store must-gather
 MUST_GATHER_DIR=$(mktemp -d)

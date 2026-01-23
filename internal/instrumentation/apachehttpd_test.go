@@ -206,7 +206,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 		},
 		// === Test Removal of probes and lifecycle =============================
 		{
-			name:        "Probes removed on clone init container",
+			name:        "Init-container-incompatible fields not copied",
 			ApacheHttpd: v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
@@ -216,6 +216,10 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							StartupProbe:   &corev1.Probe{},
 							LivenessProbe:  &corev1.Probe{},
 							Lifecycle:      &corev1.Lifecycle{},
+							ResizePolicy: []corev1.ContainerResizePolicy{
+								{ResourceName: corev1.ResourceCPU, RestartPolicy: corev1.NotRequired},
+								{ResourceName: corev1.ResourceMemory, RestartPolicy: corev1.NotRequired},
+							},
 						},
 					},
 				},
@@ -298,6 +302,10 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							StartupProbe:   &corev1.Probe{},
 							LivenessProbe:  &corev1.Probe{},
 							Lifecycle:      &corev1.Lifecycle{},
+							ResizePolicy: []corev1.ContainerResizePolicy{
+								{ResourceName: corev1.ResourceCPU, RestartPolicy: corev1.NotRequired},
+								{ResourceName: corev1.ResourceMemory, RestartPolicy: corev1.NotRequired},
+							},
 						},
 					},
 				},

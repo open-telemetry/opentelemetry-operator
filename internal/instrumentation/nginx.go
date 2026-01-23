@@ -85,25 +85,23 @@ export %[4]s="$( { nginx -v ; } 2>&1 )" && echo ${%[4]s##*/} > %[3]s/version.txt
 			nginxVersionEnvVar,
 		)
 
-		cloneContainer := container.DeepCopy()
-		cloneContainer.Name = nginxAgentCloneContainerName
-		cloneContainer.Command = []string{"/bin/sh", "-c"}
-		cloneContainer.Args = []string{nginxAgentCommands}
-		cloneContainer.VolumeMounts = append(cloneContainer.VolumeMounts, corev1.VolumeMount{
-			Name:      nginxAgentConfigVolume,
-			MountPath: nginxAgentConfDirFull,
-		})
-		// remove resource requirements since those are then reserved for the lifetime of a pod
-		// and we definitely do not need them for the init container for cp command
-		cloneContainer.Resources = nginxSpec.Resources
-		// remove livenessProbe, readinessProbe, and startupProbe, since not supported on init containers
-		cloneContainer.LivenessProbe = nil
-		cloneContainer.ReadinessProbe = nil
-		cloneContainer.StartupProbe = nil
-		// remove lifecycle, since not supported on init containers
-		cloneContainer.Lifecycle = nil
+		cloneContainer := corev1.Container{
+			Name:    nginxAgentCloneContainerName,
+			Image:   container.Image,
+			Command: []string{"/bin/sh", "-c"},
+			Args:    []string{nginxAgentCommands},
+			Env:     container.Env,
+			EnvFrom: container.EnvFrom,
+			VolumeMounts: append(container.VolumeMounts, corev1.VolumeMount{
+				Name:      nginxAgentConfigVolume,
+				MountPath: nginxAgentConfDirFull,
+			}),
+			Resources:       nginxSpec.Resources,
+			SecurityContext: container.SecurityContext,
+			ImagePullPolicy: container.ImagePullPolicy,
+		}
 
-		pod.Spec.InitContainers = append(pod.Spec.InitContainers, *cloneContainer)
+		pod.Spec.InitContainers = append(pod.Spec.InitContainers, cloneContainer)
 
 		// drop volume mount with volume-provided Nginx config from original container
 		// since it could over-write configuration provided by the injection

@@ -128,3 +128,39 @@ func TestPDB(t *testing.T) {
 		}
 	}
 }
+
+func TestPDBSelectorLabels(t *testing.T) {
+	// Create a collector with extra labels that should NOT appear in the PDB selector
+	// This test ensures the fix for issue #4623 - PDB should use stable selector labels
+	otelcol := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-instance",
+			Namespace: "my-namespace",
+			Labels: map[string]string{
+				"deploy-tag":   "v123",       // mutable label - should NOT be in selector
+				"custom-label": "custom-val", // extra label - should NOT be in selector
+			},
+		},
+	}
+
+	configuration := config.New()
+	pdb, err := PodDisruptionBudget(manifests.Params{
+		Log:     testLogger,
+		Config:  configuration,
+		OtelCol: otelcol,
+	})
+	require.NoError(t, err)
+
+	// Verify the selector uses only stable selector labels
+	expectedSelectorLabels := map[string]string{
+		"app.kubernetes.io/component":  "opentelemetry-collector",
+		"app.kubernetes.io/instance":   "my-namespace.my-instance",
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+		"app.kubernetes.io/part-of":    "opentelemetry",
+	}
+	assert.Equal(t, expectedSelectorLabels, pdb.Spec.Selector.MatchLabels)
+
+	// Verify mutable labels are NOT in the selector
+	assert.NotContains(t, pdb.Spec.Selector.MatchLabels, "deploy-tag")
+	assert.NotContains(t, pdb.Spec.Selector.MatchLabels, "custom-label")
+}
