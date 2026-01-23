@@ -57,7 +57,7 @@ spec:
               for i in 1 2 3 4 5 6 7 8 9 10; do
                 echo "Attempt $i to fetch metrics..."
                 # Use kubectl get --raw to access the metrics endpoint with proper auth
-                METRICS=$(kubectl get --raw "/api/v1/namespaces/${OPERATOR_NAMESPACE}/services/${SERVICE_NAME}:8443/proxy/metrics" 2>/dev/null || true)
+                METRICS=$(kubectl get --raw "/api/v1/namespaces/${OPERATOR_NAMESPACE}/services/https:${SERVICE_NAME}:8443/proxy/metrics" -v=1 || true)
                 if echo "$METRICS" | grep -q "opentelemetry_operator_pod_mutations_total"; then
                   echo "Found metric!"
                   break
