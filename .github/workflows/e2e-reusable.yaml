@@ -82,6 +82,7 @@ jobs:
         - e2e-metadata-filters
         - e2e-ta-collector-mtls
         - e2e-crd-validations
+        - e2e-webhook-metrics
         include:
         - group: e2e-instrumentation-default
           setup: "add-instrumentation-params prepare-e2e"
@@ -97,6 +98,8 @@ jobs:
           setup: "add-operator-arg OPERATOR_ARG='--feature-gates=operator.targetallocator.mtls' add-certmanager-permissions prepare-e2e"
         - group: e2e-automatic-rbac
           setup: "add-rbac-permissions-to-operator prepare-e2e"
+        - group: e2e-webhook-metrics
+          setup: "add-operator-arg OPERATOR_ARG='--enable-webhook-metrics=true' add-instrumentation-images prepare-e2e"
 
     steps:
     - name: Check out code into the Go module directory

@@ -1,0 +1,8 @@
+# Assert that the pod was mutated with init container
+apiVersion: v1
+kind: Pod
+metadata:
+  name: java-test-app
+spec:
+  initContainers:
+    - name: opentelemetry-auto-instrumentation-java

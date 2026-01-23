@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 )
@@ -75,13 +76,13 @@ func TestMetricsCounts(t *testing.T) {
 	checkPoint(1, []attribute.KeyValue{
 		attribute.String("mutation_type", "sidecar"),
 		attribute.String("status", "success"),
-		attribute.String("namespace", "default"),
+		semconv.K8SNamespaceName("default"),
 	})
 	checkPoint(1, []attribute.KeyValue{
 		attribute.String("mutation_type", "sidecar"),
 		attribute.String("status", "skipped"),
 		attribute.String("reason", "already_exists"),
-		attribute.String("namespace", "ns-1"),
+		semconv.K8SNamespaceName("ns-1"),
 	})
 
 	// Verify instrumentation points
@@ -89,13 +90,13 @@ func TestMetricsCounts(t *testing.T) {
 		attribute.String("mutation_type", "instrumentation"),
 		attribute.String("status", "success"),
 		attribute.String("language", "java"),
-		attribute.String("namespace", "default"),
+		semconv.K8SNamespaceName("default"),
 	})
 	checkPoint(1, []attribute.KeyValue{
 		attribute.String("mutation_type", "instrumentation"),
 		attribute.String("status", "rejected"),
 		attribute.String("reason", "feature_disabled"),
 		attribute.String("language", "nodejs"),
-		attribute.String("namespace", "ns-2"),
+		semconv.K8SNamespaceName("ns-2"),
 	})
 }

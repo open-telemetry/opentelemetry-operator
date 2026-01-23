@@ -13,4 +13,15 @@ issues: [3702]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext:
+subtext: |
+  Adds the `opentelemetry_operator_pod_mutations_total` counter metric with the following labels:
+  - `mutation_type`: "sidecar" or "instrumentation"
+  - `status`: "success", "skipped", "rejected", or "error"
+  - `reason`: Detailed reason for non-success outcomes (e.g., "already_instrumented", "feature_disabled", "lookup_failed")
+  - `k8s_namespace_name`: Kubernetes namespace of the mutated pod
+  - `language`: Programming language for instrumentation mutations (e.g., "java", "python", "nodejs")
+  
+  Example PromQL queries:
+  - Total successful instrumentations: `sum(opentelemetry_operator_pod_mutations_total{status="success"})`
+  - Error rate by language: `sum by (language) (rate(opentelemetry_operator_pod_mutations_total{status="error"}[5m]))`
+

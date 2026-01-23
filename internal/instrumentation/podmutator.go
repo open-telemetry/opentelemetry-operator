@@ -33,7 +33,7 @@ type instPodMutator struct {
 	Logger      logr.Logger
 	Recorder    record.EventRecorder
 	config      config.Config
-	metrics     *podmutation.PodMutationMetrics
+	metrics     podmutation.PodMutationMetricsRecorder
 }
 
 type instrumentationWithContainers struct {
@@ -196,7 +196,7 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns meta
 
 var _ podmutation.PodMutator = (*instPodMutator)(nil)
 
-func NewMutator(logger logr.Logger, client client.Client, recorder record.EventRecorder, cfg config.Config, metrics *podmutation.PodMutationMetrics) podmutation.PodMutator {
+func NewMutator(logger logr.Logger, client client.Client, recorder record.EventRecorder, cfg config.Config, metrics podmutation.PodMutationMetricsRecorder) podmutation.PodMutator {
 	return &instPodMutator{
 		Logger: logger,
 		Client: client,
@@ -221,7 +221,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	// We check if Pod is already instrumented.
 	if isAutoInstrumentationInjected(pod) {
 		logger.Info("Skipping pod instrumentation - already instrumented")
-		pm.metrics.RecordInstrumentationMutation(ctx, "skipped", "already_instrumented", "", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusSkipped, podmutation.ReasonAlreadyInstrumented, "", ns.Name)
 		return pod, nil
 	}
 
@@ -234,35 +234,35 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectJava); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
-		pm.metrics.RecordInstrumentationMutation(ctx, "error", "lookup_failed", "java", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusError, podmutation.ReasonLookupFailed, "java", ns.Name)
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
 	if pm.config.EnableJavaAutoInstrumentation || inst == nil {
 		insts.Java.Instrumentation = inst
 	} else {
-		pm.metrics.RecordInstrumentationMutation(ctx, "rejected", "feature_disabled", "java", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusRejected, podmutation.ReasonFeatureDisabled, "java", ns.Name)
 		logger.Error(nil, "support for Java auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Java auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNodeJS); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
-		pm.metrics.RecordInstrumentationMutation(ctx, "error", "lookup_failed", "nodejs", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusError, podmutation.ReasonLookupFailed, "nodejs", ns.Name)
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
 	if pm.config.EnableNodeJSAutoInstrumentation || inst == nil {
 		insts.NodeJS.Instrumentation = inst
 	} else {
-		pm.metrics.RecordInstrumentationMutation(ctx, "rejected", "feature_disabled", "nodejs", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusRejected, podmutation.ReasonFeatureDisabled, "nodejs", ns.Name)
 		logger.Error(nil, "support for NodeJS auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for NodeJS auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectPython); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
-		pm.metrics.RecordInstrumentationMutation(ctx, "error", "lookup_failed", "python", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusError, podmutation.ReasonLookupFailed, "python", ns.Name)
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
@@ -270,14 +270,14 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		insts.Python.Instrumentation = inst
 		insts.Python.AdditionalAnnotations = map[string]string{annotationPythonPlatform: annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationPythonPlatform)}
 	} else {
-		pm.metrics.RecordInstrumentationMutation(ctx, "rejected", "feature_disabled", "python", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusRejected, podmutation.ReasonFeatureDisabled, "python", ns.Name)
 		logger.Error(nil, "support for Python auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Python auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectDotNet); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
-		pm.metrics.RecordInstrumentationMutation(ctx, "error", "lookup_failed", "dotnet", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusError, podmutation.ReasonLookupFailed, "dotnet", ns.Name)
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
@@ -285,56 +285,56 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		insts.DotNet.Instrumentation = inst
 		insts.DotNet.AdditionalAnnotations = map[string]string{annotationDotNetRuntime: annotationValue(ns.ObjectMeta, pod.ObjectMeta, annotationDotNetRuntime)}
 	} else {
-		pm.metrics.RecordInstrumentationMutation(ctx, "rejected", "feature_disabled", "dotnet", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusRejected, podmutation.ReasonFeatureDisabled, "dotnet", ns.Name)
 		logger.Error(nil, "support for .NET auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for .NET auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectGo); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
-		pm.metrics.RecordInstrumentationMutation(ctx, "error", "lookup_failed", "go", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusError, podmutation.ReasonLookupFailed, "go", ns.Name)
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
 	if pm.config.EnableGoAutoInstrumentation || inst == nil {
 		insts.Go.Instrumentation = inst
 	} else {
-		pm.metrics.RecordInstrumentationMutation(ctx, "rejected", "feature_disabled", "go", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusRejected, podmutation.ReasonFeatureDisabled, "go", ns.Name)
 		logger.Error(err, "support for Go auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Go auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectApacheHttpd); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
-		pm.metrics.RecordInstrumentationMutation(ctx, "error", "lookup_failed", "apache-httpd", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusError, podmutation.ReasonLookupFailed, "apache-httpd", ns.Name)
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
 	if pm.config.EnableApacheHttpdInstrumentation || inst == nil {
 		insts.ApacheHttpd.Instrumentation = inst
 	} else {
-		pm.metrics.RecordInstrumentationMutation(ctx, "rejected", "feature_disabled", "apache-httpd", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusRejected, podmutation.ReasonFeatureDisabled, "apache-httpd", ns.Name)
 		logger.Error(nil, "support for Apache HTTPD auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Apache HTTPD auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectNginx); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
-		pm.metrics.RecordInstrumentationMutation(ctx, "error", "lookup_failed", "nginx", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusError, podmutation.ReasonLookupFailed, "nginx", ns.Name)
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
 	if pm.config.EnableNginxAutoInstrumentation || inst == nil {
 		insts.Nginx.Instrumentation = inst
 	} else {
-		pm.metrics.RecordInstrumentationMutation(ctx, "rejected", "feature_disabled", "nginx", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusRejected, podmutation.ReasonFeatureDisabled, "nginx", ns.Name)
 		logger.Error(nil, "support for Nginx auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Nginx auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectSdk); err != nil {
 		// we still allow the pod to be created, but we log a message to the operator's logs
-		pm.metrics.RecordInstrumentationMutation(ctx, "error", "lookup_failed", "sdk", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusError, podmutation.ReasonLookupFailed, "sdk", ns.Name)
 		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
 		return pod, err
 	}
@@ -352,7 +352,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 
 	if err = pm.validateInstrumentations(ctx, insts, ns.Name); err != nil {
 		logger.Error(err, "failed to validate instrumentations")
-		pm.metrics.RecordInstrumentationMutation(ctx, "error", "validation_failed", "", ns.Name)
+		pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusError, podmutation.ReasonValidationFailed, "", ns.Name)
 		return pod, err
 	}
 
@@ -367,7 +367,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		ok, msg := insts.areInstrumentedContainersCorrect()
 		if !ok {
 			logger.V(1).Error(msg, "skipping instrumentation injection")
-			pm.metrics.RecordInstrumentationMutation(ctx, "error", "invalid_containers", "", ns.Name)
+			pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusError, podmutation.ReasonInvalidContainers, "", ns.Name)
 			return pod, nil
 		}
 	}
@@ -383,29 +383,25 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 }
 
 func (pm *instPodMutator) recordSuccess(ctx context.Context, insts languageInstrumentations, ns string) {
-	if insts.Java.Instrumentation != nil {
-		pm.metrics.RecordInstrumentationMutation(ctx, "success", "", "java", ns)
+	// Table-driven approach for recording success metrics
+	languages := []struct {
+		inst     *instrumentationWithContainers
+		language string
+	}{
+		{&insts.Java, "java"},
+		{&insts.NodeJS, "nodejs"},
+		{&insts.Python, "python"},
+		{&insts.DotNet, "dotnet"},
+		{&insts.Go, "go"},
+		{&insts.ApacheHttpd, "apache-httpd"},
+		{&insts.Nginx, "nginx"},
+		{&insts.Sdk, "sdk"},
 	}
-	if insts.NodeJS.Instrumentation != nil {
-		pm.metrics.RecordInstrumentationMutation(ctx, "success", "", "nodejs", ns)
-	}
-	if insts.Python.Instrumentation != nil {
-		pm.metrics.RecordInstrumentationMutation(ctx, "success", "", "python", ns)
-	}
-	if insts.DotNet.Instrumentation != nil {
-		pm.metrics.RecordInstrumentationMutation(ctx, "success", "", "dotnet", ns)
-	}
-	if insts.Go.Instrumentation != nil {
-		pm.metrics.RecordInstrumentationMutation(ctx, "success", "", "go", ns)
-	}
-	if insts.ApacheHttpd.Instrumentation != nil {
-		pm.metrics.RecordInstrumentationMutation(ctx, "success", "", "apache-httpd", ns)
-	}
-	if insts.Nginx.Instrumentation != nil {
-		pm.metrics.RecordInstrumentationMutation(ctx, "success", "", "nginx", ns)
-	}
-	if insts.Sdk.Instrumentation != nil {
-		pm.metrics.RecordInstrumentationMutation(ctx, "success", "", "sdk", ns)
+
+	for _, lang := range languages {
+		if lang.inst.Instrumentation != nil {
+			pm.metrics.RecordInstrumentationMutation(ctx, podmutation.StatusSuccess, "", lang.language, ns)
+		}
 	}
 }
 

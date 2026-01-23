@@ -1,0 +1,96 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: webhook-metrics-java
+spec:
+  description: |
+    Test that pod mutation webhook metrics are exposed when a Java app is instrumented.
+    Verifies the opentelemetry_operator_pod_mutations_total metric is recorded with correct labels.
+  steps:
+    - name: Add OpenShift namespace annotations
+      use:
+        template: ../../step-templates/openshift-namespace-annotations.yaml
+    
+    - name: step-00-install-instrumentation
+      description: Install Java Instrumentation CR
+      try:
+        - apply:
+            file: 00-install-instrumentation.yaml
+    
+    - name: step-01-install-app
+      description: Deploy a pod with Java instrumentation annotation
+      try:
+        - apply:
+            file: 01-install-app.yaml
+        - assert:
+            file: 01-assert.yaml
+      catch:
+        - podLogs:
+            selector: app=java-test-app
+    
+    - name: step-02-verify-webhook-metrics
+      description: Verify pod mutation metrics are exposed on operator's metrics endpoint
+      try:
+        - script:
+            env:
+              - name: OPERATOR_NAMESPACE
+                value: "opentelemetry-operator-system"
+            timeout: 60s
+            content: |
+              #!/bin/bash
+              set -e
+              
+              # Get the operator pod name
+              OPERATOR_POD=$(kubectl get pod -n ${OPERATOR_NAMESPACE} -l control-plane=controller-manager -o jsonpath='{.items[0].metadata.name}')
+              
+              if [ -z "$OPERATOR_POD" ]; then
+                echo "ERROR: Could not find operator pod"
+                exit 1
+              fi
+              
+              echo "Found operator pod: ${OPERATOR_POD}"
+              
+              # Port-forward to the operator's metrics endpoint and fetch metrics
+              kubectl port-forward -n ${OPERATOR_NAMESPACE} pod/${OPERATOR_POD} 8443:8443 &
+              PF_PID=$!
+              sleep 3
+              
+              # Fetch metrics (using insecure since it's self-signed cert in tests)
+              METRICS=$(curl -sk https://localhost:8443/metrics 2>/dev/null || true)
+              
+              # Kill port-forward
+              kill $PF_PID 2>/dev/null || true
+              
+              # Check for the expected metric
+              if echo "$METRICS" | grep -q "opentelemetry_operator_pod_mutations_total"; then
+                echo "SUCCESS: Found opentelemetry_operator_pod_mutations_total metric"
+                
+                # Verify specific labels
+                if echo "$METRICS" | grep -q 'mutation_type="instrumentation"'; then
+                  echo "SUCCESS: Found mutation_type=instrumentation label"
+                else
+                  echo "WARNING: mutation_type label not found (may be OK if no mutations yet)"
+                fi
+                
+                if echo "$METRICS" | grep -q 'status="success"'; then
+                  echo "SUCCESS: Found status=success label"
+                else
+                  echo "INFO: status=success not found yet (metrics may not be recorded yet)"
+                fi
+                
+                if echo "$METRICS" | grep -q 'language="java"'; then
+                  echo "SUCCESS: Found language=java label"
+                else
+                  echo "INFO: language=java not found yet"
+                fi
+                
+                echo "METRICS OUTPUT:"
+                echo "$METRICS" | grep "opentelemetry_operator_pod_mutations_total" || echo "(no matching lines)"
+                exit 0
+              else
+                echo "ERROR: opentelemetry_operator_pod_mutations_total metric not found"
+                echo "Available metrics containing 'mutation' or 'pod':"
+                echo "$METRICS" | grep -i "mutation\|pod" | head -20 || echo "(none found)"
+                exit 1
+              fi

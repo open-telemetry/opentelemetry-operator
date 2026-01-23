@@ -364,16 +364,20 @@ func main() {
 		}
 
 		var crdMetrics *otelv1beta1.Metrics
-		if cfg.EnableCRMetrics {
+		if cfg.EnableCRMetrics && meterProvider != nil {
 			crdMetrics, err = otelv1beta1.NewMetrics(meterProvider, ctx, mgr.GetAPIReader())
 			if err != nil {
 				setupLog.Error(err, "Error init CRD metrics")
 			}
 		}
 
-		webhookMetrics, err := podmutation.NewMetrics(meterProvider)
-		if err != nil {
-			setupLog.Error(err, "Error init pod mutation metrics")
+		var webhookMetrics podmutation.PodMutationMetricsRecorder = podmutation.NewNoopMetrics()
+		if cfg.EnableWebhookMetrics && meterProvider != nil {
+			webhookMetrics, err = podmutation.NewMetrics(meterProvider)
+			if err != nil {
+				setupLog.Error(err, "Error init pod mutation metrics")
+				webhookMetrics = podmutation.NewNoopMetrics()
+			}
 		}
 
 		if cfg.CollectorAvailability == collector.Available {
