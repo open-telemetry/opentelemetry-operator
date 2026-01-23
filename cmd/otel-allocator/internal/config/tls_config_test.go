@@ -130,8 +130,8 @@ func TestNewTLSConfig_InvalidCertificate(t *testing.T) {
 	require.Error(t, err)
 }
 
-// generateCertificateChain generates a certificate chain: root CA -> intermediate CA -> leaf cert
-func generateCertificateChain(t *testing.T) (rootCAPEM, intermediateCAPEM, leafCertPEM, leafKeyPEM []byte, rootCert, intermediateCert, leafCert *x509.Certificate) {
+// generateCertificateChain generates a certificate chain: root CA -> intermediate CA -> leaf cert.
+func generateCertificateChain(t *testing.T) (rootCAPEM []byte, intermediateCert, leafCert *x509.Certificate) {
 	t.Helper()
 
 	// Generate root CA
@@ -155,7 +155,7 @@ func generateCertificateChain(t *testing.T) (rootCAPEM, intermediateCAPEM, leafC
 	rootDER, err := x509.CreateCertificate(rand.Reader, &rootTemplate, &rootTemplate, &rootKey.PublicKey, rootKey)
 	require.NoError(t, err)
 	rootCAPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: rootDER})
-	rootCert, err = x509.ParseCertificate(rootDER)
+	rootCert, err := x509.ParseCertificate(rootDER)
 	require.NoError(t, err)
 
 	// Generate intermediate CA
@@ -179,7 +179,6 @@ func generateCertificateChain(t *testing.T) (rootCAPEM, intermediateCAPEM, leafC
 
 	intermediateDER, err := x509.CreateCertificate(rand.Reader, &intermediateTemplate, rootCert, &intermediateKey.PublicKey, rootKey)
 	require.NoError(t, err)
-	intermediateCAPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: intermediateDER})
 	intermediateCert, err = x509.ParseCertificate(intermediateDER)
 	require.NoError(t, err)
 
@@ -202,16 +201,10 @@ func generateCertificateChain(t *testing.T) (rootCAPEM, intermediateCAPEM, leafC
 
 	leafDER, err := x509.CreateCertificate(rand.Reader, &leafTemplate, intermediateCert, &leafKey.PublicKey, intermediateKey)
 	require.NoError(t, err)
-	leafCertPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: leafDER})
 	leafCert, err = x509.ParseCertificate(leafDER)
 	require.NoError(t, err)
 
-	// Encode leaf private key
-	leafKeyBytes, err := x509.MarshalECPrivateKey(leafKey)
-	require.NoError(t, err)
-	leafKeyPEM = pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: leafKeyBytes})
-
-	return rootCAPEM, intermediateCAPEM, leafCertPEM, leafKeyPEM, rootCert, intermediateCert, leafCert
+	return rootCAPEM, intermediateCert, leafCert
 }
 
 func TestNewTLSConfig_VerifyConnection_WithIntermediateCertificates(t *testing.T) {
@@ -219,7 +212,7 @@ func TestNewTLSConfig_VerifyConnection_WithIntermediateCertificates(t *testing.T
 
 	// Generate server certificate and CA chain
 	serverCertPEM, serverKeyPEM := generateTestCertificate(t)
-	rootCAPEM, _, _, _, _, intermediateCert, leafCert := generateCertificateChain(t)
+	rootCAPEM, intermediateCert, leafCert := generateCertificateChain(t)
 
 	// Write server certificate and key
 	certPath := filepath.Join(tmpDir, "tls.crt")
@@ -261,8 +254,8 @@ func TestNewTLSConfig_VerifyConnection_WithIntermediateCertificates(t *testing.T
 			errorContains: "",
 		},
 		{
-			name: "leaf certificate only (missing intermediate)",
-			peerCerts: []*x509.Certificate{leafCert},
+			name:          "leaf certificate only (missing intermediate)",
+			peerCerts:     []*x509.Certificate{leafCert},
 			expectError:   true,
 			errorContains: "certificate verification failed",
 		},
@@ -290,7 +283,7 @@ func TestNewTLSConfig_VerifyConnection_OnlyVerifiesLeafCertificate(t *testing.T)
 
 	// Generate server certificate
 	serverCertPEM, serverKeyPEM := generateTestCertificate(t)
-	rootCAPEM, _, _, _, _, intermediateCert, leafCert := generateCertificateChain(t)
+	rootCAPEM, intermediateCert, leafCert := generateCertificateChain(t)
 
 	// Write server certificate and key
 	certPath := filepath.Join(tmpDir, "tls.crt")
