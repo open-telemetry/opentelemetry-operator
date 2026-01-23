@@ -36,9 +36,9 @@ spec:
             env:
               - name: OPERATOR_NAMESPACE
                 value: "opentelemetry-operator-system"
-            timeout: 60s
+            timeout: 120s
             content: |
-              #!/bin/bash
+              #!/bin/sh
               set -e
               
               # Get the operator pod name
@@ -51,14 +51,24 @@ spec:
               
               echo "Found operator pod: ${OPERATOR_POD}"
               
+              # DEBUG: Print operator deployment args to verify the flag is present
+              echo ""
+              echo "=== Operator Deployment Args ==="
+              kubectl get deployment -n ${OPERATOR_NAMESPACE} -o jsonpath='{.items[0].spec.template.spec.containers[0].args}' | tr ',' '\n'
+              echo ""
+              
+              # DEBUG: Print operator logs to check for initialization issues
+              echo ""
+              echo "=== Operator Logs (last 50 lines) ==="
+              kubectl logs -n ${OPERATOR_NAMESPACE} ${OPERATOR_POD} --tail=50 || echo "Could not get logs"
+              echo ""
+              
               # Port-forward to the operator's metrics endpoint and fetch metrics
               kubectl port-forward -n ${OPERATOR_NAMESPACE} pod/${OPERATOR_POD} 8443:8443 &
               PF_PID=$!
-              sleep 3
+              sleep 5
               
-              # Fetch metrics (using insecure since it's self-signed cert in tests)
-              
-              # Fetch metrics (using insecure since it's self-signed cert in tests)
+              # Fetch metrics with retries
               for i in 1 2 3 4 5 6 7 8 9 10; do
                 echo "Attempt $i to fetch metrics..."
                 METRICS=$(curl -sk https://localhost:8443/metrics 2>/dev/null || true)
@@ -66,15 +76,22 @@ spec:
                   echo "Found metric!"
                   break
                 fi
-                sleep 2
+                sleep 3
               done
               
               # Kill port-forward
               kill $PF_PID 2>/dev/null || true
               
               # Debug: Print pod details to see if mutation happened
-              echo "Checking if mutation actually happened..."
+              echo ""
+              echo "=== Checking if mutation actually happened ==="
               kubectl get pod -n ${NAMESPACE} java-test-app -o yaml | grep "initContainers" -A 5 || echo "No initContainers found!"
+              
+              # DEBUG: Print all available metrics (first 100 lines)
+              echo ""
+              echo "=== Available metrics (first 100 lines) ==="
+              echo "$METRICS" | head -100
+              echo ""
               
               # Check for the expected metric
               if echo "$METRICS" | grep -q "opentelemetry_operator_pod_mutations_total"; then
@@ -99,12 +116,14 @@ spec:
                   echo "INFO: language=java not found yet"
                 fi
                 
-                echo "METRICS OUTPUT:"
+                echo ""
+                echo "=== METRICS OUTPUT ==="
                 echo "$METRICS" | grep "opentelemetry_operator_pod_mutations_total" || echo "(no matching lines)"
                 exit 0
               else
                 echo "ERROR: opentelemetry_operator_pod_mutations_total metric not found"
-                echo "Available metrics containing 'mutation' or 'pod':"
-                echo "$METRICS" | grep -i "mutation\|pod" | head -20 || echo "(none found)"
+                echo ""
+                echo "=== All metrics containing 'opentelemetry' ==="
+                echo "$METRICS" | grep -i "opentelemetry" | head -30 || echo "(none found)"
                 exit 1
               fi
