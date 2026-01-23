@@ -29,31 +29,11 @@ spec:
         - podLogs:
             selector: app=java-test-app
     
-    - name: step-02-get-operator-service
-      description: Get the operator service name for metrics access
-      try:
-        - command:
-            entrypoint: kubectl
-            args:
-              - get
-              - service
-              - -n
-              - opentelemetry-operator-system
-              - -l
-              - app.kubernetes.io/name=opentelemetry-operator
-              - -o
-              - jsonpath={.items[0].metadata.name}
-            outputs:
-              - name: serviceName
-                value: ($stdout)
-    
-    - name: step-03-verify-webhook-metrics
+    - name: step-02-verify-webhook-metrics
       description: Verify pod mutation metrics are exposed on operator's metrics endpoint
       try:
         - script:
             env:
-              - name: serviceName
-                value: ($serviceName)
               - name: OPERATOR_NAMESPACE
                 value: "opentelemetry-operator-system"
             timeout: 120s
@@ -61,7 +41,9 @@ spec:
               #!/bin/sh
               set -e
               
-              echo "Using service: ${serviceName}"
+              # Get the operator service name
+              SERVICE_NAME=$(kubectl get service -n ${OPERATOR_NAMESPACE} -l app.kubernetes.io/name=opentelemetry-operator -o jsonpath='{.items[0].metadata.name}')
+              echo "Using service: ${SERVICE_NAME}"
               
               # DEBUG: Print operator deployment args to verify the flag is present
               echo ""
@@ -75,7 +57,7 @@ spec:
               for i in 1 2 3 4 5 6 7 8 9 10; do
                 echo "Attempt $i to fetch metrics..."
                 # Use kubectl get --raw to access the metrics endpoint with proper auth
-                METRICS=$(kubectl get --raw "/api/v1/namespaces/${OPERATOR_NAMESPACE}/services/${serviceName}:8443/proxy/metrics" 2>/dev/null || true)
+                METRICS=$(kubectl get --raw "/api/v1/namespaces/${OPERATOR_NAMESPACE}/services/${SERVICE_NAME}:8443/proxy/metrics" 2>/dev/null || true)
                 if echo "$METRICS" | grep -q "opentelemetry_operator_pod_mutations_total"; then
                   echo "Found metric!"
                   break
