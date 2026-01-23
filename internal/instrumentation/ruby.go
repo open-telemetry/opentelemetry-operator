@@ -17,11 +17,8 @@ const (
 	rubyInstrMountPath    = "/otel-auto-instrumentation-ruby"
 )
 
-func injectRubySDK(rubySpec v1alpha1.Ruby, pod corev1.Pod, index int) (corev1.Pod, error) {
+func injectRubySDK(rubySpec v1alpha1.Ruby, pod corev1.Pod, container *corev1.Container, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
 	volume := instrVolume(rubySpec.VolumeClaimTemplate, rubyVolumeName, rubySpec.VolumeSizeLimit)
-
-	// caller checks if there is at least one container.
-	container := &pod.Spec.Containers[index]
 
 	err := validateContainerEnv(container.Env, envRubyOptions)
 	if err != nil {
@@ -29,12 +26,7 @@ func injectRubySDK(rubySpec v1alpha1.Ruby, pod corev1.Pod, index int) (corev1.Po
 	}
 
 	// inject Ruby instrumentation spec env vars.
-	for _, env := range rubySpec.Env {
-		idx := getIndexOfEnv(container.Env, env.Name)
-		if idx == -1 {
-			container.Env = append(container.Env, env)
-		}
-	}
+	container.Env = appendIfNotSet(container.Env, rubySpec.Env...)
 
 	idx := getIndexOfEnv(container.Env, envRubyOptions)
 	if idx == -1 {
@@ -51,7 +43,7 @@ func injectRubySDK(rubySpec v1alpha1.Ruby, pod corev1.Pod, index int) (corev1.Po
 		MountPath: rubyInstrMountPath,
 	})
 
-	// We just inject Volumes and init containers for the first processed container
+	// We just inject Volumes and init containers for the first processed container.
 	if isInitContainerMissing(pod, rubyInitContainerName) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
@@ -63,6 +55,7 @@ func injectRubySDK(rubySpec v1alpha1.Ruby, pod corev1.Pod, index int) (corev1.Po
 				Name:      volume.Name,
 				MountPath: rubyInstrMountPath,
 			}},
+			ImagePullPolicy: instSpec.ImagePullPolicy,
 		})
 	}
 	return pod, nil

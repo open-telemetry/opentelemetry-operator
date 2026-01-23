@@ -104,19 +104,14 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 		var err error
 		i.logger.V(1).Info("injecting Ruby instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
 
-		if len(insts.Ruby.Containers) == 0 {
-			insts.Ruby.Containers = []string{pod.Spec.Containers[0].Name}
-		}
-
-		for _, container := range insts.Ruby.Containers {
-			index := getContainerIndex(container, pod)
-			pod, err = injectRubySDK(otelinst.Spec.Ruby, pod, index)
+		for _, container := range containersToInstrument(&insts.Ruby, &pod) {
+			pod, err = injectRubySDK(otelinst.Spec.Ruby, pod, container, otelinst.Spec)
 			if err != nil {
-				i.logger.Info("Skipping Ruby SDK injection", "reason", err.Error(), "container", pod.Spec.Containers[index].Name)
+				i.logger.Info("Skipping Ruby SDK injection", "reason", err.Error(), "container", container.Name)
 			} else {
-				pod = i.injectCommonEnvVar(otelinst, pod, index)
-				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, index, index)
-				pod = i.setInitContainerSecurityContext(pod, pod.Spec.Containers[index].SecurityContext, rubyInitContainerName)
+				i.injectCommonEnvVar(otelinst, container)
+				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
+				pod = i.setInitContainerSecurityContext(pod, container.SecurityContext, rubyInitContainerName)
 			}
 		}
 	}

@@ -1392,7 +1392,7 @@ func TestInjectRuby(t *testing.T) {
 						},
 						{
 							Name:  "OTEL_RESOURCE_ATTRIBUTES",
-							Value: "k8s.container.name=app,k8s.namespace.name=ns,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ns.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.version=latest",
+							Value: "k8s.container.name=app,k8s.namespace.name=ns,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ns.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=ns,service.version=latest",
 						},
 					},
 				},

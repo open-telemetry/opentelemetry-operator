@@ -2004,7 +2004,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app,k8s.namespace.name=ruby,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ruby.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app",
+									Value: "k8s.container.name=app,k8s.namespace.name=ruby,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ruby.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=ruby",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -2017,7 +2017,9 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableRubyInstrumentation(true)),
+			config: config.Config{
+				EnableRubyAutoInstrumentation: true,
+			},
 		},
 		{
 			name: "ruby injection multiple containers, true",
@@ -2201,7 +2203,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app1,k8s.namespace.name=ruby-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ruby-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app1",
+									Value: "k8s.container.name=app1,k8s.namespace.name=ruby-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ruby-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app1,service.namespace=ruby-multiple-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -2288,7 +2290,7 @@ func TestMutatePod(t *testing.T) {
 								},
 								{
 									Name:  "OTEL_RESOURCE_ATTRIBUTES",
-									Value: "k8s.container.name=app2,k8s.namespace.name=ruby-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ruby-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app2",
+									Value: "k8s.container.name=app2,k8s.namespace.name=ruby-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ruby-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app2,service.namespace=ruby-multiple-containers",
 								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
@@ -2301,7 +2303,9 @@ func TestMutatePod(t *testing.T) {
 					},
 				},
 			},
-			config: config.New(config.WithEnableRubyInstrumentation(true)),
+			config: config.Config{
+				EnableRubyAutoInstrumentation: true,
+			},
 		},
 		{
 			name: "ruby injection feature gate disabled",

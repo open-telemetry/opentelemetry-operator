@@ -15,15 +15,17 @@ import (
 
 func TestInjectRubySDK(t *testing.T) {
 	tests := []struct {
-		name string
-		v1alpha1.Ruby
+		name     string
+		Ruby     v1alpha1.Ruby
+		instSpec v1alpha1.InstrumentationSpec
 		pod      corev1.Pod
 		expected corev1.Pod
 		err      error
 	}{
 		{
-			name: "RUBYOPT not defined",
-			Ruby: v1alpha1.Ruby{Image: "foo/bar:1"},
+			name:     "RUBYOPT not defined",
+			Ruby:     v1alpha1.Ruby{Image: "foo/bar:1"},
+			instSpec: v1alpha1.InstrumentationSpec{},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -75,8 +77,9 @@ func TestInjectRubySDK(t *testing.T) {
 			err: nil,
 		},
 		{
-			name: "RUBYOPT defined",
-			Ruby: v1alpha1.Ruby{Image: "foo/bar:1", Resources: testResourceRequirements},
+			name:     "RUBYOPT defined",
+			Ruby:     v1alpha1.Ruby{Image: "foo/bar:1", Resources: testResourceRequirements},
+			instSpec: v1alpha1.InstrumentationSpec{},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -136,8 +139,9 @@ func TestInjectRubySDK(t *testing.T) {
 			err: nil,
 		},
 		{
-			name: "RUBYOPT defined as ValueFrom",
-			Ruby: v1alpha1.Ruby{Image: "foo/bar:1"},
+			name:     "RUBYOPT defined as ValueFrom",
+			Ruby:     v1alpha1.Ruby{Image: "foo/bar:1"},
+			instSpec: v1alpha1.InstrumentationSpec{},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -172,7 +176,7 @@ func TestInjectRubySDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectRubySDK(test.Ruby, test.pod, 0)
+			pod, err := injectRubySDK(test.Ruby, test.pod, &test.pod.Spec.Containers[0], test.instSpec)
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})
