@@ -57,10 +57,22 @@ spec:
               sleep 3
               
               # Fetch metrics (using insecure since it's self-signed cert in tests)
-              METRICS=$(curl -sk https://localhost:8443/metrics 2>/dev/null || true)
+              for i in {1..10}; do
+                echo "Attempt $i to fetch metrics..."
+                METRICS=$(curl -sk https://localhost:8443/metrics 2>/dev/null || true)
+                if echo "$METRICS" | grep -q "opentelemetry_operator_pod_mutations_total"; then
+                  echo "Found metric!"
+                  break
+                fi
+                sleep 2
+              done
               
               # Kill port-forward
               kill $PF_PID 2>/dev/null || true
+              
+              # Debug: Print pod details to see if mutation happened
+              echo "Checking if mutation actually happened..."
+              kubectl get pod -n ${NAMESPACE} java-test-app -o yaml | grep "initContainers" -A 5 || echo "No initContainers found!"
               
               # Check for the expected metric
               if echo "$METRICS" | grep -q "opentelemetry_operator_pod_mutations_total"; then
