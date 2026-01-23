@@ -5,6 +5,7 @@ package config
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -30,6 +31,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
@@ -387,19 +389,57 @@ func ValidateConfig(config *Config) error {
 	return nil
 }
 
-func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *CertificateReloader, error) {
-	reloader, err := NewCertificateReloader(c.TLSCertFilePath, c.TLSKeyFilePath, c.CAFilePath, logger)
+func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *certwatcher.CertWatcher, error) {
+	// Create certwatcher for server certificate/key reloading
+	certWatcher, err := certwatcher.New(c.TLSCertFilePath, c.TLSKeyFilePath)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to create cert watcher: %w", err)
 	}
 
-	tlsConfig := &tls.Config{
-		GetCertificate: reloader.GetCertificate,
-		ClientAuth:     tls.RequireAndVerifyClientCert,
-		ClientCAs:      reloader.GetClientCAs(),
-		MinVersion:     tls.VersionTLS12,
+	// Create CA reloader for client CA certificate reloading
+	caReloader, err := NewCAReloader(c.CAFilePath, logger)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create CA reloader: %w", err)
 	}
-	return tlsConfig, reloader, nil
+
+	// Register callback to reload CA when server cert changes
+	// Since Kubernetes updates secrets atomically, the CA will be updated at the same time
+	certWatcher.RegisterCallback(func(cert tls.Certificate) {
+		if reloadErr := caReloader.Reload(); reloadErr != nil {
+			logger.Error(reloadErr, "Failed to reload CA via callback")
+		}
+	})
+
+	tlsConfig := &tls.Config{
+		GetCertificate: certWatcher.GetCertificate,
+		// Request client certificate but don't verify automatically
+		// We'll do custom verification in VerifyConnection with the dynamic CA pool
+		ClientAuth: tls.RequestClientCert,
+		MinVersion: tls.VersionTLS12,
+		// Use VerifyConnection for dynamic CA pool access
+		// This allows the CA pool to be reloaded at runtime
+		VerifyConnection: func(cs tls.ConnectionState) error {
+			// Require client certificate
+			if len(cs.PeerCertificates) == 0 {
+				return fmt.Errorf("no client certificate provided")
+			}
+
+			// Verify using current CA pool (which can be reloaded)
+			opts := x509.VerifyOptions{
+				Roots:         caReloader.GetClientCAs(),
+				Intermediates: x509.NewCertPool(),
+			}
+
+			for _, cert := range cs.PeerCertificates {
+				if _, err := cert.Verify(opts); err != nil {
+					return fmt.Errorf("client certificate verification failed: %w", err)
+				}
+			}
+			return nil
+		},
+	}
+
+	return tlsConfig, certWatcher, nil
 }
 
 // GetAllowDenyLists returns the allow and deny lists as maps. If the allow list is empty, it defaults to all namespaces.
