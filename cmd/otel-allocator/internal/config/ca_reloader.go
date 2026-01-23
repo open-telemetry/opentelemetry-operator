@@ -39,6 +39,9 @@ func NewCAReloader(caPath string, logger logr.Logger) (*CAReloader, error) {
 // Reload reads the CA certificate file from disk and updates the cached certificate pool.
 // This method is thread-safe and can be called concurrently.
 func (r *CAReloader) Reload() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	caCert, err := os.ReadFile(r.caPath)
 	if err != nil {
 		return fmt.Errorf("failed to read CA certificate: %w", err)
@@ -49,9 +52,7 @@ func (r *CAReloader) Reload() error {
 		return fmt.Errorf("failed to parse CA certificate at %s", r.caPath)
 	}
 
-	r.mu.Lock()
 	r.clientCAs = caCertPool
-	r.mu.Unlock()
 
 	r.logger.Info("CA certificate reloaded successfully", "caPath", r.caPath)
 	return nil
