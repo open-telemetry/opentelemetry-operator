@@ -1,0 +1,7 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: normal-upgrade-test
+spec:
+  java:
+    image: "test-img:99.99.99"

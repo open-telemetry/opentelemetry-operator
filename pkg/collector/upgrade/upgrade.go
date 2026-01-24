@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"reflect"
 
-	semver "github.com/Masterminds/semver/v3"
+	"github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/events"
@@ -98,7 +98,7 @@ func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenT
 		if warningMsg != "" {
 			msg = fmt.Sprintf("Automated upgrade blocked: %s", warningMsg)
 		}
-		u.Recorder.Event(&otelcol, corev1.EventTypeWarning, "UpgradeBlocked", msg)
+		u.Recorder.Eventf(&otelcol, nil, corev1.EventTypeWarning, "UpgradeBlocked", "Upgrade", msg)
 		u.Log.Info("upgrade blocked for unupgradable version",
 			"name", otelcol.Name,
 			"namespace", otelcol.Namespace,

@@ -35,8 +35,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
-	"github.com/open-telemetry/opentelemetry-operator/internal/webhook"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	"github.com/open-telemetry/opentelemetry-operator/internal/webhook"
 )
 
 var testScheme = scheme.Scheme
@@ -1826,7 +1826,7 @@ func TestValidateUnupgradableVersionWarning(t *testing.T) {
 				CollectorImage:       "default-collector",
 				TargetAllocatorImage: "default-ta-allocator",
 			}
-			cvw := v1beta1.NewCollectorWebhook(
+			cvw := webhook.NewCollectorWebhook(
 				logr.Discard(),
 				testScheme,
 				cfg,

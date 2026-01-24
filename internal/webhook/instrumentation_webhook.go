@@ -20,6 +20,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
@@ -183,8 +184,12 @@ func (w InstrumentationWebhook) defaulter(r *v1alpha1.Instrumentation) error {
 	return nil
 }
 
-func (InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission.Warnings, error) {
+func (w InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission.Warnings, error) {
 	var warnings []string
+
+	// Check for unupgradable instrumentation versions
+	warnings = append(warnings, w.checkUnupgradableVersions(r)...)
+
 	switch r.Spec.Type {
 	case "":
 		warnings = append(warnings, "sampler type not set")
@@ -333,6 +338,37 @@ func NewInstrumentationWebhook(logger logr.Logger, scheme *runtime.Scheme, cfg c
 		scheme: scheme,
 		cfg:    cfg,
 	}
+}
+
+// checkUnupgradableVersions checks if any instrumentation images are at unupgradable versions.
+func (InstrumentationWebhook) checkUnupgradableVersions(r *v1alpha1.Instrumentation) []string {
+	var warnings []string
+
+	// Check each language's image for unupgradable versions
+	languageImages := map[constants.InstrumentationLanguage]string{
+		constants.InstrumentationLanguageJava:        r.Spec.Java.Image,
+		constants.InstrumentationLanguageNodeJS:      r.Spec.NodeJS.Image,
+		constants.InstrumentationLanguagePython:      r.Spec.Python.Image,
+		constants.InstrumentationLanguageDotNet:      r.Spec.DotNet.Image,
+		constants.InstrumentationLanguageGo:          r.Spec.Go.Image,
+		constants.InstrumentationLanguageApacheHttpd: r.Spec.ApacheHttpd.Image,
+		constants.InstrumentationLanguageNginx:       r.Spec.Nginx.Image,
+	}
+
+	for lang, image := range languageImages {
+		if image == "" {
+			continue
+		}
+		if isUnupgradable, warningMsg := version.IsInstrumentationVersionUnupgradable(lang, image); isUnupgradable {
+			msg := fmt.Sprintf("Instrumentation %s image %s is at a version that cannot be automatically upgraded. Manual upgrade is required.", lang, image)
+			if warningMsg != "" {
+				msg = fmt.Sprintf("Instrumentation %s image %s is at a version that cannot be automatically upgraded. %s", lang, image, warningMsg)
+			}
+			warnings = append(warnings, msg)
+		}
+	}
+
+	return warnings
 }
 
 func SetupInstrumentationWebhook(mgr ctrl.Manager, cfg config.Config) error {

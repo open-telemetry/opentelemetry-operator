@@ -378,7 +378,7 @@ func TestUnupgradableVersionBlocked(t *testing.T) {
 			currentV := version.Get()
 			currentV.OpenTelemetryCollector = upgrade.Latest.String()
 
-			recorder := record.NewFakeRecorder(upgrade.RecordBufferSize)
+			recorder := events.NewFakeRecorder(upgrade.RecordBufferSize)
 			up := &upgrade.VersionUpgrade{
 				Log:      logger,
 				Version:  currentV,
@@ -421,7 +421,7 @@ func TestUnupgradableVersionWithEmptyMessage(t *testing.T) {
 	currentV := version.Get()
 	currentV.OpenTelemetryCollector = upgrade.Latest.String()
 
-	recorder := record.NewFakeRecorder(upgrade.RecordBufferSize)
+	recorder := events.NewFakeRecorder(upgrade.RecordBufferSize)
 	up := &upgrade.VersionUpgrade{
 		Log:      logger,
 		Version:  currentV,
