@@ -36,6 +36,7 @@ import (
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook"
+	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 )
 
 var testScheme = scheme.Scheme
@@ -1764,6 +1765,81 @@ func TestValidationViaCRDAnnotations(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
+		})
+	}
+}
+
+func TestValidateUnupgradableVersionWarning(t *testing.T) {
+	// Set up unupgradable version for testing
+	cleanup := version.SetUnupgradableCollectorVersionsForTests(map[string]string{
+		"0.50.0": "Breaking changes require manual migration. See docs.",
+		"0.51.0": "", // Empty message
+	})
+	defer cleanup()
+
+	tests := []struct {
+		name             string
+		collector        v1beta1.OpenTelemetryCollector
+		expectedWarnings []string
+	}{
+		{
+			name: "unupgradable version with message returns warning",
+			collector: v1beta1.OpenTelemetryCollector{
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.50.0",
+				},
+			},
+			expectedWarnings: []string{
+				"This collector is at version 0.50.0 which cannot be automatically upgraded. Breaking changes require manual migration. See docs.",
+			},
+		},
+		{
+			name: "unupgradable version with empty message returns default warning",
+			collector: v1beta1.OpenTelemetryCollector{
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.51.0",
+				},
+			},
+			expectedWarnings: []string{
+				"This collector is at version 0.51.0 which cannot be automatically upgraded. Manual upgrade is required.",
+			},
+		},
+		{
+			name: "normal version returns no warning",
+			collector: v1beta1.OpenTelemetryCollector{
+				Status: v1beta1.OpenTelemetryCollectorStatus{
+					Version: "0.100.0",
+				},
+			},
+			expectedWarnings: nil,
+		},
+		{
+			name:             "empty version returns no warning",
+			collector:        v1beta1.OpenTelemetryCollector{},
+			expectedWarnings: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := config.Config{
+				CollectorImage:       "default-collector",
+				TargetAllocatorImage: "default-ta-allocator",
+			}
+			cvw := v1beta1.NewCollectorWebhook(
+				logr.Discard(),
+				testScheme,
+				cfg,
+				getReviewer(false),
+				nil,
+				nil,
+				nil,
+				nil,
+			)
+			ctx := context.Background()
+			warnings, err := cvw.Validate(ctx, &tt.collector)
+			require.NoError(t, err)
+			assert.ElementsMatch(t, tt.expectedWarnings, warnings)
 		})
 	}
 }
