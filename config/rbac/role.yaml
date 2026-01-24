@@ -182,6 +182,7 @@ rules:
   - opentelemetry.io
   resources:
   - clusterobservabilities/status
+  - instrumentations/status
   - opampbridges/status
   - opentelemetrycollectors/finalizers
   - opentelemetrycollectors/status

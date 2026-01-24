@@ -1,0 +1,11 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: blocked-upgrade-test
+spec:
+  exporter:
+    endpoint: http://localhost:4317
+  sampler:
+    type: always_on
+  java:
+    image: "test-img:0.0.0-blocked-for-testing"
