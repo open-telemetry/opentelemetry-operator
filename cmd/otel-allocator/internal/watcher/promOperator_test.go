@@ -1603,9 +1603,8 @@ func getTestPrometheusCRWatcher(
 	k8sClient := fake.NewSimpleClientset()
 	_, err := k8sClient.CoreV1().Secrets("test").Create(context.Background(), &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            "basic-auth",
-			Namespace:       "test",
-			ResourceVersion: "1",
+			Name:      "basic-auth",
+			Namespace: "test",
 		},
 		Data: map[string][]byte{"username": []byte("admin"), "password": []byte("password")},
 	}, metav1.CreateOptions{})
@@ -1717,7 +1716,6 @@ func sanitizeScrapeConfigsForTest(scs []*promconfig.ScrapeConfig) {
 }
 
 // getTestInformers creates informers for testing without CRD availability checks.
-// This mirrors the structure of getInformers in promOperator.go.
 func getTestInformers(factory informers.FactoriesForNamespaces, metadataFactory informers.FactoriesForNamespaces) (map[string]*informers.ForResource, error) {
 	informersMap := make(map[string]*informers.ForResource)
 
