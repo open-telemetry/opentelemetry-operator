@@ -46,7 +46,7 @@ spec:
             capabilities:
               drop: ["ALL"]
         - name: myrabbit
-          image: rabbitmq
+          image: docker.io/library/rabbitmq:latest
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

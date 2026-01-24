@@ -11,17 +11,17 @@ spec:
     - name: OTEL_NODE_IP
       valueFrom:
         fieldRef:
+          apiVersion: v1
           fieldPath: status.hostIP
     - name: OTEL_POD_IP
       valueFrom:
         fieldRef:
+          apiVersion: v1
           fieldPath: status.podIP
     - name: NODE_PATH
       value: /usr/local/lib/node_modules
     - name: OTEL_NODEJS_DEBUG
       value: "true"
-    - name: NODE_OPTIONS
-      value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
     - name: OTEL_TRACES_EXPORTER
       value: otlp
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -36,6 +36,8 @@ spec:
       value: "true"
     - name: OTEL_METRICS_EXPORTER
       value: prometheus
+    - name: NODE_OPTIONS
+      value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
     - name: OTEL_SERVICE_NAME
       value: my-nodejs
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME

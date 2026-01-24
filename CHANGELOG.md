@@ -2,6 +2,176 @@
 
 <!-- next version -->
 
+## 0.143.0
+
+### 🧰 Bug fixes 🧰
+
+- `operator`: Fix operator ServiceMonitor not created on OpenShift (#4603)
+  Two issues prevented the operator ServiceMonitor from being created on OpenShift:
+  1. The OpenShift kustomize patches were incorrectly overwriting operator args, removing flags like `--create-sm-operator-metrics=true`.
+  2. The prometheus-operator library `SchemeHTTPS` constant uses uppercase "HTTPS" which is rejected by ServiceMonitor CRD validation.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.143.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.143.0)
+* [OpenTelemetry Contrib - v0.143.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.143.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.67.3](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.67.3)
+* [Python - v0.60b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.60b1)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.142.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: Remove kube-rbac-proxy from operator deployment and use controller-runtime built-in auth (#3369)
+  The operator now uses controller-runtime built-in auth for the metrics server. It is disabled by default.
+  The client accessing the metrics endpoint must have the following RBAC rule `nonResourceURLs: "/metrics", verbs: get`.
+  Which didn't change from the previous approach of using kube-rbac-proxy.
+  
+  This changes adds following flags to the operator:
+  `metrics-secure` - enables authentication and authorization for the metrics server. If no TLS certificates are provided, self signed certificates will be generated.
+  `metrics-tls-cert-file` - TLS certificate file for the metrics server
+  `metrics-tls-key-file` - TLS private key file for the metrics server
+  
+  This change changes the following flags on the operator:
+  `--metrics-addr` - changes from `127.0.0.1:8080` to `:8443` which matches the operator's metrics service port.
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Add support for prometheus scrape classes (#3600)
+  Added support for configuring `scrapeClasses` when using the PrometheusCR-feature of the target allocator. The format of the `scrapeClasses` array is exactly as same as `spec.scrapeClasses` of the `Prometheus` CRD.
+- `operator`: Add support for Kubernetes 1.35 (#4575)
+- `collector`: exposes the `spec.hostPID` field for the collector. (#4214)
+  This will allow to set the spec.HostPID field for the collector. By default this the field is false.
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: Fix CA certificate race condition with client cert renewals by extending its duration and and renewal attempt. (#4441)
+  The CA certificate now has a 2-year duration (instead of the default 90 days) to prevent race conditions
+  where client and server certificates could be signed by different CA versions during simultaneous renewal.
+  This ensures the CA remains stable while dependent certificates renew regularly.
+  
+- `collector`: Add finalizers to OpenTelemetryCollector CR only when cluster roles and bindings for SA are created by Operator. (#4367)
+  Finalizer usage was restricted to cluster scoped resources only. Namespaced resources no longer receive finalizers,
+  preventing blocked namespace deletion if the operator is removed first. The change aligns finalizer behavior with
+  cluster-level RBAC availability, ensuring finalizers are applied only when the operator has the required
+  cluster scoped permissions.
+  
+- `config`: Fix manager logger initialization (#4584)
+  Apply config before setting up logger to configure it properly.
+  
+- `operator`: Fix the --annotations-filter and --labels-filter CLI flags. (#4594)
+
+### Components
+
+* [OpenTelemetry Collector - v0.142.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.142.0)
+* [OpenTelemetry Contrib - v0.142.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.142.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.67.3](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.67.3)
+* [Python - v0.60b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.60b1)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.141.0
+
+### 💡 Enhancements 💡
+
+- `collector`: Ensure the collector container is always listed first in the podspec (#4548)
+  This is so tools like kubectx logs will always default to the collector container instead of any additional containers that are configured.
+- `target allocator`: make evaluation_interval configurable for Prometheus CR watcher (#4520)
+- `operator`: Support for Kubernetes `1.34` version. (#4415)
+
+### Components
+
+* [OpenTelemetry Collector - v0.141.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.141.0)
+* [OpenTelemetry Contrib - v0.141.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.141.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.67.2](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.67.2)
+* [Python - v0.60b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.60b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.140.0
+
+### 🛑 Breaking changes 🛑
+
+- `operator`: Remove native sidecar feature gate (#4451)
+  The feature gate `operator.sidecarcontainers.native` has been removed.
+  It was introduced in v0.111.0, enabled by default since v0.132.0, and marked as stable in v0.139.0.
+  Native sidecars are now automatically enabled on Kubernetes v1.29+ without requiring a feature gate.
+  If you were explicitly enabling or disabling this feature gate with `--feature-gates=+operator.sidecarcontainers.native`,
+  you must remove that flag.
+  
+
+### 💡 Enhancements 💡
+
+- `collector`: Promote the `operator.golang.flags` feature flag to Beta (#4452)
+  The operator will set the GOMEMLIMIT and GOMAXPROCS environment variables based
+  on the pod configuration of the collector container by default.
+  
+- `operator`: Use pod and namespace label selector in operator NetworkPolicy for the API server Egress on OpenShift. (#4490)
+  On OpenShift use pod (`"apiserver": "true"`) and namespace (`kubernetes.io/metadata.name": "openshift-kube-apiserver"`)
+  label selectors in API server Egress network policy.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `auto-instrumentation`: Fixes the precedence of `spec.env` in Instrumentation CR so global env vars correctly override defaults. (#4068)
+  Previously, environment variables set under `spec.env` were ignored in favor of default instrumentation config, 
+  unless duplicated in each language block. This change ensures the correct order of precedence is applied:
+  language-specific env vars > spec.env > defaults.
+  
+- `collector`: Fix mounting spec.configmaps in sidecar mode (#4489)
+  Configmaps defined in `spec.configmaps` were not properly mounted in the sidecar mode.
+  
+- `github action`: Remove unused VERSION and VERSION_DATE environment variables from publish workflows (#4470)
+  Removed the unused "Read version" step that set VERSION and VERSION_DATE environment variables in both publish-target-allocator.yaml and publish-operator-opamp-bridge.yaml workflows. These variables were never referenced anywhere in the workflows.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.140.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.140.0)
+* [OpenTelemetry Contrib - v0.140.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.140.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.66.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.66.0)
+* [Python - v0.59b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.59b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.139.0
+
+### 💡 Enhancements 💡
+
+- `operator`: Promote the `operator.sidecarcontainers.native` feature flag to Stable. (#4451)
+  By default, the operator will continue to use native sidecars on Kubernetes versions
+  newer than 1.29. This behaviour cannot be disabled.
+  The operator flag will be removed with the release of version `0.140.0`.
+  
+- `collector`: Promote the `operator.collector.default.config` feature gate to Stable (#4453)
+
+### Components
+
+* [OpenTelemetry Collector - v0.139.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.139.0)
+* [OpenTelemetry Contrib - v0.139.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.139.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.66.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.66.0)
+* [Python - v0.59b0](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.59b0)
+* [Go - v0.22.1](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.22.1)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.138.0
 
 

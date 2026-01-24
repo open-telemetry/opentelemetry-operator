@@ -203,6 +203,24 @@ service:
 													},
 												},
 											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "otc-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "otc-container",
+													},
+												},
+											},
 										},
 										VolumeMounts: []corev1.VolumeMount{
 											{
@@ -237,14 +255,7 @@ service:
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
 						Selector: &v1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app.kubernetes.io/component":  "opentelemetry-collector",
-								"app.kubernetes.io/instance":   "test.test",
-								"app.kubernetes.io/managed-by": "opentelemetry-operator",
-								"app.kubernetes.io/name":       "test-collector",
-								"app.kubernetes.io/part-of":    "opentelemetry",
-								"app.kubernetes.io/version":    "latest",
-							},
+							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
 							Type:   intstr.Int,
@@ -521,6 +532,24 @@ service:
 													},
 												},
 											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "otc-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "otc-container",
+													},
+												},
+											},
 										},
 										VolumeMounts: []corev1.VolumeMount{
 											{
@@ -555,14 +584,7 @@ service:
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
 						Selector: &v1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app.kubernetes.io/component":  "opentelemetry-collector",
-								"app.kubernetes.io/instance":   "test.test",
-								"app.kubernetes.io/managed-by": "opentelemetry-operator",
-								"app.kubernetes.io/name":       "test-collector",
-								"app.kubernetes.io/part-of":    "opentelemetry",
-								"app.kubernetes.io/version":    "latest",
-							},
+							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
 							Type:   intstr.Int,
@@ -835,6 +857,24 @@ service:
 													},
 												},
 											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "otc-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "otc-container",
+													},
+												},
+											},
 										},
 										VolumeMounts: []corev1.VolumeMount{
 											{
@@ -869,14 +909,7 @@ service:
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
 						Selector: &v1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app.kubernetes.io/component":  "opentelemetry-collector",
-								"app.kubernetes.io/instance":   "test.test",
-								"app.kubernetes.io/managed-by": "opentelemetry-operator",
-								"app.kubernetes.io/name":       "test-collector",
-								"app.kubernetes.io/part-of":    "opentelemetry",
-								"app.kubernetes.io/version":    "latest",
-							},
+							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
 							Type:   intstr.Int,
@@ -1116,6 +1149,24 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 												ValueFrom: &corev1.EnvVarSource{
 													FieldRef: &corev1.ObjectFieldSelector{
 														FieldPath: "metadata.namespace",
+													},
+												},
+											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "opamp-bridge-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "opamp-bridge-container",
 													},
 												},
 											},
@@ -1387,8 +1438,22 @@ service:
 												},
 											},
 											{
-												Name:  "SHARD",
-												Value: "0",
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "otc-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "otc-container",
+													},
+												},
 											},
 										},
 										Ports: []corev1.ContainerPort{
@@ -1433,14 +1498,7 @@ service:
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
 						Selector: &v1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app.kubernetes.io/component":  "opentelemetry-collector",
-								"app.kubernetes.io/instance":   "test.test",
-								"app.kubernetes.io/managed-by": "opentelemetry-operator",
-								"app.kubernetes.io/name":       "test-collector",
-								"app.kubernetes.io/part-of":    "opentelemetry",
-								"app.kubernetes.io/version":    "latest",
-							},
+							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
 							Type:   intstr.Int,
@@ -1631,8 +1689,22 @@ service:
 												},
 											},
 											{
-												Name:  "SHARD",
-												Value: "0",
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "otc-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "otc-container",
+													},
+												},
 											},
 										},
 										Ports: []corev1.ContainerPort{
@@ -1677,14 +1749,7 @@ service:
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
 						Selector: &v1.LabelSelector{
-							MatchLabels: map[string]string{
-								"app.kubernetes.io/component":  "opentelemetry-collector",
-								"app.kubernetes.io/instance":   "test.test",
-								"app.kubernetes.io/managed-by": "opentelemetry-operator",
-								"app.kubernetes.io/name":       "test-collector",
-								"app.kubernetes.io/part-of":    "opentelemetry",
-								"app.kubernetes.io/version":    "latest",
-							},
+							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
 							Type:   intstr.Int,
@@ -1981,6 +2046,24 @@ prometheus_cr:
 													},
 												},
 											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "ta-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "ta-container",
+													},
+												},
+											},
 										},
 										Ports: []corev1.ContainerPort{
 											{
@@ -2259,6 +2342,24 @@ prometheus_cr:
 												ValueFrom: &corev1.EnvVarSource{
 													FieldRef: &corev1.ObjectFieldSelector{
 														FieldPath: "metadata.namespace",
+													},
+												},
+											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "ta-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "ta-container",
 													},
 												},
 											},
@@ -2593,6 +2694,24 @@ prometheus_cr:
 													},
 												},
 											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "ta-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "ta-container",
+													},
+												},
+											},
 										},
 										Ports: []corev1.ContainerPort{
 											{
@@ -2906,6 +3025,24 @@ prometheus_cr:
 													},
 												},
 											},
+											{
+												Name: "GOMEMLIMIT",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.memory",
+														ContainerName: "ta-container",
+													},
+												},
+											},
+											{
+												Name: "GOMAXPROCS",
+												ValueFrom: &corev1.EnvVarSource{
+													ResourceFieldRef: &corev1.ResourceFieldSelector{
+														Resource:      "limits.cpu",
+														ContainerName: "ta-container",
+													},
+												},
+											},
 										},
 										Ports: []corev1.ContainerPort{
 											{
@@ -3080,9 +3217,11 @@ prometheus_cr:
 						Subject: &cmv1.X509Subject{
 							OrganizationalUnits: []string{"opentelemetry-operator"},
 						},
-						CommonName: "test-ca-cert",
-						IsCA:       true,
-						SecretName: "test-ca-cert",
+						CommonName:  "test-ca-cert",
+						Duration:    &metav1.Duration{Duration: targetallocator.CACertDuration},
+						RenewBefore: &metav1.Duration{Duration: targetallocator.CACertRenewBefore},
+						IsCA:        true,
+						SecretName:  "test-ca-cert",
 						IssuerRef: cmmetav1.ObjectReference{
 							Name: "test-self-signed-issuer",
 							Kind: "Issuer",
@@ -3129,6 +3268,7 @@ prometheus_cr:
 						Subject: &cmv1.X509Subject{
 							OrganizationalUnits: []string{"opentelemetry-operator"},
 						},
+						Duration: &metav1.Duration{Duration: targetallocator.ClientCertDuration},
 						DNSNames: []string{
 							"test-targetallocator",
 							"test-targetallocator.test.svc",
@@ -3162,6 +3302,7 @@ prometheus_cr:
 						Subject: &cmv1.X509Subject{
 							OrganizationalUnits: []string{"opentelemetry-operator"},
 						},
+						Duration: &metav1.Duration{Duration: targetallocator.ClientCertDuration},
 						DNSNames: []string{
 							"test-targetallocator",
 							"test-targetallocator.test.svc",

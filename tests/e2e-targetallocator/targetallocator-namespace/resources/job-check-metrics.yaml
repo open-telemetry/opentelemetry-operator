@@ -9,7 +9,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: check-metrics
-          image: curlimages/curl
+          image: docker.io/curlimages/curl:latest
           env:
             - name: endpoint
               value: ($endpoint)

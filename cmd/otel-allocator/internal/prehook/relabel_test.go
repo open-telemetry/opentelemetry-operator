@@ -35,12 +35,13 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"i"},
-					Action:       "replace",
-					Separator:    ";",
-					Regex:        relabel.MustNewRegexp("(.*)"),
-					Replacement:  "$1",
-					TargetLabel:  "foo",
+					SourceLabels:         model.LabelNames{"i"},
+					Action:               "replace",
+					Separator:            ";",
+					Regex:                relabel.MustNewRegexp("(.*)"),
+					Replacement:          "$1",
+					TargetLabel:          "foo",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: false,
@@ -48,11 +49,12 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"i"},
-					Regex:        relabel.MustNewRegexp("(.*)"),
-					Separator:    ";",
-					Action:       "keep",
-					Replacement:  "$1",
+					SourceLabels:         model.LabelNames{"i"},
+					Regex:                relabel.MustNewRegexp("(.*)"),
+					Separator:            ";",
+					Action:               "keep",
+					Replacement:          "$1",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: false,
@@ -60,11 +62,12 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"i"},
-					Regex:        relabel.MustNewRegexp("bad.*match"),
-					Action:       "drop",
-					Separator:    ";",
-					Replacement:  "$1",
+					SourceLabels:         model.LabelNames{"i"},
+					Regex:                relabel.MustNewRegexp("bad.*match"),
+					Action:               "drop",
+					Separator:            ";",
+					Replacement:          "$1",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: false,
@@ -72,11 +75,12 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"label_not_present"},
-					Regex:        relabel.MustNewRegexp("(.*)"),
-					Separator:    ";",
-					Action:       "keep",
-					Replacement:  "$1",
+					SourceLabels:         model.LabelNames{"label_not_present"},
+					Regex:                relabel.MustNewRegexp("(.*)"),
+					Separator:            ";",
+					Action:               "keep",
+					Replacement:          "$1",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: false,
@@ -84,11 +88,12 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"i"},
-					Regex:        relabel.MustNewRegexp("(.*)"),
-					Separator:    ";",
-					Action:       "drop",
-					Replacement:  "$1",
+					SourceLabels:         model.LabelNames{"i"},
+					Regex:                relabel.MustNewRegexp("(.*)"),
+					Separator:            ";",
+					Action:               "drop",
+					Replacement:          "$1",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: true,
@@ -96,11 +101,12 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"collector"},
-					Regex:        relabel.MustNewRegexp("(collector.*)"),
-					Separator:    ";",
-					Action:       "drop",
-					Replacement:  "$1",
+					SourceLabels:         model.LabelNames{"collector"},
+					Regex:                relabel.MustNewRegexp("(collector.*)"),
+					Separator:            ";",
+					Action:               "drop",
+					Replacement:          "$1",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: true,
@@ -108,11 +114,12 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"i"},
-					Regex:        relabel.MustNewRegexp("bad.*match"),
-					Separator:    ";",
-					Action:       "keep",
-					Replacement:  "$1",
+					SourceLabels:         model.LabelNames{"i"},
+					Regex:                relabel.MustNewRegexp("bad.*match"),
+					Separator:            ";",
+					Action:               "keep",
+					Replacement:          "$1",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: true,
@@ -120,11 +127,12 @@ var (
 		{
 			cfg: []*relabel.Config{
 				{
-					SourceLabels: model.LabelNames{"collector"},
-					Regex:        relabel.MustNewRegexp("collectors-n"),
-					Separator:    ";",
-					Action:       "keep",
-					Replacement:  "$1",
+					SourceLabels:         model.LabelNames{"collector"},
+					Regex:                relabel.MustNewRegexp("collectors-n"),
+					Separator:            ";",
+					Action:               "keep",
+					Replacement:          "$1",
+					NameValidationScheme: model.UTF8Validation,
 				},
 			},
 			isDrop: true,
@@ -186,12 +194,12 @@ func makeNNewTargets(rCfgs []relabelConfigObj, n int, numCollectors int, startin
 	for i := startingIndex; i < n+startingIndex; i++ {
 		collector := fmt.Sprintf("collector-%d", colIndex(i, numCollectors))
 		jobName := fmt.Sprintf("test-job-%d", i)
-		label := labels.Labels{
-			{Name: "collector", Value: collector},
-			{Name: "i", Value: strconv.Itoa(i)},
-			{Name: "total", Value: strconv.Itoa(n + startingIndex)},
-			{Name: model.MetaLabelPrefix + strconv.Itoa(i), Value: strconv.Itoa(i)},
-			{Name: model.AddressLabel, Value: "address_value"},
+		label := labels.New(
+			labels.Label{Name: "collector", Value: collector},
+			labels.Label{Name: "i", Value: strconv.Itoa(i)},
+			labels.Label{Name: "total", Value: strconv.Itoa(n + startingIndex)},
+			labels.Label{Name: model.MetaLabelPrefix + strconv.Itoa(i), Value: strconv.Itoa(i)},
+			labels.Label{Name: model.AddressLabel, Value: "address_value"},
 			// These labels are typically required for correct scraping behavior and are expected to be retained after relabeling.:
 			//   - job
 			//   - __scrape_interval__
@@ -201,15 +209,15 @@ func makeNNewTargets(rCfgs []relabelConfigObj, n int, numCollectors int, startin
 			// Prometheus adds these labels by default. Removing them via relabel_configs is considered invalid and is therefore ignored.
 			// For details, see:
 			// https://github.com/prometheus/prometheus/blob/e6cfa720fbe6280153fab13090a483dbd40bece3/scrape/target.go#L429
-			{Name: model.JobLabel, Value: jobName},
-			{Name: model.ScrapeIntervalLabel, Value: "10s"},
-			{Name: model.ScrapeTimeoutLabel, Value: "10s"},
-			{Name: model.SchemeLabel, Value: "http"},
-			{Name: model.MetricsPathLabel, Value: "/metrics" + strconv.Itoa(i)},
+			labels.Label{Name: model.JobLabel, Value: jobName},
+			labels.Label{Name: model.ScrapeIntervalLabel, Value: "10s"},
+			labels.Label{Name: model.ScrapeTimeoutLabel, Value: "10s"},
+			labels.Label{Name: model.SchemeLabel, Value: "http"},
+			labels.Label{Name: model.MetricsPathLabel, Value: "/metrics" + strconv.Itoa(i)},
 
 			// Prometheus will automatically add the "instance" label if it is not present.
-			{Name: model.InstanceLabel, Value: "address_value"},
-		}
+			labels.Label{Name: model.InstanceLabel, Value: "address_value"},
+		)
 		rawTarget := target.NewItem(jobName, "test-url", label, collector)
 
 		// add a single replace, drop, or keep action as relabel_config for targets
@@ -244,7 +252,7 @@ func TestApply(t *testing.T) {
 	allocatorPrehook.SetConfig(relabelCfg)
 	remainingItems := allocatorPrehook.Apply(targets)
 	assert.Len(t, remainingItems, numRemaining)
-	assert.Equal(t, remainingItems, expectedTargetMap)
+	assert.Equal(t, expectedTargetMap, remainingItems)
 
 	// clear out relabelCfg to test with empty values
 	for key := range relabelCfg {
@@ -297,7 +305,12 @@ func TestSetConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	allocatorPrehook.SetConfig(relabelCfg)
-	assert.Equal(t, relabelCfg, allocatorPrehook.GetConfig())
+
+	for k, cfg := range relabelCfg {
+		relabelCfg[k] = addNoShardingConfig(cfg)
+	}
+	actual := allocatorPrehook.GetConfig()
+	assert.Equal(t, relabelCfg, actual)
 }
 
 func TestDistinctTarget(t *testing.T) {
@@ -309,11 +322,9 @@ func TestDistinctTarget(t *testing.T) {
 
 	duplicatedTargets := make([]*target.Item, 0, 2*len(targets))
 	for _, item := range targets {
-		ls := item.Labels.Copy()
-		ls = append(ls, labels.Label{
-			Name:  checkDistinctConfigLabel,
-			Value: "check-distinct-label-value",
-		})
+		builder := labels.NewBuilder(item.Labels)
+		builder.Set(checkDistinctConfigLabel, "check-distinct-label-value")
+		ls := builder.Labels()
 
 		duplItem := target.NewItem(item.JobName, item.TargetURL, ls, item.CollectorName)
 		duplicatedTargets = append(duplicatedTargets, duplItem)
@@ -372,7 +383,15 @@ func MakeTargetFromProm(rCfgs []*relabel.Config, rawTarget *target.Item) (*targe
 		return nil, nil
 	}
 
-	newTarget := target.NewItem(rawTarget.JobName, rawTarget.TargetURL, rawTarget.Labels, rawTarget.CollectorName, target.WithRelabeledLabels(lset))
+	// Compute the hash from the builder, skipping meta labels
+	hash := target.HashFromBuilder(lb, rawTarget.JobName)
+	newTarget := target.NewItem(
+		rawTarget.JobName,
+		rawTarget.TargetURL,
+		rawTarget.Labels,
+		rawTarget.CollectorName,
+		target.WithHash(hash),
+	)
 	return newTarget, nil
 }
 

@@ -20,12 +20,12 @@ spec:
       value: /usr/local/lib/node_modules
     - name: OTEL_SERVICE_NAME
       value: nodejsapp
-    - name: NODE_OPTIONS
-      value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
     - name: OTEL_TRACES_SAMPLER
       value: parentbased_traceidratio
     - name: OTEL_TRACES_SAMPLER_ARG
       value: "0.85"
+    - name: NODE_OPTIONS
+      value: ' --require /otel-auto-instrumentation-nodejs/autoinstrumentation.js'
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: http://deployment-collector:4317
     - name: OTEL_RESOURCE_ATTRIBUTES_POD_NAME

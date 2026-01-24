@@ -32,24 +32,22 @@ func TestAllocationPerNode(t *testing.T) {
 
 	cols := MakeNCollectors(4, 0)
 	s.SetCollectors(cols)
-	firstLabels := labels.Labels{
-		{Name: "test", Value: "test1"},
-		{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
-	}
-	secondLabels := labels.Labels{
-		{Name: "test", Value: "test2"},
-		{Name: "__meta_kubernetes_node_name", Value: "node-1"},
-	}
+	firstLabels := labels.New(
+		labels.Label{Name: "test", Value: "test1"},
+		labels.Label{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
+	)
+	secondLabels := labels.New(
+		labels.Label{Name: "test", Value: "test2"},
+		labels.Label{Name: "__meta_kubernetes_node_name", Value: "node-1"},
+	)
 	// no label, should be skipped
-	thirdLabels := labels.Labels{
-		{Name: "test", Value: "test3"},
-	}
+	thirdLabels := labels.New(labels.Label{Name: "test", Value: "test3"})
 	// endpointslice target kind and name
-	fourthLabels := labels.Labels{
-		{Name: "test", Value: "test4"},
-		{Name: "__meta_kubernetes_endpointslice_address_target_kind", Value: "Node"},
-		{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-3"},
-	}
+	fourthLabels := labels.New(
+		labels.Label{Name: "test", Value: "test4"},
+		labels.Label{Name: "__meta_kubernetes_endpointslice_address_target_kind", Value: "Node"},
+		labels.Label{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-3"},
+	)
 
 	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
 	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")
@@ -99,24 +97,22 @@ func TestAllocationPerNodeUsingFallback(t *testing.T) {
 
 	cols := MakeNCollectors(4, 0)
 	s.SetCollectors(cols)
-	firstLabels := labels.Labels{
-		{Name: "test", Value: "test1"},
-		{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
-	}
-	secondLabels := labels.Labels{
-		{Name: "test", Value: "test2"},
-		{Name: "__meta_kubernetes_node_name", Value: "node-1"},
-	}
+	firstLabels := labels.New(
+		labels.Label{Name: "test", Value: "test1"},
+		labels.Label{Name: "__meta_kubernetes_pod_node_name", Value: "node-0"},
+	)
+	secondLabels := labels.New(
+		labels.Label{Name: "test", Value: "test2"},
+		labels.Label{Name: "__meta_kubernetes_node_name", Value: "node-1"},
+	)
 	// no label, should be allocated by the fallback strategy
-	thirdLabels := labels.Labels{
-		{Name: "test", Value: "test3"},
-	}
+	thirdLabels := labels.New(labels.Label{Name: "test", Value: "test3"})
 	// endpointslice target kind and name
-	fourthLabels := labels.Labels{
-		{Name: "test", Value: "test4"},
-		{Name: "__meta_kubernetes_endpointslice_address_target_kind", Value: "Node"},
-		{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-3"},
-	}
+	fourthLabels := labels.New(
+		labels.Label{Name: "test", Value: "test4"},
+		labels.Label{Name: "__meta_kubernetes_endpointslice_address_target_kind", Value: "Node"},
+		labels.Label{Name: "__meta_kubernetes_endpointslice_address_target_name", Value: "node-3"},
+	)
 
 	firstTarget := target.NewItem("sample-name", "0.0.0.0:8000", firstLabels, "")
 	secondTarget := target.NewItem("sample-name", "0.0.0.0:8000", secondLabels, "")

@@ -5,6 +5,7 @@
 *.so
 *.dylib
 bin
+obj/
 vendor
 .DS_Store
 

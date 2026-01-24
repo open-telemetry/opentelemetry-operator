@@ -10,6 +10,8 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
 // ManagementStateType defines the type for CR management states.
@@ -389,6 +391,12 @@ type OpenTelemetryTargetAllocatorPrometheusCR struct {
 	// +kubebuilder:default:="30s"
 	// +kubebuilder:validation:Format:=duration
 	ScrapeInterval *metav1.Duration `json:"scrapeInterval,omitempty"`
+	// ScrapeClasses to be referenced by PodMonitors and ServiceMonitors to include common configuration.
+	// If specified, expects an array of ScrapeClass objects as specified by https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ScrapeClass.
+	// +optional
+	// +listType=atomic
+	// +kubebuilder:pruning:PreserveUnknownFields
+	ScrapeClasses []v1beta1.AnyConfig `json:"scrapeClasses,omitempty"`
 	// PodMonitors to be selected for target discovery.
 	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
 	// PodMonitor's meta labels. The requirements are ANDed.

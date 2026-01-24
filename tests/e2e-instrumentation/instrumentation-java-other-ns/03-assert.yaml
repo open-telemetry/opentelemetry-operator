@@ -20,14 +20,14 @@ spec:
       value: "true"
     - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
       value: "false"
-    - name: JAVA_TOOL_OPTIONS
-      value: ' -javaagent:/otel-auto-instrumentation-java-myapp/javaagent.jar'
     - name: OTEL_TRACES_SAMPLER
       value: always_on
     - name: OTEL_EXPORTER_OTLP_PROTOCOL
       value: http/protobuf
     - name: OTEL_LOGS_EXPORTER
       value: none
+    - name: JAVA_TOOL_OPTIONS
+      value: ' -javaagent:/otel-auto-instrumentation-java-myapp/javaagent.jar'
     - name: OTEL_SERVICE_NAME
       value: my-java-other-ns
     - name: OTEL_EXPORTER_OTLP_ENDPOINT

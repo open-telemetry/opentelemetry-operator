@@ -69,7 +69,7 @@ spec:
       periodSeconds: 15
       successThreshold: 1
       timeoutSeconds: 2
-  - image: rabbitmq
+  - image: docker.io/library/rabbitmq:latest
     name: myrabbit
   initContainers:
   - name: otel-agent-source-container-clone

@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: opentelemetry-operator-metrics-monitor
+  namespace: ($otelnamespace)
+  labels:
+    app.kubernetes.io/name: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry-operator
+    control-plane: controller-manager
+spec:
+  endpoints:
+  - interval: 30s
+    path: /metrics
+    scheme: https
+    scrapeTimeout: 10s
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-operator

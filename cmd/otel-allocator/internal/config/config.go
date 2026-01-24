@@ -87,8 +87,10 @@ type PrometheusCRConfig struct {
 	ScrapeConfigNamespaceSelector   *metav1.LabelSelector         `yaml:"scrape_config_namespace_selector,omitempty"`
 	ProbeSelector                   *metav1.LabelSelector         `yaml:"probe_selector,omitempty"`
 	ProbeNamespaceSelector          *metav1.LabelSelector         `yaml:"probe_namespace_selector,omitempty"`
-	ScrapeProtocols                 []monitoringv1.ScrapeProtocol `yaml:"scrape_protocols,omitempty"`
 	ScrapeInterval                  model.Duration                `yaml:"scrape_interval,omitempty"`
+	EvaluationInterval              model.Duration                `yaml:"evaluation_interval,omitempty"`
+	ScrapeProtocols                 []monitoringv1.ScrapeProtocol `yaml:"scrape_protocols,omitempty"`
+	ScrapeClasses                   []monitoringv1.ScrapeClass    `yaml:"scrape_classes,omitempty"`
 }
 
 type HTTPSServerConfig struct {

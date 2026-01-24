@@ -20,16 +20,17 @@ import (
 const (
 	operatorName         = "opentelemetry-operator-controller-manager"
 	defaultAPIServerPort = 6443
-	defaultRBACProxyPort = 8443
 )
 
 type networkPolicy struct {
 	clientset kubernetes.Interface
 	scheme    *runtime.Scheme
 
-	operatorNamespace string
-	webhookPort       int32
-	metricsPort       int32
+	operatorNamespace          string
+	webhookPort                int32
+	metricsPort                int32
+	apiServerPodSelector       *metav1.LabelSelector
+	apiServerNamespaceSelector *metav1.LabelSelector
 }
 
 var _ manager.Runnable = (*networkPolicy)(nil)
@@ -70,6 +71,20 @@ func WithMetricsPort(metricsPort int32) Option {
 	}
 }
 
+// WithAPISererPodLabelSelector sets the label selector for the pod of the API server.
+func WithAPISererPodLabelSelector(selector *metav1.LabelSelector) Option {
+	return func(s *networkPolicy) {
+		s.apiServerPodSelector = selector
+	}
+}
+
+// WithAPISererNamespaceLabelSelector sets the label selector for tbe namespace of the API server.
+func WithAPISererNamespaceLabelSelector(selector *metav1.LabelSelector) Option {
+	return func(s *networkPolicy) {
+		s.apiServerNamespaceSelector = selector
+	}
+}
+
 func (n *networkPolicy) Start(ctx context.Context) error {
 	tcp := corev1.ProtocolTCP
 	apiServerPort := intstr.FromInt32(defaultAPIServerPort)
@@ -100,6 +115,21 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 		},
 	}
 
+	if n.apiServerPodSelector != nil {
+		np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
+			PodSelector: n.apiServerPodSelector,
+		})
+	}
+	if n.apiServerNamespaceSelector != nil {
+		if np.Spec.Egress[0].To == nil {
+			np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
+				NamespaceSelector: n.apiServerNamespaceSelector,
+			})
+		} else {
+			np.Spec.Egress[0].To[0].NamespaceSelector = n.apiServerNamespaceSelector
+		}
+	}
+
 	if n.webhookPort != 0 {
 		webhookPort := intstr.FromInt32(n.webhookPort)
 		np.Spec.Ingress[0].Ports = append(np.Spec.Ingress[0].Ports, networkingv1.NetworkPolicyPort{
@@ -109,15 +139,9 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 	}
 	if n.metricsPort != 0 {
 		metricsPort := intstr.FromInt32(n.metricsPort)
-		// The RBAC proxy is used to secure the metrics endpoint.
-		rbacProxyPort := intstr.FromInt32(defaultRBACProxyPort)
 		np.Spec.Ingress[0].Ports = append(np.Spec.Ingress[0].Ports, networkingv1.NetworkPolicyPort{
 			Protocol: &tcp,
 			Port:     &metricsPort,
-		})
-		np.Spec.Ingress[0].Ports = append(np.Spec.Ingress[0].Ports, networkingv1.NetworkPolicyPort{
-			Protocol: &tcp,
-			Port:     &rbacProxyPort,
 		})
 	}
 

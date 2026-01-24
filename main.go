@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -23,6 +24,7 @@ import (
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	"go.uber.org/zap/zapcore"
 	networkingv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -33,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -95,6 +98,12 @@ func main() {
 		panic(err)
 	}
 
+	err := cfg.Apply(configFile)
+	if err != nil {
+		fmt.Printf("configuration error: %v\n", err)
+		os.Exit(1)
+	}
+
 	opts.EncoderConfigOptions = append(opts.EncoderConfigOptions, func(ec *zapcore.EncoderConfig) {
 		ec.MessageKey = cfg.Zap.MessageKey
 		ec.LevelKey = cfg.Zap.LevelKey
@@ -110,12 +119,6 @@ func main() {
 	ctrl.SetLogger(logger)
 
 	configLog := ctrl.Log.WithName("config")
-
-	err := cfg.Apply(configFile)
-	if err != nil {
-		configLog.Error(err, "configuration error")
-		os.Exit(1)
-	}
 
 	v := version.Get()
 
@@ -156,11 +159,24 @@ func main() {
 		},
 	}
 
+	// Configure metrics server options
+	metricsOptions := metricsserver.Options{
+		BindAddress: cfg.MetricsAddr,
+	}
+	if cfg.MetricsSecure {
+		metricsOptions.SecureServing = true
+		metricsOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
+		metricsOptions.TLSOpts = optionsTlSOptsFuncs
+		if cfg.MetricsTLSCertFile != "" && cfg.MetricsTLSKeyFile != "" {
+			metricsOptions.CertDir = filepath.Dir(cfg.MetricsTLSCertFile)
+			metricsOptions.CertName = filepath.Base(cfg.MetricsTLSCertFile)
+			metricsOptions.KeyName = filepath.Base(cfg.MetricsTLSKeyFile)
+		}
+	}
+
 	mgrOptions := ctrl.Options{
-		Scheme: scheme,
-		Metrics: metricsserver.Options{
-			BindAddress: cfg.MetricsAddr,
-		},
+		Scheme:                        scheme,
+		Metrics:                       metricsOptions,
 		HealthProbeBindAddress:        cfg.ProbeAddr,
 		LeaderElection:                cfg.EnableLeaderElection,
 		LeaderElectionID:              "9f7554c3.opentelemetry.io",
@@ -190,6 +206,16 @@ func main() {
 	}
 
 	ctx := ctrl.SetupSignalHandler()
+
+	// Apply feature gates from Config if set (could be from file or env vars)
+	// This must be done before checking feature gates like EnableOperatorNetworkPolicy
+	if cfg.FeatureGates != "" {
+		configLog.Info("Applying feature gates from configuration", "gates", cfg.FeatureGates)
+		if err = featuregate.ApplyFeatureGateOverrides(cfg.FeatureGates); err != nil {
+			setupLog.Error(err, "failed to apply feature gate overrides")
+			os.Exit(1)
+		}
+	}
 
 	if cfg.OpenshiftCreateDashboard {
 		dashErr := mgr.Add(openshiftDashboards.NewDashboardManagement(clientset))
@@ -250,7 +276,7 @@ func main() {
 		}
 	}
 
-	setupLog.Info("Native sidecar", cfg.Internal.NativeSidecarSupport)
+	setupLog.Info("Native sidecar", "enabled", cfg.Internal.NativeSidecarSupport)
 
 	if cfg.AnnotationsFilter != nil {
 		for _, basePattern := range cfg.AnnotationsFilter {
@@ -429,6 +455,19 @@ func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interfa
 	}
 	var policyOpts []operatornetworkpolicy.Option
 	policyOpts = append(policyOpts, operatornetworkpolicy.WithOperatorNamespace(operatorNamespace))
+
+	if cfg.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
+		policyOpts = append(policyOpts, operatornetworkpolicy.WithAPISererPodLabelSelector(&metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"apiserver": "true",
+			},
+		}))
+		policyOpts = append(policyOpts, operatornetworkpolicy.WithAPISererNamespaceLabelSelector(&metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"kubernetes.io/metadata.name": "openshift-kube-apiserver",
+			},
+		}))
+	}
 
 	if cfg.EnableWebhooks {
 		//nolint:gosec // disable G115

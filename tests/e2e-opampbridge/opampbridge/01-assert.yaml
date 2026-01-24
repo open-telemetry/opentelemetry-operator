@@ -11,6 +11,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: GOMEMLIMIT
+        - name: GOMAXPROCS
         name: opamp-bridge-container
         volumeMounts:
         - mountPath: /conf

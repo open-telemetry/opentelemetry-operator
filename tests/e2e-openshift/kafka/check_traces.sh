@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Define the label selector
 LABEL_SELECTOR="app.kubernetes.io/instance=chainsaw-kafka.kafka-receiver"

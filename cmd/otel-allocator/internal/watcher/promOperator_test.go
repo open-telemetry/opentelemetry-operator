@@ -44,6 +44,7 @@ func TestLoadConfig(t *testing.T) {
 		name            string
 		serviceMonitors []*monitoringv1.ServiceMonitor
 		podMonitors     []*monitoringv1.PodMonitor
+		scrapeClasses   []*monitoringv1.ScrapeClass
 		scrapeConfigs   []*promv1alpha1.ScrapeConfig
 		probes          []*monitoringv1.Probe
 		want            *promconfig.Config
@@ -94,7 +95,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/simple/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -111,12 +112,17 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 					{
 						JobName:         "podMonitor/test/simple/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -133,8 +139,13 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -152,18 +163,24 @@ func TestLoadConfig(t *testing.T) {
 						Endpoints: []monitoringv1.Endpoint{
 							{
 								Port: portName,
-								BasicAuth: &monitoringv1.BasicAuth{
-									Username: v1.SecretKeySelector{
-										LocalObjectReference: v1.LocalObjectReference{
-											Name: "basic-auth",
+								HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
+									HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
+										HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+											BasicAuth: &monitoringv1.BasicAuth{
+												Username: v1.SecretKeySelector{
+													LocalObjectReference: v1.LocalObjectReference{
+														Name: "basic-auth",
+													},
+													Key: "username",
+												},
+												Password: v1.SecretKeySelector{
+													LocalObjectReference: v1.LocalObjectReference{
+														Name: "basic-auth",
+													},
+													Key: "password",
+												},
+											},
 										},
-										Key: "username",
-									},
-									Password: v1.SecretKeySelector{
-										LocalObjectReference: v1.LocalObjectReference{
-											Name: "basic-auth",
-										},
-										Key: "password",
 									},
 								},
 							},
@@ -187,7 +204,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/auth/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -212,7 +229,12 @@ func TestLoadConfig(t *testing.T) {
 								Password: "password",
 							},
 						},
-						EnableCompression: true,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -230,13 +252,19 @@ func TestLoadConfig(t *testing.T) {
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
 								Port: &portName,
-								Authorization: &monitoringv1.SafeAuthorization{
-									Type: "Bearer",
-									Credentials: &v1.SecretKeySelector{
-										LocalObjectReference: v1.LocalObjectReference{
-											Name: "bearer",
+								HTTPConfigWithProxy: monitoringv1.HTTPConfigWithProxy{
+									HTTPConfig: monitoringv1.HTTPConfig{
+										HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+											Authorization: &monitoringv1.SafeAuthorization{
+												Type: "Bearer",
+												Credentials: &v1.SecretKeySelector{
+													LocalObjectReference: v1.LocalObjectReference{
+														Name: "bearer",
+													},
+													Key: "token",
+												},
+											},
 										},
-										Key: "token",
 									},
 								},
 							},
@@ -255,7 +283,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "podMonitor/test/bearer/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -280,7 +308,12 @@ func TestLoadConfig(t *testing.T) {
 								Credentials: "bearer-token",
 							},
 						},
-						EnableCompression: true,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -351,7 +384,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/valid-sm/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -368,12 +401,17 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -390,8 +428,13 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -462,7 +505,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/valid-sm/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -479,12 +522,17 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 					{
 						JobName:         "podMonitor/test/valid-pm/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -501,8 +549,13 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -555,7 +608,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/test/sm-1/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -572,8 +625,13 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -626,7 +684,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "podMonitor/test/pm-1/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -643,8 +701,13 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -687,7 +750,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "scrapeConfig/test/scrapeconfig-test-1",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -707,8 +770,13 @@ func TestLoadConfig(t *testing.T) {
 								},
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -751,7 +819,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "probe/test/probe-test-1",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -773,8 +841,13 @@ func TestLoadConfig(t *testing.T) {
 								},
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -826,7 +899,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "serviceMonitor/labellednamespace/sm-1/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -843,8 +916,13 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -896,7 +974,7 @@ func TestLoadConfig(t *testing.T) {
 				ScrapeConfigs: []*promconfig.ScrapeConfig{
 					{
 						JobName:         "podMonitor/labellednamespace/pm-1/0",
-						ScrapeInterval:  model.Duration(30 * time.Second),
+						ScrapeInterval:  model.Duration(60 * time.Second),
 						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 						ScrapeTimeout:   model.Duration(10 * time.Second),
 						HonorTimestamps: true,
@@ -913,8 +991,80 @@ func TestLoadConfig(t *testing.T) {
 								HTTPClientConfig: config.DefaultHTTPClientConfig,
 							},
 						},
-						HTTPClientConfig:  config.DefaultHTTPClientConfig,
-						EnableCompression: true,
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
+					},
+				},
+			},
+		},
+		{
+			name: "pod monitor with referenced scrape class",
+			podMonitors: []*monitoringv1.PodMonitor{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: namespace,
+					},
+					Spec: monitoringv1.PodMonitorSpec{
+						JobLabel:        "test",
+						ScrapeClassName: ptr.To("attach-node-metadata"),
+						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
+							{
+								Port: &portName,
+							},
+						},
+					},
+				},
+			},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					PodMonitorSelector: &metav1.LabelSelector{},
+					ScrapeClasses: []monitoringv1.ScrapeClass{
+						{
+							Name: "attach-node-metadata",
+							AttachMetadata: &monitoringv1.AttachMetadata{
+								Node: ptr.To(true),
+							},
+						},
+					},
+				},
+			},
+			want: &promconfig.Config{
+				ScrapeConfigs: []*promconfig.ScrapeConfig{
+					{
+						JobName:         "podMonitor/test/simple/0",
+						ScrapeInterval:  model.Duration(60 * time.Second),
+						ScrapeProtocols: promconfig.DefaultScrapeProtocols,
+						ScrapeTimeout:   model.Duration(10 * time.Second),
+						HonorTimestamps: true,
+						HonorLabels:     false,
+						Scheme:          "http",
+						MetricsPath:     "/metrics",
+						ServiceDiscoveryConfigs: []discovery.Config{
+							&kubeDiscovery.SDConfig{
+								Role: "pod",
+								NamespaceDiscovery: kubeDiscovery.NamespaceDiscovery{
+									Names:               []string{namespace},
+									IncludeOwnNamespace: false,
+								},
+								HTTPClientConfig: config.DefaultHTTPClientConfig,
+								AttachMetadata: kubeDiscovery.AttachMetadataConfig{
+									Node: true, // Added by scrape-class!
+								},
+							},
+						},
+						HTTPClientConfig:               config.DefaultHTTPClientConfig,
+						EnableCompression:              true,
+						AlwaysScrapeClassicHistograms:  ptr.To(false),
+						ConvertClassicHistogramsToNHCB: ptr.To(false),
+						MetricNameValidationScheme:     model.UTF8Validation,
+						MetricNameEscapingScheme:       model.AllowUTF8,
+						ScrapeNativeHistograms:         ptr.To(false),
 					},
 				},
 			},
@@ -1002,7 +1152,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		ScrapeConfigs: []*promconfig.ScrapeConfig{
 			{
 				JobName:         "podMonitor/labellednamespace/pm-1/0",
-				ScrapeInterval:  model.Duration(30 * time.Second),
+				ScrapeInterval:  model.Duration(60 * time.Second),
 				ScrapeProtocols: promconfig.DefaultScrapeProtocols,
 				ScrapeTimeout:   model.Duration(10 * time.Second),
 				HonorTimestamps: true,
@@ -1019,8 +1169,13 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 						HTTPClientConfig: config.DefaultHTTPClientConfig,
 					},
 				},
-				HTTPClientConfig:  config.DefaultHTTPClientConfig,
-				EnableCompression: true,
+				HTTPClientConfig:               config.DefaultHTTPClientConfig,
+				EnableCompression:              true,
+				AlwaysScrapeClassicHistograms:  ptr.To(false),
+				ConvertClassicHistogramsToNHCB: ptr.To(false),
+				MetricNameValidationScheme:     model.UTF8Validation,
+				MetricNameEscapingScheme:       model.AllowUTF8,
+				ScrapeNativeHistograms:         ptr.To(false),
 			},
 		},
 	}
@@ -1152,6 +1307,108 @@ func TestRateLimit(t *testing.T) {
 	assert.Less(t, eventInterval, elapsedTime)
 }
 
+func TestDefaultDurations(t *testing.T) {
+	namespace := "test"
+	portName := "web"
+	tests := []struct {
+		name            string
+		serviceMonitors []*monitoringv1.ServiceMonitor
+		cfg             allocatorconfig.Config
+		expectedScrape  model.Duration
+		expectedEval    model.Duration
+	}{
+		{
+			name: "custom scrape and evaluation intervals",
+			serviceMonitors: []*monitoringv1.ServiceMonitor{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-sm",
+						Namespace: namespace,
+					},
+					Spec: monitoringv1.ServiceMonitorSpec{
+						JobLabel: "test",
+						Endpoints: []monitoringv1.Endpoint{
+							{
+								Port: portName,
+							},
+						},
+					},
+				},
+			},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ScrapeInterval:         model.Duration(120 * time.Second),
+					EvaluationInterval:     model.Duration(120 * time.Second),
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+				},
+			},
+			expectedScrape: model.Duration(120 * time.Second),
+			expectedEval:   model.Duration(120 * time.Second),
+		},
+		{
+			name: "prometheus operator applies defaults when intervals nil",
+			serviceMonitors: []*monitoringv1.ServiceMonitor{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-sm",
+						Namespace: namespace,
+					},
+					Spec: monitoringv1.ServiceMonitorSpec{
+						JobLabel: "test",
+						Endpoints: []monitoringv1.Endpoint{
+							{
+								Port: portName,
+							},
+						},
+					},
+				},
+			},
+			cfg: allocatorconfig.Config{
+				PrometheusCR: allocatorconfig.PrometheusCRConfig{
+					ServiceMonitorSelector: &metav1.LabelSelector{},
+				},
+			},
+			expectedScrape: model.Duration(60 * time.Second),
+			expectedEval:   model.Duration(60 * time.Second),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w, _ := getTestPrometheusCRWatcher(t, namespace, tt.serviceMonitors, nil, nil, nil, tt.cfg)
+			defer w.Close()
+
+			events := make(chan Event, 1)
+			eventInterval := 5 * time.Millisecond
+			w.eventInterval = eventInterval
+
+			go func() {
+				watchErr := w.Watch(events, make(chan error))
+				require.NoError(t, watchErr)
+			}()
+
+			if success := cache.WaitForNamedCacheSync("namespace", w.stopChannel, w.nsInformer.HasSynced); !success {
+				require.True(t, success)
+			}
+
+			for _, informer := range w.informers {
+				success := cache.WaitForCacheSync(w.stopChannel, informer.HasSynced)
+				require.True(t, success)
+			}
+
+			got, err := w.LoadConfig(context.Background())
+			assert.NoError(t, err)
+
+			assert.NotEmpty(t, got.ScrapeConfigs)
+
+			for _, sc := range got.ScrapeConfigs {
+				assert.Equal(t, tt.expectedScrape, sc.ScrapeInterval)
+			}
+			assert.Equal(t, tt.expectedEval, got.GlobalConfig.EvaluationInterval)
+		})
+	}
+}
+
 // getTestPrometheusCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
 // and test secrets.
 func getTestPrometheusCRWatcher(
@@ -1235,7 +1492,7 @@ func getTestPrometheusCRWatcher(
 		},
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-				ScrapeInterval:                  monitoringv1.Duration("30s"),
+				ScrapeInterval:                  monitoringv1.Duration(cfg.PrometheusCR.ScrapeInterval.String()),
 				ServiceMonitorSelector:          cfg.PrometheusCR.ServiceMonitorSelector,
 				PodMonitorSelector:              cfg.PrometheusCR.PodMonitorSelector,
 				ServiceMonitorNamespaceSelector: cfg.PrometheusCR.ServiceMonitorNamespaceSelector,
@@ -1244,9 +1501,10 @@ func getTestPrometheusCRWatcher(
 				ProbeNamespaceSelector:          cfg.PrometheusCR.ProbeNamespaceSelector,
 				ScrapeConfigSelector:            cfg.PrometheusCR.ScrapeConfigSelector,
 				ScrapeConfigNamespaceSelector:   cfg.PrometheusCR.ScrapeConfigNamespaceSelector,
+				ScrapeClasses:                   cfg.PrometheusCR.ScrapeClasses,
 				ServiceDiscoveryRole:            &serviceDiscoveryRole,
 			},
-			EvaluationInterval: monitoringv1.Duration("30s"),
+			EvaluationInterval: monitoringv1.Duration(cfg.PrometheusCR.EvaluationInterval.String()),
 		},
 	}
 
@@ -1260,8 +1518,9 @@ func getTestPrometheusCRWatcher(
 	store := assets.NewStoreBuilder(k8sClient.CoreV1(), k8sClient.CoreV1())
 	promRegisterer := prometheusgoclient.NewRegistry()
 	operatorMetrics := operator.NewMetrics(promRegisterer)
-	recorderFactory := operator.NewEventRecorderFactory(false)
-	eventRecorder := recorderFactory(k8sClient, "target-allocator")
+	eventRecorderFactoryFactory := operator.NewEventRecorderFactory(false)
+	eventRecorderFactory := eventRecorderFactoryFactory(k8sClient, "target-allocator")
+	eventRecorder := eventRecorderFactory(prom)
 
 	source := fcache.NewFakeControllerSource()
 	source.Add(&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test"}})

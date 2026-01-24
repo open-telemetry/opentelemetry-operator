@@ -12,7 +12,7 @@ allowHostPorts: true
 allowHostDirVolumePlugin: false
 allowHostIPC: false
 allowHostNetwork: true
-allowHostPID: false
+allowHostPID: true
 allowPrivilegedContainer: false
 readOnlyRootFilesystem: false
 ---

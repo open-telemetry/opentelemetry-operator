@@ -511,7 +511,7 @@ func TestDaemonSetAdditionalContainer(t *testing.T) {
 	assert.Equal(t, "8888", d.Spec.Template.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", d.Spec.Template.Annotations["prometheus.io/path"])
 	assert.Len(t, d.Spec.Template.Spec.Containers, 2)
-	assert.Equal(t, v1.Container{Name: "test"}, d.Spec.Template.Spec.Containers[0])
+	assert.Equal(t, v1.Container{Name: "test"}, d.Spec.Template.Spec.Containers[1])
 }
 
 func TestDaemonSetDefaultUpdateStrategy(t *testing.T) {
@@ -698,4 +698,51 @@ func TestDaemonSetTerminationGracePeriodSeconds(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
 	assert.Equal(t, gracePeriodSec, *d2.Spec.Template.Spec.TerminationGracePeriodSeconds)
+}
+
+func TestDaemonSetHostPIDCanBeSet(t *testing.T) {
+
+	// Test the case where hostPID is not set, should default to false
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol1,
+		Log:     testLogger,
+	}
+
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
+	assert.False(t, d1.Spec.Template.Spec.HostPID)
+
+	// Test the case where hostPID is set to true
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-terminationGracePeriodSeconds",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				HostPID: true,
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		Config:  cfg,
+		OtelCol: otelcol2,
+		Log:     testLogger,
+	}
+
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
+	assert.NotNil(t, d2.Spec.Template.Spec.HostPID)
+	assert.True(t, d2.Spec.Template.Spec.HostPID)
 }

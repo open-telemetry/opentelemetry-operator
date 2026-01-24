@@ -17,11 +17,8 @@ const (
 	nodejsInstrMountPath    = "/otel-auto-instrumentation-nodejs"
 )
 
-func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
+func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, container *corev1.Container, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
 	volume := instrVolume(nodeJSSpec.VolumeClaimTemplate, nodejsVolumeName, nodeJSSpec.VolumeSizeLimit)
-
-	// caller checks if there is at least one container.
-	container := &pod.Spec.Containers[index]
 
 	err := validateContainerEnv(container.Env, envNodeOptions)
 	if err != nil {
@@ -30,16 +27,6 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int, inst
 
 	// inject NodeJS instrumentation spec env vars.
 	container.Env = appendIfNotSet(container.Env, nodeJSSpec.Env...)
-
-	idx := getIndexOfEnv(container.Env, envNodeOptions)
-	if idx == -1 {
-		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envNodeOptions,
-			Value: nodeRequireArgument,
-		})
-	} else if idx > -1 {
-		container.Env[idx].Value = container.Env[idx].Value + nodeRequireArgument
-	}
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      volume.Name,
@@ -62,4 +49,29 @@ func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, index int, inst
 		})
 	}
 	return pod, nil
+}
+
+func getDefaultNodeJSEnvVars(container *corev1.Container) []corev1.EnvVar {
+	idx := getIndexOfEnv(container.Env, envNodeOptions)
+	if idx == -1 {
+		return []corev1.EnvVar{
+			{
+				Name:  envNodeOptions,
+				Value: nodeRequireArgument,
+			},
+		}
+	} else if idx > -1 {
+		// Don't modify NODE_OPTIONS if it uses ValueFrom
+		if container.Env[idx].ValueFrom != nil {
+			return []corev1.EnvVar{}
+		}
+		// NODE_OPTIONS is set, append the required argument
+		return []corev1.EnvVar{
+			{
+				Name:  envNodeOptions,
+				Value: container.Env[idx].Value + nodeRequireArgument,
+			},
+		}
+	}
+	return []corev1.EnvVar{}
 }

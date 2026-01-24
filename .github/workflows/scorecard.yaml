@@ -21,21 +21,21 @@ jobs:
       matrix:
         kube-version:
           - "1.25"
-          - "1.33"
+          - "1.35"
 
     steps:
 
       - name: Set up Go
-        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
         id: setup-go
         with:
-          go-version: "~1.25.4"
+          go-version: "~1.25.6"
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - name: Cache tools
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: bin
           key: tools-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}-${{ steps.setup-go.outputs.go-version }}

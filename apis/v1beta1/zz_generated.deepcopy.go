@@ -829,6 +829,13 @@ func (in *TargetAllocatorPrometheusCR) DeepCopyInto(out *TargetAllocatorPromethe
 		*out = new(metav1.Duration)
 		**out = **in
 	}
+	if in.ScrapeClasses != nil {
+		in, out := &in.ScrapeClasses, &out.ScrapeClasses
+		*out = make([]AnyConfig, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.PodMonitorSelector != nil {
 		in, out := &in.PodMonitorSelector, &out.PodMonitorSelector
 		*out = new(metav1.LabelSelector)

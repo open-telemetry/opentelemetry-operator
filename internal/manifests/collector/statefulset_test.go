@@ -691,7 +691,7 @@ func TestStatefulSetAdditionalContainers(t *testing.T) {
 	assert.Equal(t, "8888", s.Spec.Template.Annotations["prometheus.io/port"])
 	assert.Equal(t, "/metrics", s.Spec.Template.Annotations["prometheus.io/path"])
 	assert.Len(t, s.Spec.Template.Spec.Containers, 2)
-	assert.Equal(t, corev1.Container{Name: "test"}, s.Spec.Template.Spec.Containers[0])
+	assert.Equal(t, corev1.Container{Name: "test"}, s.Spec.Template.Spec.Containers[1])
 }
 
 func TestStatefulSetShareProcessNamespace(t *testing.T) {
@@ -868,4 +868,51 @@ func TestStatefulSetServiceName(t *testing.T) {
 			assert.Equal(t, test.expectedServiceName, ss.Spec.ServiceName)
 		})
 	}
+}
+
+func TestStatefulSetHostPIDCanBeSet(t *testing.T) {
+
+	// Test default
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     testLogger,
+	}
+
+	d1, err := StatefulSet(params1)
+	require.NoError(t, err)
+
+	assert.False(t, d1.Spec.Template.Spec.HostPID)
+
+	// Test HostPID=true
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-HostPID",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				HostPID: true,
+			},
+		},
+	}
+
+	cfg = config.New()
+
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     testLogger,
+	}
+
+	d2, err := StatefulSet(params2)
+	require.NoError(t, err)
+	assert.True(t, d2.Spec.Template.Spec.HostPID)
 }

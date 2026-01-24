@@ -48,12 +48,8 @@ const (
 	6) Inject mounting of volumes / files into appropriate directories in application container
 */
 
-func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod corev1.Pod, useLabelsForResourceAttributes bool, index int, otlpEndpoint string, resourceMap map[string]string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
-
+func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod corev1.Pod, useLabelsForResourceAttributes bool, container *corev1.Container, otlpEndpoint string, resourceMap map[string]string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
 	volume := instrVolume(apacheSpec.VolumeClaimTemplate, apacheAgentVolume, apacheSpec.VolumeSizeLimit)
-
-	// caller checks if there is at least one container
-	container := &pod.Spec.Containers[index]
 
 	// inject env vars
 	container.Env = appendIfNotSet(container.Env, apacheSpec.Env...)
@@ -72,25 +68,23 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 
 		apacheConfDir := getApacheConfDir(apacheSpec.ConfigPath)
 
-		cloneContainer := container.DeepCopy()
-		cloneContainer.Name = apacheAgentCloneContainerName
-		cloneContainer.Command = []string{"/bin/sh", "-c"}
-		cloneContainer.Args = []string{"cp -r " + apacheConfDir + "/* " + apacheAgentConfDirFull}
-		cloneContainer.VolumeMounts = append(cloneContainer.VolumeMounts, corev1.VolumeMount{
-			Name:      apacheAgentConfigVolume,
-			MountPath: apacheAgentConfDirFull,
-		})
-		// remove resource requirements since those are then reserved for the lifetime of a pod
-		// and we definitely do not need them for the init container for cp command
-		cloneContainer.Resources = apacheSpec.Resources
-		// remove livenessProbe, readinessProbe, and startupProbe, since not supported on init containers
-		cloneContainer.LivenessProbe = nil
-		cloneContainer.ReadinessProbe = nil
-		cloneContainer.StartupProbe = nil
-		// remove lifecycle, since not supported on init containers
-		cloneContainer.Lifecycle = nil
+		cloneContainer := corev1.Container{
+			Name:    apacheAgentCloneContainerName,
+			Image:   container.Image,
+			Command: []string{"/bin/sh", "-c"},
+			Args:    []string{"cp -r " + apacheConfDir + "/* " + apacheAgentConfDirFull},
+			Env:     container.Env,
+			EnvFrom: container.EnvFrom,
+			VolumeMounts: append(container.VolumeMounts, corev1.VolumeMount{
+				Name:      apacheAgentConfigVolume,
+				MountPath: apacheAgentConfDirFull,
+			}),
+			Resources:       apacheSpec.Resources,
+			SecurityContext: container.SecurityContext,
+			ImagePullPolicy: container.ImagePullPolicy,
+		}
 
-		pod.Spec.InitContainers = append(pod.Spec.InitContainers, *cloneContainer)
+		pod.Spec.InitContainers = append(pod.Spec.InitContainers, cloneContainer)
 
 		// drop volume mount with volume-provided Apache config from original container
 		// since it could over-write configuration provided by the injection
@@ -143,7 +137,7 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 			Env: []corev1.EnvVar{
 				{
 					Name:  apacheAttributesEnvVar,
-					Value: getApacheOtelConfig(pod, useLabelsForResourceAttributes, apacheSpec, index, otlpEndpoint, resourceMap),
+					Value: getApacheOtelConfig(pod, useLabelsForResourceAttributes, apacheSpec, container, otlpEndpoint, resourceMap),
 				},
 				{Name: apacheServiceInstanceIdEnvVar,
 					ValueFrom: &corev1.EnvVarSource{
@@ -183,7 +177,7 @@ func isApacheInitContainerMissing(pod corev1.Pod, containerName string) bool {
 
 // Calculate Apache HTTPD agent configuration file based on attributes provided by the injection rules
 // and by the pod values.
-func getApacheOtelConfig(pod corev1.Pod, useLabelsForResourceAttributes bool, apacheSpec v1alpha1.ApacheHttpd, index int, otelEndpoint string, resourceMap map[string]string) string {
+func getApacheOtelConfig(pod corev1.Pod, useLabelsForResourceAttributes bool, apacheSpec v1alpha1.ApacheHttpd, container *corev1.Container, otelEndpoint string, resourceMap map[string]string) string {
 	template := `
 #Load the Otel Webserver SDK
 LoadFile %[1]s/sdk_lib/lib/libopentelemetry_common.so
@@ -204,7 +198,7 @@ LoadModule otel_apache_module %[1]s/WebServerModule/Apache/libmod_apache_otel%[2
 	if otelEndpoint == "" {
 		otelEndpoint = "http://localhost:4317/"
 	}
-	serviceName := chooseServiceName(pod, useLabelsForResourceAttributes, resourceMap, index)
+	serviceName := chooseServiceName(pod, useLabelsForResourceAttributes, resourceMap, container)
 	serviceNamespace := pod.GetNamespace()
 	if len(serviceNamespace) == 0 {
 		serviceNamespace = resourceMap[string(semconv.K8SNamespaceNameKey)]
