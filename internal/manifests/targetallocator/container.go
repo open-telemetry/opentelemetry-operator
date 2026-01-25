@@ -102,21 +102,29 @@ func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAl
 		args = append(args, fmt.Sprintf("--%s=%s", k, v))
 	}
 	sort.Strings(args)
-	readinessProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/readyz",
-				Port: intstr.FromInt(8080),
+
+	readinessProbe := instance.Spec.ReadinessProbe
+	if readinessProbe == nil {
+		readinessProbe = &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/readyz",
+					Port: intstr.FromInt(8080),
+				},
 			},
-		},
+		}
 	}
-	livenessProbe := &corev1.Probe{
-		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path: "/livez",
-				Port: intstr.FromInt(8080),
+
+	livenessProbe := instance.Spec.LivenessProbe
+	if livenessProbe == nil {
+		livenessProbe = &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path: "/livez",
+					Port: intstr.FromInt(8080),
+				},
 			},
-		},
+		}
 	}
 
 	if cfg.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
