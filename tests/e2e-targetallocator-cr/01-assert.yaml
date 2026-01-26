@@ -41,10 +41,11 @@ spec:
           livenessProbe:
             failureThreshold: 3
             httpGet:
-              path: /livez
+              path: /custom-livez
               port: 8080
               scheme: HTTP
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            periodSeconds: 20
             successThreshold: 1
             timeoutSeconds: 1
           name: ta-container
@@ -55,10 +56,11 @@ spec:
           readinessProbe:
             failureThreshold: 3
             httpGet:
-              path: /readyz
+              path: /custom-readyz
               port: 8080
               scheme: HTTP
-            periodSeconds: 10
+            initialDelaySeconds: 10
+            periodSeconds: 15
             successThreshold: 1
             timeoutSeconds: 1
           resources: {}
