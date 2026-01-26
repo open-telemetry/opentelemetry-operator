@@ -315,3 +315,121 @@ func TestInstrWithoutContainers(t *testing.T) {
 		})
 	}
 }
+
+func TestEnsureContainer(t *testing.T) {
+	tests := []struct {
+		name               string
+		inst               instrumentationWithContainers
+		pod                corev1.Pod
+		expectedContainers []string
+	}{
+		{
+			name: "empty containers list",
+			inst: instrumentationWithContainers{Containers: []string{}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app"}},
+				},
+			},
+			expectedContainers: []string{"app"},
+		},
+		{
+			name: "already has containers",
+			inst: instrumentationWithContainers{Containers: []string{"my-container"}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app"}},
+				},
+			},
+			expectedContainers: []string{"my-container"},
+		},
+		{
+			name: "multiple pod containers, empty list",
+			inst: instrumentationWithContainers{Containers: []string{}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app1"}, {Name: "app2"}},
+				},
+			},
+			expectedContainers: []string{"app1"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ensureContainer(&test.inst, test.pod)
+			assert.Equal(t, test.expectedContainers, test.inst.Containers)
+		})
+	}
+}
+
+func TestContainersToInstrument(t *testing.T) {
+	tests := []struct {
+		name          string
+		inst          instrumentationWithContainers
+		pod           corev1.Pod
+		expectedNames []string
+	}{
+		{
+			name: "single container, empty inst",
+			inst: instrumentationWithContainers{Containers: []string{}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app"}},
+				},
+			},
+			expectedNames: []string{"app"},
+		},
+		{
+			name: "single container, matching name",
+			inst: instrumentationWithContainers{Containers: []string{"app"}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app"}},
+				},
+			},
+			expectedNames: []string{"app"},
+		},
+		{
+			name: "multiple containers, one match",
+			inst: instrumentationWithContainers{Containers: []string{"app2"}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app1"}, {Name: "app2"}},
+				},
+			},
+			expectedNames: []string{"app2"},
+		},
+		{
+			name: "multiple containers, multiple matches",
+			inst: instrumentationWithContainers{Containers: []string{"app1", "app2"}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app1"}, {Name: "app2"}, {Name: "app3"}},
+				},
+			},
+			expectedNames: []string{"app1", "app2"},
+		},
+		{
+			name: "no matching container",
+			inst: instrumentationWithContainers{Containers: []string{"nonexistent"}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app"}},
+				},
+			},
+			expectedNames: []string{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := containersToInstrument(&test.inst, &test.pod)
+			names := make([]string, len(result))
+			for i, c := range result {
+				names[i] = c.Name
+			}
+			assert.Equal(t, test.expectedNames, names)
+		})
+	}
+}

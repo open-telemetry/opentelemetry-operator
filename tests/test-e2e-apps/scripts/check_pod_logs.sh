@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # This script repeatedly checks pod logs from a specific container until all specified strings are found
 # simultaneously or a timeout occurs.
 

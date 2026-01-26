@@ -161,7 +161,37 @@ MIN_OPENSHIFT_VERSION ?= 4.12
 ## consistent with Linux.
 SED ?= $(shell which gsed 2>/dev/null || which sed)
 
-.PHONY: ensure-update-is-noop
+.DEFAULT_GOAL := help
+# Show this help message
+.PHONY: help
+help: 
+	@echo -e "\033[1;3;34mOpenTelemetry Operator.\033[0m\n"
+	@echo 'Usage: make [target]'
+	@echo ''
+	@echo 'Targets:'
+	@awk '\
+	BEGIN { desc="" } \
+	/^##@/ { \
+		printf "\n\033[1m%s\033[0m\n", substr($$0, 5); \
+		next \
+	} \
+	/^# / { \
+		desc = substr($$0, 3); \
+		next \
+	} \
+	/^[a-zA-Z_0-9\/-]+:/ { \
+		target = $$1; \
+		sub(/:.*/, "", target); \
+		if (!seen[target]++) { \
+			printf "  \033[36m%-40s\033[0m %s\n", target, (desc ? desc : "(no description)"); \
+		} \
+		desc = ""; \
+	} \
+	' $(MAKEFILE_LIST)
+
+##@ PR
+# Verify generated code, manifests, bundles, and API docs are up to date
+.PHONY: ensure-update-is-noop 
 ensure-update-is-noop: VERSION=$(OPERATOR_VERSION)
 ensure-update-is-noop: DOCKER_USER=open-telemetry
 ensure-update-is-noop: set-image-controller update
@@ -169,13 +199,16 @@ ensure-update-is-noop: set-image-controller update
 	@git diff -s --exit-code bundle config || (echo "Build failed: the bundle, config files has been changed but the generated bundle, config files aren't up to date. Run 'make bundle' and update your PR." && git diff && exit 1)
 	@git diff -s --exit-code docs/api || (echo "Build failed: a model has been changed but the generated docs/api/*.md files aren't up to date. Run 'make api-docs' and update your PR." && git diff && exit 1)
 
+# Build manager binary
 .PHONY: all
 all: manager targetallocator operator-opamp-bridge
 
-# No lint here, as CI runs it separately
+##@ Core Build
+# Run full CI pipeline (generate, vet, test, and validation). No lint here, as CI runs it separately
 .PHONY: ci
 ci: generate fmt vet test ensure-update-is-noop
 
+# Update manifests
 .PHONY: update
 update: generate manifests bundle api-docs reset
 
@@ -184,6 +217,7 @@ update: generate manifests bundle api-docs reset
 manager: generate
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o bin/manager_${ARCH} -trimpath -ldflags "${COMMON_LDFLAGS} ${OPERATOR_LDFLAGS}" main.go
 
+# Build must-gather diagnostic utility
 .PHONY: must-gather
 must-gather:
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) go build -o bin/must-gather_${ARCH} -trimpath -ldflags "${COMMON_LDFLAGS}" ./cmd/gather/main.go
@@ -213,24 +247,29 @@ install: manifests kustomize
 uninstall: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
+##@ Operator Configuration
 # Set the controller image parameters
 .PHONY: set-image-controller
 set-image-controller: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 
+# Add a custom argument to the operator deployment
 .PHONY: add-operator-arg
 add-operator-arg: PATCH = [{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"$(OPERATOR_ARG)"}]
 add-operator-arg: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit add patch --kind Deployment --patch '$(PATCH)'
 
+# Set the target allocator image used by the operator
 .PHONY: add-image-targetallocator
 add-image-targetallocator:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--target-allocator-image=$(TARGETALLOCATOR_IMG)
 
+# Set the collector image used by the operator
 .PHONY: add-image-collector
 add-image-collector:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--collector-image=$(COLLECTOR_IMG)
 
+# Set auto-instrumentation images for all supported languages
 .PHONY: add-image-instrumentation
 add-instrumentation-images:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-java-image=$(INSTRUMENTATION_JAVA_IMG)
@@ -239,18 +278,22 @@ add-instrumentation-images:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-dotnet-image=$(INSTRUMENTATION_DOTNET_IMG)
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--auto-instrumentation-apache-httpd-image=$(INSTRUMENTATION_APACHE_HTTPD_IMG)
 
+# Enable Go auto-instrumentation support in the operator
 .PHONY: add-instrumentation-params
 add-instrumentation-params:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-go-instrumentation=true
 
+# Enable multi-instrumentation support
 .PHONY: add-multi-instrumentation-params
 add-multi-instrumentation-params:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--enable-multi-instrumentation
 
+# Set the OpAMP bridge image used by the operator
 .PHONY: add-image-opampbridge
 add-image-opampbridge:
 	@$(MAKE) add-operator-arg OPERATOR_ARG=--operator-opamp-bridge-image=$(OPERATOROPAMPBRIDGE_IMG)
 
+# Add extra RBAC permissions to operator for e2e tests
 .PHONY: add-rbac-permissions-to-operator
 add-rbac-permissions-to-operator: manifests kustomize
 	# Kustomize only allows patches in the folder where the kustomization is located
@@ -273,6 +316,7 @@ add-rbac-permissions-to-operator: manifests kustomize
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/replicationcontrollers.yaml
 	cd config/rbac && $(KUSTOMIZE) edit add patch --kind ClusterRole --name manager-role --path extra-permissions-operator/resourcequotas.yaml
 
+##@ Deploy
 # Deploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: deploy
 deploy: set-image-controller
@@ -302,9 +346,11 @@ manifests: controller-gen
 test: envtest gotestsum
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(KUBE_VERSION) -p path)" $(GOTESTSUM) -- ${GOTEST_OPTS} ./...
 
+# Run precommit checks (format, vet, lint, test, validation)
 .PHONY: precommit
 precommit: fmt vet lint test ensure-update-is-noop
 
+##@ Lint and Format
 # Run formatters
 .PHONY: fmt
 fmt: golangci-lint
@@ -326,11 +372,13 @@ lint: golangci-lint
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
+##@ E2E
 # end-to-tests
 .PHONY: e2e
 e2e: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e --report-name e2e
 
+# End-to-end tests for sidecar functionality
 .PHONY: e2e-sidecar
 e2e-sidecar: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-sidecar --report-name e2e-sidecar $(CHAINSAW_SELECTOR)
@@ -355,6 +403,7 @@ e2e-instrumentation-default: e2e-instrumentation
 e2e-instrumentation: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-instrumentation --report-name e2e-instrumentation
 
+# Log operator pod information for debugging
 .PHONY: e2e-log-operator
 e2e-log-operator:
 	kubectl get pod -n opentelemetry-operator-system | grep "opentelemetry-operator" | awk '{print $$1}' | xargs -I {} kubectl logs -n opentelemetry-operator-system {} manager
@@ -395,6 +444,7 @@ e2e-targetallocator: chainsaw
 e2e-targetallocator-cr: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-targetallocator-cr --report-name e2e-targetallocator-cr
 
+# Add cert-manager permissions for mTLS testing
 .PHONY: add-certmanager-permissions
 add-certmanager-permissions: 
 	# Kustomize only allows patches in the folder where the kustomization is located
@@ -424,17 +474,19 @@ e2e-upgrade: undeploy chainsaw
 e2e-crd-validations: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-crd-validations
 
+# Prepare environment for e2e tests
 .PHONY: prepare-e2e
 prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy
 	@mkdir -p ./.testresults/e2e
 
+# Run operator-sdk scorecard tests for bundles
 .PHONY: scorecard-tests
 scorecard-tests: operator-sdk
 	$(OPERATOR_SDK) scorecard -w=5m bundle/community || (echo "scorecard test for community bundle failed" && exit 1)
 	$(OPERATOR_SDK) scorecard -w=5m bundle/openshift || (echo "scorecard test for openshift bundle failed" && exit 1)
 
-
-# Build the container image, used only for local dev purposes
+##@ Container
+# Build the container image, used only for local dev purposes.
 # buildx is used to ensure same results for arm based systems (m1/2 chips)
 .PHONY: container
 container: GOOS = linux
@@ -446,78 +498,95 @@ container: manager
 container-push:
 	docker push ${IMG}
 
+# Push target allocator container image
 .PHONY: container-target-allocator-push
 container-target-allocator-push:
 	docker push ${TARGETALLOCATOR_IMG}
 
+# Push operator OpAMP bridge container image
 .PHONY: container-operator-opamp-bridge-push
 container-operator-opamp-bridge-push:
 	docker push ${OPERATOROPAMPBRIDGE_IMG}
 
+# Build target allocator container image
 .PHONY: container-target-allocator
 container-target-allocator: GOOS = linux
 container-target-allocator: targetallocator
 	docker build --load -t ${TARGETALLOCATOR_IMG} cmd/otel-allocator
 
+# Build operator OpAMP bridge container image
 .PHONY: container-operator-opamp-bridge
 container-operator-opamp-bridge: GOOS = linux
 container-operator-opamp-bridge: operator-opamp-bridge
 	docker build --load -t ${OPERATOROPAMPBRIDGE_IMG} cmd/operator-opamp-bridge
 
+# Build bridge test server container image for e2e tests
 .PHONY: container-bridge-test-server
 container-bridge-test-server: GOOS = linux
 container-bridge-test-server:
 	docker build --load -t ${BRIDGETESTSERVER_IMG} tests/test-e2e-apps/bridge-server
 
+# Build must-gather container image
 .PHONY: container-must-gather
 container-must-gather: GOOS = linux
 container-must-gather: must-gather
 	docker build -f cmd/gather/Dockerfile --load -t ${MUSTGATHER_IMG} .
 
+# Push must-gather container image
 .PHONY: container-must-gather-push
 container-must-gather-push:
 	docker push ${MUSTGATHER_IMG}
 
+# Build Java auto-instrumentation container image
 .PHONY: container-instrumentation-java
 container-instrumentation-java:
 	docker build --load -t ${INSTRUMENTATION_JAVA_IMG} autoinstrumentation/java \
 		--build-arg version=${INSTRUMENTATION_JAVA_VERSION}
 
+# Build Node.js auto-instrumentation container image
 .PHONY: container-instrumentation-nodejs
 container-instrumentation-nodejs:
 	docker build --load -t ${INSTRUMENTATION_NODEJS_IMG} autoinstrumentation/nodejs \
 		--build-arg version=${INSTRUMENTATION_NODEJS_VERSION}
 
+# Build Python auto-instrumentation container image
 .PHONY: container-instrumentation-python
 container-instrumentation-python:
 	docker build --load -t ${INSTRUMENTATION_PYTHON_IMG} autoinstrumentation/python \
 		--build-arg version=${INSTRUMENTATION_PYTHON_VERSION}
 
+# Build .NET auto-instrumentation container image
 .PHONY: container-instrumentation-dotnet
 container-instrumentation-dotnet:
 	docker build --load -t ${INSTRUMENTATION_DOTNET_IMG} autoinstrumentation/dotnet \
 		--build-arg version=${INSTRUMENTATION_DOTNET_VERSION}
 
+# Build Apache HTTPD auto-instrumentation container image
 .PHONY: container-instrumentation-apache-httpd
 container-instrumentation-apache-httpd:
 	docker build --load -t ${INSTRUMENTATION_APACHE_HTTPD_IMG} autoinstrumentation/apache-httpd \
 		--build-arg version=${INSTRUMENTATION_APACHE_HTTPD_VERSION}
 
+# Build all auto-instrumentation container images
 .PHONY: container-instrumentation-all
 container-instrumentation-all: container-instrumentation-java container-instrumentation-nodejs container-instrumentation-python container-instrumentation-dotnet container-instrumentation-apache-httpd
 
+##@ Kind Cluster
+# Start kind cluster for local development
 .PHONY: start-kind
 start-kind: kind
 ifeq (true,$(START_KIND_CLUSTER))
 	$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --config $(KIND_CONFIG) || true
 endif
 
+# Stop kind cluster
 .PHONY: stop-kind
 stop-kind: kind
 ifeq (true,$(START_KIND_CLUSTER))
 	$(KIND) delete cluster --name $(KIND_CLUSTER_NAME)
 endif
 
+# Install metrics server in the cluster
 .PHONY: install-metrics-server
 install-metrics-server:
 	./hack/install-metrics-server.sh
@@ -527,6 +596,7 @@ install-metrics-server:
 install-targetallocator-prometheus-crds:
 	./hack/install-targetallocator-prometheus-crds.sh
 
+# Load all container images into kind cluster
 .PHONY: load-image-all
 load-image-all:
 ifeq ($(IMAGE_ARCHIVE),)
@@ -536,6 +606,7 @@ else
 endif
 
 
+# Load operator image into kind cluster
 .PHONY: load-image-operator
 load-image-operator: container kind
 ifeq (true,$(START_KIND_CLUSTER))
@@ -544,6 +615,7 @@ else
 	$(MAKE) container-push
 endif
 
+# Load target allocator image into kind cluster
 .PHONY: load-image-target-allocator
 load-image-target-allocator: container-target-allocator kind
 ifeq (true,$(START_KIND_CLUSTER))
@@ -552,14 +624,17 @@ else
 	$(MAKE) container-target-allocator-push
 endif
 
+# Load bridge test server image into kind cluster
 .PHONY: load-image-bridge-test-server
 load-image-bridge-test-server: container-bridge-test-server kind
 	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${BRIDGETESTSERVER_IMG}
 
+# Load operator OpAMP bridge image into kind cluster
 .PHONY: load-image-operator-opamp-bridge
 load-image-operator-opamp-bridge: container-operator-opamp-bridge kind
 	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${OPERATOROPAMPBRIDGE_IMG}
 
+# Load all instrumentation images into kind cluster
 .PHONY: load-images-instrumentation
 load-images-instrumentation: container-instrumentation-all kind
 	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${INSTRUMENTATION_JAVA_IMG}
@@ -568,14 +643,17 @@ load-images-instrumentation: container-instrumentation-all kind
 	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${INSTRUMENTATION_DOTNET_IMG}
 	$(KIND) load --name $(KIND_CLUSTER_NAME) docker-image ${INSTRUMENTATION_APACHE_HTTPD_IMG}
 
+# Install cert-manager in the cluster
 .PHONY: cert-manager
 cert-manager: cmctl
 	# Consider using cmctl to install the cert-manager once install command is not experimental
 	kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v${CERTMANAGER_VERSION}/cert-manager.yaml
 	$(CMCTL) check api --wait=5m
 
+##@ Tools
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 CMCTL = $(shell pwd)/bin/cmctl
+# Download cmctl locally if necessary
 .PHONY: cmctl
 cmctl:
 	@{ \
@@ -613,39 +691,48 @@ CHAINSAW_VERSION ?= v0.2.14
 # renovate: datasource=go depName=gotest.tools/gotestsum
 GOTESTSUM_VERSION ?= v1.13.0
 
+# Install all development tools
 .PHONY: install-tools
 install-tools: kustomize golangci-lint kind controller-gen envtest crdoc operator-sdk chainsaw gotestsum cmctl
 
+# Download kustomize locally if necessary
 .PHONY: kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
 
+# Download golangci-lint locally if necessary
 .PHONY: golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 
+# Download kind locally if necessary
 .PHONY: kind
 kind: ## Download kind locally if necessary.
 	$(call go-install-tool,$(KIND),sigs.k8s.io/kind,$(KIND_VERSION))
 
+# Download controller-gen locally if necessary
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_TOOLS_VERSION))
 
+# Download envtest-setup locally if necessary
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,latest)
 
 CRDOC = $(shell pwd)/bin/crdoc
+# Download crdoc locally if necessary
 .PHONY: crdoc
 crdoc: ## Download crdoc locally if necessary.
 	$(call go-install-tool,$(CRDOC),fybrik.io/crdoc,v0.5.2)
 
+# Find or download chainsaw
 .PHONY: chainsaw
 chainsaw: ## Find or download chainsaw
 	$(call go-install-tool,$(CHAINSAW),github.com/kyverno/chainsaw,$(CHAINSAW_VERSION))
 
+# Find or download gotestsum
 .PHONY: gotestsum
 gotestsum: ## Find or download gotestsum
 	$(call go-install-tool,$(GOTESTSUM),gotest.tools/gotestsum,$(GOTESTSUM_VERSION))
@@ -668,6 +755,7 @@ GOBIN="$$DIR" go install "$$PKG@$$VER"
 endef
 
 OPERATOR_SDK = $(shell pwd)/bin/operator-sdk
+# Download operator-sdk locally if necessary
 .PHONY: operator-sdk
 operator-sdk: $(LOCALBIN)
 	@{ \
@@ -680,6 +768,7 @@ operator-sdk: $(LOCALBIN)
 	chmod +x $(OPERATOR_SDK) ;\
 	}
 
+##@ Bundle
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: generate-bundle
 generate-bundle: kustomize operator-sdk manifests set-image-controller api-docs
@@ -697,12 +786,14 @@ generate-bundle: kustomize operator-sdk manifests set-image-controller api-docs
 	$(OPERATOR_SDK) bundle validate $(BUNDLE_DIR)
 	./hack/ignore-createdAt-bundle.sh
 
+# Generate bundle for both community and openshift variants
 .PHONY: bundle
 bundle:
 	BUNDLE_VARIANT=community VERSION=$(VERSION) $(MAKE) generate-bundle
 	BUNDLE_VARIANT=openshift VERSION=$(VERSION) $(MAKE) generate-bundle
 
 
+# Reset bundle configuration to defaults
 .PHONY: reset
 reset: kustomize operator-sdk manifests
 	$(MAKE) VERSION=${OPERATOR_VERSION} set-image-controller
@@ -729,10 +820,13 @@ reset: kustomize operator-sdk manifests
 bundle-build:
 	docker build --load -f ./bundle/$(BUNDLE_VARIANT)/bundle.Dockerfile -t $(BUNDLE_IMG) ./bundle/$(BUNDLE_VARIANT)
 
+# Push bundle image to registry
 .PHONY: bundle-push
 bundle-push:
 	docker push $(BUNDLE_IMG)
 
+##@ Documentation
+# Generate API documentation from CRDs
 .PHONY: api-docs
 api-docs: crdoc kustomize
 	@{ \
@@ -750,29 +844,35 @@ api-docs: crdoc kustomize
 	done;\
 	}
 
-
+##@ Changelog
+# Install chloggen tool
 .PHONY: chlog-install
 chlog-install: $(CHLOGGEN)
 $(CHLOGGEN): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install go.opentelemetry.io/build-tools/chloggen@v0.23.1
 
 FILENAME?=$(shell git branch --show-current)
+# Create new changelog entry
 .PHONY: chlog-new
 chlog-new: chlog-install
 	$(CHLOGGEN) new --filename $(FILENAME)
 
+# Validate changelog entries
 .PHONY: chlog-validate
 chlog-validate: chlog-install
 	$(CHLOGGEN) validate
 
+# Preview changelog update
 .PHONY: chlog-preview
 chlog-preview: chlog-install
 	$(CHLOGGEN) update --dry
 
+# Update changelog for release
 .PHONY: chlog-update
 chlog-update: chlog-install chlog-insert-components
 	$(CHLOGGEN) update --version $(VERSION)
 
+# Insert component versions into changelog
 .PHONY: chlog-insert-components
 chlog-insert-components:
 	@echo "### Components" > components.md
@@ -790,6 +890,8 @@ chlog-insert-components:
 	@$(SED_INPLACE) '/<!-- next version -->/G' CHANGELOG.md
 	@rm components.md
 
+##@ Catalog
+# Download opm locally if necessary
 .PHONY: opm
 OPM = ./bin/opm
 opm: ## Download opm locally if necessary.
@@ -799,7 +901,7 @@ ifeq (,$(shell which opm 2>/dev/null))
 	set -e ;\
 	mkdir -p $(dir $(OPM)) ;\
 	OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
-	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.28.0/$${OS}-$${ARCH}-opm ;\
+	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.28.0/${OS}-${ARCH}-opm ;\
 	chmod +x $(OPM) ;\
 	}
 else
@@ -820,8 +922,8 @@ FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
 endif
 
 # Build a catalog image by adding bundle images to an empty catalog using the operator package manager tool, 'opm'.
-# This recipe invokes 'opm' in 'semver' bundle add mode. For more information on add modes, see:
-# https://github.com/operator-framework/community-operators/blob/7f1438c/docs/packaging-operator.md#updating-your-existing-operator
+## This recipe invokes 'opm' in 'semver' bundle add mode. For more information on add modes, see:
+## https://github.com/operator-framework/community-operators/blob/7f1438c/docs/packaging-operator.md#updating-your-existing-operator
 .PHONY: catalog-build
 catalog-build: opm bundle-build bundle-push ## Build a catalog image.
 	$(OPM) index add --container-tool docker --mode semver --tag $(CATALOG_IMG) --bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
@@ -831,6 +933,8 @@ catalog-build: opm bundle-build bundle-push ## Build a catalog image.
 catalog-push: ## Push a catalog image.
 	docker push $(CATALOG_IMG)
 
+##@ Release
+# Create container image archive with all images
 container-image-archive: IMAGE_LIST_FILE = images-$(VERSION).txt
 container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server container-instrumentation-all
 ifeq ($(IMAGE_ARCHIVE),)
@@ -848,6 +952,7 @@ endif
 	@echo "$(INSTRUMENTATION_APACHE_HTTPD_IMG)" >>$(IMAGE_LIST_FILE)
 	xargs -x -n 50 docker save -o "$(IMAGE_ARCHIVE)" <$(IMAGE_LIST_FILE)
 
+##@ Validation
 # Check markdown files for broken links using linkspector
 .PHONY: markdown-link-check
 markdown-link-check:

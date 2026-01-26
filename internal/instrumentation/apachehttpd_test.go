@@ -206,7 +206,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 		},
 		// === Test Removal of probes and lifecycle =============================
 		{
-			name:        "Probes removed on clone init container",
+			name:        "Init-container-incompatible fields not copied",
 			ApacheHttpd: v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
@@ -216,6 +216,10 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							StartupProbe:   &corev1.Probe{},
 							LivenessProbe:  &corev1.Probe{},
 							Lifecycle:      &corev1.Lifecycle{},
+							ResizePolicy: []corev1.ContainerResizePolicy{
+								{ResourceName: corev1.ResourceCPU, RestartPolicy: corev1.NotRequired},
+								{ResourceName: corev1.ResourceMemory, RestartPolicy: corev1.NotRequired},
+							},
 						},
 					},
 				},
@@ -298,6 +302,10 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 							StartupProbe:   &corev1.Probe{},
 							LivenessProbe:  &corev1.Probe{},
 							Lifecycle:      &corev1.Lifecycle{},
+							ResizePolicy: []corev1.ContainerResizePolicy{
+								{ResourceName: corev1.ResourceCPU, RestartPolicy: corev1.NotRequired},
+								{ResourceName: corev1.ResourceMemory, RestartPolicy: corev1.NotRequired},
+							},
 						},
 					},
 				},
@@ -408,7 +416,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, false, 0, "http://otlp-endpoint:4317", resourceMap, v1alpha1.InstrumentationSpec{})
+			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, false, &test.pod.Spec.Containers[0], "http://otlp-endpoint:4317", resourceMap, v1alpha1.InstrumentationSpec{})
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -518,7 +526,7 @@ func TestInjectApacheHttpdagentUnknownNamespace(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, false, 0, "http://otlp-endpoint:4317", resourceMap, v1alpha1.InstrumentationSpec{})
+			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, false, &test.pod.Spec.Containers[0], "http://otlp-endpoint:4317", resourceMap, v1alpha1.InstrumentationSpec{})
 			assert.Equal(t, test.expected, pod)
 		})
 	}

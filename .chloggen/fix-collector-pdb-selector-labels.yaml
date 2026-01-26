@@ -2,18 +2,15 @@
 change_type: bug_fix
 
 # The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
-component: operator
+component: collector
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Fix operator ServiceMonitor not created on OpenShift
+note: Fix PodDisruptionBudget using all labels instead of selector labels, preventing PDB breakage during rollouts
 
 # One or more tracking issues related to the change
-issues: [4603]
+issues: [4623]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext: |
-  Two issues prevented the operator ServiceMonitor from being created on OpenShift:
-  1. The OpenShift kustomize patches were incorrectly overwriting operator args, removing flags like `--create-sm-operator-metrics=true`.
-  2. The prometheus-operator library `SchemeHTTPS` constant uses uppercase "HTTPS" which is rejected by ServiceMonitor CRD validation.
+subtext: Use stable selector labels instead of all CR labels to prevent PDB breakage when mutable labels change during rollouts.

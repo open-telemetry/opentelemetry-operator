@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 oc create serviceaccount e2e-test-metrics-reader -n $NAMESPACE
 oc adm policy add-cluster-role-to-user cluster-monitoring-view system:serviceaccount:$NAMESPACE:e2e-test-metrics-reader

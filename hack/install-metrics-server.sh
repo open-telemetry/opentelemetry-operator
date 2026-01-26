@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Install metrics-server on kind clusters for autoscale tests.
 # Note: This is not needed for minikube,

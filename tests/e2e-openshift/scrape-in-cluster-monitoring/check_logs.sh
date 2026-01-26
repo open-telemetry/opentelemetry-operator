@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # This script checks the OpenTelemetry collector pod for the presence of Metrics.
 
 # Define the label selector
@@ -23,7 +23,7 @@ FOUND5=false
 while ! $FOUND1 || ! $FOUND2 || ! $FOUND3 || ! $FOUND4 || ! $FOUND5; do
     # Get the list of pods with the specified label
     PODS=($(kubectl -n $NAMESPACE get pods -l $LABEL_SELECTOR -o jsonpath='{.items[*].metadata.name}'))
-    
+
     # Loop through each pod and search for the strings in the logs
     for POD in "${PODS[@]}"; do
         # Search for the first string

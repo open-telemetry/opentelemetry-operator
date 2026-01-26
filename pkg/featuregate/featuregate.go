@@ -5,6 +5,7 @@ package featuregate
 
 import (
 	"flag"
+	"fmt"
 
 	"go.opentelemetry.io/collector/featuregate"
 )
@@ -65,4 +66,25 @@ func Flags(reg *featuregate.Registry) *flag.FlagSet {
 	flagSet := new(flag.FlagSet)
 	reg.RegisterFlags(flagSet)
 	return flagSet
+}
+
+// ApplyFeatureGateOverrides applies feature gate configuration from a comma-separated string.
+// Format matches CLI flag: "gate1,gate2,-gate3" where - prefix disables the gate.
+// This is needed because feature gates are stored in GlobalRegistry(), not in Config struct.
+func ApplyFeatureGateOverrides(gates string) error {
+	if gates == "" {
+		return nil
+	}
+
+	// Create temporary FlagSet to apply feature gates
+	fs := flag.NewFlagSet("config-overrides", flag.ContinueOnError)
+	reg := featuregate.GlobalRegistry()
+	reg.RegisterFlags(fs)
+
+	// Apply the gates string to the global registry
+	if err := fs.Set(FeatureGatesFlag, gates); err != nil {
+		return fmt.Errorf("failed to apply feature gates: %w", err)
+	}
+
+	return nil
 }

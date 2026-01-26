@@ -99,13 +99,13 @@ metadata:
     categories: Logging & Tracing,Monitoring
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-01-09T17:00:54Z"
+    createdAt: "2026-01-15T17:19:43Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.142.0
+  name: opentelemetry-operator.v0.143.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -526,19 +526,8 @@ spec:
             spec:
               containers:
               - args:
-                - --metrics-addr=:8443
-                - --metrics-secure=true
-                - --metrics-tls-cert-file=/var/run/tls/server/tls.crt
-                - --metrics-tls-key-file=/var/run/tls/server/tls.key
-                - --enable-leader-election
                 - --zap-log-level=info
                 - --zap-time-encoding=rfc3339nano
-                - --enable-nginx-instrumentation=true
-                - --enable-go-instrumentation=true
-                - --openshift-create-dashboard=true
-                - --enable-cr-metrics=true
-                - --create-sm-operator-metrics=true
-                - --feature-gates=operator.networkpolicy,operand.networkpolicy
                 env:
                 - name: SERVICE_ACCOUNT_NAME
                   valueFrom:
@@ -548,7 +537,29 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.142.0
+                - name: METRICS_ADDR
+                  value: :8443
+                - name: METRICS_SECURE
+                  value: "true"
+                - name: ENABLE_LEADER_ELECTION
+                  value: "true"
+                - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
+                  value: "true"
+                - name: METRICS_TLS_CERT_FILE
+                  value: /var/run/tls/server/tls.crt
+                - name: METRICS_TLS_KEY_FILE
+                  value: /var/run/tls/server/tls.key
+                - name: ENABLE_GO_AUTO_INSTRUMENTATION
+                  value: "true"
+                - name: OPENSHIFT_CREATE_DASHBOARD
+                  value: "true"
+                - name: ENABLE_CR_METRICS
+                  value: "true"
+                - name: CREATE_SM_OPERATOR_METRICS
+                  value: "true"
+                - name: FEATURE_GATES
+                  value: operator.networkpolicy,operand.networkpolicy
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.143.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -608,14 +619,6 @@ spec:
         - apiGroups:
           - ""
           resources:
-          - configmaps/status
-          verbs:
-          - get
-          - update
-          - patch
-        - apiGroups:
-          - ""
-          resources:
           - events
           verbs:
           - create
@@ -648,7 +651,7 @@ spec:
   minKubeVersion: 1.25.0
   provider:
     name: OpenTelemetry Community
-  version: 0.142.0
+  version: 0.143.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1alpha1
