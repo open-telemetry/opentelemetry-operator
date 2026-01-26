@@ -19,13 +19,13 @@ spec:
       value: test
   livenessProbe:
     httpGet:
-      path: /custom-livez
+      path: /livez
       port: 8080
     initialDelaySeconds: 15
     periodSeconds: 20
   readinessProbe:
     httpGet:
-      path: /custom-readyz
+      path: /readyz
       port: 8080
     initialDelaySeconds: 10
     periodSeconds: 15

@@ -41,7 +41,7 @@ spec:
           livenessProbe:
             failureThreshold: 3
             httpGet:
-              path: /custom-livez
+              path: /livez
               port: 8080
               scheme: HTTP
             initialDelaySeconds: 15
@@ -56,7 +56,7 @@ spec:
           readinessProbe:
             failureThreshold: 3
             httpGet:
-              path: /custom-readyz
+              path: /readyz
               port: 8080
               scheme: HTTP
             initialDelaySeconds: 10
