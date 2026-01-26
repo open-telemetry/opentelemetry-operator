@@ -44,35 +44,35 @@ Generally speaking, these are backwards compatible, but specific features requir
 
 The OpenTelemetry Operator _might_ work on versions outside of the given range, but when opening new issues, please make sure to test your scenario on a supported version.
 
-| OpenTelemetry Operator | Kubernetes     | Cert-Manager | Prometheus-Operator |
-|------------------------|----------------|--------------|---------------------|
-| v0.143.0               | v1.25 to v1.35 | v1           | v0.81.0             |
-| v0.142.0               | v1.25 to v1.35 | v1           | v0.81.0             |
-| v0.141.0               | v1.25 to v1.34 | v1           | v0.81.0             |
-| v0.140.0               | v1.25 to v1.33 | v1           | v0.81.0             |
-| v0.139.0               | v1.25 to v1.33 | v1           | v0.81.0             |
-| v0.138.0               | v1.25 to v1.33 | v1           | v0.81.0             |
-| v0.137.0               | v1.25 to v1.33 | v1           | v0.81.0             |
-| v0.136.0               | v1.25 to v1.33 | v1           | v0.81.0             |
-| v0.135.0               | v1.25 to v1.33 | v1           | v0.81.0             |
-| v0.134.0               | v1.25 to v1.33 | v1           | v0.81.0             |
-| v0.133.0  - N/A        | N/A            | N/A          | N/A                 |
-| v0.132.0               | v1.25 to v1.33 | v1           | v0.81.0             |
-| v0.131.0               | v1.25 to v1.33 | v1           | v0.81.0             |
-| v0.129.1               | v1.23 to v1.33 | v1           | v0.81.0             |
-| v0.127.0               | v1.23 to v1.32 | v1           | v0.81.0             |
-| v0.126.0               | v1.23 to v1.32 | v1           | v0.80.1             |
-| v0.125.0               | v1.23 to v1.32 | v1           | v0.80.1             |
-| v0.124.0               | v1.23 to v1.32 | v1           | v0.80.1             |
-| v0.123.0               | v1.23 to v1.32 | v1           | v0.80.1             |
-| v0.122.0               | v1.23 to v1.32 | v1           | v0.80.1             |
-| v0.121.0               | v1.23 to v1.32 | v1           | v0.78.2             |
-| v0.120.0               | v1.23 to v1.32 | v1           | v0.76.2             |
-| v0.119.0               | v1.23 to v1.32 | v1           | v0.76.2             |
-| v0.118.0               | v1.23 to v1.32 | v1           | v0.76.2             |
-| v0.117.0               | v1.23 to v1.32 | v1           | v0.76.2             |
-| v0.116.0               | v1.23 to v1.31 | v1           | v0.76.2             |
-| v0.115.0               | v1.23 to v1.31 | v1           | v0.76.0             |
+| OpenTelemetry Operator | Kubernetes     | Cert-Manager | Prometheus-Operator   |
+|------------------------|----------------|--------------|-----------------------|
+| v0.144.0               | v1.25 to v1.35 | v1           | v0.88.0               |
+| v0.143.0               | v1.25 to v1.35 | v1           | v0.87.1               |
+| v0.142.0               | v1.25 to v1.35 | v1           | v0.87.1               |
+| v0.141.0               | v1.25 to v1.34 | v1           | v0.81.0               |
+| v0.140.0               | v1.25 to v1.33 | v1           | v0.81.0               |
+| v0.139.0               | v1.25 to v1.33 | v1           | v0.81.0               |
+| v0.138.0               | v1.25 to v1.33 | v1           | v0.81.0               |
+| v0.137.0               | v1.25 to v1.33 | v1           | v0.81.0               |
+| v0.136.0               | v1.25 to v1.33 | v1           | v0.81.0               |
+| v0.135.0               | v1.25 to v1.33 | v1           | v0.81.0               |
+| v0.134.0               | v1.25 to v1.33 | v1           | v0.81.0               |
+| v0.133.0  - N/A        | N/A            | N/A          | N/A                   |
+| v0.132.0               | v1.25 to v1.33 | v1           | v0.81.0               |
+| v0.131.0               | v1.25 to v1.33 | v1           | v0.81.0               |
+| v0.129.1               | v1.23 to v1.33 | v1           | v0.81.0               |
+| v0.127.0               | v1.23 to v1.32 | v1           | v0.81.0               |
+| v0.126.0               | v1.23 to v1.32 | v1           | v0.80.1               |
+| v0.125.0               | v1.23 to v1.32 | v1           | v0.80.1               |
+| v0.124.0               | v1.23 to v1.32 | v1           | v0.80.1               |
+| v0.123.0               | v1.23 to v1.32 | v1           | v0.80.1               |
+| v0.122.0               | v1.23 to v1.32 | v1           | v0.80.1               |
+| v0.121.0               | v1.23 to v1.32 | v1           | v0.78.2               |
+| v0.120.0               | v1.23 to v1.32 | v1           | v0.76.2               |
+| v0.119.0               | v1.23 to v1.32 | v1           | v0.76.2               |
+| v0.118.0               | v1.23 to v1.32 | v1           | v0.76.2               |
+| v0.117.0               | v1.23 to v1.32 | v1           | v0.76.2               |
+| v0.116.0               | v1.23 to v1.31 | v1           | v0.76.2               |
 
 [kubernetes_releases]: https://kubernetes.io/releases/
 [openshift_support]: https://access.redhat.com/support/policy/updates/openshift
