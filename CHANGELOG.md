@@ -2,6 +2,61 @@
 
 <!-- next version -->
 
+## 0.144.0
+
+### 💡 Enhancements 💡
+
+- `operator`: change operator args in bundle to env variables (#4612)
+  The default configuration in the OLM bundle has been changed from command-line arguments to environment variables,
+  making it easily overwritable when deployed using OLM's Subscription config. Command-line flags continue to work.
+  All Config struct fields now support environment variable configuration.
+  
+  Configuration set via the Subscription's config section will persist and be reapplied after operator upgrades.
+  
+  Example of overriding configuration via OLM Subscription:
+  
+  ```yaml
+  apiVersion: operators.coreos.com/v1alpha1
+  kind: Subscription
+  metadata:
+    name: opentelemetry-operator
+  spec:
+    channel: stable
+    name: opentelemetry-operator
+    source: operatorhubio-catalog
+    sourceNamespace: olm
+    config:
+      env:
+      - name: FEATURE_GATES
+        value: "operator.networkpolicy,operand.networkpolicy"
+      - name: ENABLE_GO_AUTO_INSTRUMENTATION
+        value: "true"
+      - name: METRICS_SECURE
+        value: "false"
+  ```
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fix PodDisruptionBudget using all labels instead of selector labels, preventing PDB breakage during rollouts (#4623)
+  Use stable selector labels instead of all CR labels to prevent PDB breakage when mutable labels change during rollouts.
+- `auto-instrumentation`: Fix NGINX and Apache instrumentation init container creation to avoid copying init-container-incompatible fields. (#3729)
+  The NGINX and Apache instrumentation init containers are now created from scratch instead of 
+  cloning the main container, preventing probes, lifecycle hooks, and resize policies from being 
+  applied to init containers.
+
+### Components
+
+* [OpenTelemetry Collector - v0.144.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.144.0)
+* [OpenTelemetry Contrib - v0.144.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.144.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.69.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.69.0)
+* [Python - v0.60b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.60b1)
+* [Go - v0.23.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.23.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.143.0
 
 ### 🧰 Bug fixes 🧰
