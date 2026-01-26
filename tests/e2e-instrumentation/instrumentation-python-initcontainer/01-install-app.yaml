@@ -27,18 +27,6 @@ spec:
         # Start the Flask app in the background (Alpine-based image)
         cd /app && flask run --host=0.0.0.0 --port=8080 &
         APP_PID=$!
-        # Wait for app to be ready
-        echo "Waiting for app to start..."
-        # Give Flask time to start
-        sleep 5
-        echo "App should be ready"
-        # Make requests to generate telemetry (even 404s generate spans)
-        echo "Making requests to generate telemetry..."
-        wget -q -O /dev/null http://127.0.0.1:8080/ 2>/dev/null || true
-        wget -q -O /dev/null http://127.0.0.1:8080/ 2>/dev/null || true
-        wget -q -O /dev/null http://127.0.0.1:8080/ 2>/dev/null || true
-        # Wait for telemetry to flush
-        echo "Waiting for telemetry flush..."
         sleep 10
         # Stop the app
         kill $APP_PID 2>/dev/null || true

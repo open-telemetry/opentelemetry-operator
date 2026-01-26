@@ -27,29 +27,6 @@ spec:
         # Start the Java app in the background
         java -jar /app-0.0.1-SNAPSHOT.jar &
         APP_PID=$!
-        # Function to make HTTP request using bash /dev/tcp
-        http_get() {
-          (exec 3<>/dev/tcp/localhost/8080 && \
-           echo -e "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 && \
-           cat <&3 && \
-           exec 3>&-) 2>/dev/null
-        }
-        # Wait for app to be ready
-        echo "Waiting for app to start..."
-        for i in $(seq 1 60); do
-          if http_get | grep -q "HTTP/1.1 200"; then
-            echo "App is ready"
-            break
-          fi
-          sleep 1
-        done
-        # Make requests to generate telemetry
-        echo "Making requests to generate telemetry..."
-        http_get >/dev/null || true
-        http_get >/dev/null || true
-        http_get >/dev/null || true
-        # Wait for telemetry to flush
-        echo "Waiting for telemetry flush..."
         sleep 10
         # Stop the app
         kill $APP_PID 2>/dev/null || true
