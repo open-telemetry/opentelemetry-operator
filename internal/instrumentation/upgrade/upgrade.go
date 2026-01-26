@@ -29,6 +29,7 @@ type InstrumentationUpgrade struct {
 	DefaultAutoInstJava        string
 	DefaultAutoInstNodeJS      string
 	DefaultAutoInstPython      string
+	DefaultAutoInstRuby        string
 	DefaultAutoInstDotNet      string
 	DefaultAutoInstApacheHttpd string
 	DefaultAutoInstNginx       string
@@ -43,6 +44,7 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 		constants.AnnotationDefaultAutoInstrumentationGo:          {"enable-go-instrumentation", cfg.EnableGoAutoInstrumentation},
 		constants.AnnotationDefaultAutoInstrumentationNginx:       {"enable-nginx-instrumentation", cfg.EnableNginxAutoInstrumentation},
 		constants.AnnotationDefaultAutoInstrumentationPython:      {"enable-python-instrumentation", cfg.EnablePythonAutoInstrumentation},
+		constants.AnnotationDefaultAutoInstrumentationRuby:        {"enable-ruby-instrumentation", cfg.EnableRubyAutoInstrumentation},
 		constants.AnnotationDefaultAutoInstrumentationNodeJS:      {"enable-nodejs-instrumentation", cfg.EnableNodeJSAutoInstrumentation},
 		constants.AnnotationDefaultAutoInstrumentationJava:        {"enable-java-instrumentation", cfg.EnableJavaAutoInstrumentation},
 	}
@@ -53,6 +55,7 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 		DefaultAutoInstJava:        cfg.AutoInstrumentationJavaImage,
 		DefaultAutoInstNodeJS:      cfg.AutoInstrumentationNodeJSImage,
 		DefaultAutoInstPython:      cfg.AutoInstrumentationPythonImage,
+		DefaultAutoInstRuby:        cfg.AutoInstrumentationRubyImage,
 		DefaultAutoInstDotNet:      cfg.AutoInstrumentationDotNetImage,
 		DefaultAutoInstGo:          cfg.AutoInstrumentationGoImage,
 		DefaultAutoInstApacheHttpd: cfg.AutoInstrumentationApacheHttpdImage,
@@ -122,6 +125,11 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 					if inst.Spec.Python.Image == autoInst {
 						upgraded.Spec.Python.Image = u.DefaultAutoInstPython
 						upgraded.Annotations[annotation] = u.DefaultAutoInstPython
+					}
+				case constants.AnnotationDefaultAutoInstrumentationRuby:
+					if inst.Spec.Ruby.Image == autoInst {
+						upgraded.Spec.Ruby.Image = u.DefaultAutoInstRuby
+						upgraded.Annotations[annotation] = u.DefaultAutoInstRuby
 					}
 				case constants.AnnotationDefaultAutoInstrumentationNodeJS:
 					if inst.Spec.NodeJS.Image == autoInst {

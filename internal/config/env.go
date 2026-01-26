@@ -28,6 +28,9 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("RELATED_IMAGE_AUTO_INSTRUMENTATION_PYTHON"); ok {
 		cfg.AutoInstrumentationPythonImage = v
 	}
+	if v, ok := os.LookupEnv("RELATED_IMAGE_AUTO_INSTRUMENTATION_RUBY"); ok {
+		cfg.AutoInstrumentationRubyImage = v
+	}
 	if v, ok := os.LookupEnv("RELATED_IMAGE_AUTO_INSTRUMENTATION_DOTNET"); ok {
 		cfg.AutoInstrumentationDotNetImage = v
 	}
@@ -121,6 +124,9 @@ func ApplyEnvVars(cfg *Config) {
 	}
 	if v, ok := os.LookupEnv("ENABLE_PYTHON_AUTO_INSTRUMENTATION"); ok {
 		cfg.EnablePythonAutoInstrumentation, _ = strconv.ParseBool(v)
+	}
+	if v, ok := os.LookupEnv("ENABLE_RUBY_AUTO_INSTRUMENTATION"); ok {
+		cfg.EnableRubyAutoInstrumentation, _ = strconv.ParseBool(v)
 	}
 	if v, ok := os.LookupEnv("IGNORE_MISSING_COLLECTOR_CRDS"); ok {
 		cfg.IgnoreMissingCollectorCRDs, _ = strconv.ParseBool(v)

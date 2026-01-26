@@ -50,6 +50,10 @@ type InstrumentationSpec struct {
 	// +optional
 	Python Python `json:"python,omitempty"`
 
+	// Ruby defines configuration for Ruby auto-instrumentation.
+	// +optional
+	Ruby Ruby `json:"ruby,omitempty"`
+
 	// DotNet defines configuration for DotNet auto-instrumentation.
 	// +optional
 	DotNet DotNet `json:"dotnet,omitempty"`
@@ -232,6 +236,30 @@ type Python struct {
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
 	// Env defines python specific env vars. There are four layers for env vars' definitions and
+	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
+	// If the former var had been defined, then the other vars would be ignored.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Resources describes the compute resource requirements.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resourceRequirements,omitempty"`
+}
+
+type Ruby struct {
+	// Image is a container image with Ruby SDK and auto-instrumentation.
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// VolumeClaimTemplate defines a ephemeral volume used for auto-instrumentation.
+	// If omitted, an emptyDir is used with size limit VolumeSizeLimit
+	VolumeClaimTemplate corev1.PersistentVolumeClaimTemplate `json:"volumeClaimTemplate,omitempty"`
+
+	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
+	// The default size is 200Mi.
+	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
+
+	// Env defines Ruby specific env vars. There are four layers for env vars' definitions and
 	// the precedence order is: `original container env vars` > `language specific env vars` > `common env vars` > `instrument spec configs' vars`.
 	// If the former var had been defined, then the other vars would be ignored.
 	// +optional

@@ -1828,6 +1828,572 @@ func TestMutatePod(t *testing.T) {
 			},
 		},
 		{
+			name: "ruby injection, true",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ruby",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "ruby",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					Ruby: v1alpha1.Ruby{
+						Image: "otel/ruby:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+							{
+								Name:  "OTEL_TRACES_EXPORTER",
+								Value: "otlp",
+							},
+							{
+								Name:  "OTEL_METRICS_EXPORTER",
+								Value: "otlp",
+							},
+							{
+								Name:  "OTEL_LOGS_EXPORTER",
+								Value: "otlp",
+							},
+							{
+								Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+								Value: "http://localhost:4318",
+							},
+						},
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+							Value: "20",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER",
+							Value: "parentbased_traceidratio",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER_ARG",
+							Value: "0.85",
+						},
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectRuby: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectRuby: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: rubyVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    rubyInitContainerName,
+							Image:   "otel/ruby:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", rubyInstrMountPath},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      rubyVolumeName,
+								MountPath: rubyInstrMountPath,
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_LOG_LEVEL",
+									Value: "debug",
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_LOGS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "http://localhost:4318",
+								},
+								{
+									Name:  "RUBYOPT",
+									Value: " -r /otel-auto-instrumentation-ruby/src/autoinstrumentation",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+									Value: "20",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.85",
+								},
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=app,k8s.namespace.name=ruby,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ruby.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app,service.namespace=ruby",
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      rubyVolumeName,
+									MountPath: rubyInstrMountPath,
+								},
+							},
+						},
+					},
+				},
+			},
+			config: config.Config{
+				EnableRubyAutoInstrumentation: true,
+			},
+		},
+		{
+			name: "ruby injection multiple containers, true",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ruby-multiple-containers",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "ruby-multiple-containers",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					Ruby: v1alpha1.Ruby{
+						Image: "otel/ruby:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+							{
+								Name:  "OTEL_TRACES_EXPORTER",
+								Value: "otlp",
+							},
+							{
+								Name:  "OTEL_METRICS_EXPORTER",
+								Value: "otlp",
+							},
+							{
+								Name:  "OTEL_LOGS_EXPORTER",
+								Value: "otlp",
+							},
+							{
+								Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+								Value: "http://localhost:4318",
+							},
+						},
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+							Value: "20",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER",
+							Value: "parentbased_traceidratio",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER_ARG",
+							Value: "0.85",
+						},
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectRuby:          "true",
+						annotationInjectContainerName: "app1,app2",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app1",
+						},
+						{
+							Name: "app2",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectRuby:          "true",
+						annotationInjectContainerName: "app1,app2",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: rubyVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    rubyInitContainerName,
+							Image:   "otel/ruby:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", rubyInstrMountPath},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      rubyVolumeName,
+								MountPath: rubyInstrMountPath,
+							}},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name: "app1",
+							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_LOG_LEVEL",
+									Value: "debug",
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_LOGS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "http://localhost:4318",
+								},
+								{
+									Name:  "RUBYOPT",
+									Value: " -r /otel-auto-instrumentation-ruby/src/autoinstrumentation",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+									Value: "20",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.85",
+								},
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app1",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=app1,k8s.namespace.name=ruby-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ruby-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app1,service.namespace=ruby-multiple-containers",
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      rubyVolumeName,
+									MountPath: rubyInstrMountPath,
+								},
+							},
+						},
+						{
+							Name: "app2",
+							Env: []corev1.EnvVar{
+								{
+									Name: "OTEL_NODE_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.hostIP",
+										},
+									},
+								},
+								{
+									Name: "OTEL_POD_IP",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "status.podIP",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_LOG_LEVEL",
+									Value: "debug",
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_LOGS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+									Value: "http://localhost:4318",
+								},
+								{
+									Name:  "RUBYOPT",
+									Value: " -r /otel-auto-instrumentation-ruby/src/autoinstrumentation",
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+									Value: "20",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER",
+									Value: "parentbased_traceidratio",
+								},
+								{
+									Name:  "OTEL_TRACES_SAMPLER_ARG",
+									Value: "0.85",
+								},
+								{
+									Name:  "OTEL_SERVICE_NAME",
+									Value: "app2",
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_POD_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.name",
+										},
+									},
+								},
+								{
+									Name: "OTEL_RESOURCE_ATTRIBUTES_NODE_NAME",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+								{
+									Name:  "OTEL_RESOURCE_ATTRIBUTES",
+									Value: "k8s.container.name=app2,k8s.namespace.name=ruby-multiple-containers,k8s.node.name=$(OTEL_RESOURCE_ATTRIBUTES_NODE_NAME),k8s.pod.name=$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME),service.instance.id=ruby-multiple-containers.$(OTEL_RESOURCE_ATTRIBUTES_POD_NAME).app2,service.namespace=ruby-multiple-containers",
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      rubyVolumeName,
+									MountPath: rubyInstrMountPath,
+								},
+							},
+						},
+					},
+				},
+			},
+			config: config.Config{
+				EnableRubyAutoInstrumentation: true,
+			},
+		},
+		{
+			name: "ruby injection feature gate disabled",
+			ns: corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ruby-disabled",
+				},
+			},
+			inst: v1alpha1.Instrumentation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example-inst",
+					Namespace: "ruby-disabled",
+				},
+				Spec: v1alpha1.InstrumentationSpec{
+					Ruby: v1alpha1.Ruby{
+						Image: "otel/ruby:1",
+						Env: []corev1.EnvVar{
+							{
+								Name:  "OTEL_LOG_LEVEL",
+								Value: "debug",
+							},
+							{
+								Name:  "OTEL_TRACES_EXPORTER",
+								Value: "otlp",
+							},
+							{
+								Name:  "OTEL_METRICS_EXPORTER",
+								Value: "otlp",
+							},
+							{
+								Name:  "OTEL_LOGS_EXPORTER",
+								Value: "otlp",
+							},
+							{
+								Name:  "OTEL_EXPORTER_OTLP_ENDPOINT",
+								Value: "http://localhost:4318",
+							},
+						},
+					},
+					Exporter: v1alpha1.Exporter{
+						Endpoint: "http://collector:12345",
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "OTEL_EXPORTER_OTLP_TIMEOUT",
+							Value: "20",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER",
+							Value: "parentbased_traceidratio",
+						},
+						{
+							Name:  "OTEL_TRACES_SAMPLER_ARG",
+							Value: "0.85",
+						},
+					},
+				},
+			},
+			pod: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectRuby: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						annotationInjectRuby: "true",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "app",
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "dotnet injection, true",
 			ns: corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{

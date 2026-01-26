@@ -99,6 +99,22 @@ func (i *sdkInjector) inject(ctx context.Context, insts languageInstrumentations
 			}
 		}
 	}
+	if insts.Ruby.Instrumentation != nil {
+		otelinst := *insts.Ruby.Instrumentation
+		var err error
+		i.logger.V(1).Info("injecting Ruby instrumentation into pod", "otelinst-namespace", otelinst.Namespace, "otelinst-name", otelinst.Name)
+
+		for _, container := range containersToInstrument(&insts.Ruby, &pod) {
+			pod, err = injectRubySDK(otelinst.Spec.Ruby, pod, container, otelinst.Spec)
+			if err != nil {
+				i.logger.Info("Skipping Ruby SDK injection", "reason", err.Error(), "container", container.Name)
+			} else {
+				i.injectCommonEnvVar(otelinst, container)
+				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
+				pod = i.setInitContainerSecurityContext(pod, container.SecurityContext, rubyInitContainerName)
+			}
+		}
+	}
 	if insts.DotNet.Instrumentation != nil {
 		otelinst := *insts.DotNet.Instrumentation
 		var err error

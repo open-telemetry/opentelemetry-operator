@@ -41,6 +41,8 @@ type Config struct {
 	OperatorOpAMPBridgeImage string `yaml:"operatoropampbridge-image"`
 	// AutoInstrumentationPythonImage is the OpenTelemetry Python auto-instrumentation container image.
 	AutoInstrumentationPythonImage string `yaml:"auto-instrumentation-python-image"`
+	// AutoInstrumentationRubyImage is the OpenTelemetry Ruby auto-instrumentation container image.
+	AutoInstrumentationRubyImage string `yaml:"auto-instrumentation-ruby-image"`
 	// CollectorImage represents the flag to override the OpenTelemetry Collector container image.
 	CollectorImage string `yaml:"collector-image"`
 	// CollectorConfigMapEntry represents the configuration file name for the collector. Immutable.
@@ -59,6 +61,8 @@ type Config struct {
 	EnableNginxAutoInstrumentation bool `yaml:"enable-nginx-auto-instrumentation"`
 	// EnablePythonAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
 	EnablePythonAutoInstrumentation bool `yaml:"enable-python-auto-instrumentation"`
+	// EnableRubyAutoInstrumentation is true when the operator supports ruby auto instrumentation.
+	EnableRubyAutoInstrumentation bool `yaml:"enable-ruby-auto-instrumentation"`
 	// EnableNodeJSAutoInstrumentation is true when the operator supports dotnet auto instrumentation.
 	EnableNodeJSAutoInstrumentation bool `yaml:"enable-node-js-auto-instrumentation"`
 	// EnableJavaAutoInstrumentation is true when the operator supports java auto instrumentation.
@@ -152,6 +156,7 @@ func New() Config {
 		EnableGoAutoInstrumentation:         false,
 		EnableNginxAutoInstrumentation:      false,
 		EnablePythonAutoInstrumentation:     true,
+		EnableRubyAutoInstrumentation:       true,
 		EnableNodeJSAutoInstrumentation:     true,
 		EnableJavaAutoInstrumentation:       true,
 		TargetAllocatorImage:                fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:%s", v.TargetAllocator),
@@ -167,6 +172,7 @@ func New() Config {
 		AutoInstrumentationJavaImage:        fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:%s", v.AutoInstrumentationJava),
 		AutoInstrumentationNodeJSImage:      fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:%s", v.AutoInstrumentationNodeJS),
 		AutoInstrumentationPythonImage:      fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:%s", v.AutoInstrumentationPython),
+		AutoInstrumentationRubyImage:        fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-ruby:%s", v.AutoInstrumentationRuby),
 		AutoInstrumentationDotNetImage:      fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:%s", v.AutoInstrumentationDotNet),
 		AutoInstrumentationGoImage:          fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:%s", v.AutoInstrumentationGo),
 		AutoInstrumentationApacheHttpdImage: fmt.Sprintf("ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-apache-httpd:%s", v.AutoInstrumentationApacheHttpd),

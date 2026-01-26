@@ -45,6 +45,7 @@ type languageInstrumentations struct {
 	Java        instrumentationWithContainers
 	NodeJS      instrumentationWithContainers
 	Python      instrumentationWithContainers
+	Ruby        instrumentationWithContainers
 	DotNet      instrumentationWithContainers
 	ApacheHttpd instrumentationWithContainers
 	Nginx       instrumentationWithContainers
@@ -57,6 +58,7 @@ func instrumentationsList(langInsts *languageInstrumentations) []*instrumentatio
 		&langInsts.Java,
 		&langInsts.NodeJS,
 		&langInsts.Python,
+		&langInsts.Ruby,
 		&langInsts.DotNet,
 		&langInsts.ApacheHttpd,
 		&langInsts.Nginx,
@@ -163,6 +165,10 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns meta
 			annotation: annotationInjectPythonContainersName,
 		},
 		{
+			iwc:        &langInsts.Ruby,
+			annotation: annotationInjectRubyContainersName,
+		},
+		{
 			iwc:        &langInsts.DotNet,
 			annotation: annotationInjectDotnetContainersName,
 		},
@@ -264,6 +270,18 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	} else {
 		logger.Error(nil, "support for Python auto instrumentation is not enabled")
 		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Python auto instrumentation is not enabled")
+	}
+
+	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectRuby); err != nil {
+		// we still allow the pod to be created, but we log a message to the operator's logs
+		logger.Error(err, "failed to select an OpenTelemetry Instrumentation instance for this pod")
+		return pod, err
+	}
+	if pm.config.EnableRubyAutoInstrumentation || inst == nil {
+		insts.Ruby.Instrumentation = inst
+	} else {
+		logger.Error(err, "support for Ruby auto instrumentation is not enabled")
+		pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", "support for Ruby auto instrumentation is not enabled")
 	}
 
 	if inst, err = pm.getInstrumentationInstance(ctx, ns, pod, annotationInjectDotNet); err != nil {

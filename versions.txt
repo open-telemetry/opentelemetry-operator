@@ -25,6 +25,10 @@ autoinstrumentation-nodejs=0.67.3
 # Should match value in autoinstrumentation/python/requirements.txt
 autoinstrumentation-python=0.60b1
 
+# Represents the current release of Ruby instrumentation.
+# Should match autoinstrumentation/ruby/version.txt
+autoinstrumentation-ruby=0.73.1
+
 # Represents the current release of DotNet instrumentation.
 # This version should remain pinned to 1.2.0.
 autoinstrumentation-dotnet=1.2.0
