@@ -139,14 +139,6 @@ func TestMutatePod(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Volumes: []corev1.Volume{
 						{
-							Name: javaVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{
-									SizeLimit: &defaultVolumeLimitSize,
-								},
-							},
-						},
-						{
 							Name: "otel-auto-secret-my-certs",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
@@ -161,6 +153,14 @@ func TestMutatePod(t *testing.T) {
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: "my-ca-bundle",
 									},
+								},
+							},
+						},
+						{
+							Name: javaVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
 								},
 							},
 						},
@@ -5127,4 +5127,102 @@ func TestInstrumentationLanguageContainersSet(t *testing.T) {
 			assert.Equal(t, test.expectedInstrumentations, test.instrumentations)
 		})
 	}
+}
+
+// TestInitContainerInstrumentation tests that init containers can be instrumented
+// and receive all expected env vars through the full podmutator.Mutate flow.
+func TestInitContainerInstrumentation(t *testing.T) {
+	inst := &v1alpha1.Instrumentation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "python-inst",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.InstrumentationSpec{
+			Python: v1alpha1.Python{
+				Image: "otel/python:1",
+				Env: []corev1.EnvVar{
+					{Name: "OTEL_LOG_LEVEL", Value: "debug"},
+				},
+			},
+			Exporter: v1alpha1.Exporter{
+				Endpoint: "http://collector:4318",
+			},
+		},
+	}
+
+	err := k8sClient.Create(context.Background(), inst)
+	require.NoError(t, err)
+	defer func() {
+		_ = k8sClient.Delete(context.Background(), inst)
+	}()
+
+	ns := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "default",
+		},
+	}
+
+	// Pod with init container as instrumentation target
+	pod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-pod",
+			Namespace: "default",
+			Annotations: map[string]string{
+				annotationInjectPython:        "true",
+				annotationInjectContainerName: "python-init",
+			},
+		},
+		Spec: corev1.PodSpec{
+			InitContainers: []corev1.Container{
+				{Name: "python-init"},
+			},
+			Containers: []corev1.Container{
+				{Name: "main-app"},
+			},
+		},
+	}
+
+	mutator := NewMutator(logr.Discard(), k8sClient, nil, config.New())
+
+	result, err := mutator.Mutate(context.Background(), ns, pod)
+	require.NoError(t, err)
+
+	// Check that instrumentation init container was added BEFORE the target init container
+	require.Len(t, result.Spec.InitContainers, 2, "Should have 2 init containers")
+	assert.Equal(t, pythonInitContainerName, result.Spec.InitContainers[0].Name, "Instrumentation init container should be first")
+	assert.Equal(t, "python-init", result.Spec.InitContainers[1].Name, "Target init container should be second")
+
+	// Check env vars on the target init container
+	targetContainer := result.Spec.InitContainers[1]
+	t.Logf("Target init container env vars: %v", targetContainer.Env)
+
+	// Check for env vars from second loop (injectCommonEnvVar)
+	foundNodeIP := false
+	foundPodIP := false
+	// Check for env vars from first loop (injectPythonSDKToContainer)
+	foundLogLevel := false
+	foundPythonPath := false
+	// Check for env vars from injectCommonSDKConfig
+	foundServiceName := false
+
+	for _, env := range targetContainer.Env {
+		switch env.Name {
+		case "OTEL_NODE_IP":
+			foundNodeIP = true
+		case "OTEL_POD_IP":
+			foundPodIP = true
+		case "OTEL_LOG_LEVEL":
+			foundLogLevel = true
+		case "PYTHONPATH":
+			foundPythonPath = true
+		case "OTEL_SERVICE_NAME":
+			foundServiceName = true
+		}
+	}
+
+	assert.True(t, foundNodeIP, "Should have OTEL_NODE_IP env var (from injectCommonEnvVar)")
+	assert.True(t, foundPodIP, "Should have OTEL_POD_IP env var (from injectCommonEnvVar)")
+	assert.True(t, foundLogLevel, "Should have OTEL_LOG_LEVEL env var (from injectPythonSDKToContainer)")
+	assert.True(t, foundPythonPath, "Should have PYTHONPATH env var (from injectPythonSDKToContainer)")
+	assert.True(t, foundServiceName, "Should have OTEL_SERVICE_NAME env var (from injectCommonSDKConfig)")
 }
