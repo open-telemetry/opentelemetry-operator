@@ -33,7 +33,7 @@ Creates a Kafka cluster with:
 - 1 controller node and 1 broker node via KafkaNodePools
 - Ephemeral storage for testing
 - Plain text (port 9092) and TLS (port 9093) listeners
-- Kafka version 3.9.0
+- Kafka version 4.1.0
 - Resource limits: 1 CPU and 4Gi memory per node
 
 ### KafkaNodePools
@@ -90,9 +90,10 @@ Generate test traces to validate the Kafka integration:
 **Configuration:** [`04-generate-traces.yaml`](./04-generate-traces.yaml)
 
 Creates a job that:
-- Generates 50 test traces
-- Sends traces to the exporter collector via OTLP HTTP
-- Uses `kafka-test-service` as the service name for identification
+- Generates traces at a rate of 1 per second for 30 seconds
+- Sends traces to the exporter collector via OTLP gRPC
+- Uses `kafka` as the service name for identification
+- Includes test attribute `test=chainsaw-kafka` for verification
 
 ## Deployment Steps
 
@@ -150,7 +151,7 @@ The test includes verification logic in the Chainsaw test configuration.
 The script verifies:
 - Trace generation job completes successfully
 - Traces are visible in Kafka receiver collector logs
-- Expected service name (`kafka-test-service`) appears in traces
+- Expected service name (`kafka`) and test attribute (`test=chainsaw-kafka`) appear in traces
 - End-to-end trace flow through Kafka messaging
 
 ## Verification
@@ -187,5 +188,5 @@ The test verifies:
 - Kafka brokers are accessible via internal Kubernetes service DNS
 - The `otlp-spans` topic has 3 partitions for load distribution
 - Collectors use the Kafka exporter/receiver from OpenTelemetry contrib
-- Trace generation creates 50 test traces with 100ms span duration
+- Trace generation runs for 30 seconds at 1 trace per second
 - Entity operator reconciliation intervals: 90s for topics, 120s for users 
