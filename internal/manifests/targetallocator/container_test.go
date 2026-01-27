@@ -392,6 +392,58 @@ func TestLivenessProbe(t *testing.T) {
 	assert.Equal(t, expected, c.LivenessProbe)
 }
 
+func TestCustomReadinessProbe(t *testing.T) {
+	// prepare
+	customProbe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/custom-ready",
+				Port: intstr.FromInt(9090),
+			},
+		},
+		InitialDelaySeconds: 10,
+		PeriodSeconds:       5,
+	}
+	targetAllocator := v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{
+			ReadinessProbe: customProbe,
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, targetAllocator)
+
+	// verify
+	assert.Equal(t, customProbe, c.ReadinessProbe)
+}
+
+func TestCustomLivenessProbe(t *testing.T) {
+	// prepare
+	customProbe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/custom-live",
+				Port: intstr.FromInt(9090),
+			},
+		},
+		InitialDelaySeconds: 15,
+		PeriodSeconds:       10,
+	}
+	targetAllocator := v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{
+			LivenessProbe: customProbe,
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, targetAllocator)
+
+	// verify
+	assert.Equal(t, customProbe, c.LivenessProbe)
+}
+
 func TestSecurityContext(t *testing.T) {
 	runAsNonRoot := true
 	securityContext := &corev1.SecurityContext{
