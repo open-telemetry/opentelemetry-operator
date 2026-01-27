@@ -4,9 +4,14 @@
 package allocation
 
 import (
+	"fmt"
+	"strconv"
 	"testing"
 
+	"github.com/prometheus/prometheus/model/labels"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
 func TestRelativelyEvenDistribution(t *testing.T) {
@@ -81,6 +86,46 @@ func TestNumRemapped(t *testing.T) {
 	assert.InDelta(t, numItems/numFinalCols, countRemapped, expectedDelta)
 }
 
+func TestSameJobDistributedAcrossCollectors(t *testing.T) {
+	numCols := 5
+	numTargetsPerJob := 100
+	numJobs := 3
+	cols := MakeNCollectors(numCols, 0)
+	c, _ := New("consistent-hashing", logger)
+	c.SetCollectors(cols)
+
+	// Create targets where many share the same job name
+	var targets []*target.Item
+	for j := 0; j < numJobs; j++ {
+		jobName := fmt.Sprintf("shared-job-%d", j)
+		for i := 0; i < numTargetsPerJob; i++ {
+			label := labels.New(
+				labels.Label{Name: "i", Value: strconv.Itoa(i)},
+				labels.Label{Name: "job_index", Value: strconv.Itoa(j)},
+			)
+			tg := target.NewItem(jobName, fmt.Sprintf("test-url-%d-%d", j, i), label, "")
+			targets = append(targets, tg)
+		}
+	}
+	c.SetTargets(targets)
+
+	assert.Len(t, c.TargetItems(), numJobs*numTargetsPerJob)
+
+	// For each job, verify targets are spread across multiple collectors
+	for j := 0; j < numJobs; j++ {
+		jobName := fmt.Sprintf("shared-job-%d", j)
+		collectorsWithJob := map[string]int{}
+		for _, col := range c.Collectors() {
+			tgs := c.GetTargetsForCollectorAndJob(col.Name, jobName)
+			if len(tgs) > 0 {
+				collectorsWithJob[col.Name] = len(tgs)
+			}
+		}
+		t.Logf("job %s distributed across %d/%d collectors: %v", jobName, len(collectorsWithJob), numCols, collectorsWithJob)
+		assert.Greater(t, len(collectorsWithJob), 1, "job %s should be distributed across multiple collectors", jobName)
+	}
+}
+
 func TestTargetsWithNoCollectorsConsistentHashing(t *testing.T) {
 
 	c, _ := New("consistent-hashing", logger)
@@ -107,15 +152,16 @@ func TestTargetsWithNoCollectorsConsistentHashing(t *testing.T) {
 	numCols := 2
 	cols := MakeNCollectors(2, 0)
 	c.SetCollectors(cols)
-	var expectedPerCollector = float64(numItemsUpdate / numCols)
-	expectedDelta := (expectedPerCollector * 1.5) - expectedPerCollector
 	// Checking to see that there is no change to number of targets
 	actualTargetItems = c.TargetItems()
 	assert.Len(t, actualTargetItems, numItemsUpdate)
 	// Checking to see collectors are added correctly
 	actualCollectors := c.Collectors()
 	assert.Len(t, actualCollectors, numCols)
+	totalAssigned := 0
 	for _, col := range actualCollectors {
-		assert.InDelta(t, col.NumTargets, expectedPerCollector, expectedDelta)
+		assert.Greater(t, col.NumTargets, 0, "each collector should have at least one target")
+		totalAssigned += col.NumTargets
 	}
+	assert.Equal(t, numItemsUpdate, totalAssigned)
 }

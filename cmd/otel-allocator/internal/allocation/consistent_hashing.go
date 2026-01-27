@@ -47,7 +47,7 @@ func (s *consistentHashingStrategy) GetName() string {
 }
 
 func (s *consistentHashingStrategy) GetCollectorForTarget(collectors map[string]*Collector, item *target.Item) (*Collector, error) {
-	hashKey := item.TargetURL
+	hashKey := item.JobName + item.TargetURL
 	member := s.consistentHasher.LocateKey([]byte(hashKey))
 	collectorName := member.String()
 	collector, ok := collectors[collectorName]
