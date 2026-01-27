@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"os"
 	"os/signal"
@@ -22,6 +23,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/collector"
@@ -45,6 +47,7 @@ func main() {
 		discoveryManager *discovery.Manager
 		collectorWatcher *collector.Watcher
 		targetDiscoverer *target.Discoverer
+		certWatcher      *certwatcher.CertWatcher
 
 		discoveryCancel context.CancelFunc
 		runGroup        run.Group
@@ -96,7 +99,9 @@ func main() {
 
 	httpOptions := []server.Option{}
 	if cfg.HTTPS.Enabled {
-		tlsConfig, confErr := cfg.HTTPS.NewTLSConfig()
+		var tlsConfig *tls.Config
+		var confErr error
+		tlsConfig, certWatcher, confErr = cfg.HTTPS.NewTLSConfig(log)
 		if confErr != nil {
 			setupLog.Error(confErr, "Unable to initialize TLS configuration")
 			os.Exit(1)
@@ -225,6 +230,21 @@ func main() {
 				if shutdownErr := srv.ShutdownHTTPS(ctx); shutdownErr != nil {
 					setupLog.Error(shutdownErr, "Error on HTTPS server shutdown")
 				}
+			})
+
+		// Start certificate watchers for hot-reload
+		certWatcherCtx, certWatcherCancel := context.WithCancel(ctx)
+
+		// Server certificate watcher
+		runGroup.Add(
+			func() error {
+				watchErr := certWatcher.Start(certWatcherCtx)
+				setupLog.Info("Certificate watcher exited")
+				return watchErr
+			},
+			func(_ error) {
+				setupLog.Info("Closing certificate watcher")
+				certWatcherCancel()
 			})
 	}
 	meter := otel.GetMeterProvider().Meter("targetallocator")

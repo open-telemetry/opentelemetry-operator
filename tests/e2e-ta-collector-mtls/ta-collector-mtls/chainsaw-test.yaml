@@ -6,49 +6,59 @@ metadata:
   name: targetallocator-collector-mtls
 spec:
   steps:
-  - name: Setup Target Allocator RBAC
-    use:
-      template: ../../step-templates/target-allocator-rbac-comprehensive.yaml
-  - name: step-00
-    try:
-    - apply:
-        template: true
-        file: 00-install.yaml
-    - assert:
-        file: 00-assert.yaml
-    catch:
-    - podLogs:
-        selector: app.kubernetes.io/managed-by=opentelemetry-operator
-  - name: step-01
-    try:
-    - apply:
-        file: 01-install.yaml
-    - assert:
-        file: 01-assert.yaml
-  - name: step-02
-    try:
-    - apply:
-        template: true
-        file: 02-install.yaml
-    - assert:
-        file: 02-assert.yaml
-    catch:
-    - podLogs:
-        selector: app.kubernetes.io/managed-by=opentelemetry-operator
-  - name: step-03
-    try:
-    - command:
-        entrypoint: bash
-        args:
-          - -c
-          - "$(git rev-parse --show-toplevel)/bin/cmctl renew prometheus-cr-ta-server-cert -n ${NAMESPACE}"
-    - sleep:
-        duration: 30s
-    - apply:
-        template: true
-        file: 03-install.yaml
-    - assert:
-        file: 03-assert.yaml
-    catch:
-    - podLogs:
-        selector: app.kubernetes.io/managed-by=opentelemetry-operator
+    - name: Setup Target Allocator RBAC
+      use:
+        template: ../../step-templates/target-allocator-rbac-comprehensive.yaml
+    - name: step-00
+      try:
+        - apply:
+            template: true
+            file: 00-install.yaml
+        - assert:
+            file: 00-assert.yaml
+      catch:
+        - podLogs:
+            selector: app.kubernetes.io/managed-by=opentelemetry-operator
+    - name: step-01
+      try:
+        - apply:
+            file: 01-install.yaml
+        - assert:
+            file: 01-assert.yaml
+    - name: step-02
+      try:
+        - apply:
+            template: true
+            file: 02-install.yaml
+        - assert:
+            file: 02-assert.yaml
+      catch:
+        - podLogs:
+            selector: app.kubernetes.io/managed-by=opentelemetry-operator
+    - name: step-02b-capture-cert-date
+      try:
+        - apply:
+            template: true
+            file: 02b-install.yaml
+        - assert:
+            file: 02b-assert.yaml
+      catch:
+        - podLogs:
+            selector: app.kubernetes.io/managed-by=opentelemetry-operator
+    - name: step-03
+      try:
+        - command:
+            entrypoint: bash
+            args:
+              - -c
+              - "$(git rev-parse --show-toplevel)/bin/cmctl renew prometheus-cr-ta-server-cert -n ${NAMESPACE}"
+        - sleep:
+            duration: 30s
+        - apply:
+            template: true
+            file: 03-install.yaml
+        - assert:
+            file: 03-assert.yaml
+      catch:
+        - podLogs:
+            selector: app.kubernetes.io/managed-by=opentelemetry-operator
