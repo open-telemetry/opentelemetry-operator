@@ -30,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/kubernetes/fake"
+	metadatafake "k8s.io/client-go/metadata/fake"
 	"k8s.io/client-go/tools/cache"
 	fcache "k8s.io/client-go/tools/cache/testing"
 	"k8s.io/utils/ptr"
@@ -1072,7 +1073,7 @@ func TestLoadConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w, _ := getTestPrometheusCRWatcher(t, namespace, tt.serviceMonitors, tt.podMonitors, tt.probes, tt.scrapeConfigs, tt.cfg)
+			w, _, _ := getTestPrometheusCRWatcher(t, namespace, tt.serviceMonitors, tt.podMonitors, tt.probes, tt.scrapeConfigs, tt.cfg)
 
 			// Start namespace informers in order to populate cache.
 			go w.nsInformer.Run(w.stopChannel)
@@ -1184,7 +1185,7 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 		ScrapeConfigs: []*promconfig.ScrapeConfig{},
 	}
 
-	w, source := getTestPrometheusCRWatcher(t, namespace, nil, podMonitors, nil, nil, cfg)
+	w, source, _ := getTestPrometheusCRWatcher(t, namespace, nil, podMonitors, nil, nil, cfg)
 	events := make(chan Event, 1)
 	eventInterval := 5 * time.Millisecond
 
@@ -1227,6 +1228,160 @@ func TestNamespaceLabelUpdate(t *testing.T) {
 	}, time.Second*60, time.Millisecond*100)
 }
 
+// TestSecretInformerUpdatesStore verifies that when a secret is updated through the informer,
+// the asset store is automatically updated and LoadConfig reflects the new values.
+func TestSecretInformerUpdatesStore(t *testing.T) {
+	namespace := "test"
+	portName := "web"
+
+	sm := &monitoringv1.ServiceMonitor{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "auth",
+			Namespace: namespace,
+		},
+		Spec: monitoringv1.ServiceMonitorSpec{
+			JobLabel: "auth",
+			Endpoints: []monitoringv1.Endpoint{
+				{
+					Port: portName,
+					BasicAuth: &monitoringv1.BasicAuth{
+						Username: v1.SecretKeySelector{
+							LocalObjectReference: v1.LocalObjectReference{
+								Name: "basic-auth",
+							},
+							Key: "username",
+						},
+						Password: v1.SecretKeySelector{
+							LocalObjectReference: v1.LocalObjectReference{
+								Name: "basic-auth",
+							},
+							Key: "password",
+						},
+					},
+				},
+			},
+			Selector: metav1.LabelSelector{},
+		},
+	}
+
+	cfg := allocatorconfig.Config{
+		PrometheusCR: allocatorconfig.PrometheusCRConfig{
+			ServiceMonitorSelector: &metav1.LabelSelector{},
+			PodMonitorSelector:     &metav1.LabelSelector{},
+		},
+	}
+
+	w, _, mdClient := getTestPrometheusCRWatcher(t, namespace, []*monitoringv1.ServiceMonitor{sm}, nil, nil, nil, cfg)
+	defer w.Close()
+
+	// Add initial secret to the metadata client's tracker so the informer can watch it
+	secretGVR := v1.SchemeGroupVersion.WithResource(string(v1.ResourceSecrets))
+	initialSecretMeta := &metav1.PartialObjectMetadata{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "basic-auth",
+			Namespace:       namespace,
+			ResourceVersion: "1",
+		},
+	}
+	err := mdClient.Tracker().Add(initialSecretMeta)
+	require.NoError(t, err)
+
+	events := make(chan Event, 1)
+	errors := make(chan error, 1)
+	eventInterval := 5 * time.Millisecond
+	w.eventInterval = eventInterval
+
+	// Start Watch in a goroutine - this registers the secret informer event handlers
+	go func() {
+		watchErr := w.Watch(events, errors)
+		require.NoError(t, watchErr)
+	}()
+
+	// Wait for informers to sync
+	require.Eventually(t, func() bool {
+		return w.nsInformer.HasSynced()
+	}, time.Second*5, time.Millisecond*10)
+
+	for _, inf := range w.informers {
+		require.Eventually(t, func() bool {
+			return inf.HasSynced()
+		}, time.Second*5, time.Millisecond*10)
+	}
+
+	// Initial config should reflect the original secret values.
+	got, err := w.LoadConfig(context.Background())
+	require.NoError(t, err)
+	require.NotEmpty(t, got.ScrapeConfigs)
+
+	var smSC *promconfig.ScrapeConfig
+	for _, sc := range got.ScrapeConfigs {
+		if sc.JobName == "serviceMonitor/test/auth/0" {
+			smSC = sc
+			break
+		}
+	}
+	require.NotNil(t, smSC)
+	require.NotNil(t, smSC.HTTPClientConfig.BasicAuth)
+	assert.Equal(t, "admin", smSC.HTTPClientConfig.BasicAuth.Username)
+	assert.Equal(t, config.Secret("password"), smSC.HTTPClientConfig.BasicAuth.Password)
+
+	// Update the k8sClient first (this is what the informer's UpdateFunc reads from)
+	updatedSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "basic-auth",
+			Namespace:       namespace,
+			ResourceVersion: "2",
+		},
+		Data: map[string][]byte{
+			"username": []byte("newadmin"),
+			"password": []byte("newpassword"),
+		},
+	}
+	_, err = w.k8sClient.CoreV1().Secrets(namespace).Update(context.Background(), updatedSecret, metav1.UpdateOptions{})
+	require.NoError(t, err)
+
+	// Update the metadata client's tracker to trigger the informer's UpdateFunc
+	updatedSecretMeta := &metav1.PartialObjectMetadata{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "basic-auth",
+			Namespace:       namespace,
+			ResourceVersion: "2",
+		},
+	}
+	err = mdClient.Tracker().Update(secretGVR, updatedSecretMeta, namespace)
+	require.NoError(t, err)
+
+	// Give time for the tracker update to propagate to the informer
+	time.Sleep(100 * time.Millisecond)
+
+	// Wait for the informer event to be processed and verify the store was updated automatically
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		got, err = w.LoadConfig(context.Background())
+		assert.NoError(collect, err)
+
+		smSC = nil
+		for _, sc := range got.ScrapeConfigs {
+			if sc.JobName == "serviceMonitor/test/auth/0" {
+				smSC = sc
+				break
+			}
+		}
+		assert.NotNil(collect, smSC)
+		if smSC != nil && smSC.HTTPClientConfig.BasicAuth != nil {
+			assert.Equal(collect, "newadmin", smSC.HTTPClientConfig.BasicAuth.Username)
+			assert.Equal(collect, config.Secret("newpassword"), smSC.HTTPClientConfig.BasicAuth.Password)
+		}
+	}, time.Second*10, time.Millisecond*100)
+}
+
 func TestRateLimit(t *testing.T) {
 	var err error
 	namespace := "test"
@@ -1248,7 +1403,7 @@ func TestRateLimit(t *testing.T) {
 	eventInterval := 500 * time.Millisecond
 	cfg := allocatorconfig.Config{}
 
-	w, _ := getTestPrometheusCRWatcher(t, namespace, nil, nil, nil, nil, cfg)
+	w, _, _ := getTestPrometheusCRWatcher(t, namespace, nil, nil, nil, nil, cfg)
 	defer w.Close()
 	w.eventInterval = eventInterval
 
@@ -1375,7 +1530,7 @@ func TestDefaultDurations(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w, _ := getTestPrometheusCRWatcher(t, namespace, tt.serviceMonitors, nil, nil, nil, tt.cfg)
+			w, _, _ := getTestPrometheusCRWatcher(t, namespace, tt.serviceMonitors, nil, nil, nil, tt.cfg)
 			defer w.Close()
 
 			events := make(chan Event, 1)
@@ -1410,7 +1565,7 @@ func TestDefaultDurations(t *testing.T) {
 }
 
 // getTestPrometheusCRWatcher creates a test instance of PrometheusCRWatcher with fake clients
-// and test secrets.
+// and test secrets. Returns the watcher, namespace source, and metadata client for secret updates.
 func getTestPrometheusCRWatcher(
 	t *testing.T,
 	namespace string,
@@ -1419,7 +1574,7 @@ func getTestPrometheusCRWatcher(
 	probes []*monitoringv1.Probe,
 	scrapeConfigs []*promv1alpha1.ScrapeConfig,
 	cfg allocatorconfig.Config,
-) (*PrometheusCRWatcher, *fcache.FakeControllerSource) {
+) (*PrometheusCRWatcher, *fcache.FakeControllerSource, *metadatafake.FakeMetadataClient) {
 	mClient := fakemonitoringclient.NewSimpleClientset()
 	for _, sm := range svcMonitors {
 		if sm != nil {
@@ -1479,7 +1634,13 @@ func getTestPrometheusCRWatcher(
 
 	factory := informers.NewMonitoringInformerFactories(map[string]struct{}{v1.NamespaceAll: {}}, map[string]struct{}{}, mClient, 0, nil)
 
-	informers, err := getTestInformers(factory)
+	// Create fake metadata client for secret informer
+	scheme := metadatafake.NewTestScheme()
+	metav1.AddMetaToScheme(scheme)
+	mdClient := metadatafake.NewSimpleMetadataClient(scheme)
+	metadataFactory := informers.NewMetadataInformerFactory(map[string]struct{}{v1.NamespaceAll: {}}, map[string]struct{}{}, mdClient, 0, nil)
+
+	informers, err := getTestInformers(factory, metadataFactory)
 	if err != nil {
 		t.Fatal(t, err)
 	}
@@ -1551,7 +1712,7 @@ func getTestPrometheusCRWatcher(
 		resourceSelector:                resourceSelector,
 		store:                           store,
 		prometheusCR:                    prom,
-	}, source
+	}, source, mdClient
 
 }
 
@@ -1565,7 +1726,7 @@ func sanitizeScrapeConfigsForTest(scs []*promconfig.ScrapeConfig) {
 }
 
 // getTestInformers creates informers for testing without CRD availability checks.
-func getTestInformers(factory informers.FactoriesForNamespaces) (map[string]*informers.ForResource, error) {
+func getTestInformers(factory informers.FactoriesForNamespaces, metadataFactory informers.FactoriesForNamespaces) (map[string]*informers.ForResource, error) {
 	informersMap := make(map[string]*informers.ForResource)
 
 	// Create ServiceMonitor informers
@@ -1595,6 +1756,21 @@ func getTestInformers(factory informers.FactoriesForNamespaces) (map[string]*inf
 		return nil, err
 	}
 	informersMap[promv1alpha1.ScrapeConfigName] = scrapeConfigInformers
+
+	// Secret informer - mirrors production code in getInformers
+	if metadataFactory != nil {
+		secretInformer, err := informers.NewInformersForResourceWithTransform(
+			metadataFactory,
+			v1.SchemeGroupVersion.WithResource(string(v1.ResourceSecrets)),
+			informers.PartialObjectMetadataStrip(operator.SecretGVK()),
+		)
+		if err != nil {
+			return nil, err
+		}
+		if secretInformer != nil {
+			informersMap[string(v1.ResourceSecrets)] = secretInformer
+		}
+	}
 
 	return informersMap, nil
 }
