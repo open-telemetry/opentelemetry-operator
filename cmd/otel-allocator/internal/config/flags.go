@@ -7,6 +7,7 @@ import (
 	"flag"
 
 	"github.com/spf13/pflag"
+	"go.opentelemetry.io/collector/featuregate"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
@@ -41,6 +42,10 @@ func getFlagSet(errorHandling pflag.ErrorHandling) *pflag.FlagSet {
 	zapFlagSet := flag.NewFlagSet("", flag.ErrorHandling(errorHandling))
 	zapCmdLineOpts.BindFlags(zapFlagSet)
 	flagSet.AddGoFlagSet(zapFlagSet)
+	// Add feature gate flags
+	featureGateFlagSet := flag.NewFlagSet("", flag.ErrorHandling(errorHandling))
+	featuregate.GlobalRegistry().RegisterFlags(featureGateFlagSet)
+	flagSet.AddGoFlagSet(featureGateFlagSet)
 	return flagSet
 }
 
