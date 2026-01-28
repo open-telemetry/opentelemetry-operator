@@ -73,7 +73,7 @@ func NewConfigLoader() *ConfigLoader {
 }
 
 // LoadCollectorConfig loads and merges collector configuration for the specified type and distro.
-func (c *ConfigLoader) LoadCollectorConfig(collectorType CollectorType, distroProvider DistroProvider, signals []v1alpha1.ObservabilitySignal, spec v1alpha1.ClusterObservabilitySpec) (v1beta1.Config, error) {
+func (c *ConfigLoader) LoadCollectorConfig(collectorType CollectorType, distroProvider DistroProvider, spec v1alpha1.ClusterObservabilitySpec) (v1beta1.Config, error) {
 	// Load base configuration
 	baseConfig, err := c.loadBaseConfig(collectorType)
 	if err != nil {
@@ -99,8 +99,8 @@ func (c *ConfigLoader) LoadCollectorConfig(collectorType CollectorType, distroPr
 	exporters := c.buildExportersConfig(spec)
 	finalConfig.Exporters = exporters
 
-	// Build pipelines based on enabled signals
-	pipelines := c.buildPipelinesWithExporters(collectorType, signals)
+	// Build pipelines with all signals enabled
+	pipelines := c.buildPipelinesWithExporters(collectorType)
 
 	finalConfig.Service.Pipelines = pipelines
 
@@ -255,58 +255,41 @@ func (c *ConfigLoader) buildExportersConfig(spec v1alpha1.ClusterObservabilitySp
 	return exporters
 }
 
-// buildPipelinesWithExporters creates service pipelines based on collector type and enabled signals.
-func (c *ConfigLoader) buildPipelinesWithExporters(collectorType CollectorType, signals []v1alpha1.ObservabilitySignal) map[string]PipelineConfig {
+// buildPipelinesWithExporters creates service pipelines based on collector type.
+func (c *ConfigLoader) buildPipelinesWithExporters(collectorType CollectorType) map[string]PipelineConfig {
 	pipelines := make(map[string]PipelineConfig)
 
 	// We only use the otlphttp exporter for now
 	exporterName := "otlphttp"
 
-	for _, signal := range signals {
-
-		switch signal {
-		case v1alpha1.ObservabilitySignalMetrics:
-			if collectorType == AgentCollectorType {
-				pipelines["metrics"] = PipelineConfig{
-					Receivers:  []string{"otlp", "kubeletstats"},
-					Processors: []string{"resourcedetection", "k8sattributes", "batch"},
-					Exporters:  []string{exporterName},
-				}
-			} else if collectorType == ClusterCollectorType {
-				pipelines["metrics"] = PipelineConfig{
-					Receivers:  []string{"k8s_cluster"},
-					Processors: []string{"resourcedetection", "batch"},
-					Exporters:  []string{exporterName},
-				}
-			}
-
-		case v1alpha1.ObservabilitySignalLogs:
-			if collectorType == AgentCollectorType {
-				pipelines["logs"] = PipelineConfig{
-					Receivers:  []string{"filelog"},
-					Processors: []string{"k8sattributes", "batch"},
-					Exporters:  []string{exporterName},
-				}
-			} else if collectorType == ClusterCollectorType {
-				pipelines["logs"] = PipelineConfig{
-					Receivers:  []string{"k8s_events"},
-					Processors: []string{"batch"},
-					Exporters:  []string{exporterName},
-				}
-			}
-
-		case v1alpha1.ObservabilitySignalTraces:
-			if collectorType == AgentCollectorType {
-				pipelines["traces"] = PipelineConfig{
-					Receivers:  []string{"otlp"},
-					Processors: []string{"resourcedetection", "k8sattributes", "batch"},
-					Exporters:  []string{exporterName},
-				}
-			}
-			// Cluster collector doesn't handle traces directly
-
-		case v1alpha1.ObservabilitySignalProfiles:
-			continue
+	if collectorType == AgentCollectorType {
+		// Agent collector: metrics, logs, traces
+		pipelines["metrics"] = PipelineConfig{
+			Receivers:  []string{"otlp", "kubeletstats"},
+			Processors: []string{"resourcedetection", "k8sattributes", "batch"},
+			Exporters:  []string{exporterName},
+		}
+		pipelines["logs"] = PipelineConfig{
+			Receivers:  []string{"filelog"},
+			Processors: []string{"k8sattributes", "batch"},
+			Exporters:  []string{exporterName},
+		}
+		pipelines["traces"] = PipelineConfig{
+			Receivers:  []string{"otlp"},
+			Processors: []string{"resourcedetection", "k8sattributes", "batch"},
+			Exporters:  []string{exporterName},
+		}
+	} else if collectorType == ClusterCollectorType {
+		// Cluster collector: metrics, logs (k8s events)
+		pipelines["metrics"] = PipelineConfig{
+			Receivers:  []string{"k8s_cluster"},
+			Processors: []string{"resourcedetection", "batch"},
+			Exporters:  []string{exporterName},
+		}
+		pipelines["logs"] = PipelineConfig{
+			Receivers:  []string{"k8s_events"},
+			Processors: []string{"batch"},
+			Exporters:  []string{exporterName},
 		}
 	}
 

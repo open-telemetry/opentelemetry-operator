@@ -7,17 +7,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ObservabilitySignal represents the type of observability signal.
-// +kubebuilder:validation:Enum=logs;traces;metrics;profiles
-type ObservabilitySignal string
-
-const (
-	ObservabilitySignalLogs     ObservabilitySignal = "logs"
-	ObservabilitySignalTraces   ObservabilitySignal = "traces"
-	ObservabilitySignalMetrics  ObservabilitySignal = "metrics"
-	ObservabilitySignalProfiles ObservabilitySignal = "profiles"
-)
-
 // OTLPHTTPExporter defines OTLP HTTP exporter configuration.
 // This structure mirrors the official OpenTelemetry Collector otlphttpexporter configuration.
 type OTLPHTTPExporter struct {
@@ -159,13 +148,6 @@ type RetryConfig struct {
 // ClusterObservabilitySpec defines the desired state of ClusterObservability.
 // This follows a simplified design using a single OTLP HTTP exporter for all signals.
 type ClusterObservabilitySpec struct {
-	// Signals defines which observability signals to collect and export.
-	// Must contain at least one signal type from: logs, traces, metrics, profiles
-	// +required
-	// +kubebuilder:validation:MinItems=1
-	// +listType=set
-	Signals []ObservabilitySignal `json:"signals"`
-
 	// Exporter defines the OTLP HTTP exporter configuration for all signals.
 	// The collector will automatically append appropriate paths for each signal type.
 	// +required
@@ -265,7 +247,6 @@ type ComponentStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Signals",type="string",JSONPath=".spec.signals",description="Observability signals"
 // +kubebuilder:printcolumn:name="Endpoint",type="string",JSONPath=".spec.exporter.endpoint",description="OTLP exporter endpoint"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase",description="Current phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
