@@ -12,6 +12,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
 var logger = logf.Log.WithName("unit-tests")
@@ -156,6 +158,50 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	// test
 	for _, i := range collectors {
 		assert.InDelta(t, i.NumTargets, count, math.Round(percent))
+	}
+}
+
+// TestLeastWeightedJobDistribution verifies that when multiple jobs have targets,
+// each job's targets are evenly distributed across collectors.
+// This tests the job-name tiebreaker: when collectors have equal total targets,
+// the one with fewer targets from the current job should be chosen.
+func TestLeastWeightedJobDistribution(t *testing.T) {
+	s, _ := New("least-weighted", logger)
+
+	numCols := 5
+	numTargetsPerJob := 100 // Use larger numbers for more stable distribution
+	jobs := []string{"job-a", "job-b", "job-c"}
+
+	cols := MakeNCollectors(numCols, 0)
+	s.SetCollectors(cols)
+
+	// Create and assign targets for each job
+	var allTargets []*target.Item
+	for i, job := range jobs {
+		targets := MakeNTargetsForJob(numTargetsPerJob, job, i*numTargetsPerJob)
+		allTargets = append(allTargets, targets...)
+	}
+	s.SetTargets(allTargets)
+
+	expectedPerJobPerCollector := float64(numTargetsPerJob) / float64(numCols) // 100/5 = 20
+
+	// For each job, count targets per collector
+	for _, job := range jobs {
+		perCollector := map[string]int{}
+		for _, col := range s.Collectors() {
+			targets := s.GetTargetsForCollectorAndJob(col.Name, job)
+			perCollector[col.Name] = len(targets)
+		}
+
+		t.Logf("job %s distribution: %v (expected ~%.0f each)", job, perCollector, expectedPerJobPerCollector)
+
+		// Each collector should have close to expectedPerJobPerCollector targets from this job
+		// Allow 10% variance to account for target processing order
+		for colName, count := range perCollector {
+			assert.InDelta(t, expectedPerJobPerCollector, count, expectedPerJobPerCollector*0.1,
+				"collector %s should have ~%.0f targets from job %s, got %d",
+				colName, expectedPerJobPerCollector, job, count)
+		}
 	}
 }
 

@@ -86,9 +86,10 @@ var _ consistent.Member = Collector{}
 // This struct will be parsed into endpoint with Collector and jobs info.
 // This struct can be extended with information like annotations and labels in the future.
 type Collector struct {
-	Name       string
-	NodeName   string
-	NumTargets int
+	Name          string
+	NodeName      string
+	NumTargets    int
+	TargetsPerJob map[string]int
 }
 
 func (c Collector) Hash() string {
@@ -100,5 +101,5 @@ func (c Collector) String() string {
 }
 
 func NewCollector(name, node string) *Collector {
-	return &Collector{Name: name, NodeName: node}
+	return &Collector{Name: name, NodeName: node, TargetsPerJob: make(map[string]int)}
 }
