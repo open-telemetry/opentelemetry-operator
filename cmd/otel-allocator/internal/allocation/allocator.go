@@ -93,6 +93,7 @@ type allocator struct {
 	log logr.Logger
 
 	filter                Filter
+	useLabeledMetrics     bool
 	targetsPerCollector   metric.Int64Gauge
 	collectorsAllocatable metric.Int64Gauge
 	timeToAssign          metric.Float64Histogram
@@ -110,6 +111,11 @@ func (a *allocator) SetFallbackStrategy(strategy Strategy) {
 	a.strategy.SetFallbackStrategy(strategy)
 }
 
+// SetLabeledMetrics sets whether to use labeled metrics.
+func (a *allocator) SetLabeledMetrics(enabled bool) {
+	a.useLabeledMetrics = enabled
+}
+
 // SetTargets accepts a list of targets that will be used to make
 // load balancing decisions. This method should be called when there are
 // new targets discovered or existing targets are shutdown.
@@ -123,7 +129,35 @@ func (a *allocator) SetTargets(targets []*target.Item) {
 		targets = a.filter.Apply(targets)
 	}
 
-	a.targetsRemaining.Record(context.Background(), int64(len(targets)))
+	// Record remaining targets, with labels if feature flag is enabled
+	if a.useLabeledMetrics {
+		// Record remaining targets grouped by job.name and k8s.namespace.name (OTel semantic conventions)
+		remainingByJobNamespace := make(map[string]map[string]int)
+		for _, t := range targets {
+			namespace := t.Labels.Get("__meta_kubernetes_namespace")
+			if namespace == "" {
+				namespace = "unknown"
+			}
+			if remainingByJobNamespace[t.JobName] == nil {
+				remainingByJobNamespace[t.JobName] = make(map[string]int)
+			}
+			remainingByJobNamespace[t.JobName][namespace]++
+		}
+
+		for jobName, namespaceMap := range remainingByJobNamespace {
+			for namespace, count := range namespaceMap {
+				a.targetsRemaining.Record(context.Background(), int64(count),
+					metric.WithAttributes(
+						attribute.String("job.name", jobName),
+						attribute.String("k8s.namespace.name", namespace),
+					))
+			}
+		}
+	} else {
+		// Legacy behavior: record total targets without labels
+		a.targetsRemaining.Record(context.Background(), int64(len(targets)))
+	}
+
 	concurrency := runtime.NumCPU() * 2 // determined experimentally
 	targetMap := buildTargetMap(targets, concurrency)
 

@@ -44,6 +44,12 @@ func WithFallbackStrategy(fallbackStrategy string) Option {
 	}
 }
 
+func WithLabeledMetrics(enabled bool) Option {
+	return func(allocator Allocator) {
+		allocator.SetLabeledMetrics(enabled)
+	}
+}
+
 func New(name string, log logr.Logger, opts ...Option) (Allocator, error) {
 	if strategy, ok := strategies[name]; ok {
 		return newAllocator(log.WithValues("allocator", name), strategy, opts...)
@@ -67,6 +73,7 @@ type Allocator interface {
 	GetTargetsForCollectorAndJob(collector string, job string) []*target.Item
 	SetFilter(filter Filter)
 	SetFallbackStrategy(strategy Strategy)
+	SetLabeledMetrics(enabled bool)
 }
 
 type Strategy interface {
