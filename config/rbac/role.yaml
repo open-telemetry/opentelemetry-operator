@@ -137,18 +137,10 @@ rules:
 - apiGroups:
   - opentelemetry.io
   resources:
+  - clusterobservabilities
   - instrumentations
-  - opentelemetrycollectors
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - opentelemetry.io
-  resources:
   - opampbridges
+  - opentelemetrycollectors
   - targetallocators
   - targetallocators/finalizers
   verbs:
@@ -162,12 +154,14 @@ rules:
 - apiGroups:
   - opentelemetry.io
   resources:
+  - clusterobservabilities/finalizers
   - opampbridges/finalizers
   verbs:
   - update
 - apiGroups:
   - opentelemetry.io
   resources:
+  - clusterobservabilities/status
   - opampbridges/status
   - opentelemetrycollectors/finalizers
   - opentelemetrycollectors/status
@@ -193,6 +187,18 @@ rules:
   resources:
   - routes
   - routes/custom-host
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
   verbs:
   - create
   - delete
