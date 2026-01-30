@@ -1,0 +1,49 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
+# Example ClusterObservability configuration
+# This resource manages a complete observability stack for your Kubernetes cluster.
+apiVersion: opentelemetry.io/v1alpha1
+kind: ClusterObservability
+metadata:
+  name: cluster-observability
+  namespace: opentelemetry-operator-system
+spec:
+  # OTLP HTTP exporter configuration
+  exporter:
+    # Base endpoint for all signals (e.g., https://otel-backend.example.com:4318)
+    endpoint: "https://otel-backend.example.com:4318"
+    
+    # Optional: Override endpoint for specific signals
+    # traces_endpoint: "https://trace-backend.example.com/v2/trace/otlp"
+    # metrics_endpoint: "https://metrics-backend.example.com/v2/datapoint/otlp"
+    # logs_endpoint: "https://logs-backend.example.com/v1/logs"
+    
+    # Optional: Add headers (e.g., for authentication)
+    headers:
+      "Authorization": "Bearer your-token-here"
+    
+    # Optional: Compression (gzip or none)
+    compression: "gzip"
+    
+    # Optional: Request timeout
+    timeout: "30s"
+    
+    # Optional: TLS configuration
+    # Note: File mounting for ca_file, cert_file, key_file is not yet supported
+    # tls:
+    #   insecure: false
+    #   server_name: "otel-backend.example.com"
+    
+    # Optional: Retry configuration
+    # retry_on_failure:
+    #   enabled: true
+    #   initial_interval: "5s"
+    #   max_interval: "30s"
+    #   max_elapsed_time: "5m"
+    
+    # Optional: Sending queue configuration
+    # sending_queue:
+    #   enabled: true
+    #   num_consumers: 10
+    #   queue_size: 1000

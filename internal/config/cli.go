@@ -154,6 +154,13 @@ func ApplyCLI(cfg *Config) error {
 				cfg.Zap.LevelFormat, _ = f.GetString("zap-level-format")
 			case "enable-webhooks":
 				cfg.EnableWebhooks, _ = f.GetBool("enable-webhooks")
+			case "create-rbac-permissions":
+				val, _ := f.GetBool("create-rbac-permissions")
+				if val {
+					cfg.CreateRBACPermissions = autoRBAC.Available
+				} else {
+					cfg.CreateRBACPermissions = autoRBAC.NotAvailable
+				}
 			}
 		}
 	})

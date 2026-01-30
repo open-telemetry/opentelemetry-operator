@@ -346,6 +346,22 @@ func main() {
 		}
 	}
 
+	if featuregate.EnableClusterObservability.IsEnabled() {
+		setupLog.Info("ClusterObservability feature is enabled")
+		if err = controllers.NewClusterObservabilityReconciler(controllers.ClusterObservabilityReconcilerParams{
+			Client:   mgr.GetClient(),
+			Log:      ctrl.Log.WithName("controllers").WithName("ClusterObservability"),
+			Scheme:   mgr.GetScheme(),
+			Config:   cfg,
+			Recorder: mgr.GetEventRecorderFor("cluster-observability"),
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "ClusterObservability")
+			os.Exit(1)
+		}
+	} else {
+		setupLog.Info("ClusterObservability feature is disabled")
+	}
+
 	if cfg.PrometheusCRAvailability == prometheus.Available && cfg.CreateServiceMonitorOperatorMetrics {
 		operatorMetrics, opError := operatormetrics.NewOperatorMetrics(mgr.GetConfig(), scheme, ctrl.Log.WithName("operator-metrics-sm"))
 		if opError != nil {

@@ -840,7 +840,11 @@ api-docs: crdoc kustomize
 	for crdmanifest in $$TMP_DIR/*; do \
 	  filename="$$(basename -s .opentelemetry.io.yaml $$crdmanifest)" ;\
 	  filename="$${filename#apiextensions.k8s.io_v1_customresourcedefinition_}" ;\
-	  $(CRDOC) --resources $$crdmanifest --output docs/api/$$filename.md ;\
+	  if [ "$$filename" = "clusterobservabilities" ]; then \
+	    echo "Skipping API documentation generation for clusterobservabilities (internal alpha API)" ;\
+	  else \
+	    $(CRDOC) --resources $$crdmanifest --output docs/api/$$filename.md ;\
+	  fi ;\
 	done;\
 	}
 
