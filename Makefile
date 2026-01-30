@@ -474,6 +474,11 @@ e2e-upgrade: undeploy chainsaw
 e2e-crd-validations: chainsaw
 	$(CHAINSAW) test --test-dir ./tests/e2e-crd-validations
 
+# end-to-end tests for webhook metrics
+.PHONY: e2e-webhook-metrics
+e2e-webhook-metrics: chainsaw
+	$(CHAINSAW) test --test-dir ./tests/e2e-webhook-metrics --report-name e2e-webhook-metrics
+
 # Prepare environment for e2e tests
 .PHONY: prepare-e2e
 prepare-e2e: chainsaw set-image-controller add-image-targetallocator add-image-opampbridge start-kind cert-manager install-metrics-server install-targetallocator-prometheus-crds load-image-all deploy

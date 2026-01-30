@@ -36,6 +36,7 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.Bool("enable-nodejs-instrumentation", cfg.EnableNodeJSAutoInstrumentation, "Controls whether the operator supports nodejs auto-instrumentation")
 	f.Bool("enable-java-instrumentation", cfg.EnableJavaAutoInstrumentation, "Controls whether the operator supports java auto-instrumentation")
 	f.Bool("enable-cr-metrics", cfg.EnableCRMetrics, "Controls whether exposing the CR metrics is enabled")
+	f.Bool("enable-webhook-metrics", cfg.EnableWebhookMetrics, "Controls whether exposing the pod mutation webhook metrics is enabled")
 	f.Bool("create-sm-operator-metrics", cfg.CreateServiceMonitorOperatorMetrics, "Create a ServiceMonitor for the operator metrics")
 	f.Bool("ignore-missing-collector-crds", cfg.IgnoreMissingCollectorCRDs, "Ignore missing OpenTelemetryCollector CRDs presence in the cluster")
 	f.String("collector-image", cfg.CollectorImage, "The default OpenTelemetry collector image. This image is used when no image is specified in the CustomResource.")
@@ -134,6 +135,8 @@ func ApplyCLI(cfg *Config) error {
 				cfg.EnableLeaderElection, _ = f.GetBool("enable-leader-election")
 			case "enable-cr-metrics":
 				cfg.EnableCRMetrics, _ = f.GetBool("enable-cr-metrics")
+			case "enable-webhook-metrics":
+				cfg.EnableWebhookMetrics, _ = f.GetBool("enable-webhook-metrics")
 			case "create-sm-operator-metrics":
 				cfg.CreateServiceMonitorOperatorMetrics, _ = f.GetBool("create-sm-operator-metrics")
 			case "webhook-port":
