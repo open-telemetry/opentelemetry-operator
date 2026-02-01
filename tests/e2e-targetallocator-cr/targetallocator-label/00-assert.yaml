@@ -43,3 +43,10 @@ data:
 kind: ConfigMap
 metadata:
   name: ta-targetallocator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ta-targetallocator
+  annotations:
+    e2e-test-annotation: "true"

@@ -4,6 +4,8 @@ metadata:
   name: stateful-targetallocator
   labels:
     app.kubernetes.io/name: test
+  annotations:
+    e2e-test-annotation: "true"
 spec:
   selector:
     matchLabels:
