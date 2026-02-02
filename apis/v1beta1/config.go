@@ -270,12 +270,21 @@ func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, co
 }
 
 // applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
+// If defaultsCfg.TLSProfile is set, TLS defaults are also applied via the Parser.GetDefaultConfig method.
 // Returns a list of events that should be recorded by the caller.
-func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]EventInfo, error) {
+func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, defaultsCfg *DefaultsConfig, componentKinds ...ComponentKind) ([]EventInfo, error) {
 	events, err := c.Service.ApplyDefaults(logger)
 	if err != nil {
 		return events, err
 	}
+	return c.applyComponentDefaults(logger, defaultsCfg, componentKinds...)
+}
+
+// applyComponentDefaults applies defaults to components via Parser.GetDefaultConfig.
+// This does NOT apply service defaults - use applyDefaultForComponentKinds for that.
+// If defaultsCfg.TLSProfile is set, TLS defaults are injected into components with tls: blocks.
+func (c *Config) applyComponentDefaults(logger logr.Logger, defaultsCfg *DefaultsConfig, componentKinds ...ComponentKind) ([]EventInfo, error) {
+	var events []EventInfo
 	enabledComponents := c.GetEnabledComponents()
 	for _, componentKind := range componentKinds {
 		var retriever components.ParserRetriever
@@ -285,7 +294,8 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 			retriever = receivers.ReceiverFor
 			cfg = c.Receivers
 		case KindExporter:
-			continue
+			retriever = exporters.ParserFor
+			cfg = c.Exporters
 		case KindProcessor:
 			continue
 		case KindExtension:
@@ -298,7 +308,7 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 		for componentName := range enabledComponents[componentKind] {
 			parser := retriever(componentName)
 			componentConf := cfg.Object[componentName]
-			newCfg, err := parser.GetDefaultConfig(logger, componentConf)
+			newCfg, err := parser.GetDefaultConfig(logger, componentConf, defaultsCfg.TLSProfile)
 			if err != nil {
 				return events, err
 			}
@@ -354,8 +364,34 @@ func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error
 	return c.getRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor, KindExtension)
 }
 
-func (c *Config) ApplyDefaults(logger logr.Logger) ([]EventInfo, error) {
-	return c.applyDefaultForComponentKinds(logger, KindReceiver, KindExtension)
+// DefaultsConfig holds configuration options for applying defaults to collector config.
+// +kubebuilder:object:generate=false
+type DefaultsConfig struct {
+	// TLSProfile provides TLS settings to inject into components with tls: blocks.
+	TLSProfile components.TLSProfile
+}
+
+// DefaultsOption is a functional option for configuring defaults behavior.
+// +kubebuilder:object:generate=false
+type DefaultsOption func(*DefaultsConfig)
+
+// WithTLSProfile sets the TLS profile to use when applying defaults.
+// When set, TLS settings (min_version, cipher_suites) are injected into
+// components that have a tls: block with cert_file configured.
+func WithTLSProfile(tls components.TLSProfile) DefaultsOption {
+	return func(cfg *DefaultsConfig) {
+		cfg.TLSProfile = tls
+	}
+}
+
+// ApplyDefaults applies default configuration values to the collector config.
+// Optional DefaultsOption arguments can be provided to customize behavior.
+func (c *Config) ApplyDefaults(logger logr.Logger, opts ...DefaultsOption) ([]EventInfo, error) {
+	cfg := &DefaultsConfig{}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+	return c.applyDefaultForComponentKinds(logger, cfg, KindReceiver, KindExporter, KindExtension)
 }
 
 // GetLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled
