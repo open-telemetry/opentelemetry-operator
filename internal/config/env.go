@@ -77,6 +77,12 @@ func ApplyEnvVars(cfg *Config) {
 	if v, ok := os.LookupEnv("FIPS_DISABLED_COMPONENTS"); ok {
 		cfg.FipsDisabledComponents = v
 	}
+	if v, ok := os.LookupEnv("TLS_CLUSTER_PROFILE"); ok {
+		cfg.TLS.UseClusterProfile, _ = strconv.ParseBool(v)
+	}
+	if v, ok := os.LookupEnv("TLS_CONFIGURE_OPERANDS"); ok {
+		cfg.TLS.ConfigureOperands, _ = strconv.ParseBool(v)
+	}
 	if v, ok := os.LookupEnv("TLS_MIN_VERSION"); ok {
 		cfg.TLS.MinVersion = v
 	}

@@ -99,7 +99,7 @@ metadata:
     categories: Logging & Tracing,Monitoring,Observability
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-02-18T12:31:45Z"
+    createdAt: "2026-02-19T07:34:42Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
@@ -385,6 +385,7 @@ spec:
         - apiGroups:
           - config.openshift.io
           resources:
+          - apiservers
           - infrastructures
           - infrastructures/status
           verbs:
@@ -572,6 +573,10 @@ spec:
                   value: "true"
                 - name: FEATURE_GATES
                   value: operator.networkpolicy,operand.networkpolicy
+                - name: TLS_CLUSTER_PROFILE
+                  value: "true"
+                - name: TLS_CONFIGURE_OPERANDS
+                  value: "true"
                 image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.145.0
                 livenessProbe:
                   httpGet:

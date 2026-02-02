@@ -63,7 +63,15 @@ func (m *MultiPortReceiver) ParserName() string {
 	return fmt.Sprintf("__%s", m.name)
 }
 
-func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error) {
+func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config interface{}, opts ...DefaultOption) (interface{}, error) {
+	// Apply options to build the DefaultConfig
+	defaultCfg := &DefaultConfig{}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(defaultCfg)
+		}
+	}
+
 	multiProtoEndpointCfg := &MultiProtocolEndpointConfig{}
 	if err := mapstructure.Decode(config, multiProtoEndpointCfg); err != nil {
 		return nil, err
@@ -79,7 +87,7 @@ func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config interfac
 			if defaultAddr, ok := m.addrMappings[protocol]; ok {
 				addr = defaultAddr
 			}
-			conf, err := AddressDefaulter(logger, addr, port, ec)
+			conf, err := AddressDefaulter(logger, defaultCfg, addr, port, ec)
 			if err != nil {
 				return nil, err
 			}

@@ -42,9 +42,27 @@ type ProbeGenerator[ComponentConfigType any] func(logger logr.Logger, config Com
 // It's expected that type Config is the configuration used by a parser.
 type EnvVarGenerator[ComponentConfigType any] func(logger logr.Logger, config ComponentConfigType) ([]corev1.EnvVar, error)
 
+// DefaultConfig holds configuration options for applying defaults to components.
+type DefaultConfig struct {
+	// TLSProfile provides TLS settings to inject into components with tls: blocks.
+	TLSProfile TLSProfile
+}
+
+// DefaultOption is a functional option for configuring defaults behavior.
+type DefaultOption func(*DefaultConfig)
+
+// WithTLSProfile sets the TLS profile to use when applying defaults.
+// When set, TLS settings (min_version, cipher_suites) are injected into
+// components that have a tls: block with cert_file configured.
+func WithTLSProfile(tls TLSProfile) DefaultOption {
+	return func(cfg *DefaultConfig) {
+		cfg.TLSProfile = tls
+	}
+}
+
 // Defaulter is a function that applies given defaults to the passed Config.
 // It's expected that type Config is the configuration used by a parser.
-type Defaulter[ComponentConfigType any] func(logger logr.Logger, defaultAddr string, defaultPort int32, config ComponentConfigType) (map[string]interface{}, error)
+type Defaulter[ComponentConfigType any] func(logger logr.Logger, defaultCfg *DefaultConfig, defaultAddr string, defaultPort int32, config ComponentConfigType) (map[string]interface{}, error)
 
 // ComponentType returns the type for a given component name.
 // components have a name like:
@@ -85,8 +103,9 @@ type ParserRetriever func(string) Parser
 
 type Parser interface {
 	// GetDefaultConfig returns a config with set default values.
+	// Optional DefaultOption arguments can customize behavior (e.g., WithTLSProfile for TLS defaults).
 	// NOTE: Config merging must be done by the caller if desired.
-	GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error)
+	GetDefaultConfig(logger logr.Logger, config interface{}, opts ...DefaultOption) (interface{}, error)
 
 	// Ports returns the service ports parsed based on the component's configuration where name is the component's name
 	// of the form "name" or "type/name"

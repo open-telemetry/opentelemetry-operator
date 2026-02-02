@@ -93,6 +93,7 @@ rules:
 - apiGroups:
   - config.openshift.io
   resources:
+  - apiservers
   - infrastructures
   - infrastructures/status
   verbs:

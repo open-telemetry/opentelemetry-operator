@@ -20,7 +20,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oklog/run v1.2.0
 	github.com/open-telemetry/opamp-go v0.15.0
-	github.com/openshift/api v0.0.0-20240124164020-e2ce40831f2e
+	github.com/openshift/api v0.0.0-20260130140113-71e91db96ffc
 	github.com/operator-framework/api v0.38.0
 	github.com/operator-framework/operator-lib v0.19.0
 	github.com/prometheus-operator/prometheus-operator v0.89.0
@@ -49,8 +49,8 @@ require (
 	k8s.io/client-go v0.34.3
 	k8s.io/component-base v0.34.3
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
-	sigs.k8s.io/controller-runtime v0.22.4
+	k8s.io/utils v0.0.0-20260108192941-914a6e750570
+	sigs.k8s.io/controller-runtime v0.22.5
 	sigs.k8s.io/gateway-api v1.1.0 // indirect
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -220,6 +220,8 @@ require gotest.tools/v3 v3.5.2
 require (
 	github.com/aws/smithy-go v1.24.0
 	github.com/goccy/go-yaml v1.19.2
+	github.com/openshift/controller-runtime-common v0.0.0-20260210092218-8eef974290cd
+	github.com/openshift/library-go v0.0.0-20260210145149-d0e860e8d752
 	go.opentelemetry.io/contrib/otelconf v0.20.0
 )
 
@@ -283,5 +285,5 @@ require (
 	k8s.io/apiserver v0.34.3 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.33.0 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
-	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v6 v6.3.2-0.20260122202528-d9cc6641c482 // indirect
 )

@@ -23,8 +23,14 @@ var (
 // SingleEndpointConfig represents the minimal struct for a given YAML configuration input containing either
 // endpoint or listen_address.
 type SingleEndpointConfig struct {
-	Endpoint      string `mapstructure:"endpoint,omitempty" yaml:"endpoint,omitempty"`
-	ListenAddress string `mapstructure:"listen_address,omitempty" yaml:"listen_address,omitempty"`
+	Endpoint      string     `mapstructure:"endpoint,omitempty" yaml:"endpoint,omitempty"`
+	ListenAddress string     `mapstructure:"listen_address,omitempty" yaml:"listen_address,omitempty"`
+	TLS           *TLSConfig `mapstructure:"tls,omitempty"`
+}
+
+type TLSConfig struct {
+	Ciphers    []string `mapstructure:"cipher_suites,omitempty"`
+	MinVersion string   `mapstructure:"min_version,omitempty"`
 }
 
 func (g *SingleEndpointConfig) GetPortNumOrDefault(logger logr.Logger, p int32) int32 {
@@ -82,7 +88,7 @@ func NewSilentSinglePortParserBuilder(name string, port int32) Builder[*SingleEn
 	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpointSilent).WithDefaultsApplier(AddressDefaulter).WithDefaultRecAddress(DefaultRecAddress)
 }
 
-func AddressDefaulter(logger logr.Logger, defaultRecAddr string, port int32, config *SingleEndpointConfig) (map[string]interface{}, error) {
+func AddressDefaulter(_ logr.Logger, defaultCfg *DefaultConfig, defaultRecAddr string, port int32, config *SingleEndpointConfig) (map[string]interface{}, error) {
 	if config == nil {
 		config = &SingleEndpointConfig{}
 	}
@@ -93,6 +99,15 @@ func AddressDefaulter(logger logr.Logger, defaultRecAddr string, port int32, con
 		v := strings.Split(config.Endpoint, ":")
 		if len(v) < 2 || v[0] == "" {
 			config.Endpoint = fmt.Sprintf("%s:%s", defaultRecAddr, v[len(v)-1])
+		}
+	}
+
+	if defaultCfg != nil && defaultCfg.TLSProfile != nil && config.TLS != nil {
+		if config.TLS.MinVersion == "" && defaultCfg.TLSProfile.MinTLSVersionOTEL() != "" {
+			config.TLS.MinVersion = defaultCfg.TLSProfile.MinTLSVersionOTEL()
+		}
+		if config.TLS.Ciphers == nil && len(defaultCfg.TLSProfile.CipherSuiteNames()) > 0 {
+			config.TLS.Ciphers = defaultCfg.TLSProfile.CipherSuiteNames()
 		}
 	}
 

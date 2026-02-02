@@ -16,6 +16,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
@@ -142,6 +143,12 @@ type Internal struct {
 	KubeAPIServerPort int32 `yaml:"kube-api-server-port"`
 	// KubeAPIServerIPs are the IPs of the Kubernetes API server discovered from EndpointSlices.
 	KubeAPIServerIPs []string `yaml:"kube-api-server-ips"`
+	// OperandTLSProfile holds the TLS profile to inject into operand (collector) configurations.
+	// This is set at operator startup from the cluster's TLS security profile and is applied
+	// during reconciliation when generating ConfigMaps. When the cluster TLS profile changes,
+	// the operator restarts (via SecurityProfileWatcher) and all collectors are reconciled
+	// with the new TLS settings.
+	OperandTLSProfile components.TLSProfile `yaml:"-"`
 }
 
 // New constructs a new configuration.
@@ -187,8 +194,10 @@ func New() Config {
 		WebhookPort:                         9443,
 		FipsDisabledComponents:              "uppercase",
 		TLS: TLSConfig{
-			MinVersion:   "VersionTLS12",
-			CipherSuites: nil,
+			UseClusterProfile: false,
+			ConfigureOperands: false,
+			MinVersion:        "VersionTLS12",
+			CipherSuites:      nil,
 		},
 		Zap: ZapConfig{
 			MessageKey:  "message",

@@ -5,6 +5,7 @@ package controllers_test
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"regexp"
 	"slices"
@@ -42,6 +43,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -1493,6 +1495,142 @@ func namespacedObjectName(name string, namespace string) types.NamespacedName {
 		Namespace: namespace,
 		Name:      name,
 	}
+}
+
+func TestTLSDefaultingAtReconcileTime(t *testing.T) {
+	// This test verifies that when a collector with TLS config is reconciled,
+	// the TLS defaults from OperandTLSProfile are injected into the generated ConfigMap.
+	// This happens at reconciliation time (ConfigMap generation), not via webhook.
+
+	collectorName := sanitizeResourceName(t.Name())
+	collector := &v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      collectorName,
+			Namespace: metav1.NamespaceDefault,
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: v1beta1.ModeDeployment,
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"otlp": map[string]interface{}{
+							"protocols": map[string]interface{}{
+								"grpc": map[string]interface{}{
+									"endpoint": "0.0.0.0:4317",
+									"tls": map[string]interface{}{
+										"cert_file": "/certs/tls.crt",
+										"key_file":  "/certs/tls.key",
+									},
+								},
+							},
+						},
+					},
+				},
+				Exporters: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"debug": map[string]interface{}{},
+					},
+				},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"traces": {
+							Receivers: []string{"otlp"},
+							Exporters: []string{"debug"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	testCtx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	// Create a config with OperandTLSProfile set (TLS 1.2 and specific cipher)
+	cfg := config.Config{
+		CollectorImage:          "default-collector",
+		TargetAllocatorImage:    "default-ta-allocator",
+		CollectorConfigMapEntry: "collector.yaml",
+	}
+	cfg.Internal.OperandTLSProfile = components.NewStaticTLSProfile(
+		tls.VersionTLS12,
+		[]uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+	)
+	reconciler := createTestReconciler(t, testCtx, cfg)
+
+	clientCtx := context.Background()
+	err := k8sClient.Create(clientCtx, collector)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		deleteErr := k8sClient.Delete(clientCtx, collector)
+		assert.NoError(t, deleteErr)
+	})
+
+	nsn := types.NamespacedName{Name: collector.Name, Namespace: collector.Namespace}
+	err = k8sClient.Get(clientCtx, nsn, collector)
+	require.NoError(t, err)
+
+	// Reconcile to generate the ConfigMap
+	req := k8sreconcile.Request{NamespacedName: nsn}
+	_, reconcileErr := reconciler.Reconcile(clientCtx, req)
+	require.NoError(t, reconcileErr)
+
+	// Find and verify the generated ConfigMap
+	opts := []client.ListOption{
+		client.InNamespace(collector.Namespace),
+		client.MatchingLabels(map[string]string{
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/instance":   naming.Truncate("%s.%s", 63, nsn.Namespace, nsn.Name),
+		}),
+	}
+
+	var configMap *v1.ConfigMap
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		configMaps := &v1.ConfigMapList{}
+		listErr := k8sClient.List(clientCtx, configMaps, opts...)
+		assert.NoError(collect, listErr)
+		if len(configMaps.Items) > 0 {
+			configMap = &configMaps.Items[0]
+		}
+		assert.NotNil(collect, configMap, "ConfigMap should be created")
+	}, time.Second*30, time.Millisecond*100)
+
+	require.NotNil(t, configMap, "ConfigMap should be created")
+
+	// Parse the collector config from the ConfigMap
+	collectorYAML, ok := configMap.Data["collector.yaml"]
+	require.True(t, ok, "ConfigMap should contain collector.yaml")
+
+	var configData map[string]interface{}
+	err = yaml.Unmarshal([]byte(collectorYAML), &configData)
+	require.NoError(t, err)
+
+	// Navigate to the TLS config in the OTLP receiver
+	receivers, ok := configData["receivers"].(map[string]interface{})
+	require.True(t, ok, "receivers should exist")
+
+	otlp, ok := receivers["otlp"].(map[string]interface{})
+	require.True(t, ok, "otlp receiver should exist")
+
+	protocols, ok := otlp["protocols"].(map[string]interface{})
+	require.True(t, ok, "protocols should exist")
+
+	grpc, ok := protocols["grpc"].(map[string]interface{})
+	require.True(t, ok, "grpc protocol should exist")
+
+	tlsConfig, ok := grpc["tls"].(map[string]interface{})
+	require.True(t, ok, "tls config should exist")
+
+	// Check that min_version was injected (TLS 1.2 = "1.2")
+	minVersion, ok := tlsConfig["min_version"]
+	assert.True(t, ok, "min_version should be set at reconcile time")
+	assert.Equal(t, "1.2", minVersion, "min_version should be 1.2 from TLS profile")
+
+	// Check that cipher_suites was injected
+	cipherSuites, ok := tlsConfig["cipher_suites"]
+	assert.True(t, ok, "cipher_suites should be set at reconcile time")
+	expectedCiphers := []interface{}{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"}
+	assert.Equal(t, expectedCiphers, cipherSuites, "cipher_suites should match TLS profile")
 }
 
 // getAllResources gets all the resource types owned by the controller.
