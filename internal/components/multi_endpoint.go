@@ -64,30 +64,38 @@ func (m *MultiPortReceiver) ParserName() string {
 	return fmt.Sprintf("__%s", m.name)
 }
 
-func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config any) (any, error) {
+func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config any, opts ...DefaultOption) (any, error) {
+	// Apply options to build the DefaultConfig
+	defaultCfg := &DefaultConfig{}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(defaultCfg)
+		}
+	}
+
 	multiProtoEndpointCfg := &MultiProtocolEndpointConfig{}
 	if err := mapstructure.Decode(config, multiProtoEndpointCfg); err != nil {
 		return nil, err
 	}
 	defaultedConfig := map[string]any{}
 	for protocol, ec := range multiProtoEndpointCfg.Protocols {
-		defaultSvc, ok := m.portMappings[protocol]
-		if !ok {
+		if defaultSvc, ok := m.portMappings[protocol]; ok {
+			port := defaultSvc.Port
+			if ec != nil {
+				port = ec.GetPortNumOrDefault(logger, port)
+			}
+			addr := m.defaultRecAddr
+			if defaultAddr, ok := m.addrMappings[protocol]; ok {
+				addr = defaultAddr
+			}
+			conf, err := AddressDefaulter(logger, defaultCfg, addr, port, ec)
+			if err != nil {
+				return nil, err
+			}
+			defaultedConfig[protocol] = conf
+		} else {
 			return nil, fmt.Errorf("unknown protocol set: %s", protocol)
 		}
-		port := defaultSvc.Port
-		if ec != nil {
-			port = ec.GetPortNumOrDefault(logger, port)
-		}
-		addr := m.defaultRecAddr
-		if defaultAddr, ok := m.addrMappings[protocol]; ok {
-			addr = defaultAddr
-		}
-		conf, err := AddressDefaulter(logger, addr, port, ec)
-		if err != nil {
-			return nil, err
-		}
-		defaultedConfig[protocol] = conf
 	}
 	return map[string]any{
 		"protocols": defaultedConfig,
