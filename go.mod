@@ -219,7 +219,7 @@ require gotest.tools/v3 v3.5.2
 
 require (
 	github.com/aws/smithy-go v1.24.0
-	github.com/goccy/go-yaml v1.18.0
+	github.com/goccy/go-yaml v1.19.2
 	go.opentelemetry.io/contrib/otelconf v0.19.0
 )
 
