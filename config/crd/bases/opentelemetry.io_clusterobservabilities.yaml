@@ -1,0 +1,174 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.0
+  name: clusterobservabilities.opentelemetry.io
+spec:
+  group: opentelemetry.io
+  names:
+    kind: ClusterObservability
+    listKind: ClusterObservabilityList
+    plural: clusterobservabilities
+    singular: clusterobservability
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: OTLP exporter endpoint
+      jsonPath: .spec.exporter.endpoint
+      name: Endpoint
+      type: string
+    - description: Current phase
+      jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              exporter:
+                properties:
+                  compression:
+                    enum:
+                    - gzip
+                    - none
+                    - ""
+                    type: string
+                  encoding:
+                    enum:
+                    - proto
+                    - json
+                    type: string
+                  endpoint:
+                    type: string
+                  headers:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  logs_endpoint:
+                    type: string
+                  metrics_endpoint:
+                    type: string
+                  profiles_endpoint:
+                    type: string
+                  read_buffer_size:
+                    minimum: 0
+                    type: integer
+                  retry_on_failure:
+                    properties:
+                      enabled:
+                        type: boolean
+                      initial_interval:
+                        type: string
+                      max_elapsed_time:
+                        type: string
+                      max_interval:
+                        type: string
+                      multiplier:
+                        type: string
+                      randomization_factor:
+                        type: string
+                    type: object
+                  sending_queue:
+                    properties:
+                      enabled:
+                        type: boolean
+                      num_consumers:
+                        minimum: 1
+                        type: integer
+                      queue_size:
+                        minimum: 1
+                        type: integer
+                    type: object
+                  timeout:
+                    type: string
+                  tls:
+                    properties:
+                      ca_file:
+                        type: string
+                      cert_file:
+                        type: string
+                      insecure:
+                        type: boolean
+                      key_file:
+                        type: string
+                      server_name:
+                        type: string
+                    type: object
+                  traces_endpoint:
+                    type: string
+                  write_buffer_size:
+                    minimum: 0
+                    type: integer
+                type: object
+            required:
+            - exporter
+            type: object
+          status:
+            properties:
+              componentsStatus:
+                additionalProperties:
+                  properties:
+                    lastUpdated:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    ready:
+                      type: boolean
+                  type: object
+                type: object
+              conditions:
+                items:
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    observedGeneration:
+                      format: int64
+                      type: integer
+                    reason:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              configVersions:
+                additionalProperties:
+                  type: string
+                type: object
+              message:
+                type: string
+              observedGeneration:
+                format: int64
+                type: integer
+              phase:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
