@@ -59,6 +59,13 @@ var (
 		featuregate.StageAlpha,
 		featuregate.WithRegisterDescription("enables the operator to create network policies for operands,  collector and target allocator are supported"),
 	)
+	// EnableClusterObservability is the feature gate that enables the ClusterObservability controller.
+	EnableClusterObservability = featuregate.GlobalRegistry().MustRegister(
+		"operator.clusterobservability",
+		featuregate.StageAlpha,
+		featuregate.WithRegisterDescription("enables the ClusterObservability controller for managed observability deployment"),
+		featuregate.WithRegisterFromVersion("v0.134.0"),
+	)
 )
 
 // Flags creates a new FlagSet that represents the available featuregate flags using the supplied featuregate registry.

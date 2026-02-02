@@ -6,6 +6,8 @@ resources:
 - bases/opentelemetry.io_instrumentations.yaml
 - bases/opentelemetry.io_opampbridges.yaml
 - bases/opentelemetry.io_targetallocators.yaml
+# NOTE: We dont include the clusterObservability CR for now.
+# - bases/opentelemetry.io_clusterobservabilities.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 # patches here are for enabling the conversion webhook for each CRD
