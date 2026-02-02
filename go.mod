@@ -1,6 +1,6 @@
 module github.com/open-telemetry/opentelemetry-operator
 
-go 1.25.0
+go 1.25.3
 
 retract v1.51.0
 
@@ -21,7 +21,7 @@ require (
 	github.com/oklog/run v1.2.0
 	github.com/open-telemetry/opamp-go v0.15.0
 	github.com/openshift/api v0.0.0-20240124164020-e2ce40831f2e
-	github.com/operator-framework/api v0.37.0
+	github.com/operator-framework/api v0.38.0
 	github.com/operator-framework/operator-lib v0.19.0
 	github.com/prometheus-operator/prometheus-operator v0.88.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.88.0
@@ -174,7 +174,7 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/procfs v0.19.2 // indirect
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.35 // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
