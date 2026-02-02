@@ -31,6 +31,10 @@ func isNamespaceScoped(obj client.Object) bool {
 	case *rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding:
 		return false
 	default:
+		// Check for OpenShift SecurityContextConstraints (unstructured)
+		if obj.GetObjectKind().GroupVersionKind().Kind == "SecurityContextConstraints" {
+			return false
+		}
 		return true
 	}
 }
