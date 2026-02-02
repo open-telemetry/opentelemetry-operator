@@ -138,7 +138,7 @@ func TestDownstreamParsers(t *testing.T) {
 				parser := receivers.ReceiverFor(tt.receiverName)
 
 				// test
-				config, err := parser.GetDefaultConfig(logger, map[string]interface{}{})
+				config, err := parser.GetDefaultConfig(logger, map[string]interface{}{}, nil)
 
 				// verify
 				assert.NoError(t, err)

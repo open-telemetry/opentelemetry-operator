@@ -108,6 +108,7 @@ func TestValidate(t *testing.T) {
 			nil,
 			bv,
 			nil,
+			nil,
 		)
 		t.Run(tt.name, func(t *testing.T) {
 			tt := tt
@@ -547,6 +548,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				nil,
 				nil,
 				bv,
+				nil,
 				nil,
 			)
 			ctx := context.Background()
@@ -1431,6 +1433,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				nil,
 				bv,
 				nil,
+				nil,
 			)
 			ctx := context.Background()
 			warnings, err := cvw.ValidateCreate(ctx, &test.otelcol)
@@ -1500,6 +1503,7 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 				nil,
 				nil,
 				bv,
+				nil,
 				nil,
 			)
 			ctx := context.Background()

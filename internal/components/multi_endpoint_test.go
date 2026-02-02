@@ -507,7 +507,7 @@ func TestMultiPortReceiver_GetDefaultConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.m.GetDefaultConfig(tt.args.logger, tt.args.config)
+			got, err := tt.m.GetDefaultConfig(tt.args.logger, tt.args.config, nil)
 			if !tt.wantErr(t, err, fmt.Sprintf("GetDefaultConfig(%v, %v)", tt.args.logger, tt.args.config)) {
 				return
 			}

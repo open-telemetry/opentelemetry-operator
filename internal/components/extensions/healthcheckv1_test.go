@@ -275,7 +275,7 @@ func TestHealthCheckV1AddressDefaulter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			parser := ParserFor("health_check")
-			got, err := parser.GetDefaultConfig(logr.Discard(), tt.args.config)
+			got, err := parser.GetDefaultConfig(logr.Discard(), tt.args.config, nil)
 			if !tt.wantErr(t, err, fmt.Sprintf("GetDefaultConfig(%v)", tt.args.config)) {
 				return
 			}

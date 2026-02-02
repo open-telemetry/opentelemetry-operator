@@ -183,8 +183,10 @@ func New() Config {
 		WebhookPort:                         9443,
 		FipsDisabledComponents:              "uppercase",
 		TLS: TLSConfig{
-			MinVersion:   "VersionTLS12",
-			CipherSuites: nil,
+			UseClusterProfile: false,
+			ConfigureOperands: false,
+			MinVersion:        "VersionTLS12",
+			CipherSuites:      nil,
 		},
 		Zap: ZapConfig{
 			MessageKey:  "message",

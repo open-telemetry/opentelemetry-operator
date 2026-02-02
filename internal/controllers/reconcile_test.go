@@ -1495,6 +1495,99 @@ func namespacedObjectName(name string, namespace string) types.NamespacedName {
 	}
 }
 
+func TestTLSDefaultingViaWebhook(t *testing.T) {
+	// This test verifies that when a collector with TLS config is created,
+	// the webhook injects TLS defaults from the TLSProfileProvider.
+	// The webhook is configured in suite_test.go with TLS 1.1 and TLS_AES_128_GCM_SHA256.
+
+	namespace, err := createRandomNamespace(k8sClient)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		delErr := k8sClient.Delete(context.Background(), namespace)
+		assert.NoError(t, delErr)
+	})
+
+	collectorName := sanitizeResourceName(t.Name())
+	collector := &v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      collectorName,
+			Namespace: namespace.Name,
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: v1beta1.ModeDeployment,
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"otlp": map[string]interface{}{
+							"protocols": map[string]interface{}{
+								"grpc": map[string]interface{}{
+									"endpoint": "0.0.0.0:4317",
+									"tls": map[string]interface{}{
+										"cert_file": "/certs/tls.crt",
+										"key_file":  "/certs/tls.key",
+									},
+								},
+							},
+						},
+					},
+				},
+				Exporters: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"debug": map[string]interface{}{},
+					},
+				},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"traces": {
+							Receivers: []string{"otlp"},
+							Exporters: []string{"debug"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	clientCtx := context.Background()
+	err = k8sClient.Create(clientCtx, collector)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		deleteErr := k8sClient.Delete(clientCtx, collector)
+		assert.NoError(t, deleteErr)
+	})
+
+	// Fetch the collector after creation to see the defaults applied by the webhook
+	nsn := types.NamespacedName{Name: collector.Name, Namespace: collector.Namespace}
+	err = k8sClient.Get(clientCtx, nsn, collector)
+	require.NoError(t, err)
+
+	// Verify that TLS defaults were injected by the webhook
+	// The webhook is configured with TLS 1.1 and TLS_AES_128_GCM_SHA256 (see suite_test.go)
+	receivers := collector.Spec.Config.Receivers.Object
+	otlp, ok := receivers["otlp"].(map[string]interface{})
+	require.True(t, ok, "otlp receiver should exist")
+
+	protocols, ok := otlp["protocols"].(map[string]interface{})
+	require.True(t, ok, "protocols should exist")
+
+	grpc, ok := protocols["grpc"].(map[string]interface{})
+	require.True(t, ok, "grpc protocol should exist")
+
+	tlsConfig, ok := grpc["tls"].(map[string]interface{})
+	require.True(t, ok, "tls config should exist")
+
+	// Check that min_version was injected (TLS 1.1 = "1.1")
+	minVersion, ok := tlsConfig["min_version"]
+	assert.True(t, ok, "min_version should be set by webhook")
+	assert.Equal(t, "1.1", minVersion, "min_version should be 1.1 from TLS profile")
+
+	// Check that cipher_suites was injected
+	cipherSuites, ok := tlsConfig["cipher_suites"]
+	assert.True(t, ok, "cipher_suites should be set by webhook")
+	expectedCiphers := []interface{}{"TLS_AES_128_GCM_SHA256"}
+	assert.Equal(t, expectedCiphers, cipherSuites, "cipher_suites should match TLS profile")
+}
+
 // getAllResources gets all the resource types owned by the controller.
 func getAllOwnedResources(
 	ctx context.Context,

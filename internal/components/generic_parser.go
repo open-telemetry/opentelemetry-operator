@@ -30,7 +30,7 @@ type GenericParser[T any] struct {
 	defaultsApplier Defaulter[T]
 }
 
-func (g *GenericParser[T]) GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error) {
+func (g *GenericParser[T]) GetDefaultConfig(logger logr.Logger, config interface{}, tlsProfile TLSProfile) (interface{}, error) {
 	if g.settings == nil || g.defaultsApplier == nil {
 		return config, nil
 	}
@@ -43,7 +43,7 @@ func (g *GenericParser[T]) GetDefaultConfig(logger logr.Logger, config interface
 	if err := mapstructure.Decode(config, &parsed); err != nil {
 		return nil, err
 	}
-	return g.defaultsApplier(logger, g.settings.defaultRecAddr, g.settings.port, parsed)
+	return g.defaultsApplier(logger, tlsProfile, g.settings.defaultRecAddr, g.settings.port, parsed)
 }
 
 func (g *GenericParser[T]) GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {

@@ -53,6 +53,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/testdata"
@@ -214,7 +215,7 @@ func TestMain(m *testing.M) {
 	}
 	reviewer := rbac.NewReviewer(clientset)
 
-	if err = v1beta1.SetupCollectorWebhook(mgr, config.New(), reviewer, nil, nil, nil); err != nil {
+	if err = v1beta1.SetupCollectorWebhook(mgr, config.New(), reviewer, nil, nil, nil, StaticTLSProvider{Profile: components.NewStaticTLSProfile(tls.VersionTLS11, []uint16{tls.TLS_AES_128_GCM_SHA256})}); err != nil {
 		fmt.Printf("failed to SetupWebhookWithManager: %v", err)
 		os.Exit(1)
 	}
@@ -555,4 +556,14 @@ func populateObjectIfExists(t testing.TB, object client.Object, namespacedName t
 
 func getConfigMapSHAFromString(cfg v1beta1.Config) (string, error) {
 	return manifestutils.GetConfigMapSHA(cfg)
+}
+
+var _ components.TLSProfileProvider = (*StaticTLSProvider)(nil)
+
+type StaticTLSProvider struct {
+	Profile components.TLSProfile
+}
+
+func (s StaticTLSProvider) GetTLSProfile() components.TLSProfile {
+	return s.Profile
 }
