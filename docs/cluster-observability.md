@@ -51,17 +51,30 @@ graph TB
     OTC2 --> DEP[Cluster Deployment]
     IC --> POD[Instrumented Pods]
     
-    subgraph "OpenShift Integration"
-        Controller --> SCC[Security Context Constraints]
-        DS --> KubeletCA[Kubelet CA Certificate]
-    end
-    
     subgraph "Configuration System"
         Controller --> ConfigLoader[Config Loader]
         ConfigLoader --> BaseConfig[Base Configs]
-        ConfigLoader --> DistroConfig[Distro Overrides]
+        ConfigLoader --> DistroConfig[Distro Overrides<br/>e.g. OpenShift]
+    end
+    
+    subgraph "Platform Auto-Detection (Optional)"
+        Controller -.-> PlatformDetect[Platform Detection]
+        PlatformDetect -.-> SCC[OpenShift: SCC]
+        PlatformDetect -.-> Future[Future: Other Platforms]
     end
 ```
+
+### Platform Auto-Detection
+
+The controller automatically detects the K8s platform at startup (cached for efficiency). Platform-specific integrations are **optional** and only applied when the corresponding platform is detected:
+
+| Platform | Auto-Detection | Platform-Specific Actions |
+|----------|---------------|---------------------------|
+| **OpenShift** | Checks for OpenShift API availability | Creates SecurityContextConstraints for collector pods; applies kubelet CA certificate configuration |
+| **Vanilla Kubernetes** | Default | No additional resources created |
+| **Other Platforms** | Planned | Future support for EKS, GKE, AKS-specific configurations |
+
+This design allows the same `ClusterObservability` CR to work across different K8s distributions without user intervention.
 
 ## Controller Interaction Flow
 
@@ -84,14 +97,15 @@ sequenceDiagram
         Status->>K8s: Update Status (Conflicted)
     else Single Active CR
         Controller->>ConfigLoader: Load Collector Configs
-        ConfigLoader-->>Controller: Agent & Cluster Configs
+        ConfigLoader-->>Controller: Agent & Cluster Configs (with distro overrides if applicable)
         
         Controller->>K8s: Create Agent OpenTelemetryCollector CR
         Controller->>K8s: Create Cluster OpenTelemetryCollector CR
         Controller->>K8s: Create Instrumentation CR
         
-        opt OpenShift Environment (cached detection)
-            Controller->>K8s: Create Security Context Constraints
+        opt Platform-Specific Resources (auto-detected, optional)
+            Note over Controller,K8s: Example: OpenShift detected
+            Controller->>K8s: Create SecurityContextConstraints
         end
         
         Controller->>Status: Check Component Health
@@ -191,16 +205,17 @@ Events:
 
 ## Configuration System
 
-ClusterObservability uses an embedded YAML-based configuration system that supports different Kubernetes distributions:
+ClusterObservability uses an embedded YAML-based configuration system that supports different Kubernetes distributions. The base configuration works on all platforms, with optional distro-specific overrides applied automatically when the platform is detected.
 
 ```
 internal/manifests/clusterobservability/config/configs/
-├── agent-collector-base.yaml      # Base agent collector config
-├── cluster-collector-base.yaml    # Base cluster collector config
+├── agent-collector-base.yaml      # Base agent collector config (all platforms)
+├── cluster-collector-base.yaml    # Base cluster collector config (all platforms)
 └── distros/
-    └── openshift/
-        ├── agent-collector-overrides.yaml
+    └── openshift/                 # OpenShift-specific overrides (optional, auto-applied)
+        ├── agent-collector-overrides.yaml   # e.g., kubelet CA path adjustments
         └── cluster-collector-overrides.yaml
+    # Future: Additional distro folders (eks/, gke/, aks/) for platform-specific tuning
 ```
 
 ### Agent Collector Configuration
