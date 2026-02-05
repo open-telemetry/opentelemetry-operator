@@ -1,0 +1,213 @@
+# ===========================================================
+# DEPLOY SERVICES WHICH ALL ALREADY REGISTRED
+# ===========================================================
+---
+# Java Application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: auto-injection-dev
+  name: jvm-test-app
+  labels:
+    app: jvm-test-app
+spec:
+  selector:
+    matchLabels:
+      app: jvm-test-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: jvm-test-app
+    spec:
+      containers:
+      - name: app
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: auto-injection-dev
+  name: jvm-test-app
+spec:
+  selector:
+    app: jvm-test-app
+  ports:
+  - port: 8080
+---
+# Node.js Application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: auto-injection-dev
+  name: nodejs-test-app
+  labels:
+    app: nodejs-test-app
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-test-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nodejs-test-app
+    spec:
+      containers:
+      - name: app
+        image: busybox:latest
+        command: ['sh', '-c', 'sleep 3600']
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: auto-injection-dev
+  name: nodejs-test-app
+spec:
+  selector:
+    app: nodejs-test-app
+  ports:
+  - port: 3000
+---
+# Python Application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: auto-injection-dev
+  name: python-test-app
+  labels:
+    app: python-test-app
+spec:
+  selector:
+    matchLabels:
+      app: python-test-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: python-test-app
+    spec:
+      containers:
+      - name: app
+        image: busybox:latest
+        command: ['sh', '-c', 'sleep 3600']
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: auto-injection-dev
+  name: python-test-app
+spec:
+  selector:
+    app: python-test-app
+  ports:
+  - port: 5000
+---
+# Go Application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: auto-injection-dev
+  name: go-test-app
+  labels:
+    app: go-test-app
+spec:
+  selector:
+    matchLabels:
+      app: go-test-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: go-test-app
+    spec:
+      containers:
+      - name: app
+        image: busybox:latest
+        command: ['sh', '-c', 'sleep 3600']
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: auto-injection-dev
+  name: go-test-app
+spec:
+  selector:
+    app: go-test-app
+  ports:
+  - port: 8080
+
+# ===========================================================
+# DEPLOY SERVICE NOT REGISTRED
+# ===========================================================
+# Java Application
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: auto-injection-dev
+  name: jvm-testnotregistred-app
+  labels:
+    app: jvm-testnotregistred-app
+spec:
+  selector:
+    matchLabels:
+      app: jvm-testnotregistred-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: jvm-testnotregistred-app
+    spec:
+      containers:
+      - name: app
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: auto-injection-dev
+  name: jvm-testnotregistred-app
+spec:
+  selector:
+    app: jvm-testnotregistred-app
+  ports:
+  - port: 8080
+# ===========================================================
+# DEPLOY SERVICE NOT REGISTRED WITH ANNOTATIONS
+# ===========================================================
+# Java Application
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: auto-injection-dev
+  name: jvm-testwithannotation-app
+  labels:
+    app: jvm-testwithannotation-app
+spec:
+  selector:
+    matchLabels:
+      app: jvm-testwithannotation-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: jvm-testwithannotation-app
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
+    spec:
+      containers:
+      - name: app
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-java:main
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: auto-injection-dev
+  name: jvm-testwithannotation-app
+spec:
+  selector:
+    app: jvm-testwithannotation-app
+  ports:
+  - port: 8080

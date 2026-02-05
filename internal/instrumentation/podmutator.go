@@ -52,6 +52,13 @@ type languageInstrumentations struct {
 	Sdk         instrumentationWithContainers
 }
 
+// ServiceConfig holds parsed service configuration from targetServices
+type serviceConfig struct {
+	lang           string
+	serviceName    string
+	executablePath string
+}
+
 func instrumentationsList(langInsts *languageInstrumentations) []*instrumentationWithContainers {
 	return []*instrumentationWithContainers{
 		&langInsts.Java,
@@ -208,6 +215,104 @@ func NewMutator(logger logr.Logger, client client.Client, recorder record.EventR
 	}
 }
 
+// shouldAutoInject checks if pod should be auto-injected based on AutoInjection configuration
+// Returns: instrumentation, serviceConfig, error
+func (pm *instPodMutator) shouldAutoInject(ctx context.Context, ns corev1.Namespace, pod corev1.Pod) (*v1alpha1.Instrumentation, *serviceConfig, error) {
+	var otelInsts v1alpha1.InstrumentationList
+	if err := pm.Client.List(ctx, &otelInsts, client.InNamespace(ns.Name)); err != nil {
+		return nil, nil, err
+	}
+
+	podServiceName := pm.getServiceName(pod)
+
+	for _, inst := range otelInsts.Items {
+		if inst.Spec.AutoInjection == nil || !inst.Spec.AutoInjection.Enabled {
+			continue
+		}
+
+		for _, configService := range inst.Spec.AutoInjection.TargetServices {
+			if cfg := matchTargetService(podServiceName, configService); cfg != nil {
+				return &inst, cfg, nil
+			}
+		}
+	}
+
+	return nil, nil, nil
+}
+
+
+func matchTargetService(podServiceName, configService string) *serviceConfig {
+	cfg := parseServiceConfig(configService)
+
+	if podServiceName != cfg.serviceName {
+		return nil
+	}
+
+	return cfg
+}
+
+// parseServiceConfig parses service config string into serviceConfig
+// Formats:
+//   - "service"                    → Java, service, ""
+//   - "go:service"                 → Go, service, "" (use default)
+//   - "go:service:/path/to/exe"    → Go, service, "/path/to/exe"
+//   - "jvm:service"                → Java, service, ""
+func parseServiceConfig(configService string) *serviceConfig {
+	parts := strings.Split(configService, ":")
+
+	// No prefix: "service" → default Java
+	if len(parts) == 1 {
+		return &serviceConfig{
+			lang:        "java",
+			serviceName: parts[0],
+		}
+	}
+
+	// 2 parts: "prefix:service"
+	if len(parts) == 2 {
+		return &serviceConfig{
+			lang:        mapPrefixToLang(parts[0]),
+			serviceName: parts[1],
+		}
+	}
+
+	// 3+ parts: "prefix:service:path" or "prefix:service:path:with:colons"
+	// Join everything after service name as path (for paths like /usr/local/bin:backup)
+	return &serviceConfig{
+		lang:           mapPrefixToLang(parts[0]),
+		serviceName:    parts[1],
+		executablePath: strings.Join(parts[2:], ":"),
+	}
+}
+
+// mapPrefixToLang maps prefix to language name
+func mapPrefixToLang(prefix string) string {
+	switch prefix {
+	case "go":
+		return "go"
+	case "jvm":
+		return "java"
+	case "node":
+		return "nodejs"
+	case "py":
+		return "python"
+	case "dotnet":
+		return "dotnet"
+	default:
+		return "java" // safety default
+	}
+}
+
+func (pm *instPodMutator) getServiceName(pod corev1.Pod) string {
+	if appName, ok := pod.Labels["app"]; ok {
+		return appName
+	}
+	if serviceName, ok := pod.Labels["app.kubernetes.io/name"]; ok {
+		return serviceName
+	}
+	return pod.Name
+}
+
 func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod corev1.Pod) (corev1.Pod, error) {
 	logger := pm.Logger.WithValues("namespace", pod.Namespace)
 	if pod.Name != "" {
@@ -220,6 +325,98 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	if isAutoInstrumentationInjected(pod) {
 		logger.Info("Skipping pod instrumentation - already instrumented")
 		return pod, nil
+	}
+
+	// Check if pod was already auto-injected to prevent loop
+	if pod.Annotations["instrumentation.opentelemetry.io/auto-injected"] == "true" {
+		logger.Info("Skipping pod instrumentation - already auto-injected")
+		return pod, nil
+	}
+
+	// Check for auto-injection first
+	if autoInst, cfg, err := pm.shouldAutoInject(ctx, ns, pod); err != nil {
+		logger.Error(err, "failed to check auto-injection")
+	} else if autoInst != nil && cfg != nil {
+		logger.Info("Auto-injecting instrumentation", 
+			"instrumentation", autoInst.Name, 
+			"language", cfg.lang, 
+			"serviceName", cfg.serviceName,
+			"executablePath", cfg.executablePath)
+
+		// Validate that the language instrumentation is enabled
+		var isEnabled bool
+		switch cfg.lang {
+		case "java":
+			isEnabled = pm.config.EnableJavaAutoInstrumentation
+		case "go":
+			isEnabled = pm.config.EnableGoAutoInstrumentation
+		case "nodejs":
+			isEnabled = pm.config.EnableNodeJSAutoInstrumentation
+		case "python":
+			isEnabled = pm.config.EnablePythonAutoInstrumentation
+		case "dotnet":
+			isEnabled = pm.config.EnableDotNetAutoInstrumentation
+		default:
+			isEnabled = pm.config.EnableJavaAutoInstrumentation
+		}
+
+		if !isEnabled {
+			logger.Error(nil, "auto-instrumentation is disabled for language", "language", cfg.lang)
+			pm.Recorder.Event(pod.DeepCopy(), "Warning", "InstrumentationRequestRejected", 
+				fmt.Sprintf("support for %s auto instrumentation is not enabled", cfg.lang))
+			return pod, nil
+		}
+
+		// Clone instrumentation to avoid modifying the original
+		instCopy := autoInst.DeepCopy()
+
+		// Override Go executable path if specified
+		if cfg.lang == "go" && cfg.executablePath != "" {
+			if instCopy.Spec.Go.Env == nil {
+				instCopy.Spec.Go.Env = []corev1.EnvVar{}
+			}
+			// Override or add OTEL_GO_AUTO_TARGET_EXE
+			found := false
+			for i, env := range instCopy.Spec.Go.Env {
+				if env.Name == "OTEL_GO_AUTO_TARGET_EXE" {
+					instCopy.Spec.Go.Env[i].Value = cfg.executablePath
+					found = true
+					break
+				}
+			}
+			if !found {
+				instCopy.Spec.Go.Env = append(instCopy.Spec.Go.Env, corev1.EnvVar{
+					Name:  "OTEL_GO_AUTO_TARGET_EXE",
+					Value: cfg.executablePath,
+				})
+			}
+		}
+
+		// Use auto-injection instrumentation for detected language
+		insts := languageInstrumentations{}
+		switch cfg.lang {
+		case "java":
+			insts.Java = instrumentationWithContainers{Instrumentation: instCopy}
+		case "go":
+			insts.Go = instrumentationWithContainers{Instrumentation: instCopy}
+		case "nodejs":
+			insts.NodeJS = instrumentationWithContainers{Instrumentation: instCopy}
+		case "python":
+			insts.Python = instrumentationWithContainers{Instrumentation: instCopy}
+		case "dotnet":
+			insts.DotNet = instrumentationWithContainers{Instrumentation: instCopy}
+		default:
+			insts.Java = instrumentationWithContainers{Instrumentation: instCopy}
+		}
+
+		modifiedPod := pm.sdkInjector.inject(ctx, insts, ns, pod, pm.config)
+
+		if modifiedPod.Annotations == nil {
+			modifiedPod.Annotations = make(map[string]string)
+		}
+		modifiedPod.Annotations["instrumentation.opentelemetry.io/auto-injected"] = "true"
+
+		return modifiedPod, nil
 	}
 
 	var inst *v1alpha1.Instrumentation

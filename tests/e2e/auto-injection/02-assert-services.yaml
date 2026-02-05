@@ -1,0 +1,92 @@
+---
+# ===========================================================
+# ASSERT REGISTERED SERVICES (SHOULD BE AUTO-INJECTED)
+# ===========================================================
+
+# Assert Java auto-injection
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: auto-injection-dev
+  labels:
+    app: jvm-test-app
+  annotations:
+    instrumentation.opentelemetry.io/auto-injected: "true"
+status:
+  phase: Running
+spec:
+  initContainers:
+  - name: opentelemetry-auto-instrumentation-java
+---
+# Assert Node.js auto-injection
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: auto-injection-dev
+  labels:
+    app: nodejs-test-app
+  annotations:
+    instrumentation.opentelemetry.io/auto-injected: "true"
+status:
+  phase: Running
+spec:
+  initContainers:
+  - name: opentelemetry-auto-instrumentation-nodejs
+---
+# Assert Python auto-injection
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: auto-injection-dev
+  labels:
+    app: python-test-app
+  annotations:
+    instrumentation.opentelemetry.io/auto-injected: "true"
+status:
+  phase: Running
+spec:
+  initContainers:
+  - name: opentelemetry-auto-instrumentation-python
+---
+# Assert Go auto-injection (uses sidecar container, not init container)
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: auto-injection-dev
+  labels:
+    app: go-test-app
+  annotations:
+    instrumentation.opentelemetry.io/auto-injected: "true"
+status:
+  phase: Running
+---
+# ===========================================================
+# ASSERT NOT REGISTERED SERVICE (SHOULD NOT BE AUTO-INJECTED)
+# ===========================================================
+
+# Assert Java NOT auto-injected (no annotation, no init container)
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: auto-injection-dev
+  labels:
+    app: jvm-testnotregistred-app
+status:
+  phase: Running
+---
+# ===========================================================
+# ASSERT SERVICE WITH ANNOTATION (ANNOTATION TAKES PRECEDENCE)
+# ===========================================================
+
+# Assert Java with annotation (should be injected via annotation)
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: auto-injection-dev
+  labels:
+    app: jvm-testwithannotation-app
+status:
+  phase: Running
+spec:
+  initContainers:
+  - name: opentelemetry-auto-instrumentation-java
