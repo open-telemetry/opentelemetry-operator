@@ -29,6 +29,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakediscovery "k8s.io/client-go/discovery/fake"
+	clientfeatures "k8s.io/client-go/features"
+	clientfeaturestesting "k8s.io/client-go/features/testing"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
 	fcache "k8s.io/client-go/tools/cache/testing"
@@ -1420,6 +1422,11 @@ func getTestPrometheusCRWatcher(
 	scrapeConfigs []*promv1alpha1.ScrapeConfig,
 	cfg allocatorconfig.Config,
 ) (*PrometheusCRWatcher, *fcache.FakeControllerSource) {
+	// Disable WatchListClient because the fake monitoring client does not support
+	// streaming list-watch (SendInitialEvents), which is now enabled by default.
+	// TODO: Revisit this after prometheus-operator upgrades past it, see https://github.com/prometheus-operator/prometheus-operator/pull/8333
+	clientfeaturestesting.SetFeatureDuringTest(t, clientfeatures.WatchListClient, false)
+
 	mClient := fakemonitoringclient.NewSimpleClientset()
 	for _, sm := range svcMonitors {
 		if sm != nil {
