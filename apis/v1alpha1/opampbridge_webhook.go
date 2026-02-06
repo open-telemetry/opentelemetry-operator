@@ -18,8 +18,8 @@ import (
 )
 
 var (
-	_ admission.CustomValidator = &OpAMPBridgeWebhook{}
-	_ admission.CustomDefaulter = &OpAMPBridgeWebhook{}
+	_ admission.Validator[*OpAMPBridge] = &OpAMPBridgeWebhook{}
+	_ admission.Defaulter[*OpAMPBridge] = &OpAMPBridgeWebhook{}
 )
 
 //+kubebuilder:webhook:path=/mutate-opentelemetry-io-v1alpha1-opampbridge,mutating=true,failurePolicy=fail,sideEffects=None,groups=opentelemetry.io,resources=opampbridges,verbs=create;update,versions=v1alpha1,name=mopampbridge.kb.io,admissionReviewVersions=v1
@@ -33,35 +33,19 @@ type OpAMPBridgeWebhook struct {
 	scheme *runtime.Scheme
 }
 
-func (o *OpAMPBridgeWebhook) Default(ctx context.Context, obj runtime.Object) error {
-	opampBridge, ok := obj.(*OpAMPBridge)
-	if !ok {
-		return fmt.Errorf("expected an OpAMPBridge, received %T", obj)
-	}
+func (o *OpAMPBridgeWebhook) Default(ctx context.Context, opampBridge *OpAMPBridge) error {
 	return o.defaulter(opampBridge)
 }
 
-func (o *OpAMPBridgeWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	opampBridge, ok := obj.(*OpAMPBridge)
-	if !ok {
-		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", obj)
-	}
+func (o *OpAMPBridgeWebhook) ValidateCreate(ctx context.Context, opampBridge *OpAMPBridge) (admission.Warnings, error) {
 	return o.validate(opampBridge)
 }
 
-func (o *OpAMPBridgeWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	opampBridge, ok := newObj.(*OpAMPBridge)
-	if !ok {
-		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", newObj)
-	}
+func (o *OpAMPBridgeWebhook) ValidateUpdate(ctx context.Context, _, opampBridge *OpAMPBridge) (admission.Warnings, error) {
 	return o.validate(opampBridge)
 }
 
-func (o *OpAMPBridgeWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	opampBridge, ok := obj.(*OpAMPBridge)
-	if !ok || opampBridge == nil {
-		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", obj)
-	}
+func (o *OpAMPBridgeWebhook) ValidateDelete(ctx context.Context, opampBridge *OpAMPBridge) (admission.Warnings, error) {
 	return o.validate(opampBridge)
 }
 
@@ -125,8 +109,7 @@ func SetupOpAMPBridgeWebhook(mgr ctrl.Manager, cfg config.Config) error {
 		scheme: mgr.GetScheme(),
 		cfg:    cfg,
 	}
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(&OpAMPBridge{}).
+	return ctrl.NewWebhookManagedBy(mgr, &OpAMPBridge{}).
 		WithValidator(webhook).
 		WithDefaulter(webhook).
 		Complete()

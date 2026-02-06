@@ -29,8 +29,8 @@ const (
 )
 
 var (
-	_ admission.CustomValidator = &CollectorWebhook{}
-	_ admission.CustomDefaulter = &CollectorWebhook{}
+	_ admission.Validator[*OpenTelemetryCollector] = &CollectorWebhook{}
+	_ admission.Defaulter[*OpenTelemetryCollector] = &CollectorWebhook{}
 )
 
 // +kubebuilder:webhook:path=/mutate-opentelemetry-io-v1beta1-opentelemetrycollector,mutating=true,failurePolicy=fail,groups=opentelemetry.io,resources=opentelemetrycollectors,verbs=create;update,versions=v1beta1,name=mopentelemetrycollectorbeta.kb.io,sideEffects=none,admissionReviewVersions=v1
@@ -49,11 +49,7 @@ type CollectorWebhook struct {
 	recorder record.EventRecorder
 }
 
-func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
-	otelcol, ok := obj.(*OpenTelemetryCollector)
-	if !ok {
-		return fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
-	}
+func (c CollectorWebhook) Default(_ context.Context, otelcol *OpenTelemetryCollector) error {
 	if len(otelcol.Spec.Mode) == 0 {
 		otelcol.Spec.Mode = ModeDeployment
 	}
@@ -116,12 +112,7 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 	return nil
 }
 
-func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := obj.(*OpenTelemetryCollector)
-	if !ok {
-		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
-	}
-
+func (c CollectorWebhook) ValidateCreate(ctx context.Context, otelcol *OpenTelemetryCollector) (admission.Warnings, error) {
 	warnings, err := c.Validate(ctx, otelcol)
 	if err != nil {
 		return warnings, err
@@ -136,17 +127,7 @@ func (c CollectorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object
 	return warnings, nil
 }
 
-func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := newObj.(*OpenTelemetryCollector)
-	if !ok {
-		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", newObj)
-	}
-
-	otelcolOld, ok := oldObj.(*OpenTelemetryCollector)
-	if !ok {
-		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", oldObj)
-	}
-
+func (c CollectorWebhook) ValidateUpdate(ctx context.Context, otelcolOld, otelcol *OpenTelemetryCollector) (admission.Warnings, error) {
 	if otelcolOld.Spec.Mode != otelcol.Spec.Mode {
 		return admission.Warnings{}, fmt.Errorf("the OpenTelemetry Collector mode is set to %s, which does not support modification", otelcolOld.Spec.Mode)
 	}
@@ -166,12 +147,7 @@ func (c CollectorWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj run
 	return warnings, nil
 }
 
-func (c CollectorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := obj.(*OpenTelemetryCollector)
-	if !ok || otelcol == nil {
-		return nil, fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
-	}
-
+func (c CollectorWebhook) ValidateDelete(ctx context.Context, otelcol *OpenTelemetryCollector) (admission.Warnings, error) {
 	warnings, err := c.Validate(ctx, otelcol)
 	if err != nil {
 		return warnings, err
@@ -445,8 +421,7 @@ func NewCollectorWebhook(
 
 func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
 	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, mgr.GetEventRecorderFor("opentelemetry-operator"), metrics, bv, fipsCheck)
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(&OpenTelemetryCollector{}).
+	return ctrl.NewWebhookManagedBy(mgr, &OpenTelemetryCollector{}).
 		WithValidator(cvw).
 		WithDefaulter(cvw).
 		Complete()
