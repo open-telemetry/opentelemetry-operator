@@ -420,7 +420,7 @@ func NewCollectorWebhook(
 }
 
 func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
-	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, mgr.GetEventRecorderFor("opentelemetry-operator"), metrics, bv, fipsCheck)
+	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, mgr.GetEventRecorderFor("opentelemetry-operator"), metrics, bv, fipsCheck) //nolint:staticcheck // TODO: migrate to mgr.GetEventRecorder()
 	return ctrl.NewWebhookManagedBy(mgr, &OpenTelemetryCollector{}).
 		WithValidator(cvw).
 		WithDefaulter(cvw).

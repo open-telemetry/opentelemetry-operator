@@ -309,7 +309,7 @@ func main() {
 			Log:      ctrl.Log.WithName("controllers").WithName("OpenTelemetryCollector"),
 			Scheme:   mgr.GetScheme(),
 			Config:   cfg,
-			Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"),
+			Recorder: mgr.GetEventRecorderFor("opentelemetry-operator"), //nolint:staticcheck // TODO: migrate to mgr.GetEventRecorder()
 			Reviewer: reviewer,
 			Version:  v,
 		})
@@ -324,7 +324,7 @@ func main() {
 		if err = controllers.NewTargetAllocatorReconciler(
 			mgr.GetClient(),
 			mgr.GetScheme(),
-			mgr.GetEventRecorderFor("targetallocator"),
+			mgr.GetEventRecorderFor("targetallocator"), //nolint:staticcheck // TODO: migrate to mgr.GetEventRecorder()
 			cfg,
 			ctrl.Log.WithName("controllers").WithName("TargetAllocator"),
 		).SetupWithManager(mgr); err != nil {
@@ -339,7 +339,7 @@ func main() {
 			Log:      ctrl.Log.WithName("controllers").WithName("OpAMPBridge"),
 			Scheme:   mgr.GetScheme(),
 			Config:   cfg,
-			Recorder: mgr.GetEventRecorderFor("opamp-bridge"),
+			Recorder: mgr.GetEventRecorderFor("opamp-bridge"), //nolint:staticcheck // TODO: migrate to mgr.GetEventRecorder()
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "OpAMPBridge")
 			os.Exit(1)
