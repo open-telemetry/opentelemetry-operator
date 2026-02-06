@@ -16,6 +16,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
 	ta "github.com/open-telemetry/opentelemetry-operator/internal/manifests/targetallocator/adapters"
@@ -39,17 +40,18 @@ var (
 // +kubebuilder:object:generate=false
 
 type CollectorWebhook struct {
-	logger   logr.Logger
-	cfg      config.Config
-	scheme   *runtime.Scheme
-	reviewer *rbac.Reviewer
-	metrics  *Metrics
-	bv       BuildValidator
-	fips     fips.FIPSCheck
-	recorder record.EventRecorder
+	logger             logr.Logger
+	cfg                config.Config
+	scheme             *runtime.Scheme
+	reviewer           *rbac.Reviewer
+	metrics            *Metrics
+	bv                 BuildValidator
+	fips               fips.FIPSCheck
+	tlsProfileProvider components.TLSProfileProvider
+	recorder           record.EventRecorder
 }
 
-func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
+func (c CollectorWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	otelcol, ok := obj.(*OpenTelemetryCollector)
 	if !ok {
 		return fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
@@ -104,7 +106,16 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 		trueVal := true
 		otelcol.Spec.NetworkPolicy.Enabled = &trueVal
 	}
-	events, err := otelcol.Spec.Config.ApplyDefaults(c.logger)
+	// Get TLS profile from the cluster's TLS security profile configuration
+	var tlsProfile components.TLSProfile
+	if c.tlsProfileProvider != nil {
+		var err error
+		tlsProfile, err = c.tlsProfileProvider.GetTLSProfile(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get TLS profile: %w", err)
+		}
+	}
+	events, err := otelcol.Spec.Config.ApplyDefaults(c.logger, tlsProfile)
 	if err != nil {
 		return err
 	}
@@ -430,21 +441,23 @@ func NewCollectorWebhook(
 	metrics *Metrics,
 	bv BuildValidator,
 	fips fips.FIPSCheck,
+	tlsProfileProvider components.TLSProfileProvider,
 ) *CollectorWebhook {
 	return &CollectorWebhook{
-		logger:   logger,
-		scheme:   scheme,
-		cfg:      cfg,
-		reviewer: reviewer,
-		recorder: recorder,
-		metrics:  metrics,
-		bv:       bv,
-		fips:     fips,
+		logger:             logger,
+		scheme:             scheme,
+		cfg:                cfg,
+		reviewer:           reviewer,
+		recorder:           recorder,
+		metrics:            metrics,
+		bv:                 bv,
+		fips:               fips,
+		tlsProfileProvider: tlsProfileProvider,
 	}
 }
 
-func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck) error {
-	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, mgr.GetEventRecorderFor("opentelemetry-operator"), metrics, bv, fipsCheck)
+func SetupCollectorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *rbac.Reviewer, metrics *Metrics, bv BuildValidator, fipsCheck fips.FIPSCheck, tlsProfileProvider components.TLSProfileProvider) error {
+	cvw := NewCollectorWebhook(mgr.GetLogger().WithValues("handler", "CollectorWebhook", "version", "v1beta1"), mgr.GetScheme(), cfg, reviewer, mgr.GetEventRecorderFor("opentelemetry-operator"), metrics, bv, fipsCheck, tlsProfileProvider)
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&OpenTelemetryCollector{}).
 		WithValidator(cvw).

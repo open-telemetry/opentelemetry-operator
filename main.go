@@ -19,6 +19,7 @@ import (
 	"time"
 
 	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
@@ -32,6 +33,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -49,6 +51,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/targetallocator"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/fips"
@@ -59,6 +62,7 @@ import (
 	operatormetrics "github.com/open-telemetry/opentelemetry-operator/internal/operator-metrics"
 	"github.com/open-telemetry/opentelemetry-operator/internal/operatornetworkpolicy"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/tlsobserver"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -75,6 +79,7 @@ func init() {
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(otelv1beta1.AddToScheme(scheme))
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
+	utilruntime.Must(configv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -151,10 +156,36 @@ func main() {
 	renewDeadline := time.Second * 107
 	retryPeriod := time.Second * 26
 
+	// Fetch TLS profile from cluster if enabled
+	var clusterTLSProfile components.TLSProfile
+	var tlsClusterObserver *tlsobserver.TLSObserver
+	if cfg.TLS.UseClusterProfile {
+		// Create a direct client for TLS observer (before the manager is created).
+		// The TLS profile should be set before the manager starts.
+		directClient, errClient := client.New(restConfig, client.Options{Scheme: scheme})
+		if errClient != nil {
+			setupLog.Error(err, "unable to create direct client for TLS observer")
+			os.Exit(1)
+		}
+
+		// Create TLS observer to fetch OpenShift APIServer TLS security profile
+		tlsClusterObserver = tlsobserver.NewTLSObserver(directClient)
+		clusterTLSProfile, err = tlsClusterObserver.GetTLSProfile(context.Background())
+		if err != nil {
+			setupLog.Error(err, "unable to get TLS profile from cluster")
+			os.Exit(1)
+		}
+	}
+
 	optionsTlSOptsFuncs := []func(*tls.Config){
 		func(config *tls.Config) {
 			if err = cfg.TLS.ApplyTLSConfig(config); err != nil {
 				setupLog.Error(err, "error setting up TLS")
+			}
+
+			if clusterTLSProfile != nil {
+				config.MinVersion = clusterTLSProfile.MinTLSVersion()
+				config.CipherSuites = clusterTLSProfile.CipherSuites()
 			}
 		},
 	}
@@ -412,7 +443,22 @@ func main() {
 				logger.Info("Fips disabled components", "receivers", receivers, "exporters", exporters, "processors", processors, "extensions", extensions)
 				fipsCheck = fips.NewFipsCheck(receivers, exporters, processors, extensions)
 			}
-			if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck); err != nil {
+			var operandTLSProvider components.TLSProfileProvider
+			if cfg.TLS.ConfigureOperands {
+				if cfg.TLS.UseClusterProfile {
+					operandTLSProvider = tlsClusterObserver
+				} else {
+					tempTLS := &tls.Config{MinVersion: tls.VersionTLS12} //nolint:gosec // ApplyTLSConfig sets the actual MinVersion
+					if errTLS := cfg.TLS.ApplyTLSConfig(tempTLS); errTLS != nil {
+						setupLog.Error(errTLS, "unable to apply TLS config for operands")
+						os.Exit(1)
+					}
+					operandTLSProvider = components.StaticTLSProfileProvider{
+						Profile: components.NewStaticTLSProfile(tempTLS.MinVersion, tempTLS.CipherSuites),
+					}
+				}
+			}
+			if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck, operandTLSProvider); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 				os.Exit(1)
 			}

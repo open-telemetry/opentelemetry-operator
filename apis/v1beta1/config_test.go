@@ -77,7 +77,7 @@ func TestNullObjects_issue_3445(t *testing.T) {
 	err = json.Unmarshal(collectorJson, cfg)
 	require.NoError(t, err)
 
-	_, err = cfg.ApplyDefaults(logr.Discard())
+	_, err = cfg.ApplyDefaults(logr.Discard(), nil)
 	require.NoError(t, err)
 	assert.Empty(t, cfg.nullObjects())
 }

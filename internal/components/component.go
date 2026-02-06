@@ -44,7 +44,7 @@ type EnvVarGenerator[ComponentConfigType any] func(logger logr.Logger, config Co
 
 // Defaulter is a function that applies given defaults to the passed Config.
 // It's expected that type Config is the configuration used by a parser.
-type Defaulter[ComponentConfigType any] func(logger logr.Logger, defaultAddr string, defaultPort int32, config ComponentConfigType) (map[string]interface{}, error)
+type Defaulter[ComponentConfigType any] func(logger logr.Logger, tls TLSProfile, defaultAddr string, defaultPort int32, config ComponentConfigType) (map[string]interface{}, error)
 
 // ComponentType returns the type for a given component name.
 // components have a name like:
@@ -85,8 +85,9 @@ type ParserRetriever func(string) Parser
 
 type Parser interface {
 	// GetDefaultConfig returns a config with set default values.
+	// If tlsProfile is provided, TLS defaults (min_version, cipher_suites) are injected if they are not specified in the config.
 	// NOTE: Config merging must be done by the caller if desired.
-	GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error)
+	GetDefaultConfig(logger logr.Logger, config interface{}, tlsProfile TLSProfile) (interface{}, error)
 
 	// Ports returns the service ports parsed based on the component's configuration where name is the component's name
 	// of the form "name" or "type/name"
