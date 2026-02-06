@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strings"
 
 	"dario.cat/mergo"
 	"github.com/go-logr/logr"
@@ -355,7 +356,31 @@ func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error
 }
 
 func (c *Config) ApplyDefaults(logger logr.Logger) ([]EventInfo, error) {
-	return c.applyDefaultForComponentKinds(logger, KindReceiver, KindExtension)
+	events, err := c.applyDefaultForComponentKinds(logger, KindReceiver, KindExtension)
+	if err != nil {
+		return events, err
+	}
+
+	// Check for deprecated batch processor
+	enabledComponents := c.GetEnabledComponents()
+	for processorName := range enabledComponents[KindProcessor] {
+		if processorName == "batch" || strings.HasPrefix(processorName, "batch/") {
+			const issueID = "https://github.com/open-telemetry/opentelemetry-collector/issues/12022"
+			warnStr := fmt.Sprintf(
+				"The batch processor is deprecated and will be removed in a future release. "+
+					"Please consider migrating to alternative batching solutions. See: %s",
+				issueID,
+			)
+			events = append(events, EventInfo{
+				Type:    corev1.EventTypeWarning,
+				Reason:  "BatchProcessorDeprecated",
+				Message: warnStr,
+			})
+			break
+		}
+	}
+
+	return events, nil
 }
 
 // GetLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled
