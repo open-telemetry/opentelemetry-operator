@@ -156,7 +156,8 @@ func main() {
 	renewDeadline := time.Second * 107
 	retryPeriod := time.Second * 26
 
-	var tlsProvider components.TLSProfileProvider
+	// Fetch TLS profile from cluster if enabled
+	var clusterTLSProfile components.TLSProfile
 	var tlsClusterObserver *tlsobserver.TLSObserver
 	if cfg.TLS.UseClusterProfile {
 		// Create a direct client for TLS observer (before the manager is created).
@@ -167,15 +168,13 @@ func main() {
 			os.Exit(1)
 		}
 
-		// Create TLS observer to watch OpenShift APIServer TLS security profile
+		// Create TLS observer to fetch OpenShift APIServer TLS security profile
 		tlsClusterObserver = tlsobserver.NewTLSObserver(directClient)
-		err = tlsClusterObserver.FetchAndUpdateTLSConfig(context.Background())
+		clusterTLSProfile, err = tlsClusterObserver.GetTLSProfile(context.Background())
 		if err != nil {
-			setupLog.Error(err, "unable to start TLS observer")
+			setupLog.Error(err, "unable to get TLS profile from cluster")
 			os.Exit(1)
 		}
-
-		tlsProvider = tlsClusterObserver
 	}
 
 	optionsTlSOptsFuncs := []func(*tls.Config){
@@ -184,12 +183,9 @@ func main() {
 				setupLog.Error(err, "error setting up TLS")
 			}
 
-			if tlsProvider != nil {
-				tlsProfile := tlsProvider.GetTLSProfile()
-				if tlsProfile != nil {
-					config.MinVersion = tlsProfile.MinTLSVersion()
-					config.CipherSuites = tlsProfile.CipherSuites()
-				}
+			if clusterTLSProfile != nil {
+				config.MinVersion = clusterTLSProfile.MinTLSVersion()
+				config.CipherSuites = clusterTLSProfile.CipherSuites()
 			}
 		},
 	}

@@ -20,7 +20,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oklog/run v1.2.0
 	github.com/open-telemetry/opamp-go v0.15.0
-	github.com/openshift/api v0.0.0-20251111013132-5c461e21bdb7
+	github.com/openshift/api v0.0.0-20260126183958-606bd613f9f7
 	github.com/operator-framework/api v0.38.0
 	github.com/operator-framework/operator-lib v0.19.0
 	github.com/prometheus-operator/prometheus-operator v0.88.0
@@ -220,6 +220,7 @@ require gotest.tools/v3 v3.5.2
 require (
 	github.com/aws/smithy-go v1.24.0
 	github.com/goccy/go-yaml v1.19.2
+	github.com/openshift/library-go v0.0.0-20260205095356-7bced6e899b6
 	go.opentelemetry.io/contrib/otelconf v0.19.0
 )
 

@@ -3,12 +3,18 @@
 
 package components
 
-import "crypto/tls"
+import (
+	"context"
+	"crypto/tls"
+)
 
 // TLSProfileProvider provides TLS settings for component configuration.
 // This interface is implemented by TLSObserver to provide cluster-wide TLS settings.
 type TLSProfileProvider interface {
-	GetTLSProfile() TLSProfile
+	// GetTLSProfile fetches the TLS profile from the cluster.
+	// This is a blocking call that fetches the current TLS security profile.
+	// Returns nil profile if TLS profile is not configured or not available.
+	GetTLSProfile(ctx context.Context) (TLSProfile, error)
 }
 
 // TLSProfile holds the TLS configuration to inject into collector components.
@@ -48,8 +54,8 @@ type StaticTLSProfileProvider struct {
 	Profile TLSProfile
 }
 
-func (d StaticTLSProfileProvider) GetTLSProfile() TLSProfile {
-	return d.Profile
+func (d StaticTLSProfileProvider) GetTLSProfile(_ context.Context) (TLSProfile, error) {
+	return d.Profile, nil
 }
 
 var _ TLSProfile = (*StaticTLSProfile)(nil)

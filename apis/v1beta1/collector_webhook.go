@@ -51,7 +51,7 @@ type CollectorWebhook struct {
 	recorder           record.EventRecorder
 }
 
-func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
+func (c CollectorWebhook) Default(ctx context.Context, obj runtime.Object) error {
 	otelcol, ok := obj.(*OpenTelemetryCollector)
 	if !ok {
 		return fmt.Errorf("expected an OpenTelemetryCollector, received %T", obj)
@@ -106,11 +106,14 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 		trueVal := true
 		otelcol.Spec.NetworkPolicy.Enabled = &trueVal
 	}
-	// Pass nil for TLS settings - TLS injection happens during manifest building
-	// when TLSObserver provides the cluster-wide TLS settings
+	// Get TLS profile from the cluster's TLS security profile configuration
 	var tlsProfile components.TLSProfile
 	if c.tlsProfileProvider != nil {
-		tlsProfile = c.tlsProfileProvider.GetTLSProfile()
+		var err error
+		tlsProfile, err = c.tlsProfileProvider.GetTLSProfile(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get TLS profile: %w", err)
+		}
 	}
 	events, err := otelcol.Spec.Config.ApplyDefaults(c.logger, tlsProfile)
 	if err != nil {

@@ -564,6 +564,6 @@ type StaticTLSProvider struct {
 	Profile components.TLSProfile
 }
 
-func (s StaticTLSProvider) GetTLSProfile() components.TLSProfile {
-	return s.Profile
+func (s StaticTLSProvider) GetTLSProfile(_ context.Context) (components.TLSProfile, error) {
+	return s.Profile, nil
 }
