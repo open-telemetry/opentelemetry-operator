@@ -515,7 +515,7 @@ func service(name string, ports []v1beta1.PortsSpec) v1.Service {
 	return serviceWithInternalTrafficPolicy(name, ports, v1.ServiceInternalTrafficPolicyCluster)
 }
 
-func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, internalTrafficPolicy v1.ServiceInternalTrafficPolicyType) v1.Service {
+func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, internalTrafficPolicy v1.ServiceInternalTrafficPolicy) v1.Service {
 	params := deploymentParams()
 	labels := manifestutils.Labels(params.OtelCol.ObjectMeta, name, params.OtelCol.Spec.Image, ComponentOpenTelemetryCollector, []string{})
 	labels[serviceTypeLabel] = BaseServiceType.String()

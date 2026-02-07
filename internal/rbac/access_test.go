@@ -26,7 +26,7 @@ type fakeClientGenerator func() kubernetes.Interface
 
 func reactorFactory(status v1.SubjectAccessReviewStatus, mockErr error) fakeClientGenerator {
 	return func() kubernetes.Interface {
-		c := fake.NewSimpleClientset()
+		c := fake.NewClientset()
 		c.PrependReactor(createVerb, sarResource, func(action kubeTesting.Action) (handled bool, ret runtime.Object, err error) {
 			// check our expectation here
 			if !action.Matches(createVerb, sarResource) {
