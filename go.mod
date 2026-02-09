@@ -14,7 +14,7 @@ require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logr/logr v1.4.3
-	github.com/go-viper/mapstructure/v2 v2.4.0
+	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/google/uuid v1.6.0
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mitchellh/mapstructure v1.5.0
