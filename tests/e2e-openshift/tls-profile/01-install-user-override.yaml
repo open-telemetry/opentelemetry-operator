@@ -1,0 +1,24 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: tls-profile-test
+spec:
+  mode: deployment
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            tls:
+              min_version: "1.3"
+          http:
+            tls:
+              cipher_suites:
+                - TLS_AES_128_GCM_SHA256
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
