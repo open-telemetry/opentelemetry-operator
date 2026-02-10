@@ -536,9 +536,10 @@ func TestAddTAConfigToPromConfigWithTLSConfig(t *testing.T) {
 				"interval":     "30s",
 				"collector_id": "${POD_NAME}",
 				"tls": map[interface{}]interface{}{
-					"ca_file":   "ca.crt",
-					"cert_file": "tls.crt",
-					"key_file":  "tls.key",
+					"ca_file":         "ca.crt",
+					"cert_file":       "tls.crt",
+					"key_file":        "tls.key",
+					"reload_interval": "5m",
 				},
 			},
 		}

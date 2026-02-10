@@ -262,6 +262,7 @@ func WithTLSConfig(caFile, certFile, keyFile, taServiceName string) TAOption {
 		tlsCfg["ca_file"] = caFile
 		tlsCfg["cert_file"] = certFile
 		tlsCfg["key_file"] = keyFile
+		tlsCfg["reload_interval"] = "5m"
 
 		targetAllocatorCfg["endpoint"] = fmt.Sprintf("https://%s:443", taServiceName)
 
