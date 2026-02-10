@@ -40,6 +40,10 @@ func (r *reportingGauge) Record(_ context.Context, value int64, _ ...metric.Reco
 	r.value.Store(value)
 }
 
+func (r *reportingGauge) Enabled(_ context.Context) bool {
+	return true
+}
+
 func getTestPodWatcher(collectorNotReadyGracePeriod time.Duration) *Watcher {
 	podWatcher := Watcher{
 		k8sClient:                    fake.NewClientset(),
