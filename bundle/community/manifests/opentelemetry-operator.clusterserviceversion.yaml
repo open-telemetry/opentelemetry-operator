@@ -96,10 +96,10 @@ metadata:
         }
       ]
     capabilities: Deep Insights
-    categories: Logging & Tracing,Monitoring
+    categories: Logging & Tracing,Monitoring,Observability
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-01-26T15:18:00Z"
+    createdAt: "2026-02-10T14:25:17Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
