@@ -348,7 +348,7 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 }
 
 func getReviewer(shouldFailSAR bool) *rbac.Reviewer {
-	c := fake.NewSimpleClientset()
+	c := fake.NewClientset()
 	c.PrependReactor("create", "subjectaccessreviews", func(action kubeTesting.Action) (handled bool, ret runtime.Object, err error) {
 		// check our expectation here
 		if !action.Matches("create", "subjectaccessreviews") {
