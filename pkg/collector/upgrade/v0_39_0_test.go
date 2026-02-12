@@ -119,7 +119,7 @@ exporters:
 service:
   pipelines:
     traces:
-      receivers: [otlp/mtls, otlp]
+      receivers: [otlp/mtls, otlp_grpc]
       exporters: [debug]
 `,
 		},

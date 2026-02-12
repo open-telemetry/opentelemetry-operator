@@ -59,7 +59,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp/mtls]
-      exporters: [otlp]
+      exporters: [otlp_grpc]
 `,
 		},
 	}

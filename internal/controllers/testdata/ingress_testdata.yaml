@@ -1,10 +1,10 @@
 ---
 receivers:
-  otlp:
+  otlp_grpc:
     protocols:
       grpc:
         endpoint: 0.0.0.0:12345
-  otlp/test:
+  otlp_grpc/test:
     protocols:
       grpc:
         endpoint: 0.0.0.0:12346
@@ -13,5 +13,5 @@ exporters:
 service:
   pipelines:
     traces:
-      receivers: [otlp, otlp/test]
+      receivers: [otlp_grpc, otlp/test]
       exporters: [debug]

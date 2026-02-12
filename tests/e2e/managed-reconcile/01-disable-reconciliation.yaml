@@ -45,5 +45,5 @@ data:
     service:
       pipelines:
         traces:
-          receivers: [jaeger, otlp]
+          receivers: [jaeger, otlp_grpc]
           exporters: [debug]

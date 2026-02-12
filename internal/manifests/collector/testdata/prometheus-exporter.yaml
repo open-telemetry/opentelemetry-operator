@@ -1,5 +1,5 @@
 receivers:
-  otlp:
+  otlp_grpc:
     protocols:
       grpc:
       http:

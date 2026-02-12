@@ -1,0 +1,22 @@
+# Use this changelog template to create an entry for release notes.
+
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: enhancement
+
+# The name of the component, or a single word describing the area of concern, (e.g. filelogreceiver)
+component: operator
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Add automatic migration and deprecation warnings for OTLP exporter name changes (otlp→otlp_grpc, otlphttp→otlp_http)
+
+# Mandatory: One or more tracking issues related to the change. You can use the PR number here if no issue exists.
+issues: [4689]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  The operator now automatically renames deprecated otlp and otlphttp exporters to otlp_grpc and otlp_http when upgrading to collector v0.145.0+.
+  Deprecation warnings are emitted for existing configs using old names to help users migrate their configurations.
+  This change aligns with the OpenTelemetry Collector's deprecation of generic OTLP exporter names in favor of explicit protocol names.
+
