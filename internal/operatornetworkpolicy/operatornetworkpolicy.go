@@ -5,6 +5,7 @@ package operatornetworkpolicy
 
 import (
 	"context"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -27,6 +28,7 @@ type networkPolicy struct {
 
 	operatorNamespace          string
 	apiServerPort              int32
+	apiServerIPs               []string
 	webhookPort                int32
 	metricsPort                int32
 	apiServerPodSelector       *metav1.LabelSelector
@@ -62,6 +64,56 @@ func WithAPIServerPort(apiServerPort int32) Option {
 	return func(s *networkPolicy) {
 		s.apiServerPort = apiServerPort
 	}
+}
+
+// WithAPIServerIPs sets the IPs of the API server for use in network policy IPBlock rules.
+func WithAPIServerIPs(ips []string) Option {
+	return func(s *networkPolicy) {
+		s.apiServerIPs = ips
+	}
+}
+
+// WithAPIServerFromEndpointSlice discovers the API server port and IPs from the "kubernetes"
+// EndpointSlice in the "default" namespace. This is useful when the API server port and IPs
+// are not known ahead of time.
+func WithAPIServerFromEndpointSlice(ctx context.Context, clientset kubernetes.Interface) ([]Option, error) {
+	endpointSlices, err := clientset.DiscoveryV1().EndpointSlices("default").List(ctx, metav1.ListOptions{
+		LabelSelector: "kubernetes.io/service-name=kubernetes",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list kubernetes EndpointSlices: %w", err)
+	}
+
+	if len(endpointSlices.Items) == 0 {
+		return nil, fmt.Errorf("no EndpointSlice found for kubernetes service in default namespace")
+	}
+
+	var port int32
+	var ips []string
+
+	for _, endpointSlice := range endpointSlices.Items {
+		// Extract port
+		for _, p := range endpointSlice.Ports {
+			if p.Port != nil && p.Name != nil && *p.Name == "https" {
+				port = *p.Port
+				break
+			}
+		}
+		// Extract IPs from endpoints
+		for _, endpoint := range endpointSlice.Endpoints {
+			ips = append(ips, endpoint.Addresses...)
+		}
+	}
+
+	if port == 0 {
+		return nil, fmt.Errorf("no https port found in kubernetes EndpointSlice")
+	}
+
+	if len(ips) == 0 {
+		return nil, fmt.Errorf("no endpoint IPs found in kubernetes EndpointSlice")
+	}
+
+	return []Option{WithAPIServerPort(port), WithAPIServerIPs(ips)}, nil
 }
 
 // WithWebhookPort sets the port of the webhook and enables it in the network policy.
@@ -135,6 +187,15 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 		} else {
 			np.Spec.Egress[0].To[0].NamespaceSelector = n.apiServerNamespaceSelector
 		}
+	}
+	// Add IPBlock rules for API server IPs
+	for _, ip := range n.apiServerIPs {
+		cidr := ip + "/32"
+		np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
+			IPBlock: &networkingv1.IPBlock{
+				CIDR: cidr,
+			},
+		})
 	}
 
 	if n.webhookPort != 0 {

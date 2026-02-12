@@ -10,7 +10,6 @@ import (
 	"flag"
 	"fmt"
 	"net"
-	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -466,27 +465,19 @@ func main() {
 }
 
 func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interface, mgr ctrl.Manager) error {
-	ctrlCfg := mgr.GetConfig()
-	apiURL, err := url.Parse(ctrlCfg.Host)
-	if err != nil {
-		return fmt.Errorf("unable to parse the API server URL: %w", err)
-	}
-	apiPortStr := apiURL.Port()
-	if apiPortStr == "" && apiURL.Scheme == "https" {
-		apiPortStr = "443"
-	}
-	apiPort, err := strconv.ParseInt(apiPortStr, 10, 32)
-	if err != nil {
-		return fmt.Errorf("unable to parse the API server port: %w", err)
-	}
-
 	operatorNamespace := os.Getenv("NAMESPACE")
 	if operatorNamespace == "" {
 		return fmt.Errorf("NAMESPACE environment variable is not set, it is rquired for the Operator Network Policy to work")
 	}
 	var policyOpts []operatornetworkpolicy.Option
 	policyOpts = append(policyOpts, operatornetworkpolicy.WithOperatorNamespace(operatorNamespace))
-	policyOpts = append(policyOpts, operatornetworkpolicy.WithAPIServerPort(int32(apiPort)))
+	// Try to discover API server port and IPs from EndpointSlice, fall back to URL-based port
+	apiServerOpts, err := operatornetworkpolicy.WithAPIServerFromEndpointSlice(context.Background(), clientset)
+	if err != nil {
+		setupLog.Error(err, "Failed to discover API server from EndpointSlice, using port from URL")
+		return err
+	}
+	policyOpts = append(policyOpts, apiServerOpts...)
 
 	if cfg.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
 		policyOpts = append(policyOpts, operatornetworkpolicy.WithAPISererPodLabelSelector(&metav1.LabelSelector{
