@@ -205,6 +205,11 @@ func main() {
 		setupLog.Error(err, "failed to create kubernetes clientset")
 	}
 
+	// Discover Kubernetes API server info from EndpointSlices for network policies
+	if err = discoverKubeAPIServer(context.Background(), clientset, &cfg); err != nil {
+		setupLog.Info("Failed to discover Kubernetes API server from EndpointSlice", "error", err)
+	}
+
 	ctx := ctrl.SetupSignalHandler()
 
 	// Apply feature gates from Config if set (could be from file or env vars)
@@ -464,13 +469,59 @@ func main() {
 	}
 }
 
+func discoverKubeAPIServer(ctx context.Context, clientset kubernetes.Interface, cfg *config.Config) error {
+	endpointSlices, err := clientset.DiscoveryV1().EndpointSlices("default").List(ctx, metav1.ListOptions{
+		LabelSelector: "kubernetes.io/service-name=kubernetes",
+	})
+	if err != nil {
+		return fmt.Errorf("failed to list kubernetes EndpointSlices: %w", err)
+	}
+
+	if len(endpointSlices.Items) == 0 {
+		return fmt.Errorf("no EndpointSlice found for kubernetes service in default namespace")
+	}
+
+	for _, endpointSlice := range endpointSlices.Items {
+		// Extract port
+		for _, p := range endpointSlice.Ports {
+			if p.Port != nil && p.Name != nil && *p.Name == "https" {
+				cfg.Internal.KubeAPIServerPort = *p.Port
+				break
+			}
+		}
+		// Extract IPs from endpoints
+		for _, endpoint := range endpointSlice.Endpoints {
+			cfg.Internal.KubeAPIServerIPs = append(cfg.Internal.KubeAPIServerIPs, endpoint.Addresses...)
+		}
+	}
+
+	if cfg.Internal.KubeAPIServerPort == 0 {
+		return fmt.Errorf("no https port found in kubernetes EndpointSlice")
+	}
+
+	if len(cfg.Internal.KubeAPIServerIPs) == 0 {
+		return fmt.Errorf("no endpoint IPs found in kubernetes EndpointSlice")
+	}
+
+	setupLog.Info("Discovered Kubernetes API server", "port", cfg.Internal.KubeAPIServerPort, "ips", cfg.Internal.KubeAPIServerIPs)
+	return nil
+}
+
 func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interface, mgr ctrl.Manager) error {
 	operatorNamespace := os.Getenv("NAMESPACE")
 	if operatorNamespace == "" {
 		return fmt.Errorf("NAMESPACE environment variable is not set, it is rquired for the Operator Network Policy to work")
 	}
+
+	// Check if API server info was discovered
+	if cfg.Internal.KubeAPIServerPort == 0 || len(cfg.Internal.KubeAPIServerIPs) == 0 {
+		return fmt.Errorf("Kubernetes API server info not discovered from EndpointSlice")
+	}
+
 	var policyOpts []operatornetworkpolicy.Option
 	policyOpts = append(policyOpts, operatornetworkpolicy.WithOperatorNamespace(operatorNamespace))
+	policyOpts = append(policyOpts, operatornetworkpolicy.WithAPIServerPort(cfg.Internal.KubeAPIServerPort))
+	policyOpts = append(policyOpts, operatornetworkpolicy.WithAPIServerIPs(cfg.Internal.KubeAPIServerIPs))
 
 	if cfg.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
 		policyOpts = append(policyOpts, operatornetworkpolicy.WithAPISererPodLabelSelector(&metav1.LabelSelector{

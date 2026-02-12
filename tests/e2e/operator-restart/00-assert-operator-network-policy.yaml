@@ -10,10 +10,6 @@ metadata:
       kind: Deployment
       name: opentelemetry-operator-controller-manager
 spec:
-  egress:
-    - ports:
-        - port: 6443
-          protocol: TCP
   ingress:
     - ports:
         - port: 9443

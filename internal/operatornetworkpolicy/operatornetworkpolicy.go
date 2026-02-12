@@ -18,8 +18,7 @@ import (
 )
 
 const (
-	operatorName         = "opentelemetry-operator-controller-manager"
-	defaultAPIServerPort = 6443
+	operatorName = "opentelemetry-operator-controller-manager"
 )
 
 type networkPolicy struct {
@@ -27,6 +26,8 @@ type networkPolicy struct {
 	scheme    *runtime.Scheme
 
 	operatorNamespace          string
+	apiServerPort              int32
+	apiServerIPs               []string
 	webhookPort                int32
 	metricsPort                int32
 	apiServerPodSelector       *metav1.LabelSelector
@@ -54,6 +55,20 @@ type Option func(policy *networkPolicy)
 func WithOperatorNamespace(operatorNamespace string) Option {
 	return func(s *networkPolicy) {
 		s.operatorNamespace = operatorNamespace
+	}
+}
+
+// WithAPIServerPort sets the port of the API server and enables it in the network policy.
+func WithAPIServerPort(apiServerPort int32) Option {
+	return func(s *networkPolicy) {
+		s.apiServerPort = apiServerPort
+	}
+}
+
+// WithAPIServerIPs sets the IPs of the API server for use in network policy IPBlock rules.
+func WithAPIServerIPs(ips []string) Option {
+	return func(s *networkPolicy) {
+		s.apiServerIPs = ips
 	}
 }
 
@@ -87,7 +102,18 @@ func WithAPISererNamespaceLabelSelector(selector *metav1.LabelSelector) Option {
 
 func (n *networkPolicy) Start(ctx context.Context) error {
 	tcp := corev1.ProtocolTCP
-	apiServerPort := intstr.FromInt32(defaultAPIServerPort)
+	apiServerPort := intstr.FromInt32(n.apiServerPort)
+
+	var apiSeverIPs []networkingv1.NetworkPolicyPeer
+	// Add IPBlock rules for API server IPs
+	for _, ip := range n.apiServerIPs {
+		cidr := ip + "/32"
+		apiSeverIPs = append(apiSeverIPs, networkingv1.NetworkPolicyPeer{
+			IPBlock: &networkingv1.IPBlock{
+				CIDR: cidr,
+			},
+		})
+	}
 
 	np := &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -109,6 +135,7 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 							Port:     &apiServerPort,
 						},
 					},
+					To: apiSeverIPs,
 				},
 			},
 			PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress},
