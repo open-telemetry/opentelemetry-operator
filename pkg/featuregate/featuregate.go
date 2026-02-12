@@ -38,14 +38,6 @@ var (
 		featuregate.WithRegisterDescription("enables fallback allocation strategy for the target allocator"),
 		featuregate.WithRegisterFromVersion("v0.114.0"),
 	)
-	// EnableConfigDefaulting is the feature gate that enables the operator to default the endpoint for known components.
-	EnableConfigDefaulting = featuregate.GlobalRegistry().MustRegister(
-		"operator.collector.default.config",
-		featuregate.StageStable,
-		featuregate.WithRegisterDescription("enables the operator to default the endpoint for known components"),
-		featuregate.WithRegisterFromVersion("v0.110.0"),
-		featuregate.WithRegisterToVersion("v0.139.0"),
-	)
 	// EnableOperatorNetworkPolicy is the feature gate that enables the operator to create network policies for the operator.
 	EnableOperatorNetworkPolicy = featuregate.GlobalRegistry().MustRegister(
 		"operator.networkpolicy",
