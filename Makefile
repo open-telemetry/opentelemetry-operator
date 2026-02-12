@@ -1,3 +1,5 @@
+-include Makefile.alauda.mk
+
 # Current Operator version
 VERSION ?= $(shell git describe --tags | sed 's/^v//')
 VERSION_DATE ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')

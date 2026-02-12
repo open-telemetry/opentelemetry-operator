@@ -1,0 +1,55 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  labels:
+    cpaas.io/protocol.stack.ipv4: supported
+    cpaas.io/protocol.stack.ipv6: supported
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.arm64: supported
+  annotations:
+    provider: '{"zh":"Alauda", "en": "Alauda"}'
+    provider-type: platform
+    operatorframework.io/suggested-namespace: opentelemetry-operator
+    containerImage: build-harbor.alauda.cn/asm/opentelemetry-operator2:OPENTELEMETRY-OPERATOR2-TAG-PLACEHOLDER
+    support: Alauda
+  name: opentelemetry-operator2.OPENTELEMETRY-OPERATOR2-TAG-PLACEHOLDER
+  namespace: placeholder
+spec:
+  description: |-
+    Alauda Build of OpenTelemetry v2 is a collection of tools, APIs, and SDKs. You use it to instrument, generate, collect, and export telemetry data (metrics, logs, and traces) for analysis in order to understand your software's performance and behavior.
+
+    ### Operator features
+
+    * **Sidecar injection** - annotate your pods and let the operator inject a sidecar.
+    * **Managed upgrades** - updating the operator will automatically update your OpenTelemetry collectors.
+    * **Deployment modes** - your collector can be deployed as sidecar, daemon set, or regular deployment.
+    * **Service port management** - the operator detects which ports need to be exposed based on the provided configuration.
+  displayName: Alauda Build of OpenTelemetry v2
+  icon:
+  - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHJvbGU9ImltZyIgdmlld0JveD0iLTEyLjcwIC0xMi43MCAxMDI0LjQwIDEwMjQuNDAiPjxzdHlsZT5zdmcge2VuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMTAwMCAxMDAwfTwvc3R5bGU+PHBhdGggZmlsbD0iI2Y1YTgwMCIgZD0iTTUyOC43IDU0NS45Yy00MiA0Mi00MiAxMTAuMSAwIDE1Mi4xczExMC4xIDQyIDE1Mi4xIDAgNDItMTEwLjEgMC0xNTIuMS0xMTAuMS00Mi0xNTIuMSAwem0xMTMuNyAxMTMuOGMtMjAuOCAyMC44LTU0LjUgMjAuOC03NS4zIDAtMjAuOC0yMC44LTIwLjgtNTQuNSAwLTc1LjMgMjAuOC0yMC44IDU0LjUtMjAuOCA3NS4zIDAgMjAuOCAyMC43IDIwLjggNTQuNSAwIDc1LjN6bTM2LjYtNjQzbC02NS45IDY1LjljLTEyLjkgMTIuOS0xMi45IDM0LjEgMCA0N2wyNTcuMyAyNTcuM2MxMi45IDEyLjkgMzQuMSAxMi45IDQ3IDBsNjUuOS02NS45YzEyLjktMTIuOSAxMi45LTM0LjEgMC00N0w3MjUuOSAxNi43Yy0xMi45LTEyLjktMzQtMTIuOS00Ni45IDB6TTIxNy4zIDg1OC44YzExLjctMTEuNyAxMS43LTMwLjggMC00Mi41bC0zMy41LTMzLjVjLTExLjctMTEuNy0zMC44LTExLjctNDIuNSAwTDcyLjEgODUybC0uMS4xLTE5LTE5Yy0xMC41LTEwLjUtMjcuNi0xMC41LTM4IDAtMTAuNSAxMC41LTEwLjUgMjcuNiAwIDM4bDExNCAxMTRjMTAuNSAxMC41IDI3LjYgMTAuNSAzOCAwczEwLjUtMjcuNiAwLTM4bC0xOS0xOSAuMS0uMSA2OS4yLTY5LjJ6Ii8+PHBhdGggZmlsbD0iIzQyNWNjNyIgZD0iTTU2NS45IDIwNS45TDQxOS41IDM1Mi4zYy0xMyAxMy0xMyAzNC40IDAgNDcuNGw5MC40IDkwLjRjNjMuOS00NiAxNTMuNS00MC4zIDIxMSAxNy4ybDczLjItNzMuMmMxMy0xMyAxMy0zNC40IDAtNDcuNEw2MTMuMyAyMDUuOWMtMTMtMTMuMS0zNC40LTEzLjEtNDcuNCAwem0tOTQgMzIyLjNsLTUzLjQtNTMuNGMtMTIuNS0xMi41LTMzLTEyLjUtNDUuNSAwTDE4NC43IDY2My4yYy0xMi41IDEyLjUtMTIuNSAzMyAwIDQ1LjVsMTA2LjcgMTA2LjdjMTIuNSAxMi41IDMzIDEyLjUgNDUuNSAwTDQ1OCA2OTQuMWMtMjUuNi01Mi45LTIxLTExNi44IDEzLjktMTY1Ljl6Ii8+PC9zdmc+
+    mediatype: image/svg+xml
+  install:
+    spec:
+      deployments:
+      - name: opentelemetry-operator-controller-manager
+        spec:
+          template:
+            spec:
+              containers:
+              - name: manager
+                env:
+                - name: ENABLE_GO_AUTO_INSTRUMENTATION
+                  value: 'true'
+                - name: ENABLE_CR_METRICS
+                  value: 'true'
+                - name: CREATE_SM_OPERATOR_METRICS
+                  value: 'true'
+                - name: RELATED_IMAGE_COLLECTOR
+                  value: "build-harbor.alauda.cn/asm/opentelemetry-collector:OPENTELEMETRY-COLLECTOR-TAG-PLACEHOLDER"
+  provider:
+    name: Alauda
+  relatedImages:
+    - name: opentelemetry-operator2
+      image: build-harbor.alauda.cn/asm/opentelemetry-operator2:OPENTELEMETRY-OPERATOR2-TAG-PLACEHOLDER
+    - name: component.opentelemetry-collector
+      image: build-harbor.alauda.cn/asm/opentelemetry-collector:OPENTELEMETRY-COLLECTOR-TAG-PLACEHOLDER

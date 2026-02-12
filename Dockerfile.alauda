@@ -1,0 +1,14 @@
+#syntax=build-harbor.alauda.cn/asm/dockerfile:1.12
+
+FROM build-harbor.alauda.cn/mlops/static@sha256:d2185a95c5e553a32e4f82d8138ccb78b57242f987985bd089ae2fb3c21e18d0
+
+ARG TARGETARCH
+
+WORKDIR /
+
+# Copy binary built on the host
+COPY bin/manager_${TARGETARCH} manager
+
+USER 65532:65532
+
+ENTRYPOINT ["/manager"]
