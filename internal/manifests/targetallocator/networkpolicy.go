@@ -17,9 +17,8 @@ import (
 )
 
 const (
-	defaultAPIServerPort = 6443
-	defaultHTTPPort      = 8080
-	defaultHTTPSPort     = 8443
+	defaultHTTPPort  = 8080
+	defaultHTTPSPort = 8443
 )
 
 func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
@@ -32,7 +31,18 @@ func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
 	annotations := Annotations(params.TargetAllocator, nil, params.Config.AnnotationsFilter)
 
 	tcp := corev1.ProtocolTCP
-	apiServerPort := intstr.FromInt32(defaultAPIServerPort)
+	apiServerPort := intstr.FromInt32(params.Config.Internal.KubeAPIServerPort)
+	var apiSeverIPs []networkingv1.NetworkPolicyPeer
+	// Add IPBlock rules for API server IPs
+	for _, ip := range params.Config.Internal.KubeAPIServerIPs {
+		cidr := ip + "/32"
+		apiSeverIPs = append(apiSeverIPs, networkingv1.NetworkPolicyPeer{
+			IPBlock: &networkingv1.IPBlock{
+				CIDR: cidr,
+			},
+		})
+	}
+
 	np := &networkingv1.NetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -55,6 +65,7 @@ func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
 							Port:     &apiServerPort,
 						},
 					},
+					To: apiSeverIPs,
 				},
 			},
 			PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress},
