@@ -14,5 +14,6 @@ issues: [4411]
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
 subtext: |
-  The port for the Kubernetes API server egress network policy is now set dynamically from the Kubernetes client configuration.
-  Before the port was hardcoded to 6443 which did not work on Azure EKS clusters where the port is 443.
+  The operator network policy egress rule for the Kubernetes API server was hardcoded to port 6443.
+  This PR uses uses `endpointslices.discovery.k8s.io -n default kubernetes` to get the port and IP addresses of the Kubernetes API server
+  for the operator egress network policy.
