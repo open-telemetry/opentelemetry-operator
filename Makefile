@@ -155,7 +155,7 @@ MANIFESTS_DIR = config/manifests/$(BUNDLE_VARIANT)
 BUNDLE_BUILD_GEN_FLAGS ?= $(BUNDLE_GEN_FLAGS) --output-dir . --kustomize-dir ../../$(MANIFESTS_DIR)
 
 MIN_KUBERNETES_VERSION ?= 1.25.0
-MIN_OPENSHIFT_VERSION ?= 4.12
+MIN_OPENSHIFT_VERSION ?= 4.14
 
 ## On MacOS, use gsed instead of sed, to make sed behavior
 ## consistent with Linux.
