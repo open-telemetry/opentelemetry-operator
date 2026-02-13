@@ -4,6 +4,7 @@
 package components_test
 
 import (
+	"crypto/tls"
 	"fmt"
 	"testing"
 
@@ -425,8 +426,9 @@ func TestGenericParser_GetProbe(t *testing.T) {
 
 func TestGenericParser_GetDefaultConfig(t *testing.T) {
 	type args struct {
-		logger logr.Logger
-		config interface{}
+		logger     logr.Logger
+		config     interface{}
+		tlsProfile components.TLSProfile
 	}
 	type testCase[T any] struct {
 		name    string
@@ -480,6 +482,107 @@ func TestGenericParser_GetDefaultConfig(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
+			name: "valid settings with defaultsApplier and TLS profile",
+			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"endpoint": nil,
+					"tls":      map[string]interface{}{},
+				},
+				tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			},
+			want: map[string]interface{}{
+				"endpoint": "127.0.0.1:8080",
+				"tls": map[string]interface{}{
+					"min_version":   "1.2",
+					"cipher_suites": []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "TLS profile not injected when config.TLS is nil",
+			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"endpoint": nil,
+					// no "tls" key - TLS config is nil
+				},
+				tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			},
+			want: map[string]interface{}{
+				"endpoint": "127.0.0.1:8080",
+				// no TLS injected because config.TLS was nil
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "TLS profile does not override existing MinVersion",
+			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"endpoint": nil,
+					"tls": map[string]interface{}{
+						"min_version": "1.3", // already set
+					},
+				},
+				tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			},
+			want: map[string]interface{}{
+				"endpoint": "127.0.0.1:8080",
+				"tls": map[string]interface{}{
+					"min_version":   "1.3", // not overridden
+					"cipher_suites": []string{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "TLS profile does not override existing Ciphers",
+			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"endpoint": nil,
+					"tls": map[string]interface{}{
+						"cipher_suites": []string{"TLS_AES_256_GCM_SHA384"}, // already set
+					},
+				},
+				tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS12, []uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256}),
+			},
+			want: map[string]interface{}{
+				"endpoint": "127.0.0.1:8080",
+				"tls": map[string]interface{}{
+					"min_version":   "1.2",
+					"cipher_suites": []string{"TLS_AES_256_GCM_SHA384"}, // not overridden
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "TLS 1.3 profile does not inject cipher suites",
+			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
+			args: args{
+				logger: logr.Discard(),
+				config: map[string]interface{}{
+					"endpoint": nil,
+					"tls":      map[string]interface{}{},
+				},
+				tlsProfile: components.NewStaticTLSProfile(tls.VersionTLS13, []uint16{tls.TLS_AES_128_GCM_SHA256}),
+			},
+			want: map[string]interface{}{
+				"endpoint": "127.0.0.1:8080",
+				"tls": map[string]interface{}{
+					"min_version": "1.3",
+					// no cipher_suites - TLS 1.3 doesn't allow configuring them
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
 			name: "valid settings with defaultsApplier doesnt override",
 			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
 			args: args{
@@ -507,7 +610,11 @@ func TestGenericParser_GetDefaultConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.g.GetDefaultConfig(tt.args.logger, tt.args.config)
+			var opts []components.DefaultOption
+			if tt.args.tlsProfile != nil {
+				opts = append(opts, components.WithTLSProfile(tt.args.tlsProfile))
+			}
+			got, err := tt.g.GetDefaultConfig(tt.args.logger, tt.args.config, opts...)
 			if !tt.wantErr(t, err, fmt.Sprintf("GetDefaultConfig(%v, %v)", tt.args.logger, tt.args.config)) {
 				return
 			}
