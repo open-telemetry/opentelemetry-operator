@@ -69,10 +69,10 @@ spec:
           ($error == null): true
     - assert:
         resource:
-          ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] >= ($minSpanCount)): true
-          ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] >= ($minSpanCount)): true
-          ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_metric_points_total'].value | [0] >= ($minMetricPointCount)): true
-          ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_metric_points_total'].value | [0] >= ($minMetricPointCount)): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] > ($minSpanCount)): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] > ($minSpanCount)): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_metric_points_total'].value | [0] > ($minMetricPointCount)): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_metric_points_total'].value | [0] > ($minMetricPointCount)): true
   catch:
     - podLogs:
         selector: ($catchPodLabelSelector)
