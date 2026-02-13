@@ -610,7 +610,11 @@ func TestGenericParser_GetDefaultConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.g.GetDefaultConfig(tt.args.logger, tt.args.config, tt.args.tlsProfile)
+			var opts []components.DefaultOption
+			if tt.args.tlsProfile != nil {
+				opts = append(opts, components.WithTLSProfile(tt.args.tlsProfile))
+			}
+			got, err := tt.g.GetDefaultConfig(tt.args.logger, tt.args.config, opts...)
 			if !tt.wantErr(t, err, fmt.Sprintf("GetDefaultConfig(%v, %v)", tt.args.logger, tt.args.config)) {
 				return
 			}

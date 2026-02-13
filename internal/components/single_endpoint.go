@@ -88,7 +88,7 @@ func NewSilentSinglePortParserBuilder(name string, port int32) Builder[*SingleEn
 	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpointSilent).WithDefaultsApplier(AddressDefaulter).WithDefaultRecAddress(DefaultRecAddress)
 }
 
-func AddressDefaulter(_ logr.Logger, tlsProfile TLSProfile, defaultRecAddr string, port int32, config *SingleEndpointConfig) (map[string]interface{}, error) {
+func AddressDefaulter(_ logr.Logger, defaultCfg *DefaultConfig, defaultRecAddr string, port int32, config *SingleEndpointConfig) (map[string]interface{}, error) {
 	if config == nil {
 		config = &SingleEndpointConfig{}
 	}
@@ -102,12 +102,12 @@ func AddressDefaulter(_ logr.Logger, tlsProfile TLSProfile, defaultRecAddr strin
 		}
 	}
 
-	if tlsProfile != nil && config.TLS != nil {
-		if config.TLS.MinVersion == "" && tlsProfile.MinTLSVersionOTEL() != "" {
-			config.TLS.MinVersion = tlsProfile.MinTLSVersionOTEL()
+	if defaultCfg != nil && defaultCfg.TLSProfile != nil && config.TLS != nil {
+		if config.TLS.MinVersion == "" && defaultCfg.TLSProfile.MinTLSVersionOTEL() != "" {
+			config.TLS.MinVersion = defaultCfg.TLSProfile.MinTLSVersionOTEL()
 		}
-		if config.TLS.Ciphers == nil && len(tlsProfile.CipherSuiteNames()) > 0 {
-			config.TLS.Ciphers = tlsProfile.CipherSuiteNames()
+		if config.TLS.Ciphers == nil && len(defaultCfg.TLSProfile.CipherSuiteNames()) > 0 {
+			config.TLS.Ciphers = defaultCfg.TLSProfile.CipherSuiteNames()
 		}
 	}
 

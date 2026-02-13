@@ -308,7 +308,12 @@ func (c *Config) applyComponentDefaults(logger logr.Logger, defaultsCfg *Default
 		for componentName := range enabledComponents[componentKind] {
 			parser := retriever(componentName)
 			componentConf := cfg.Object[componentName]
-			newCfg, err := parser.GetDefaultConfig(logger, componentConf, defaultsCfg.TLSProfile)
+			// Build parser options from DefaultsConfig
+			var parserOpts []components.DefaultOption
+			if defaultsCfg != nil && defaultsCfg.TLSProfile != nil {
+				parserOpts = append(parserOpts, components.WithTLSProfile(defaultsCfg.TLSProfile))
+			}
+			newCfg, err := parser.GetDefaultConfig(logger, componentConf, parserOpts...)
 			if err != nil {
 				return events, err
 			}

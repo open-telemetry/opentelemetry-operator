@@ -256,8 +256,6 @@ func main() {
 		setupLog.Info("Failed to discover Kubernetes API server from EndpointSlice", "error", err)
 	}
 
-	ctx := ctrl.SetupSignalHandler()
-
 	// Create a cancellable context for graceful shutdown on TLS profile change
 	signalCtx := ctrl.SetupSignalHandler()
 	ctx, cancel := context.WithCancel(signalCtx)

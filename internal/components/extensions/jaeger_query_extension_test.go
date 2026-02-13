@@ -21,7 +21,7 @@ func TestJaegerQueryExtensionParser(t *testing.T) {
 	assert.Equal(t, "jaeger_query", genericBuilder.ParserType())
 	assert.Equal(t, "__jaeger_query", genericBuilder.ParserName())
 
-	defaultCfg, err := genericBuilder.GetDefaultConfig(logr.Discard(), nil, nil)
+	defaultCfg, err := genericBuilder.GetDefaultConfig(logr.Discard(), nil)
 	require.NoError(t, err)
 
 	ports, err := genericBuilder.Ports(logr.Discard(), "jaeger_query", defaultCfg)
@@ -56,7 +56,7 @@ func TestJaegerQueryExtensionParser_config(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cfg, errCfg := genericBuilder.GetDefaultConfig(logr.Discard(), test.config, nil)
+			cfg, errCfg := genericBuilder.GetDefaultConfig(logr.Discard(), test.config)
 			assert.Equal(t, test.want, cfg)
 			require.NoError(t, errCfg)
 		})
