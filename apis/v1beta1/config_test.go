@@ -1482,3 +1482,150 @@ func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
 	require.Equal(t, "0.0.0.0", *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Host)
 	require.Equal(t, 8888, *telemetry.Metrics.Readers[0].Pull.Exporter.Prometheus.Port)
 }
+
+func TestBatchProcessorDeprecationWarning(t *testing.T) {
+	tests := []struct {
+		name          string
+		config        *Config
+		wantWarning   bool
+		wantEventType string
+	}{
+		{
+			name: "batch processor enabled should emit deprecation warning",
+			config: &Config{
+				Receivers: AnyConfig{
+					Object: map[string]interface{}{
+						"otlp": map[string]interface{}{},
+					},
+				},
+				Exporters: AnyConfig{
+					Object: map[string]interface{}{
+						"otlp": map[string]interface{}{},
+					},
+				},
+				Processors: &AnyConfig{
+					Object: map[string]interface{}{
+						"batch": map[string]interface{}{},
+					},
+				},
+				Service: Service{
+					Pipelines: map[string]*Pipeline{
+						"traces": {
+							Receivers:  []string{"otlp"},
+							Processors: []string{"batch"},
+							Exporters:  []string{"otlp"},
+						},
+					},
+				},
+			},
+			wantWarning:   true,
+			wantEventType: v1.EventTypeWarning,
+		},
+		{
+			name: "batch processor with instance name should emit deprecation warning",
+			config: &Config{
+				Receivers: AnyConfig{
+					Object: map[string]interface{}{
+						"otlp": map[string]interface{}{},
+					},
+				},
+				Exporters: AnyConfig{
+					Object: map[string]interface{}{
+						"otlp": map[string]interface{}{},
+					},
+				},
+				Processors: &AnyConfig{
+					Object: map[string]interface{}{
+						"batch/custom": map[string]interface{}{},
+					},
+				},
+				Service: Service{
+					Pipelines: map[string]*Pipeline{
+						"traces": {
+							Receivers:  []string{"otlp"},
+							Processors: []string{"batch/custom"},
+							Exporters:  []string{"otlp"},
+						},
+					},
+				},
+			},
+			wantWarning:   true,
+			wantEventType: v1.EventTypeWarning,
+		},
+		{
+			name: "no batch processor should not emit warning",
+			config: &Config{
+				Receivers: AnyConfig{
+					Object: map[string]interface{}{
+						"otlp": map[string]interface{}{},
+					},
+				},
+				Exporters: AnyConfig{
+					Object: map[string]interface{}{
+						"otlp": map[string]interface{}{},
+					},
+				},
+				Processors: &AnyConfig{
+					Object: map[string]interface{}{
+						"memory_limiter": map[string]interface{}{},
+					},
+				},
+				Service: Service{
+					Pipelines: map[string]*Pipeline{
+						"traces": {
+							Receivers:  []string{"otlp"},
+							Processors: []string{"memory_limiter"},
+							Exporters:  []string{"otlp"},
+						},
+					},
+				},
+			},
+			wantWarning: false,
+		},
+		{
+			name: "nil processors should not emit warning",
+			config: &Config{
+				Receivers: AnyConfig{
+					Object: map[string]interface{}{
+						"otlp": map[string]interface{}{},
+					},
+				},
+				Exporters: AnyConfig{
+					Object: map[string]interface{}{
+						"otlp": map[string]interface{}{},
+					},
+				},
+				Processors: nil,
+				Service: Service{
+					Pipelines: map[string]*Pipeline{
+						"traces": {
+							Receivers: []string{"otlp"},
+							Exporters: []string{"otlp"},
+						},
+					},
+				},
+			},
+			wantWarning: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			events, err := tt.config.ApplyDefaults(logr.Discard())
+			require.NoError(t, err)
+
+			var foundWarning bool
+			for _, event := range events {
+				if event.Reason == "BatchProcessorDeprecated" {
+					foundWarning = true
+					assert.Equal(t, tt.wantEventType, event.Type)
+					assert.Contains(t, event.Message, "batch processor is deprecated")
+					assert.Contains(t, event.Message, "https://github.com/open-telemetry/opentelemetry-collector/issues/12022")
+					break
+				}
+			}
+
+			assert.Equal(t, tt.wantWarning, foundWarning, "batch processor deprecation warning presence mismatch")
+		})
+	}
+}
