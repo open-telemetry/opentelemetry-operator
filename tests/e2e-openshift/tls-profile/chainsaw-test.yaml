@@ -1,0 +1,196 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  creationTimestamp: null
+  name: tls-profile
+spec:
+  # Modifies the cluster-wide APIServer TLS profile; do not run in parallel.
+  concurrent: false
+  steps:
+  # Step 0: Create self-signed TLS certificate for the collector.
+  - name: step-00
+    try:
+    - script:
+        timeout: 1m
+        content: |
+          #!/bin/bash
+          set -ex
+          openssl req -x509 -newkey rsa:2048 \
+            -keyout /tmp/tls.key -out /tmp/tls.crt \
+            -days 1 -nodes \
+            -subj "/CN=tls-profile-test-collector.${NAMESPACE}.svc" \
+            -addext "subjectAltName=DNS:tls-profile-test-collector.${NAMESPACE}.svc,DNS:tls-profile-test-collector,DNS:tls-profile-test-collector.${NAMESPACE}.svc.cluster.local"
+          kubectl create secret tls collector-tls-certs \
+            --cert=/tmp/tls.crt --key=/tmp/tls.key \
+            -n "$NAMESPACE"
+          rm -f /tmp/tls.key /tmp/tls.crt
+
+  # Step 1: Apply collector A (multi-component with TLS) and assert it's running.
+  # Covers S1 (Intermediate injection), S2 (no injection without tls block),
+  # S3 (multi-protocol), S4 (single-endpoint), S5 (exporter with TLS).
+  - name: step-01
+    try:
+    - apply:
+        file: 00-install.yaml
+    - assert:
+        file: 00-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-collector
+
+  # Step 2: Verify Intermediate profile injection on CR fields.
+  - name: step-02
+    try:
+    - script:
+        timeout: 1m
+        content: ./check_tls_profile.sh "1.2" "true"
+
+  # Step 3: Functional TLS test - Intermediate profile.
+  # Verifies collector accepts TLS 1.2 and TLS 1.3 connections.
+  - name: step-03
+    try:
+    - script:
+        timeout: 3m
+        content: ./check_tls_functional.sh "1.2" "false"
+
+  # Step 4: Save current APIServer TLS profile and patch to Modern.
+  - name: step-04
+    try:
+    - script:
+        timeout: 1m
+        content: |
+          #!/bin/bash
+          set -ex
+          # Save the current APIServer TLS security profile for later restoration
+          CURRENT_PROFILE=$(oc get apiserver cluster -o jsonpath='{.spec.tlsSecurityProfile}')
+          echo "Current APIServer TLS profile: ${CURRENT_PROFILE:-<not set>}"
+          # Store in a ConfigMap so we can retrieve it later
+          oc create configmap tls-profile-backup \
+            -n "$NAMESPACE" \
+            --from-literal=profile="${CURRENT_PROFILE}" \
+            --dry-run=client -o yaml | oc apply -f -
+          # Patch APIServer to Modern profile
+          oc patch apiserver cluster --type merge -p '{"spec":{"tlsSecurityProfile":{"type":"Modern","modern":{}}}}'
+          echo "APIServer patched to Modern profile"
+    catch:
+    - script:
+        timeout: 1m
+        content: |
+          #!/bin/bash
+          # Attempt to restore APIServer profile on failure
+          SAVED=$(oc get configmap tls-profile-backup -n "$NAMESPACE" -o jsonpath='{.data.profile}' 2>/dev/null || true)
+          if [ -n "$SAVED" ] && [ "$SAVED" != "{}" ]; then
+            oc patch apiserver cluster --type merge -p "{\"spec\":{\"tlsSecurityProfile\":${SAVED}}}"
+          else
+            oc patch apiserver cluster --type json -p '[{"op":"remove","path":"/spec/tlsSecurityProfile"}]' 2>/dev/null || true
+          fi
+
+  # Step 5: Delete and recreate collector A so the webhook injects the new Modern profile.
+  # Covers S7 (Modern profile) and S8 (dynamic profile change).
+  - name: step-05
+    try:
+    - script:
+        timeout: 1m
+        content: |
+          #!/bin/bash
+          set -ex
+          oc delete otelcol tls-profile-test -n "$NAMESPACE" --ignore-not-found
+          oc wait --for=delete otelcol/tls-profile-test -n "$NAMESPACE" --timeout=60s 2>/dev/null || true
+    - apply:
+        file: 00-install.yaml
+    - assert:
+        file: 00-assert.yaml
+    catch:
+    - script:
+        timeout: 1m
+        content: |
+          #!/bin/bash
+          SAVED=$(oc get configmap tls-profile-backup -n "$NAMESPACE" -o jsonpath='{.data.profile}' 2>/dev/null || true)
+          if [ -n "$SAVED" ] && [ "$SAVED" != "{}" ]; then
+            oc patch apiserver cluster --type merge -p "{\"spec\":{\"tlsSecurityProfile\":${SAVED}}}"
+          else
+            oc patch apiserver cluster --type json -p '[{"op":"remove","path":"/spec/tlsSecurityProfile"}]' 2>/dev/null || true
+          fi
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-collector
+
+  # Step 6: Verify Modern profile injection on CR fields.
+  - name: step-06
+    try:
+    - script:
+        timeout: 1m
+        content: ./check_tls_profile.sh "1.3" "false"
+    catch:
+    - script:
+        timeout: 1m
+        content: |
+          #!/bin/bash
+          SAVED=$(oc get configmap tls-profile-backup -n "$NAMESPACE" -o jsonpath='{.data.profile}' 2>/dev/null || true)
+          if [ -n "$SAVED" ] && [ "$SAVED" != "{}" ]; then
+            oc patch apiserver cluster --type merge -p "{\"spec\":{\"tlsSecurityProfile\":${SAVED}}}"
+          else
+            oc patch apiserver cluster --type json -p '[{"op":"remove","path":"/spec/tlsSecurityProfile"}]' 2>/dev/null || true
+          fi
+
+  # Step 7: Functional TLS test - Modern profile.
+  # Verifies collector accepts TLS 1.3 and rejects TLS 1.2 connections.
+  - name: step-07
+    try:
+    - script:
+        timeout: 3m
+        content: ./check_tls_functional.sh "1.3" "true"
+    catch:
+    - script:
+        timeout: 1m
+        content: |
+          #!/bin/bash
+          SAVED=$(oc get configmap tls-profile-backup -n "$NAMESPACE" -o jsonpath='{.data.profile}' 2>/dev/null || true)
+          if [ -n "$SAVED" ] && [ "$SAVED" != "{}" ]; then
+            oc patch apiserver cluster --type merge -p "{\"spec\":{\"tlsSecurityProfile\":${SAVED}}}"
+          else
+            oc patch apiserver cluster --type json -p '[{"op":"remove","path":"/spec/tlsSecurityProfile"}]' 2>/dev/null || true
+          fi
+
+  # Step 8: Restore APIServer TLS profile to saved value.
+  - name: step-08
+    try:
+    - script:
+        timeout: 1m
+        content: |
+          #!/bin/bash
+          set -ex
+          SAVED=$(oc get configmap tls-profile-backup -n "$NAMESPACE" -o jsonpath='{.data.profile}' 2>/dev/null || true)
+          if [ -n "$SAVED" ] && [ "$SAVED" != "{}" ]; then
+            oc patch apiserver cluster --type merge -p "{\"spec\":{\"tlsSecurityProfile\":${SAVED}}}"
+          else
+            # Remove tlsSecurityProfile to restore default (Intermediate)
+            oc patch apiserver cluster --type json -p '[{"op":"remove","path":"/spec/tlsSecurityProfile"}]' 2>/dev/null || true
+          fi
+          echo "APIServer TLS profile restored"
+
+  # Step 9: Delete collector A, apply collector B (user overrides).
+  # Covers S6 (user-specified values preserved).
+  - name: step-09
+    try:
+    - script:
+        timeout: 1m
+        content: |
+          #!/bin/bash
+          set -ex
+          oc delete otelcol tls-profile-test -n "$NAMESPACE" --ignore-not-found
+          oc wait --for=delete otelcol/tls-profile-test -n "$NAMESPACE" --timeout=60s 2>/dev/null || true
+    - apply:
+        file: 01-install-user-override.yaml
+    - assert:
+        file: 01-assert.yaml
+    catch:
+    - podLogs:
+        selector: app.kubernetes.io/component=opentelemetry-collector
+
+  # Step 10: Verify user-specified values are preserved.
+  - name: step-10
+    try:
+    - script:
+        timeout: 1m
+        content: ./check_user_tls_override.sh
