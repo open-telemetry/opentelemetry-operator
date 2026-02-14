@@ -1,16 +1,16 @@
 receivers:
-  otlp:
+  otlp_grpc:
     protocols:
       grpc:
 processors:
   resourcedetection:
     detectors: [openshift]
 exporters:
-  otlp:
+  otlp_grpc:
     endpoint: "otlp:4317"
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [resourcedetection]
-      exporters: [otlp]
+      exporters: [otlp_grpc]

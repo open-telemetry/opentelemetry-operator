@@ -30,5 +30,5 @@ spec:
     service:
       pipelines:
         metrics:
-          receivers: [otlp, prometheus]
+          receivers: [otlp_grpc, prometheus]
           exporters: [prometheus/dev]
