@@ -110,6 +110,11 @@ func (t *Item) GetNodeName() string {
 	return relevantLabels.Get(endpointSliceTargetNameLabel)
 }
 
+// GetWeightClass returns the value of the given label name, which represents the target's weight class.
+func (t *Item) GetWeightClass(labelName string) string {
+	return t.Labels.Get(labelName)
+}
+
 // GetEndpointSliceName returns the name of the EndpointSlice that the target is part of.
 // If the target is not part of an EndpointSlice, it returns an empty string.
 func (t *Item) GetEndpointSliceName() string {

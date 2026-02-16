@@ -16,6 +16,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/diff"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
@@ -93,6 +94,7 @@ type allocator struct {
 	log logr.Logger
 
 	filter                Filter
+	weightClasses         *config.WeightClassConfig
 	targetsPerCollector   metric.Int64Gauge
 	collectorsAllocatable metric.Int64Gauge
 	timeToAssign          metric.Float64Histogram
@@ -108,6 +110,21 @@ func (a *allocator) SetFilter(filter Filter) {
 // SetFallbackStrategy sets the fallback strategy to use.
 func (a *allocator) SetFallbackStrategy(strategy Strategy) {
 	a.strategy.SetFallbackStrategy(strategy)
+}
+
+// SetWeightClasses sets the weight class configuration for weighted load balancing.
+func (a *allocator) SetWeightClasses(weightClasses *config.WeightClassConfig) {
+	a.weightClasses = weightClasses
+}
+
+// getTargetWeight returns the numeric weight for a target based on its weight class label.
+// When no weight classes are configured, returns 1 to maintain backward compatibility.
+func (a *allocator) getTargetWeight(tg *target.Item) int {
+	if a.weightClasses == nil {
+		return 1
+	}
+	class := tg.GetWeightClass(a.weightClasses.GetLabel())
+	return a.weightClasses.GetWeightForClass(class)
 }
 
 // SetTargets accepts a list of targets that will be used to make
@@ -261,6 +278,7 @@ func (a *allocator) addTargetToTargetItems(tg *target.Item) error {
 	tg.CollectorName = colOwner.Name
 	a.addCollectorTargetItemMapping(tg)
 	a.collectors[colOwner.Name].NumTargets++
+	a.collectors[colOwner.Name].WeightedLoad += a.getTargetWeight(tg)
 	a.collectors[colOwner.Name].TargetsPerJob[tg.JobName]++
 	a.targetsPerCollector.Record(context.Background(), int64(a.collectors[colOwner.String()].NumTargets), metric.WithAttributes(attribute.String("collector_name", colOwner.String()), attribute.String("strategy", a.strategy.GetName())))
 	return nil
@@ -277,6 +295,7 @@ func (a *allocator) unassignTargetItem(item *target.Item) {
 		return
 	}
 	c.NumTargets--
+	c.WeightedLoad -= a.getTargetWeight(item)
 	c.TargetsPerJob[item.JobName]--
 	if c.TargetsPerJob[item.JobName] == 0 {
 		delete(c.TargetsPerJob, item.JobName)

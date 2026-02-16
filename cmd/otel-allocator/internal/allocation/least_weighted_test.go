@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
@@ -202,6 +203,102 @@ func TestLeastWeightedJobDistribution(t *testing.T) {
 				"collector %s should have ~%.0f targets from job %s, got %d",
 				colName, expectedPerJobPerCollector, job, count)
 		}
+	}
+}
+
+// TestWeightedLoadBalancing verifies that heavy and light targets are distributed
+// so that WeightedLoad is balanced across collectors rather than just target count.
+func TestWeightedLoadBalancing(t *testing.T) {
+	weightCfg := &config.WeightClassConfig{
+		Label:   "__weight_class",
+		Default: 1,
+		Classes: map[string]int{"heavy": 10, "light": 1},
+	}
+
+	s, _ := New("least-weighted", logger, WithWeightClasses(weightCfg))
+
+	numCols := 3
+	cols := MakeNCollectors(numCols, 0)
+	s.SetCollectors(cols)
+
+	// Create 3 heavy targets (weight=10 each) and 30 light targets (weight=1 each)
+	// Total weight = 3*10 + 30*1 = 60, expect ~20 per collector
+	heavyTargets := MakeNTargetsWithWeightClass(3, "heavy-job", 0, "__weight_class", "heavy")
+	lightTargets := MakeNTargetsWithWeightClass(30, "light-job", 100, "__weight_class", "light")
+
+	allTargets := append(heavyTargets, lightTargets...)
+	s.SetTargets(allTargets)
+
+	collectors := s.Collectors()
+
+	// Verify heavy targets are spread across collectors (not all on one)
+	heavyPerCollector := map[string]int{}
+	for _, col := range collectors {
+		targets := s.GetTargetsForCollectorAndJob(col.Name, "heavy-job")
+		heavyPerCollector[col.Name] = len(targets)
+	}
+	t.Logf("Heavy targets per collector: %v", heavyPerCollector)
+	// Each collector should have at most 1 heavy target (3 heavy / 3 collectors)
+	for colName, count := range heavyPerCollector {
+		assert.LessOrEqual(t, count, 2, "collector %s should have at most 2 heavy targets, got %d", colName, count)
+	}
+
+	// Verify WeightedLoad is balanced across collectors
+	var loads []int
+	for _, col := range collectors {
+		loads = append(loads, col.WeightedLoad)
+	}
+	t.Logf("WeightedLoad per collector: %v", loads)
+
+	// Expected total weight = 60, expected per collector = 20
+	expectedPerCollector := 60.0 / float64(numCols)
+	for _, col := range collectors {
+		assert.InDelta(t, expectedPerCollector, col.WeightedLoad, expectedPerCollector*0.5,
+			"collector %s WeightedLoad should be ~%.0f, got %d", col.Name, expectedPerCollector, col.WeightedLoad)
+	}
+}
+
+// TestWeightedLoadWithoutConfig verifies that when no weight classes are configured,
+// WeightedLoad equals NumTargets (backward compatibility).
+func TestWeightedLoadWithoutConfig(t *testing.T) {
+	s, _ := New("least-weighted", logger)
+
+	cols := MakeNCollectors(3, 0)
+	s.SetCollectors(cols)
+
+	targets := MakeNNewTargets(9, 3, 0)
+	s.SetTargets(targets)
+
+	for _, col := range s.Collectors() {
+		assert.Equal(t, col.NumTargets, col.WeightedLoad,
+			"without weight config, WeightedLoad should equal NumTargets for collector %s", col.Name)
+	}
+}
+
+// TestWeightedLoadUnknownClass verifies that targets with an unknown weight class
+// use the default weight.
+func TestWeightedLoadUnknownClass(t *testing.T) {
+	weightCfg := &config.WeightClassConfig{
+		Label:   "__weight_class",
+		Default: 5,
+		Classes: map[string]int{"heavy": 10},
+	}
+
+	s, _ := New("least-weighted", logger, WithWeightClasses(weightCfg))
+
+	cols := MakeNCollectors(1, 0)
+	s.SetCollectors(cols)
+
+	// Create targets with unknown weight class
+	targets := MakeNTargetsWithWeightClass(2, "test-job", 0, "__weight_class", "unknown")
+	s.SetTargets(targets)
+
+	collectors := s.Collectors()
+	for _, col := range collectors {
+		// 2 targets * default weight 5 = 10
+		assert.Equal(t, 10, col.WeightedLoad,
+			"unknown weight class should use default weight")
+		assert.Equal(t, 2, col.NumTargets)
 	}
 }
 

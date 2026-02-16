@@ -757,6 +757,92 @@ func TestGetAllowDenyLists(t *testing.T) {
 	}
 }
 
+func TestWeightClassConfig(t *testing.T) {
+	t.Run("nil config returns defaults", func(t *testing.T) {
+		var w *WeightClassConfig
+		assert.Equal(t, DefaultWeightClassLabel, w.GetLabel())
+		assert.Equal(t, 1, w.GetDefault())
+		assert.Equal(t, 1, w.GetWeightForClass("heavy"))
+		assert.Equal(t, 1, w.GetWeightForClass(""))
+	})
+
+	t.Run("empty config returns defaults", func(t *testing.T) {
+		w := &WeightClassConfig{}
+		assert.Equal(t, DefaultWeightClassLabel, w.GetLabel())
+		assert.Equal(t, 1, w.GetDefault())
+		assert.Equal(t, 1, w.GetWeightForClass("heavy"))
+	})
+
+	t.Run("custom label", func(t *testing.T) {
+		w := &WeightClassConfig{Label: "my_weight"}
+		assert.Equal(t, "my_weight", w.GetLabel())
+	})
+
+	t.Run("custom default", func(t *testing.T) {
+		w := &WeightClassConfig{Default: 5}
+		assert.Equal(t, 5, w.GetDefault())
+		assert.Equal(t, 5, w.GetWeightForClass("unknown"))
+	})
+
+	t.Run("known class returns its weight", func(t *testing.T) {
+		w := &WeightClassConfig{
+			Classes: map[string]int{"heavy": 10, "light": 1},
+			Default: 3,
+		}
+		assert.Equal(t, 10, w.GetWeightForClass("heavy"))
+		assert.Equal(t, 1, w.GetWeightForClass("light"))
+		assert.Equal(t, 3, w.GetWeightForClass("unknown"))
+		assert.Equal(t, 3, w.GetWeightForClass(""))
+	})
+
+	t.Run("YAML deserialization", func(t *testing.T) {
+		configContent := `
+collector_namespace: default
+allocation_strategy: least-weighted
+weight_classes:
+  label: __weight_class
+  default: 1
+  classes:
+    heavy: 10
+    medium: 3
+    light: 1
+`
+		tempDir := t.TempDir()
+		configPath := filepath.Join(tempDir, "weight_classes_config.yaml")
+		err := os.WriteFile(configPath, []byte(configContent), 0600)
+		require.NoError(t, err)
+
+		cfg := CreateDefaultConfig()
+		err = LoadFromFile(configPath, &cfg)
+		require.NoError(t, err)
+
+		require.NotNil(t, cfg.WeightClasses)
+		assert.Equal(t, "__weight_class", cfg.WeightClasses.GetLabel())
+		assert.Equal(t, 1, cfg.WeightClasses.GetDefault())
+		assert.Equal(t, 10, cfg.WeightClasses.GetWeightForClass("heavy"))
+		assert.Equal(t, 3, cfg.WeightClasses.GetWeightForClass("medium"))
+		assert.Equal(t, 1, cfg.WeightClasses.GetWeightForClass("light"))
+		assert.Equal(t, "least-weighted", cfg.AllocationStrategy)
+	})
+
+	t.Run("YAML without weight_classes leaves nil", func(t *testing.T) {
+		configContent := `
+collector_namespace: default
+allocation_strategy: least-weighted
+`
+		tempDir := t.TempDir()
+		configPath := filepath.Join(tempDir, "no_weight_classes.yaml")
+		err := os.WriteFile(configPath, []byte(configContent), 0600)
+		require.NoError(t, err)
+
+		cfg := CreateDefaultConfig()
+		err = LoadFromFile(configPath, &cfg)
+		require.NoError(t, err)
+
+		assert.Nil(t, cfg.WeightClasses)
+	})
+}
+
 func TestConfigLoadPriority(t *testing.T) {
 	// Helper function to create a dummy kube config for tests
 	createDummyKubeConfig := func(t *testing.T, dir string) string {

@@ -9,6 +9,7 @@ import (
 	"github.com/buraksezer/consistent"
 	"github.com/go-logr/logr"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
@@ -44,6 +45,12 @@ func WithFallbackStrategy(fallbackStrategy string) Option {
 	}
 }
 
+func WithWeightClasses(weightClasses *config.WeightClassConfig) Option {
+	return func(allocator Allocator) {
+		allocator.SetWeightClasses(weightClasses)
+	}
+}
+
 func New(name string, log logr.Logger, opts ...Option) (Allocator, error) {
 	if strategy, ok := strategies[name]; ok {
 		return newAllocator(log.WithValues("allocator", name), strategy, opts...)
@@ -67,6 +74,7 @@ type Allocator interface {
 	GetTargetsForCollectorAndJob(collector string, job string) []*target.Item
 	SetFilter(filter Filter)
 	SetFallbackStrategy(strategy Strategy)
+	SetWeightClasses(weightClasses *config.WeightClassConfig)
 }
 
 type Strategy interface {
@@ -89,6 +97,7 @@ type Collector struct {
 	Name          string
 	NodeName      string
 	NumTargets    int
+	WeightedLoad  int // sum of weights of assigned targets; equals NumTargets when no weight classes configured
 	TargetsPerJob map[string]int
 }
 

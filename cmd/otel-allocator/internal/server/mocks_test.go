@@ -5,6 +5,7 @@ package server
 
 import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
@@ -22,6 +23,7 @@ func (m *mockAllocator) Collectors() map[string]*allocation.Collector           
 func (m *mockAllocator) GetTargetsForCollectorAndJob(_ string, _ string) []*target.Item { return nil }
 func (m *mockAllocator) SetFilter(_ allocation.Filter)                                  {}
 func (m *mockAllocator) SetFallbackStrategy(_ allocation.Strategy)                      {}
+func (m *mockAllocator) SetWeightClasses(_ *config.WeightClassConfig)                   {}
 
 func (m *mockAllocator) TargetItems() map[target.ItemHash]*target.Item {
 	return m.targetItems

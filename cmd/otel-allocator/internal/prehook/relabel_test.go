@@ -369,6 +369,47 @@ func TestDistinctTarget(t *testing.T) {
 	assert.Equal(t, remainingItemsMap, expectedTargetMap)
 }
 
+func TestApplyReplaceLabelPersistence(t *testing.T) {
+	allocatorPrehook := New("relabel-config", logger)
+	assert.NotNil(t, allocatorPrehook)
+
+	jobName := "test-job"
+	label := labels.New(
+		labels.Label{Name: "i", Value: "1"},
+		labels.Label{Name: model.AddressLabel, Value: "localhost:9090"},
+		labels.Label{Name: model.JobLabel, Value: jobName},
+		labels.Label{Name: model.ScrapeIntervalLabel, Value: "10s"},
+		labels.Label{Name: model.ScrapeTimeoutLabel, Value: "10s"},
+		labels.Label{Name: model.SchemeLabel, Value: "http"},
+		labels.Label{Name: model.MetricsPathLabel, Value: "/metrics"},
+		labels.Label{Name: model.InstanceLabel, Value: "localhost:9090"},
+	)
+	rawTarget := target.NewItem(jobName, "localhost:9090", label, "")
+
+	// A relabel config that adds a new label via replace action
+	replaceConfig := map[string][]*relabel.Config{
+		jobName: {
+			{
+				SourceLabels:         model.LabelNames{"i"},
+				Action:               "replace",
+				Separator:            ";",
+				Regex:                relabel.MustNewRegexp("(.*)"),
+				Replacement:          "heavy",
+				TargetLabel:          "__weight_class",
+				NameValidationScheme: model.UTF8Validation,
+			},
+		},
+	}
+
+	allocatorPrehook.SetConfig(replaceConfig)
+	result := allocatorPrehook.Apply([]*target.Item{rawTarget})
+	assert.Len(t, result, 1)
+
+	// The relabeled label should persist on the output Item
+	assert.Equal(t, "heavy", result[0].Labels.Get("__weight_class"),
+		"relabeled labels should persist on the output Item")
+}
+
 func MakeTargetFromProm(rCfgs []*relabel.Config, rawTarget *target.Item) (*target.Item, error) {
 	lb := labels.NewBuilder(rawTarget.Labels)
 	cfg := &config.ScrapeConfig{
@@ -383,12 +424,18 @@ func MakeTargetFromProm(rCfgs []*relabel.Config, rawTarget *target.Item) (*targe
 		return nil, nil
 	}
 
+	// Simulate what Apply does: apply relabel configs and keep all labels including meta.
+	// PopulateLabels strips meta labels from lb, so we use a fresh builder here to match
+	// the Apply behavior which preserves meta labels on the output Item.
+	applyBuilder := labels.NewBuilder(rawTarget.Labels)
+	relabel.ProcessBuilder(applyBuilder, rCfgs...)
+
 	// Compute the hash from the builder, skipping meta labels
-	hash := target.HashFromBuilder(lb, rawTarget.JobName)
+	hash := target.HashFromBuilder(applyBuilder, rawTarget.JobName)
 	newTarget := target.NewItem(
 		rawTarget.JobName,
 		rawTarget.TargetURL,
-		rawTarget.Labels,
+		applyBuilder.Labels(),
 		rawTarget.CollectorName,
 		target.WithHash(hash),
 	)
