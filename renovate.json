@@ -69,6 +69,7 @@
       "description": "Update kind node images in kind config files",
       "datasourceTemplate": "docker",
       "depNameTemplate": "kindest/node",
+      "versioningTemplate": "regex:^v?(?<compatibility>\\d+\\.\\d+)\\.(?<major>\\d+)$",
       "fileMatch": [
         "(^|/)kind-[\\d\\.]+\\.ya?ml$"
       ],
@@ -119,12 +120,6 @@
         "commitMessageTopic": "OpenTelemetry python agent version to {{ upgrades.0.newVersion }}"
       },
       "ignoreUnstable": false
-    },
-    {
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["kindest/node"],
-      "matchUpdateTypes": ["major", "minor"],
-      "enabled": false
     },
     {
       "matchDatasources": ["docker"],
