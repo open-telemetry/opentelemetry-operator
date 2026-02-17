@@ -39,9 +39,9 @@ spec:
         env:
           - name: podName
             value: ($podName)
+        shell: /bin/bash
         timeout: 90s
         content: |
-          #!/bin/bash
           # Add retry logic for metrics collection to handle timing issues
           # This is especially important on older K8s versions where sidecars are not native
           for i in {1..18}; do
