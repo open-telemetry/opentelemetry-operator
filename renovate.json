@@ -63,6 +63,18 @@
       "matchStrings": [
         "^(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\\s*$"
       ]
+    },
+    {
+      "customType": "regex",
+      "description": "Update kind node images in kind config files",
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "kindest/node",
+      "fileMatch": [
+        "(^|/)kind-[\\d\\.]+\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "image: kindest/node:(?<currentValue>v[\\d\\.]+)@(?<currentDigest>sha256:[a-f0-9]+)"
+      ]
     }
   ],
   "packageRules": [
@@ -107,6 +119,19 @@
         "commitMessageTopic": "OpenTelemetry python agent version to {{ upgrades.0.newVersion }}"
       },
       "ignoreUnstable": false
+    },
+    {
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["kindest/node"],
+      "matchUpdateTypes": ["major", "minor"],
+      "enabled": false
+    },
+    {
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["kindest/node"],
+      "groupName": "kind node images",
+      "schedule": ["on monday"],
+      "commitMessageTopic": "kind node images"
     }
   ]
 }
