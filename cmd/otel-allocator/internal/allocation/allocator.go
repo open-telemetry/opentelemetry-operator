@@ -93,9 +93,8 @@ type allocator struct {
 
 	log logr.Logger
 
-	filter                Filter
-	weightClasses         *config.WeightClassConfig
-	targetsPerCollector   metric.Int64Gauge
+	filter              Filter
+	targetsPerCollector metric.Int64Gauge
 	collectorsAllocatable metric.Int64Gauge
 	timeToAssign          metric.Float64Histogram
 	targetsRemaining      metric.Int64Gauge
@@ -112,19 +111,11 @@ func (a *allocator) SetFallbackStrategy(strategy Strategy) {
 	a.strategy.SetFallbackStrategy(strategy)
 }
 
-// SetWeightClasses sets the weight class configuration for weighted load balancing.
-func (a *allocator) SetWeightClasses(weightClasses *config.WeightClassConfig) {
-	a.weightClasses = weightClasses
-}
-
 // getTargetWeight returns the numeric weight for a target based on its weight class label.
-// When no weight classes are configured, returns 1 to maintain backward compatibility.
+// Standard weight classes: light=1, medium=5, heavy=10. Unlabeled targets default to light (1).
 func (a *allocator) getTargetWeight(tg *target.Item) int {
-	if a.weightClasses == nil {
-		return 1
-	}
-	class := tg.GetWeightClass(a.weightClasses.GetLabel())
-	return a.weightClasses.GetWeightForClass(class)
+	class := tg.GetWeightClass(config.WeightClassLabel)
+	return config.GetWeightForClass(class)
 }
 
 // SetTargets accepts a list of targets that will be used to make

@@ -94,7 +94,6 @@ func main() {
 	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log,
 		allocation.WithFilter(allocatorPrehook),
 		allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy),
-		allocation.WithWeightClasses(cfg.WeightClasses),
 	)
 	if allocErr != nil {
 		setupLog.Error(allocErr, "Unable to initialize allocation strategy")

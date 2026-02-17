@@ -395,7 +395,7 @@ func TestApplyReplaceLabelPersistence(t *testing.T) {
 				Separator:            ";",
 				Regex:                relabel.MustNewRegexp("(.*)"),
 				Replacement:          "heavy",
-				TargetLabel:          "__weight_class",
+				TargetLabel:          "__target_allocation_weight",
 				NameValidationScheme: model.UTF8Validation,
 			},
 		},
@@ -406,7 +406,7 @@ func TestApplyReplaceLabelPersistence(t *testing.T) {
 	assert.Len(t, result, 1)
 
 	// The relabeled label should persist on the output Item
-	assert.Equal(t, "heavy", result[0].Labels.Get("__weight_class"),
+	assert.Equal(t, "heavy", result[0].Labels.Get("__target_allocation_weight"),
 		"relabeled labels should persist on the output Item")
 }
 

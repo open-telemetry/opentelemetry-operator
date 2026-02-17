@@ -74,46 +74,37 @@ type Config struct {
 	PrometheusCR                 PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	HTTPS                        HTTPSServerConfig     `yaml:"https,omitempty"`
 	CollectorNotReadyGracePeriod time.Duration         `yaml:"collector_not_ready_grace_period,omitempty"`
-	WeightClasses                *WeightClassConfig    `yaml:"weight_classes,omitempty"`
 }
 
-// WeightClassConfig configures weight-based load balancing for the least-weighted allocation strategy.
-// Targets are labeled with a weight class, and each class maps to a numeric weight.
-// The strategy uses sum-of-weights instead of count for load balancing.
-type WeightClassConfig struct {
-	Label   string         `yaml:"label,omitempty"`   // label name to read weight class from; defaults to "__weight_class"
-	Default int            `yaml:"default,omitempty"` // default weight for targets without a weight class; defaults to 1
-	Classes map[string]int `yaml:"classes,omitempty"` // mapping of weight class name to numeric weight
-}
+const (
+	// WeightClassLabel is the target label used to read the weight class.
+	WeightClassLabel = "__target_allocation_weight"
 
-const DefaultWeightClassLabel = "__weight_class"
+	// Standard weight class values.
+	WeightClassLight  = "light"
+	WeightClassMedium = "medium"
+	WeightClassHeavy  = "heavy"
 
-// GetLabel returns the label name to use for weight class lookup.
-func (w *WeightClassConfig) GetLabel() string {
-	if w == nil || w.Label == "" {
-		return DefaultWeightClassLabel
-	}
-	return w.Label
-}
+	// Standard weight class weights.
+	WeightLight  = 1
+	WeightMedium = 5
+	WeightHeavy  = 10
+)
 
-// GetDefault returns the default weight for targets without a recognized weight class.
-func (w *WeightClassConfig) GetDefault() int {
-	if w == nil || w.Default == 0 {
-		return 1
-	}
-	return w.Default
+// standardWeightClasses maps standard weight class names to their numeric weights.
+var standardWeightClasses = map[string]int{
+	WeightClassLight:  WeightLight,
+	WeightClassMedium: WeightMedium,
+	WeightClassHeavy:  WeightHeavy,
 }
 
 // GetWeightForClass returns the numeric weight for the given weight class name.
-// If the class is not found or empty, it returns the default weight.
-func (w *WeightClassConfig) GetWeightForClass(class string) int {
-	if w == nil || class == "" {
-		return w.GetDefault()
-	}
-	if weight, ok := w.Classes[class]; ok {
+// Unrecognized or empty class names return the default weight (1).
+func GetWeightForClass(class string) int {
+	if weight, ok := standardWeightClasses[class]; ok {
 		return weight
 	}
-	return w.GetDefault()
+	return WeightLight
 }
 
 type PrometheusCRConfig struct {

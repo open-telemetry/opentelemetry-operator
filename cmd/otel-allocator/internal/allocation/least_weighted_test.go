@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
@@ -209,13 +208,7 @@ func TestLeastWeightedJobDistribution(t *testing.T) {
 // TestWeightedLoadBalancing verifies that heavy and light targets are distributed
 // so that WeightedLoad is balanced across collectors rather than just target count.
 func TestWeightedLoadBalancing(t *testing.T) {
-	weightCfg := &config.WeightClassConfig{
-		Label:   "__weight_class",
-		Default: 1,
-		Classes: map[string]int{"heavy": 10, "light": 1},
-	}
-
-	s, _ := New("least-weighted", logger, WithWeightClasses(weightCfg))
+	s, _ := New("least-weighted", logger)
 
 	numCols := 3
 	cols := MakeNCollectors(numCols, 0)
@@ -223,8 +216,8 @@ func TestWeightedLoadBalancing(t *testing.T) {
 
 	// Create 3 heavy targets (weight=10 each) and 30 light targets (weight=1 each)
 	// Total weight = 3*10 + 30*1 = 60, expect ~20 per collector
-	heavyTargets := MakeNTargetsWithWeightClass(3, "heavy-job", 0, "__weight_class", "heavy")
-	lightTargets := MakeNTargetsWithWeightClass(30, "light-job", 100, "__weight_class", "light")
+	heavyTargets := MakeNTargetsWithWeightClass(3, "heavy-job", 0, "__target_allocation_weight", "heavy")
+	lightTargets := MakeNTargetsWithWeightClass(30, "light-job", 100, "__target_allocation_weight", "light")
 
 	allTargets := append(heavyTargets, lightTargets...)
 	s.SetTargets(allTargets)
@@ -258,9 +251,9 @@ func TestWeightedLoadBalancing(t *testing.T) {
 	}
 }
 
-// TestWeightedLoadWithoutConfig verifies that when no weight classes are configured,
-// WeightedLoad equals NumTargets (backward compatibility).
-func TestWeightedLoadWithoutConfig(t *testing.T) {
+// TestWeightedLoadUnlabeledTargets verifies that targets without a weight class label
+// get the default weight of 1, so WeightedLoad equals NumTargets.
+func TestWeightedLoadUnlabeledTargets(t *testing.T) {
 	s, _ := New("least-weighted", logger)
 
 	cols := MakeNCollectors(3, 0)
@@ -271,33 +264,27 @@ func TestWeightedLoadWithoutConfig(t *testing.T) {
 
 	for _, col := range s.Collectors() {
 		assert.Equal(t, col.NumTargets, col.WeightedLoad,
-			"without weight config, WeightedLoad should equal NumTargets for collector %s", col.Name)
+			"unlabeled targets should have weight 1, so WeightedLoad equals NumTargets for collector %s", col.Name)
 	}
 }
 
 // TestWeightedLoadUnknownClass verifies that targets with an unknown weight class
-// use the default weight.
+// use the default weight (light=1).
 func TestWeightedLoadUnknownClass(t *testing.T) {
-	weightCfg := &config.WeightClassConfig{
-		Label:   "__weight_class",
-		Default: 5,
-		Classes: map[string]int{"heavy": 10},
-	}
-
-	s, _ := New("least-weighted", logger, WithWeightClasses(weightCfg))
+	s, _ := New("least-weighted", logger)
 
 	cols := MakeNCollectors(1, 0)
 	s.SetCollectors(cols)
 
-	// Create targets with unknown weight class
-	targets := MakeNTargetsWithWeightClass(2, "test-job", 0, "__weight_class", "unknown")
+	// Create targets with unknown weight class — should default to light (1)
+	targets := MakeNTargetsWithWeightClass(2, "test-job", 0, "__target_allocation_weight", "unknown")
 	s.SetTargets(targets)
 
 	collectors := s.Collectors()
 	for _, col := range collectors {
-		// 2 targets * default weight 5 = 10
-		assert.Equal(t, 10, col.WeightedLoad,
-			"unknown weight class should use default weight")
+		// 2 targets * default weight 1 = 2
+		assert.Equal(t, 2, col.WeightedLoad,
+			"unknown weight class should use default weight (light=1)")
 		assert.Equal(t, 2, col.NumTargets)
 	}
 }
