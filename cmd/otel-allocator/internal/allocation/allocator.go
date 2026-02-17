@@ -93,8 +93,8 @@ type allocator struct {
 
 	log logr.Logger
 
-	filter              Filter
-	targetsPerCollector metric.Int64Gauge
+	filter                Filter
+	targetsPerCollector   metric.Int64Gauge
 	collectorsAllocatable metric.Int64Gauge
 	timeToAssign          metric.Float64Histogram
 	targetsRemaining      metric.Int64Gauge
