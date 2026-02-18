@@ -268,6 +268,10 @@ spec:
         kind: StatefulSet
         namespace: chainsaw-upgrade
         format: yaml
+  - name: Assert operator and collector network policies post upgrade
+    try:
+    - assert:
+        file: assert-network-policies.yaml
   - name: Generate metrics and traces after upgrade
     try:
     - apply:

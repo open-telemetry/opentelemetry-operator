@@ -57,32 +57,3 @@ spec:
   source: redhat-operators
   sourceNamespace: openshift-marketplace
 
----
-apiVersion: project.openshift.io/v1
-kind: Project
-metadata:
-  labels:
-    openshift.io/cluster-monitoring: "true"
-  name: openshift-cluster-observability-operator
-
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorGroup
-metadata:
-  name: openshift-cluster-observability-operator
-  namespace: openshift-cluster-observability-operator
-spec:
-  upgradeStrategy: Default
-
----
-apiVersion: operators.coreos.com/v1alpha1
-kind: Subscription
-metadata:
-  name: cluster-observability-operator
-  namespace: openshift-cluster-observability-operator
-spec:
-  channel: stable
-  installPlanApproval: Automatic
-  name: cluster-observability-operator
-  source: redhat-operators
-  sourceNamespace: openshift-marketplace 

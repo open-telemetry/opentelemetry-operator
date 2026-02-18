@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: opentelemetry-operator
+  namespace: openshift-opentelemetry-operator
+spec:
+  egress:
+    - ports:
+        - port: 6443
+          protocol: TCP
+  ingress:
+    - ports:
+        - port: 9443
+          protocol: TCP
+        - port: 8080
+          protocol: TCP
+        - port: 8443
+          protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-operator
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cluster-collector-collector-networkpolicy
+  namespace: chainsaw-upgrade
+spec:
+  ingress:
+    - ports:
+        - port: 8888
+          protocol: TCP
+        - port: 4317
+          protocol: TCP
+        - port: 4318
+          protocol: TCP
+        - port: 8889
+          protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: opentelemetry-collector
+      app.kubernetes.io/managed-by: opentelemetry-operator
+      app.kubernetes.io/part-of: opentelemetry
+  policyTypes:
+    - Ingress
