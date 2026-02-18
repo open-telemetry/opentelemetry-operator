@@ -19,9 +19,9 @@ func TestGenerateKubeletStatsRbacRules(t *testing.T) {
 		Verbs:     []string{"get"},
 	}
 
-	proxyRule := rbacv1.PolicyRule{
+	podsRule := rbacv1.PolicyRule{
 		APIGroups: []string{""},
-		Resources: []string{"nodes/proxy"},
+		Resources: []string{"nodes/pods"},
 		Verbs:     []string{"get"},
 	}
 
@@ -41,7 +41,7 @@ func TestGenerateKubeletStatsRbacRules(t *testing.T) {
 			config: kubeletStatsConfig{
 				ExtraMetadataLabels: []string{"label1", "label2"},
 			},
-			expectedRules: []rbacv1.PolicyRule{baseRule, proxyRule},
+			expectedRules: []rbacv1.PolicyRule{baseRule, podsRule},
 		},
 		{
 			name: "CPU limit utilization enabled",
@@ -50,7 +50,7 @@ func TestGenerateKubeletStatsRbacRules(t *testing.T) {
 					K8sContainerCPULimitUtilization: metricConfig{Enabled: true},
 				},
 			},
-			expectedRules: []rbacv1.PolicyRule{baseRule, proxyRule},
+			expectedRules: []rbacv1.PolicyRule{baseRule, podsRule},
 		},
 		{
 			name: "Memory request utilization enabled",
@@ -59,7 +59,7 @@ func TestGenerateKubeletStatsRbacRules(t *testing.T) {
 					K8sPodMemoryRequestUtilization: metricConfig{Enabled: true},
 				},
 			},
-			expectedRules: []rbacv1.PolicyRule{baseRule, proxyRule},
+			expectedRules: []rbacv1.PolicyRule{baseRule, podsRule},
 		},
 		{
 			name: "No extra permissions needed",
