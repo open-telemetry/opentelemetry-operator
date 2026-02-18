@@ -74,6 +74,13 @@ linters:
       - common-false-positives
       - legacy
       - std-error-handling
+    rules:
+      - linters:
+          - gosec
+        path: _test\.go
+      - linters:
+          - gosec
+        path: tests/
 formatters:
   enable:
     - gci
