@@ -1,0 +1,42 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: tls-profile-test
+spec:
+  mode: deployment
+  volumeMounts:
+    - name: tls-certs
+      mountPath: /etc/tls
+      readOnly: true
+  volumes:
+    - name: tls-certs
+      secret:
+        secretName: collector-tls-certs
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            tls:
+              cert_file: /etc/tls/tls.crt
+              key_file: /etc/tls/tls.key
+          http: {}
+      zipkin:
+        tls:
+          cert_file: /etc/tls/tls.crt
+          key_file: /etc/tls/tls.key
+    exporters:
+      prometheus:
+        endpoint: "0.0.0.0:8889"
+        tls:
+          cert_file: /etc/tls/tls.crt
+          key_file: /etc/tls/tls.key
+      debug: {}
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp, zipkin]
+          exporters: [debug]
+        metrics:
+          receivers: [otlp]
+          exporters: [prometheus]
