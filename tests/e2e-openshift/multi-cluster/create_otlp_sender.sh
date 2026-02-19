@@ -34,14 +34,14 @@ spec:
         limit_percentage: 50
         spike_limit_percentage: 30
     exporters:
-      otlphttp:
+      otlp_http:
         endpoint: "https://${otlp_route_http}:443"
         tls:
           insecure: false
           cert_file: /certs/server.crt
           key_file: /certs/server.key
           ca_file: /certs/ca.crt
-      otlp:
+      otlp_grpc:
         endpoint: "${otlp_route_grpc}:443"
         tls:
           insecure: false
@@ -53,7 +53,7 @@ spec:
         traces:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [otlphttp, otlp]
+          exporters: [otlp_http, otlp_grpc]
 EOF
 )
 

@@ -43,7 +43,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [otlp]
+      exporters: [otlp_grpc]
 `,
 		},
 	}
@@ -76,6 +76,6 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [otlp]
+      exporters: [otlp_grpc]
 `, res.Spec.Config)
 }

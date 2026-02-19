@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strings"
 
 	"dario.cat/mergo"
 	"github.com/go-logr/logr"
@@ -320,6 +321,26 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 				return events, err
 			}
 			cfg.Object[componentName] = mappedCfg
+		}
+	}
+
+	// Check for deprecated OTLP exporter names and emit warnings
+	if c.Exporters.Object != nil {
+		for exporterName := range c.Exporters.Object {
+			if exporterName == "otlp" || strings.HasPrefix(exporterName, "otlp/") {
+				events = append(events, EventInfo{
+					Type:    corev1.EventTypeWarning,
+					Reason:  "DeprecatedExporter",
+					Message: fmt.Sprintf("Exporter '%s' uses deprecated name 'otlp'. Use 'otlp_grpc' instead. Config will be auto-migrated on next operator upgrade.", exporterName),
+				})
+			}
+			if exporterName == "otlphttp" || strings.HasPrefix(exporterName, "otlphttp/") {
+				events = append(events, EventInfo{
+					Type:    corev1.EventTypeWarning,
+					Reason:  "DeprecatedExporter",
+					Message: fmt.Sprintf("Exporter '%s' uses deprecated name 'otlphttp'. Use 'otlp_http' instead. Config will be auto-migrated on next operator upgrade.", exporterName),
+				})
+			}
 		}
 	}
 
