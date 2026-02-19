@@ -757,6 +757,22 @@ func TestGetAllowDenyLists(t *testing.T) {
 	}
 }
 
+func TestGetWeightForClass(t *testing.T) {
+	t.Run("standard classes return correct weights", func(t *testing.T) {
+		assert.Equal(t, WeightLight, GetWeightForClass("light"))
+		assert.Equal(t, WeightMedium, GetWeightForClass("medium"))
+		assert.Equal(t, WeightHeavy, GetWeightForClass("heavy"))
+	})
+
+	t.Run("unknown class returns default weight", func(t *testing.T) {
+		assert.Equal(t, WeightLight, GetWeightForClass("unknown"))
+	})
+
+	t.Run("empty class returns default weight", func(t *testing.T) {
+		assert.Equal(t, WeightLight, GetWeightForClass(""))
+	})
+}
+
 func TestConfigLoadPriority(t *testing.T) {
 	// Helper function to create a dummy kube config for tests
 	createDummyKubeConfig := func(t *testing.T, dir string) string {

@@ -76,6 +76,37 @@ type Config struct {
 	CollectorNotReadyGracePeriod time.Duration         `yaml:"collector_not_ready_grace_period,omitempty"`
 }
 
+const (
+	// WeightClassLabel is the target label used to read the weight class.
+	WeightClassLabel = "__target_allocation_weight"
+
+	// Standard weight class values.
+	WeightClassLight  = "light"
+	WeightClassMedium = "medium"
+	WeightClassHeavy  = "heavy"
+
+	// Standard weight class weights.
+	WeightLight  = 1
+	WeightMedium = 5
+	WeightHeavy  = 10
+)
+
+// standardWeightClasses maps standard weight class names to their numeric weights.
+var standardWeightClasses = map[string]int{
+	WeightClassLight:  WeightLight,
+	WeightClassMedium: WeightMedium,
+	WeightClassHeavy:  WeightHeavy,
+}
+
+// GetWeightForClass returns the numeric weight for the given weight class name.
+// Unrecognized or empty class names return the default weight (1).
+func GetWeightForClass(class string) int {
+	if weight, ok := standardWeightClasses[class]; ok {
+		return weight
+	}
+	return WeightLight
+}
+
 type PrometheusCRConfig struct {
 	Enabled                         bool                          `yaml:"enabled,omitempty"`
 	AllowNamespaces                 []string                      `yaml:"allow_namespaces,omitempty"`

@@ -1481,7 +1481,7 @@ func TestUpgrade(t *testing.T) {
 
 			// Compare upgraded CR with expected
 			upgraded := v1beta1.OpenTelemetryCollector{}
-			err = k8sClient.Get(ctx, nsn, &upgraded)
+			err = k8sClient.Get(testCtx, nsn, &upgraded)
 			require.NoError(t, err)
 			tt.expected(t, upgraded)
 		})

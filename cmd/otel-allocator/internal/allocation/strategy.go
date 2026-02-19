@@ -89,6 +89,7 @@ type Collector struct {
 	Name          string
 	NodeName      string
 	NumTargets    int
+	WeightedLoad  int // sum of weights of assigned targets; equals NumTargets when no weight classes configured
 	TargetsPerJob map[string]int
 }
 
