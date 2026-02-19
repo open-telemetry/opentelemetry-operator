@@ -19,6 +19,7 @@ import (
 	"time"
 
 	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
@@ -62,7 +63,6 @@ import (
 	operatormetrics "github.com/open-telemetry/opentelemetry-operator/internal/operator-metrics"
 	"github.com/open-telemetry/opentelemetry-operator/internal/operatornetworkpolicy"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
-	"github.com/open-telemetry/opentelemetry-operator/internal/tlsobserver"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
@@ -156,9 +156,15 @@ func main() {
 	renewDeadline := time.Second * 107
 	retryPeriod := time.Second * 26
 
-	// Fetch TLS profile from cluster if enabled
+	optionsTlSOptsFuncs := []func(*tls.Config){
+		func(config *tls.Config) {
+			if err = cfg.TLS.ApplyTLSConfig(config); err != nil {
+				setupLog.Error(err, "error setting up TLS")
+			}
+		},
+	}
 	var initialTLSProfileSpec configv1.TLSProfileSpec
-	var clusterTLSOptsFuncs []func(*tls.Config)
+	// Fetch TLS profile from the cluster if enabled
 	if cfg.TLS.UseClusterProfile {
 		// Create a temporary client for TLS profile fetch (before the manager is created).
 		// The TLS profile should be set before the manager starts.
@@ -180,30 +186,17 @@ func main() {
 		if len(unsupportedCiphers) > 0 {
 			setupLog.Info("some TLS ciphers from cluster profile are not supported by Go", "unsupportedCiphers", unsupportedCiphers)
 		}
-		clusterTLSOptsFuncs = append(clusterTLSOptsFuncs, tlsConfigFunc)
 
-		// Set operand TLS profile for injection into collector configs during reconciliation.
-		// This is applied at ConfigMap generation time, ensuring collectors get updated TLS
-		// settings when the operator restarts after a cluster TLS profile change.
-		if cfg.TLS.ConfigureOperands {
-			operandProfile, errTLS := tlsobserver.TLSProfileFromSpec(initialTLSProfileSpec)
-			if errTLS != nil {
-				setupLog.Error(errTLS, "unable to convert TLS profile for operands")
-				os.Exit(1)
-			}
-			cfg.Internal.OperandTLSProfile = operandProfile
+		// Add cluster profile to the TLS funcs, it will override the statically provided config.
+		optionsTlSOptsFuncs = append(optionsTlSOptsFuncs, tlsConfigFunc)
+	}
+	if cfg.TLS.ConfigureOperands {
+		tlsCfg := &tls.Config{}
+		for _, t := range optionsTlSOptsFuncs {
+			t(tlsCfg)
 		}
+		cfg.Internal.OperandTLSProfile = components.NewStaticTLSProfile(tlsCfg.MinVersion, tlsCfg.CipherSuites)
 	}
-
-	optionsTlSOptsFuncs := []func(*tls.Config){
-		func(config *tls.Config) {
-			if err = cfg.TLS.ApplyTLSConfig(config); err != nil {
-				setupLog.Error(err, "error setting up TLS")
-			}
-		},
-	}
-	// Append cluster TLS profile function if enabled
-	optionsTlSOptsFuncs = append(optionsTlSOptsFuncs, clusterTLSOptsFuncs...)
 
 	// Configure metrics server options
 	metricsOptions := metricsserver.Options{
