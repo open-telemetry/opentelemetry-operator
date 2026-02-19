@@ -68,7 +68,7 @@ func NewJaegerQueryExtensionParserBuilder() components.Builder[*JaegerQueryExten
 	return components.NewBuilder[*JaegerQueryExtensionConfig]().WithPort(port).WithName(name).WithPortParser(ParseJaegerQueryExtensionConfig).WithDefaultsApplier(endpointDefaulter).WithDefaultRecAddress(components.DefaultRecAddress).WithTargetPort(port)
 }
 
-func endpointDefaulter(_ logr.Logger, defaultRecAddr string, port int32, config *JaegerQueryExtensionConfig) (map[string]interface{}, error) {
+func endpointDefaulter(_ logr.Logger, _ *components.DefaultConfig, defaultRecAddr string, port int32, config *JaegerQueryExtensionConfig) (map[string]interface{}, error) {
 	if config == nil {
 		config = &JaegerQueryExtensionConfig{}
 	}

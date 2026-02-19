@@ -52,6 +52,8 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 	f.StringArray("annotations-filter", cfg.AnnotationsFilter, "Annotations to filter away from propagating onto deploys. It should be a string array containing patterns, which are literal strings optionally containing a * wildcard character. Example: --annotations-filter=.*filter.out will filter out annotations that looks like: annotation.filter.out: true")
 	f.String("fips-disabled-components", cfg.FipsDisabledComponents, "Disabled collector components when operator runs on FIPS enabled platform. Example flag value =receiver.foo,receiver.bar,exporter.baz")
 	f.Int("webhook-port", cfg.WebhookPort, "The port the webhook endpoint binds to.")
+	f.Bool("tls-cluster-profile", false, "Retrieves the TLS profile (min version and ciphers) from the cluster. Supported only on OpenShift clusters. The TLS profile is obtained from APIServer CR.")
+	f.Bool("tls-configure-operands", false, "Configures TLS version and cyphers in operands.")
 	f.String("tls-min-version", "VersionTLS12", "Minimum TLS version supported. Value must match version names from https://golang.org/pkg/crypto/tls/#pkg-constants.")
 	f.StringSlice("tls-cipher-suites", nil, "Comma-separated list of cipher suites for the server. Values are from tls package constants (https://golang.org/pkg/crypto/tls/#pkg-constants). If omitted, the default Go cipher suites will be used")
 	f.String("zap-message-key", "message", "The message key to be used in the customized Log Encoder")
@@ -140,6 +142,10 @@ func ApplyCLI(cfg *Config) error {
 				cfg.WebhookPort, _ = f.GetInt("webhook-port")
 			case "fips-disabled-components":
 				cfg.FipsDisabledComponents, _ = f.GetString("fips-disabled-components")
+			case "tls-cluster-profile":
+				cfg.TLS.UseClusterProfile, _ = f.GetBool("tls-cluster-profile")
+			case "tls-configure-operands":
+				cfg.TLS.ConfigureOperands, _ = f.GetBool("tls-configure-operands")
 			case "min-tls-version":
 				cfg.TLS.MinVersion, _ = f.GetString("min-tls-version")
 			case "tls-cipher-suites":

@@ -101,6 +101,10 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 		trueVal := true
 		otelcol.Spec.NetworkPolicy.Enabled = &trueVal
 	}
+	// Apply config defaults (service pipelines, etc.) but NOT TLS.
+	// TLS defaults are applied at reconciliation time (ConfigMap generation) so that
+	// existing collectors automatically get updated TLS settings when the operator
+	// restarts after a cluster TLS profile change.
 	events, err := otelcol.Spec.Config.ApplyDefaults(c.logger)
 	if err != nil {
 		return err

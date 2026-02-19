@@ -1,0 +1,28 @@
+# One of 'breaking', 'deprecation', 'new_component', 'enhancement', 'bug_fix'
+change_type: enhancement
+
+# The name of the component, or a single word describing the area of concern, (e.g. collector, target allocator, auto-instrumentation, opamp, github action)
+component: operator, collector
+
+# A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
+note: Allow operator to get TLS settings from OpenShift `APIServer` CR and configure operands TLS settings.
+
+# One or more tracking issues related to the change
+issues: [4669]
+
+# (Optional) One or more lines of additional information to render under the primary note.
+# These lines will be padded with 2 spaces and then inserted directly into the document.
+# Use pipe (|) for multiline entries.
+subtext: |
+  Added operator flag `--tls-cluster-profile` which obtains the TLS min version and cipher suites from the OpenShift `APIServer` `cluster` custom resource (CR).
+  It overrides the `--tls-min-version` and `--tls-cipher-suites` flags if set.
+  The flags is disabled by default on Kubernetes and enabled on OpenShift.
+  
+  Added operator flag `--tls-configure-operands` which configures operands TLS settings (min version, cipher suites)
+  based on the supplied operator TLS flags (`--tls-cipher-suites` and `--tls-min-version`) or from the OpenShift `APIServer` CR
+  if `--tls-cluster-profile` is enabled.
+  The flag is disabled by default on Kubernetes and enabled on OpenShift.
+  
+  The `--tls-min-version` defaults to `TLSv1.2` which matches the collector's default.
+  The `--tls-cipher-suites` is empty by default which matches the collector's default.
+  Therefore enabling `--tls-configure-operands` with the default TLS flags should not change the collector's behavior.

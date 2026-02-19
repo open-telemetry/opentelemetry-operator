@@ -58,3 +58,13 @@
   value:
     name: FEATURE_GATES
     value: "operator.networkpolicy,operand.networkpolicy"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: TLS_CLUSTER_PROFILE
+    value: "true"
+- op: add
+  path: "/spec/template/spec/containers/0/env/-"
+  value:
+    name: TLS_CONFIGURE_OPERANDS
+    value: "true"

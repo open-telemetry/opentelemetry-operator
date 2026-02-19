@@ -19,7 +19,10 @@ import (
 	"time"
 
 	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
+	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
+	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
 	"go.uber.org/zap/zapcore"
@@ -32,6 +35,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -75,6 +79,7 @@ func init() {
 	utilruntime.Must(otelv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(otelv1beta1.AddToScheme(scheme))
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
+	utilruntime.Must(configv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -158,6 +163,40 @@ func main() {
 			}
 		},
 	}
+	var initialTLSProfileSpec configv1.TLSProfileSpec
+	// Fetch TLS profile from the cluster if enabled
+	if cfg.TLS.UseClusterProfile {
+		// Create a temporary client for TLS profile fetch (before the manager is created).
+		// The TLS profile should be set before the manager starts.
+		tempClient, errClient := client.New(restConfig, client.Options{Scheme: scheme})
+		if errClient != nil {
+			setupLog.Error(errClient, "unable to create temporary client for TLS profile fetch")
+			os.Exit(1)
+		}
+
+		// Fetch initial TLS profile using controller-runtime-common
+		initialTLSProfileSpec, err = openshifttls.FetchAPIServerTLSProfile(context.Background(), tempClient)
+		if err != nil {
+			setupLog.Error(err, "unable to get TLS profile from cluster")
+			os.Exit(1)
+		}
+
+		// Convert to TLS options function for operator's own TLS (webhooks, metrics)
+		tlsConfigFunc, unsupportedCiphers := openshifttls.NewTLSConfigFromProfile(initialTLSProfileSpec)
+		if len(unsupportedCiphers) > 0 {
+			setupLog.Info("some TLS ciphers from cluster profile are not supported by Go", "unsupportedCiphers", unsupportedCiphers)
+		}
+
+		// Add cluster profile to the TLS funcs, it will override the statically provided config.
+		optionsTlSOptsFuncs = append(optionsTlSOptsFuncs, tlsConfigFunc)
+	}
+	if cfg.TLS.ConfigureOperands {
+		tlsCfg := &tls.Config{}
+		for _, t := range optionsTlSOptsFuncs {
+			t(tlsCfg)
+		}
+		cfg.Internal.OperandTLSProfile = components.NewStaticTLSProfile(tlsCfg.MinVersion, tlsCfg.CipherSuites)
+	}
 
 	// Configure metrics server options
 	metricsOptions := metricsserver.Options{
@@ -210,7 +249,33 @@ func main() {
 		setupLog.Info("Failed to discover Kubernetes API server from EndpointSlice", "error", err)
 	}
 
-	ctx := ctrl.SetupSignalHandler()
+	// Create a cancellable context for graceful shutdown on TLS profile change
+	signalCtx := ctrl.SetupSignalHandler()
+	ctx, cancel := context.WithCancel(signalCtx)
+	defer cancel()
+
+	// Setup TLS profile watcher for graceful restart on TLS profile change.
+	// When the cluster's TLS security profile changes (e.g., from Intermediate to Modern),
+	// the watcher detects this and cancels the context, triggering a graceful shutdown.
+	// The operator pod will restart and apply the new TLS settings to webhooks, metrics,
+	// and operand configurations. This approach is recommended by OpenShift because:
+	// 1. TLS profile changes are cluster-level security policy changes
+	// 2. All connections (existing and new) should use the new profile uniformly
+	// 3. It avoids complexity of hot-reloading TLS config on existing connections
+	if cfg.TLS.UseClusterProfile {
+		watcher := &openshifttls.SecurityProfileWatcher{
+			Client:                mgr.GetClient(),
+			InitialTLSProfileSpec: initialTLSProfileSpec,
+			OnProfileChange: func(_ context.Context, _, _ configv1.TLSProfileSpec) {
+				setupLog.Info("TLS security profile changed, triggering graceful restart")
+				cancel()
+			},
+		}
+		if err = watcher.SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to setup TLS profile watcher")
+			os.Exit(1)
+		}
+	}
 
 	// Apply feature gates from Config if set (could be from file or env vars)
 	// This must be done before checking feature gates like EnableOperatorNetworkPolicy
@@ -417,6 +482,10 @@ func main() {
 				logger.Info("Fips disabled components", "receivers", receivers, "exporters", exporters, "processors", processors, "extensions", extensions)
 				fipsCheck = fips.NewFipsCheck(receivers, exporters, processors, extensions)
 			}
+			// TLS defaults for operands are now applied at reconciliation time (ConfigMap generation)
+			// via cfg.Internal.OperandTLSProfile, which was set earlier in this function.
+			// This ensures collectors automatically get updated TLS settings when the operator
+			// restarts after a cluster TLS profile change.
 			if err = otelv1beta1.SetupCollectorWebhook(mgr, cfg, reviewer, crdMetrics, bv, fipsCheck); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "OpenTelemetryCollector")
 				os.Exit(1)
