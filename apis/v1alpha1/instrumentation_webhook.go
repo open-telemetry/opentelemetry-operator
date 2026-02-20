@@ -305,9 +305,9 @@ func validateExporter(exporter Exporter) []string {
 }
 
 func validateJaegerRemoteSamplerArgument(argument string) error {
-	parts := strings.Split(argument, ",")
+	parts := strings.SplitSeq(argument, ",")
 
-	for _, part := range parts {
+	for part := range parts {
 		kv := strings.Split(part, "=")
 		if len(kv) != 2 {
 			return fmt.Errorf("invalid argument: %s, the argument should be in the form of key=value", part)

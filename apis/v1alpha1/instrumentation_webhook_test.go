@@ -5,6 +5,7 @@ package v1alpha1
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -594,7 +595,6 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
 			if test.err == "" {
@@ -671,13 +671,7 @@ func TestInstrumentationValidatingWebhook_DeprecationWarnings(t *testing.T) {
 			warnings, err := InstrumentationWebhook{}.ValidateCreate(context.Background(), &tt.inst)
 			assert.NoError(t, err)
 
-			found := false
-			for _, w := range warnings {
-				if w == tt.want {
-					found = true
-					break
-				}
-			}
+			found := slices.Contains(warnings, tt.want)
 			assert.True(t, found, "expected warnings to contain %q, got %v", tt.want, warnings)
 		})
 	}

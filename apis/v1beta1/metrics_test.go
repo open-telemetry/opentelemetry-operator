@@ -36,13 +36,13 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 			Mode: ModeDeployment,
 			Config: Config{
 				Processors: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"batch": nil,
 						"foo":   nil,
 					},
 				},
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"extfoo": nil,
 					},
 				},
@@ -59,18 +59,18 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 			Mode: ModeSidecar,
 			Config: Config{
 				Processors: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"x": nil,
 						"y": nil,
 					},
 				},
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"z/r": nil,
 					},
 				},
 				Exporters: AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"w": nil,
 					},
 				},
@@ -87,18 +87,18 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 			Mode: ModeSidecar,
 			Config: Config{
 				Processors: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"foo": nil,
 						"y":   nil,
 					},
 				},
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"z/r": nil,
 					},
 				},
 				Exporters: AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"w": nil,
 					},
 				},
@@ -155,13 +155,13 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 			Mode: ModeDeployment,
 			Config: Config{
 				Processors: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"batch": nil,
 						"foo":   nil,
 					},
 				},
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"extfoo": nil,
 					},
 				},
@@ -179,18 +179,18 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 			Mode: ModeSidecar,
 			Config: Config{
 				Processors: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"x": nil,
 						"y": nil,
 					},
 				},
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"z/r": nil,
 					},
 				},
 				Exporters: AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"w": nil,
 					},
 				},

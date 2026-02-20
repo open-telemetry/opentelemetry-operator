@@ -153,7 +153,6 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			cfg := config.Config{
 				TargetAllocatorImage: "ta:v0.0.0",
@@ -322,7 +321,6 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			cfg := config.Config{
 				CollectorImage:       "targetallocator:v0.0.0",
