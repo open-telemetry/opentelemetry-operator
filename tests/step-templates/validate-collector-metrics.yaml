@@ -10,12 +10,6 @@ spec:
     - name: collectorMetricsPort
       # Port to fetch metrics from
       value: "8888"
-    - name: minSpanCount
-      # Minimum expected span count
-      value: "`1`"
-    - name: minMetricPointCount
-      # Minimum expected metric point count
-      value: "`1`"
     - name: catchPodLabelSelector
       # Label selector for pods to get logs from on failure
       value: ""
@@ -25,16 +19,13 @@ spec:
   try:
     - command:
         entrypoint: kubectl
-        env:
-          - name: LABEL_SELECTOR
-            value: ($collectorLabelSelector)
         args:
           - get
           - pod
           - -n
           - ${NAMESPACE}
           - -l
-          - ${LABEL_SELECTOR}
+          - ($collectorLabelSelector)
           - -o
           - jsonpath={.items[0].metadata.name}
         outputs:
@@ -46,9 +37,9 @@ spec:
             value: ($collectorPodName)
           - name: metricsPort
             value: ($collectorMetricsPort)
+        shell: /bin/bash
         timeout: 60s
         content: |
-          #!/bin/bash
           # Add retry logic for metrics collection to handle timing issues
           for i in {1..12}; do
             echo "Attempt $i: Fetching metrics from pod ${podName}..." >&2
@@ -69,10 +60,10 @@ spec:
           ($error == null): true
     - assert:
         resource:
-          ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] > ($minSpanCount)): true
-          ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] > ($minSpanCount)): true
-          ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_metric_points_total'].value | [0] > ($minMetricPointCount)): true
-          ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_metric_points_total'].value | [0] > ($minMetricPointCount)): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_spans_total'].value | [0] > `1`): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_spans_total'].value | [0] > `1`): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_exporter_sent_metric_points_total'].value | [0] > `1`): true
+          ($metrics[?as_string(metric."__name__") == 'otelcol_receiver_accepted_metric_points_total'].value | [0] > `1`): true
   catch:
     - podLogs:
         selector: ($catchPodLabelSelector)
