@@ -184,7 +184,7 @@ prometheus_cr:
 				"release": "my-instance",
 			}}
 		targetAllocator.Spec.GlobalConfig = v1beta1.AnyConfig{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"scrape_interval":  "30s",
 				"scrape_protocols": []string{"PrometheusProto", "OpenMetricsText1.0.0", "OpenMetricsText0.0.1", "PrometheusText0.0.4"},
 			},
@@ -426,7 +426,7 @@ func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
 			name: "empty scrape configs list",
 			input: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"prometheus": map[string]any{
 							"config": map[string]any{
 								"scrape_configs": []any{},
@@ -441,7 +441,7 @@ func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
 			name: "no scrape configs key",
 			input: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"prometheus": map[string]any{
 							"config": map[string]any{},
 						},
@@ -454,7 +454,7 @@ func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
 			name: "one scrape config",
 			input: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"prometheus": map[string]any{
 							"config": map[string]any{
 								"scrape_configs": []any{
@@ -468,14 +468,14 @@ func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
 				},
 			},
 			want: []v1beta1.AnyConfig{
-				{Object: map[string]interface{}{"job": "somejob"}},
+				{Object: map[string]any{"job": "somejob"}},
 			},
 		},
 		{
 			name: "regex substitution",
 			input: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"prometheus": map[string]any{
 							"config": map[string]any{
 								"scrape_configs": []any{
@@ -496,7 +496,7 @@ func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
 				},
 			},
 			want: []v1beta1.AnyConfig{
-				{Object: map[string]interface{}{
+				{Object: map[string]any{
 					"job": "somejob",
 					"metric_relabel_configs": []any{
 						map[any]any{
@@ -511,7 +511,6 @@ func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			configStr, err := testCase.input.Yaml()
 			require.NoError(t, err)
@@ -537,10 +536,10 @@ func TestGetGlobalConfigFromOtelConfig(t *testing.T) {
 			args: args{
 				otelConfig: v1beta1.Config{
 					Receivers: v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"prometheus": map[string]interface{}{
-								"config": map[string]interface{}{
-									"global": map[string]interface{}{
+						Object: map[string]any{
+							"prometheus": map[string]any{
+								"config": map[string]any{
+									"global": map[string]any{
 										"scrape_interval":  "15s",
 										"scrape_protocols": []string{"PrometheusProto", "OpenMetricsText1.0.0", "OpenMetricsText0.0.1", "PrometheusText0.0.4"},
 									},
@@ -551,7 +550,7 @@ func TestGetGlobalConfigFromOtelConfig(t *testing.T) {
 				},
 			},
 			want: v1beta1.AnyConfig{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"scrape_interval":  "15s",
 					"scrape_protocols": []string{"PrometheusProto", "OpenMetricsText1.0.0", "OpenMetricsText0.0.1", "PrometheusText0.0.4"},
 				},
@@ -563,9 +562,9 @@ func TestGetGlobalConfigFromOtelConfig(t *testing.T) {
 			args: args{
 				otelConfig: v1beta1.Config{
 					Receivers: v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"prometheus": map[string]interface{}{
-								"config": map[string]interface{}{},
+						Object: map[string]any{
+							"prometheus": map[string]any{
+								"config": map[string]any{},
 							},
 						},
 					},
@@ -601,7 +600,7 @@ func TestGetScrapeConfigs(t *testing.T) {
 				taScrapeConfigs: []v1beta1.AnyConfig{},
 				collectorConfig: v1beta1.Config{
 					Receivers: v1beta1.AnyConfig{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"prometheus": map[string]any{
 								"config": map[string]any{
 									"scrape_configs": []any{},
@@ -625,7 +624,7 @@ func TestGetScrapeConfigs(t *testing.T) {
 				},
 				collectorConfig: v1beta1.Config{
 					Receivers: v1beta1.AnyConfig{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"prometheus": map[string]any{
 								"config": map[string]any{
 									"scrape_configs": []any{
@@ -650,7 +649,7 @@ func TestGetScrapeConfigs(t *testing.T) {
 				taScrapeConfigs: []v1beta1.AnyConfig{},
 				collectorConfig: v1beta1.Config{
 					Receivers: v1beta1.AnyConfig{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"prometheus": map[string]any{
 								"config": map[string]any{},
 							},
@@ -663,7 +662,6 @@ func TestGetScrapeConfigs(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			actual, err := getScrapeConfigs(testCase.args.taScrapeConfigs, testCase.args.collectorConfig)
 			assert.Equal(t, testCase.wantErr, err)
@@ -688,10 +686,10 @@ func TestGetGlobalConfig(t *testing.T) {
 			args: args{
 				collectorConfig: v1beta1.Config{
 					Receivers: v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"prometheus": map[string]interface{}{
-								"config": map[string]interface{}{
-									"global": map[string]interface{}{
+						Object: map[string]any{
+							"prometheus": map[string]any{
+								"config": map[string]any{
+									"global": map[string]any{
 										"scrape_interval": "15s",
 									},
 								},
@@ -700,12 +698,12 @@ func TestGetGlobalConfig(t *testing.T) {
 					},
 				},
 				taGlobalConfig: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"scrape_protocols": []string{"PrometheusProto"},
 					},
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"scrape_protocols": []string{"PrometheusProto"},
 			},
 		},
@@ -714,20 +712,20 @@ func TestGetGlobalConfig(t *testing.T) {
 			args: args{
 				collectorConfig: v1beta1.Config{
 					Receivers: v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"prometheus": map[string]interface{}{
-								"config": map[string]interface{}{},
+						Object: map[string]any{
+							"prometheus": map[string]any{
+								"config": map[string]any{},
 							},
 						},
 					},
 				},
 				taGlobalConfig: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"scrape_protocols": []string{"PrometheusProto"},
 					},
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"scrape_protocols": []string{"PrometheusProto"},
 			},
 		},
@@ -736,10 +734,10 @@ func TestGetGlobalConfig(t *testing.T) {
 			args: args{
 				collectorConfig: v1beta1.Config{
 					Receivers: v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"prometheus": map[string]interface{}{
-								"config": map[string]interface{}{
-									"global": map[string]interface{}{
+						Object: map[string]any{
+							"prometheus": map[string]any{
+								"config": map[string]any{
+									"global": map[string]any{
 										"scrape_interval": "15s",
 									},
 								},
@@ -749,7 +747,7 @@ func TestGetGlobalConfig(t *testing.T) {
 				},
 				taGlobalConfig: v1beta1.AnyConfig{},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"scrape_interval": "15s",
 			},
 		},
@@ -758,7 +756,7 @@ func TestGetGlobalConfig(t *testing.T) {
 			args: args{
 				collectorConfig: v1beta1.Config{
 					Receivers: v1beta1.AnyConfig{
-						Object: map[string]interface{}{
+						Object: map[string]any{
 							"prometheus": "invalid_value",
 						},
 					},
