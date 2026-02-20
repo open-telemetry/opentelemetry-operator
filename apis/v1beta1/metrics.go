@@ -158,7 +158,7 @@ func (m *Metrics) updateComponentCounters(ctx context.Context, collector *OpenTe
 
 }
 
-func extractElements(elements map[string]interface{}) []string {
+func extractElements(elements map[string]any) []string {
 	// TODO: we should get rid of this method and centralize the parse logic
 	//		see https://github.com/open-telemetry/opentelemetry-operator/issues/2603
 	if elements == nil {
