@@ -34,8 +34,8 @@ func Test0_111_0Upgrade(t *testing.T) {
 	defaultCollectorWithConfig := defaultCollector.DeepCopy()
 
 	defaultCollectorWithConfig.Spec.Config.Service.Telemetry = &v1beta1.AnyConfig{
-		Object: map[string]interface{}{
-			"metrics": map[string]interface{}{
+		Object: map[string]any{
+			"metrics": map[string]any{
 				"address": "1.2.3.4:8888",
 			},
 		},
@@ -57,8 +57,8 @@ func Test0_111_0Upgrade(t *testing.T) {
 			expected: func() v1beta1.OpenTelemetryCollector {
 				col := defaultCollector.DeepCopy()
 				col.Spec.Config.Service.Telemetry = &v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"address": "0.0.0.0:8888",
 						},
 					},

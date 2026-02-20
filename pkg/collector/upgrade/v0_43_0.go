@@ -37,20 +37,20 @@ func upgrade0_43_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		if err != nil {
 			return otelcol, fmt.Errorf("couldn't upgrade to v0.43.0, failed to parse configuration: %w", err)
 		}
-		serviceConfig, ok := cfg["service"].(map[interface{}]interface{})
+		serviceConfig, ok := cfg["service"].(map[any]any)
 		if !ok {
-			cfg["service"] = make(map[interface{}]interface{})
-			serviceConfig, _ = cfg["service"].(map[interface{}]interface{})
+			cfg["service"] = make(map[any]any)
+			serviceConfig, _ = cfg["service"].(map[any]any)
 		}
-		telemetryConfig, ok := serviceConfig["telemetry"].(map[interface{}]interface{})
+		telemetryConfig, ok := serviceConfig["telemetry"].(map[any]any)
 		if !ok {
-			serviceConfig["telemetry"] = make(map[interface{}]interface{})
-			telemetryConfig, _ = serviceConfig["telemetry"].(map[interface{}]interface{})
+			serviceConfig["telemetry"] = make(map[any]any)
+			telemetryConfig, _ = serviceConfig["telemetry"].(map[any]any)
 		}
-		metricsConfig, ok := telemetryConfig["metrics"].(map[interface{}]interface{})
+		metricsConfig, ok := telemetryConfig["metrics"].(map[any]any)
 		if !ok {
-			telemetryConfig["metrics"] = make(map[interface{}]interface{})
-			metricsConfig, _ = telemetryConfig["metrics"].(map[interface{}]interface{})
+			telemetryConfig["metrics"] = make(map[any]any)
+			metricsConfig, _ = telemetryConfig["metrics"].(map[any]any)
 		}
 
 		// if there are already those Args under Spec.Config
