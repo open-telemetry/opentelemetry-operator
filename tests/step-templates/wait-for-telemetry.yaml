@@ -3,22 +3,6 @@ kind: StepTemplate
 metadata:
   name: wait-for-telemetry
 spec:
-  bindings:
-    - name: collectorLabelSelector
-      # Label selector for the collector pod
-      value: "app.kubernetes.io/name=deployment-collector"
-    - name: containerName
-      # Name of the container to check logs in
-      value: "otc-container"
-    - name: retryTimeout
-      # Timeout in seconds for retry logic
-      value: "120"
-    - name: retrySleep
-      # Sleep duration in seconds between retries
-      value: "5"
-    - name: searchStrings
-      # Strings to search for in the logs (multi-line string)
-      value: ""
   try:
     - script:
         env:
@@ -34,4 +18,3 @@ spec:
             value: ($searchStrings)
         timeout: 2m
         content: ../../test-e2e-apps/scripts/check_pod_logs.sh
-

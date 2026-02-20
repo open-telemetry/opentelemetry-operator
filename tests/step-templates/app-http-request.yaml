@@ -3,16 +3,6 @@ kind: StepTemplate
 metadata:
   name: app-http-request
 spec:
-  bindings:
-    - name: podLabelSelector
-      # Label selector for the pod (e.g., "app=my-java")
-      value: ""
-    - name: appPort
-      # Port to connect to on the pod
-      value: "8080"
-    - name: appPath
-      # HTTP path to request (optional, leave empty for root)
-      value: ""
   try:
     - command:
         entrypoint: kubectl
@@ -33,5 +23,5 @@ spec:
         kind: Pod
         name: ($podName)
         namespace: ${NAMESPACE}
-        port: ($appPort)
-        path: ($appPath)
+        port: ${appPort}
+        path: ${appPath}

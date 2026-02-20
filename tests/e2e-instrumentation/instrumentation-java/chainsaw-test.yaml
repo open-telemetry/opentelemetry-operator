@@ -4,6 +4,21 @@ kind: Test
 metadata:
   name: instrumentation-java
 spec:
+  bindings:
+    - name: podLabelSelector
+      value: app=my-java
+    - name: appPort
+      value: "8080"
+    - name: appPath
+      value: /
+    - name: collectorLabelSelector
+      value: app.kubernetes.io/name=deployment-collector
+    - name: collectorMetricsPort
+      value: "8888"
+    - name: catchPodLabelSelector
+      value: app=my-java
+    - name: catchContainer
+      value: otc-container
   steps:
   - name: Add OpenShift namespace annotations
     use:
@@ -26,12 +41,6 @@ spec:
   - name: Make a request to the app
     use:
       template: ../../step-templates/app-http-request.yaml
-      with:
-        bindings:
-          - name: podLabelSelector
-            value: app=my-java
-          - name: appPort
-            value: "8080"
   - name: Wait for telemetry data
     try:
     - command:
@@ -60,7 +69,7 @@ spec:
           - name: LABEL_SELECTOR
             value: "app.kubernetes.io/name=deployment-collector"
           - name: CONTAINER_NAME
-            value: "otc-container" 
+            value: "otc-container"
           - name: RETRY_TIMEOUT
             value: "120"
           - name: RETRY_SLEEP
@@ -72,9 +81,3 @@ spec:
   - name: Check the instrumented app has sent the telemetry data successfully
     use:
       template: ../../step-templates/validate-collector-metrics.yaml
-      with:
-        bindings:
-          - name: catchPodLabelSelector
-            value: app=my-java
-          - name: catchContainer
-            value: otc-container

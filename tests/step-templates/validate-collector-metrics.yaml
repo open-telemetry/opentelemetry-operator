@@ -3,19 +3,6 @@ kind: StepTemplate
 metadata:
   name: validate-collector-metrics
 spec:
-  bindings:
-    - name: collectorLabelSelector
-      # Label selector for the collector pod
-      value: "app.kubernetes.io/name=deployment-collector"
-    - name: collectorMetricsPort
-      # Port to fetch metrics from
-      value: "8888"
-    - name: catchPodLabelSelector
-      # Label selector for pods to get logs from on failure
-      value: ""
-    - name: catchContainer
-      # Container name to get logs from on failure
-      value: otc-container
   try:
     - command:
         entrypoint: kubectl

@@ -5,6 +5,31 @@ metadata:
   creationTimestamp: null
   name: instrumentation-nodejs
 spec:
+  bindings:
+    - name: podLabelSelector
+      value: app=my-nodejs
+    - name: appPort
+      value: "3000"
+    - name: appPath
+      value: /rolldice
+    - name: collectorLabelSelector
+      value: app.kubernetes.io/name=deployment-collector
+    - name: collectorMetricsPort
+      value: "8888"
+    - name: containerName
+      value: otc-container
+    - name: retryTimeout
+      value: "120"
+    - name: retrySleep
+      value: "5"
+    - name: searchStrings
+      value: |
+        Name: http.server.duration
+        Description: Measures the duration of inbound HTTP requests
+    - name: catchPodLabelSelector
+      value: app.kubernetes.io/name=deployment-collector
+    - name: catchContainer
+      value: otc-container
   steps:
   - name: Add OpenShift namespace annotations
     use:
@@ -27,29 +52,9 @@ spec:
   - name: Make a request to the app
     use:
       template: ../../step-templates/app-http-request.yaml
-      with:
-        bindings:
-          - name: podLabelSelector
-            value: app=my-nodejs
-          - name: appPort
-            value: "3000"
-          - name: appPath
-            value: /rolldice
   - name: Wait for telemetry data
     use:
       template: ../../step-templates/wait-for-telemetry.yaml
-      with:
-        bindings:
-          - name: searchStrings
-            value: |
-              Name: http.server.duration
-              Description: Measures the duration of inbound HTTP requests
   - name: Check the instrumented app has sent the telemetry data successfully
     use:
       template: ../../step-templates/validate-collector-metrics.yaml
-      with:
-        bindings:
-          - name: catchPodLabelSelector
-            value: app.kubernetes.io/name=deployment-collector
-          - name: catchContainer
-            value: otc-container
