@@ -325,7 +325,7 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 		}
 
 		_, _ = w.nsInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-			UpdateFunc: func(oldObj, newObj interface{}) {
+			UpdateFunc: func(oldObj, newObj any) {
 				old := oldObj.(*v1.Namespace)
 				cur := newObj.(*v1.Namespace)
 
@@ -379,19 +379,19 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 		resource.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			// these functions only write to the notification channel if it's empty to avoid blocking
 			// if scrape config updates are being rate-limited
-			AddFunc: func(obj interface{}) {
+			AddFunc: func(obj any) {
 				select {
 				case notifyEvents <- struct{}{}:
 				default:
 				}
 			},
-			UpdateFunc: func(oldObj, newObj interface{}) {
+			UpdateFunc: func(oldObj, newObj any) {
 				select {
 				case notifyEvents <- struct{}{}:
 				default:
 				}
 			},
-			DeleteFunc: func(obj interface{}) {
+			DeleteFunc: func(obj any) {
 				select {
 				case notifyEvents <- struct{}{}:
 				default:
@@ -518,7 +518,7 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 		for _, scrapeConfig := range promCfg.ScrapeConfigs {
 			for _, serviceDiscoveryConfig := range scrapeConfig.ServiceDiscoveryConfigs {
 				if serviceDiscoveryConfig.Name() == "kubernetes" {
-					sdConfig := interface{}(serviceDiscoveryConfig).(*kubeDiscovery.SDConfig)
+					sdConfig := any(serviceDiscoveryConfig).(*kubeDiscovery.SDConfig)
 					sdConfig.KubeConfig = w.kubeConfigPath
 				}
 			}

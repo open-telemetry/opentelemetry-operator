@@ -211,7 +211,7 @@ func randSeq(random rand.Rand, n int) string {
 
 func makeNScrapeConfigs(random rand.Rand, n int) map[string]*promconfig.ScrapeConfig {
 	items := make(map[string]*promconfig.ScrapeConfig, n)
-	for i := 0; i < n; i++ {
+	for range n {
 		items[randSeq(random, 20)] = &promconfig.ScrapeConfig{
 			JobName:               randSeq(random, 20),
 			ScrapeInterval:        model.Duration(30 * time.Second),
@@ -229,7 +229,7 @@ func makeNScrapeConfigs(random rand.Rand, n int) map[string]*promconfig.ScrapeCo
 
 func makeNCollectorJSON(random rand.Rand, numCollectors, numItems int) map[string]collectorJSON {
 	items := make(map[string]collectorJSON, numCollectors)
-	for i := 0; i < numCollectors; i++ {
+	for range numCollectors {
 		items[randSeq(random, 20)] = collectorJSON{
 			Link: randSeq(random, 120),
 			Jobs: makeNTargetJSON(random, numItems, 50),
@@ -241,7 +241,7 @@ func makeNCollectorJSON(random rand.Rand, numCollectors, numItems int) map[strin
 func makeNTargetItems(random rand.Rand, numItems, numLabels int) []*target.Item {
 	builder := labels.NewBuilder(labels.EmptyLabels())
 	items := make([]*target.Item, 0, numItems)
-	for i := 0; i < numItems; i++ {
+	for range numItems {
 		items = append(items, target.NewItem(
 			randSeq(random, 80),
 			randSeq(random, 150),
@@ -255,7 +255,7 @@ func makeNTargetItems(random rand.Rand, numItems, numLabels int) []*target.Item 
 func makeNTargetJSON(random rand.Rand, numItems, numLabels int) []*targetJSON {
 	items := makeNTargetItems(random, numItems, numLabels)
 	targets := make([]*targetJSON, numItems)
-	for i := 0; i < numItems; i++ {
+	for i := range numItems {
 		targets[i] = targetJsonFromTargetItem(items[i])
 	}
 	return targets
@@ -263,7 +263,7 @@ func makeNTargetJSON(random rand.Rand, numItems, numLabels int) []*targetJSON {
 
 func makeNNewLabels(builder *labels.Builder, random rand.Rand, n int) labels.Labels {
 	builder.Reset(labels.EmptyLabels())
-	for i := 0; i < n; i++ {
+	for range n {
 		builder.Set(randSeq(random, 20), randSeq(random, 20))
 	}
 	return builder.Labels()
