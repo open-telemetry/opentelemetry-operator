@@ -34,13 +34,13 @@ func buildOpenShiftSCC(params manifests.Params) []client.Object {
 
 	// SCC configuration for host access
 	scc := &unstructured.Unstructured{
-		Object: map[string]interface{}{
+		Object: map[string]any{
 			"apiVersion": OpenShiftSCCAPIVersion,
 			"kind":       OpenShiftSCCKind,
-			"metadata": map[string]interface{}{
+			"metadata": map[string]any{
 				"name":   sccName,
 				"labels": labels,
-				"annotations": map[string]interface{}{
+				"annotations": map[string]any{
 					"kubernetes.io/description": "Allows OpenTelemetry agent collectors to access host resources for metrics and log collection",
 				},
 			},
@@ -53,22 +53,22 @@ func buildOpenShiftSCC(params manifests.Params) []client.Object {
 			"allowPrivilegedContainer": false,
 			"readOnlyRootFilesystem":   true,
 			// SELinux context for podman/crio socket and /proc access
-			"seLinuxContext": map[string]interface{}{
+			"seLinuxContext": map[string]any{
 				"type": "MustRunAs",
-				"seLinuxOptions": map[string]interface{}{
+				"seLinuxOptions": map[string]any{
 					"user":  "system_u",
 					"role":  "system_r",
 					"type":  "spc_t",
 					"level": "s0",
 				},
 			},
-			"runAsUser": map[string]interface{}{
+			"runAsUser": map[string]any{
 				"type": "RunAsAny",
 			},
-			"fsGroup": map[string]interface{}{
+			"fsGroup": map[string]any{
 				"type": "RunAsAny",
 			},
-			"supplementalGroups": map[string]interface{}{
+			"supplementalGroups": map[string]any{
 				"type": "RunAsAny",
 			},
 			"allowedCapabilities":      []string{},
