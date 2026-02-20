@@ -149,17 +149,17 @@ func (s *Server) ShutdownHTTPS(ctx context.Context) error {
 // for these actions. Adding this as a fix until the original issue with prometheus unmarshaling is fixed -
 // https://github.com/prometheus/prometheus/issues/12534
 func RemoveRegexFromRelabelAction(jsonConfig []byte) ([]byte, error) {
-	var jobToScrapeConfig map[string]interface{}
+	var jobToScrapeConfig map[string]any
 	err := json.Unmarshal(jsonConfig, &jobToScrapeConfig)
 	if err != nil {
 		return nil, err
 	}
 	for _, scrapeConfig := range jobToScrapeConfig {
-		scrapeConfig := scrapeConfig.(map[string]interface{})
+		scrapeConfig := scrapeConfig.(map[string]any)
 		if scrapeConfig["relabel_configs"] != nil {
-			relabelConfigs := scrapeConfig["relabel_configs"].([]interface{})
+			relabelConfigs := scrapeConfig["relabel_configs"].([]any)
 			for _, relabelConfig := range relabelConfigs {
-				relabelConfig := relabelConfig.(map[string]interface{})
+				relabelConfig := relabelConfig.(map[string]any)
 				// Dropping regex key from the map since unmarshalling this on the client(metrics_receiver.go) results in error
 				// because of the bug here - https://github.com/prometheus/prometheus/issues/12534
 				if relabelConfig["action"] == "keepequal" || relabelConfig["action"] == "dropequal" {
@@ -168,9 +168,9 @@ func RemoveRegexFromRelabelAction(jsonConfig []byte) ([]byte, error) {
 			}
 		}
 		if scrapeConfig["metric_relabel_configs"] != nil {
-			metricRelabelConfigs := scrapeConfig["metric_relabel_configs"].([]interface{})
+			metricRelabelConfigs := scrapeConfig["metric_relabel_configs"].([]any)
 			for _, metricRelabelConfig := range metricRelabelConfigs {
-				metricRelabelConfig := metricRelabelConfig.(map[string]interface{})
+				metricRelabelConfig := metricRelabelConfig.(map[string]any)
 				// Dropping regex key from the map since unmarshalling this on the client(metrics_receiver.go) results in error
 				// because of the bug here - https://github.com/prometheus/prometheus/issues/12534
 				if metricRelabelConfig["action"] == "keepequal" || metricRelabelConfig["action"] == "dropequal" {
@@ -604,7 +604,7 @@ func (s *Server) ScrapeConfigsHTMLHandler(c *gin.Context) {
 	})
 	//s.scrapeConfigResponse
 	// Marshal the scrape config to JSON
-	scrapeConfigs := make(map[string]interface{})
+	scrapeConfigs := make(map[string]any)
 	err := json.Unmarshal(s.scrapeConfigResponse, &scrapeConfigs)
 	if err != nil {
 		s.errorHandler(c.Writer, err)
@@ -648,7 +648,7 @@ func (s *Server) TargetsHandler(c *gin.Context) {
 		targets := GetAllTargetsByCollectorAndJob(s.allocator, q[0], jobId)
 		// Displays empty list if nothing matches
 		if len(targets) == 0 {
-			s.jsonHandler(c.Writer, []interface{}{})
+			s.jsonHandler(c.Writer, []any{})
 			return
 		}
 		s.jsonHandler(c.Writer, targets)
@@ -660,7 +660,7 @@ func (s *Server) errorHandler(w http.ResponseWriter, err error) {
 	s.jsonHandler(w, err)
 }
 
-func (s *Server) jsonHandler(w http.ResponseWriter, data interface{}) {
+func (s *Server) jsonHandler(w http.ResponseWriter, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
@@ -681,7 +681,7 @@ func (s *Server) sortedTargetItems() []*target.Item {
 }
 
 func (s *Server) getScrapeConfigCount() int {
-	scrapeConfigs := make(map[string]interface{})
+	scrapeConfigs := make(map[string]any)
 	err := json.Unmarshal(s.scrapeConfigResponse, &scrapeConfigs)
 	if err != nil {
 		return 0

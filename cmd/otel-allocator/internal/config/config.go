@@ -109,13 +109,13 @@ func StringToModelOrTimeDurationHookFunc() mapstructure.DecodeHookFuncType {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
+		data any,
+	) (any, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
 
-		if t != reflect.TypeOf(model.Duration(5)) && t != reflect.TypeOf(time.Duration(5)) {
+		if t != reflect.TypeFor[model.Duration]() && t != reflect.TypeFor[time.Duration]() {
 			return data, nil
 		}
 
@@ -129,13 +129,13 @@ func MapToPromConfig() mapstructure.DecodeHookFuncType {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
+		data any,
+	) (any, error) {
 		if f.Kind() != reflect.Map {
 			return data, nil
 		}
 
-		if t != reflect.TypeOf(&promconfig.Config{}) {
+		if t != reflect.TypeFor[*promconfig.Config]() {
 			return data, nil
 		}
 
@@ -163,13 +163,13 @@ func MapToLabelSelector() mapstructure.DecodeHookFuncType {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
+		data any,
+	) (any, error) {
 		if f.Kind() != reflect.Map {
 			return data, nil
 		}
 
-		if t != reflect.TypeOf(&metav1.LabelSelector{}) {
+		if t != reflect.TypeFor[*metav1.LabelSelector]() {
 			return data, nil
 		}
 
@@ -291,7 +291,7 @@ func unmarshal(cfg *Config, configFile string) error {
 		return err
 	}
 
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	err = yaml.Unmarshal(yamlFile, &m)
 	if err != nil {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
