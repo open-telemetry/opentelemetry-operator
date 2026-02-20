@@ -162,13 +162,13 @@ func TestEnvVarUpdates(t *testing.T) {
 			},
 			Config: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"prometheus": nil,
 					},
 				},
 				Exporters: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"debug": []interface{}{},
+					Object: map[string]any{
+						"debug": []any{},
 					},
 				},
 				Service: v1beta1.Service{

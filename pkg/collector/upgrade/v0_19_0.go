@@ -24,7 +24,7 @@ func upgrade0_19_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.19.0, failed to parse configuration: %w", err)
 	}
 
-	processors, ok := cfg["processors"].(map[interface{}]interface{})
+	processors, ok := cfg["processors"].(map[any]any)
 	if !ok {
 		// no processors? no need to fail because of that
 		return otelcol, nil
@@ -45,7 +45,7 @@ func upgrade0_19_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		// Remove deprecated configs from resource processor: type (set "opencensus.type" key in "attributes.upsert" map instead) and labels (use "attributes.upsert" instead).
 		if strings.HasPrefix(k.(string), "resource") {
 			switch processor := v.(type) {
-			case map[interface{}]interface{}:
+			case map[any]any:
 				// type becomes an attribute.upsert with key opencensus.type
 				if typ, found := processor["type"]; found {
 					var attributes []map[string]string
@@ -76,7 +76,7 @@ func upgrade0_19_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 						}
 					}
 
-					if ls, ok := labels.(map[interface{}]interface{}); ok {
+					if ls, ok := labels.(map[any]any); ok {
 						for labelK, labelV := range ls {
 							attr := map[string]string{}
 							attr["key"] = labelK.(string)
