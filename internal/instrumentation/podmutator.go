@@ -185,7 +185,6 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns meta
 	}
 
 	for _, i := range inst {
-		i := i
 		if err := setContainersFromAnnotation(i.iwc, i.annotation, ns, pod); err != nil {
 			return err
 		}

@@ -112,7 +112,6 @@ func TestShouldInjectSidecar(t *testing.T) {
 			},
 		},
 	} {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			err := k8sClient.Create(context.Background(), &tt.ns)
 			require.NoError(t, err)
@@ -331,7 +330,6 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 			}},
 		},
 	} {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			err := k8sClient.Create(context.Background(), &tt.ns)
 			require.NoError(t, err)
