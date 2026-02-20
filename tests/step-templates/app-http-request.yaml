@@ -22,7 +22,7 @@ spec:
           - -n
           - ${NAMESPACE}
           - -l
-          - ($podLabelSelector)
+          - ${podLabelSelector}
           - -o
           - jsonpath={.items[0].metadata.name}
         outputs:
