@@ -52,15 +52,15 @@ func generateKubeletStatsRbacRules(_ logr.Logger, config kubeletStatsConfig) ([]
 	}
 
 	// Additionally, when using extra_metadata_labels or any of the {request|limit}_utilization metrics
-	// the processor also needs the get permissions for nodes/proxy resources.
-	nodesProxyPr := rbacv1.PolicyRule{
+	// the processor also needs the get permissions for nodes/pods resources.
+	nodesPodsPr := rbacv1.PolicyRule{
 		APIGroups: []string{""},
-		Resources: []string{"nodes/proxy"},
+		Resources: []string{"nodes/pods"},
 		Verbs:     []string{"get"},
 	}
 
 	if len(config.ExtraMetadataLabels) > 0 {
-		prs = append(prs, nodesProxyPr)
+		prs = append(prs, nodesPodsPr)
 		return prs, nil
 	}
 
@@ -76,7 +76,7 @@ func generateKubeletStatsRbacRules(_ logr.Logger, config kubeletStatsConfig) ([]
 	}
 	for _, metric := range metrics {
 		if metric {
-			prs = append(prs, nodesProxyPr)
+			prs = append(prs, nodesPodsPr)
 			return prs, nil
 		}
 	}

@@ -6,6 +6,6 @@
     - ""
     resources:
     - nodes/stats
-    - nodes/proxy
+    - nodes/pods
     verbs:
     - get
