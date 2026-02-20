@@ -162,7 +162,7 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 func (agent *Agent) getCollectorSelector(col v1beta1.OpenTelemetryCollector) map[string]string {
 	if len(col.Status.Scale.Selector) > 0 {
 		selMap := map[string]string{}
-		for _, kvPair := range strings.Split(col.Status.Scale.Selector, ",") {
+		for kvPair := range strings.SplitSeq(col.Status.Scale.Selector, ",") {
 			kv := strings.Split(kvPair, "=")
 			// skip malformed pairs
 			if len(kv) != 2 {

@@ -706,7 +706,6 @@ func TestValidateConfig(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			err := ValidateConfig(&tc.fileConfig)
 			assert.Equal(t, tc.expectedErr, err)
@@ -748,7 +747,6 @@ func TestGetAllowDenyLists(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			allowList, denyList := tc.promCRConfig.GetAllowDenyLists()
 			assert.Equal(t, tc.expectedAllowList, allowList)

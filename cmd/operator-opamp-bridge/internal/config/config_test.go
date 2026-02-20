@@ -183,7 +183,7 @@ func TestLoadFromFile(t *testing.T) {
 			},
 			want:    &Config{},
 			needErr: true,
-			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+			wantErr: func(t assert.TestingT, err error, i ...any) bool {
 				return assert.ErrorContains(t, err, "error unmarshaling YAML", i...)
 			},
 		},

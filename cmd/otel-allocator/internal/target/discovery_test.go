@@ -538,7 +538,7 @@ func BenchmarkApplyScrapeConfig(b *testing.B) {
 		ScrapeConfigs: make([]*promconfig.ScrapeConfig, numConfigs),
 	}
 
-	for i := 0; i < numConfigs; i++ {
+	for i := range numConfigs {
 		cfg.ScrapeConfigs[i] = &scrapeConfig
 	}
 
