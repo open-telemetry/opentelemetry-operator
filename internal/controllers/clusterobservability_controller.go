@@ -6,6 +6,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"maps"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -553,9 +554,7 @@ func (r *ClusterObservabilityReconciler) findClusterObservabilityOwnedObjects(ct
 		if err != nil {
 			return nil, err
 		}
-		for uid, object := range objs {
-			ownedObjects[uid] = object
-		}
+		maps.Copy(ownedObjects, objs)
 	}
 
 	return ownedObjects, nil
