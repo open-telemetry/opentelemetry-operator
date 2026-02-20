@@ -123,34 +123,34 @@ func TestNullObjects_go_yaml(t *testing.T) {
 func TestConfigYaml(t *testing.T) {
 	cfg := &Config{
 		Receivers: AnyConfig{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"otlp": nil,
 			},
 		},
 		Processors: &AnyConfig{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"modify_2000": "enabled",
 			},
 		},
 		Exporters: AnyConfig{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"otlp/exporter": nil,
 			},
 		},
 		Connectors: &AnyConfig{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"con": "magic",
 			},
 		},
 		Extensions: &AnyConfig{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"addon": "option1",
 			},
 		},
 		Service: Service{
 			Extensions: []string{"addon"},
 			Telemetry: &AnyConfig{
-				Object: map[string]interface{}{
+				Object: map[string]any{
 					"insights": "yeah!",
 				},
 			},
@@ -237,8 +237,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 9090,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"address": "localhost:9090",
 						},
 					},
@@ -251,8 +251,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 9090,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"address": "[::]:9090",
 						},
 					},
@@ -265,8 +265,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 8888,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"address": "localhost",
 						},
 					},
@@ -279,8 +279,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 8888,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"address": "[::]",
 						},
 					},
@@ -293,8 +293,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 8888,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"address": "${env:POD_IP}",
 						},
 					},
@@ -307,8 +307,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 8888,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"address": "[${env:POD_IP}]",
 						},
 					},
@@ -321,8 +321,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 1234,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"address": "${POD_IP}:1234",
 						},
 					},
@@ -335,8 +335,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 1234,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"address": "[${POD_IP}]:1234",
 						},
 					},
@@ -348,8 +348,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedErr: true,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"address": "localhost:${env:POD_PORT}",
 						},
 					},
@@ -361,8 +361,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedErr: true,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"address": "[::]:${env:POD_PORT}",
 						},
 					},
@@ -375,8 +375,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 8888,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"level": "detailed",
 						},
 					},
@@ -402,8 +402,8 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 4567,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"address": "1.2.3.4:4567",
 						},
 					},
@@ -416,14 +416,14 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 8889,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"level": "detailed",
-							"readers": []interface{}{
-								map[string]interface{}{
-									"pull": map[string]interface{}{
-										"exporter": map[string]interface{}{
-											"prometheus": map[string]interface{}{
+							"readers": []any{
+								map[string]any{
+									"pull": map[string]any{
+										"exporter": map[string]any{
+											"prometheus": map[string]any{
 												"host": "0.0.0.0",
 												"port": 8889,
 											},
@@ -442,13 +442,13 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 8899,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
-							"readers": []interface{}{
-								map[string]interface{}{
-									"pull": map[string]interface{}{
-										"exporter": map[string]interface{}{
-											"prometheus": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
+							"readers": []any{
+								map[string]any{
+									"pull": map[string]any{
+										"exporter": map[string]any{
+											"prometheus": map[string]any{
 												"port": 8899,
 											},
 										},
@@ -466,13 +466,13 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 8888,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
-							"readers": []interface{}{
-								map[string]interface{}{
-									"pull": map[string]interface{}{
-										"exporter": map[string]interface{}{
-											"prometheus": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
+							"readers": []any{
+								map[string]any{
+									"pull": map[string]any{
+										"exporter": map[string]any{
+											"prometheus": map[string]any{
 												"host": "127.0.0.1",
 											},
 										},
@@ -490,14 +490,14 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 8889,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"address": "1.2.3.4:4567",
-							"readers": []interface{}{
-								map[string]interface{}{
-									"pull": map[string]interface{}{
-										"exporter": map[string]interface{}{
-											"prometheus": map[string]interface{}{
+							"readers": []any{
+								map[string]any{
+									"pull": map[string]any{
+										"exporter": map[string]any{
+											"prometheus": map[string]any{
 												"host": "0.0.0.0",
 												"port": 8889,
 											},
@@ -516,15 +516,15 @@ func TestConfigMetricsEndpoint(t *testing.T) {
 			expectedPort: 8888,
 			config: Service{
 				Telemetry: &AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
-							"readers": []interface{}{
-								map[string]interface{}{
-									"pull": map[string]interface{}{
-										"exporter": map[string]interface{}{
-											"otlp": map[string]interface{}{
-												"protocols": map[string]interface{}{
-													"http": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
+							"readers": []any{
+								map[string]any{
+									"pull": map[string]any{
+										"exporter": map[string]any{
+											"otlp": map[string]any{
+												"protocols": map[string]any{
+													"http": map[string]any{
 														"endpoint": "0.0.0.0:19001",
 													},
 												},
@@ -557,13 +557,13 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 	tests := []struct {
 		name string
 		file string
-		want map[ComponentKind]map[string]interface{}
+		want map[ComponentKind]map[string]any
 	}{
 
 		{
 			name: "connectors",
 			file: "testdata/otelcol-connectors.yaml",
-			want: map[ComponentKind]map[string]interface{}{
+			want: map[ComponentKind]map[string]any{
 				KindReceiver: {
 					"foo":   struct{}{},
 					"count": struct{}{},
@@ -579,7 +579,7 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 		{
 			name: "couchbase",
 			file: "testdata/otelcol-couchbase.yaml",
-			want: map[ComponentKind]map[string]interface{}{
+			want: map[ComponentKind]map[string]any{
 				KindReceiver: {
 					"prometheus/couchbase": struct{}{},
 				},
@@ -597,7 +597,7 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 		{
 			name: "demo",
 			file: "testdata/otelcol-demo.yaml",
-			want: map[ComponentKind]map[string]interface{}{
+			want: map[ComponentKind]map[string]any{
 				KindReceiver: {
 					"otlp": struct{}{},
 				},
@@ -620,7 +620,7 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 		{
 			name: "extensions",
 			file: "testdata/otelcol-extensions.yaml",
-			want: map[ComponentKind]map[string]interface{}{
+			want: map[ComponentKind]map[string]any{
 				KindReceiver: {
 					"otlp": struct{}{},
 				},
@@ -636,7 +636,7 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 		{
 			name: "filelog",
 			file: "testdata/otelcol-filelog.yaml",
-			want: map[ComponentKind]map[string]interface{}{
+			want: map[ComponentKind]map[string]any{
 				KindReceiver: {
 					"filelog": struct{}{},
 				},
@@ -650,7 +650,7 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 		{
 			name: "null",
 			file: "testdata/otelcol-null-values.yaml",
-			want: map[ComponentKind]map[string]interface{}{
+			want: map[ComponentKind]map[string]any{
 				KindReceiver:  {},
 				KindProcessor: {},
 				KindExporter:  {},
@@ -682,8 +682,8 @@ func TestConfig_getEnvironmentVariablesForComponentKinds(t *testing.T) {
 			name: "no env vars",
 			config: &Config{
 				Receivers: AnyConfig{
-					Object: map[string]interface{}{
-						"myreceiver": map[string]interface{}{
+					Object: map[string]any{
+						"myreceiver": map[string]any{
 							"env": "test",
 						},
 					},
@@ -703,8 +703,8 @@ func TestConfig_getEnvironmentVariablesForComponentKinds(t *testing.T) {
 			name: "kubeletstats env vars",
 			config: &Config{
 				Receivers: AnyConfig{
-					Object: map[string]interface{}{
-						"kubeletstats": map[string]interface{}{},
+					Object: map[string]any{
+						"kubeletstats": map[string]any{},
 					},
 				},
 				Service: Service{
@@ -919,7 +919,7 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 			name: "empty extensions should return nil",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{},
+					Object: map[string]any{},
 				},
 				Service: Service{
 					Extensions: []string{},
@@ -931,7 +931,7 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 			name: "empty extensions with health_check in service extensions should return probe",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{},
+					Object: map[string]any{},
 				},
 				Service: Service{
 					Extensions: []string{"health_check"},
@@ -950,8 +950,8 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 			name: "health_check extension enabled should return probe",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
-						"health_check": map[string]interface{}{},
+					Object: map[string]any{
+						"health_check": map[string]any{},
 					},
 				},
 				Service: Service{
@@ -971,8 +971,8 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 			name: "health_check extension with custom path",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
-						"health_check": map[string]interface{}{
+					Object: map[string]any{
+						"health_check": map[string]any{
 							"path": "/healthz",
 						},
 					},
@@ -994,8 +994,8 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 			name: "health_check extension with custom endpoint port",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
-						"health_check": map[string]interface{}{
+					Object: map[string]any{
+						"health_check": map[string]any{
 							"endpoint": "0.0.0.0:8080",
 						},
 					},
@@ -1017,8 +1017,8 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 			name: "extension without liveness probe should return nil",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
-						"jaeger_query": map[string]interface{}{},
+					Object: map[string]any{
+						"jaeger_query": map[string]any{},
 					},
 				},
 				Service: Service{
@@ -1031,7 +1031,7 @@ func TestConfig_GetLivenessProbe(t *testing.T) {
 			name: "invalid health_check config should return error",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"health_check": func() {},
 					},
 				},
@@ -1088,7 +1088,7 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 			name: "empty extensions should return nil",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{},
+					Object: map[string]any{},
 				},
 				Service: Service{
 					Extensions: []string{},
@@ -1100,7 +1100,7 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 			name: "empty extensions with health_check in service extensions should return probe",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{},
+					Object: map[string]any{},
 				},
 				Service: Service{
 					Extensions: []string{"health_check"},
@@ -1119,8 +1119,8 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 			name: "health_check extension enabled should return probe",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
-						"health_check": map[string]interface{}{},
+					Object: map[string]any{
+						"health_check": map[string]any{},
 					},
 				},
 				Service: Service{
@@ -1140,8 +1140,8 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 			name: "health_check extension with custom path",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
-						"health_check": map[string]interface{}{
+					Object: map[string]any{
+						"health_check": map[string]any{
 							"path": "/healthz",
 						},
 					},
@@ -1163,8 +1163,8 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 			name: "health_check extension with custom endpoint port",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
-						"health_check": map[string]interface{}{
+					Object: map[string]any{
+						"health_check": map[string]any{
 							"endpoint": "0.0.0.0:8080",
 						},
 					},
@@ -1186,8 +1186,8 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 			name: "extension without readiness probe should return nil",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
-						"jaeger_query": map[string]interface{}{},
+					Object: map[string]any{
+						"jaeger_query": map[string]any{},
 					},
 				},
 				Service: Service{
@@ -1200,7 +1200,7 @@ func TestConfig_GetReadinessProbe(t *testing.T) {
 			name: "invalid health_check config should return error",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"health_check": func() {},
 					},
 				},
@@ -1257,7 +1257,7 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 			name: "empty extensions should return nil",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{},
+					Object: map[string]any{},
 				},
 				Service: Service{
 					Extensions: []string{},
@@ -1269,7 +1269,7 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 			name: "empty extensions with health_check in service extensions should return probe",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{},
+					Object: map[string]any{},
 				},
 				Service: Service{
 					Extensions: []string{"health_check"},
@@ -1288,8 +1288,8 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 			name: "health_check extension enabled should return probe",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
-						"health_check": map[string]interface{}{},
+					Object: map[string]any{
+						"health_check": map[string]any{},
 					},
 				},
 				Service: Service{
@@ -1309,8 +1309,8 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 			name: "health_check extension with custom path",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
-						"health_check": map[string]interface{}{
+					Object: map[string]any{
+						"health_check": map[string]any{
 							"path": "/healthz",
 						},
 					},
@@ -1332,8 +1332,8 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 			name: "health_check extension with custom endpoint port",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
-						"health_check": map[string]interface{}{
+					Object: map[string]any{
+						"health_check": map[string]any{
 							"endpoint": "0.0.0.0:8080",
 						},
 					},
@@ -1355,8 +1355,8 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 			name: "extension without startup probe should return nil",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
-						"jaeger_query": map[string]interface{}{},
+					Object: map[string]any{
+						"jaeger_query": map[string]any{},
 					},
 				},
 				Service: Service{
@@ -1369,7 +1369,7 @@ func TestConfig_GetStartupProbe(t *testing.T) {
 			name: "invalid health_check config should return error",
 			config: &Config{
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"health_check": func() {},
 					},
 				},
@@ -1399,8 +1399,8 @@ func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 	cfg := &Config{
 		Service: Service{
 			Telemetry: &AnyConfig{
-				Object: map[string]interface{}{
-					"logs": map[string]interface{}{
+				Object: map[string]any{
+					"logs": map[string]any{
 						"level": "debug",
 					},
 				},
@@ -1411,16 +1411,16 @@ func TestTelemetryLogsPreservedWithMetrics(t *testing.T) {
 	expected := &Config{
 		Service: Service{
 			Telemetry: &AnyConfig{
-				Object: map[string]interface{}{
-					"logs": map[string]interface{}{
+				Object: map[string]any{
+					"logs": map[string]any{
 						"level": "debug",
 					},
-					"metrics": map[string]interface{}{
-						"readers": []interface{}{
-							map[string]interface{}{
-								"pull": map[string]interface{}{
-									"exporter": map[string]interface{}{
-										"prometheus": map[string]interface{}{
+					"metrics": map[string]any{
+						"readers": []any{
+							map[string]any{
+								"pull": map[string]any{
+									"exporter": map[string]any{
+										"prometheus": map[string]any{
 											"host": "0.0.0.0",
 											"port": int32(8888),
 										},
@@ -1447,14 +1447,14 @@ func TestTelemetryIncompleteConfigAppliesDefaults(t *testing.T) {
 	cfg := &Config{
 		Service: Service{
 			Telemetry: &AnyConfig{
-				Object: map[string]interface{}{
-					"metrics": map[string]interface{}{
+				Object: map[string]any{
+					"metrics": map[string]any{
 						"level": "basic",
-						"readers": []interface{}{
-							map[string]interface{}{
-								"periodic": map[string]interface{}{
-									"exporter": map[string]interface{}{
-										"otlp": map[string]interface{}{
+						"readers": []any{
+							map[string]any{
+								"periodic": map[string]any{
+									"exporter": map[string]any{
+										"otlp": map[string]any{
 											"endpoint": "otlp_host:4317",
 											// Missing protocol - makes this invalid
 										},
