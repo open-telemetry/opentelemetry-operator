@@ -21,7 +21,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 	name := naming.OpAMPBridgeConfigMap(params.OpAMPBridge.Name)
 	labels := manifestutils.Labels(params.OpAMPBridge.ObjectMeta, name, params.OpAMPBridge.Spec.Image, ComponentOpAMPBridge, []string{})
 
-	config := make(map[interface{}]interface{})
+	config := make(map[any]any)
 
 	if len(params.OpAMPBridge.Spec.Endpoint) > 0 {
 		config["endpoint"] = params.OpAMPBridge.Spec.Endpoint
