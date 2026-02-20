@@ -272,7 +272,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result:  controllerruntime.Result{},
 					checks:  []check[v1beta1.OpenTelemetryCollector]{},
 					wantErr: assert.NoError,
-					validateErr: func(t assert.TestingT, err2 error, msgAndArgs ...interface{}) bool {
+					validateErr: func(t assert.TestingT, err2 error, msgAndArgs ...any) bool {
 						return assert.ErrorContains(t, err2, "Unsupported value: \"bad\"", msgAndArgs)
 					},
 				},
@@ -289,7 +289,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result:  controllerruntime.Result{},
 					checks:  []check[v1beta1.OpenTelemetryCollector]{},
 					wantErr: assert.NoError,
-					validateErr: func(t assert.TestingT, err2 error, msgAndArgs ...interface{}) bool {
+					validateErr: func(t assert.TestingT, err2 error, msgAndArgs ...any) bool {
 						return assert.ErrorContains(t, err2, "no prometheus available as part of the configuration", msgAndArgs)
 					},
 				},
@@ -607,12 +607,10 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			testContext := context.Background()
 			nsn := types.NamespacedName{Name: tt.args.params.Name, Namespace: tt.args.params.Namespace}
-			testCtx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			testCtx := t.Context()
 
 			cfg := config.Config{
 				CollectorImage:                "default-collector",
@@ -665,7 +663,6 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			}
 			// run the next set of checks
 			for pid, updateParam := range tt.args.updates {
-				updateParam := updateParam
 				existing := v1beta1.OpenTelemetryCollector{}
 				found, err := populateObjectIfExists(t, &existing, nsn)
 				assert.True(t, found)
@@ -730,17 +727,17 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 			},
 			Config: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"prometheus": map[string]interface{}{
-							"config": map[string]interface{}{
-								"scrape_configs": []interface{}{},
+					Object: map[string]any{
+						"prometheus": map[string]any{
+							"config": map[string]any{
+								"scrape_configs": []any{},
 							},
 						},
 					},
 				},
 				Exporters: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"nop": map[string]interface{}{},
+					Object: map[string]any{
+						"nop": map[string]any{},
 					},
 				},
 				Service: v1beta1.Service{
@@ -803,7 +800,6 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			namespace, err := createRandomNamespace(k8sClient)
 			require.NoError(t, err)
@@ -879,13 +875,13 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 			Mode:           v1beta1.ModeStatefulSet,
 			Config: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"nop": map[string]interface{}{},
+					Object: map[string]any{
+						"nop": map[string]any{},
 					},
 				},
 				Exporters: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"nop": map[string]interface{}{},
+					Object: map[string]any{
+						"nop": map[string]any{},
 					},
 				},
 				Service: v1beta1.Service{
@@ -948,7 +944,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 	time.Sleep(time.Second)
 	err = k8sClient.Get(clientCtx, nsn, collector)
 	require.NoError(t, err)
-	collector.Spec.Config.Exporters.Object["debug"] = map[string]interface{}{}
+	collector.Spec.Config.Exporters.Object["debug"] = map[string]any{}
 	err = k8sClient.Update(clientCtx, collector)
 	require.NoError(t, err)
 	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
@@ -974,7 +970,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 	time.Sleep(time.Second)
 	err = k8sClient.Get(clientCtx, nsn, collector)
 	require.NoError(t, err)
-	collector.Spec.Config.Exporters.Object["debug/2"] = map[string]interface{}{}
+	collector.Spec.Config.Exporters.Object["debug/2"] = map[string]any{}
 	err = k8sClient.Update(clientCtx, collector)
 	require.NoError(t, err)
 	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
@@ -1092,7 +1088,6 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			testContext := context.Background()
 			nsn := types.NamespacedName{Name: tt.args.params.OpAMPBridge.Name, Namespace: tt.args.params.OpAMPBridge.Namespace}
@@ -1131,7 +1126,6 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 			}
 			// run the next set of checks
 			for pid, updateParam := range tt.args.updates {
-				updateParam := updateParam
 				existing := v1alpha1.OpAMPBridge{}
 				found, err := populateObjectIfExists(t, &existing, nsn)
 				assert.True(t, found)
@@ -1245,8 +1239,7 @@ service:
 	clientErr = k8sClient.Create(context.Background(), otelcol)
 	require.NoError(t, clientErr)
 
-	testCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	testCtx := t.Context()
 
 	cfg := config.Config{
 		CollectorImage:                    "default-collector",
@@ -1302,8 +1295,7 @@ service:
 }
 
 func TestUpgrade(t *testing.T) {
-	testCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	testCtx := t.Context()
 
 	cfg := config.Config{
 		CollectorImage:                "default-collector",
