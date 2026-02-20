@@ -20,7 +20,7 @@ func TestBuilder_Build(t *testing.T) {
 	type sampleConfig struct {
 		example string
 		number  int
-		m       map[string]interface{}
+		m       map[string]any
 	}
 	type want struct {
 		name           string
@@ -33,7 +33,7 @@ func TestBuilder_Build(t *testing.T) {
 		b components.Builder[T]
 	}
 	type params struct {
-		conf interface{}
+		conf any
 	}
 	type testCase[T any] struct {
 		name            string
@@ -135,7 +135,7 @@ func TestBuilder_Build(t *testing.T) {
 				conf: sampleConfig{
 					example: "test",
 					number:  100,
-					m: map[string]interface{}{
+					m: map[string]any{
 						"key": "value",
 					},
 				},
@@ -182,7 +182,7 @@ func TestBuilder_Build(t *testing.T) {
 				conf: sampleConfig{
 					example: "test",
 					number:  100,
-					m: map[string]interface{}{
+					m: map[string]any{
 						"key": "value",
 					},
 				},
@@ -210,7 +210,7 @@ func TestBuilder_Build(t *testing.T) {
 				conf: sampleConfig{
 					example: "test",
 					number:  100,
-					m: map[string]interface{}{
+					m: map[string]any{
 						"key": "value",
 					},
 				},
@@ -254,7 +254,7 @@ func TestBuilder_Build(t *testing.T) {
 				conf: sampleConfig{
 					example: "test",
 					number:  100,
-					m: map[string]interface{}{
+					m: map[string]any{
 						"key": "value",
 					},
 				},

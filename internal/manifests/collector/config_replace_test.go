@@ -29,11 +29,11 @@ func TestPrometheusParser(t *testing.T) {
 		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
-		prometheusConfig := promCfgMap["config"].(map[interface{}]interface{})
+		prometheusConfig := promCfgMap["config"].(map[any]any)
 
 		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
-		expectedTAConfig := map[interface{}]interface{}{
+		expectedTAConfig := map[any]any{
 			"endpoint":     "http://test-targetallocator:80",
 			"interval":     "30s",
 			"collector_id": "${POD_NAME}",
@@ -54,11 +54,11 @@ func TestPrometheusParser(t *testing.T) {
 		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
-		prometheusConfig := promCfgMap["config"].(map[interface{}]interface{})
+		prometheusConfig := promCfgMap["config"].(map[any]any)
 
 		assert.NotContains(t, prometheusConfig, "scrape_configs")
 
-		expectedTAConfig := map[interface{}]interface{}{
+		expectedTAConfig := map[any]any{
 			"endpoint":     "http://test-targetallocator:80",
 			"interval":     "30s",
 			"collector_id": "${POD_NAME}",
@@ -139,6 +139,6 @@ func TestReplaceConfig(t *testing.T) {
 		promCfgMap, err := ta.ConfigToPromConfig(actualConfig)
 		assert.NoError(t, err)
 
-		assert.Equal(t, customInterval.Duration.String(), promCfgMap["target_allocator"].(map[interface{}]interface{})["interval"])
+		assert.Equal(t, customInterval.Duration.String(), promCfgMap["target_allocator"].(map[any]any)["interval"])
 	})
 }
