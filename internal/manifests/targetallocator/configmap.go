@@ -31,9 +31,9 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	labels := manifestutils.Labels(instance.ObjectMeta, name, params.TargetAllocator.Spec.Image, ComponentOpenTelemetryTargetAllocator, nil)
 	taSpec := instance.Spec
 
-	taConfig := make(map[interface{}]interface{})
+	taConfig := make(map[any]any)
 	// Set config if global or scrape configs set
-	config := map[string]interface{}{}
+	config := map[string]any{}
 	var (
 		globalConfig      map[string]any
 		scrapeConfigs     []v1beta1.AnyConfig
@@ -87,7 +87,7 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	taConfig["filter_strategy"] = taSpec.FilterStrategy
 
 	if taSpec.PrometheusCR.Enabled {
-		prometheusCRConfig := map[interface{}]interface{}{
+		prometheusCRConfig := map[any]any{
 			"enabled": true,
 		}
 		if taSpec.PrometheusCR.ScrapeInterval.Size() > 0 {
@@ -118,7 +118,7 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 	}
 
 	if params.Config.CertManagerAvailability == certmanager.Available && featuregate.EnableTargetAllocatorMTLS.IsEnabled() {
-		taConfig["https"] = map[string]interface{}{
+		taConfig["https"] = map[string]any{
 			"enabled":            true,
 			"listen_addr":        ":8443",
 			"ca_file_path":       filepath.Join(constants.TACollectorTLSDirPath, constants.TACollectorCAFileName),
@@ -188,7 +188,7 @@ func getGlobalConfigFromOtelConfig(otelConfig v1beta1.Config) (v1beta1.AnyConfig
 	type promReceiverConfig struct {
 		Prometheus struct {
 			Config struct {
-				Global map[string]interface{} `mapstructure:"global"`
+				Global map[string]any `mapstructure:"global"`
 			} `mapstructure:"config"`
 		} `mapstructure:"prometheus"`
 	}
