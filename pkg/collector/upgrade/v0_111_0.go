@@ -24,8 +24,8 @@ func applyDefaults(otelcol *v1beta1.OpenTelemetryCollector, logger logr.Logger) 
 	}
 
 	tm := &v1beta1.AnyConfig{
-		Object: map[string]interface{}{
-			"metrics": map[string]interface{}{
+		Object: map[string]any{
+			"metrics": map[string]any{
 				"address": fmt.Sprintf("%s:%d", telemetryAddr, telemetryPort),
 			},
 		},
