@@ -139,7 +139,7 @@ func main() {
 	if found {
 		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
 		namespaces = map[string]cache.Config{}
-		for _, ns := range strings.Split(watchNamespace, ",") {
+		for ns := range strings.SplitSeq(watchNamespace, ",") {
 			namespaces[ns] = cache.Config{}
 		}
 	} else {
