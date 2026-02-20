@@ -15,7 +15,7 @@ import (
 
 func TestGenerateResourceDetectionRbacRules(t *testing.T) {
 	type args struct {
-		config map[string]interface{}
+		config map[string]any
 	}
 	tests := []struct {
 		name    string
@@ -26,7 +26,7 @@ func TestGenerateResourceDetectionRbacRules(t *testing.T) {
 		{
 			name: "default config with no detectors",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"detectors": []string{},
 				},
 			},
@@ -36,7 +36,7 @@ func TestGenerateResourceDetectionRbacRules(t *testing.T) {
 		{
 			name: "config with k8snode detector",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"detectors": []string{"k8snode"},
 				},
 			},
@@ -52,7 +52,7 @@ func TestGenerateResourceDetectionRbacRules(t *testing.T) {
 		{
 			name: "config with openshift detector",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"detectors": []string{"openshift"},
 				},
 			},
@@ -68,7 +68,7 @@ func TestGenerateResourceDetectionRbacRules(t *testing.T) {
 		{
 			name: "config with multiple detectors",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"detectors": []string{"k8snode", "openshift"},
 				},
 			},
@@ -89,7 +89,7 @@ func TestGenerateResourceDetectionRbacRules(t *testing.T) {
 		{
 			name: "config with invalid detector",
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"detectors": []string{"invalid"},
 				},
 			},
