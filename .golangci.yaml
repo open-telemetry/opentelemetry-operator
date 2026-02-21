@@ -16,6 +16,8 @@ linters:
               desc: Use go.uber.org/atomic instead of sync/atomic
             - pkg: github.com/pkg/errors
               desc: Use 'errors' or 'fmt' instead of github.com/pkg/errors
+    exhaustive:
+      default-signifies-exhaustive: true
     goheader:
       template: |-
         Copyright The OpenTelemetry Authors
@@ -42,7 +44,6 @@ linters:
     staticcheck:
       checks:
         - all
-        - -QF1003 # FIXME Convert if/else-if chain to tagged switch
         - -QF1008 # FIXME Omit embedded fields from selector expression
         - -QF1011 # FIXME Omit redundant type from variable declaration
         - -ST1003 # FIXME Poorly chosen identifier
