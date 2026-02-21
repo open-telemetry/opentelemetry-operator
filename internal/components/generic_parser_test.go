@@ -4,6 +4,7 @@
 package components_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -120,7 +121,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 
 	rbacGenFunc := func(logger logr.Logger, config *components.SingleEndpointConfig) ([]rbacv1.PolicyRule, error) {
 		if config.Endpoint == "" && config.ListenAddress == "" {
-			return nil, fmt.Errorf("either endpoint or listen_address must be specified")
+			return nil, errors.New("either endpoint or listen_address must be specified")
 		}
 		return []rbacv1.PolicyRule{
 			{
@@ -229,7 +230,7 @@ func TestGenericParser_GetProbe(t *testing.T) {
 	}
 	probeFunc := func(logger logr.Logger, config *components.SingleEndpointConfig) (*corev1.Probe, error) {
 		if config.Endpoint == "" && config.ListenAddress == "" {
-			return nil, fmt.Errorf("either endpoint or listen_address must be specified")
+			return nil, errors.New("either endpoint or listen_address must be specified")
 		}
 		return &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{

@@ -4,6 +4,7 @@
 package adapters_test
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -99,7 +100,7 @@ func TestExtractPromConfigFromNullConfig(t *testing.T) {
 
 	// test
 	promConfig, err := ta.ConfigToPromConfig(configStr)
-	assert.Equal(t, err, fmt.Errorf("no prometheus available as part of the configuration"))
+	assert.Equal(t, err, errors.New("no prometheus available as part of the configuration"))
 
 	// verify
 	assert.True(t, reflect.ValueOf(promConfig).IsNil())
@@ -493,7 +494,7 @@ func TestValidateTargetAllocatorConfig(t *testing.T) {
 				},
 			},
 			targetAllocatorPrometheusCR: false,
-			expectedError:               fmt.Errorf("either at least one scrape config needs to be defined or PrometheusCR needs to be enabled"),
+			expectedError:               errors.New("either at least one scrape config needs to be defined or PrometheusCR needs to be enabled"),
 		},
 	}
 
