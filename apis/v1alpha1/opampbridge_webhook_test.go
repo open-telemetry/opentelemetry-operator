@@ -115,7 +115,7 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 
 	two := int32(2)
 
-	tests := []struct { //nolint:govet
+	tests := []struct {
 		name             string
 		opampBridge      OpAMPBridge
 		expectedErr      string

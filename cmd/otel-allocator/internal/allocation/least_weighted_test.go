@@ -129,7 +129,7 @@ func TestCollectorBalanceWhenAddingAndRemovingAtRandom(t *testing.T) {
 	toDelete := len(targets) / 2
 	counter := 0
 	for index := range targets {
-		shouldDelete := rand.Intn(toDelete) //nolint:gosec
+		shouldDelete := rand.Intn(toDelete)
 		if counter < shouldDelete {
 			targets = slices.Delete(targets, index, index)
 		}

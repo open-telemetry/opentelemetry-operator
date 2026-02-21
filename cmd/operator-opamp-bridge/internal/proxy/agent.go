@@ -42,7 +42,7 @@ func (a *Agent) hasCapability(capability protobufs.AgentCapabilities) bool {
 	if capability < 0 {
 		return false
 	}
-	//nolint:gosec
+
 	return a.Status.Capabilities&uint64(capability) != 0
 }
 

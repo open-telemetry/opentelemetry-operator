@@ -32,7 +32,7 @@ var (
 	// prometheusCAFile declares the path for prometheus CA file for service monitors in OpenShift.
 	prometheusCAFile = fmt.Sprintf("/etc/prometheus/configmaps/%s/service-ca.crt", caBundleConfigMap)
 
-	// nolint #nosec
+	//nolint:gosec
 	// bearerTokenFile declares the path for bearer token file for service monitors.
 	bearerTokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 

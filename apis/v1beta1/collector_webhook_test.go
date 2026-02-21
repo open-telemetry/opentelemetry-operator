@@ -611,7 +611,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	err := go_yaml.Unmarshal([]byte(cfgYaml), &cfg)
 	require.NoError(t, err)
 
-	tests := []struct { //nolint:govet
+	tests := []struct {
 		name             string
 		otelcol          v1beta1.OpenTelemetryCollector
 		expectedErr      string
@@ -1444,7 +1444,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 }
 
 func TestOTELColValidateUpdateWebhook(t *testing.T) {
-	tests := []struct { //nolint:govet
+	tests := []struct {
 		name             string
 		otelcolOld       v1beta1.OpenTelemetryCollector
 		otelcolNew       v1beta1.OpenTelemetryCollector
