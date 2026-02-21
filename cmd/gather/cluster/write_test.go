@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -69,13 +68,13 @@ func (m *MockObject) SetAnnotations(annotations map[string]string) {
 }
 
 // GetCreationTimestamp mocks the GetCreationTimestamp method.
-func (m *MockObject) GetCreationTimestamp() v1.Time {
+func (m *MockObject) GetCreationTimestamp() metav1.Time {
 	args := m.Called()
-	return args.Get(0).(v1.Time)
+	return args.Get(0).(metav1.Time)
 }
 
 // SetCreationTimestamp mocks the SetCreationTimestamp method.
-func (m *MockObject) SetCreationTimestamp(timestamp v1.Time) {
+func (m *MockObject) SetCreationTimestamp(timestamp metav1.Time) {
 	m.Called(timestamp)
 }
 
@@ -86,9 +85,9 @@ func (m *MockObject) GetDeletionGracePeriodSeconds() *int64 {
 }
 
 // GetDeletionTimestamp mocks the GetDeletionTimestamp method.
-func (m *MockObject) GetDeletionTimestamp() *v1.Time {
+func (m *MockObject) GetDeletionTimestamp() *metav1.Time {
 	args := m.Called()
-	return args.Get(0).(*v1.Time)
+	return args.Get(0).(*metav1.Time)
 }
 
 // GetLabels mocks the GetLabels method.
@@ -130,14 +129,14 @@ func (m *MockObject) DeepCopyObject() runtime.Object {
 	return args.Get(0).(runtime.Object)
 }
 
-func (m *MockObject) GetManagedFields() []v1.ManagedFieldsEntry {
+func (m *MockObject) GetManagedFields() []metav1.ManagedFieldsEntry {
 	args := m.Called()
-	return args.Get(0).([]v1.ManagedFieldsEntry)
+	return args.Get(0).([]metav1.ManagedFieldsEntry)
 }
 
-func (m *MockObject) GetOwnerReferences() []v1.OwnerReference {
+func (m *MockObject) GetOwnerReferences() []metav1.OwnerReference {
 	args := m.Called()
-	return args.Get(0).([]v1.OwnerReference)
+	return args.Get(0).([]metav1.OwnerReference)
 }
 
 func (m *MockObject) GetGeneration() int64 {
@@ -225,7 +224,7 @@ func (m *MockObject) SetDeletionGracePeriodSeconds(seconds *int64) {
 	m.Called(seconds)
 }
 
-func (m *MockObject) SetDeletionTimestamp(timestamp *v1.Time) {
+func (m *MockObject) SetDeletionTimestamp(timestamp *metav1.Time) {
 	m.Called(timestamp)
 }
 
@@ -233,11 +232,11 @@ func (m *MockObject) SetGeneration(generation int64) {
 	m.Called(generation)
 }
 
-func (m *MockObject) SetManagedFields(fields []v1.ManagedFieldsEntry) {
+func (m *MockObject) SetManagedFields(fields []metav1.ManagedFieldsEntry) {
 	m.Called(fields)
 }
 
-func (m *MockObject) SetOwnerReferences(references []v1.OwnerReference) {
+func (m *MockObject) SetOwnerReferences(references []metav1.OwnerReference) {
 	m.Called(references)
 }
 
