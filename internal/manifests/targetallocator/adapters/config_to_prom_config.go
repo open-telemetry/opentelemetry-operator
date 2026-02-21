@@ -4,6 +4,7 @@
 package adapters
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -352,7 +353,7 @@ func ValidateTargetAllocatorConfig(targetAllocatorPrometheusCR bool, promReceive
 	}
 
 	if len(scrapeConfigs) == 0 {
-		return fmt.Errorf("either at least one scrape config needs to be defined or PrometheusCR needs to be enabled")
+		return errors.New("either at least one scrape config needs to be defined or PrometheusCR needs to be enabled")
 	}
 
 	return nil

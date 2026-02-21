@@ -5,6 +5,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"time"
@@ -113,7 +114,7 @@ func (r *ClusterObservabilityReconciler) Reconcile(ctx context.Context, req ctrl
 	if !isActive {
 		// This instance is conflicted, update status and skip reconciliation
 		params := r.getParams(instance)
-		return coStatus.HandleReconcileStatus(ctx, log, params, fmt.Errorf("multiple ClusterObservability resources detected"))
+		return coStatus.HandleReconcileStatus(ctx, log, params, errors.New("multiple ClusterObservability resources detected"))
 	}
 
 	// TODO: Add upgrade support
