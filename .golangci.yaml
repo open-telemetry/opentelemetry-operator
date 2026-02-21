@@ -63,6 +63,7 @@ linters:
     - gosec
     - govet
     - ineffassign
+    - modernize
     - misspell
     - staticcheck
     - unparam
