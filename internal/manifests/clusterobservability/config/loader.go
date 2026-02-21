@@ -6,6 +6,7 @@ package config
 import (
 	"crypto/sha256"
 	"embed"
+	"errors"
 	"fmt"
 
 	"dario.cat/mergo"
@@ -346,15 +347,15 @@ func (c *ConfigLoader) DetectDistroProvider(cfg config.Config) DistroProvider {
 // ValidateConfig validates that a configuration is valid.
 func (c *ConfigLoader) ValidateConfig(config v1beta1.Config) error {
 	if len(config.Receivers.Object) == 0 {
-		return fmt.Errorf("no receivers configured")
+		return errors.New("no receivers configured")
 	}
 
 	if len(config.Exporters.Object) == 0 {
-		return fmt.Errorf("no exporters configured")
+		return errors.New("no exporters configured")
 	}
 
 	if len(config.Service.Pipelines) == 0 {
-		return fmt.Errorf("no pipelines configured")
+		return errors.New("no pipelines configured")
 	}
 
 	// Validate that pipeline components exist

@@ -4,7 +4,7 @@
 package components
 
 import (
-	"fmt"
+	"errors"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -136,7 +136,7 @@ func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigTyp
 	o := NewEmptySettings[ComponentConfigType]()
 	o.Apply(b...)
 	if len(o.name) == 0 {
-		return nil, fmt.Errorf("invalid settings struct, no name specified")
+		return nil, errors.New("invalid settings struct, no name specified")
 	}
 	return &GenericParser[ComponentConfigType]{
 		name:            o.name,

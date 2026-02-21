@@ -377,7 +377,7 @@ func Load(args []string) (*Config, error) {
 // ValidateConfig validates the cli and file configs together.
 func ValidateConfig(config *Config) error {
 	scrapeConfigsPresent := (config.PromConfig != nil && len(config.PromConfig.ScrapeConfigs) > 0)
-	if !(config.PrometheusCR.Enabled || scrapeConfigsPresent) {
+	if !config.PrometheusCR.Enabled && !scrapeConfigsPresent {
 		return fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
 	}
 	if config.CollectorNamespace == "" {

@@ -5,7 +5,7 @@ package rbac
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,11 +30,11 @@ func reactorFactory(status v1.SubjectAccessReviewStatus, mockErr error) fakeClie
 		c.PrependReactor(createVerb, sarResource, func(action kubeTesting.Action) (handled bool, ret runtime.Object, err error) {
 			// check our expectation here
 			if !action.Matches(createVerb, sarResource) {
-				return false, nil, fmt.Errorf("must be a create for a SAR")
+				return false, nil, errors.New("must be a create for a SAR")
 			}
 			sar, ok := action.(kubeTesting.CreateAction).GetObject().DeepCopyObject().(*v1.SubjectAccessReview)
 			if !ok || sar == nil {
-				return false, nil, fmt.Errorf("bad object")
+				return false, nil, errors.New("bad object")
 			}
 			sar.Status = status
 			return true, sar, mockErr
@@ -92,7 +92,7 @@ func TestReviewer_CanAccess(t *testing.T) {
 		},
 		{
 			name:            "handles error",
-			clientGenerator: reactorFactory(v1.SubjectAccessReviewStatus{}, fmt.Errorf("failed to create SAR")),
+			clientGenerator: reactorFactory(v1.SubjectAccessReviewStatus{}, errors.New("failed to create SAR")),
 			args: args{
 				serviceAccount:          "test",
 				serviceAccountNamespace: "default",
@@ -187,7 +187,7 @@ func TestReviewer_CheckPolicyRules(t *testing.T) {
 		},
 		{
 			name:            "handles error",
-			clientGenerator: reactorFactory(v1.SubjectAccessReviewStatus{}, fmt.Errorf("failed to create SAR")),
+			clientGenerator: reactorFactory(v1.SubjectAccessReviewStatus{}, errors.New("failed to create SAR")),
 			args: args{
 				serviceAccount:          "test",
 				serviceAccountNamespace: "default",
