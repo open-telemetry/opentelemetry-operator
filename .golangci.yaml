@@ -42,7 +42,6 @@ linters:
     staticcheck:
       checks:
         - all
-        - -QF1001 # FIXME Apply De Morgan’s law
         - -QF1003 # FIXME Convert if/else-if chain to tagged switch
         - -QF1004 # FIXME Use strings.ReplaceAll instead of strings.Replace with n == -1
         - -QF1008 # FIXME Omit embedded fields from selector expression
