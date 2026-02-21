@@ -1,0 +1,15 @@
+# This creates an Instrumentation resource for Java
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: java-instrumentation
+spec:
+  exporter:
+    endpoint: http://localhost:4317
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: always_on
+  java:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest

@@ -379,17 +379,25 @@ func main() {
 	}
 
 	if cfg.EnableWebhooks {
+		meterProvider, metricsErr := otelv1beta1.BootstrapMetrics()
+		if metricsErr != nil {
+			setupLog.Error(metricsErr, "Error bootstrapping metrics")
+		}
+
 		var crdMetrics *otelv1beta1.Metrics
-
-		if cfg.EnableCRMetrics {
-			meterProvider, metricsErr := otelv1beta1.BootstrapMetrics()
-			if metricsErr != nil {
-				setupLog.Error(metricsErr, "Error bootstrapping CRD metrics")
-			}
-
+		if cfg.EnableCRMetrics && meterProvider != nil {
 			crdMetrics, err = otelv1beta1.NewMetrics(meterProvider, ctx, mgr.GetAPIReader())
 			if err != nil {
 				setupLog.Error(err, "Error init CRD metrics")
+			}
+		}
+
+		var webhookMetrics podmutation.PodMutationMetricsRecorder = podmutation.NewNoopMetrics()
+		if cfg.EnableWebhookMetrics && meterProvider != nil {
+			webhookMetrics, err = podmutation.NewMetrics(meterProvider)
+			if err != nil {
+				setupLog.Error(err, "Error init pod mutation metrics")
+				webhookMetrics = podmutation.NewNoopMetrics()
 			}
 		}
 
@@ -436,9 +444,9 @@ func main() {
 		mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
 			Handler: podmutation.NewWebhookHandler(cfg, ctrl.Log.WithName("pod-webhook"), decoder, mgr.GetClient(),
 				[]podmutation.PodMutator{
-					sidecar.NewMutator(logger, cfg, mgr.GetClient()),
-					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("opentelemetry-operator"), cfg),
-				}),
+					sidecar.NewMutator(logger, cfg, mgr.GetClient(), webhookMetrics),
+					instrumentation.NewMutator(logger, mgr.GetClient(), mgr.GetEventRecorderFor("opentelemetry-operator"), cfg, webhookMetrics),
+				}, webhookMetrics),
 		})
 
 		if cfg.OpAmpBridgeAvailability == opampbridge.Available {
