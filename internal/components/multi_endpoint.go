@@ -4,6 +4,7 @@
 package components
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -129,7 +130,7 @@ func (mp MultiPortBuilder[ComponentConfigType]) AddPortMapping(builder Builder[C
 
 func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, error) {
 	if len(mp) < 1 {
-		return nil, fmt.Errorf("must provide at least one port mapping")
+		return nil, errors.New("must provide at least one port mapping")
 	}
 
 	mb := mp[0].MustBuild()

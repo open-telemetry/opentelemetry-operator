@@ -237,7 +237,7 @@ func (c *Cluster) GetOpenTelemetryCollectors() error {
 	}
 
 	if errorDetected {
-		return fmt.Errorf("something failed while getting the opentelemtrycollectors")
+		return errors.New("something failed while getting the opentelemtrycollectors")
 	}
 	return nil
 }
@@ -264,7 +264,7 @@ func (c *Cluster) GetTargetAllocators() error {
 	}
 
 	if errorDetected {
-		return fmt.Errorf("something failed while getting the targetallocators")
+		return errors.New("something failed while getting the targetallocators")
 	}
 	return nil
 }
@@ -294,7 +294,7 @@ func (c *Cluster) GetInstrumentations() error {
 	}
 
 	if errorDetected {
-		return fmt.Errorf("something failed while getting the opentelemtrycollectors")
+		return errors.New("something failed while getting the opentelemtrycollectors")
 	}
 	return nil
 }

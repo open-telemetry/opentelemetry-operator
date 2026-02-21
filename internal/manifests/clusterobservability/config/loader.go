@@ -263,7 +263,8 @@ func (c *ConfigLoader) buildPipelinesWithExporters(collectorType CollectorType) 
 	// We only use the otlphttp exporter for now
 	exporterName := "otlphttp"
 
-	if collectorType == AgentCollectorType {
+	switch collectorType {
+	case AgentCollectorType:
 		// Agent collector: metrics, logs, traces
 		pipelines["metrics"] = PipelineConfig{
 			Receivers:  []string{"otlp", "kubeletstats"},
@@ -280,7 +281,7 @@ func (c *ConfigLoader) buildPipelinesWithExporters(collectorType CollectorType) 
 			Processors: []string{"resourcedetection", "k8sattributes", "batch"},
 			Exporters:  []string{exporterName},
 		}
-	} else if collectorType == ClusterCollectorType {
+	case ClusterCollectorType:
 		// Cluster collector: metrics, logs (k8s events)
 		pipelines["metrics"] = PipelineConfig{
 			Receivers:  []string{"k8s_cluster"},

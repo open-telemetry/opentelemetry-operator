@@ -87,9 +87,10 @@ func TestHPA(t *testing.T) {
 				assert.Equal(t, 2, len(hpa.Spec.Metrics))
 
 				for _, metric := range hpa.Spec.Metrics {
-					if metric.Resource.Name == corev1.ResourceCPU {
+					switch metric.Resource.Name { //nolint:exhaustive
+					case corev1.ResourceCPU:
 						assert.Equal(t, cpuUtilization, *metric.Resource.Target.AverageUtilization)
-					} else if metric.Resource.Name == corev1.ResourceMemory {
+					case corev1.ResourceMemory:
 						assert.Equal(t, memoryUtilization, *metric.Resource.Target.AverageUtilization)
 					}
 				}
