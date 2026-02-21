@@ -378,13 +378,13 @@ func Load(args []string) (*Config, error) {
 func ValidateConfig(config *Config) error {
 	scrapeConfigsPresent := (config.PromConfig != nil && len(config.PromConfig.ScrapeConfigs) > 0)
 	if !(config.PrometheusCR.Enabled || scrapeConfigsPresent) {
-		return fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
+		return errors.New("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
 	}
 	if config.CollectorNamespace == "" {
-		return fmt.Errorf("collector namespace must be set")
+		return errors.New("collector namespace must be set")
 	}
 	if len(config.PrometheusCR.AllowNamespaces) != 0 && len(config.PrometheusCR.DenyNamespaces) != 0 {
-		return fmt.Errorf("only one of allowNamespaces or denyNamespaces can be set")
+		return errors.New("only one of allowNamespaces or denyNamespaces can be set")
 	}
 	return nil
 }
@@ -421,7 +421,7 @@ func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *certw
 		VerifyConnection: func(cs tls.ConnectionState) error {
 			// Require client certificate
 			if len(cs.PeerCertificates) == 0 {
-				return fmt.Errorf("no client certificate provided")
+				return errors.New("no client certificate provided")
 			}
 
 			// Verify using current CA pool (which can be reloaded)
