@@ -6,13 +6,16 @@ spec:
   try:
     - command:
         entrypoint: kubectl
+        env:
+          - name: COLLECTOR_LABEL_SELECTOR
+            value: ($collectorLabelSelector)
         args:
           - get
           - pod
           - -n
           - ${NAMESPACE}
           - -l
-          - ${collectorLabelSelector}
+          - ${COLLECTOR_LABEL_SELECTOR}
           - -o
           - jsonpath={.items[0].metadata.name}
         outputs:
