@@ -51,7 +51,6 @@ linters:
         - -ST1012 # FIXME Poorly chosen name for error variable
         - -ST1016 # FIXME Use consistent method receiver names
         - -ST1019 # FIXME Importing the same package multiple times
-        - -ST1023 # FIXME Redundant type in variable declaration
   enable:
     - depguard
     - errcheck
