@@ -65,6 +65,7 @@ linters:
     - ineffassign
     - modernize
     - misspell
+    - noctx
     - staticcheck
     - unparam
     - unused
