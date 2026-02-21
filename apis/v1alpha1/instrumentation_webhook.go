@@ -5,6 +5,7 @@ package v1alpha1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -316,7 +317,7 @@ func validateJaegerRemoteSamplerArgument(argument string) error {
 		switch kv[0] {
 		case "endpoint":
 			if kv[1] == "" {
-				return fmt.Errorf("endpoint cannot be empty")
+				return errors.New("endpoint cannot be empty")
 			}
 		case "pollingIntervalMs":
 			if _, err := strconv.Atoi(kv[1]); err != nil {
@@ -337,7 +338,7 @@ func validateJaegerRemoteSamplerArgument(argument string) error {
 
 func validateInstrVolume(volumeClaimTemplate corev1.PersistentVolumeClaimTemplate, volumeSizeLimit *resource.Quantity) error {
 	if !reflect.ValueOf(volumeClaimTemplate).IsZero() && volumeSizeLimit != nil {
-		return fmt.Errorf("unable to resolve volume size")
+		return errors.New("unable to resolve volume size")
 	}
 	return nil
 }

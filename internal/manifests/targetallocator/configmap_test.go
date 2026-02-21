@@ -4,7 +4,7 @@
 package targetallocator
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 	"time"
 
@@ -448,7 +448,7 @@ func TestGetScrapeConfigsFromOtelConfig(t *testing.T) {
 					},
 				},
 			},
-			wantErr: fmt.Errorf("no scrape_configs available as part of the configuration"),
+			wantErr: errors.New("no scrape_configs available as part of the configuration"),
 		},
 		{
 			name: "one scrape config",
@@ -657,7 +657,7 @@ func TestGetScrapeConfigs(t *testing.T) {
 					},
 				},
 			},
-			wantErr: fmt.Errorf("no scrape_configs available as part of the configuration"),
+			wantErr: errors.New("no scrape_configs available as part of the configuration"),
 		},
 	}
 

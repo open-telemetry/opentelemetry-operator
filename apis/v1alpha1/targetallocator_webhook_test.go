@@ -5,6 +5,7 @@ package v1alpha1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
@@ -350,11 +351,11 @@ func getReviewer(shouldFailSAR bool) *rbac.Reviewer {
 	c.PrependReactor("create", "subjectaccessreviews", func(action kubeTesting.Action) (handled bool, ret runtime.Object, err error) {
 		// check our expectation here
 		if !action.Matches("create", "subjectaccessreviews") {
-			return false, nil, fmt.Errorf("must be a create for a SAR")
+			return false, nil, errors.New("must be a create for a SAR")
 		}
 		sar, ok := action.(kubeTesting.CreateAction).GetObject().DeepCopyObject().(*authv1.SubjectAccessReview)
 		if !ok || sar == nil {
-			return false, nil, fmt.Errorf("bad object")
+			return false, nil, errors.New("bad object")
 		}
 		sar.Status = authv1.SubjectAccessReviewStatus{
 			Allowed: !shouldFailSAR,

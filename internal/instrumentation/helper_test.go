@@ -4,7 +4,7 @@
 package instrumentation
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -166,7 +166,7 @@ func TestDuplicatedContainers(t *testing.T) {
 		{
 			name:               "Duplicates in containers",
 			containers:         []string{"app1", "app2", "app1", "app1", "app3", "app4", "app4"},
-			expectedDuplicates: fmt.Errorf("duplicated container names detected: [app1 app4]"),
+			expectedDuplicates: errors.New("duplicated container names detected: [app1 app4]"),
 		},
 	}
 

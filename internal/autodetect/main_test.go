@@ -6,7 +6,7 @@ package autodetect_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -174,11 +174,11 @@ func reactorFactory(status v1.SubjectAccessReviewStatus) fakeClientGenerator {
 		c.PrependReactor(createVerb, sarResource, func(action kubeTesting.Action) (handled bool, ret runtime.Object, err error) {
 			// check our expectation here
 			if !action.Matches(createVerb, sarResource) {
-				return false, nil, fmt.Errorf("must be a create for a SAR")
+				return false, nil, errors.New("must be a create for a SAR")
 			}
 			sar, ok := action.(kubeTesting.CreateAction).GetObject().DeepCopyObject().(*v1.SubjectAccessReview)
 			if !ok || sar == nil {
-				return false, nil, fmt.Errorf("bad object")
+				return false, nil, errors.New("bad object")
 			}
 			sar.Status = status
 			return true, sar, nil

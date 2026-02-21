@@ -234,7 +234,7 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 
 // getEnvironmentVariablesForComponentKinds gets the environment variables for the given ComponentKind(s).
 func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]corev1.EnvVar, error) {
-	var envVars []corev1.EnvVar = []corev1.EnvVar{}
+	var envVars = []corev1.EnvVar{}
 	enabledComponents := c.GetEnabledComponents()
 	for _, componentKind := range componentKinds {
 		var retriever components.ParserRetriever

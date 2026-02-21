@@ -4,6 +4,7 @@
 package instrumentation
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -773,7 +774,7 @@ func TestInjectPythonSDK(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("provided instrumentation.opentelemetry.io/otel-python-platform annotation value 'not-supported' is not supported"),
+			err: errors.New("provided instrumentation.opentelemetry.io/otel-python-platform annotation value 'not-supported' is not supported"),
 		},
 	}
 

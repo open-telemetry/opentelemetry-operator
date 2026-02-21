@@ -68,7 +68,7 @@ func TestOperatorMetrics_Start(t *testing.T) {
 	defer cancelTimeout()
 
 	// Wait until one service monitor is being created
-	var serviceMonitor *monitoringv1.ServiceMonitor = &monitoringv1.ServiceMonitor{}
+	var serviceMonitor = &monitoringv1.ServiceMonitor{}
 	err = wait.PollUntilContextTimeout(
 		ctxTimeout,
 		time.Millisecond*100,
