@@ -4,6 +4,7 @@
 package instrumentation
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -332,7 +333,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("OTEL_DOTNET_AUTO_HOME environment variable is already set in the container"),
+			err: errors.New("OTEL_DOTNET_AUTO_HOME environment variable is already set in the container"),
 		},
 		{
 			name:   "OTEL_DOTNET_AUTO_HOME already set in the .NET instrumentation spec",
@@ -351,7 +352,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec"),
+			err: errors.New("OTEL_DOTNET_AUTO_HOME environment variable is already set in the .NET instrumentation spec"),
 		},
 		{
 			name:   "runtime linux-x64",
@@ -530,7 +531,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("provided instrumentation.opentelemetry.io/dotnet-runtime annotation value 'not-supported' is not supported"),
+			err: errors.New("provided instrumentation.opentelemetry.io/dotnet-runtime annotation value 'not-supported' is not supported"),
 		},
 	}
 

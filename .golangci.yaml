@@ -42,9 +42,7 @@ linters:
     staticcheck:
       checks:
         - all
-        - -QF1001 # FIXME Apply De Morgan’s law
         - -QF1003 # FIXME Convert if/else-if chain to tagged switch
-        - -QF1004 # FIXME Use strings.ReplaceAll instead of strings.Replace with n == -1
         - -QF1008 # FIXME Omit embedded fields from selector expression
         - -QF1011 # FIXME Omit redundant type from variable declaration
         - -ST1003 # FIXME Poorly chosen identifier
@@ -52,7 +50,6 @@ linters:
         - -ST1012 # FIXME Poorly chosen name for error variable
         - -ST1016 # FIXME Use consistent method receiver names
         - -ST1019 # FIXME Importing the same package multiple times
-        - -ST1023 # FIXME Redundant type in variable declaration
   enable:
     - depguard
     - errcheck
@@ -63,7 +60,9 @@ linters:
     - gosec
     - govet
     - ineffassign
+    - modernize
     - misspell
+    - noctx
     - staticcheck
     - unparam
     - unused
