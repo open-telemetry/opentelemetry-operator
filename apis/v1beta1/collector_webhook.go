@@ -5,6 +5,7 @@ package v1beta1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -263,7 +264,7 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	}
 
 	if r.Spec.Autoscaler != nil && r.Spec.Autoscaler.MinReplicas != nil && r.Spec.Autoscaler.MaxReplicas == nil {
-		return warnings, fmt.Errorf("spec.maxReplica must be set when spec.minReplica is set")
+		return warnings, errors.New("spec.maxReplica must be set when spec.minReplica is set")
 	}
 
 	// check deprecated .Spec.MinReplicas if minReplicas is not set
@@ -274,11 +275,11 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 	// validate autoscale with horizontal pod autoscaler
 	if maxReplicas != nil {
 		if r.Spec.Replicas != nil && *r.Spec.Replicas > *maxReplicas {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, replicas must not be greater than maxReplicas")
+			return warnings, errors.New("the OpenTelemetry Spec autoscale configuration is incorrect, replicas must not be greater than maxReplicas")
 		}
 
 		if minReplicas != nil && *minReplicas > *maxReplicas {
-			return warnings, fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas")
+			return warnings, errors.New("the OpenTelemetry Spec autoscale configuration is incorrect, minReplicas must not be greater than maxReplicas")
 		}
 
 		if r.Spec.Autoscaler != nil {
@@ -298,7 +299,7 @@ func (c CollectorWebhook) Validate(ctx context.Context, r *OpenTelemetryCollecto
 		)
 	}
 	if r.Spec.Ingress.RuleType == IngressRuleTypeSubdomain && (r.Spec.Ingress.Hostname == "" || r.Spec.Ingress.Hostname == "*") {
-		return warnings, fmt.Errorf("a valid Ingress hostname has to be defined for subdomain ruleType")
+		return warnings, errors.New("a valid Ingress hostname has to be defined for subdomain ruleType")
 	}
 
 	// validate updateStrategy for DaemonSet
@@ -383,31 +384,31 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 	if autoscaler.Behavior != nil {
 		if autoscaler.Behavior.ScaleDown != nil && autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds != nil &&
 			(*autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds < int32(0) || *autoscaler.Behavior.ScaleDown.StabilizationWindowSeconds > 3600) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleDown.stabilizationWindowSeconds should be >=0 and <=3600")
+			return errors.New("the OpenTelemetry Spec autoscale configuration is incorrect, scaleDown.stabilizationWindowSeconds should be >=0 and <=3600")
 		}
 
 		if autoscaler.Behavior.ScaleUp != nil && autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds != nil &&
 			(*autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds < int32(0) || *autoscaler.Behavior.ScaleUp.StabilizationWindowSeconds > 3600) {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp.stabilizationWindowSeconds should be >=0 and <=3600")
+			return errors.New("the OpenTelemetry Spec autoscale configuration is incorrect, scaleUp.stabilizationWindowSeconds should be >=0 and <=3600")
 		}
 	}
 
 	for _, metric := range autoscaler.Metrics {
 		if metric.Type != autoscalingv2.PodsMetricSourceType {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod")
+			return errors.New("the OpenTelemetry Spec autoscale configuration is incorrect, metric type unsupported. Expected metric of source type Pod")
 		}
 
 		// pod metrics target only support value and averageValue.
 		if metric.Pods.Target.Type == autoscalingv2.AverageValueMetricType {
 			if val, ok := metric.Pods.Target.AverageValue.AsInt64(); !ok || val < int64(1) {
-				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0")
+				return errors.New("the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0")
 			}
 		} else if metric.Pods.Target.Type == autoscalingv2.ValueMetricType {
 			if val, ok := metric.Pods.Target.Value.AsInt64(); !ok || val < int64(1) {
-				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, value should be greater than 0")
+				return errors.New("the OpenTelemetry Spec autoscale configuration is incorrect, value should be greater than 0")
 			}
 		} else {
-			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type")
+			return errors.New("the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type")
 		}
 	}
 
