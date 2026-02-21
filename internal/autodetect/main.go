@@ -89,9 +89,10 @@ func (a *autoDetect) PrometheusCRsAvailability() (prometheus.Availability, error
 				}
 
 				for _, resource := range resources.APIResources {
-					if resource.Kind == "ServiceMonitor" {
+					switch resource.Kind {
+					case "ServiceMonitor":
 						foundServiceMonitor = true
-					} else if resource.Kind == "PodMonitor" {
+					case "PodMonitor":
 						foundPodMonitor = true
 					}
 				}

@@ -398,15 +398,16 @@ func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
 		}
 
 		// pod metrics target only support value and averageValue.
-		if metric.Pods.Target.Type == autoscalingv2.AverageValueMetricType {
+		switch metric.Pods.Target.Type {
+		case autoscalingv2.AverageValueMetricType:
 			if val, ok := metric.Pods.Target.AverageValue.AsInt64(); !ok || val < int64(1) {
 				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, average value should be greater than 0")
 			}
-		} else if metric.Pods.Target.Type == autoscalingv2.ValueMetricType {
+		case autoscalingv2.ValueMetricType:
 			if val, ok := metric.Pods.Target.Value.AsInt64(); !ok || val < int64(1) {
 				return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, value should be greater than 0")
 			}
-		} else {
+		default:
 			return fmt.Errorf("the OpenTelemetry Spec autoscale configuration is incorrect, invalid pods target type")
 		}
 	}
