@@ -11,13 +11,13 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	go_yaml "github.com/goccy/go-yaml"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/yaml"
 )
 
 func TestConfigFiles(t *testing.T) {
@@ -34,7 +34,7 @@ func TestConfigFiles(t *testing.T) {
 			collectorYaml, err := os.ReadFile(testFile)
 			require.NoError(t, err)
 
-			collectorJson, err := go_yaml.YAMLToJSON(collectorYaml)
+			collectorJson, err := yaml.YAMLToJSON(collectorYaml)
 			require.NoError(t, err)
 
 			cfg := &Config{}
@@ -44,7 +44,7 @@ func TestConfigFiles(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.JSONEq(t, string(collectorJson), string(jsonCfg))
-			yamlCfg, err := go_yaml.JSONToYAML(jsonCfg)
+			yamlCfg, err := yaml.JSONToYAML(jsonCfg)
 			require.NoError(t, err)
 			assert.YAMLEq(t, string(collectorYaml), string(yamlCfg))
 		})
@@ -55,7 +55,7 @@ func TestNullObjects(t *testing.T) {
 	collectorYaml, err := os.ReadFile("./testdata/otelcol-null-values.yaml")
 	require.NoError(t, err)
 
-	collectorJson, err := go_yaml.YAMLToJSON(collectorYaml)
+	collectorJson, err := yaml.YAMLToJSON(collectorYaml)
 	require.NoError(t, err)
 
 	cfg := &Config{}
@@ -70,7 +70,7 @@ func TestNullObjects_issue_3445(t *testing.T) {
 	collectorYaml, err := os.ReadFile("./testdata/issue-3452.yaml")
 	require.NoError(t, err)
 
-	collectorJson, err := go_yaml.YAMLToJSON(collectorYaml)
+	collectorJson, err := yaml.YAMLToJSON(collectorYaml)
 	require.NoError(t, err)
 
 	cfg := &Config{}
@@ -97,9 +97,9 @@ func TestConfigFiles_go_yaml(t *testing.T) {
 			require.NoError(t, err)
 
 			cfg := &Config{}
-			err = go_yaml.Unmarshal(collectorYaml, cfg)
+			err = yaml.Unmarshal(collectorYaml, cfg)
 			require.NoError(t, err)
-			yamlCfg, err := go_yaml.Marshal(cfg)
+			yamlCfg, err := yaml.Marshal(cfg)
 			require.NoError(t, err)
 
 			require.NoError(t, err)
@@ -113,7 +113,7 @@ func TestNullObjects_go_yaml(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := &Config{}
-	err = go_yaml.Unmarshal(collectorYaml, cfg)
+	err = yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
 
 	nullObjects := cfg.nullObjects()
@@ -200,7 +200,7 @@ func TestGetTelemetryFromYAML(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := &Config{}
-	err = go_yaml.Unmarshal(collectorYaml, cfg)
+	err = yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
 	telemetry := &Telemetry{
 		Metrics: MetricsConfig{
@@ -217,7 +217,7 @@ func TestGetTelemetryFromYAMLIsNil(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := &Config{}
-	err = go_yaml.Unmarshal(collectorYaml, cfg)
+	err = yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
 	logger := logr.Discard()
 	assert.Nil(t, cfg.Service.GetTelemetry(logger))
@@ -664,7 +664,7 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 			require.NoError(t, err)
 
 			c := &Config{}
-			err = go_yaml.Unmarshal(collectorYaml, c)
+			err = yaml.Unmarshal(collectorYaml, c)
 			require.NoError(t, err)
 			assert.Equalf(t, tt.want, c.GetEnabledComponents(), "GetEnabledComponents()")
 		})
@@ -806,7 +806,7 @@ func TestConfig_GetReceiverPorts(t *testing.T) {
 			require.NoError(t, err)
 
 			c := &Config{}
-			err = go_yaml.Unmarshal(collectorYaml, c)
+			err = yaml.Unmarshal(collectorYaml, c)
 			require.NoError(t, err)
 			ports, err := c.GetReceiverPorts(logr.Discard())
 			if tt.wantErr {
@@ -875,7 +875,7 @@ func TestConfig_GetExporterPorts(t *testing.T) {
 			require.NoError(t, err)
 
 			c := &Config{}
-			err = go_yaml.Unmarshal(collectorYaml, c)
+			err = yaml.Unmarshal(collectorYaml, c)
 			require.NoError(t, err)
 			ports, err := c.GetExporterPorts(logr.Discard())
 			if tt.wantErr {

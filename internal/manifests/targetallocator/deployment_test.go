@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	go_yaml "github.com/goccy/go-yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -178,7 +178,7 @@ func collectorInstance() *v1beta1.OpenTelemetryCollector {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
 	cfg := v1beta1.Config{}
-	err = go_yaml.Unmarshal(configYAML, &cfg)
+	err = yaml.Unmarshal(configYAML, &cfg)
 	if err != nil {
 		fmt.Printf("Error unmarshalling YAML: %v", err)
 	}

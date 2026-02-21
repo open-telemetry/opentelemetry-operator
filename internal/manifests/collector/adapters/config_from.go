@@ -7,7 +7,7 @@ package adapters
 import (
 	"errors"
 
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 var (

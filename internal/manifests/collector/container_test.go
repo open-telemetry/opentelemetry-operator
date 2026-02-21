@@ -6,12 +6,12 @@ package collector
 import (
 	"testing"
 
-	go_yaml "github.com/goccy/go-yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	colfg "go.opentelemetry.io/collector/featuregate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
@@ -875,7 +875,7 @@ func TestContainerLifecycle(t *testing.T) {
 
 func mustUnmarshalToConfig(t *testing.T, config string) v1beta1.Config {
 	cfg := v1beta1.Config{}
-	if err := go_yaml.Unmarshal([]byte(config), &cfg); err != nil {
+	if err := yaml.Unmarshal([]byte(config), &cfg); err != nil {
 		t.Fatal(err)
 	}
 	return cfg

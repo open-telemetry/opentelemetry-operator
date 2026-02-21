@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	go_yaml "github.com/goccy/go-yaml"
 	"github.com/prometheus/common/model"
 	promconfig "github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
@@ -24,6 +23,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap/zapcore"
+	"sigs.k8s.io/yaml"
 
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
@@ -279,17 +279,19 @@ func (m *Discoverer) Close() {
 // This is done by marshaling to YAML because it's the most straightforward and doesn't run into problems with unexported fields.
 func getScrapeConfigHash(jobToScrapeConfig map[string]*promconfig.ScrapeConfig) (hash.Hash64, error) {
 	hash := fnv.New64()
-	yamlEncoder := go_yaml.NewEncoder(hash)
 	for jobName, scrapeConfig := range jobToScrapeConfig {
 		_, err := hash.Write([]byte(jobName))
 		if err != nil {
 			return nil, err
 		}
-		err = yamlEncoder.Encode(scrapeConfig)
+		data, err := yaml.Marshal(scrapeConfig)
+		if err != nil {
+			return nil, err
+		}
+		_, err = hash.Write(data)
 		if err != nil {
 			return nil, err
 		}
 	}
-	yamlEncoder.Close()
 	return hash, nil
 }

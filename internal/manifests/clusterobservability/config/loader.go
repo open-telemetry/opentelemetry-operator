@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"dario.cat/mergo"
-	"github.com/goccy/go-yaml"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"

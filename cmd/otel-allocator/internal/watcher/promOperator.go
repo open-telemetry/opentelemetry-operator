@@ -24,7 +24,6 @@ import (
 	prometheusgoclient "github.com/prometheus/client_golang/prometheus"
 	promconfig "github.com/prometheus/prometheus/config"
 	kubeDiscovery "github.com/prometheus/prometheus/discovery/kubernetes"
-	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -33,6 +32,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/yaml"
 
 	allocatorconfig "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 )

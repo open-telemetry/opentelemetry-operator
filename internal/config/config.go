@@ -7,7 +7,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/goccy/go-yaml"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"

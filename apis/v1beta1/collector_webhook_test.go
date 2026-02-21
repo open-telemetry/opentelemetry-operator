@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	go_yaml "github.com/goccy/go-yaml"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,6 +27,7 @@ import (
 	kubeTesting "k8s.io/client-go/testing"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
@@ -145,7 +145,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Config: func() v1beta1.Config {
 						const input = `{"receivers":{"otlp":{"protocols":{"grpc":null,"http":null}}},"exporters":{"debug":null},"service":{"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
-						require.NoError(t, go_yaml.Unmarshal([]byte(input), &cfg))
+						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
 						return cfg
 					}(),
 				},
@@ -164,7 +164,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Config: func() v1beta1.Config {
 						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317"},"http":{"endpoint":"0.0.0.0:4318"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"0.0.0.0","port":8888}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
-						require.NoError(t, go_yaml.Unmarshal([]byte(input), &cfg))
+						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
 						// This is a workaround to avoid the type mismatch because how go-yaml unmarshals
 						cfg.Service.Telemetry.Object["metrics"].(map[string]any)["readers"].([]any)[0].(map[string]any)["pull"].(map[string]any)["exporter"].(map[string]any)["prometheus"].(map[string]any)["port"] = int32(8888)
 						return cfg
@@ -179,7 +179,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Config: func() v1beta1.Config {
 						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"localhost","port":9999}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
-						require.NoError(t, go_yaml.Unmarshal([]byte(input), &cfg))
+						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
 						return cfg
 					}(),
 				},
@@ -198,7 +198,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 					Config: func() v1beta1.Config {
 						const input = `{"receivers":{"otlp":{"protocols":{"grpc":{"endpoint":"0.0.0.0:4317","headers":{"example":"another"}},"http":{"endpoint":"0.0.0.0:4000"}}}},"exporters":{"debug":null},"service":{"telemetry":{"metrics":{"readers":[{"pull":{"exporter":{"prometheus":{"host":"localhost","port":9999}}}}]}},"pipelines":{"traces":{"receivers":["otlp"],"exporters":["debug"]}}}}`
 						var cfg v1beta1.Config
-						require.NoError(t, go_yaml.Unmarshal([]byte(input), &cfg))
+						require.NoError(t, yaml.Unmarshal([]byte(input), &cfg))
 						return cfg
 					}(),
 				},
@@ -608,7 +608,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 			},
 		},
 	}
-	err := go_yaml.Unmarshal([]byte(cfgYaml), &cfg)
+	err := yaml.Unmarshal([]byte(cfgYaml), &cfg)
 	require.NoError(t, err)
 
 	tests := []struct { //nolint:govet

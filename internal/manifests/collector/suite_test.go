@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"os"
 
-	go_yaml "github.com/goccy/go-yaml"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/tools/record"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
@@ -43,7 +43,7 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 		fmt.Printf("Error getting yaml file: %v", err)
 	}
 	cfg := v1beta1.Config{}
-	err = go_yaml.Unmarshal(configYAML, &cfg)
+	err = yaml.Unmarshal(configYAML, &cfg)
 	if err != nil {
 		fmt.Printf("Error unmarshalling YAML: %v", err)
 	}
@@ -108,7 +108,7 @@ func newParams(taContainerImage string, file string, cfg *config.Config) (manife
 	}
 
 	colCfg := v1beta1.Config{}
-	err = go_yaml.Unmarshal(configYAML, &colCfg)
+	err = yaml.Unmarshal(configYAML, &colCfg)
 	if err != nil {
 		return manifests.Params{}, fmt.Errorf("failed to unmarshal config: %w", err)
 	}

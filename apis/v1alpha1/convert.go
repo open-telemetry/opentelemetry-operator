@@ -6,11 +6,11 @@ package v1alpha1
 import (
 	"fmt"
 
-	go_yaml "github.com/goccy/go-yaml"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
@@ -51,7 +51,7 @@ func (dst *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
 func tov1beta1(in OpenTelemetryCollector) v1beta1.OpenTelemetryCollector {
 	copy := in.DeepCopy()
 	cfg := &v1beta1.Config{}
-	if err := go_yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
+	if err := yaml.Unmarshal([]byte(copy.Spec.Config), cfg); err != nil {
 		// It is critical that the conversion does not fail!
 		// See https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#response
 		// Thus, if unmarshalling fails, we return a valid, empty config.

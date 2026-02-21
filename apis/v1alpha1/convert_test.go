@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	go_yaml "github.com/goccy/go-yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -17,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
@@ -55,7 +55,7 @@ func Test_tov1beta1_config(t *testing.T) {
 		assert.NotNil(t, cfgV2)
 		assert.Equal(t, cfgV1.Spec.Args, cfgV2.Spec.Args)
 
-		yamlCfg, err := go_yaml.Marshal(&cfgV2.Spec.Config)
+		yamlCfg, err := yaml.Marshal(&cfgV2.Spec.Config)
 		assert.Nil(t, err)
 		assert.YAMLEq(t, collectorCfg, string(yamlCfg))
 	})
@@ -114,7 +114,7 @@ func Test_tov1beta1_config(t *testing.T) {
 
 func Test_tov1alpha1_config(t *testing.T) {
 	cfg := v1beta1.Config{}
-	err := go_yaml.Unmarshal([]byte(collectorCfg), &cfg)
+	err := yaml.Unmarshal([]byte(collectorCfg), &cfg)
 	require.NoError(t, err)
 
 	beta1Col := v1beta1.OpenTelemetryCollector{

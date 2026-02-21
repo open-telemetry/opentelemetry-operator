@@ -9,7 +9,6 @@ import (
 	cmv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
-	go_yaml "github.com/goccy/go-yaml"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/require"
 	colfeaturegate "go.opentelemetry.io/collector/featuregate"
@@ -22,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -78,7 +78,7 @@ service:
 `
 
 	goodConfig := v1beta1.Config{}
-	err := go_yaml.Unmarshal([]byte(goodConfigYaml), &goodConfig)
+	err := yaml.Unmarshal([]byte(goodConfigYaml), &goodConfig)
 	require.NoError(t, err)
 
 	goodConfigHash, _ := manifestutils.GetConfigMapSHA(goodConfig)
@@ -1320,7 +1320,7 @@ service:
 `
 
 	goodConfig := v1beta1.Config{}
-	err := go_yaml.Unmarshal([]byte(goodConfigYaml), &goodConfig)
+	err := yaml.Unmarshal([]byte(goodConfigYaml), &goodConfig)
 	require.NoError(t, err)
 
 	goodConfigHash, _ := manifestutils.GetConfigMapSHA(goodConfig)
