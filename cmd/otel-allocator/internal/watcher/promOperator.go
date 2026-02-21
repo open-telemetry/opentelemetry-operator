@@ -5,6 +5,7 @@ package watcher
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -400,7 +401,7 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 		})
 	}
 	if !success {
-		return fmt.Errorf("failed to sync one of the caches")
+		return errors.New("failed to sync one of the caches")
 	}
 
 	// limit the rate of outgoing events

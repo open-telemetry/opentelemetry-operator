@@ -5,6 +5,7 @@ package metrics
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -45,7 +46,7 @@ type MetricReporter struct {
 func NewMetricReporter(logger logr.Logger, dest *protobufs.TelemetryConnectionSettings, agentType string, agentVersion string, instanceId uuid.UUID) (*MetricReporter, error) {
 
 	if dest.DestinationEndpoint == "" {
-		return nil, fmt.Errorf("metric destination must specify DestinationEndpoint")
+		return nil, errors.New("metric destination must specify DestinationEndpoint")
 	}
 
 	u, err := url.Parse(dest.DestinationEndpoint)
