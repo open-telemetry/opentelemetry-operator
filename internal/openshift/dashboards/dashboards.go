@@ -10,7 +10,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -40,7 +39,7 @@ func NewDashboardManagement(clientset kubernetes.Interface) manager.Runnable {
 
 func (d dashboardManagement) Start(ctx context.Context) error {
 	cm := corev1.ConfigMap{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      configMapName,
 			Namespace: openshiftDashboardsNamespace,
 			Labels: map[string]string{

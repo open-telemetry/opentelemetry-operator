@@ -33,6 +33,10 @@ linters:
             - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Warnf
             - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Errorf
             - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Fatalf
+    importas:
+      alias:
+        - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
+          alias: metav1
     misspell:
       locale: US
       ignore-rules:
@@ -51,7 +55,6 @@ linters:
         - -ST1005 # FIXME Incorrectly formatted error string
         - -ST1012 # FIXME Poorly chosen name for error variable
         - -ST1016 # FIXME Use consistent method receiver names
-        - -ST1019 # FIXME Importing the same package multiple times
         - -ST1023 # FIXME Redundant type in variable declaration
   enable:
     - depguard
@@ -62,6 +65,7 @@ linters:
     - goheader
     - gosec
     - govet
+    - importas
     - ineffassign
     - misspell
     - staticcheck
