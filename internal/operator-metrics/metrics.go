@@ -5,6 +5,7 @@ package operatormetrics
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -97,7 +98,7 @@ func (om operatorMetrics) getOwnerReferences(ctx context.Context, namespace stri
 	}
 
 	if len(deploymentList.Items) == 0 {
-		return metav1.OwnerReference{}, fmt.Errorf("no deployments found with the specified label")
+		return metav1.OwnerReference{}, errors.New("no deployments found with the specified label")
 	}
 	deployment := &deploymentList.Items[0]
 
