@@ -39,6 +39,8 @@ linters:
       locale: US
       ignore-rules:
         - cancelled
+    nolintlint:
+      require-specific: true
     revive:
       confidence: 0.8
     staticcheck:
@@ -64,6 +66,7 @@ linters:
     - modernize
     - misspell
     - noctx
+    - nolintlint
     - staticcheck
     - unparam
     - unused

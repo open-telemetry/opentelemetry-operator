@@ -22,7 +22,7 @@ import (
 )
 
 func BenchmarkServerTargetsHandler(b *testing.B) {
-	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
 	var table = []struct {
 		numCollectors int
 		numJobs       int
@@ -50,8 +50,8 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", allocatorName, v.numCollectors, v.numJobs), func(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
-					randomJob := random.Intn(v.numJobs)       //nolint: gosec
-					randomCol := random.Intn(v.numCollectors) //nolint: gosec
+					randomJob := random.Intn(v.numJobs)
+					randomCol := random.Intn(v.numCollectors)
 					request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/test-job-%d/targets?collector_id=collector-%d", randomJob, randomCol), nil)
 					w := httptest.NewRecorder()
 					s.server.Handler.ServeHTTP(w, request)
@@ -62,7 +62,7 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 }
 
 func BenchmarkScrapeConfigsHandler(b *testing.B) {
-	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
 	s := &Server{
 		logger: logger,
 	}
@@ -86,7 +86,7 @@ func BenchmarkScrapeConfigsHandler(b *testing.B) {
 }
 
 func BenchmarkCollectorMapJSONHandler(b *testing.B) {
-	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
 	s := &Server{
 		logger: logger,
 	}
@@ -141,7 +141,7 @@ func BenchmarkCollectorMapJSONHandler(b *testing.B) {
 }
 
 func BenchmarkTargetItemsJSONHandler(b *testing.B) {
-	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
 	s := &Server{
 		logger: logger,
 	}
@@ -204,7 +204,7 @@ var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_/")
 func randSeq(random rand.Rand, n int) string {
 	b := make([]rune, n)
 	for i := range b {
-		b[i] = letters[random.Intn(len(letters))] //nolint:gosec
+		b[i] = letters[random.Intn(len(letters))]
 	}
 	return string(b)
 }

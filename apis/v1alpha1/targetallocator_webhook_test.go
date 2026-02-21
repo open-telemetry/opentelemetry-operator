@@ -174,7 +174,7 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 	three := int32(3)
 
-	tests := []struct { //nolint:govet
+	tests := []struct {
 		name             string
 		targetallocator  TargetAllocator
 		expectedErr      string
