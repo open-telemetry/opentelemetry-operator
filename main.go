@@ -515,7 +515,7 @@ func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interfa
 
 	// Check if API server info was discovered
 	if cfg.Internal.KubeAPIServerPort == 0 || len(cfg.Internal.KubeAPIServerIPs) == 0 {
-		return errors.New("Kubernetes API server info not discovered from EndpointSlice")
+		return errors.New("Kubernetes API server info not discovered from EndpointSlice") //nolint:staticcheck // ST1005
 	}
 
 	var policyOpts []operatornetworkpolicy.Option

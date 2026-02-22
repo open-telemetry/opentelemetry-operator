@@ -55,9 +55,7 @@ linters:
         - -QF1008 # FIXME Omit embedded fields from selector expression
         - -QF1011 # FIXME Omit redundant type from variable declaration
         - -ST1003 # FIXME Poorly chosen identifier
-        - -ST1005 # FIXME Incorrectly formatted error string
         - -ST1012 # FIXME Poorly chosen name for error variable
-        - -ST1016 # FIXME Use consistent method receiver names
   enable:
     - depguard
     - errcheck
