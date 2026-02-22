@@ -145,14 +145,14 @@ func prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob int) map[str
 		"__meta_kubernetes_pod_label_app":                                                                    "example",
 	}
 	targets := []model.LabelSet{}
-	for i := 0; i < numTargets; i++ {
+	for i := range numTargets {
 		newTarget := exampleTarget.Clone()
 		// ensure each target has a unique label to avoid deduplication
 		newTarget["target_id"] = model.LabelValue(strconv.Itoa(i))
 		targets = append(targets, newTarget)
 	}
 	groups := make([]*targetgroup.Group, numGroups)
-	for i := 0; i < numGroups; i++ {
+	for i := range numGroups {
 		groupTargets := targets[(i * targetsPerGroup):(i*targetsPerGroup + targetsPerGroup)]
 		groups[i] = &targetgroup.Group{
 			Labels:  groupLabels,
@@ -160,7 +160,7 @@ func prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob int) map[str
 		}
 	}
 	tsets := make(map[string][]*targetgroup.Group, numJobs)
-	for i := 0; i < numJobs; i++ {
+	for i := range numJobs {
 		jobGroups := groups[(i * groupsPerJob):(i*groupsPerJob + groupsPerJob)]
 		jobName := fmt.Sprintf("%s%d", jobNamePrefix, i)
 		tsets[jobName] = jobGroups

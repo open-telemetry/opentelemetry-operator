@@ -21,7 +21,7 @@ func TestParserForReturns(t *testing.T) {
 	parser := processors.ProcessorFor(testComponentName)
 	assert.Equal(t, "test", parser.ParserType())
 	assert.Equal(t, "__test", parser.ParserName())
-	ports, err := parser.Ports(logr.Discard(), testComponentName, map[string]interface{}{
+	ports, err := parser.Ports(logr.Discard(), testComponentName, map[string]any{
 		"endpoint": "localhost:9000",
 	})
 	assert.NoError(t, err)
@@ -35,7 +35,7 @@ func TestCanRegister(t *testing.T) {
 	parser := processors.ProcessorFor(testComponentName)
 	assert.Equal(t, "test", parser.ParserType())
 	assert.Equal(t, "__test", parser.ParserName())
-	ports, err := parser.Ports(logr.Discard(), testComponentName, map[string]interface{}{})
+	ports, err := parser.Ports(logr.Discard(), testComponentName, map[string]any{})
 	assert.NoError(t, err)
 	assert.Len(t, ports, 1)
 	assert.Equal(t, ports[0].Port, int32(9000))

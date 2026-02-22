@@ -9,7 +9,7 @@ import (
 
 type FIPSCheck interface {
 	// DisabledComponents checks if a submitted components are denied or not.
-	DisabledComponents(receivers map[string]interface{}, exporters map[string]interface{}, processors map[string]interface{}, extensions map[string]interface{}) []string
+	DisabledComponents(receivers map[string]any, exporters map[string]any, processors map[string]any, extensions map[string]any) []string
 }
 
 // FipsCheck holds configuration for FIPS deny list.
@@ -38,7 +38,7 @@ func listToMap(list []string) map[string]bool {
 	return m
 }
 
-func (fips fipsCheck) DisabledComponents(receivers map[string]interface{}, exporters map[string]interface{}, processors map[string]interface{}, extensions map[string]interface{}) []string {
+func (fips fipsCheck) DisabledComponents(receivers map[string]any, exporters map[string]any, processors map[string]any, extensions map[string]any) []string {
 	var disabled []string
 	if comp := isDisabled(fips.receivers, receivers); comp != "" {
 		disabled = append(disabled, comp)
@@ -55,7 +55,7 @@ func (fips fipsCheck) DisabledComponents(receivers map[string]interface{}, expor
 	return disabled
 }
 
-func isDisabled(denyList map[string]bool, cfg map[string]interface{}) string {
+func isDisabled(denyList map[string]bool, cfg map[string]any) string {
 	for id := range cfg {
 		component := strings.Split(id, "/")[0]
 		if denyList[component] {

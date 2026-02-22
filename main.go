@@ -139,7 +139,7 @@ func main() {
 	if found {
 		setupLog.Info("watching namespace(s)", "namespaces", watchNamespace)
 		namespaces = map[string]cache.Config{}
-		for _, ns := range strings.Split(watchNamespace, ",") {
+		for ns := range strings.SplitSeq(watchNamespace, ",") {
 			namespaces[ns] = cache.Config{}
 		}
 	} else {
@@ -478,7 +478,7 @@ func discoverKubeAPIServer(ctx context.Context, clientset kubernetes.Interface, 
 	}
 
 	if len(endpointSlices.Items) == 0 {
-		return fmt.Errorf("no EndpointSlice found for kubernetes service in default namespace")
+		return errors.New("no EndpointSlice found for kubernetes service in default namespace")
 	}
 
 	for _, endpointSlice := range endpointSlices.Items {
@@ -496,11 +496,11 @@ func discoverKubeAPIServer(ctx context.Context, clientset kubernetes.Interface, 
 	}
 
 	if cfg.Internal.KubeAPIServerPort == 0 {
-		return fmt.Errorf("no https port found in kubernetes EndpointSlice")
+		return errors.New("no https port found in kubernetes EndpointSlice")
 	}
 
 	if len(cfg.Internal.KubeAPIServerIPs) == 0 {
-		return fmt.Errorf("no endpoint IPs found in kubernetes EndpointSlice")
+		return errors.New("no endpoint IPs found in kubernetes EndpointSlice")
 	}
 
 	setupLog.Info("Discovered Kubernetes API server", "port", cfg.Internal.KubeAPIServerPort, "ips", cfg.Internal.KubeAPIServerIPs)
@@ -510,12 +510,12 @@ func discoverKubeAPIServer(ctx context.Context, clientset kubernetes.Interface, 
 func enableOperatorNetworkPolicy(cfg config.Config, clientset kubernetes.Interface, mgr ctrl.Manager) error {
 	operatorNamespace := os.Getenv("NAMESPACE")
 	if operatorNamespace == "" {
-		return fmt.Errorf("NAMESPACE environment variable is not set, it is rquired for the Operator Network Policy to work")
+		return errors.New("NAMESPACE environment variable is not set, it is rquired for the Operator Network Policy to work")
 	}
 
 	// Check if API server info was discovered
 	if cfg.Internal.KubeAPIServerPort == 0 || len(cfg.Internal.KubeAPIServerIPs) == 0 {
-		return fmt.Errorf("Kubernetes API server info not discovered from EndpointSlice")
+		return errors.New("Kubernetes API server info not discovered from EndpointSlice")
 	}
 
 	var policyOpts []operatornetworkpolicy.Option

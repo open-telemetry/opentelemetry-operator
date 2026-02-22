@@ -16,6 +16,10 @@ linters:
               desc: Use go.uber.org/atomic instead of sync/atomic
             - pkg: github.com/pkg/errors
               desc: Use 'errors' or 'fmt' instead of github.com/pkg/errors
+            - pkg: go.uber.org/multierr
+              desc: Use 'errors.Join' instead of go.uber.org/multierr
+    exhaustive:
+      default-signifies-exhaustive: true
     goheader:
       template: |-
         Copyright The OpenTelemetry Authors
@@ -33,26 +37,27 @@ linters:
             - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Warnf
             - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Errorf
             - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Fatalf
+    importas:
+      alias:
+        - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
+          alias: metav1
     misspell:
       locale: US
       ignore-rules:
         - cancelled
+    nolintlint:
+      require-specific: true
     revive:
       confidence: 0.8
     staticcheck:
       checks:
         - all
-        - -QF1001 # FIXME Apply De Morgan’s law
-        - -QF1003 # FIXME Convert if/else-if chain to tagged switch
-        - -QF1004 # FIXME Use strings.ReplaceAll instead of strings.Replace with n == -1
         - -QF1008 # FIXME Omit embedded fields from selector expression
         - -QF1011 # FIXME Omit redundant type from variable declaration
         - -ST1003 # FIXME Poorly chosen identifier
         - -ST1005 # FIXME Incorrectly formatted error string
         - -ST1012 # FIXME Poorly chosen name for error variable
         - -ST1016 # FIXME Use consistent method receiver names
-        - -ST1019 # FIXME Importing the same package multiple times
-        - -ST1023 # FIXME Redundant type in variable declaration
   enable:
     - depguard
     - errcheck
@@ -62,8 +67,12 @@ linters:
     - goheader
     - gosec
     - govet
+    - importas
     - ineffassign
+    - modernize
     - misspell
+    - noctx
+    - nolintlint
     - staticcheck
     - unparam
     - unused
@@ -74,6 +83,13 @@ linters:
       - common-false-positives
       - legacy
       - std-error-handling
+    rules:
+      - linters:
+          - gosec
+        path: _test\.go
+      - linters:
+          - gosec
+        path: tests/
 formatters:
   enable:
     - gci

@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	"go.opentelemetry.io/otel/sdk/metric"
-	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,13 +35,13 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 			Mode: ModeDeployment,
 			Config: Config{
 				Processors: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"batch": nil,
 						"foo":   nil,
 					},
 				},
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"extfoo": nil,
 					},
 				},
@@ -59,18 +58,18 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 			Mode: ModeSidecar,
 			Config: Config{
 				Processors: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"x": nil,
 						"y": nil,
 					},
 				},
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"z/r": nil,
 					},
 				},
 				Exporters: AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"w": nil,
 					},
 				},
@@ -87,18 +86,18 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 			Mode: ModeSidecar,
 			Config: Config{
 				Processors: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"foo": nil,
 						"y":   nil,
 					},
 				},
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"z/r": nil,
 					},
 				},
 				Exporters: AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"w": nil,
 					},
 				},
@@ -131,8 +130,8 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 	scheme := runtime.NewScheme()
 	err := schemeBuilder.AddToScheme(scheme)
 	require.NoError(t, err)
-	reader := sdkmetric.NewManualReader()
-	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	reader := metric.NewManualReader()
+	provider := metric.NewMeterProvider(metric.WithReader(reader))
 	cl := fake.NewClientBuilder().WithScheme(scheme).Build()
 	crdMetrics, err := NewMetrics(provider, context.Background(), cl)
 	assert.NoError(t, err)
@@ -155,13 +154,13 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 			Mode: ModeDeployment,
 			Config: Config{
 				Processors: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"batch": nil,
 						"foo":   nil,
 					},
 				},
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"extfoo": nil,
 					},
 				},
@@ -179,18 +178,18 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 			Mode: ModeSidecar,
 			Config: Config{
 				Processors: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"x": nil,
 						"y": nil,
 					},
 				},
 				Extensions: &AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"z/r": nil,
 					},
 				},
 				Exporters: AnyConfig{
-					Object: map[string]interface{}{
+					Object: map[string]any{
 						"w": nil,
 					},
 				},
@@ -211,8 +210,8 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 	}
 	require.NoError(t, err, "Should be able to add custom types")
 	cl := fake.NewClientBuilder().WithLists(list).WithScheme(scheme).Build()
-	reader := sdkmetric.NewManualReader()
-	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	reader := metric.NewManualReader()
+	provider := metric.NewMeterProvider(metric.WithReader(reader))
 	_, err = NewMetrics(provider, context.Background(), cl)
 	assert.NoError(t, err)
 
@@ -335,7 +334,7 @@ func TestOTELCollectorInitMetrics(t *testing.T) {
 }
 
 func checkCreate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector, reader metric.Reader) {
-	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	provider := metric.NewMeterProvider(metric.WithReader(reader))
 	otel.SetMeterProvider(provider)
 
 	m.create(context.Background(), collectors[0])

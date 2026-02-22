@@ -5,6 +5,7 @@ package operatormetrics
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -32,7 +33,7 @@ var (
 	// prometheusCAFile declares the path for prometheus CA file for service monitors in OpenShift.
 	prometheusCAFile = fmt.Sprintf("/etc/prometheus/configmaps/%s/service-ca.crt", caBundleConfigMap)
 
-	// nolint #nosec
+	//nolint:gosec
 	// bearerTokenFile declares the path for bearer token file for service monitors.
 	bearerTokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 
@@ -97,7 +98,7 @@ func (om operatorMetrics) getOwnerReferences(ctx context.Context, namespace stri
 	}
 
 	if len(deploymentList.Items) == 0 {
-		return metav1.OwnerReference{}, fmt.Errorf("no deployments found with the specified label")
+		return metav1.OwnerReference{}, errors.New("no deployments found with the specified label")
 	}
 	deployment := &deploymentList.Items[0]
 

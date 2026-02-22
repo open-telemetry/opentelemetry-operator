@@ -4,6 +4,7 @@
 package manifestutils
 
 import (
+	"maps"
 	"regexp"
 	"strings"
 
@@ -37,14 +38,12 @@ func Labels(instance metav1.ObjectMeta, name string, image string, component str
 		}
 	}
 
-	for k, v := range SelectorLabels(instance, component) {
-		base[k] = v
-	}
+	maps.Copy(base, SelectorLabels(instance, component))
 
 	version := strings.Split(image, ":")
 	for _, v := range version {
-		if strings.HasSuffix(v, "@sha256") {
-			versionLabel = strings.TrimSuffix(v, "@sha256")
+		if before, ok := strings.CutSuffix(v, "@sha256"); ok {
+			versionLabel = before
 		}
 	}
 	switch lenVersion := len(version); lenVersion {

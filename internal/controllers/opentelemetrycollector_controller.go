@@ -6,6 +6,7 @@ package controllers
 
 import (
 	"context"
+	"maps"
 	"sort"
 	"time"
 
@@ -89,9 +90,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 		if err != nil {
 			return nil, err
 		}
-		for uid, object := range objs {
-			ownedObjects[uid] = object
-		}
+		maps.Copy(ownedObjects, objs)
 		// save Collector ConfigMaps into a separate slice, we need to do additional filtering on them
 		switch objectType.(type) {
 		case *corev1.ConfigMap:
@@ -128,9 +127,7 @@ func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Co
 		if err != nil {
 			return nil, err
 		}
-		for uid, object := range objs {
-			ownedObjects[uid] = object
-		}
+		maps.Copy(ownedObjects, objs)
 	}
 	return ownedObjects, nil
 }

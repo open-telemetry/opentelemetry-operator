@@ -110,7 +110,7 @@ func (c Client) validateComponents(collectorConfig *v1beta1.Config) error {
 		return nil
 	}
 
-	configuredComponents := map[string]map[string]interface{}{
+	configuredComponents := map[string]map[string]any{
 		"receivers":  collectorConfig.Receivers.Object,
 		"processors": collectorConfig.Processors.Object,
 		"exporters":  collectorConfig.Exporters.Object,

@@ -5,6 +5,7 @@ package v1alpha1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -94,12 +95,12 @@ func (o *OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error
 
 	// validate OpAMP server endpoint
 	if len(strings.TrimSpace(r.Spec.Endpoint)) == 0 {
-		return warnings, fmt.Errorf("the OpAMP server endpoint is not specified")
+		return warnings, errors.New("the OpAMP server endpoint is not specified")
 	}
 
 	// validate OpAMPBridge capabilities
 	if len(r.Spec.Capabilities) == 0 {
-		return warnings, fmt.Errorf("the capabilities supported by OpAMP Bridge are not specified")
+		return warnings, errors.New("the capabilities supported by OpAMP Bridge are not specified")
 	}
 
 	// validate port config
@@ -114,7 +115,7 @@ func (o *OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error
 
 	// check for maximum replica count
 	if r.Spec.Replicas != nil && *r.Spec.Replicas > 1 {
-		return warnings, fmt.Errorf("replica count must not be greater than 1")
+		return warnings, errors.New("replica count must not be greater than 1")
 	}
 	return warnings, nil
 }

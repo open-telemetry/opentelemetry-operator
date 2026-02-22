@@ -5,6 +5,7 @@ package instrumentation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -4956,7 +4957,6 @@ func TestMutatePod(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			mutator := NewMutator(logr.Discard(), k8sClient, record.NewFakeRecorder(100), test.config)
 			require.NotNil(t, mutator)
@@ -5030,7 +5030,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
 			},
 			expectedStatus: false,
-			expectedMsg:    fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations"),
+			expectedMsg:    errors.New("incorrect instrumentation configuration - please provide container names for all instrumentations"),
 		},
 		{
 			name: "Multiple instrumentations enabled with containers for single instrumentation",
@@ -5039,7 +5039,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}},
 			},
 			expectedStatus: false,
-			expectedMsg:    fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations"),
+			expectedMsg:    errors.New("incorrect instrumentation configuration - please provide container names for all instrumentations"),
 		},
 		{
 			name: "Disabled instrumentations",
@@ -5047,7 +5047,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				NodeJS: instrumentationWithContainers{Instrumentation: nil},
 			},
 			expectedStatus: false,
-			expectedMsg:    fmt.Errorf("instrumentation configuration not provided"),
+			expectedMsg:    errors.New("instrumentation configuration not provided"),
 		},
 		{
 			name: "Multiple instrumentations enabled with duplicated containers",
@@ -5056,7 +5056,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: []string{"app1", "app", "nodejs"}},
 			},
 			expectedStatus: false,
-			expectedMsg:    fmt.Errorf("duplicated container names detected: [app app1]"),
+			expectedMsg:    errors.New("duplicated container names detected: [app app1]"),
 		},
 		{
 			name: "Multiple instrumentations enabled with duplicated containers for single instrumentation",
@@ -5065,7 +5065,7 @@ func TestContainerNamesConfiguredForMultipleInstrumentations(t *testing.T) {
 				NodeJS: instrumentationWithContainers{Instrumentation: &v1alpha1.Instrumentation{}, Containers: []string{"nodejs"}},
 			},
 			expectedStatus: false,
-			expectedMsg:    fmt.Errorf("duplicated container names detected: [app]"),
+			expectedMsg:    errors.New("duplicated container names detected: [app]"),
 		},
 	}
 

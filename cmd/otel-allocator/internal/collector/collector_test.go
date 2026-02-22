@@ -478,13 +478,11 @@ func Test_closeChannel(t *testing.T) {
 	podWatcher := getTestPodWatcher(0 * time.Second)
 
 	var wg sync.WaitGroup
-	wg.Add(1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		err := podWatcher.Watch("default", &labelSelector, func(colMap map[string]*allocation.Collector) {})
 		require.NoError(t, err)
-	}()
+	})
 
 	podWatcher.Close()
 	wg.Wait()

@@ -5,6 +5,7 @@ package v1beta1_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -54,13 +55,13 @@ func TestValidate(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: v1beta1.Config{
 						Processors: &v1beta1.AnyConfig{
-							Object: map[string]interface{}{
+							Object: map[string]any{
 								"batch": nil,
 								"foo":   nil,
 							},
 						},
 						Extensions: &v1beta1.AnyConfig{
-							Object: map[string]interface{}{
+							Object: map[string]any{
 								"foo": nil,
 							},
 						},
@@ -166,7 +167,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 						var cfg v1beta1.Config
 						require.NoError(t, go_yaml.Unmarshal([]byte(input), &cfg))
 						// This is a workaround to avoid the type mismatch because how go-yaml unmarshals
-						cfg.Service.Telemetry.Object["metrics"].(map[string]interface{})["readers"].([]interface{})[0].(map[string]interface{})["pull"].(map[string]interface{})["exporter"].(map[string]interface{})["prometheus"].(map[string]interface{})["port"] = int32(8888)
+						cfg.Service.Telemetry.Object["metrics"].(map[string]any)["readers"].([]any)[0].(map[string]any)["pull"].(map[string]any)["exporter"].(map[string]any)["prometheus"].(map[string]any)["port"] = int32(8888)
 						return cfg
 					}(),
 				},
@@ -533,7 +534,6 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			cfg := config.Config{
 				CollectorImage:       "collector:v0.0.0",
@@ -590,13 +590,13 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	cfg := v1beta1.Config{
 		Service: v1beta1.Service{
 			Telemetry: &v1beta1.AnyConfig{
-				Object: map[string]interface{}{
-					"metrics": map[string]interface{}{
-						"readers": []map[string]interface{}{
+				Object: map[string]any{
+					"metrics": map[string]any{
+						"readers": []map[string]any{
 							{
-								"pull": map[string]interface{}{
-									"exporter": map[string]interface{}{
-										"prometheus": map[string]interface{}{
+								"pull": map[string]any{
+									"exporter": map[string]any{
+										"prometheus": map[string]any{
 											"host": "${env:POD_ID}",
 											"port": int32(8888),
 										},
@@ -612,7 +612,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	err := go_yaml.Unmarshal([]byte(cfgYaml), &cfg)
 	require.NoError(t, err)
 
-	tests := []struct { //nolint:govet
+	tests := []struct {
 		name             string
 		otelcol          v1beta1.OpenTelemetryCollector
 		expectedErr      string
@@ -1268,10 +1268,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: v1beta1.Config{
 						Receivers: v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"otlp": map[string]interface{}{
-									"protocols": map[string]interface{}{
-										"grpc": map[string]interface{}{
+							Object: map[string]any{
+								"otlp": map[string]any{
+									"protocols": map[string]any{
+										"grpc": map[string]any{
 											"endpoint": "0.0.0.0:65536",
 										},
 									},
@@ -1279,8 +1279,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 							},
 						},
 						Exporters: v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"debug": map[string]interface{}{},
+							Object: map[string]any{
+								"debug": map[string]any{},
 							},
 						},
 						Service: v1beta1.Service{
@@ -1302,10 +1302,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: v1beta1.Config{
 						Receivers: v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"otlp": map[string]interface{}{
-									"protocols": map[string]interface{}{
-										"grpc": map[string]interface{}{
+							Object: map[string]any{
+								"otlp": map[string]any{
+									"protocols": map[string]any{
+										"grpc": map[string]any{
 											"endpoint": "0.0.0.0:0",
 										},
 									},
@@ -1313,8 +1313,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 							},
 						},
 						Exporters: v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"debug": map[string]interface{}{},
+							Object: map[string]any{
+								"debug": map[string]any{},
 							},
 						},
 						Service: v1beta1.Service{
@@ -1336,10 +1336,10 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: v1beta1.Config{
 						Receivers: v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"otlp": map[string]interface{}{
-									"protocols": map[string]interface{}{
-										"grpc": map[string]interface{}{
+							Object: map[string]any{
+								"otlp": map[string]any{
+									"protocols": map[string]any{
+										"grpc": map[string]any{
 											"endpoint": "0.0.0.0:-1",
 										},
 									},
@@ -1347,8 +1347,8 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 							},
 						},
 						Exporters: v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"debug": map[string]interface{}{},
+							Object: map[string]any{
+								"debug": map[string]any{},
 							},
 						},
 						Service: v1beta1.Service{
@@ -1370,15 +1370,15 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				Spec: v1beta1.OpenTelemetryCollectorSpec{
 					Config: v1beta1.Config{
 						Receivers: v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"zipkin": map[string]interface{}{
+							Object: map[string]any{
+								"zipkin": map[string]any{
 									"endpoint": "0.0.0.0:65537",
 								},
 							},
 						},
 						Exporters: v1beta1.AnyConfig{
-							Object: map[string]interface{}{
-								"debug": map[string]interface{}{},
+							Object: map[string]any{
+								"debug": map[string]any{},
 							},
 						},
 						Service: v1beta1.Service{
@@ -1416,7 +1416,6 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			cfg := config.Config{
 				CollectorImage:       "default-collector",
@@ -1446,7 +1445,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 }
 
 func TestOTELColValidateUpdateWebhook(t *testing.T) {
-	tests := []struct { //nolint:govet
+	tests := []struct {
 		name             string
 		otelcolOld       v1beta1.OpenTelemetryCollector
 		otelcolNew       v1beta1.OpenTelemetryCollector
@@ -1486,7 +1485,6 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			cfg := config.Config{
 				CollectorImage:       "collector:v0.0.0",
@@ -1529,13 +1527,13 @@ func TestValidationViaCRDAnnotations(t *testing.T) {
 				UpgradeStrategy: v1beta1.UpgradeStrategyAutomatic,
 				Config: v1beta1.Config{
 					Receivers: v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"otlp": map[string]interface{}{},
+						Object: map[string]any{
+							"otlp": map[string]any{},
 						},
 					},
 					Exporters: v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"debug": map[string]interface{}{},
+						Object: map[string]any{
+							"debug": map[string]any{},
 						},
 					},
 					Service: v1beta1.Service{
@@ -1776,11 +1774,11 @@ func getReviewer(shouldFailSAR bool) *rbac.Reviewer {
 	c.PrependReactor("create", "subjectaccessreviews", func(action kubeTesting.Action) (handled bool, ret runtime.Object, err error) {
 		// check our expectation here
 		if !action.Matches("create", "subjectaccessreviews") {
-			return false, nil, fmt.Errorf("must be a create for a SAR")
+			return false, nil, errors.New("must be a create for a SAR")
 		}
 		sar, ok := action.(kubeTesting.CreateAction).GetObject().DeepCopyObject().(*authv1.SubjectAccessReview)
 		if !ok || sar == nil {
-			return false, nil, fmt.Errorf("bad object")
+			return false, nil, errors.New("bad object")
 		}
 		sar.Status = authv1.SubjectAccessReviewStatus{
 			Allowed: !shouldFailSAR,

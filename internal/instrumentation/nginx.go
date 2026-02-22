@@ -286,7 +286,7 @@ func getNginxOtelConfig(pod corev1.Pod, useLabelsForResourceAttributes bool, ngi
 		attrMap[attr.Name] = attr.Value
 	}
 
-	configFileContent := ""
+	var configFileContent strings.Builder
 
 	keys := make([]string, 0, len(attrMap))
 	for key := range attrMap {
@@ -295,10 +295,10 @@ func getNginxOtelConfig(pod corev1.Pod, useLabelsForResourceAttributes bool, ngi
 	sort.Strings(keys)
 
 	for _, key := range keys {
-		configFileContent += fmt.Sprintf("%s %s;\n", key, attrMap[key])
+		fmt.Fprintf(&configFileContent, "%s %s;\n", key, attrMap[key])
 	}
 
-	return configFileContent
+	return configFileContent.String()
 }
 
 func getNginxConfDir(configuredFile string) string {
@@ -324,8 +324,8 @@ func prepareCommandFromTemplate(template string, params ...any) string {
 		params...,
 	)
 
-	command = strings.Replace(command, "\n", " ", -1)
-	command = strings.Replace(command, "\t", " ", -1)
+	command = strings.ReplaceAll(command, "\n", " ")
+	command = strings.ReplaceAll(command, "\t", " ")
 	command = strings.TrimLeft(command, " ")
 	command = strings.TrimRight(command, " ")
 

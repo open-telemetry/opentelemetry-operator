@@ -537,8 +537,8 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 	existingRes := map[string]bool{}
 	existingResourceEnvIdx := getIndexOfEnv(container.Env, constants.EnvOTELResourceAttrs)
 	if existingResourceEnvIdx > -1 {
-		existingResArr := strings.Split(container.Env[existingResourceEnvIdx].Value, ",")
-		for _, kv := range existingResArr {
+		existingResArr := strings.SplitSeq(container.Env[existingResourceEnvIdx].Value, ",")
+		for kv := range existingResArr {
 			keyValueArr := strings.Split(strings.TrimSpace(kv), "=")
 			if len(keyValueArr) != 2 {
 				continue
@@ -578,8 +578,8 @@ func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.I
 
 	// attributes and labels from the pod have the highest precedence (except for values set in environment variables)
 	for k, v := range pod.GetAnnotations() {
-		if strings.HasPrefix(k, constants.ResourceAttributeAnnotationPrefix) {
-			key := strings.TrimPrefix(k, constants.ResourceAttributeAnnotationPrefix)
+		if after, ok := strings.CutPrefix(k, constants.ResourceAttributeAnnotationPrefix); ok {
+			key := after
 			if !existingRes[key] && key != string(semconv.ServiceNameKey) {
 				res[key] = v
 			}

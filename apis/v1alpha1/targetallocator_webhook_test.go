@@ -5,6 +5,7 @@ package v1alpha1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
@@ -153,7 +154,6 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			cfg := config.Config{
 				TargetAllocatorImage: "ta:v0.0.0",
@@ -174,7 +174,7 @@ func TestTargetAllocatorDefaultingWebhook(t *testing.T) {
 func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 	three := int32(3)
 
-	tests := []struct { //nolint:govet
+	tests := []struct {
 		name             string
 		targetallocator  TargetAllocator
 		expectedErr      string
@@ -322,7 +322,6 @@ func TestTargetAllocatorValidatingWebhook(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			cfg := config.Config{
 				CollectorImage:       "targetallocator:v0.0.0",
@@ -352,11 +351,11 @@ func getReviewer(shouldFailSAR bool) *rbac.Reviewer {
 	c.PrependReactor("create", "subjectaccessreviews", func(action kubeTesting.Action) (handled bool, ret runtime.Object, err error) {
 		// check our expectation here
 		if !action.Matches("create", "subjectaccessreviews") {
-			return false, nil, fmt.Errorf("must be a create for a SAR")
+			return false, nil, errors.New("must be a create for a SAR")
 		}
 		sar, ok := action.(kubeTesting.CreateAction).GetObject().DeepCopyObject().(*authv1.SubjectAccessReview)
 		if !ok || sar == nil {
-			return false, nil, fmt.Errorf("bad object")
+			return false, nil, errors.New("bad object")
 		}
 		sar.Status = authv1.SubjectAccessReviewStatus{
 			Allowed: !shouldFailSAR,
