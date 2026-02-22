@@ -81,7 +81,7 @@ func TASelectorLabels(instance v1alpha1.TargetAllocator, component string) map[s
 	// TargetAllocator uses the name label as well for selection
 	// This is inconsistent with the Collector, but changing is a somewhat painful breaking change
 	// Don't override the app name if it already exists
-	if name, ok := instance.ObjectMeta.Labels["app.kubernetes.io/name"]; ok {
+	if name, ok := instance.Labels["app.kubernetes.io/name"]; ok {
 		selectorLabels["app.kubernetes.io/name"] = name
 	} else {
 		selectorLabels["app.kubernetes.io/name"] = naming.TargetAllocator(instance.Name)

@@ -173,7 +173,7 @@ func (r *OpenTelemetryCollectorReconciler) getTargetAllocator(ctx context.Contex
 	if taName, ok := params.OtelCol.GetLabels()[constants.LabelTargetAllocator]; ok {
 		targetAllocator := &v1alpha1.TargetAllocator{}
 		taKey := client.ObjectKey{Name: taName, Namespace: params.OtelCol.GetNamespace()}
-		err := r.Client.Get(ctx, taKey, targetAllocator)
+		err := r.Get(ctx, taKey, targetAllocator)
 		if err != nil {
 			return nil, err
 		}

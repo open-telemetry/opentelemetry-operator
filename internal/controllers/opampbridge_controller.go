@@ -72,7 +72,7 @@ func NewOpAMPBridgeReconciler(params OpAMPBridgeReconcilerParams) *OpAMPBridgeRe
 func (r *OpAMPBridgeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.log.WithValues("opamp-bridge", req.NamespacedName)
 	var instance v1alpha1.OpAMPBridge
-	if err := r.Client.Get(ctx, req.NamespacedName, &instance); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
 			log.Error(err, "unable to fetch OpAMPBridge")
 		}

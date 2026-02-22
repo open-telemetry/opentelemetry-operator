@@ -93,7 +93,7 @@ func (r *ClusterObservabilityReconciler) Reconcile(ctx context.Context, req ctrl
 	log := r.log.WithValues("clusterobservability", req.NamespacedName)
 
 	var instance v1alpha1.ClusterObservability
-	if err := r.Client.Get(ctx, req.NamespacedName, &instance); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
 			log.Error(err, "unable to fetch ClusterObservability")
 		}
@@ -298,14 +298,14 @@ func (r *ClusterObservabilityReconciler) reconcileUnstructuredResource(ctx conte
 	existing.SetGroupVersionKind(unstructuredObj.GroupVersionKind())
 
 	key := client.ObjectKeyFromObject(unstructuredObj)
-	getErr := r.Client.Get(ctx, key, existing)
+	getErr := r.Get(ctx, key, existing)
 	if getErr != nil && !apierrors.IsNotFound(getErr) {
 		return fmt.Errorf("failed to get existing unstructured resource %s: %w", unstructuredObj.GetName(), getErr)
 	}
 
 	if apierrors.IsNotFound(getErr) {
 		// Create new resource
-		if createErr := r.Client.Create(ctx, unstructuredObj); createErr != nil {
+		if createErr := r.Create(ctx, unstructuredObj); createErr != nil {
 			return fmt.Errorf("failed to create unstructured resource %s: %w", unstructuredObj.GetName(), createErr)
 		}
 		log.Info("Created unstructured resource",
@@ -315,7 +315,7 @@ func (r *ClusterObservabilityReconciler) reconcileUnstructuredResource(ctx conte
 		// Check if update is needed by comparing specs
 		if !apiequality.Semantic.DeepEqual(existing.Object, unstructuredObj.Object) {
 			unstructuredObj.SetResourceVersion(existing.GetResourceVersion())
-			if updateErr := r.Client.Update(ctx, unstructuredObj); updateErr != nil {
+			if updateErr := r.Update(ctx, unstructuredObj); updateErr != nil {
 				return fmt.Errorf("failed to update unstructured resource %s: %w", unstructuredObj.GetName(), updateErr)
 			}
 			log.Info("Updated unstructured resource",

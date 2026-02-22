@@ -200,32 +200,32 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 
 func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, error) {
 	var warnings []string
-	switch r.Spec.Sampler.Type {
+	switch r.Spec.Type {
 	case "":
 		warnings = append(warnings, "sampler type not set")
 	case TraceIDRatio, ParentBasedTraceIDRatio:
-		if r.Spec.Sampler.Argument != "" {
-			rate, err := strconv.ParseFloat(r.Spec.Sampler.Argument, 64)
+		if r.Spec.Argument != "" {
+			rate, err := strconv.ParseFloat(r.Spec.Argument, 64)
 			if err != nil {
-				return warnings, fmt.Errorf("spec.sampler.argument is not a number: %s", r.Spec.Sampler.Argument)
+				return warnings, fmt.Errorf("spec.sampler.argument is not a number: %s", r.Spec.Argument)
 			}
 			if rate < 0 || rate > 1 {
-				return warnings, fmt.Errorf("spec.sampler.argument should be in rage [0..1]: %s", r.Spec.Sampler.Argument)
+				return warnings, fmt.Errorf("spec.sampler.argument should be in rage [0..1]: %s", r.Spec.Argument)
 			}
 		}
 	case JaegerRemote, ParentBasedJaegerRemote:
 		// value is a comma separated list of endpoint, pollingIntervalMs, initialSamplingRate
 		// Example: `endpoint=http://localhost:14250,pollingIntervalMs=5000,initialSamplingRate=0.25`
-		if r.Spec.Sampler.Argument != "" {
-			err := validateJaegerRemoteSamplerArgument(r.Spec.Sampler.Argument)
+		if r.Spec.Argument != "" {
+			err := validateJaegerRemoteSamplerArgument(r.Spec.Argument)
 
 			if err != nil {
-				return warnings, fmt.Errorf("spec.sampler.argument is not a valid argument for sampler %s: %w", r.Spec.Sampler.Type, err)
+				return warnings, fmt.Errorf("spec.sampler.argument is not a valid argument for sampler %s: %w", r.Spec.Type, err)
 			}
 		}
 	case AlwaysOn, AlwaysOff, ParentBasedAlwaysOn, ParentBasedAlwaysOff, XRaySampler:
 	default:
-		return warnings, fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Sampler.Type)
+		return warnings, fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Type)
 	}
 
 	var err error

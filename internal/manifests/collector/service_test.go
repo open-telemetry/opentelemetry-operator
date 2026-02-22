@@ -526,7 +526,7 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, in
 
 	svcPorts := []v1.ServicePort{}
 	for _, p := range ports {
-		p.ServicePort.TargetPort = intstr.FromInt32(p.Port)
+		p.TargetPort = intstr.FromInt32(p.Port)
 		svcPorts = append(svcPorts, p.ServicePort)
 	}
 
