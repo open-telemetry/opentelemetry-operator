@@ -6,7 +6,7 @@ package config
 import (
 	"os"
 
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 // ApplyConfigFile applies the yaml file contents to the configuration.

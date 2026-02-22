@@ -12,12 +12,16 @@ linters:
       rules:
         main:
           deny:
-            - pkg: sync/atomic
-              desc: Use go.uber.org/atomic instead of sync/atomic
+            - pkg: github.com/ghodss/yaml
+              desc: Use sigs.k8s.io/yaml instead of github.com/ghodss/yaml
             - pkg: github.com/pkg/errors
               desc: Use 'errors' or 'fmt' instead of github.com/pkg/errors
             - pkg: go.uber.org/multierr
               desc: Use 'errors.Join' instead of go.uber.org/multierr
+            - pkg: gopkg.in/yaml.v2
+              desc: Use sigs.k8s.io/yaml instead of gopkg.in/yaml.v2
+            - pkg: sync/atomic
+              desc: Use go.uber.org/atomic instead of sync/atomic
     exhaustive:
       default-signifies-exhaustive: true
     goheader:

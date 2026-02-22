@@ -16,7 +16,6 @@ import (
 	"sync"
 	"time"
 
-	yaml2 "github.com/ghodss/yaml"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	"github.com/goccy/go-json"
@@ -27,7 +26,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
@@ -196,7 +195,7 @@ func (s *Server) MarshalScrapeConfig(configs map[string]*promconfig.ScrapeConfig
 	}
 
 	var jsonConfig []byte
-	jsonConfig, err = yaml2.YAMLToJSON(configBytes)
+	jsonConfig, err = yaml.YAMLToJSON(configBytes)
 	if err != nil {
 		return err
 	}
