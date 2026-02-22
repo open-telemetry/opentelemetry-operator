@@ -17,11 +17,11 @@ import (
 
 var _ conversion.Convertible = &OpenTelemetryCollector{}
 
-func (src *OpenTelemetryCollector) ConvertTo(dstRaw conversion.Hub) error {
+func (otc *OpenTelemetryCollector) ConvertTo(dstRaw conversion.Hub) error {
 	switch t := dstRaw.(type) {
 	case *v1beta1.OpenTelemetryCollector:
 		dst := dstRaw.(*v1beta1.OpenTelemetryCollector)
-		convertedSrc := tov1beta1(*src)
+		convertedSrc := tov1beta1(*otc)
 		dst.ObjectMeta = convertedSrc.ObjectMeta
 		dst.Spec = convertedSrc.Spec
 		dst.Status = convertedSrc.Status
@@ -31,7 +31,7 @@ func (src *OpenTelemetryCollector) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
-func (dst *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
+func (otc *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
 	switch t := srcRaw.(type) {
 	case *v1beta1.OpenTelemetryCollector:
 		src := srcRaw.(*v1beta1.OpenTelemetryCollector)
@@ -39,9 +39,9 @@ func (dst *OpenTelemetryCollector) ConvertFrom(srcRaw conversion.Hub) error {
 		if err != nil {
 			return fmt.Errorf("failed to convert to v1alpha1: %w", err)
 		}
-		dst.ObjectMeta = srcConverted.ObjectMeta
-		dst.Spec = srcConverted.Spec
-		dst.Status = srcConverted.Status
+		otc.ObjectMeta = srcConverted.ObjectMeta
+		otc.Spec = srcConverted.Spec
+		otc.Status = srcConverted.Status
 	default:
 		return fmt.Errorf("unsupported type %v", t)
 	}
