@@ -420,7 +420,7 @@ func (c *Config) GetStartupProbe(logger logr.Logger) (*corev1.Probe, error) {
 // Yaml encodes the current object and returns it as a string.
 func (c *Config) Yaml() (string, error) {
 	var buf bytes.Buffer
-	yamlEncoder := go_yaml.NewEncoder(&buf, go_yaml.IndentSequence(true), go_yaml.AutoInt())
+	yamlEncoder := go_yaml.NewEncoder(&buf, go_yaml.IndentSequence(true), go_yaml.UseSingleQuote(false))
 	if err := yamlEncoder.Encode(&c); err != nil {
 		return "", err
 	}

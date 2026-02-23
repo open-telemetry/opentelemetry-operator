@@ -195,6 +195,61 @@ service:
 	assert.Equal(t, expected, yamlCollector)
 }
 
+func TestConfigYamlStringPreservation(t *testing.T) {
+	// Test for issue https://github.com/open-telemetry/opentelemetry-operator/issues/4314
+	// Ensure that string values that look like numbers (e.g., "0e12") are preserved as strings
+	cfg := &Config{
+		Processors: &AnyConfig{
+			Object: map[string]interface{}{
+				"transform": map[string]interface{}{
+					"operations": []interface{}{
+						map[string]interface{}{
+							"new_value": "0e12", // This should remain a string, not be converted to float64
+						},
+					},
+				},
+			},
+		},
+		Receivers: AnyConfig{
+			Object: map[string]interface{}{
+				"otlp": map[string]interface{}{},
+			},
+		},
+		Exporters: AnyConfig{
+			Object: map[string]interface{}{
+				"debug": map[string]interface{}{},
+			},
+		},
+		Service: Service{
+			Pipelines: map[string]*Pipeline{
+				"traces": {
+					Receivers:  []string{"otlp"},
+					Processors: []string{"transform"},
+					Exporters:  []string{"debug"},
+				},
+			},
+		},
+	}
+
+	yamlOutput, err := cfg.Yaml()
+	require.NoError(t, err)
+
+	// Verify the string is not converted to a number by parsing back
+	var parsedConfig map[string]interface{}
+	err = go_yaml.Unmarshal([]byte(yamlOutput), &parsedConfig)
+	require.NoError(t, err)
+
+	processors := parsedConfig["processors"].(map[string]interface{})
+	transform := processors["transform"].(map[string]interface{})
+	operations := transform["operations"].([]interface{})
+	operation := operations[0].(map[string]interface{})
+	newValue := operation["new_value"]
+
+	// Ensure it's still a string, not a float64
+	assert.IsType(t, "", newValue)
+	assert.Equal(t, "0e12", newValue)
+}
+
 func TestGetTelemetryFromYAML(t *testing.T) {
 	collectorYaml, err := os.ReadFile("./testdata/otelcol-demo.yaml")
 	require.NoError(t, err)
