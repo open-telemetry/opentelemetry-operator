@@ -16,7 +16,6 @@ import (
 	"github.com/open-telemetry/opamp-go/client"
 	"github.com/open-telemetry/opamp-go/client/types"
 	"github.com/open-telemetry/opamp-go/protobufs"
-	"go.uber.org/multierr"
 	"k8s.io/utils/clock"
 	"sigs.k8s.io/yaml"
 
@@ -162,7 +161,7 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 func (agent *Agent) getCollectorSelector(col v1beta1.OpenTelemetryCollector) map[string]string {
 	if len(col.Status.Scale.Selector) > 0 {
 		selMap := map[string]string{}
-		for _, kvPair := range strings.Split(col.Status.Scale.Selector, ",") {
+		for kvPair := range strings.SplitSeq(col.Status.Scale.Selector, ",") {
 			kv := strings.Split(kvPair, "=")
 			// skip malformed pairs
 			if len(kv) != 2 {
@@ -399,7 +398,7 @@ func (agent *Agent) initMeter(settings *protobufs.TelemetryConnectionSettings) {
 //
 // INVARIANT: The caller must verify that config isn't nil _and_ the configuration has changed between calls.
 func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*protobufs.RemoteConfigStatus, error) {
-	var multiErr error
+	var errs []error
 	// Apply changes from the received config map
 	for key, file := range config.Config.GetConfigMap() {
 		if len(key) == 0 || len(file.Body) == 0 {
@@ -407,12 +406,12 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 		}
 		colKey, err := kubeResourceFromKey(key)
 		if err != nil {
-			multiErr = multierr.Append(multiErr, err)
+			errs = append(errs, err)
 			continue
 		}
 		err = agent.applier.Apply(colKey.name, colKey.namespace, file)
 		if err != nil {
-			multiErr = multierr.Append(multiErr, err)
+			errs = append(errs, err)
 			continue
 		}
 		agent.appliedKeys[colKey] = true
@@ -422,11 +421,12 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 		if _, ok := config.Config.GetConfigMap()[collectorKey.String()]; !ok {
 			err := agent.applier.Delete(collectorKey.name, collectorKey.namespace)
 			if err != nil {
-				multiErr = multierr.Append(multiErr, err)
+				errs = append(errs, err)
 			}
 		}
 	}
 	agent.lastHash = config.GetConfigHash()
+	multiErr := errors.Join(errs...)
 	if multiErr != nil {
 		return &protobufs.RemoteConfigStatus{
 			LastRemoteConfigHash: agent.lastHash,

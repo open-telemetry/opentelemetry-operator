@@ -21,10 +21,10 @@ func NewLogger(logger logr.Logger) *Logger {
 	return &Logger{Logger: logger}
 }
 
-func (l *Logger) Debugf(ctx context.Context, format string, v ...interface{}) {
+func (l *Logger) Debugf(ctx context.Context, format string, v ...any) {
 	l.Logger.V(4).Info(fmt.Sprintf(format, v...))
 }
 
-func (l *Logger) Errorf(ctx context.Context, format string, v ...interface{}) {
+func (l *Logger) Errorf(ctx context.Context, format string, v ...any) {
 	l.Logger.V(0).Error(nil, fmt.Sprintf(format, v...))
 }

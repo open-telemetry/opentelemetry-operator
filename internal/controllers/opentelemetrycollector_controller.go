@@ -6,6 +6,7 @@ package controllers
 
 import (
 	"context"
+	"maps"
 	"sort"
 	"time"
 
@@ -89,9 +90,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 		if err != nil {
 			return nil, err
 		}
-		for uid, object := range objs {
-			ownedObjects[uid] = object
-		}
+		maps.Copy(ownedObjects, objs)
 		// save Collector ConfigMaps into a separate slice, we need to do additional filtering on them
 		switch objectType.(type) {
 		case *corev1.ConfigMap:
@@ -128,9 +127,7 @@ func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Co
 		if err != nil {
 			return nil, err
 		}
-		for uid, object := range objs {
-			ownedObjects[uid] = object
-		}
+		maps.Copy(ownedObjects, objs)
 	}
 	return ownedObjects, nil
 }
@@ -176,7 +173,7 @@ func (r *OpenTelemetryCollectorReconciler) getTargetAllocator(ctx context.Contex
 	if taName, ok := params.OtelCol.GetLabels()[constants.LabelTargetAllocator]; ok {
 		targetAllocator := &v1alpha1.TargetAllocator{}
 		taKey := client.ObjectKey{Name: taName, Namespace: params.OtelCol.GetNamespace()}
-		err := r.Client.Get(ctx, taKey, targetAllocator)
+		err := r.Get(ctx, taKey, targetAllocator)
 		if err != nil {
 			return nil, err
 		}

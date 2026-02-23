@@ -1,3 +1,6 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package opampsrv
 
 import (
@@ -13,10 +16,10 @@ type Logger struct {
 	logger *log.Logger
 }
 
-func (l *Logger) Debugf(ctx context.Context, format string, v ...interface{}) {
+func (l *Logger) Debugf(ctx context.Context, format string, v ...any) {
 	l.logger.Printf(format, v...)
 }
 
-func (l *Logger) Errorf(ctx context.Context, format string, v ...interface{}) {
+func (l *Logger) Errorf(ctx context.Context, format string, v ...any) {
 	l.logger.Printf(format, v...)
 }

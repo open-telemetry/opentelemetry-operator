@@ -6,6 +6,7 @@ package collector
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/embedded"
-	"go.uber.org/atomic"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
@@ -478,13 +478,11 @@ func Test_closeChannel(t *testing.T) {
 	podWatcher := getTestPodWatcher(0 * time.Second)
 
 	var wg sync.WaitGroup
-	wg.Add(1)
 
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		err := podWatcher.Watch("default", &labelSelector, func(colMap map[string]*allocation.Collector) {})
 		require.NoError(t, err)
-	}()
+	})
 
 	podWatcher.Close()
 	wg.Wait()

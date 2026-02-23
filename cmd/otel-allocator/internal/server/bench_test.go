@@ -22,7 +22,7 @@ import (
 )
 
 func BenchmarkServerTargetsHandler(b *testing.B) {
-	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
 	var table = []struct {
 		numCollectors int
 		numJobs       int
@@ -50,8 +50,8 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 			b.Run(fmt.Sprintf("%s_num_cols_%d_num_jobs_%d", allocatorName, v.numCollectors, v.numJobs), func(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
-					randomJob := random.Intn(v.numJobs)       //nolint: gosec
-					randomCol := random.Intn(v.numCollectors) //nolint: gosec
+					randomJob := random.Intn(v.numJobs)
+					randomCol := random.Intn(v.numCollectors)
 					request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/test-job-%d/targets?collector_id=collector-%d", randomJob, randomCol), nil)
 					w := httptest.NewRecorder()
 					s.server.Handler.ServeHTTP(w, request)
@@ -62,7 +62,7 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 }
 
 func BenchmarkScrapeConfigsHandler(b *testing.B) {
-	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
 	s := &Server{
 		logger: logger,
 	}
@@ -86,7 +86,7 @@ func BenchmarkScrapeConfigsHandler(b *testing.B) {
 }
 
 func BenchmarkCollectorMapJSONHandler(b *testing.B) {
-	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
 	s := &Server{
 		logger: logger,
 	}
@@ -141,7 +141,7 @@ func BenchmarkCollectorMapJSONHandler(b *testing.B) {
 }
 
 func BenchmarkTargetItemsJSONHandler(b *testing.B) {
-	random := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint: gosec
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
 	s := &Server{
 		logger: logger,
 	}
@@ -204,14 +204,14 @@ var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_/")
 func randSeq(random rand.Rand, n int) string {
 	b := make([]rune, n)
 	for i := range b {
-		b[i] = letters[random.Intn(len(letters))] //nolint:gosec
+		b[i] = letters[random.Intn(len(letters))]
 	}
 	return string(b)
 }
 
 func makeNScrapeConfigs(random rand.Rand, n int) map[string]*promconfig.ScrapeConfig {
 	items := make(map[string]*promconfig.ScrapeConfig, n)
-	for i := 0; i < n; i++ {
+	for range n {
 		items[randSeq(random, 20)] = &promconfig.ScrapeConfig{
 			JobName:               randSeq(random, 20),
 			ScrapeInterval:        model.Duration(30 * time.Second),
@@ -229,7 +229,7 @@ func makeNScrapeConfigs(random rand.Rand, n int) map[string]*promconfig.ScrapeCo
 
 func makeNCollectorJSON(random rand.Rand, numCollectors, numItems int) map[string]collectorJSON {
 	items := make(map[string]collectorJSON, numCollectors)
-	for i := 0; i < numCollectors; i++ {
+	for range numCollectors {
 		items[randSeq(random, 20)] = collectorJSON{
 			Link: randSeq(random, 120),
 			Jobs: makeNTargetJSON(random, numItems, 50),
@@ -241,7 +241,7 @@ func makeNCollectorJSON(random rand.Rand, numCollectors, numItems int) map[strin
 func makeNTargetItems(random rand.Rand, numItems, numLabels int) []*target.Item {
 	builder := labels.NewBuilder(labels.EmptyLabels())
 	items := make([]*target.Item, 0, numItems)
-	for i := 0; i < numItems; i++ {
+	for range numItems {
 		items = append(items, target.NewItem(
 			randSeq(random, 80),
 			randSeq(random, 150),
@@ -255,7 +255,7 @@ func makeNTargetItems(random rand.Rand, numItems, numLabels int) []*target.Item 
 func makeNTargetJSON(random rand.Rand, numItems, numLabels int) []*targetJSON {
 	items := makeNTargetItems(random, numItems, numLabels)
 	targets := make([]*targetJSON, numItems)
-	for i := 0; i < numItems; i++ {
+	for i := range numItems {
 		targets[i] = targetJsonFromTargetItem(items[i])
 	}
 	return targets
@@ -263,7 +263,7 @@ func makeNTargetJSON(random rand.Rand, numItems, numLabels int) []*targetJSON {
 
 func makeNNewLabels(builder *labels.Builder, random rand.Rand, n int) labels.Labels {
 	builder.Reset(labels.EmptyLabels())
-	for i := 0; i < n; i++ {
+	for range n {
 		builder.Set(randSeq(random, 20), randSeq(random, 20))
 	}
 	return builder.Labels()

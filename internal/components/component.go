@@ -44,7 +44,7 @@ type EnvVarGenerator[ComponentConfigType any] func(logger logr.Logger, config Co
 
 // Defaulter is a function that applies given defaults to the passed Config.
 // It's expected that type Config is the configuration used by a parser.
-type Defaulter[ComponentConfigType any] func(logger logr.Logger, defaultAddr string, defaultPort int32, config ComponentConfigType) (map[string]interface{}, error)
+type Defaulter[ComponentConfigType any] func(logger logr.Logger, defaultAddr string, defaultPort int32, config ComponentConfigType) (map[string]any, error)
 
 // ComponentType returns the type for a given component name.
 // components have a name like:
@@ -66,7 +66,7 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 
 	if r.MatchString(endpoint) {
 		portStr := r.FindString(endpoint)
-		cleanedPortStr := strings.Replace(portStr, ":", "", -1)
+		cleanedPortStr := strings.ReplaceAll(portStr, ":", "")
 		port, err = strconv.ParseInt(cleanedPortStr, 10, 32)
 
 		if err != nil {
@@ -78,7 +78,7 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 		return UnsetPort, PortNotFoundErr
 	}
 
-	return int32(port), err //nolint: gosec // disable G115, this is guaranteed to not overflow due to the bitSize in the ParseInt call
+	return int32(port), err
 }
 
 type ParserRetriever func(string) Parser
@@ -86,26 +86,26 @@ type ParserRetriever func(string) Parser
 type Parser interface {
 	// GetDefaultConfig returns a config with set default values.
 	// NOTE: Config merging must be done by the caller if desired.
-	GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error)
+	GetDefaultConfig(logger logr.Logger, config any) (any, error)
 
 	// Ports returns the service ports parsed based on the component's configuration where name is the component's name
 	// of the form "name" or "type/name"
-	Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error)
+	Ports(logger logr.Logger, name string, config any) ([]corev1.ServicePort, error)
 
 	// GetRBACRules returns the rbac rules for this component
-	GetRBACRules(logger logr.Logger, config interface{}) ([]rbacv1.PolicyRule, error)
+	GetRBACRules(logger logr.Logger, config any) ([]rbacv1.PolicyRule, error)
 
 	// GetLivenessProbe returns a liveness probe set for the collector
-	GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)
+	GetLivenessProbe(logger logr.Logger, config any) (*corev1.Probe, error)
 
 	// GetEnvironmentVariables returns a list of environment variables for the collector
-	GetEnvironmentVariables(logger logr.Logger, config interface{}) ([]corev1.EnvVar, error)
+	GetEnvironmentVariables(logger logr.Logger, config any) ([]corev1.EnvVar, error)
 
 	// GetReadinessProbe returns a readiness probe set for the collector
-	GetReadinessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)
+	GetReadinessProbe(logger logr.Logger, config any) (*corev1.Probe, error)
 
 	// GetStartupProbe returns a startup probe set for the collector
-	GetStartupProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error)
+	GetStartupProbe(logger logr.Logger, config any) (*corev1.Probe, error)
 
 	// ParserType returns the type of this parser
 	ParserType() string

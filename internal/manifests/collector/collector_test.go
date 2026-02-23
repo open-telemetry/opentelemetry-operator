@@ -5,7 +5,7 @@ package collector
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -133,7 +133,7 @@ type mockReviewer struct{}
 var _ irbac.SAReviewer = &mockReviewer{}
 
 func (m *mockReviewer) CheckPolicyRules(ctx context.Context, serviceAccount, serviceAccountNamespace string, rules ...*rbacv1.PolicyRule) ([]*v1.SubjectAccessReview, error) {
-	return nil, fmt.Errorf("error checking policy rules")
+	return nil, errors.New("error checking policy rules")
 }
 
 func (m *mockReviewer) CanAccess(ctx context.Context, serviceAccount, serviceAccountNamespace string, res *v1.ResourceAttributes, nonResourceAttributes *v1.NonResourceAttributes) (*v1.SubjectAccessReview, error) {

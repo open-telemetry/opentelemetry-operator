@@ -110,7 +110,7 @@ func (c Client) validateComponents(collectorConfig *v1beta1.Config) error {
 		return nil
 	}
 
-	configuredComponents := map[string]map[string]interface{}{
+	configuredComponents := map[string]map[string]any{
 		"receivers":  collectorConfig.Receivers.Object,
 		"processors": collectorConfig.Processors.Object,
 		"exporters":  collectorConfig.Exporters.Object,
@@ -169,13 +169,13 @@ func labelSetContainsLabel(resourceLabelSet map[string]string, label, value stri
 func (c Client) create(ctx context.Context, name string, namespace string, collector *v1beta1.OpenTelemetryCollector) error {
 	// Set the defaults
 	setTypedMeta(collector)
-	collector.ObjectMeta.Name = name
-	collector.ObjectMeta.Namespace = namespace
+	collector.Name = name
+	collector.Namespace = namespace
 
-	if collector.ObjectMeta.Labels == nil {
-		collector.ObjectMeta.Labels = map[string]string{}
+	if collector.Labels == nil {
+		collector.Labels = map[string]string{}
 	}
-	collector.ObjectMeta.Labels[ResourceIdentifierKey] = ResourceIdentifierValue
+	collector.Labels[ResourceIdentifierKey] = ResourceIdentifierValue
 
 	c.log.Info("Creating collector")
 	return c.k8sClient.Create(ctx, collector)
@@ -268,6 +268,6 @@ func (c Client) GetCollectorPods(selectorLabels map[string]string, namespace str
 // setTypedMeta sets the TypeMeta of the given collector to the correct values. The controller-runtime
 // client will not set the TypeMeta for us, so we need to do it manually.
 func setTypedMeta(collector *v1beta1.OpenTelemetryCollector) {
-	collector.TypeMeta.Kind = CollectorResource
-	collector.TypeMeta.APIVersion = v1beta1.GroupVersion.String()
+	collector.Kind = CollectorResource
+	collector.APIVersion = v1beta1.GroupVersion.String()
 }

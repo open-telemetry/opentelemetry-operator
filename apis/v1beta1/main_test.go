@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 func prepareNamespace(t *testing.T, ctx context.Context) string {
 	t.Helper()
 
-	name := "test-namespace-" + strconv.Itoa(rand.Int()) // nolint:gosec
+	name := "test-namespace-" + strconv.Itoa(rand.Int())
 	namespace := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,

@@ -192,6 +192,6 @@ func (n *networkPolicy) Start(ctx context.Context) error {
 	return nil
 }
 
-func (d *networkPolicy) NeedLeaderElection() bool {
+func (*networkPolicy) NeedLeaderElection() bool {
 	return true
 }

@@ -4,6 +4,7 @@
 package prehook
 
 import (
+	"maps"
 	"slices"
 
 	"github.com/go-logr/logr"
@@ -93,8 +94,6 @@ func addNoShardingConfig(cfg []*relabel.Config) []*relabel.Config {
 
 func (tf *relabelConfigTargetFilter) GetConfig() map[string][]*relabel.Config {
 	relabelCfgCopy := make(map[string][]*relabel.Config)
-	for k, v := range tf.relabelCfg {
-		relabelCfgCopy[k] = v
-	}
+	maps.Copy(relabelCfgCopy, tf.relabelCfg)
 	return relabelCfgCopy
 }

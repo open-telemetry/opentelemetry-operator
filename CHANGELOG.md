@@ -2,6 +2,59 @@
 
 <!-- next version -->
 
+## 0.145.0
+
+### 🛑 Breaking changes 🛑
+
+- `collector`: Remove operator.collector.default.config feature gate (#4473)
+
+### 🚀 New components 🚀
+
+- `clusterObservability`: Inital implementation of ClusterObservability CRD (#3820)
+  This change provides an initial implementation of the Cluster Observability CRD and operator control loop.
+  Reconcilation is disabled by default.
+  Currently, the CRD is **not** included in the operator bundle and must be installed manually.
+  To enable reconciliation, enable the `--feature-gates=+operator.clusterobservability` feature gate.
+  
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Add readiness and liveness probe configurations for target allocator CRD (#4639)
+- `target allocator`: Make the least-weighted target allocation strategy take job name into account. (#3128)
+  Uses job name instead of "first match" to when number of targets is equal. The effect is to spread out targets with the same job name across collectors.
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: Fix TLS certificate hot-reload for mTLS connections (#4368)
+  The Target Allocator now automatically reloads TLS certificates when they are renewed
+  by cert-manager. Previously, certificate renewals required a pod restart because
+  certificates were only loaded once at startup. The fix uses fsnotify to watch the
+  certificate directory and dynamically reloads certificates via the GetCertificate
+  callback, enabling seamless certificate rotation without downtime.
+  
+- `collector`: Configure collector to reload client certificate periodically (#4657)
+  When the collector connects to the target allocator over mTLS, certificates were not automatically reloaded after expiration. This adds reload_interval to the TLS configuration, enabling the Prometheus receiver to periodically reload certificates from disk.
+  
+  The default interval of 5 minutes provides a good balance between picking up renewed certificates promptly and avoiding unnecessary overhead.
+  
+- `operator`: Set Kubernetes API server egress network policy port dynamically. (#4411)
+  The operator network policy egress rule for the Kubernetes API server was hardcoded to port 6443.
+  This PR uses uses `endpointslices.discovery.k8s.io -n default kubernetes` to get the port and IP addresses of the Kubernetes API server
+  for the operator egress network policy.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.145.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.145.0)
+* [OpenTelemetry Contrib - v0.145.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.145.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.70.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.70.0)
+* [Python - v0.60b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.60b1)
+* [Go - v0.23.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.23.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.144.0
 
 ### 💡 Enhancements 💡

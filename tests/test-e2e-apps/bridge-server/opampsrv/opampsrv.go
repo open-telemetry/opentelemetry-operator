@@ -1,3 +1,6 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package opampsrv
 
 import (
@@ -135,13 +138,13 @@ func (srv *Server) getAgents(writer http.ResponseWriter, request *http.Request) 
 	for id, agent := range allAgents {
 		converted[uuid.UUID(id).String()] = agent
 	}
-	marshalled, err := json.Marshal(converted)
+	marshaled, err := json.Marshal(converted)
 	if err != nil {
 		srv.logger.Errorf(request.Context(), "failed to marshal: %v", err)
 		writer.WriteHeader(503)
 		return
 	}
-	writer.Write(marshalled)
+	writer.Write(marshaled)
 }
 
 func (srv *Server) getAgentById(writer http.ResponseWriter, request *http.Request) {
@@ -158,12 +161,12 @@ func (srv *Server) getAgentById(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 	agent := srv.agents.FindAgent(data.InstanceId(parsed))
-	marshalled, err := json.Marshal(agent)
+	marshaled, err := json.Marshal(agent)
 	if err != nil {
 		srv.logger.Errorf(request.Context(), "failed to marshal: %v", err)
 		writer.WriteHeader(503)
 		return
 	}
-	writer.Write(marshalled)
+	writer.Write(marshaled)
 
 }

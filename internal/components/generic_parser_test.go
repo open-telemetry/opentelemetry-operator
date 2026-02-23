@@ -4,6 +4,7 @@
 package components_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -19,7 +20,7 @@ import (
 func TestGenericParser_GetPorts(t *testing.T) {
 	type args struct {
 		logger logr.Logger
-		config interface{}
+		config any
 	}
 	type testCase[T any] struct {
 		name    string
@@ -35,7 +36,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "http://localhost:8080",
 				},
 			},
@@ -52,7 +53,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"listen_address": "0.0.0.0:9090",
 				},
 			},
@@ -69,7 +70,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithProtocol(corev1.ProtocolUDP).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"listen_address": "0.0.0.0:9090",
 				},
 			},
@@ -87,7 +88,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			want:    []corev1.ServicePort{},
 			wantErr: assert.Error,
@@ -108,7 +109,7 @@ func TestGenericParser_GetPorts(t *testing.T) {
 func TestGenericParser_GetRBACRules(t *testing.T) {
 	type args struct {
 		logger logr.Logger
-		config interface{}
+		config any
 	}
 	type testCase[T any] struct {
 		name    string
@@ -120,7 +121,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 
 	rbacGenFunc := func(logger logr.Logger, config *components.SingleEndpointConfig) ([]rbacv1.PolicyRule, error) {
 		if config.Endpoint == "" && config.ListenAddress == "" {
-			return nil, fmt.Errorf("either endpoint or listen_address must be specified")
+			return nil, errors.New("either endpoint or listen_address must be specified")
 		}
 		return []rbacv1.PolicyRule{
 			{
@@ -137,7 +138,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithRbacGen(rbacGenFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "http://localhost:8080",
 				},
 			},
@@ -155,7 +156,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithRbacGen(rbacGenFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"listen_address": "0.0.0.0:9090",
 				},
 			},
@@ -173,7 +174,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithRbacGen(rbacGenFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			want:    nil,
 			wantErr: assert.Error,
@@ -183,7 +184,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 			g:    components.NewBuilder[*components.SingleEndpointConfig]().WithName("test").MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			want:    nil,
 			wantErr: assert.NoError,
@@ -214,7 +215,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 func TestGenericParser_GetProbe(t *testing.T) {
 	type args struct {
 		logger logr.Logger
-		config interface{}
+		config any
 	}
 	type testCase[T any] struct {
 		name             string
@@ -229,7 +230,7 @@ func TestGenericParser_GetProbe(t *testing.T) {
 	}
 	probeFunc := func(logger logr.Logger, config *components.SingleEndpointConfig) (*corev1.Probe, error) {
 		if config.Endpoint == "" && config.ListenAddress == "" {
-			return nil, fmt.Errorf("either endpoint or listen_address must be specified")
+			return nil, errors.New("either endpoint or listen_address must be specified")
 		}
 		return &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -247,7 +248,7 @@ func TestGenericParser_GetProbe(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithReadinessGen(probeFunc).WithLivenessGen(probeFunc).WithStartupGen(probeFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "http://localhost:8080",
 				},
 			},
@@ -284,7 +285,7 @@ func TestGenericParser_GetProbe(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithReadinessGen(probeFunc).WithLivenessGen(probeFunc).WithStartupGen(probeFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"listen_address": "0.0.0.0:9090",
 				},
 			},
@@ -321,7 +322,7 @@ func TestGenericParser_GetProbe(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithReadinessGen(probeFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			readinessProbe:   nil,
 			livenessProbe:    nil,
@@ -335,7 +336,7 @@ func TestGenericParser_GetProbe(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithLivenessGen(probeFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			readinessProbe:   nil,
 			livenessProbe:    nil,
@@ -349,7 +350,7 @@ func TestGenericParser_GetProbe(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).WithStartupGen(probeFunc).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			readinessProbe:   nil,
 			livenessProbe:    nil,
@@ -426,13 +427,13 @@ func TestGenericParser_GetProbe(t *testing.T) {
 func TestGenericParser_GetDefaultConfig(t *testing.T) {
 	type args struct {
 		logger logr.Logger
-		config interface{}
+		config any
 	}
 	type testCase[T any] struct {
 		name    string
 		g       *components.GenericParser[T]
 		args    args
-		want    interface{}
+		want    any
 		wantErr assert.ErrorAssertionFunc
 	}
 
@@ -442,11 +443,11 @@ func TestGenericParser_GetDefaultConfig(t *testing.T) {
 			g:    &components.GenericParser[*components.SingleEndpointConfig]{},
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "http://localhost:8080",
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"endpoint": "http://localhost:8080",
 			},
 			wantErr: assert.NoError,
@@ -456,11 +457,11 @@ func TestGenericParser_GetDefaultConfig(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 0).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "http://localhost:8080",
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"endpoint": "http://localhost:8080",
 			},
 			wantErr: assert.NoError,
@@ -470,11 +471,11 @@ func TestGenericParser_GetDefaultConfig(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": nil,
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"endpoint": "127.0.0.1:8080",
 			},
 			wantErr: assert.NoError,
@@ -484,11 +485,11 @@ func TestGenericParser_GetDefaultConfig(t *testing.T) {
 			g:    components.NewSinglePortParserBuilder("test", 8080).WithDefaultRecAddress("127.0.0.1").WithDefaultsApplier(components.AddressDefaulter).MustBuild(),
 			args: args{
 				logger: logr.Discard(),
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "127.0.0.1:9090",
 				},
 			},
-			want: map[string]interface{}{
+			want: map[string]any{
 				"endpoint": "127.0.0.1:9090",
 			},
 			wantErr: assert.NoError,

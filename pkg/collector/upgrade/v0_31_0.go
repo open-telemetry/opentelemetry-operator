@@ -24,7 +24,7 @@ func upgrade0_31_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.31.0, failed to parse configuration: %w", err)
 	}
 
-	receivers, ok := cfg["receivers"].(map[interface{}]interface{})
+	receivers, ok := cfg["receivers"].(map[any]any)
 	if !ok {
 		// no receivers? no need to fail because of that
 		return otelcol, nil
@@ -36,7 +36,7 @@ func upgrade0_31_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 
 		// Remove deprecated field metrics_schema from influxdb receiver
 		if strings.HasPrefix(k.(string), "influxdb") {
-			influxdbConfig, ok := v.(map[interface{}]interface{})
+			influxdbConfig, ok := v.(map[any]any)
 			if !ok {
 				// no influxdbConfig? no need to fail because of that
 				return otelcol, nil

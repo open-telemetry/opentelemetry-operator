@@ -102,7 +102,7 @@ func TestDesiredServiceMonitorsWithEmptyExtraLabels(t *testing.T) {
 		"app.kubernetes.io/name":       "test-collector",
 		"app.kubernetes.io/version":    "latest",
 	}
-	assert.Equal(t, expectedLabels, actual.ObjectMeta.Labels)
+	assert.Equal(t, expectedLabels, actual.Labels)
 
 	expectedSelectorLabels := map[string]string{
 		"app.kubernetes.io/component":                      "opentelemetry-collector",
@@ -146,7 +146,7 @@ func TestDesiredServiceMonitorsWithExtraLabels(t *testing.T) {
 		"environment":                  "production",
 		"custom.io/key":                "custom-value",
 	}
-	assert.Equal(t, expectedLabels, actual.ObjectMeta.Labels)
+	assert.Equal(t, expectedLabels, actual.Labels)
 
 	expectedSelectorLabels := map[string]string{
 		"app.kubernetes.io/component":                      "opentelemetry-collector",

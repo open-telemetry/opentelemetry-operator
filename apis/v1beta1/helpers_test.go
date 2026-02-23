@@ -4,6 +4,7 @@
 package v1beta1
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -127,24 +128,24 @@ func TestAddPrefix(t *testing.T) {
 func TestGetNullValue(t *testing.T) {
 	tests := []struct {
 		name     string
-		cfg      map[string]interface{}
+		cfg      map[string]any
 		expected []string
 	}{
 		{
 			name:     "empty map",
-			cfg:      map[string]interface{}{},
+			cfg:      map[string]any{},
 			expected: []string{},
 		},
 		{
 			name: "single null value",
-			cfg: map[string]interface{}{
+			cfg: map[string]any{
 				"key": nil,
 			},
 			expected: []string{"key:"},
 		},
 		{
 			name: "multiple null values",
-			cfg: map[string]interface{}{
+			cfg: map[string]any{
 				"key1": nil,
 				"key2": nil,
 			},
@@ -152,8 +153,8 @@ func TestGetNullValue(t *testing.T) {
 		},
 		{
 			name: "nested null values",
-			cfg: map[string]interface{}{
-				"parent": map[string]interface{}{
+			cfg: map[string]any{
+				"parent": map[string]any{
 					"child": nil,
 				},
 			},
@@ -161,9 +162,9 @@ func TestGetNullValue(t *testing.T) {
 		},
 		{
 			name: "deeply nested null values",
-			cfg: map[string]interface{}{
-				"parent": map[string]interface{}{
-					"child": map[string]interface{}{
+			cfg: map[string]any{
+				"parent": map[string]any{
+					"child": map[string]any{
 						"grandchild": nil,
 					},
 				},
@@ -172,10 +173,10 @@ func TestGetNullValue(t *testing.T) {
 		},
 		{
 			name: "mixed null and non-null values",
-			cfg: map[string]interface{}{
+			cfg: map[string]any{
 				"key1": nil,
 				"key2": "value",
-				"key3": map[string]interface{}{
+				"key3": map[string]any{
 					"child1": nil,
 					"child2": "value",
 				},
@@ -190,13 +191,7 @@ func TestGetNullValue(t *testing.T) {
 			require.Equal(t, len(result), len(tt.expected))
 
 			for _, expected := range tt.expected {
-				found := false
-				for _, actual := range result {
-					if actual == expected {
-						found = true
-						break
-					}
-				}
+				found := slices.Contains(result, expected)
 				require.True(t, found, "getNullValuedKeys() missing expected value: %s", expected)
 			}
 		})
@@ -206,56 +201,56 @@ func TestGetNullValue(t *testing.T) {
 func TestNormalizeConfig(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    map[string]interface{}
-		expected map[string]interface{}
+		input    map[string]any
+		expected map[string]any
 	}{
 		{
 			name: "remove nil values",
-			input: map[string]interface{}{
+			input: map[string]any{
 				"key1": "value1",
 				"key2": nil,
 			},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				"key1": "value1",
 			},
 		},
 		{
 			name: "convert port float64 to int32",
-			input: map[string]interface{}{
+			input: map[string]any{
 				"port": float64(8080),
 			},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				"port": int32(8080),
 			},
 		},
 		{
 			name: "normalize nested map",
-			input: map[string]interface{}{
-				"parent": map[string]interface{}{
+			input: map[string]any{
+				"parent": map[string]any{
 					"child": nil,
 					"port":  float64(8080),
 				},
 			},
-			expected: map[string]interface{}{
-				"parent": map[string]interface{}{
+			expected: map[string]any{
+				"parent": map[string]any{
 					"port": int32(8080),
 				},
 			},
 		},
 		{
 			name: "normalize array with nil values",
-			input: map[string]interface{}{
-				"items": []interface{}{
+			input: map[string]any{
+				"items": []any{
 					nil,
-					map[string]interface{}{
+					map[string]any{
 						"key": "value",
 					},
 				},
 			},
-			expected: map[string]interface{}{
-				"items": []interface{}{
-					map[string]interface{}{},
-					map[string]interface{}{
+			expected: map[string]any{
+				"items": []any{
+					map[string]any{},
+					map[string]any{
 						"key": "value",
 					},
 				},
