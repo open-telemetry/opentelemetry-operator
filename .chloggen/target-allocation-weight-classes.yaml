@@ -13,4 +13,6 @@ issues: [3128]
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
-subtext: By applying a weight-class label to a podspec (or using Prometheus `relabel_configs`), heavier jobs can be spread across collectors.
+subtext: |
+  Weight classes can be specified via pod annotation (`opentelemetry.io/target-allocation-weight`) for pods you control,
+  or via config-based weight overrides by job name (`weight_overrides` in the TA config) for pods you don't control.

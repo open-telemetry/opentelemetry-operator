@@ -773,6 +773,31 @@ func TestGetWeightForClass(t *testing.T) {
 	})
 }
 
+func TestGetWeightForJob(t *testing.T) {
+	overrides := []WeightOverride{
+		{JobName: "kube-system-job", WeightClass: "heavy"},
+		{JobName: "monitoring-job", WeightClass: "medium"},
+	}
+
+	t.Run("match found", func(t *testing.T) {
+		class, ok := GetWeightForJob(overrides, "kube-system-job")
+		assert.True(t, ok)
+		assert.Equal(t, "heavy", class)
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		class, ok := GetWeightForJob(overrides, "unknown-job")
+		assert.False(t, ok)
+		assert.Equal(t, "", class)
+	})
+
+	t.Run("empty overrides", func(t *testing.T) {
+		class, ok := GetWeightForJob(nil, "any-job")
+		assert.False(t, ok)
+		assert.Equal(t, "", class)
+	})
+}
+
 func TestConfigLoadPriority(t *testing.T) {
 	// Helper function to create a dummy kube config for tests
 	createDummyKubeConfig := func(t *testing.T, dir string) string {

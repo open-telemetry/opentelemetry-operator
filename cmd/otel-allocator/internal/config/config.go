@@ -74,11 +74,15 @@ type Config struct {
 	PrometheusCR                 PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	HTTPS                        HTTPSServerConfig     `yaml:"https,omitempty"`
 	CollectorNotReadyGracePeriod time.Duration         `yaml:"collector_not_ready_grace_period,omitempty"`
+	WeightOverrides              []WeightOverride      `yaml:"weight_overrides,omitempty"`
 }
 
 const (
-	// WeightClassLabel is the target label used to read the weight class.
-	WeightClassLabel = "__target_allocation_weight"
+	// WeightAnnotation is the pod annotation name used to specify a target's weight class.
+	WeightAnnotation = "opentelemetry.io/target-allocation-weight"
+
+	// WeightAnnotationMetaLabel is the Kubernetes SD meta label that surfaces the weight annotation.
+	WeightAnnotationMetaLabel = "__meta_kubernetes_pod_annotation_opentelemetry_io_target_allocation_weight"
 
 	// Standard weight class values.
 	WeightClassLight  = "light"
@@ -90,6 +94,12 @@ const (
 	WeightMedium = 5
 	WeightHeavy  = 10
 )
+
+// WeightOverride allows specifying a weight class for all targets belonging to a specific job.
+type WeightOverride struct {
+	JobName     string `yaml:"job_name"`
+	WeightClass string `yaml:"weight_class"`
+}
 
 // standardWeightClasses maps standard weight class names to their numeric weights.
 var standardWeightClasses = map[string]int{
@@ -105,6 +115,16 @@ func GetWeightForClass(class string) int {
 		return weight
 	}
 	return WeightLight
+}
+
+// GetWeightForJob looks up a job name in the overrides and returns its weight class.
+func GetWeightForJob(overrides []WeightOverride, jobName string) (string, bool) {
+	for _, o := range overrides {
+		if o.JobName == jobName {
+			return o.WeightClass, true
+		}
+	}
+	return "", false
 }
 
 type PrometheusCRConfig struct {

@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
 
@@ -216,8 +217,8 @@ func TestWeightedLoadBalancing(t *testing.T) {
 
 	// Create 3 heavy targets (weight=10 each) and 30 light targets (weight=1 each)
 	// Total weight = 3*10 + 30*1 = 60, expect ~20 per collector
-	heavyTargets := MakeNTargetsWithWeightClass(3, "heavy-job", 0, "__target_allocation_weight", "heavy")
-	lightTargets := MakeNTargetsWithWeightClass(30, "light-job", 100, "__target_allocation_weight", "light")
+	heavyTargets := MakeNTargetsWithWeightClass(3, "heavy-job", 0, config.WeightAnnotationMetaLabel, "heavy")
+	lightTargets := MakeNTargetsWithWeightClass(30, "light-job", 100, config.WeightAnnotationMetaLabel, "light")
 
 	allTargets := append(heavyTargets, lightTargets...)
 	s.SetTargets(allTargets)
@@ -277,7 +278,7 @@ func TestWeightedLoadUnknownClass(t *testing.T) {
 	s.SetCollectors(cols)
 
 	// Create targets with unknown weight class — should default to light (1)
-	targets := MakeNTargetsWithWeightClass(2, "test-job", 0, "__target_allocation_weight", "unknown")
+	targets := MakeNTargetsWithWeightClass(2, "test-job", 0, config.WeightAnnotationMetaLabel, "unknown")
 	s.SetTargets(targets)
 
 	collectors := s.Collectors()
@@ -286,6 +287,39 @@ func TestWeightedLoadUnknownClass(t *testing.T) {
 		assert.Equal(t, 2, col.WeightedLoad,
 			"unknown weight class should use default weight (light=1)")
 		assert.Equal(t, 2, col.NumTargets)
+	}
+}
+
+// TestWeightedLoadWithJobOverride verifies that config-based weight overrides
+// take precedence over pod annotation labels.
+func TestWeightedLoadWithJobOverride(t *testing.T) {
+	s, _ := New("least-weighted", logger, WithWeightOverrides(map[string]string{
+		"heavy-job": "heavy",
+	}))
+
+	cols := MakeNCollectors(3, 0)
+	s.SetCollectors(cols)
+
+	// Create targets for heavy-job WITHOUT any weight label — the override should apply.
+	heavyTargets := MakeNTargetsForJob(3, "heavy-job", 0)
+	// Create light targets with an explicit annotation label
+	lightTargets := MakeNTargetsWithWeightClass(30, "light-job", 100, config.WeightAnnotationMetaLabel, "light")
+
+	allTargets := append(heavyTargets, lightTargets...)
+	s.SetTargets(allTargets)
+
+	// Total weight = 3*10 + 30*1 = 60, expect ~20 per collector
+	expectedPerCollector := 60.0 / 3.0
+	for _, col := range s.Collectors() {
+		assert.InDelta(t, expectedPerCollector, col.WeightedLoad, expectedPerCollector*0.5,
+			"collector %s WeightedLoad should be ~%.0f, got %d", col.Name, expectedPerCollector, col.WeightedLoad)
+	}
+
+	// Also verify that heavy targets are spread (not all on one collector)
+	for _, col := range s.Collectors() {
+		targets := s.GetTargetsForCollectorAndJob(col.Name, "heavy-job")
+		assert.LessOrEqual(t, len(targets), 2,
+			"collector %s should have at most 2 heavy targets", col.Name)
 	}
 }
 

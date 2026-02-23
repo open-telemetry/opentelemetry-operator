@@ -91,9 +91,17 @@ func main() {
 	otel.SetMeterProvider(meterProvider)
 
 	allocatorPrehook = prehook.New(cfg.FilterStrategy, log)
+
+	// Build weight overrides map from config
+	weightOverrides := make(map[string]string)
+	for _, o := range cfg.WeightOverrides {
+		weightOverrides[o.JobName] = o.WeightClass
+	}
+
 	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log,
 		allocation.WithFilter(allocatorPrehook),
 		allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy),
+		allocation.WithWeightOverrides(weightOverrides),
 	)
 	if allocErr != nil {
 		setupLog.Error(allocErr, "Unable to initialize allocation strategy")
