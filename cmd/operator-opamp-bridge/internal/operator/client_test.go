@@ -160,8 +160,8 @@ func TestClient_ApplyUpdate(t *testing.T) {
 	require.NoError(t, err, "Should be no error on unmarshal")
 
 	setTypedMeta(&reportingCol)
-	reportingCol.ObjectMeta.Name = "simplest"
-	reportingCol.ObjectMeta.Namespace = namespace
+	reportingCol.Name = "simplest"
+	reportingCol.Namespace = namespace
 
 	err = fakeClient.Create(context.Background(), &reportingCol)
 	require.NoError(t, err, "Should be able to make reporting col")

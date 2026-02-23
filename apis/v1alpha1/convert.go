@@ -159,12 +159,12 @@ func tov1beta1Ports(in []PortsSpec) []v1beta1.PortsSpec {
 	for _, p := range in {
 		ports = append(ports, v1beta1.PortsSpec{
 			ServicePort: v1.ServicePort{
-				Name:        p.ServicePort.Name,
-				Protocol:    p.ServicePort.Protocol,
-				AppProtocol: p.ServicePort.AppProtocol,
-				Port:        p.ServicePort.Port,
-				TargetPort:  p.ServicePort.TargetPort,
-				NodePort:    p.ServicePort.NodePort,
+				Name:        p.Name,
+				Protocol:    p.Protocol,
+				AppProtocol: p.AppProtocol,
+				Port:        p.Port,
+				TargetPort:  p.TargetPort,
+				NodePort:    p.NodePort,
 			},
 			HostPort: p.HostPort,
 		})
@@ -285,12 +285,12 @@ func tov1alpha1Ports(in []v1beta1.PortsSpec) []PortsSpec {
 	for _, p := range in {
 		ports = append(ports, PortsSpec{
 			ServicePort: v1.ServicePort{
-				Name:        p.ServicePort.Name,
-				Protocol:    p.ServicePort.Protocol,
-				AppProtocol: p.ServicePort.AppProtocol,
-				Port:        p.ServicePort.Port,
-				TargetPort:  p.ServicePort.TargetPort,
-				NodePort:    p.ServicePort.NodePort,
+				Name:        p.Name,
+				Protocol:    p.Protocol,
+				AppProtocol: p.AppProtocol,
+				Port:        p.Port,
+				TargetPort:  p.TargetPort,
+				NodePort:    p.NodePort,
 			},
 			HostPort: p.HostPort,
 		})

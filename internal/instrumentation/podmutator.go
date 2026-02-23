@@ -422,15 +422,15 @@ func (pm *instPodMutator) validateInstrumentation(ctx context.Context, inst *v1a
 	// Check if secret and configmap exists
 	// If they don't exist pod cannot start
 	var errs []error
-	if inst.Spec.Exporter.TLS != nil {
-		if inst.Spec.Exporter.TLS.SecretName != "" {
-			nsn := types.NamespacedName{Name: inst.Spec.Exporter.TLS.SecretName, Namespace: podNamespace}
+	if inst.Spec.TLS != nil {
+		if inst.Spec.TLS.SecretName != "" {
+			nsn := types.NamespacedName{Name: inst.Spec.TLS.SecretName, Namespace: podNamespace}
 			if err := pm.Client.Get(ctx, nsn, &corev1.Secret{}); apierrors.IsNotFound(err) {
 				errs = append(errs, fmt.Errorf("secret %s with certificates does not exists: %w", nsn.String(), err))
 			}
 		}
-		if inst.Spec.Exporter.TLS.ConfigMapName != "" {
-			nsn := types.NamespacedName{Name: inst.Spec.Exporter.TLS.ConfigMapName, Namespace: podNamespace}
+		if inst.Spec.TLS.ConfigMapName != "" {
+			nsn := types.NamespacedName{Name: inst.Spec.TLS.ConfigMapName, Namespace: podNamespace}
 			if err := pm.Client.Get(ctx, nsn, &corev1.ConfigMap{}); apierrors.IsNotFound(err) {
 				errs = append(errs, fmt.Errorf("configmap %s with CA certificate does not exists: %w", nsn.String(), err))
 			}

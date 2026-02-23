@@ -149,7 +149,7 @@ func (r *TargetAllocatorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	log := r.log.WithValues("targetallocator", req.NamespacedName)
 
 	var instance v1alpha1.TargetAllocator
-	if err := r.Client.Get(ctx, req.NamespacedName, &instance); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if !apierrors.IsNotFound(err) {
 			log.Error(err, "unable to fetch TargetAllocator")
 		}

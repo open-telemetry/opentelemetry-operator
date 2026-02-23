@@ -48,13 +48,13 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 				assert.Equal(t, "nginx-img:1", inst.Spec.Nginx.Image)
 				assert.Equal(t, "apache-httpd-img:1", inst.Spec.ApacheHttpd.Image)
 
-				assert.Equal(t, "java-img:1", inst.ObjectMeta.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"])
-				assert.Equal(t, "nodejs-img:1", inst.ObjectMeta.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"])
-				assert.Equal(t, "python-img:1", inst.ObjectMeta.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"])
-				assert.Equal(t, "dotnet-img:1", inst.ObjectMeta.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image"])
-				assert.Equal(t, "go-img:1", inst.ObjectMeta.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-go-image"])
-				assert.Equal(t, "nginx-img:1", inst.ObjectMeta.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-nginx-image"])
-				assert.Equal(t, "apache-httpd-img:1", inst.ObjectMeta.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-apache-httpd-image"])
+				assert.Equal(t, "java-img:1", inst.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"])
+				assert.Equal(t, "nodejs-img:1", inst.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"])
+				assert.Equal(t, "python-img:1", inst.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"])
+				assert.Equal(t, "dotnet-img:1", inst.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image"])
+				assert.Equal(t, "go-img:1", inst.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-go-image"])
+				assert.Equal(t, "nginx-img:1", inst.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-nginx-image"])
+				assert.Equal(t, "apache-httpd-img:1", inst.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-apache-httpd-image"])
 			},
 		},
 		{
@@ -102,13 +102,13 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 				assert.Equal(t, "custom-nginx-img:2", inst.Spec.Nginx.Image)
 				assert.Equal(t, "custom-apache-httpd-img:2", inst.Spec.ApacheHttpd.Image)
 
-				assert.Equal(t, "java-img:1", inst.ObjectMeta.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"])
-				assert.Equal(t, "nodejs-img:1", inst.ObjectMeta.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"])
-				assert.Equal(t, "python-img:1", inst.ObjectMeta.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"])
-				assert.Equal(t, "dotnet-img:1", inst.ObjectMeta.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image"])
-				assert.Equal(t, "go-img:1", inst.ObjectMeta.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-go-image"])
-				assert.Equal(t, "nginx-img:1", inst.ObjectMeta.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-nginx-image"])
-				assert.Equal(t, "apache-httpd-img:1", inst.ObjectMeta.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-apache-httpd-image"])
+				assert.Equal(t, "java-img:1", inst.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-java-image"])
+				assert.Equal(t, "nodejs-img:1", inst.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-nodejs-image"])
+				assert.Equal(t, "python-img:1", inst.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-python-image"])
+				assert.Equal(t, "dotnet-img:1", inst.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-dotnet-image"])
+				assert.Equal(t, "go-img:1", inst.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-go-image"])
+				assert.Equal(t, "nginx-img:1", inst.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-nginx-image"])
+				assert.Equal(t, "apache-httpd-img:1", inst.Annotations["instrumentation.opentelemetry.io/default-auto-instrumentation-apache-httpd-image"])
 			},
 		},
 		{

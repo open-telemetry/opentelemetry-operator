@@ -9,6 +9,6 @@ import (
 
 func upgrade0_110_0(_ VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (*v1beta1.OpenTelemetryCollector, error) {
 	envVarExpansionFeatureFlag := "-component.UseLocalHostAsDefaultHost"
-	otelcol.Spec.OpenTelemetryCommonFields.Args = RemoveFeatureGate(otelcol.Spec.OpenTelemetryCommonFields.Args, envVarExpansionFeatureFlag)
+	otelcol.Spec.Args = RemoveFeatureGate(otelcol.Spec.Args, envVarExpansionFeatureFlag)
 	return otelcol, nil
 }

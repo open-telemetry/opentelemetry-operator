@@ -774,7 +774,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 		{
 			name: "disable default service account",
 			mutateCollector: func(obj *v1beta1.OpenTelemetryCollector) {
-				obj.Spec.OpenTelemetryCommonFields.ServiceAccount = "placeholder"
+				obj.Spec.ServiceAccount = "placeholder"
 			},
 			expectedResourcesDeletedCount: 1,
 		},
@@ -1354,7 +1354,7 @@ func TestUpgrade(t *testing.T) {
 			expected: func(t *testing.T, otelcol v1beta1.OpenTelemetryCollector) {
 				assert.Equal(t, upgrade.Latest.String(), otelcol.Status.Version)
 				// The '-component.UseLocalHostAsDefaultHost' feature gate was removed in the 0.110.0 upgrade step
-				assert.Equal(t, "", otelcol.Spec.OpenTelemetryCommonFields.Args["feature-gates"])
+				assert.Equal(t, "", otelcol.Spec.Args["feature-gates"])
 			},
 		},
 		{

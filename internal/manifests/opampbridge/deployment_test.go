@@ -241,9 +241,9 @@ func TestDeploymentFilterLabels(t *testing.T) {
 
 	d := Deployment(params)
 
-	assert.Len(t, d.ObjectMeta.Labels, 6)
+	assert.Len(t, d.Labels, 6)
 	for k := range excludedLabels {
-		assert.NotContains(t, d.ObjectMeta.Labels, k)
+		assert.NotContains(t, d.Labels, k)
 	}
 }
 
@@ -274,12 +274,12 @@ func TestDeploymentFilterAnnotations(t *testing.T) {
 
 	d := Deployment(params)
 
-	assert.Len(t, d.ObjectMeta.Annotations, 1)
-	assert.NotContains(t, d.ObjectMeta.Annotations, "foo")
-	assert.NotContains(t, d.ObjectMeta.Annotations, "app.foo.bar")
-	assert.Len(t, d.Spec.Template.ObjectMeta.Annotations, 2)
-	assert.NotContains(t, d.Spec.Template.ObjectMeta.Annotations, "foo")
-	assert.NotContains(t, d.Spec.Template.ObjectMeta.Annotations, "app.foo.bar")
+	assert.Len(t, d.Annotations, 1)
+	assert.NotContains(t, d.Annotations, "foo")
+	assert.NotContains(t, d.Annotations, "app.foo.bar")
+	assert.Len(t, d.Spec.Template.Annotations, 2)
+	assert.NotContains(t, d.Spec.Template.Annotations, "foo")
+	assert.NotContains(t, d.Spec.Template.Annotations, "app.foo.bar")
 }
 
 func TestDeploymentNodeSelector(t *testing.T) {

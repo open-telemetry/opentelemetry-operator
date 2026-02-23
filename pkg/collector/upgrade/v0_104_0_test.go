@@ -59,30 +59,30 @@ func TestTAUnifyEnvVarExpansion(t *testing.T) {
 		},
 	}
 	upgrade.TAUnifyEnvVarExpansion(otelcol)
-	assert.Nil(t, otelcol.Spec.OpenTelemetryCommonFields.Args, "expect nil")
+	assert.Nil(t, otelcol.Spec.Args, "expect nil")
 	otelcol.Spec.Config.Receivers.Object = map[string]any{
 		"prometheus": nil,
 	}
 	upgrade.TAUnifyEnvVarExpansion(otelcol)
-	assert.NotNil(t, otelcol.Spec.OpenTelemetryCommonFields.Args, "expect not nil")
+	assert.NotNil(t, otelcol.Spec.Args, "expect not nil")
 	expect := map[string]string{
 		"feature-gates": "-confmap.unifyEnvVarExpansion",
 	}
-	assert.EqualValues(t, otelcol.Spec.OpenTelemetryCommonFields.Args, expect)
+	assert.EqualValues(t, otelcol.Spec.Args, expect)
 	upgrade.TAUnifyEnvVarExpansion(otelcol)
-	assert.EqualValues(t, otelcol.Spec.OpenTelemetryCommonFields.Args, expect)
+	assert.EqualValues(t, otelcol.Spec.Args, expect)
 	expect = map[string]string{
 		"feature-gates": "-confmap.unifyEnvVarExpansion,+abc",
 	}
-	otelcol.Spec.OpenTelemetryCommonFields.Args = expect
+	otelcol.Spec.Args = expect
 	upgrade.TAUnifyEnvVarExpansion(otelcol)
-	assert.EqualValues(t, otelcol.Spec.OpenTelemetryCommonFields.Args, expect)
-	otelcol.Spec.OpenTelemetryCommonFields.Args = map[string]string{
+	assert.EqualValues(t, otelcol.Spec.Args, expect)
+	otelcol.Spec.Args = map[string]string{
 		"feature-gates": "+abc",
 	}
 	upgrade.TAUnifyEnvVarExpansion(otelcol)
 	expect = map[string]string{
 		"feature-gates": "+abc,-confmap.unifyEnvVarExpansion",
 	}
-	assert.EqualValues(t, otelcol.Spec.OpenTelemetryCommonFields.Args, expect)
+	assert.EqualValues(t, otelcol.Spec.Args, expect)
 }
