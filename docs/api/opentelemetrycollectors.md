@@ -11413,6 +11413,14 @@ targetallocator.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>priorityClassName</b></td>
+        <td>string</td>
+        <td>
+          PriorityClassName specifies the pod priority class.
+The pod priority will be default or zero if there is no default and this is not set.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscr">prometheusCR</a></b></td>
         <td>object</td>
         <td>
@@ -32129,6 +32137,14 @@ allocation strategy.<br/>
         <td>
           PodSecurityContext configures the pod security context for the
 targetallocator.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>priorityClassName</b></td>
+        <td>string</td>
+        <td>
+          PriorityClassName specifies the pod priority class.
+The pod priority will be default or zero if there is no default and this is not set.<br/>
         </td>
         <td>false</td>
       </tr><tr>

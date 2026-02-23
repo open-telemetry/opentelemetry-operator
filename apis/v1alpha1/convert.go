@@ -184,6 +184,7 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 		Image:              in.Image,
 		Enabled:            in.Enabled,
 		Affinity:           in.Affinity,
+		PriorityClassName:  in.PriorityClassName,
 		PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
 			Enabled:        in.PrometheusCR.Enabled,
 			ScrapeInterval: in.PrometheusCR.ScrapeInterval,
@@ -456,6 +457,7 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		Image:              in.Image,
 		Enabled:            in.Enabled,
 		Affinity:           in.Affinity,
+		PriorityClassName:  in.PriorityClassName,
 		PrometheusCR: OpenTelemetryTargetAllocatorPrometheusCR{
 			Enabled:                in.PrometheusCR.Enabled,
 			ScrapeInterval:         in.PrometheusCR.ScrapeInterval,

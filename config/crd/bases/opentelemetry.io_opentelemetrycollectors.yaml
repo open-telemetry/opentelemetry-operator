@@ -3347,6 +3347,8 @@ spec:
                             type: string
                         type: object
                     type: object
+                  priorityClassName:
+                    type: string
                   prometheusCR:
                     properties:
                       enabled:
@@ -8240,6 +8242,8 @@ spec:
                             type: string
                         type: object
                     type: object
+                  priorityClassName:
+                    type: string
                   prometheusCR:
                     properties:
                       allowNamespaces:

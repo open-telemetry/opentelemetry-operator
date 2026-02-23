@@ -103,6 +103,7 @@ func TestTargetAllocator(t *testing.T) {
 						ServiceAccount:     "serviceAccountName",
 						Image:              "custom_image",
 						Enabled:            true,
+						PriorityClassName:  "priority-class",
 						Affinity: &v1.Affinity{
 							NodeAffinity: &v1.NodeAffinity{
 								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
@@ -198,8 +199,9 @@ func TestTargetAllocator(t *testing.T) {
 								v1.ResourceMemory: resource.MustParse("128Mi"),
 							},
 						},
-						ServiceAccount: "serviceAccountName",
-						Image:          "custom_image",
+						ServiceAccount:    "serviceAccountName",
+						Image:             "custom_image",
+						PriorityClassName: "priority-class",
 						Affinity: &v1.Affinity{
 							NodeAffinity: &v1.NodeAffinity{
 								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{

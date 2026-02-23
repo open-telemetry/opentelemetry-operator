@@ -459,6 +459,7 @@ func createTA() OpenTelemetryTargetAllocator {
 		ServiceAccount:     "serviceAccountName",
 		Image:              "custom_image",
 		Enabled:            true,
+		PriorityClassName:  "priority-class",
 		Affinity: &v1.Affinity{
 			NodeAffinity: &v1.NodeAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
