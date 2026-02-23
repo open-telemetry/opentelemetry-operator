@@ -8561,6 +8561,23 @@ spec:
                       - whenUnsatisfiable
                       type: object
                     type: array
+                  weightOverrides:
+                    items:
+                      properties:
+                        jobName:
+                          type: string
+                        weightClass:
+                          enum:
+                          - light
+                          - medium
+                          - heavy
+                          type: string
+                      required:
+                      - jobName
+                      - weightClass
+                      type: object
+                    type: array
+                    x-kubernetes-list-type: atomic
                 type: object
               terminationGracePeriodSeconds:
                 format: int64

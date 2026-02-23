@@ -131,6 +131,17 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		taConfig["collector_not_ready_grace_period"] = taSpec.CollectorNotReadyGracePeriod.Duration
 	}
 
+	if len(taSpec.WeightOverrides) > 0 {
+		overrides := make([]map[string]string, len(taSpec.WeightOverrides))
+		for i, o := range taSpec.WeightOverrides {
+			overrides[i] = map[string]string{
+				"job_name":     o.JobName,
+				"weight_class": o.WeightClass,
+			}
+		}
+		taConfig["weight_overrides"] = overrides
+	}
+
 	taConfigYAML, err := yaml.Marshal(taConfig)
 	if err != nil {
 		return &corev1.ConfigMap{}, err

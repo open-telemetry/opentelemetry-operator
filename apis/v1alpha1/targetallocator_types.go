@@ -97,6 +97,10 @@ type TargetAllocatorSpec struct {
 	// +kubebuilder:default:="30s"
 	// +kubebuilder:validation:Format:=duration
 	CollectorNotReadyGracePeriod *metav1.Duration `json:"collectorNotReadyGracePeriod,omitempty"`
+	// WeightOverrides assigns weight classes to targets by job name for the least-weighted allocation strategy.
+	// +optional
+	// +listType=atomic
+	WeightOverrides []v1beta1.TargetAllocatorWeightOverride `json:"weightOverrides,omitempty"`
 	// LivenessProbe defines the liveness probe configuration for the Target Allocator container.
 	// +optional
 	LivenessProbe *corev1.Probe `json:"livenessProbe,omitempty"`
