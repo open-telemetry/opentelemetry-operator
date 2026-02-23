@@ -4,7 +4,7 @@ networking:
   ipFamily: dual
 nodes:
   - role: control-plane
-    image: kindest/node:v1.31.0@sha256:25a3504b2b340954595fa7a6ed1575ef2edadf5abd83c0776a4308b64bf47c93
+    image: kindest/node:v1.31.14@sha256:6f86cf509dbb42767b6e79debc3f2c32e4ee01386f0489b3b2be24b0a55aac2b
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration
