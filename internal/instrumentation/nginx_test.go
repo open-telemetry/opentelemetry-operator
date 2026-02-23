@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
@@ -44,12 +44,12 @@ func TestInjectNginxSDK(t *testing.T) {
 						{},
 					},
 				},
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 			},
 			expected: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 				Spec: corev1.PodSpec{
@@ -144,7 +144,7 @@ func TestInjectNginxSDK(t *testing.T) {
 				ConfigFile: "/opt/nginx/custom-nginx.conf",
 			},
 			pod: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 				Spec: corev1.PodSpec{
@@ -154,7 +154,7 @@ func TestInjectNginxSDK(t *testing.T) {
 				},
 			},
 			expected: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 				Spec: corev1.PodSpec{
@@ -247,7 +247,7 @@ func TestInjectNginxSDK(t *testing.T) {
 				Image: "foo/bar:1",
 			},
 			pod: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 				Spec: corev1.PodSpec{
@@ -266,7 +266,7 @@ func TestInjectNginxSDK(t *testing.T) {
 				},
 			},
 			expected: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 				Spec: corev1.PodSpec{
@@ -366,7 +366,7 @@ func TestInjectNginxSDK(t *testing.T) {
 			name:  "Pod Namespace specified",
 			Nginx: v1alpha1.Nginx{Image: "foo/bar:1"},
 			pod: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "my-namespace",
 					Name:      "my-nginx-6c44bcbdd",
 				},
@@ -377,7 +377,7 @@ func TestInjectNginxSDK(t *testing.T) {
 				},
 			},
 			expected: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "my-namespace",
 					Name:      "my-nginx-6c44bcbdd",
 				},
@@ -492,7 +492,7 @@ func TestInjectNginxUnknownNamespace(t *testing.T) {
 			name:  "Clone Container not present, unknown namespace",
 			Nginx: v1alpha1.Nginx{Image: "foo/bar:1"},
 			pod: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 				Spec: corev1.PodSpec{
@@ -502,7 +502,7 @@ func TestInjectNginxUnknownNamespace(t *testing.T) {
 				},
 			},
 			expected: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
 				},
 				Spec: corev1.PodSpec{

@@ -21,8 +21,8 @@ func Annotations(instance v1alpha1.OpAMPBridge, filterAnnotations []string) map[
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
 
-	if instance.ObjectMeta.Annotations != nil {
-		for k, v := range instance.ObjectMeta.Annotations {
+	if instance.Annotations != nil {
+		for k, v := range instance.Annotations {
 			if !manifestutils.IsFilteredSet(k, filterAnnotations) {
 				annotations[k] = v
 			}
@@ -37,8 +37,8 @@ func PodAnnotations(instance v1alpha1.OpAMPBridge, configMap *v1.ConfigMap, filt
 	// Make a copy of PodAnnotations to be safe
 	annotations := make(map[string]string, len(instance.Spec.PodAnnotations))
 	maps.Copy(annotations, instance.Spec.PodAnnotations)
-	if instance.ObjectMeta.Annotations != nil {
-		for k, v := range instance.ObjectMeta.Annotations {
+	if instance.Annotations != nil {
+		for k, v := range instance.Annotations {
 			if !manifestutils.IsFilteredSet(k, filterAnnotations) {
 				annotations[k] = v
 			}

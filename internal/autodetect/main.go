@@ -80,7 +80,7 @@ func (a *autoDetect) PrometheusCRsAvailability() (prometheus.Availability, error
 	foundServiceMonitor := false
 	foundPodMonitor := false
 	apiGroups := apiList.Groups
-	for i := 0; i < len(apiGroups); i++ {
+	for i := range apiGroups {
 		if apiGroups[i].Name == "monitoring.coreos.com" {
 			for _, version := range apiGroups[i].Versions {
 				resources, err := a.dcl.ServerResourcesForGroupVersion(version.GroupVersion)
@@ -89,9 +89,10 @@ func (a *autoDetect) PrometheusCRsAvailability() (prometheus.Availability, error
 				}
 
 				for _, resource := range resources.APIResources {
-					if resource.Kind == "ServiceMonitor" {
+					switch resource.Kind {
+					case "ServiceMonitor":
 						foundServiceMonitor = true
-					} else if resource.Kind == "PodMonitor" {
+					case "PodMonitor":
 						foundPodMonitor = true
 					}
 				}
@@ -114,7 +115,7 @@ func (a *autoDetect) OpenShiftRoutesAvailability() (openshift.RoutesAvailability
 	}
 
 	apiGroups := apiList.Groups
-	for i := 0; i < len(apiGroups); i++ {
+	for i := range apiGroups {
 		if apiGroups[i].Name == "route.openshift.io" {
 			return openshift.RoutesAvailable, nil
 		}
@@ -143,7 +144,7 @@ func (a *autoDetect) CertManagerAvailability(ctx context.Context) (certmanager.A
 
 	apiGroups := apiList.Groups
 	certManagerFound := false
-	for i := 0; i < len(apiGroups); i++ {
+	for i := range apiGroups {
 		if apiGroups[i].Name == "cert-manager.io" {
 			certManagerFound = true
 			break

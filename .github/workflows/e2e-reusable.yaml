@@ -51,6 +51,7 @@ jobs:
         path: ${{ env.IMAGE_ARCHIVE_FILENAME }}
         if-no-files-found: 'error'
         retention-days: 1
+        overwrite: true
 
   e2e-tests:
     runs-on: ubuntu-latest

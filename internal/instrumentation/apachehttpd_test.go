@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
@@ -316,7 +316,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 			name:        "Pod Namespace specified",
 			ApacheHttpd: v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
 			pod: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "my-namespace",
 				},
 				Spec: corev1.PodSpec{
@@ -326,7 +326,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 				},
 			},
 			expected: corev1.Pod{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "my-namespace",
 				},
 				Spec: corev1.PodSpec{

@@ -224,9 +224,9 @@ func TestDesiredService(t *testing.T) {
 			OtelCol: v1beta1.OpenTelemetryCollector{
 				Spec: v1beta1.OpenTelemetryCollectorSpec{Config: v1beta1.Config{
 					Receivers: v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"otlp": map[string]interface{}{
-								"protocols": map[string]interface{}{
+						Object: map[string]any{
+							"otlp": map[string]any{
+								"protocols": map[string]any{
 									"grpc": nil,
 									"http": nil,
 								},
@@ -234,8 +234,8 @@ func TestDesiredService(t *testing.T) {
 						},
 					},
 					Exporters: v1beta1.AnyConfig{
-						Object: map[string]interface{}{
-							"otlp": map[string]interface{}{
+						Object: map[string]any{
+							"otlp": map[string]any{
 								"endpoint": "jaeger-allinone-collector-headless.chainsaw-otlp-metrics.svc:4317",
 							},
 						},
@@ -293,8 +293,8 @@ func TestMonitoringService(t *testing.T) {
 		params.OtelCol.Spec.Config = v1beta1.Config{
 			Service: v1beta1.Service{
 				Telemetry: &v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"metrics": map[string]interface{}{
+					Object: map[string]any{
+						"metrics": map[string]any{
 							"level":   "detailed",
 							"address": "0.0.0.0:9090",
 						},
@@ -332,9 +332,9 @@ func TestExtensionService(t *testing.T) {
 								Extensions: []string{"jaeger_query"},
 							},
 							Extensions: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{
-									"jaeger_query": map[string]interface{}{
-										"http": map[string]interface{}{
+								Object: map[string]any{
+									"jaeger_query": map[string]any{
+										"http": map[string]any{
 											"endpoint": "0.0.0.0:16686",
 										},
 									},
@@ -369,9 +369,9 @@ func TestExtensionService(t *testing.T) {
 								Extensions: []string{"jaeger_query"},
 							},
 							Extensions: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{
-									"jaeger_query": map[string]interface{}{
-										"http": map[string]interface{}{
+								Object: map[string]any{
+									"jaeger_query": map[string]any{
+										"http": map[string]any{
 											"endpoint": "0.0.0.0:16686",
 										},
 									},
@@ -406,12 +406,12 @@ func TestExtensionService(t *testing.T) {
 								Extensions: []string{"jaeger_query"},
 							},
 							Extensions: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{
-									"jaeger_query": map[string]interface{}{
-										"http": map[string]interface{}{
+								Object: map[string]any{
+									"jaeger_query": map[string]any{
+										"http": map[string]any{
 											"endpoint": "0.0.0.0:16686",
 										},
-										"grpc": map[string]interface{}{
+										"grpc": map[string]any{
 											"endpoint": "0.0.0.0:16686",
 										},
 									},
@@ -446,7 +446,7 @@ func TestExtensionService(t *testing.T) {
 								Extensions: []string{"jaeger_query"},
 							},
 							Extensions: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{},
+								Object: map[string]any{},
 							},
 						},
 					},
@@ -469,8 +469,8 @@ func TestExtensionService(t *testing.T) {
 								Extensions: []string{"jaeger_query"},
 							},
 							Extensions: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{
-									"jaeger_query": map[string]interface{}{},
+								Object: map[string]any{
+									"jaeger_query": map[string]any{},
 								},
 							},
 						},
@@ -490,7 +490,6 @@ func TestExtensionService(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			actual, err := ExtensionService(tc.params)
 			assert.NoError(t, err)
@@ -527,7 +526,7 @@ func serviceWithInternalTrafficPolicy(name string, ports []v1beta1.PortsSpec, in
 
 	svcPorts := []v1.ServicePort{}
 	for _, p := range ports {
-		p.ServicePort.TargetPort = intstr.FromInt32(p.Port)
+		p.TargetPort = intstr.FromInt32(p.Port)
 		svcPorts = append(svcPorts, p.ServicePort)
 	}
 

@@ -7,7 +7,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-func upgrade0_122_0(u VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (*v1beta1.OpenTelemetryCollector, error) { //nolint:unparam
+func upgrade0_122_0(u VersionUpgrade, otelcol *v1beta1.OpenTelemetryCollector) (*v1beta1.OpenTelemetryCollector, error) {
 	tel := otelcol.Spec.Config.Service.GetTelemetry(u.Log)
 
 	if tel == nil || tel.Metrics.Address == "" {

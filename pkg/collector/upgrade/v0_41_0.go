@@ -21,20 +21,20 @@ func upgrade0_41_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 
 	// Re-structure the cors section in otlp receiver
 	// in reference to https://github.com/open-telemetry/opentelemetry-collector/pull/4492
-	receivers, _ := cfg["receivers"].(map[interface{}]interface{})
+	receivers, _ := cfg["receivers"].(map[any]any)
 
 	for k1, v1 := range receivers {
 		if strings.HasPrefix(k1.(string), "otlp") {
-			otlpReceiver, _ := v1.(map[interface{}]interface{})
+			otlpReceiver, _ := v1.(map[any]any)
 			var createdCors bool
 			for k2, v2 := range otlpReceiver {
 				if k2.(string) == "cors_allowed_origins" || k2.(string) == "cors_allowed_headers" {
 					if !createdCors {
-						otlpReceiver["cors"] = make(map[interface{}]interface{})
+						otlpReceiver["cors"] = make(map[any]any)
 						createdCors = true
 					}
 					newsCorsKey := strings.Replace(k2.(string), "cors_", "", 1)
-					otlpCors, _ := otlpReceiver["cors"].(map[interface{}]interface{})
+					otlpCors, _ := otlpReceiver["cors"].(map[any]any)
 					otlpCors[newsCorsKey] = v2
 					delete(otlpReceiver, k2)
 

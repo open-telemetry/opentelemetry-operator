@@ -6,6 +6,7 @@ package controllers_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -21,7 +22,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -258,8 +259,11 @@ func TestMain(m *testing.M) {
 		}, func(error) bool {
 			return true
 		}, func() error {
-			// #nosec G402
-			conn, tlsErr := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
+			tlsDialer := &tls.Dialer{
+				NetDialer: dialer,
+				Config:    &tls.Config{InsecureSkipVerify: true},
+			}
+			conn, tlsErr := tlsDialer.DialContext(ctx, "tcp", addrPort)
 			if tlsErr != nil {
 				return tlsErr
 			}
@@ -445,7 +449,7 @@ func testCollectorWithPDB(t *testing.T, minAvailable, maxUnavailable int32) v1be
 	pdb := &v1beta1.PodDisruptionBudgetSpec{}
 
 	if maxUnavailable > 0 && minAvailable > 0 {
-		fmt.Printf("worng configuration: %v", fmt.Errorf("minAvailable and maxUnavailable cannot be both set"))
+		fmt.Printf("worng configuration: %v", errors.New("minAvailable and maxUnavailable cannot be both set"))
 	}
 	if maxUnavailable > 0 {
 		pdb.MaxUnavailable = &intstr.IntOrString{
@@ -544,7 +548,7 @@ func opampBridgeParams() manifests.Params {
 func populateObjectIfExists(t testing.TB, object client.Object, namespacedName types.NamespacedName) (bool, error) {
 	t.Helper()
 	err := k8sClient.Get(context.Background(), namespacedName, object)
-	if errors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		return false, nil
 	}
 	if err != nil {

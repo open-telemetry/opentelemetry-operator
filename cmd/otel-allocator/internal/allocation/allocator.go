@@ -6,6 +6,7 @@ package allocation
 import (
 	"context"
 	"errors"
+	"maps"
 	"runtime"
 	"slices"
 	"sync"
@@ -206,9 +207,7 @@ func (a *allocator) TargetItems() map[target.ItemHash]*target.Item {
 	a.m.RLock()
 	defer a.m.RUnlock()
 	targetItemsCopy := make(map[target.ItemHash]*target.Item)
-	for k, v := range a.targetItems {
-		targetItemsCopy[k] = v
-	}
+	maps.Copy(targetItemsCopy, a.targetItems)
 	return targetItemsCopy
 }
 
@@ -217,9 +216,7 @@ func (a *allocator) Collectors() map[string]*Collector {
 	a.m.RLock()
 	defer a.m.RUnlock()
 	collectorsCopy := make(map[string]*Collector)
-	for k, v := range a.collectors {
-		collectorsCopy[k] = v
-	}
+	maps.Copy(collectorsCopy, a.collectors)
 	return collectorsCopy
 }
 

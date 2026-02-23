@@ -4,6 +4,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -657,7 +658,7 @@ func TestValidateConfig(t *testing.T) {
 		{
 			name:        "no namespace",
 			fileConfig:  Config{PrometheusCR: PrometheusCRConfig{Enabled: true}},
-			expectedErr: fmt.Errorf("collector namespace must be set"),
+			expectedErr: errors.New("collector namespace must be set"),
 		},
 		{
 			name:        "promCR enabled, no Prometheus config",
@@ -667,12 +668,12 @@ func TestValidateConfig(t *testing.T) {
 		{
 			name:        "promCR disabled, no Prometheus config",
 			fileConfig:  Config{PromConfig: nil},
-			expectedErr: fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled"),
+			expectedErr: errors.New("at least one scrape config must be defined, or Prometheus CR watching must be enabled"),
 		},
 		{
 			name:        "promCR disabled, Prometheus config present, no scrapeConfigs",
 			fileConfig:  Config{PromConfig: &promconfig.Config{}},
-			expectedErr: fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled"),
+			expectedErr: errors.New("at least one scrape config must be defined, or Prometheus CR watching must be enabled"),
 		},
 		{
 			name: "promCR disabled, Prometheus config present, scrapeConfigs present",
@@ -701,12 +702,11 @@ func TestValidateConfig(t *testing.T) {
 				},
 				CollectorNamespace: "default",
 			},
-			expectedErr: fmt.Errorf("only one of allowNamespaces or denyNamespaces can be set"),
+			expectedErr: errors.New("only one of allowNamespaces or denyNamespaces can be set"),
 		},
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			err := ValidateConfig(&tc.fileConfig)
 			assert.Equal(t, tc.expectedErr, err)
@@ -748,7 +748,6 @@ func TestGetAllowDenyLists(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			allowList, denyList := tc.promCRConfig.GetAllowDenyLists()
 			assert.Equal(t, tc.expectedAllowList, allowList)
