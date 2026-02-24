@@ -358,8 +358,14 @@ func Test_tov1beta1AndBack_prometheus_selectors(t *testing.T) {
 				TargetAllocator: OpenTelemetryTargetAllocator{
 					PrometheusCR: OpenTelemetryTargetAllocatorPrometheusCR{
 						// nil or empty map means select everything
-						PodMonitorSelector:     nil,
-						ServiceMonitorSelector: nil,
+						PodMonitorSelector:              nil,
+						ServiceMonitorSelector:          nil,
+						PodMonitorNamespaceSelector:     nil,
+						ServiceMonitorNamespaceSelector: nil,
+						ScrapeConfigSelector:            nil,
+						ScrapeConfigNamespaceSelector:   nil,
+						ProbeSelector:                   nil,
+						ProbeNamespaceSelector:          nil,
 					},
 				},
 			},
@@ -373,13 +379,32 @@ func Test_tov1beta1AndBack_prometheus_selectors(t *testing.T) {
 		// empty LabelSelector mean select everything
 		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector)
 		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector)
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.PodMonitorNamespaceSelector)
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorNamespaceSelector)
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ScrapeConfigSelector)
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ScrapeConfigNamespaceSelector)
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ProbeSelector)
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ProbeNamespaceSelector)
+
 		assert.Equal(t, 0, len(colalpha1.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector))
 		assert.Equal(t, 0, len(colalpha1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector))
+		assert.Equal(t, 0, len(colalpha1.Spec.TargetAllocator.PrometheusCR.PodMonitorNamespaceSelector))
+		assert.Equal(t, 0, len(colalpha1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorNamespaceSelector))
+		assert.Equal(t, 0, len(colalpha1.Spec.TargetAllocator.PrometheusCR.ScrapeConfigSelector))
+		assert.Equal(t, 0, len(colalpha1.Spec.TargetAllocator.PrometheusCR.ScrapeConfigNamespaceSelector))
+		assert.Equal(t, 0, len(colalpha1.Spec.TargetAllocator.PrometheusCR.ProbeSelector))
+		assert.Equal(t, 0, len(colalpha1.Spec.TargetAllocator.PrometheusCR.ProbeNamespaceSelector))
 
 		err = colalpha1.ConvertFrom(&colbeta1)
 		require.NoError(t, err)
 		assert.Nil(t, colalpha1.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector)
 		assert.Nil(t, colalpha1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector)
+		assert.Nil(t, colalpha1.Spec.TargetAllocator.PrometheusCR.PodMonitorNamespaceSelector)
+		assert.Nil(t, colalpha1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorNamespaceSelector)
+		assert.Nil(t, colalpha1.Spec.TargetAllocator.PrometheusCR.ScrapeConfigSelector)
+		assert.Nil(t, colalpha1.Spec.TargetAllocator.PrometheusCR.ScrapeConfigNamespaceSelector)
+		assert.Nil(t, colalpha1.Spec.TargetAllocator.PrometheusCR.ProbeSelector)
+		assert.Nil(t, colalpha1.Spec.TargetAllocator.PrometheusCR.ProbeNamespaceSelector)
 	})
 	t.Run("empty-selectors", func(t *testing.T) {
 		colalpha1 := OpenTelemetryCollector{
@@ -387,8 +412,14 @@ func Test_tov1beta1AndBack_prometheus_selectors(t *testing.T) {
 				TargetAllocator: OpenTelemetryTargetAllocator{
 					PrometheusCR: OpenTelemetryTargetAllocatorPrometheusCR{
 						// nil or empty map means select everything
-						PodMonitorSelector:     map[string]string{},
-						ServiceMonitorSelector: map[string]string{},
+						PodMonitorSelector:              map[string]string{},
+						ServiceMonitorSelector:          map[string]string{},
+						PodMonitorNamespaceSelector:     map[string]string{},
+						ServiceMonitorNamespaceSelector: map[string]string{},
+						ScrapeConfigSelector:            map[string]string{},
+						ScrapeConfigNamespaceSelector:   map[string]string{},
+						ProbeSelector:                   map[string]string{},
+						ProbeNamespaceSelector:          map[string]string{},
 					},
 				},
 			},
@@ -402,11 +433,23 @@ func Test_tov1beta1AndBack_prometheus_selectors(t *testing.T) {
 		// empty LabelSelector mean select everything
 		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector)
 		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector)
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.PodMonitorNamespaceSelector)
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorNamespaceSelector)
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ScrapeConfigSelector)
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ScrapeConfigNamespaceSelector)
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ProbeSelector)
+		assert.NotNil(t, colbeta1.Spec.TargetAllocator.PrometheusCR.ProbeNamespaceSelector)
 
 		err = colalpha1.ConvertFrom(&colbeta1)
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{}, colalpha1.Spec.TargetAllocator.PrometheusCR.PodMonitorSelector)
 		assert.Equal(t, map[string]string{}, colalpha1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorSelector)
+		assert.Equal(t, map[string]string{}, colalpha1.Spec.TargetAllocator.PrometheusCR.PodMonitorNamespaceSelector)
+		assert.Equal(t, map[string]string{}, colalpha1.Spec.TargetAllocator.PrometheusCR.ServiceMonitorNamespaceSelector)
+		assert.Equal(t, map[string]string{}, colalpha1.Spec.TargetAllocator.PrometheusCR.ScrapeConfigSelector)
+		assert.Equal(t, map[string]string{}, colalpha1.Spec.TargetAllocator.PrometheusCR.ScrapeConfigNamespaceSelector)
+		assert.Equal(t, map[string]string{}, colalpha1.Spec.TargetAllocator.PrometheusCR.ProbeSelector)
+		assert.Equal(t, map[string]string{}, colalpha1.Spec.TargetAllocator.PrometheusCR.ProbeNamespaceSelector)
 	})
 }
 
@@ -559,8 +602,14 @@ func TestConvertTo(t *testing.T) {
 			},
 			TargetAllocator: v1beta1.TargetAllocatorEmbedded{
 				PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
-					PodMonitorSelector:     &metav1.LabelSelector{},
-					ServiceMonitorSelector: &metav1.LabelSelector{},
+					PodMonitorSelector:              &metav1.LabelSelector{},
+					ServiceMonitorSelector:          &metav1.LabelSelector{},
+					PodMonitorNamespaceSelector:     &metav1.LabelSelector{},
+					ServiceMonitorNamespaceSelector: &metav1.LabelSelector{},
+					ScrapeConfigSelector:            &metav1.LabelSelector{},
+					ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{},
+					ProbeSelector:                   &metav1.LabelSelector{},
+					ProbeNamespaceSelector:          &metav1.LabelSelector{},
 				},
 			},
 			Config: v1beta1.Config{

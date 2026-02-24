@@ -13975,10 +13975,46 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>allowNamespaces</b></td>
+        <td>[]string</td>
+        <td>
+          AllowNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (allow list). This is mutually exclusive with DenyNamespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>denyNamespaces</b></td>
+        <td>[]string</td>
+        <td>
+          DenyNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (deny list). This is mutually exclusive with AllowNamespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
           Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>evaluationInterval</b></td>
+        <td>string</td>
+        <td>
+          Default interval between rule evaluations.
+
+Default: "30s"<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+            <i>Default</i>: 30s<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>podMonitorNamespaceSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          Namespaces to be selected for PodMonitor discovery.
+This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
+namespace's meta labels. The requirements are ANDed.
+Empty or nil map matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -13992,11 +14028,51 @@ Empty or nil map matches all pod monitors.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>probeNamespaceSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          Namespaces to be selected for Probe discovery.
+This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
+namespace's meta labels. The requirements are ANDed.
+Empty or nil map matches all namespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>probeSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          Probes to be selected for target discovery.
+This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
+Probe's meta labels. The requirements are ANDed.
+Empty or nil map matches all probes.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>scrapeClasses</b></td>
         <td>[]object</td>
         <td>
           ScrapeClasses to be referenced by PodMonitors and ServiceMonitors to include common configuration.
 If specified, expects an array of ScrapeClass objects as specified by https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ScrapeClass.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scrapeConfigNamespaceSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          Namespaces to be selected for ScrapeConfig discovery.
+This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
+namespace's meta labels. The requirements are ANDed.
+Empty or nil map matches all namespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scrapeConfigSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          ScrapeConfigs to be selected for target discovery.
+This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
+ScrapeConfig's meta labels. The requirements are ANDed.
+Empty or nil map matches all scrape configs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14009,6 +14085,24 @@ Default: "30s"<br/>
           <br/>
             <i>Format</i>: duration<br/>
             <i>Default</i>: 30s<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scrapeProtocols</b></td>
+        <td>[]string</td>
+        <td>
+          ScrapeProtocols define the protocols to negotiate during a scrape. It tells clients the
+protocols supported by Prometheus in order of preference (from most to least preferred).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>serviceMonitorNamespaceSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          Namespaces to be selected for ServiceMonitor discovery.
+This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
+namespace's meta labels. The requirements are ANDed.
+Empty or nil map matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -34723,10 +34817,42 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>evaluationInterval</b></td>
+        <td>string</td>
+        <td>
+          Default interval between rule evaluations.
+
+Default: "30s"<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+            <i>Default</i>: 30s<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrpodmonitornamespaceselector">podMonitorNamespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          Namespaces to be selected for PodMonitor discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrpodmonitorselector">podMonitorSelector</a></b></td>
         <td>object</td>
         <td>
           PodMonitors to be selected for target discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrprobenamespaceselector">probeNamespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          Namespaces to be selected for Probe discovery.
 A label selector is a label query over a set of resources. The result of matchLabels and
 matchExpressions are ANDed. An empty label selector matches all objects. A null
 label selector matches no objects.<br/>
@@ -34751,6 +34877,16 @@ If specified, expects an array of ScrapeClass objects as specified by https://pr
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeconfignamespaceselector">scrapeConfigNamespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          Namespaces to be selected for ScrapeConfig discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeconfigselector">scrapeConfigSelector</a></b></td>
         <td>object</td>
         <td>
@@ -34765,12 +34901,29 @@ label selector matches no objects.<br/>
         <td>string</td>
         <td>
           Default interval between consecutive scrapes. Intervals set in ServiceMonitors and PodMonitors override it.
-Equivalent to the same setting on the Prometheus CR.
 
 Default: "30s"<br/>
           <br/>
             <i>Format</i>: duration<br/>
             <i>Default</i>: 30s<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scrapeProtocols</b></td>
+        <td>[]string</td>
+        <td>
+          ScrapeProtocols define the protocols to negotiate during a scrape. It tells clients the
+protocols supported by Prometheus in order of preference (from most to least preferred).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrservicemonitornamespaceselector">serviceMonitorNamespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          Namespaces to be selected for ServiceMonitor discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -34781,6 +34934,91 @@ Default: "30s"<br/>
 A label selector is a label query over a set of resources. The result of matchLabels and
 matchExpressions are ANDed. An empty label selector matches all objects. A null
 label selector matches no objects.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.podMonitorNamespaceSelector
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscr-1)</sup></sup>
+
+
+
+Namespaces to be selected for PodMonitor discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrpodmonitornamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.podMonitorNamespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrpodmonitornamespaceselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -34828,6 +35066,91 @@ operator is "In", and the values array contains only "value". The requirements a
 
 ### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.podMonitorSelector.matchExpressions[index]
 <sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrpodmonitorselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.probeNamespaceSelector
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscr-1)</sup></sup>
+
+
+
+Namespaces to be selected for Probe discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrprobenamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.probeNamespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrprobenamespaceselector)</sup></sup>
 
 
 
@@ -34957,6 +35280,91 @@ merge patch.<br/>
 </table>
 
 
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeConfigNamespaceSelector
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscr-1)</sup></sup>
+
+
+
+Namespaces to be selected for ScrapeConfig discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrscrapeconfignamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeConfigNamespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeconfignamespaceselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeConfigSelector
 <sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscr-1)</sup></sup>
 
@@ -34998,6 +35406,91 @@ operator is "In", and the values array contains only "value". The requirements a
 
 ### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.scrapeConfigSelector.matchExpressions[index]
 <sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrscrapeconfigselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.serviceMonitorNamespaceSelector
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscr-1)</sup></sup>
+
+
+
+Namespaces to be selected for ServiceMonitor discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#opentelemetrycollectorspectargetallocatorprometheuscrservicemonitornamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### OpenTelemetryCollector.spec.targetAllocator.prometheusCR.serviceMonitorNamespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocatorprometheuscrservicemonitornamespaceselector)</sup></sup>
 
 
 

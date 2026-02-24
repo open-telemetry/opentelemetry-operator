@@ -27,8 +27,23 @@ spec:
     prometheusCR:
       enabled: true
       scrapeInterval: 1s
+      evaluationInterval: 2m
+      scrapeProtocols:
+        - PrometheusText1.0.0
       scrapeConfigSelector: {}
       probeSelector: {}
+      podMonitorNamespaceSelector:
+        matchLabels:
+          ns-label: pod
+      serviceMonitorNamespaceSelector:
+        matchLabels:
+          ns-label: service
+      scrapeConfigNamespaceSelector:
+        matchLabels:
+          ns-label: scrape
+      probeNamespaceSelector:
+        matchLabels:
+          ns-label: probe
       scrapeClasses:
         - name: tls-config
           tlsConfig:

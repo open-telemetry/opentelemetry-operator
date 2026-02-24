@@ -185,16 +185,20 @@ func tov1beta1TA(in OpenTelemetryTargetAllocator) v1beta1.TargetAllocatorEmbedde
 		Enabled:            in.Enabled,
 		Affinity:           in.Affinity,
 		PrometheusCR: v1beta1.TargetAllocatorPrometheusCR{
-			Enabled:        in.PrometheusCR.Enabled,
-			ScrapeInterval: in.PrometheusCR.ScrapeInterval,
-			ScrapeClasses:  in.PrometheusCR.ScrapeClasses,
+			Enabled:            in.PrometheusCR.Enabled,
+			ScrapeInterval:     in.PrometheusCR.ScrapeInterval,
+			EvaluationInterval: in.PrometheusCR.EvaluationInterval,
+			ScrapeProtocols:    in.PrometheusCR.ScrapeProtocols,
+			ScrapeClasses:      in.PrometheusCR.ScrapeClasses,
 			// prometheus_cr.pod_monitor_selector shouldn't be nil when selector is empty
-			PodMonitorSelector: &metav1.LabelSelector{
-				MatchLabels: in.PrometheusCR.PodMonitorSelector,
-			},
-			ServiceMonitorSelector: &metav1.LabelSelector{
-				MatchLabels: in.PrometheusCR.ServiceMonitorSelector,
-			},
+			PodMonitorSelector:              &metav1.LabelSelector{MatchLabels: in.PrometheusCR.PodMonitorSelector},
+			PodMonitorNamespaceSelector:     &metav1.LabelSelector{MatchLabels: in.PrometheusCR.PodMonitorNamespaceSelector},
+			ServiceMonitorSelector:          &metav1.LabelSelector{MatchLabels: in.PrometheusCR.ServiceMonitorSelector},
+			ServiceMonitorNamespaceSelector: &metav1.LabelSelector{MatchLabels: in.PrometheusCR.ServiceMonitorNamespaceSelector},
+			ScrapeConfigSelector:            &metav1.LabelSelector{MatchLabels: in.PrometheusCR.ScrapeConfigSelector},
+			ScrapeConfigNamespaceSelector:   &metav1.LabelSelector{MatchLabels: in.PrometheusCR.ScrapeConfigNamespaceSelector},
+			ProbeSelector:                   &metav1.LabelSelector{MatchLabels: in.PrometheusCR.ProbeSelector},
+			ProbeNamespaceSelector:          &metav1.LabelSelector{MatchLabels: in.PrometheusCR.ProbeNamespaceSelector},
 		},
 		SecurityContext:           in.SecurityContext,
 		PodSecurityContext:        in.PodSecurityContext,
@@ -441,9 +445,33 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 	if in.PrometheusCR.PodMonitorSelector != nil {
 		podMonitorSelector = in.PrometheusCR.PodMonitorSelector.MatchLabels
 	}
+	var podMonitorNamespaceSelector map[string]string
+	if in.PrometheusCR.PodMonitorNamespaceSelector != nil {
+		podMonitorNamespaceSelector = in.PrometheusCR.PodMonitorNamespaceSelector.MatchLabels
+	}
 	var serviceMonitorSelector map[string]string
 	if in.PrometheusCR.ServiceMonitorSelector != nil {
 		serviceMonitorSelector = in.PrometheusCR.ServiceMonitorSelector.MatchLabels
+	}
+	var serviceMonitorNamespaceSelector map[string]string
+	if in.PrometheusCR.ServiceMonitorNamespaceSelector != nil {
+		serviceMonitorNamespaceSelector = in.PrometheusCR.ServiceMonitorNamespaceSelector.MatchLabels
+	}
+	var scrapeConfigSelector map[string]string
+	if in.PrometheusCR.ScrapeConfigSelector != nil {
+		scrapeConfigSelector = in.PrometheusCR.ScrapeConfigSelector.MatchLabels
+	}
+	var scrapeConfigNamespaceSelector map[string]string
+	if in.PrometheusCR.ScrapeConfigNamespaceSelector != nil {
+		scrapeConfigNamespaceSelector = in.PrometheusCR.ScrapeConfigNamespaceSelector.MatchLabels
+	}
+	var probeSelector map[string]string
+	if in.PrometheusCR.ProbeSelector != nil {
+		probeSelector = in.PrometheusCR.ProbeSelector.MatchLabels
+	}
+	var probeNamespaceSelector map[string]string
+	if in.PrometheusCR.ProbeNamespaceSelector != nil {
+		probeNamespaceSelector = in.PrometheusCR.ProbeNamespaceSelector.MatchLabels
 	}
 
 	return OpenTelemetryTargetAllocator{
@@ -457,11 +485,19 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 		Enabled:            in.Enabled,
 		Affinity:           in.Affinity,
 		PrometheusCR: OpenTelemetryTargetAllocatorPrometheusCR{
-			Enabled:                in.PrometheusCR.Enabled,
-			ScrapeInterval:         in.PrometheusCR.ScrapeInterval,
-			ScrapeClasses:          in.PrometheusCR.ScrapeClasses,
-			PodMonitorSelector:     podMonitorSelector,
-			ServiceMonitorSelector: serviceMonitorSelector,
+			Enabled:                         in.PrometheusCR.Enabled,
+			ScrapeInterval:                  in.PrometheusCR.ScrapeInterval,
+			EvaluationInterval:              in.PrometheusCR.EvaluationInterval,
+			ScrapeProtocols:                 in.PrometheusCR.ScrapeProtocols,
+			ScrapeClasses:                   in.PrometheusCR.ScrapeClasses,
+			PodMonitorSelector:              podMonitorSelector,
+			PodMonitorNamespaceSelector:     podMonitorNamespaceSelector,
+			ServiceMonitorSelector:          serviceMonitorSelector,
+			ServiceMonitorNamespaceSelector: serviceMonitorNamespaceSelector,
+			ScrapeConfigSelector:            scrapeConfigSelector,
+			ScrapeConfigNamespaceSelector:   scrapeConfigNamespaceSelector,
+			ProbeSelector:                   probeSelector,
+			ProbeNamespaceSelector:          probeNamespaceSelector,
 		},
 		SecurityContext:           in.SecurityContext,
 		PodSecurityContext:        in.PodSecurityContext,

@@ -93,6 +93,12 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		if taSpec.PrometheusCR.ScrapeInterval.Size() > 0 {
 			prometheusCRConfig["scrape_interval"] = taSpec.PrometheusCR.ScrapeInterval.Duration
 		}
+		if taSpec.PrometheusCR.EvaluationInterval.Size() > 0 {
+			prometheusCRConfig["evaluation_interval"] = taSpec.PrometheusCR.EvaluationInterval.Duration
+		}
+		if taSpec.PrometheusCR.ScrapeProtocols != nil {
+			prometheusCRConfig["scrape_protocols"] = taSpec.PrometheusCR.ScrapeProtocols
+		}
 
 		if taSpec.PrometheusCR.ScrapeClasses != nil {
 			prometheusCRConfig["scrape_classes"] = taSpec.PrometheusCR.ScrapeClasses
@@ -107,12 +113,24 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 		}
 
 		prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
+		if taSpec.PrometheusCR.ServiceMonitorNamespaceSelector != nil {
+			prometheusCRConfig["service_monitor_namespace_selector"] = taSpec.PrometheusCR.ServiceMonitorNamespaceSelector
+		}
 
 		prometheusCRConfig["pod_monitor_selector"] = taSpec.PrometheusCR.PodMonitorSelector
+		if taSpec.PrometheusCR.PodMonitorNamespaceSelector != nil {
+			prometheusCRConfig["pod_monitor_namespace_selector"] = taSpec.PrometheusCR.PodMonitorNamespaceSelector
+		}
 
 		prometheusCRConfig["scrape_config_selector"] = taSpec.PrometheusCR.ScrapeConfigSelector
+		if taSpec.PrometheusCR.ScrapeConfigNamespaceSelector != nil {
+			prometheusCRConfig["scrape_config_namespace_selector"] = taSpec.PrometheusCR.ScrapeConfigNamespaceSelector
+		}
 
 		prometheusCRConfig["probe_selector"] = taSpec.PrometheusCR.ProbeSelector
+		if taSpec.PrometheusCR.ProbeNamespaceSelector != nil {
+			prometheusCRConfig["probe_namespace_selector"] = taSpec.PrometheusCR.ProbeNamespaceSelector
+		}
 
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}

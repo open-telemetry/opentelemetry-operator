@@ -10327,10 +10327,42 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>evaluationInterval</b></td>
+        <td>string</td>
+        <td>
+          Default interval between rule evaluations.
+
+Default: "30s"<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+            <i>Default</i>: 30s<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrpodmonitornamespaceselector">podMonitorNamespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          Namespaces to be selected for PodMonitor discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#targetallocatorspecprometheuscrpodmonitorselector">podMonitorSelector</a></b></td>
         <td>object</td>
         <td>
           PodMonitors to be selected for target discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrprobenamespaceselector">probeNamespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          Namespaces to be selected for Probe discovery.
 A label selector is a label query over a set of resources. The result of matchLabels and
 matchExpressions are ANDed. An empty label selector matches all objects. A null
 label selector matches no objects.<br/>
@@ -10355,6 +10387,16 @@ If specified, expects an array of ScrapeClass objects as specified by https://pr
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrscrapeconfignamespaceselector">scrapeConfigNamespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          Namespaces to be selected for ScrapeConfig discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#targetallocatorspecprometheuscrscrapeconfigselector">scrapeConfigSelector</a></b></td>
         <td>object</td>
         <td>
@@ -10369,12 +10411,29 @@ label selector matches no objects.<br/>
         <td>string</td>
         <td>
           Default interval between consecutive scrapes. Intervals set in ServiceMonitors and PodMonitors override it.
-Equivalent to the same setting on the Prometheus CR.
 
 Default: "30s"<br/>
           <br/>
             <i>Format</i>: duration<br/>
             <i>Default</i>: 30s<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scrapeProtocols</b></td>
+        <td>[]string</td>
+        <td>
+          ScrapeProtocols define the protocols to negotiate during a scrape. It tells clients the
+protocols supported by Prometheus in order of preference (from most to least preferred).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrservicemonitornamespaceselector">serviceMonitorNamespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          Namespaces to be selected for ServiceMonitor discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10385,6 +10444,91 @@ Default: "30s"<br/>
 A label selector is a label query over a set of resources. The result of matchLabels and
 matchExpressions are ANDed. An empty label selector matches all objects. A null
 label selector matches no objects.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.prometheusCR.podMonitorNamespaceSelector
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscr)</sup></sup>
+
+
+
+Namespaces to be selected for PodMonitor discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrpodmonitornamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.prometheusCR.podMonitorNamespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscrpodmonitornamespaceselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10432,6 +10576,91 @@ operator is "In", and the values array contains only "value". The requirements a
 
 ### TargetAllocator.spec.prometheusCR.podMonitorSelector.matchExpressions[index]
 <sup><sup>[↩ Parent](#targetallocatorspecprometheuscrpodmonitorselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.prometheusCR.probeNamespaceSelector
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscr)</sup></sup>
+
+
+
+Namespaces to be selected for Probe discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrprobenamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.prometheusCR.probeNamespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscrprobenamespaceselector)</sup></sup>
 
 
 
@@ -10561,6 +10790,91 @@ merge patch.<br/>
 </table>
 
 
+### TargetAllocator.spec.prometheusCR.scrapeConfigNamespaceSelector
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscr)</sup></sup>
+
+
+
+Namespaces to be selected for ScrapeConfig discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrscrapeconfignamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.prometheusCR.scrapeConfigNamespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscrscrapeconfignamespaceselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### TargetAllocator.spec.prometheusCR.scrapeConfigSelector
 <sup><sup>[↩ Parent](#targetallocatorspecprometheuscr)</sup></sup>
 
@@ -10602,6 +10916,91 @@ operator is "In", and the values array contains only "value". The requirements a
 
 ### TargetAllocator.spec.prometheusCR.scrapeConfigSelector.matchExpressions[index]
 <sup><sup>[↩ Parent](#targetallocatorspecprometheuscrscrapeconfigselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.prometheusCR.serviceMonitorNamespaceSelector
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscr)</sup></sup>
+
+
+
+Namespaces to be selected for ServiceMonitor discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrservicemonitornamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.prometheusCR.serviceMonitorNamespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscrservicemonitornamespaceselector)</sup></sup>
 
 
 
