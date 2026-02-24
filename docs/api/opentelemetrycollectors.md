@@ -13975,46 +13975,10 @@ All CR instances which the ServiceAccount has access to will be retrieved. This 
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>allowNamespaces</b></td>
-        <td>[]string</td>
-        <td>
-          AllowNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (allow list). This is mutually exclusive with DenyNamespaces.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>denyNamespaces</b></td>
-        <td>[]string</td>
-        <td>
-          DenyNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (deny list). This is mutually exclusive with AllowNamespaces.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
           Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>evaluationInterval</b></td>
-        <td>string</td>
-        <td>
-          Default interval between rule evaluations.
-
-Default: "30s"<br/>
-          <br/>
-            <i>Format</i>: duration<br/>
-            <i>Default</i>: 30s<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>podMonitorNamespaceSelector</b></td>
-        <td>map[string]string</td>
-        <td>
-          Namespaces to be selected for PodMonitor discovery.
-This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-namespace's meta labels. The requirements are ANDed.
-Empty or nil map matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14028,51 +13992,11 @@ Empty or nil map matches all pod monitors.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>probeNamespaceSelector</b></td>
-        <td>map[string]string</td>
-        <td>
-          Namespaces to be selected for Probe discovery.
-This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-namespace's meta labels. The requirements are ANDed.
-Empty or nil map matches all namespaces.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>probeSelector</b></td>
-        <td>map[string]string</td>
-        <td>
-          Probes to be selected for target discovery.
-This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-Probe's meta labels. The requirements are ANDed.
-Empty or nil map matches all probes.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>scrapeClasses</b></td>
         <td>[]object</td>
         <td>
           ScrapeClasses to be referenced by PodMonitors and ServiceMonitors to include common configuration.
 If specified, expects an array of ScrapeClass objects as specified by https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ScrapeClass.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>scrapeConfigNamespaceSelector</b></td>
-        <td>map[string]string</td>
-        <td>
-          Namespaces to be selected for ScrapeConfig discovery.
-This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-namespace's meta labels. The requirements are ANDed.
-Empty or nil map matches all namespaces.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>scrapeConfigSelector</b></td>
-        <td>map[string]string</td>
-        <td>
-          ScrapeConfigs to be selected for target discovery.
-This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-ScrapeConfig's meta labels. The requirements are ANDed.
-Empty or nil map matches all scrape configs.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -14085,24 +14009,6 @@ Default: "30s"<br/>
           <br/>
             <i>Format</i>: duration<br/>
             <i>Default</i>: 30s<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>scrapeProtocols</b></td>
-        <td>[]string</td>
-        <td>
-          ScrapeProtocols define the protocols to negotiate during a scrape. It tells clients the
-protocols supported by Prometheus in order of preference (from most to least preferred).<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>serviceMonitorNamespaceSelector</b></td>
-        <td>map[string]string</td>
-        <td>
-          Namespaces to be selected for ServiceMonitor discovery.
-This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-namespace's meta labels. The requirements are ANDed.
-Empty or nil map matches all namespaces.<br/>
         </td>
         <td>false</td>
       </tr><tr>

@@ -8,8 +8,7 @@ component: target allocator
 note: Expose missing Prometheus CR fields in the Operator API
 
 # One or more tracking issues related to the change
-# Issue 5517 does not exist...
-issues: [5517]
+issues: [1934]
 
 # (Optional) One or more lines of additional information to render under the primary note.
 # These lines will be padded with 2 spaces and then inserted directly into the document.

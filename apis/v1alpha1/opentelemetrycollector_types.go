@@ -385,29 +385,12 @@ type OpenTelemetryTargetAllocatorPrometheusCR struct {
 	// Enabled indicates whether to use a PrometheusOperator custom resources as targets or not.
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
-	// AllowNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (allow list). This is mutually exclusive with DenyNamespaces.
-	// +optional
-	AllowNamespaces []string `json:"allowNamespaces,omitempty"`
-	// DenyNamespaces Namespaces to scope the interaction of the Target Allocator and the apiserver (deny list). This is mutually exclusive with AllowNamespaces.
-	// +optional
-	DenyNamespaces []string `json:"denyNamespaces,omitempty"`
 	// Interval between consecutive scrapes. Equivalent to the same setting on the Prometheus CRD.
 	//
 	// Default: "30s"
 	// +kubebuilder:default:="30s"
 	// +kubebuilder:validation:Format:=duration
 	ScrapeInterval *metav1.Duration `json:"scrapeInterval,omitempty"`
-	// Default interval between rule evaluations.
-	//
-	// Default: "30s"
-	// +kubebuilder:default:="30s"
-	// +kubebuilder:validation:Format:=duration
-	// +optional
-	EvaluationInterval *metav1.Duration `json:"evaluationInterval,omitempty"`
-	// ScrapeProtocols define the protocols to negotiate during a scrape. It tells clients the
-	// protocols supported by Prometheus in order of preference (from most to least preferred).
-	// +optional
-	ScrapeProtocols []string `json:"scrapeProtocols,omitempty"`
 	// ScrapeClasses to be referenced by PodMonitors and ServiceMonitors to include common configuration.
 	// If specified, expects an array of ScrapeClass objects as specified by https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ScrapeClass.
 	// +optional
@@ -420,48 +403,12 @@ type OpenTelemetryTargetAllocatorPrometheusCR struct {
 	// Empty or nil map matches all pod monitors.
 	// +optional
 	PodMonitorSelector map[string]string `json:"podMonitorSelector,omitempty"`
-	// Namespaces to be selected for PodMonitor discovery.
-	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-	// namespace's meta labels. The requirements are ANDed.
-	// Empty or nil map matches all namespaces.
-	// +optional
-	PodMonitorNamespaceSelector map[string]string `json:"podMonitorNamespaceSelector,omitempty"`
 	// ServiceMonitors to be selected for target discovery.
 	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
 	// ServiceMonitor's meta labels. The requirements are ANDed.
 	// Empty or nil map matches all service monitors.
 	// +optional
 	ServiceMonitorSelector map[string]string `json:"serviceMonitorSelector,omitempty"`
-	// Namespaces to be selected for ServiceMonitor discovery.
-	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-	// namespace's meta labels. The requirements are ANDed.
-	// Empty or nil map matches all namespaces.
-	// +optional
-	ServiceMonitorNamespaceSelector map[string]string `json:"serviceMonitorNamespaceSelector,omitempty"`
-	// ScrapeConfigs to be selected for target discovery.
-	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-	// ScrapeConfig's meta labels. The requirements are ANDed.
-	// Empty or nil map matches all scrape configs.
-	// +optional
-	ScrapeConfigSelector map[string]string `json:"scrapeConfigSelector,omitempty"`
-	// Namespaces to be selected for ScrapeConfig discovery.
-	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-	// namespace's meta labels. The requirements are ANDed.
-	// Empty or nil map matches all namespaces.
-	// +optional
-	ScrapeConfigNamespaceSelector map[string]string `json:"scrapeConfigNamespaceSelector,omitempty"`
-	// Probes to be selected for target discovery.
-	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-	// Probe's meta labels. The requirements are ANDed.
-	// Empty or nil map matches all probes.
-	// +optional
-	ProbeSelector map[string]string `json:"probeSelector,omitempty"`
-	// Namespaces to be selected for Probe discovery.
-	// This is a map of {key,value} pairs. Each {key,value} in the map is going to exactly match a label in a
-	// namespace's meta labels. The requirements are ANDed.
-	// Empty or nil map matches all namespaces.
-	// +optional
-	ProbeNamespaceSelector map[string]string `json:"probeNamespaceSelector,omitempty"`
 }
 
 // ScaleSubresourceStatus defines the observed state of the OpenTelemetryCollector's

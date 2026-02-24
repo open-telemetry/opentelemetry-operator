@@ -3363,33 +3363,9 @@ spec:
                     type: object
                   prometheusCR:
                     properties:
-                      allowNamespaces:
-                        items:
-                          type: string
-                        type: array
-                      denyNamespaces:
-                        items:
-                          type: string
-                        type: array
                       enabled:
                         type: boolean
-                      evaluationInterval:
-                        default: 30s
-                        format: duration
-                        type: string
-                      podMonitorNamespaceSelector:
-                        additionalProperties:
-                          type: string
-                        type: object
                       podMonitorSelector:
-                        additionalProperties:
-                          type: string
-                        type: object
-                      probeNamespaceSelector:
-                        additionalProperties:
-                          type: string
-                        type: object
-                      probeSelector:
                         additionalProperties:
                           type: string
                         type: object
@@ -3399,26 +3375,10 @@ spec:
                         type: array
                         x-kubernetes-list-type: atomic
                         x-kubernetes-preserve-unknown-fields: true
-                      scrapeConfigNamespaceSelector:
-                        additionalProperties:
-                          type: string
-                        type: object
-                      scrapeConfigSelector:
-                        additionalProperties:
-                          type: string
-                        type: object
                       scrapeInterval:
                         default: 30s
                         format: duration
                         type: string
-                      scrapeProtocols:
-                        items:
-                          type: string
-                        type: array
-                      serviceMonitorNamespaceSelector:
-                        additionalProperties:
-                          type: string
-                        type: object
                       serviceMonitorSelector:
                         additionalProperties:
                           type: string
