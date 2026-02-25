@@ -2,22 +2,68 @@
 apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
-  name: prometheus-cr-v1beta1-ns-defaults
+  name: prometheus-cr-ns-discovery-v1beta1
 spec:
   config:
     receivers:
       prometheus:
         config:
           scrape_configs: []
+
+    processors:
+
     exporters:
-      debug: {}
+      prometheus:
+        endpoint: 0.0.0.0:9090
     service:
       pipelines:
         metrics:
           receivers: [prometheus]
-          exporters: [debug]
+          exporters: [prometheus]
   mode: statefulset
+  serviceAccount: collector
   targetAllocator:
     enabled: true
+    serviceAccount: ta
     prometheusCR:
       enabled: true
+      scrapeConfigSelector: {}
+      podMonitorNamespaceSelector:
+        matchLabels:
+          ns-label: targetallocator-e2e
+      serviceMonitorNamespaceSelector:
+        matchLabels:
+          ns-label: targetallocator-e2e
+      scrapeConfigNamespaceSelector:
+        matchLabels:
+          ns-label: targetallocator-e2e
+      probeNamespaceSelector:
+        matchLabels:
+          ns-label: targetallocator-e2e
+---
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: ns-discovery-scrape-config-cr
+spec:
+  kubernetesSDConfigs:
+    - role: Node
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-ns-discovery-v1beta1
+spec:
+  template:
+    metadata:
+      labels:
+        checker: "true"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-metrics
+          image: docker.io/curlimages/curl:latest
+          args:
+            - /bin/sh
+            - -c
+            - curl -s http://prometheus-cr-ns-discovery-v1beta1-targetallocator/scrape_configs | grep "ns-discovery-scrape-config-cr"

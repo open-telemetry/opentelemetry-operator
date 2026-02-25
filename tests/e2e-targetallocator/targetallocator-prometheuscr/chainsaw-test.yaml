@@ -42,6 +42,8 @@ spec:
           selector: checker=true
   - name: step-03
     try:
+      - script:
+          content: kubectl label namespace $NAMESPACE ns-label=targetallocator-e2e
       - apply:
           file: 03-install.yaml
       - assert:

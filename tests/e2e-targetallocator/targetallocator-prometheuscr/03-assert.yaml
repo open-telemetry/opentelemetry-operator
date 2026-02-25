@@ -1,10 +1,18 @@
 apiVersion: v1
-data:
-  targetallocator.yaml:
-    ( contains(@, join(':', ['pod_monitor_namespace_selector', ' {}'])) ): true
-    ( contains(@, join(':', ['service_monitor_namespace_selector', ' {}'])) ): true
-    ( contains(@, join(':', ['scrape_config_namespace_selector', ' {}'])) ): true
-    ( contains(@, join(':', ['probe_namespace_selector', ' {}'])) ): true
 kind: ConfigMap
 metadata:
-  name: prometheus-cr-v1beta1-ns-defaults-targetallocator
+  name: prometheus-cr-ns-discovery-v1beta1-targetallocator
+data:
+  targetallocator.yaml:
+    ( contains(@, 'pod_monitor_namespace_selector:') ): true
+    ( contains(@, 'service_monitor_namespace_selector:') ): true
+    ( contains(@, 'scrape_config_namespace_selector:') ): true
+    ( contains(@, 'probe_namespace_selector:') ): true
+    ( contains(@, join(':', ['ns-label', ' targetallocator-e2e'])) ): true
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-ta-ns-discovery-v1beta1
+status:
+  succeeded: 1

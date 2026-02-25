@@ -32,18 +32,6 @@ spec:
         - PrometheusText1.0.0
       scrapeConfigSelector: {}
       probeSelector: {}
-      podMonitorNamespaceSelector:
-        matchLabels:
-          ns-label: pod
-      serviceMonitorNamespaceSelector:
-        matchLabels:
-          ns-label: service
-      scrapeConfigNamespaceSelector:
-        matchLabels:
-          ns-label: scrape
-      probeNamespaceSelector:
-        matchLabels:
-          ns-label: probe
       scrapeClasses:
         - name: tls-config
           tlsConfig:

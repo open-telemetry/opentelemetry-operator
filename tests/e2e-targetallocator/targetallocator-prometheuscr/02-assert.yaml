@@ -26,14 +26,12 @@ data:
     ( contains(@, join(':', ['matchexpressions', ' {}}'])) ): false
     ( contains(@, join(':', ['evaluation_interval', ' 2m'])) ): true
     ( contains(@, '- PrometheusText1.0.0') ): true
-    ( contains(@, 'service_monitor_namespace_selector:') ): true
     ( contains(@, 'pod_monitor_namespace_selector:') ): true
+    ( contains(@, 'service_monitor_namespace_selector:') ): true
     ( contains(@, 'scrape_config_namespace_selector:') ): true
     ( contains(@, 'probe_namespace_selector:') ): true
-    ( contains(@, join(':', ['ns-label', ' service'])) ): true
-    ( contains(@, join(':', ['ns-label', ' pod'])) ): true
-    ( contains(@, join(':', ['ns-label', ' scrape'])) ): true
-    ( contains(@, join(':', ['ns-label', ' probe'])) ): true
+    ( contains(@, join(':', ['matchlabels', ' {}'])) ): true
+    ( contains(@, join(':', ['matchexpressions', ' []'])) ): true
 kind: ConfigMap
 metadata:
   name: prometheus-cr-v1beta1-targetallocator
