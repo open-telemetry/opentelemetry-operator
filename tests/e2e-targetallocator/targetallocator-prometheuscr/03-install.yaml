@@ -1,0 +1,23 @@
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: prometheus-cr-v1beta1-ns-defaults
+spec:
+  config:
+    receivers:
+      prometheus:
+        config:
+          scrape_configs: []
+    exporters:
+      debug: {}
+    service:
+      pipelines:
+        metrics:
+          receivers: [prometheus]
+          exporters: [debug]
+  mode: statefulset
+  targetAllocator:
+    enabled: true
+    prometheusCR:
+      enabled: true

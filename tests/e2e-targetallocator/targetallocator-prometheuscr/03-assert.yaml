@@ -1,0 +1,10 @@
+apiVersion: v1
+data:
+  targetallocator.yaml:
+    ( contains(@, join(':', ['pod_monitor_namespace_selector', ' {}'])) ): true
+    ( contains(@, join(':', ['service_monitor_namespace_selector', ' {}'])) ): true
+    ( contains(@, join(':', ['scrape_config_namespace_selector', ' {}'])) ): true
+    ( contains(@, join(':', ['probe_namespace_selector', ' {}'])) ): true
+kind: ConfigMap
+metadata:
+  name: prometheus-cr-v1beta1-ns-defaults-targetallocator

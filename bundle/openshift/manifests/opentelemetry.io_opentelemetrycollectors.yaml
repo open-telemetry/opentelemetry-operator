@@ -8270,6 +8270,7 @@ spec:
                         format: duration
                         type: string
                       podMonitorNamespaceSelector:
+                        default: {}
                         properties:
                           matchExpressions:
                             items:
@@ -8322,6 +8323,7 @@ spec:
                         type: object
                         x-kubernetes-map-type: atomic
                       probeNamespaceSelector:
+                        default: {}
                         properties:
                           matchExpressions:
                             items:
@@ -8380,6 +8382,7 @@ spec:
                         x-kubernetes-list-type: atomic
                         x-kubernetes-preserve-unknown-fields: true
                       scrapeConfigNamespaceSelector:
+                        default: {}
                         properties:
                           matchExpressions:
                             items:
@@ -8440,6 +8443,7 @@ spec:
                           type: string
                         type: array
                       serviceMonitorNamespaceSelector:
+                        default: {}
                         properties:
                           matchExpressions:
                             items:

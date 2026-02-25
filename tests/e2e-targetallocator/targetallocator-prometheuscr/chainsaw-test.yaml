@@ -40,3 +40,9 @@ spec:
     catch:
       - podLogs:
           selector: checker=true
+  - name: step-03
+    try:
+      - apply:
+          file: 03-install.yaml
+      - assert:
+          file: 03-assert.yaml

@@ -10346,6 +10346,8 @@ Default: "30s"<br/>
 A label selector is a label query over a set of resources. The result of matchLabels and
 matchExpressions are ANDed. An empty label selector matches all objects. A null
 label selector matches no objects.<br/>
+          <br/>
+            <i>Default</i>: map[]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10366,6 +10368,8 @@ label selector matches no objects.<br/>
 A label selector is a label query over a set of resources. The result of matchLabels and
 matchExpressions are ANDed. An empty label selector matches all objects. A null
 label selector matches no objects.<br/>
+          <br/>
+            <i>Default</i>: map[]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10394,6 +10398,8 @@ If specified, expects an array of ScrapeClass objects as specified by https://pr
 A label selector is a label query over a set of resources. The result of matchLabels and
 matchExpressions are ANDed. An empty label selector matches all objects. A null
 label selector matches no objects.<br/>
+          <br/>
+            <i>Default</i>: map[]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10434,6 +10440,8 @@ protocols supported by Prometheus in order of preference (from most to least pre
 A label selector is a label query over a set of resources. The result of matchLabels and
 matchExpressions are ANDed. An empty label selector matches all objects. A null
 label selector matches no objects.<br/>
+          <br/>
+            <i>Default</i>: map[]<br/>
         </td>
         <td>false</td>
       </tr><tr>

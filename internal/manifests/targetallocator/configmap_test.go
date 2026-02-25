@@ -146,18 +146,22 @@ config:
 filter_strategy: relabel-config
 prometheus_cr:
   enabled: true
+  pod_monitor_namespace_selector: null
   pod_monitor_selector:
     matchlabels:
       release: my-instance
     matchexpressions: []
+  probe_namespace_selector: null
   probe_selector:
     matchlabels:
       release: my-instance
     matchexpressions: []
+  scrape_config_namespace_selector: null
   scrape_config_selector:
     matchlabels:
       release: my-instance
     matchexpressions: []
+  service_monitor_namespace_selector: null
   service_monitor_selector:
     matchlabels:
       release: my-instance
@@ -198,9 +202,95 @@ prometheus_cr:
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
-
 	})
-	t.Run("should return expected target allocator config map with scrape interval set", func(t *testing.T) {
+
+	t.Run("should return expected target allocator config map with namespace label selectors", func(t *testing.T) {
+		expectedData := map[string]string{
+			targetAllocatorFilename: `allocation_strategy: consistent-hashing
+collector_selector:
+  matchlabels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: default.my-instance
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/part-of: opentelemetry
+  matchexpressions: []
+config:
+  global:
+    scrape_interval: 30s
+    scrape_protocols:
+    - PrometheusProto
+    - OpenMetricsText1.0.0
+    - OpenMetricsText0.0.1
+    - PrometheusText0.0.4
+  scrape_configs:
+  - job_name: otel-collector
+    scrape_interval: 10s
+    static_configs:
+    - targets:
+      - 0.0.0.0:8888
+      - 0.0.0.0:9999
+filter_strategy: relabel-config
+prometheus_cr:
+  enabled: true
+  pod_monitor_namespace_selector:
+    matchlabels:
+      release: my-instance
+    matchexpressions: []
+  pod_monitor_selector: null
+  probe_namespace_selector:
+    matchlabels:
+      release: my-instance
+    matchexpressions: []
+  probe_selector: null
+  scrape_config_namespace_selector:
+    matchlabels:
+      release: my-instance
+    matchexpressions: []
+  scrape_config_selector: null
+  service_monitor_namespace_selector:
+    matchlabels:
+      release: my-instance
+    matchexpressions: []
+  service_monitor_selector: null
+`,
+		}
+		targetAllocator := targetAllocatorInstance()
+		targetAllocator.Spec.PrometheusCR.Enabled = true
+		targetAllocator.Spec.PrometheusCR.PodMonitorNamespaceSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"release": "my-instance",
+			},
+		}
+		targetAllocator.Spec.PrometheusCR.ServiceMonitorNamespaceSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"release": "my-instance",
+			}}
+		targetAllocator.Spec.PrometheusCR.ScrapeConfigNamespaceSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"release": "my-instance",
+			}}
+		targetAllocator.Spec.PrometheusCR.ProbeNamespaceSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"release": "my-instance",
+			}}
+		targetAllocator.Spec.GlobalConfig = v1beta1.AnyConfig{
+			Object: map[string]any{
+				"scrape_interval":  "30s",
+				"scrape_protocols": []string{"PrometheusProto", "OpenMetricsText1.0.0", "OpenMetricsText0.0.1", "PrometheusText0.0.4"},
+			},
+		}
+		testParams := Params{
+			Collector:       collectorInstance(),
+			TargetAllocator: targetAllocator,
+		}
+		actual, err := ConfigMap(testParams)
+		assert.NoError(t, err)
+		assert.Equal(t, "my-instance-targetallocator", actual.Name)
+		assert.Equal(t, expectedLabels, actual.Labels)
+		assert.Equal(t, expectedData, actual.Data)
+	})
+
+	t.Run("should return expected target allocator config map with scrape and evaluation intervals and protocols set", func(t *testing.T) {
 		expectedData := map[string]string{
 			targetAllocatorFilename: `allocation_strategy: consistent-hashing
 collector_selector:
@@ -221,10 +311,17 @@ config:
 filter_strategy: relabel-config
 prometheus_cr:
   enabled: true
+  evaluation_interval: 30s
+  pod_monitor_namespace_selector: null
   pod_monitor_selector: null
+  probe_namespace_selector: null
   probe_selector: null
+  scrape_config_namespace_selector: null
   scrape_config_selector: null
   scrape_interval: 30s
+  scrape_protocols:
+  - PrometheusText1.0.0
+  service_monitor_namespace_selector: null
   service_monitor_selector: null
 `,
 		}
@@ -232,6 +329,8 @@ prometheus_cr:
 		targetAllocator := targetAllocatorInstance()
 		targetAllocator.Spec.PrometheusCR.Enabled = true
 		targetAllocator.Spec.PrometheusCR.ScrapeInterval = &metav1.Duration{Duration: time.Second * 30}
+		targetAllocator.Spec.PrometheusCR.EvaluationInterval = &metav1.Duration{Duration: time.Second * 30}
+		targetAllocator.Spec.PrometheusCR.ScrapeProtocols = []string{"PrometheusText1.0.0"}
 		testParams := Params{
 			Collector:       collectorInstance(),
 			TargetAllocator: targetAllocator,
@@ -266,7 +365,9 @@ config:
 filter_strategy: relabel-config
 prometheus_cr:
   enabled: true
+  pod_monitor_namespace_selector: null
   pod_monitor_selector: null
+  probe_namespace_selector: null
   probe_selector: null
   scrape_classes:
   - default: true
@@ -274,7 +375,9 @@ prometheus_cr:
     relabelings:
     - action: labeldrop
       regex: pod
+  scrape_config_namespace_selector: null
   scrape_config_selector: null
+  service_monitor_namespace_selector: null
   service_monitor_selector: null
 `,
 		}

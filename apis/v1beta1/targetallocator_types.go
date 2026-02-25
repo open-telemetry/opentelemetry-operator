@@ -52,6 +52,7 @@ type TargetAllocatorPrometheusCR struct {
 	// matchExpressions are ANDed. An empty label selector matches all objects. A null
 	// label selector matches no objects.
 	// +optional
+	// +kubebuilder:default:={}
 	PodMonitorNamespaceSelector *metav1.LabelSelector `json:"podMonitorNamespaceSelector,omitempty"`
 	// ServiceMonitors to be selected for target discovery.
 	// A label selector is a label query over a set of resources. The result of matchLabels and
@@ -64,6 +65,7 @@ type TargetAllocatorPrometheusCR struct {
 	// matchExpressions are ANDed. An empty label selector matches all objects. A null
 	// label selector matches no objects.
 	// +optional
+	// +kubebuilder:default:={}
 	ServiceMonitorNamespaceSelector *metav1.LabelSelector `json:"serviceMonitorNamespaceSelector,omitempty"`
 	// ScrapeConfigs to be selected for target discovery.
 	// A label selector is a label query over a set of resources. The result of matchLabels and
@@ -76,6 +78,7 @@ type TargetAllocatorPrometheusCR struct {
 	// matchExpressions are ANDed. An empty label selector matches all objects. A null
 	// label selector matches no objects.
 	// +optional
+	// +kubebuilder:default:={}
 	ScrapeConfigNamespaceSelector *metav1.LabelSelector `json:"scrapeConfigNamespaceSelector,omitempty"`
 	// Probes to be selected for target discovery.
 	// A label selector is a label query over a set of resources. The result of matchLabels and
@@ -88,6 +91,7 @@ type TargetAllocatorPrometheusCR struct {
 	// matchExpressions are ANDed. An empty label selector matches all objects. A null
 	// label selector matches no objects.
 	// +optional
+	// +kubebuilder:default:={}
 	ProbeNamespaceSelector *metav1.LabelSelector `json:"probeNamespaceSelector,omitempty"`
 }
 

@@ -112,25 +112,17 @@ func ConfigMap(params Params) (*corev1.ConfigMap, error) {
 			prometheusCRConfig["deny_namespaces"] = taSpec.PrometheusCR.DenyNamespaces
 		}
 
+		prometheusCRConfig["service_monitor_namespace_selector"] = taSpec.PrometheusCR.ServiceMonitorNamespaceSelector
 		prometheusCRConfig["service_monitor_selector"] = taSpec.PrometheusCR.ServiceMonitorSelector
-		if taSpec.PrometheusCR.ServiceMonitorNamespaceSelector != nil {
-			prometheusCRConfig["service_monitor_namespace_selector"] = taSpec.PrometheusCR.ServiceMonitorNamespaceSelector
-		}
 
+		prometheusCRConfig["pod_monitor_namespace_selector"] = taSpec.PrometheusCR.PodMonitorNamespaceSelector
 		prometheusCRConfig["pod_monitor_selector"] = taSpec.PrometheusCR.PodMonitorSelector
-		if taSpec.PrometheusCR.PodMonitorNamespaceSelector != nil {
-			prometheusCRConfig["pod_monitor_namespace_selector"] = taSpec.PrometheusCR.PodMonitorNamespaceSelector
-		}
 
+		prometheusCRConfig["scrape_config_namespace_selector"] = taSpec.PrometheusCR.ScrapeConfigNamespaceSelector
 		prometheusCRConfig["scrape_config_selector"] = taSpec.PrometheusCR.ScrapeConfigSelector
-		if taSpec.PrometheusCR.ScrapeConfigNamespaceSelector != nil {
-			prometheusCRConfig["scrape_config_namespace_selector"] = taSpec.PrometheusCR.ScrapeConfigNamespaceSelector
-		}
 
+		prometheusCRConfig["probe_namespace_selector"] = taSpec.PrometheusCR.ProbeNamespaceSelector
 		prometheusCRConfig["probe_selector"] = taSpec.PrometheusCR.ProbeSelector
-		if taSpec.PrometheusCR.ProbeNamespaceSelector != nil {
-			prometheusCRConfig["probe_namespace_selector"] = taSpec.PrometheusCR.ProbeNamespaceSelector
-		}
 
 		taConfig["prometheus_cr"] = prometheusCRConfig
 	}
