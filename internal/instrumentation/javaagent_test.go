@@ -5,6 +5,7 @@ package instrumentation
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -410,8 +411,7 @@ func TestInjectJavaagent(t *testing.T) {
 					continue
 				}
 				// Skip extension init containers
-				if len(pod.Spec.InitContainers[i].Name) > len(initContainerName+"-extension-") &&
-					pod.Spec.InitContainers[i].Name[:len(initContainerName+"-extension-")] == initContainerName+"-extension-" {
+				if strings.HasPrefix(pod.Spec.InitContainers[i].Name, initContainerName+"-extension-") {
 					continue
 				}
 				injector.injectDefaultJavaEnvVars(&pod.Spec.InitContainers[i], test.Java)
