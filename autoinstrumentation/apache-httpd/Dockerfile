@@ -24,3 +24,6 @@ RUN chmod 775 -R /opt/opentelemetry/
 RUN chmod a+w /opt/opentelemetry/logs
 
 CMD ["cat", "Just delivering the Opentelemetry Apache/Nginx agent"]
+
+RUN addgroup -g 1000 -S nonroot && adduser -u 1000 -S nonroot -G nonroot
+USER 1000:1000

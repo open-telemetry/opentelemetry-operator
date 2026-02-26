@@ -33,3 +33,6 @@ COPY --from=build-musl /operator-build/workspace /autoinstrumentation-musl
 
 RUN chmod -R go+r /autoinstrumentation
 RUN chmod -R go+r /autoinstrumentation-musl
+
+RUN addgroup -g 1000 -S nonroot && adduser -u 1000 -S nonroot -G nonroot
+USER 1000:1000

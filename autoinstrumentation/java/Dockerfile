@@ -11,3 +11,6 @@ ARG version
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v$version/opentelemetry-javaagent.jar /javaagent.jar
 
 RUN chmod -R go+r /javaagent.jar
+
+RUN addgroup -g 1000 -S nonroot && adduser -u 1000 -S nonroot -G nonroot
+USER 1000:1000

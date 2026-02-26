@@ -25,3 +25,6 @@ RUN chmod -R go+r /autoinstrumentation
 # Backward compatibility with old operator version
 RUN cp -r /autoinstrumentation/node_modules/@opentelemetry/auto-instrumentations-node/build/src/. /autoinstrumentation
 RUN ln /autoinstrumentation/register.js /autoinstrumentation/autoinstrumentation.js
+
+RUN addgroup -g 1000 -S nonroot && adduser -u 1000 -S nonroot -G nonroot
+USER 1000:1000
