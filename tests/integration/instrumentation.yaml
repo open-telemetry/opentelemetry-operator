@@ -1,0 +1,13 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: java-instrumentation
+spec:
+  exporter:
+    endpoint: http://collector.default.svc:4318
+  propagators:
+    - tracecontext
+    - baggage
+    - b3
+  java:
+    image: java-autoinstrumentation:dev
