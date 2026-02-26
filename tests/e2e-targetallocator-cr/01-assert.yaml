@@ -95,10 +95,23 @@ data:
     filter_strategy: relabel-config
     prometheus_cr:
       enabled: true
+      evaluation_interval: 30s
+      pod_monitor_namespace_selector:
+        matchlabels: {}
+        matchexpressions: []
       pod_monitor_selector: null
+      probe_namespace_selector:
+        matchlabels: {}
+        matchexpressions: []
       probe_selector: null
+      scrape_config_namespace_selector:
+        matchlabels: {}
+        matchexpressions: []
       scrape_config_selector: null
       scrape_interval: 30s
+      service_monitor_namespace_selector:
+        matchlabels: {}
+        matchexpressions: []
       service_monitor_selector: null
 kind: ConfigMap
 metadata:
