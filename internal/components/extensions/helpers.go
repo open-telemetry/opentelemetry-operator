@@ -10,8 +10,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 )
 
-// registry holds a record of all known receiver parsers.
-var registry = map[string]components.Parser{
+// Registry holds a record of all known extension parsers.
+var Registry = map[string]components.Parser{
 	"health_check": components.NewBuilder[healthcheckV1Config]().
 		WithName("health_check").
 		WithPort(defaultHealthcheckV1Port).
@@ -32,11 +32,7 @@ var registry = map[string]components.Parser{
 		MustBuild(),
 }
 
-// ParserFor returns a parser builder for the given exporter name.
-func ParserFor(name string) components.Parser {
-	if parser, ok := registry[components.ComponentType(name)]; ok {
-		return parser
-	}
-	// We want the default for exporters to fail silently.
-	return components.NewBuilder[any]().WithName(name).MustBuild()
+// GetParser returns a parser builder for the given extension name.
+func GetParser(name string) components.Parser {
+	return components.GetParser(name, Registry)
 }

@@ -154,7 +154,7 @@ func TestGenerateK8SAttrRbacRules(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			parser := processors.ProcessorFor("k8sattributes")
+			parser := processors.GetParser("k8sattributes")
 			got, err := parser.GetRBACRules(logger, tt.args.config)
 			if !tt.wantErr(t, err, fmt.Sprintf("GetRBACRules(%v)", tt.args.config)) {
 				return

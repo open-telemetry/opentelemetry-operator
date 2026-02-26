@@ -51,7 +51,7 @@ func TestScraperParsers(t *testing.T) {
 		t.Run(tt.receiverName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
 				// test
-				parser := receivers.ReceiverFor(tt.receiverName)
+				parser := receivers.GetParser(tt.receiverName)
 
 				// verify
 				assert.Equal(t, tt.parserName, parser.ParserName())
@@ -59,7 +59,7 @@ func TestScraperParsers(t *testing.T) {
 
 			t.Run("default is nothing", func(t *testing.T) {
 				// prepare
-				parser := receivers.ReceiverFor(tt.receiverName)
+				parser := receivers.GetParser(tt.receiverName)
 
 				// test
 				ports, err := parser.Ports(logger, tt.receiverName, map[string]any{})
@@ -71,7 +71,7 @@ func TestScraperParsers(t *testing.T) {
 
 			t.Run("always returns nothing", func(t *testing.T) {
 				// prepare
-				parser := receivers.ReceiverFor(tt.receiverName)
+				parser := receivers.GetParser(tt.receiverName)
 
 				// test
 				ports, err := parser.Ports(logger, tt.receiverName, map[string]any{
