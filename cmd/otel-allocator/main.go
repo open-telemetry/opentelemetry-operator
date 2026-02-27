@@ -91,11 +91,7 @@ func main() {
 	otel.SetMeterProvider(meterProvider)
 
 	allocatorPrehook = prehook.New(cfg.FilterStrategy, log)
-
-	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log,
-		allocation.WithFilter(allocatorPrehook),
-		allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy),
-	)
+	allocator, allocErr := allocation.New(cfg.AllocationStrategy, log, allocation.WithFilter(allocatorPrehook), allocation.WithFallbackStrategy(cfg.AllocationFallbackStrategy))
 	if allocErr != nil {
 		setupLog.Error(allocErr, "Unable to initialize allocation strategy")
 		os.Exit(1)
