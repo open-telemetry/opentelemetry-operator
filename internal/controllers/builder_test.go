@@ -1903,6 +1903,9 @@ func TestBuildTargetAllocator(t *testing.T) {
 						Name:      "test",
 						Namespace: "test",
 						Labels:    nil,
+						Annotations: map[string]string{
+							"test": "test",
+						},
 					},
 					Spec: v1alpha1.TargetAllocatorSpec{
 						FilterStrategy: v1beta1.TargetAllocatorFilterStrategyRelabelConfig,
@@ -1949,7 +1952,9 @@ func TestBuildTargetAllocator(t *testing.T) {
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: nil,
+						Annotations: map[string]string{
+							"test": "test",
+						},
 					},
 					Data: map[string]string{
 						"targetallocator.yaml": `allocation_strategy: consistent-hashing
@@ -1993,7 +1998,10 @@ prometheus_cr:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: nil,
+						Annotations: map[string]string{
+							"opentelemetry-targetallocator-config/hash": "f80c054419fe2f9030368557da143e200c70772d1d5f1be50ed55ae960b4b17d",
+							"test": "test",
+						},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Selector: &metav1.LabelSelector{
@@ -2011,6 +2019,7 @@ prometheus_cr:
 								},
 								Annotations: map[string]string{
 									"opentelemetry-targetallocator-config/hash": "f80c054419fe2f9030368557da143e200c70772d1d5f1be50ed55ae960b4b17d",
+									"test": "test",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -2116,6 +2125,9 @@ prometheus_cr:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
+						Annotations: map[string]string{
+							"test": "test",
+						},
 					},
 				},
 				&corev1.Service{
@@ -2161,6 +2173,7 @@ prometheus_cr:
 						},
 						Annotations: map[string]string{
 							"opentelemetry-targetallocator-config/hash": "f80c054419fe2f9030368557da143e200c70772d1d5f1be50ed55ae960b4b17d",
+							"test": "test",
 						},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
@@ -2292,7 +2305,9 @@ prometheus_cr:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: nil,
+						Annotations: map[string]string{
+							"opentelemetry-targetallocator-config/hash": "f80c054419fe2f9030368557da143e200c70772d1d5f1be50ed55ae960b4b17d",
+						},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Selector: &metav1.LabelSelector{
@@ -2641,7 +2656,9 @@ prometheus_cr:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: nil,
+						Annotations: map[string]string{
+							"opentelemetry-targetallocator-config/hash": "286a5a4e7ec6d2ce652a4ce23e135c10053b4c87fd080242daa5bf21dcd5a337",
+						},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Selector: &metav1.LabelSelector{
@@ -2964,7 +2981,9 @@ prometheus_cr:
 							"app.kubernetes.io/part-of":    "opentelemetry",
 							"app.kubernetes.io/version":    "latest",
 						},
-						Annotations: nil,
+						Annotations: map[string]string{
+							"opentelemetry-targetallocator-config/hash": "3e2818ab54d866289de7837779e86e9c95803c43c0c4b58b25123e809ae9b771",
+						},
 					},
 					Spec: appsv1.DeploymentSpec{
 						Selector: &metav1.LabelSelector{

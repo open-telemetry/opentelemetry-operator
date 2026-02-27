@@ -35,7 +35,10 @@ func main() {
 	var timeout int
 	var kubeconfigPath string
 
-	defaultKubeconfigPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
+	defaultKubeconfigPath := os.Getenv("KUBECONFIG")
+	if defaultKubeconfigPath == "" {
+		defaultKubeconfigPath = filepath.Join(homedir.HomeDir(), ".kube", "config")
+	}
 
 	pflag.IntVar(&timeout, "timeout", 300, "The timeout for the check.")
 	pflag.StringVar(&kubeconfigPath, "kubeconfig-path", defaultKubeconfigPath, "Absolute path to the KubeconfigPath file")

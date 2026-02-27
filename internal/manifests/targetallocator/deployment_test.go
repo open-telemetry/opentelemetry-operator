@@ -145,8 +145,35 @@ func TestDeploymentNewDefault(t *testing.T) {
 	assert.Contains(t, d.Spec.Template.Annotations, configMapHashAnnotationKey)
 	assert.Len(t, d.Spec.Template.Annotations, 1)
 
+	// should only have the ConfigMap hash annotation
+	assert.Contains(t, d.ObjectMeta.Annotations, configMapHashAnnotationKey)
+	assert.Len(t, d.ObjectMeta.Annotations, 1)
+
 	// the pod selector should match the pod spec's labels
 	assert.Subset(t, d.Spec.Template.Labels, d.Spec.Selector.MatchLabels)
+}
+
+func TestDeploymentAnnotations(t *testing.T) {
+	// prepare
+	testAnnotationValues := map[string]string{"annotation-key": "annotation-value"}
+	otelcol := collectorInstance()
+	targetAllocator := targetAllocatorInstance()
+	targetAllocator.ObjectMeta.Annotations = testAnnotationValues
+	cfg := config.New()
+
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          cfg,
+		Log:             logger,
+	}
+
+	// test
+	ds, err := Deployment(params)
+	assert.NoError(t, err)
+	// verify
+	assert.Equal(t, "my-instance-targetallocator", ds.Name)
+	assert.Subset(t, ds.ObjectMeta.Annotations, testAnnotationValues)
 }
 
 func TestDeploymentPodAnnotations(t *testing.T) {

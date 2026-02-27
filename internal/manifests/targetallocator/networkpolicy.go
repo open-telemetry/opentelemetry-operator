@@ -28,7 +28,7 @@ func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
 
 	name := naming.TargetAllocatorNetworkPolicy(params.TargetAllocator.Name)
 	labels := manifestutils.Labels(params.TargetAllocator.ObjectMeta, name, params.TargetAllocator.Status.Image, ComponentOpenTelemetryTargetAllocator, params.Config.LabelsFilter)
-	annotations := Annotations(params.TargetAllocator, nil, params.Config.AnnotationsFilter)
+	podAnnotations := PodAnnotations(params.TargetAllocator, nil, params.Config.AnnotationsFilter)
 
 	tcp := corev1.ProtocolTCP
 	apiServerPort := intstr.FromInt32(params.Config.Internal.KubeAPIServerPort)
@@ -47,7 +47,7 @@ func NetworkPolicy(params Params) (*networkingv1.NetworkPolicy, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   params.TargetAllocator.Namespace,
-			Annotations: annotations,
+			Annotations: podAnnotations,
 			Labels:      labels,
 		},
 		Spec: networkingv1.NetworkPolicySpec{
