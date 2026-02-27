@@ -269,24 +269,26 @@ func TestWeightedLoadUnlabeledTargets(t *testing.T) {
 	}
 }
 
-// TestWeightedLoadInvalidAnnotation verifies that targets with a non-numeric weight annotation
-// use the default weight (1).
+// TestWeightedLoadInvalidAnnotation verifies that targets with an invalid weight annotation
+// (non-numeric, zero, negative, or >100) use the default weight (1).
 func TestWeightedLoadInvalidAnnotation(t *testing.T) {
-	s, _ := New("least-weighted", logger)
+	invalidValues := []string{"notanumber", "0", "-5", "101", "999"}
+	for _, val := range invalidValues {
+		t.Run(val, func(t *testing.T) {
+			s, _ := New("least-weighted", logger)
 
-	cols := MakeNCollectors(1, 0)
-	s.SetCollectors(cols)
+			cols := MakeNCollectors(1, 0)
+			s.SetCollectors(cols)
 
-	// Create targets with non-numeric annotation — should default to 1
-	targets := MakeNTargetsWithWeightClass(2, "test-job", 0, config.WeightAnnotationMetaLabel, "notanumber")
-	s.SetTargets(targets)
+			targets := MakeNTargetsWithWeightClass(2, "test-job", 0, config.WeightAnnotationMetaLabel, val)
+			s.SetTargets(targets)
 
-	collectors := s.Collectors()
-	for _, col := range collectors {
-		// 2 targets * default weight 1 = 2
-		assert.Equal(t, 2, col.WeightedLoad,
-			"non-numeric weight annotation should use default weight (1)")
-		assert.Equal(t, 2, col.NumTargets)
+			for _, col := range s.Collectors() {
+				assert.Equal(t, 2, col.WeightedLoad,
+					"annotation %q should use default weight (1)", val)
+				assert.Equal(t, 2, col.NumTargets)
+			}
+		})
 	}
 }
 

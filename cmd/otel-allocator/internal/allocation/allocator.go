@@ -118,7 +118,7 @@ func (a *allocator) SetFallbackStrategy(strategy Strategy) {
 func (a *allocator) getTargetWeight(tg *target.Item) int {
 	// Check pod annotation (exposed as meta label by K8s SD)
 	if labelVal := tg.Labels.Get(config.WeightAnnotationMetaLabel); labelVal != "" {
-		if w, err := strconv.Atoi(labelVal); err == nil && w >= 1 {
+		if w, err := strconv.Atoi(labelVal); err == nil && w >= 1 && w <= 100 {
 			return w
 		}
 	}
