@@ -5,7 +5,7 @@ change_type: enhancement
 component: target allocator
 
 # A brief description of the change. Surround your text with quotes ("") if it needs to start with a backtick (`).
-note: Introduces weight-class configuration for allocating targets by expected load in least-weighted strategy
+note: Add weight-based target allocation for the least-weighted strategy via pod annotations
 
 # One or more tracking issues related to the change
 issues: [3128]
@@ -14,5 +14,6 @@ issues: [3128]
 # These lines will be padded with 2 spaces and then inserted directly into the document.
 # Use pipe (|) for multiline entries.
 subtext: |
-  Weight classes can be specified via pod annotation (`opentelemetry.io/target-allocation-weight`) for pods you control,
-  or via config-based weight overrides by job name (`weight_overrides` in the TA config) for pods you don't control.
+  Targets can be assigned a weight (1-100) via the pod annotation `opentelemetry.io/target-allocation-weight`.
+  The least-weighted strategy uses these weights to balance load across collectors.
+  Targets without the annotation default to weight 1.
