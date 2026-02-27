@@ -454,13 +454,6 @@ This is only applicable to Service resources.<br/>
           Volumes represents which volumes to use in the underlying deployment(s).<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b><a href="#targetallocatorspecweightoverridesindex">weightOverrides</a></b></td>
-        <td>[]object</td>
-        <td>
-          WeightOverrides assigns weight classes to targets by job name for the least-weighted allocation strategy.<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -15834,42 +15827,6 @@ Ex. "ext4", "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.<br/>
           storagePolicyName is the storage Policy Based Management (SPBM) profile name.<br/>
         </td>
         <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### TargetAllocator.spec.weightOverrides[index]
-<sup><sup>[↩ Parent](#targetallocatorspec)</sup></sup>
-
-
-
-TargetAllocatorWeightOverride assigns a weight class to all targets belonging to a specific job.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>jobName</b></td>
-        <td>string</td>
-        <td>
-          JobName is the Prometheus job name to match.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>weightClass</b></td>
-        <td>enum</td>
-        <td>
-          WeightClass is the weight class to assign (light, medium, or heavy).<br/>
-          <br/>
-            <i>Enum</i>: light, medium, heavy<br/>
-        </td>
-        <td>true</td>
       </tr></tbody>
 </table>
 

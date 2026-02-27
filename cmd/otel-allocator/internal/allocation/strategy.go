@@ -34,12 +34,6 @@ func WithFilter(filter Filter) Option {
 	}
 }
 
-func WithWeightOverrides(overrides map[string]string) Option {
-	return func(allocator Allocator) {
-		allocator.SetWeightOverrides(overrides)
-	}
-}
-
 func WithFallbackStrategy(fallbackStrategy string) Option {
 	var strategy, ok = strategies[fallbackStrategy]
 	if fallbackStrategy != "" && !ok {
@@ -73,7 +67,6 @@ type Allocator interface {
 	GetTargetsForCollectorAndJob(collector string, job string) []*target.Item
 	SetFilter(filter Filter)
 	SetFallbackStrategy(strategy Strategy)
-	SetWeightOverrides(overrides map[string]string)
 }
 
 type Strategy interface {

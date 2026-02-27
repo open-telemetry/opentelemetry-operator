@@ -9,6 +9,7 @@ import (
 	"maps"
 	"runtime"
 	"slices"
+	"strconv"
 	"sync"
 	"time"
 
@@ -95,7 +96,6 @@ type allocator struct {
 	log logr.Logger
 
 	filter                Filter
-	weightOverrides       map[string]string // jobName -> weightClass
 	targetsPerCollector   metric.Int64Gauge
 	collectorsAllocatable metric.Int64Gauge
 	timeToAssign          metric.Float64Histogram
@@ -113,23 +113,16 @@ func (a *allocator) SetFallbackStrategy(strategy Strategy) {
 	a.strategy.SetFallbackStrategy(strategy)
 }
 
-// SetWeightOverrides sets the job-name to weight-class overrides map.
-func (a *allocator) SetWeightOverrides(overrides map[string]string) {
-	a.weightOverrides = overrides
-}
-
 // getTargetWeight returns the numeric weight for a target.
-// Resolution order: config override by job name > pod annotation meta label > default (light=1).
+// Resolution order: pod annotation meta label > default (1).
 func (a *allocator) getTargetWeight(tg *target.Item) int {
-	// 1. Check config overrides by job name
-	if a.weightOverrides != nil {
-		if class, ok := a.weightOverrides[tg.JobName]; ok {
-			return config.GetWeightForClass(class)
+	// Check pod annotation (exposed as meta label by K8s SD)
+	if labelVal := tg.Labels.Get(config.WeightAnnotationMetaLabel); labelVal != "" {
+		if w, err := strconv.Atoi(labelVal); err == nil && w >= 1 {
+			return w
 		}
 	}
-	// 2. Check pod annotation (exposed as meta label by K8s SD)
-	class := tg.Labels.Get(config.WeightAnnotationMetaLabel)
-	return config.GetWeightForClass(class)
+	return config.DefaultWeight
 }
 
 // SetTargets accepts a list of targets that will be used to make

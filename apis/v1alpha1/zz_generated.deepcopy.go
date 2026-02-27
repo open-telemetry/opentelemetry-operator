@@ -1661,11 +1661,6 @@ func (in *TargetAllocatorSpec) DeepCopyInto(out *TargetAllocatorSpec) {
 		*out = new(metav1.Duration)
 		**out = **in
 	}
-	if in.WeightOverrides != nil {
-		in, out := &in.WeightOverrides, &out.WeightOverrides
-		*out = make([]v1beta1.TargetAllocatorWeightOverride, len(*in))
-		copy(*out, *in)
-	}
 	if in.LivenessProbe != nil {
 		in, out := &in.LivenessProbe, &out.LivenessProbe
 		*out = new(v1.Probe)

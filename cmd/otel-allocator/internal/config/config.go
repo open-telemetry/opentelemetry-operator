@@ -74,58 +74,18 @@ type Config struct {
 	PrometheusCR                 PrometheusCRConfig    `yaml:"prometheus_cr,omitempty"`
 	HTTPS                        HTTPSServerConfig     `yaml:"https,omitempty"`
 	CollectorNotReadyGracePeriod time.Duration         `yaml:"collector_not_ready_grace_period,omitempty"`
-	WeightOverrides              []WeightOverride      `yaml:"weight_overrides,omitempty"`
 }
 
 const (
-	// WeightAnnotation is the pod annotation name used to specify a target's weight class.
+	// WeightAnnotation is the pod annotation name used to specify a target's weight.
 	WeightAnnotation = "opentelemetry.io/target-allocation-weight"
 
 	// WeightAnnotationMetaLabel is the Kubernetes SD meta label that surfaces the weight annotation.
 	WeightAnnotationMetaLabel = "__meta_kubernetes_pod_annotation_opentelemetry_io_target_allocation_weight"
 
-	// Standard weight class values.
-	WeightClassLight  = "light"
-	WeightClassMedium = "medium"
-	WeightClassHeavy  = "heavy"
-
-	// Standard weight class weights.
-	WeightLight  = 1
-	WeightMedium = 5
-	WeightHeavy  = 10
+	// DefaultWeight is the weight used when no weight is specified.
+	DefaultWeight = 1
 )
-
-// WeightOverride allows specifying a weight class for all targets belonging to a specific job.
-type WeightOverride struct {
-	JobName     string `yaml:"job_name"`
-	WeightClass string `yaml:"weight_class"`
-}
-
-// standardWeightClasses maps standard weight class names to their numeric weights.
-var standardWeightClasses = map[string]int{
-	WeightClassLight:  WeightLight,
-	WeightClassMedium: WeightMedium,
-	WeightClassHeavy:  WeightHeavy,
-}
-
-// GetWeightForClass returns the numeric weight for the given weight class name.
-// Unrecognized or empty class names return the default weight (1).
-func GetWeightForClass(class string) int {
-	if weight, ok := standardWeightClasses[class]; ok {
-		return weight
-	}
-	return WeightLight
-}
-
-// GetWeightForJob looks up a job name in the overrides and returns its weight class.
-func GetWeightForJob(overrides []WeightOverride, jobName string) (string, bool) {
-	for _, o := range overrides {
-		if o.JobName == jobName {
-			return o.WeightClass, true
-		}
-	}
-	return "", false
-}
 
 type PrometheusCRConfig struct {
 	Enabled                         bool                          `yaml:"enabled,omitempty"`

@@ -217,8 +217,8 @@ func TestWeightedLoadBalancing(t *testing.T) {
 
 	// Create 3 heavy targets (weight=10 each) and 30 light targets (weight=1 each)
 	// Total weight = 3*10 + 30*1 = 60, expect ~20 per collector
-	heavyTargets := MakeNTargetsWithWeightClass(3, "heavy-job", 0, config.WeightAnnotationMetaLabel, "heavy")
-	lightTargets := MakeNTargetsWithWeightClass(30, "light-job", 100, config.WeightAnnotationMetaLabel, "light")
+	heavyTargets := MakeNTargetsWithWeightClass(3, "heavy-job", 0, config.WeightAnnotationMetaLabel, "10")
+	lightTargets := MakeNTargetsWithWeightClass(30, "light-job", 100, config.WeightAnnotationMetaLabel, "1")
 
 	allTargets := append(heavyTargets, lightTargets...)
 	s.SetTargets(allTargets)
@@ -252,7 +252,7 @@ func TestWeightedLoadBalancing(t *testing.T) {
 	}
 }
 
-// TestWeightedLoadUnlabeledTargets verifies that targets without a weight class label
+// TestWeightedLoadUnlabeledTargets verifies that targets without a weight annotation
 // get the default weight of 1, so WeightedLoad equals NumTargets.
 func TestWeightedLoadUnlabeledTargets(t *testing.T) {
 	s, _ := New("least-weighted", logger)
@@ -269,57 +269,24 @@ func TestWeightedLoadUnlabeledTargets(t *testing.T) {
 	}
 }
 
-// TestWeightedLoadUnknownClass verifies that targets with an unknown weight class
-// use the default weight (light=1).
-func TestWeightedLoadUnknownClass(t *testing.T) {
+// TestWeightedLoadInvalidAnnotation verifies that targets with a non-numeric weight annotation
+// use the default weight (1).
+func TestWeightedLoadInvalidAnnotation(t *testing.T) {
 	s, _ := New("least-weighted", logger)
 
 	cols := MakeNCollectors(1, 0)
 	s.SetCollectors(cols)
 
-	// Create targets with unknown weight class — should default to light (1)
-	targets := MakeNTargetsWithWeightClass(2, "test-job", 0, config.WeightAnnotationMetaLabel, "unknown")
+	// Create targets with non-numeric annotation — should default to 1
+	targets := MakeNTargetsWithWeightClass(2, "test-job", 0, config.WeightAnnotationMetaLabel, "notanumber")
 	s.SetTargets(targets)
 
 	collectors := s.Collectors()
 	for _, col := range collectors {
 		// 2 targets * default weight 1 = 2
 		assert.Equal(t, 2, col.WeightedLoad,
-			"unknown weight class should use default weight (light=1)")
+			"non-numeric weight annotation should use default weight (1)")
 		assert.Equal(t, 2, col.NumTargets)
-	}
-}
-
-// TestWeightedLoadWithJobOverride verifies that config-based weight overrides
-// take precedence over pod annotation labels.
-func TestWeightedLoadWithJobOverride(t *testing.T) {
-	s, _ := New("least-weighted", logger, WithWeightOverrides(map[string]string{
-		"heavy-job": "heavy",
-	}))
-
-	cols := MakeNCollectors(3, 0)
-	s.SetCollectors(cols)
-
-	// Create targets for heavy-job WITHOUT any weight label — the override should apply.
-	heavyTargets := MakeNTargetsForJob(3, "heavy-job", 0)
-	// Create light targets with an explicit annotation label
-	lightTargets := MakeNTargetsWithWeightClass(30, "light-job", 100, config.WeightAnnotationMetaLabel, "light")
-
-	allTargets := append(heavyTargets, lightTargets...)
-	s.SetTargets(allTargets)
-
-	// Total weight = 3*10 + 30*1 = 60, expect ~20 per collector
-	expectedPerCollector := 60.0 / 3.0
-	for _, col := range s.Collectors() {
-		assert.InDelta(t, expectedPerCollector, col.WeightedLoad, expectedPerCollector*0.5,
-			"collector %s WeightedLoad should be ~%.0f, got %d", col.Name, expectedPerCollector, col.WeightedLoad)
-	}
-
-	// Also verify that heavy targets are spread (not all on one collector)
-	for _, col := range s.Collectors() {
-		targets := s.GetTargetsForCollectorAndJob(col.Name, "heavy-job")
-		assert.LessOrEqual(t, len(targets), 2,
-			"collector %s should have at most 2 heavy targets", col.Name)
 	}
 }
 

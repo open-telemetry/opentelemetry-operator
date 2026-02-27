@@ -229,10 +229,6 @@ type TargetAllocatorEmbedded struct {
 	// +kubebuilder:default:="30s"
 	// +kubebuilder:validation:Format:=duration
 	CollectorNotReadyGracePeriod *metav1.Duration `json:"collectorNotReadyGracePeriod,omitempty"`
-	// WeightOverrides assigns weight classes to targets by job name for the least-weighted allocation strategy.
-	// +optional
-	// +listType=atomic
-	WeightOverrides []TargetAllocatorWeightOverride `json:"weightOverrides,omitempty"`
 	// CollectorTargetReloadInterval defines the interval at which the Prometheus receiver will reload targets from the target allocator.
 	// The default is 30s.
 	//

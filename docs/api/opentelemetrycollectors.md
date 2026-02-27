@@ -32191,13 +32191,6 @@ such as regions, zones, nodes, and other user-defined topology domains
 https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b><a href="#opentelemetrycollectorspectargetallocatorweightoverridesindex">weightOverrides</a></b></td>
-        <td>[]object</td>
-        <td>
-          WeightOverrides assigns weight classes to targets by job name for the least-weighted allocation strategy.<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -35918,42 +35911,6 @@ the values array must be empty. This array is replaced during a strategic
 merge patch.<br/>
         </td>
         <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### OpenTelemetryCollector.spec.targetAllocator.weightOverrides[index]
-<sup><sup>[↩ Parent](#opentelemetrycollectorspectargetallocator-1)</sup></sup>
-
-
-
-TargetAllocatorWeightOverride assigns a weight class to all targets belonging to a specific job.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>jobName</b></td>
-        <td>string</td>
-        <td>
-          JobName is the Prometheus job name to match.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
-        <td><b>weightClass</b></td>
-        <td>enum</td>
-        <td>
-          WeightClass is the weight class to assign (light, medium, or heavy).<br/>
-          <br/>
-            <i>Enum</i>: light, medium, heavy<br/>
-        </td>
-        <td>true</td>
       </tr></tbody>
 </table>
 

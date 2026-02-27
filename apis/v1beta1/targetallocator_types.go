@@ -79,14 +79,3 @@ const (
 	// TargetAllocatorFilterStrategyRelabelConfig targets will be consistently drops targets based on the relabel_config.
 	TargetAllocatorFilterStrategyRelabelConfig TargetAllocatorFilterStrategy = "relabel-config"
 )
-
-// TargetAllocatorWeightOverride assigns a weight class to all targets belonging to a specific job.
-type TargetAllocatorWeightOverride struct {
-	// JobName is the Prometheus job name to match.
-	// +required
-	JobName string `json:"jobName"`
-	// WeightClass is the weight class to assign (light, medium, or heavy).
-	// +required
-	// +kubebuilder:validation:Enum=light;medium;heavy
-	WeightClass string `json:"weightClass"`
-}

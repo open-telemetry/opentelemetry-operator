@@ -59,7 +59,6 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 			PrometheusCR:                 taSpec.PrometheusCR,
 			Observability:                taSpec.Observability,
 			CollectorNotReadyGracePeriod: taSpec.CollectorNotReadyGracePeriod,
-			WeightOverrides:              taSpec.WeightOverrides,
 		},
 	}, nil
 }
