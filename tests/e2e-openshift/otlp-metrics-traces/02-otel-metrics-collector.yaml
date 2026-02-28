@@ -18,7 +18,7 @@ spec:
           http:  {}
     processors: {}
     exporters:
-      otlp:
+      otlp_grpc:
         endpoint: tempo-otlpmetrics.chainsaw-otlp-metrics.svc:4317
         tls:
           insecure: true
@@ -30,7 +30,7 @@ spec:
       pipelines:
         traces:
           receivers: [otlp]
-          exporters: [otlp]
+          exporters: [otlp_grpc]
         metrics:
           receivers: [otlp]
           exporters: [prometheus]

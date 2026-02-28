@@ -75,7 +75,7 @@ spec:
             statements:
               - set(attributes["level"], ConvertCase(severity_text, "lower"))
     exporters:
-      otlphttp:
+      otlp_http:
         endpoint: https://logging-loki-gateway-http.openshift-logging.svc.cluster.local:8080/api/logs/v1/application/otlp
         encoding: json
         tls:
@@ -90,7 +90,7 @@ spec:
         logs:
           receivers: [otlp]
           processors: [k8sattributes, transform, resource]
-          exporters: [otlphttp]
+          exporters: [otlp_http]
         logs/test:
           receivers: [otlp]
           processors: []

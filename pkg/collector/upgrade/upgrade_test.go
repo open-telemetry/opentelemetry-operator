@@ -309,7 +309,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [otlp]
+      exporters: [otlp_grpc]
 `
 
 func makeOtelcol(nsn types.NamespacedName, managementState v1alpha1.ManagementStateType) v1alpha1.OpenTelemetryCollector {

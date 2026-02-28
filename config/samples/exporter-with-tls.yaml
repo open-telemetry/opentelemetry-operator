@@ -34,7 +34,7 @@ spec:
       batch: {}
 
     exporters:
-      otlp:
+      otlp_grpc:
         endpoint: "simplest-collector-headless.default.svc:14250"
         tls:
           ca_file: "/etc/pki/ca-trust/source/service-ca/service-ca.crt"
@@ -45,4 +45,4 @@ spec:
         traces:
           receivers: [jaeger]
           processors: []
-          exporters: [otlp]
+          exporters: [otlp_grpc]
