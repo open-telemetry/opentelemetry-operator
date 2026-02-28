@@ -112,7 +112,6 @@ func TestShouldInjectSidecar(t *testing.T) {
 			},
 		},
 	} {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			err := k8sClient.Create(context.Background(), &tt.ns)
 			require.NoError(t, err)
@@ -148,7 +147,7 @@ func TestShouldInjectSidecar(t *testing.T) {
 
 			// verify
 			assert.True(t, res.Allowed)
-			assert.Nil(t, res.AdmissionResponse.Result)
+			assert.Nil(t, res.Result)
 			assert.Len(t, res.Patches, 2)
 
 			expectedMap := map[string]bool{
@@ -331,7 +330,6 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 			}},
 		},
 	} {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			err := k8sClient.Create(context.Background(), &tt.ns)
 			require.NoError(t, err)
@@ -368,7 +366,7 @@ func TestPodShouldNotBeChanged(t *testing.T) {
 
 			// verify
 			assert.True(t, res.Allowed)
-			assert.Nil(t, res.AdmissionResponse.Result)
+			assert.Nil(t, res.Result)
 			assert.Len(t, res.Patches, 0)
 
 			// cleanup
@@ -425,8 +423,8 @@ func TestFailOnInvalidRequest(t *testing.T) {
 
 			// verify
 			assert.Equal(t, tt.allowed, res.Allowed)
-			assert.NotNil(t, res.AdmissionResponse.Result)
-			assert.Equal(t, tt.expected, res.AdmissionResponse.Result.Code)
+			assert.NotNil(t, res.Result)
+			assert.Equal(t, tt.expected, res.Result.Code)
 		})
 	}
 }

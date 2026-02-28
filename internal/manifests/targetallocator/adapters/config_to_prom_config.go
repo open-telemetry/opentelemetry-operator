@@ -4,6 +4,7 @@
 package adapters
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -12,7 +13,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector/adapters"
 )
 
-type TAOption func(targetAllocatorCfg map[interface{}]interface{}) error
+type TAOption func(targetAllocatorCfg map[any]any) error
 
 func errorNoComponent(component string) error {
 	return fmt.Errorf("no %s available as part of the configuration", component)
@@ -39,13 +40,13 @@ func errorNotAStringAtIndex(component string, index int) error {
 }
 
 // GetScrapeConfigsFromPromConfig extracts the scrapeConfig array from prometheus receiver config.
-func GetScrapeConfigsFromPromConfig(promReceiverConfig map[interface{}]interface{}) ([]map[string]interface{}, error) {
+func GetScrapeConfigsFromPromConfig(promReceiverConfig map[any]any) ([]map[string]any, error) {
 	prometheusConfigProperty, ok := promReceiverConfig["config"]
 	if !ok {
 		return nil, errorNoComponent("prometheusConfig")
 	}
 
-	prometheusConfig, ok := prometheusConfigProperty.(map[interface{}]interface{})
+	prometheusConfig, ok := prometheusConfigProperty.(map[any]any)
 	if !ok {
 		return nil, errorNotAMap("prometheusConfig")
 	}
@@ -55,18 +56,18 @@ func GetScrapeConfigsFromPromConfig(promReceiverConfig map[interface{}]interface
 		return nil, errorNoComponent("scrape_configs")
 	}
 
-	scrapeConfigs, ok := scrapeConfigsProperty.([]interface{})
+	scrapeConfigs, ok := scrapeConfigsProperty.([]any)
 	if !ok {
 		return nil, errorNotAList("scrape_configs")
 	}
 
-	scrapeConfigMaps := make([]map[string]interface{}, len(scrapeConfigs))
+	scrapeConfigMaps := make([]map[string]any, len(scrapeConfigs))
 	for i, scrapeConfig := range scrapeConfigs {
-		scrapeConfigMapInterface, ok := scrapeConfig.(map[interface{}]interface{})
+		scrapeConfigMapInterface, ok := scrapeConfig.(map[any]any)
 		if !ok {
 			return nil, errorNotAMap("scrape_config")
 		}
-		scrapeConfigMap := make(map[string]interface{})
+		scrapeConfigMap := make(map[string]any)
 		for k, v := range scrapeConfigMapInterface {
 			k, ok := k.(string)
 			if !ok {
@@ -81,7 +82,7 @@ func GetScrapeConfigsFromPromConfig(promReceiverConfig map[interface{}]interface
 }
 
 // ConfigToPromConfig converts the incoming configuration object into the Prometheus receiver config.
-func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
+func ConfigToPromConfig(cfg string) (map[any]any, error) {
 	config, err := adapters.ConfigFromString(cfg)
 	if err != nil {
 		return nil, err
@@ -92,7 +93,7 @@ func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
 		return nil, errorNoComponent("receivers")
 	}
 
-	receivers, ok := receiversProperty.(map[interface{}]interface{})
+	receivers, ok := receiversProperty.(map[any]any)
 	if !ok {
 		return nil, errorNotAMap("receivers")
 	}
@@ -102,7 +103,7 @@ func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
 		return nil, errorNoComponent("prometheus")
 	}
 
-	prometheus, ok := prometheusProperty.(map[interface{}]interface{})
+	prometheus, ok := prometheusProperty.(map[any]any)
 	if !ok {
 		return nil, errorNotAMap("prometheus")
 	}
@@ -112,7 +113,7 @@ func ConfigToPromConfig(cfg string) (map[interface{}]interface{}, error) {
 
 // UnescapeDollarSignsInPromConfig replaces "$$" with "$" in the "replacement" fields of
 // both "relabel_configs" and "metric_relabel_configs" in a Prometheus configuration file.
-func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, error) {
+func UnescapeDollarSignsInPromConfig(cfg string) (map[any]any, error) {
 	prometheus, err := ConfigToPromConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -127,13 +128,13 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 
 		relabelConfigsProperty, found := scrapeConfig["relabel_configs"]
 		if found {
-			relabelConfigs, ok := relabelConfigsProperty.([]interface{})
+			relabelConfigs, ok := relabelConfigsProperty.([]any)
 			if !ok {
 				return nil, errorNotAListAtIndex("relabel_configs", i)
 			}
 
 			for i, rc := range relabelConfigs {
-				relabelConfig, rcErr := rc.(map[interface{}]interface{})
+				relabelConfig, rcErr := rc.(map[any]any)
 				if !rcErr {
 					return nil, errorNotAMapAtIndex("relabel_config", i)
 				}
@@ -154,13 +155,13 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 
 		metricRelabelConfigsProperty, found := scrapeConfig["metric_relabel_configs"]
 		if found {
-			metricRelabelConfigs, ok := metricRelabelConfigsProperty.([]interface{})
+			metricRelabelConfigs, ok := metricRelabelConfigsProperty.([]any)
 			if !ok {
 				return nil, errorNotAListAtIndex("metric_relabel_configs", i)
 			}
 
 			for i, rc := range metricRelabelConfigs {
-				relabelConfig, ok := rc.(map[interface{}]interface{})
+				relabelConfig, ok := rc.(map[any]any)
 				if !ok {
 					return nil, errorNotAMapAtIndex("metric_relabel_config", i)
 				}
@@ -187,13 +188,13 @@ func UnescapeDollarSignsInPromConfig(cfg string) (map[interface{}]interface{}, e
 // This function removes any existing service discovery configurations (e.g., `sd_configs`, `dns_sd_configs`, `file_sd_configs`, etc.)
 // from the `scrape_configs` section and adds a single `http_sd_configs` configuration.
 // The `http_sd_configs` points to the TA (Target Allocator) endpoint that provides the list of targets for the given job.
-func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceName string) (map[interface{}]interface{}, error) {
+func AddHTTPSDConfigToPromConfig(prometheus map[any]any, taServiceName string) (map[any]any, error) {
 	prometheusConfigProperty, ok := prometheus["config"]
 	if !ok {
 		return nil, errorNoComponent("prometheusConfig")
 	}
 
-	prometheusConfig, ok := prometheusConfigProperty.(map[interface{}]interface{})
+	prometheusConfig, ok := prometheusConfigProperty.(map[any]any)
 	if !ok {
 		return nil, errorNotAMap("prometheusConfig")
 	}
@@ -203,7 +204,7 @@ func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServi
 		return nil, errorNoComponent("scrape_configs")
 	}
 
-	scrapeConfigs, ok := scrapeConfigsProperty.([]interface{})
+	scrapeConfigs, ok := scrapeConfigsProperty.([]any)
 	if !ok {
 		return nil, errorNotAList("scrape_configs")
 	}
@@ -211,7 +212,7 @@ func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServi
 	sdRegex := regexp.MustCompile(`^.*(sd|static)_configs$`)
 
 	for i, config := range scrapeConfigs {
-		scrapeConfig, ok := config.(map[interface{}]interface{})
+		scrapeConfig, ok := config.(map[any]any)
 		if !ok {
 			return nil, errorNotAMapAtIndex("scrape_config", i)
 		}
@@ -238,8 +239,8 @@ func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServi
 		}
 
 		escapedJob := url.QueryEscape(jobName)
-		scrapeConfig["http_sd_configs"] = []interface{}{
-			map[string]interface{}{
+		scrapeConfig["http_sd_configs"] = []any{
+			map[string]any{
 				"url": fmt.Sprintf("http://%s:80/jobs/%s/targets?collector_id=$POD_NAME", taServiceName, escapedJob),
 			},
 		}
@@ -249,12 +250,12 @@ func AddHTTPSDConfigToPromConfig(prometheus map[interface{}]interface{}, taServi
 }
 
 func WithTLSConfig(caFile, certFile, keyFile, taServiceName string) TAOption {
-	return func(targetAllocatorCfg map[interface{}]interface{}) error {
+	return func(targetAllocatorCfg map[any]any) error {
 		if _, exists := targetAllocatorCfg["tls"]; !exists {
-			targetAllocatorCfg["tls"] = make(map[interface{}]interface{})
+			targetAllocatorCfg["tls"] = make(map[any]any)
 		}
 
-		tlsCfg, ok := targetAllocatorCfg["tls"].(map[interface{}]interface{})
+		tlsCfg, ok := targetAllocatorCfg["tls"].(map[any]any)
 		if !ok {
 			return errorNotAMap("tls")
 		}
@@ -262,6 +263,7 @@ func WithTLSConfig(caFile, certFile, keyFile, taServiceName string) TAOption {
 		tlsCfg["ca_file"] = caFile
 		tlsCfg["cert_file"] = certFile
 		tlsCfg["key_file"] = keyFile
+		tlsCfg["reload_interval"] = "5m"
 
 		targetAllocatorCfg["endpoint"] = fmt.Sprintf("https://%s:443", taServiceName)
 
@@ -271,7 +273,7 @@ func WithTLSConfig(caFile, certFile, keyFile, taServiceName string) TAOption {
 
 // WithCollectorTargetReloadInterval adds the collector target reload interval to the target allocator configuration.
 func WithCollectorTargetReloadInterval(interval string) TAOption {
-	return func(targetAllocatorCfg map[interface{}]interface{}) error {
+	return func(targetAllocatorCfg map[any]any) error {
 		targetAllocatorCfg["interval"] = interval
 		return nil
 	}
@@ -280,23 +282,23 @@ func WithCollectorTargetReloadInterval(interval string) TAOption {
 // AddTAConfigToPromConfig adds or updates the target_allocator configuration in the Prometheus configuration.
 // If the `EnableTargetAllocatorRewrite` feature flag for the target allocator is enabled, this function
 // removes the existing scrape_configs from the collector's Prometheus configuration as it's not required.
-func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceName string, taOpts ...TAOption) (map[interface{}]interface{}, error) {
+func AddTAConfigToPromConfig(prometheus map[any]any, taServiceName string, taOpts ...TAOption) (map[any]any, error) {
 	prometheusConfigProperty, ok := prometheus["config"]
 	if !ok {
 		return nil, errorNoComponent("prometheusConfig")
 	}
 
-	prometheusCfg, ok := prometheusConfigProperty.(map[interface{}]interface{})
+	prometheusCfg, ok := prometheusConfigProperty.(map[any]any)
 	if !ok {
 		return nil, errorNotAMap("prometheusConfig")
 	}
 
 	// Create the TargetAllocConfig dynamically if it doesn't exist
 	if prometheus["target_allocator"] == nil {
-		prometheus["target_allocator"] = make(map[interface{}]interface{})
+		prometheus["target_allocator"] = make(map[any]any)
 	}
 
-	targetAllocatorCfg, ok := prometheus["target_allocator"].(map[interface{}]interface{})
+	targetAllocatorCfg, ok := prometheus["target_allocator"].(map[any]any)
 	if !ok {
 		return nil, errorNotAMap("target_allocator")
 	}
@@ -319,7 +321,7 @@ func AddTAConfigToPromConfig(prometheus map[interface{}]interface{}, taServiceNa
 }
 
 // ValidatePromConfig checks if the prometheus receiver config is valid given other collector-level settings.
-func ValidatePromConfig(config map[interface{}]interface{}, targetAllocatorEnabled bool) error {
+func ValidatePromConfig(config map[any]any, targetAllocatorEnabled bool) error {
 	// TODO: Rethink this validation, now that target allocator rewrite is enabled permanently.
 
 	_, promConfigExists := config["config"]
@@ -339,7 +341,7 @@ func ValidatePromConfig(config map[interface{}]interface{}, targetAllocatorEnabl
 // In order for Target Allocator to do anything useful, at least one of the following has to be true:
 //   - at least one scrape config has to be defined in Prometheus receiver configuration
 //   - PrometheusCR has to be enabled in target allocator settings
-func ValidateTargetAllocatorConfig(targetAllocatorPrometheusCR bool, promReceiverConfig map[interface{}]interface{}) error {
+func ValidateTargetAllocatorConfig(targetAllocatorPrometheusCR bool, promReceiverConfig map[any]any) error {
 
 	if targetAllocatorPrometheusCR {
 		return nil
@@ -351,7 +353,7 @@ func ValidateTargetAllocatorConfig(targetAllocatorPrometheusCR bool, promReceive
 	}
 
 	if len(scrapeConfigs) == 0 {
-		return fmt.Errorf("either at least one scrape config needs to be defined or PrometheusCR needs to be enabled")
+		return errors.New("either at least one scrape config needs to be defined or PrometheusCR needs to be enabled")
 	}
 
 	return nil

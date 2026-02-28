@@ -109,6 +109,13 @@ rules:
   - list
   - update
 - apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - list
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - podmonitors

@@ -20,10 +20,15 @@ import (
 
 func TestNetworkPolicy(t *testing.T) {
 	tcp := corev1.ProtocolTCP
-	apiServerPort := intstr.FromInt32(defaultAPIServerPort)
+	apiServerPort := intstr.FromInt32(6443)
+	testConfig := config.Config{}
+	testConfig.Internal.KubeAPIServerPort = 6443
+	testConfig.Internal.KubeAPIServerIPs = []string{"10.0.0.1"}
+
 	tests := []struct {
 		name     string
 		ta       v1alpha1.TargetAllocator
+		cfg      config.Config
 		expected *networkingv1.NetworkPolicy
 	}{
 		{
@@ -39,6 +44,7 @@ func TestNetworkPolicy(t *testing.T) {
 					},
 				},
 			},
+			cfg:      testConfig,
 			expected: nil,
 		},
 		{
@@ -54,6 +60,7 @@ func TestNetworkPolicy(t *testing.T) {
 					},
 				},
 			},
+			cfg: testConfig,
 			expected: &networkingv1.NetworkPolicy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-ta-targetallocator-networkpolicy",
@@ -86,6 +93,13 @@ func TestNetworkPolicy(t *testing.T) {
 									Port:     &apiServerPort,
 								},
 							},
+							To: []networkingv1.NetworkPolicyPeer{
+								{
+									IPBlock: &networkingv1.IPBlock{
+										CIDR: "10.0.0.1/32",
+									},
+								},
+							},
 						},
 					},
 					PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress},
@@ -98,7 +112,7 @@ func TestNetworkPolicy(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			params := Params{
 				TargetAllocator: test.ta,
-				Config:          config.Config{},
+				Config:          test.cfg,
 			}
 			actual, err := NetworkPolicy(params)
 			require.NoError(t, err)
@@ -114,6 +128,9 @@ func TestNetworkPolicy(t *testing.T) {
 				assert.Len(t, actual.Spec.Ingress, 1)
 				assert.Len(t, actual.Spec.Ingress[0].Ports, 1)
 				assert.Equal(t, test.expected.Spec.Ingress[0].Ports[0], actual.Spec.Ingress[0].Ports[0])
+				assert.Len(t, actual.Spec.Egress, 1)
+				assert.Equal(t, test.expected.Spec.Egress[0].Ports, actual.Spec.Egress[0].Ports)
+				assert.Equal(t, test.expected.Spec.Egress[0].To, actual.Spec.Egress[0].To)
 			}
 		})
 	}

@@ -25,7 +25,7 @@ func TestVolumeNewDefault(t *testing.T) {
 	assert.Len(t, volumes, 1)
 
 	// check if the number of elements in the volume source items list is 1
-	assert.Len(t, volumes[0].VolumeSource.ConfigMap.Items, 1)
+	assert.Len(t, volumes[0].ConfigMap.Items, 1)
 
 	// check that it's the opamp-bridge-internal volume, with the config map
 	assert.Equal(t, naming.OpAMPBridgeConfigMapVolume(), volumes[0].Name)

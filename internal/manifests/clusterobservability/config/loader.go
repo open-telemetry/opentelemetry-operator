@@ -6,6 +6,7 @@ package config
 import (
 	"crypto/sha256"
 	"embed"
+	"errors"
 	"fmt"
 
 	"dario.cat/mergo"
@@ -41,11 +42,11 @@ const (
 
 // CollectorConfigSpec represents the collector configuration structure from YAML.
 type CollectorConfigSpec struct {
-	Receivers   map[string]interface{} `yaml:"receivers"`
-	Processors  map[string]interface{} `yaml:"processors"`
-	Exporters   map[string]interface{} `yaml:"exporters"`
-	Service     ServiceConfig          `yaml:"service"`
-	Environment map[string]string      `yaml:"environment,omitempty"`
+	Receivers   map[string]any    `yaml:"receivers"`
+	Processors  map[string]any    `yaml:"processors"`
+	Exporters   map[string]any    `yaml:"exporters"`
+	Service     ServiceConfig     `yaml:"service"`
+	Environment map[string]string `yaml:"environment,omitempty"`
 }
 
 // ServiceConfig represents the service section of collector config.
@@ -145,11 +146,11 @@ func (c *ConfigLoader) loadDistroOverrides(collectorType CollectorType, distroPr
 }
 
 // buildExportersConfig builds exporters configuration from the single OTLP HTTP exporter spec.
-func (c *ConfigLoader) buildExportersConfig(spec v1alpha1.ClusterObservabilitySpec) map[string]interface{} {
-	exporters := make(map[string]interface{})
+func (c *ConfigLoader) buildExportersConfig(spec v1alpha1.ClusterObservabilitySpec) map[string]any {
+	exporters := make(map[string]any)
 
 	// Build the otlphttp exporter configuration - map exactly to collector fields
-	otlpConfig := map[string]interface{}{}
+	otlpConfig := map[string]any{}
 
 	// Handle endpoints - either base endpoint or per-signal endpoints
 	if spec.Exporter.Endpoint != "" {
@@ -170,7 +171,7 @@ func (c *ConfigLoader) buildExportersConfig(spec v1alpha1.ClusterObservabilitySp
 
 	// TODO: We do not really handle taking the CA/Cert/Key.
 	if spec.Exporter.TLS != nil {
-		tlsConfig := map[string]interface{}{}
+		tlsConfig := map[string]any{}
 		if spec.Exporter.TLS.CAFile != "" {
 			tlsConfig["ca_file"] = spec.Exporter.TLS.CAFile
 		}
@@ -211,7 +212,7 @@ func (c *ConfigLoader) buildExportersConfig(spec v1alpha1.ClusterObservabilitySp
 	}
 
 	if spec.Exporter.SendingQueue != nil {
-		queueConfig := map[string]interface{}{}
+		queueConfig := map[string]any{}
 		if spec.Exporter.SendingQueue.Enabled != nil {
 			queueConfig["enabled"] = *spec.Exporter.SendingQueue.Enabled
 		}
@@ -227,7 +228,7 @@ func (c *ConfigLoader) buildExportersConfig(spec v1alpha1.ClusterObservabilitySp
 	}
 
 	if spec.Exporter.RetryOnFailure != nil {
-		retryConfig := map[string]interface{}{}
+		retryConfig := map[string]any{}
 		if spec.Exporter.RetryOnFailure.Enabled != nil {
 			retryConfig["enabled"] = *spec.Exporter.RetryOnFailure.Enabled
 		}
@@ -262,7 +263,8 @@ func (c *ConfigLoader) buildPipelinesWithExporters(collectorType CollectorType) 
 	// We only use the otlphttp exporter for now
 	exporterName := "otlphttp"
 
-	if collectorType == AgentCollectorType {
+	switch collectorType {
+	case AgentCollectorType:
 		// Agent collector: metrics, logs, traces
 		pipelines["metrics"] = PipelineConfig{
 			Receivers:  []string{"otlp", "kubeletstats"},
@@ -279,7 +281,7 @@ func (c *ConfigLoader) buildPipelinesWithExporters(collectorType CollectorType) 
 			Processors: []string{"resourcedetection", "k8sattributes", "batch"},
 			Exporters:  []string{exporterName},
 		}
-	} else if collectorType == ClusterCollectorType {
+	case ClusterCollectorType:
 		// Cluster collector: metrics, logs (k8s events)
 		pipelines["metrics"] = PipelineConfig{
 			Receivers:  []string{"k8s_cluster"},
@@ -345,15 +347,15 @@ func (c *ConfigLoader) DetectDistroProvider(cfg config.Config) DistroProvider {
 // ValidateConfig validates that a configuration is valid.
 func (c *ConfigLoader) ValidateConfig(config v1beta1.Config) error {
 	if len(config.Receivers.Object) == 0 {
-		return fmt.Errorf("no receivers configured")
+		return errors.New("no receivers configured")
 	}
 
 	if len(config.Exporters.Object) == 0 {
-		return fmt.Errorf("no exporters configured")
+		return errors.New("no exporters configured")
 	}
 
 	if len(config.Service.Pipelines) == 0 {
-		return fmt.Errorf("no pipelines configured")
+		return errors.New("no pipelines configured")
 	}
 
 	// Validate that pipeline components exist

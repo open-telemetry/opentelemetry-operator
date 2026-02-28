@@ -138,6 +138,10 @@ type Config struct {
 type Internal struct {
 	// NativeSidecarSupport is set to true if the corresponding featuregate is enabled and the minimum required k8s version is met.
 	NativeSidecarSupport bool `yaml:"native-sidecar-support"`
+	// KubeAPIServerPort is the port of the Kubernetes API server discovered from EndpointSlices.
+	KubeAPIServerPort int32 `yaml:"kube-api-server-port"`
+	// KubeAPIServerIPs are the IPs of the Kubernetes API server discovered from EndpointSlices.
+	KubeAPIServerIPs []string `yaml:"kube-api-server-ips"`
 }
 
 // New constructs a new configuration.

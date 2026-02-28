@@ -418,9 +418,9 @@ func TestDeploymentFilterLabels(t *testing.T) {
 	d, err := Deployment(params)
 	require.NoError(t, err)
 
-	assert.Len(t, d.ObjectMeta.Labels, 6)
+	assert.Len(t, d.Labels, 6)
 	for k := range excludedLabels {
-		assert.NotContains(t, d.ObjectMeta.Labels, k)
+		assert.NotContains(t, d.Labels, k)
 	}
 }
 
@@ -451,9 +451,9 @@ func TestDeploymentFilterAnnotations(t *testing.T) {
 	d, err := Deployment(params)
 	require.NoError(t, err)
 
-	assert.Len(t, d.ObjectMeta.Annotations, 0)
+	assert.Len(t, d.Annotations, 0)
 	for k := range excludedAnnotations {
-		assert.NotContains(t, d.ObjectMeta.Annotations, k)
+		assert.NotContains(t, d.Annotations, k)
 	}
 }
 

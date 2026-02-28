@@ -7,6 +7,7 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -1666,13 +1667,7 @@ func TestCRDAvailabilityChecks(t *testing.T) {
 				available, err := checkCRDAvailability(fakeDiscovery, crd)
 				require.NoError(t, err)
 
-				expected := false
-				for _, expectedCRD := range tt.expectedCRDs {
-					if crd == expectedCRD {
-						expected = true
-						break
-					}
-				}
+				expected := slices.Contains(tt.expectedCRDs, crd)
 
 				assert.Equal(t, expected, available, "CRD %s availability should match expectation", crd)
 			}

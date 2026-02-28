@@ -69,7 +69,7 @@ func intToInt32Safe(v int) int32 {
 
 // getNullValuedKeys returns keys from the input map whose values are nil. Keys from nested maps are prefixed
 // by the name of the parent key, using a dot notation.
-func getNullValuedKeys(cfg map[string]interface{}) []string {
+func getNullValuedKeys(cfg map[string]any) []string {
 	var nullKeys []string
 	for k, v := range cfg {
 		if v == nil {
@@ -77,7 +77,7 @@ func getNullValuedKeys(cfg map[string]interface{}) []string {
 		}
 		if reflect.ValueOf(v).Kind() == reflect.Map {
 			var nulls []string
-			val, ok := v.(map[string]interface{})
+			val, ok := v.(map[string]any)
 			if ok {
 				nulls = getNullValuedKeys(val)
 			}
@@ -92,20 +92,20 @@ func getNullValuedKeys(cfg map[string]interface{}) []string {
 
 // normalizeConfig fixes the config to be valid for the collector.
 // It removes nil values, converts float64 to int32.
-func normalizeConfig(m map[string]interface{}) {
+func normalizeConfig(m map[string]any) {
 	for k, v := range m {
 		switch val := v.(type) {
 		case nil:
 			// We remove those fields which value is nil. This prevents issues when
 			// unmarshalling the config in the collector
 			delete(m, k)
-		case map[string]interface{}:
+		case map[string]any:
 			normalizeConfig(val)
-		case []interface{}:
+		case []any:
 			for i, item := range val {
 				if item == nil {
-					val[i] = map[string]interface{}{}
-				} else if sub, ok := item.(map[string]interface{}); ok {
+					val[i] = map[string]any{}
+				} else if sub, ok := item.(map[string]any); ok {
 					normalizeConfig(sub)
 				}
 			}

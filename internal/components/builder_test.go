@@ -4,7 +4,7 @@
 package components_test
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -20,7 +20,7 @@ func TestBuilder_Build(t *testing.T) {
 	type sampleConfig struct {
 		example string
 		number  int
-		m       map[string]interface{}
+		m       map[string]any
 	}
 	type want struct {
 		name           string
@@ -33,7 +33,7 @@ func TestBuilder_Build(t *testing.T) {
 		b components.Builder[T]
 	}
 	type params struct {
-		conf interface{}
+		conf any
 	}
 	type testCase[T any] struct {
 		name            string
@@ -135,7 +135,7 @@ func TestBuilder_Build(t *testing.T) {
 				conf: sampleConfig{
 					example: "test",
 					number:  100,
-					m: map[string]interface{}{
+					m: map[string]any{
 						"key": "value",
 					},
 				},
@@ -173,7 +173,7 @@ func TestBuilder_Build(t *testing.T) {
 							},
 						}
 						if v, ok := config.m["key"]; ok && v == "value" {
-							return nil, fmt.Errorf("errors from function")
+							return nil, errors.New("errors from function")
 						}
 						return rules, nil
 					}),
@@ -182,7 +182,7 @@ func TestBuilder_Build(t *testing.T) {
 				conf: sampleConfig{
 					example: "test",
 					number:  100,
-					m: map[string]interface{}{
+					m: map[string]any{
 						"key": "value",
 					},
 				},
@@ -210,7 +210,7 @@ func TestBuilder_Build(t *testing.T) {
 				conf: sampleConfig{
 					example: "test",
 					number:  100,
-					m: map[string]interface{}{
+					m: map[string]any{
 						"key": "value",
 					},
 				},
@@ -247,14 +247,14 @@ func TestBuilder_Build(t *testing.T) {
 					WithPort(443).
 					WithProtocol(corev1.ProtocolTCP).
 					WithLivenessGen(func(logger logr.Logger, config sampleConfig) (*corev1.Probe, error) {
-						return nil, fmt.Errorf("no probe")
+						return nil, errors.New("no probe")
 					}),
 			},
 			params: params{
 				conf: sampleConfig{
 					example: "test",
 					number:  100,
-					m: map[string]interface{}{
+					m: map[string]any{
 						"key": "value",
 					},
 				},

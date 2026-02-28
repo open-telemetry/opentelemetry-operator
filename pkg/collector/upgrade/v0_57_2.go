@@ -25,7 +25,7 @@ func upgrade0_57_2(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 	}
 
 	//Remove deprecated port field from config. (https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/10853)
-	extensionsConfig, ok := otelCfg["extensions"].(map[interface{}]interface{})
+	extensionsConfig, ok := otelCfg["extensions"].(map[any]any)
 	if !ok {
 		// In case there is no extensions config.
 		return otelcol, nil
@@ -34,7 +34,7 @@ func upgrade0_57_2(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 	for keyExt, valExt := range extensionsConfig {
 		if strings.HasPrefix(keyExt.(string), "health_check") {
 			switch extensions := valExt.(type) {
-			case map[interface{}]interface{}:
+			case map[any]any:
 				if port, ok := extensions["port"]; ok {
 					endpointV := extensions["endpoint"]
 					extensions["endpoint"] = fmt.Sprintf("%s:%s", endpointV, port)

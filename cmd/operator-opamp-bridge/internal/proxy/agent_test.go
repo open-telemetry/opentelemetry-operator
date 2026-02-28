@@ -51,7 +51,7 @@ func TestAgent_UpdateStatus(t *testing.T) {
 				{Key: "service.name", Value: &protobufs.AnyValue{Value: &protobufs.AnyValue_StringValue{StringValue: "test-service"}}},
 			},
 		},
-		//nolint:gosec
+
 		Capabilities: uint64(protobufs.AgentCapabilities_AgentCapabilities_ReportsEffectiveConfig),
 	}
 

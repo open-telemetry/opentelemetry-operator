@@ -54,7 +54,7 @@ func updateCollectorStatus(ctx context.Context, cli client.Client, changed *v1be
 	var statusReplicas string
 	var statusImage string
 
-	switch mode { // nolint:exhaustive
+	switch mode { //nolint:exhaustive
 	case v1beta1.ModeDeployment:
 		obj := &appsv1.Deployment{}
 		if err := cli.Get(ctx, objKey, obj); err != nil {

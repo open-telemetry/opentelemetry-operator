@@ -25,7 +25,7 @@ jobs:
       uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
       id: setup-go
       with:
-        go-version: "~1.25.6"
+        go-version: "~1.25.7"
 
     - name: Cache tools
       uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
@@ -52,7 +52,7 @@ jobs:
       uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
       id: setup-go
       with:
-        go-version: "~1.25.6"
+        go-version: "~1.25.7"
 
     - name: Cache tools
       uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
@@ -86,18 +86,18 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
       with:
-        go-version: "~1.25.6"
+        go-version: "~1.25.7"
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v3.29.5
+      uses: github/codeql-action/init@89a39a4e59826350b863aa6b6252a07ad50cf83e # v3.29.5
       with:
         languages: go
 
     - name: Autobuild
-      uses: github/codeql-action/autobuild@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v3.29.5
+      uses: github/codeql-action/autobuild@89a39a4e59826350b863aa6b6252a07ad50cf83e # v3.29.5
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v3.29.5
+      uses: github/codeql-action/analyze@89a39a4e59826350b863aa6b6252a07ad50cf83e # v3.29.5
 
     - name: Govulncheck
       uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee # v1.0.4

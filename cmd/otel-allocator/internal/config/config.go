@@ -109,13 +109,13 @@ func StringToModelOrTimeDurationHookFunc() mapstructure.DecodeHookFuncType {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
+		data any,
+	) (any, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
 
-		if t != reflect.TypeOf(model.Duration(5)) && t != reflect.TypeOf(time.Duration(5)) {
+		if t != reflect.TypeFor[model.Duration]() && t != reflect.TypeFor[time.Duration]() {
 			return data, nil
 		}
 
@@ -129,13 +129,13 @@ func MapToPromConfig() mapstructure.DecodeHookFuncType {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
+		data any,
+	) (any, error) {
 		if f.Kind() != reflect.Map {
 			return data, nil
 		}
 
-		if t != reflect.TypeOf(&promconfig.Config{}) {
+		if t != reflect.TypeFor[*promconfig.Config]() {
 			return data, nil
 		}
 
@@ -163,13 +163,13 @@ func MapToLabelSelector() mapstructure.DecodeHookFuncType {
 	return func(
 		f reflect.Type,
 		t reflect.Type,
-		data interface{},
-	) (interface{}, error) {
+		data any,
+	) (any, error) {
 		if f.Kind() != reflect.Map {
 			return data, nil
 		}
 
-		if t != reflect.TypeOf(&metav1.LabelSelector{}) {
+		if t != reflect.TypeFor[*metav1.LabelSelector]() {
 			return data, nil
 		}
 
@@ -291,7 +291,7 @@ func unmarshal(cfg *Config, configFile string) error {
 		return err
 	}
 
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	err = yaml.Unmarshal(yamlFile, &m)
 	if err != nil {
 		return fmt.Errorf("error unmarshaling YAML: %w", err)
@@ -377,14 +377,14 @@ func Load(args []string) (*Config, error) {
 // ValidateConfig validates the cli and file configs together.
 func ValidateConfig(config *Config) error {
 	scrapeConfigsPresent := (config.PromConfig != nil && len(config.PromConfig.ScrapeConfigs) > 0)
-	if !(config.PrometheusCR.Enabled || scrapeConfigsPresent) {
-		return fmt.Errorf("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
+	if !config.PrometheusCR.Enabled && !scrapeConfigsPresent {
+		return errors.New("at least one scrape config must be defined, or Prometheus CR watching must be enabled")
 	}
 	if config.CollectorNamespace == "" {
-		return fmt.Errorf("collector namespace must be set")
+		return errors.New("collector namespace must be set")
 	}
 	if len(config.PrometheusCR.AllowNamespaces) != 0 && len(config.PrometheusCR.DenyNamespaces) != 0 {
-		return fmt.Errorf("only one of allowNamespaces or denyNamespaces can be set")
+		return errors.New("only one of allowNamespaces or denyNamespaces can be set")
 	}
 	return nil
 }
@@ -421,7 +421,7 @@ func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *certw
 		VerifyConnection: func(cs tls.ConnectionState) error {
 			// Require client certificate
 			if len(cs.PeerCertificates) == 0 {
-				return fmt.Errorf("no client certificate provided")
+				return errors.New("no client certificate provided")
 			}
 
 			// Verify using current CA pool (which can be reloaded)

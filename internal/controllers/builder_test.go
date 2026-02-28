@@ -18,7 +18,6 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	policyV1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -254,7 +253,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
-						Selector: &v1.LabelSelector{
+						Selector: &metav1.LabelSelector{
 							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
@@ -379,7 +378,7 @@ service:
 					},
 				},
 				&networkingv1.NetworkPolicy{
-					ObjectMeta: v1.ObjectMeta{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-collector-networkpolicy",
 						Namespace: "test",
 						Labels: map[string]string{
@@ -583,7 +582,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
-						Selector: &v1.LabelSelector{
+						Selector: &metav1.LabelSelector{
 							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
@@ -908,7 +907,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
-						Selector: &v1.LabelSelector{
+						Selector: &metav1.LabelSelector{
 							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
@@ -1497,7 +1496,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
-						Selector: &v1.LabelSelector{
+						Selector: &metav1.LabelSelector{
 							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
@@ -1748,7 +1747,7 @@ service:
 						Annotations: map[string]string{},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
-						Selector: &v1.LabelSelector{
+						Selector: &metav1.LabelSelector{
 							MatchLabels: selectorLabels,
 						},
 						MaxUnavailable: &intstr.IntOrString{
@@ -2165,7 +2164,7 @@ prometheus_cr:
 						},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
-						Selector: &v1.LabelSelector{
+						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 								"app.kubernetes.io/instance":   "test.test",
@@ -2464,7 +2463,7 @@ prometheus_cr:
 						},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
-						Selector: &v1.LabelSelector{
+						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 								"app.kubernetes.io/instance":   "test.test",
@@ -2497,7 +2496,7 @@ prometheus_cr:
 						Endpoints: []monitoringv1.Endpoint{
 							{Port: "targetallocation"},
 						},
-						Selector: v1.LabelSelector{
+						Selector: metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 								"app.kubernetes.io/instance":   "test.test",
@@ -2813,7 +2812,7 @@ prometheus_cr:
 						},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
-						Selector: &v1.LabelSelector{
+						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 								"app.kubernetes.io/instance":   "test.test",
@@ -3162,7 +3161,7 @@ prometheus_cr:
 						},
 					},
 					Spec: policyV1.PodDisruptionBudgetSpec{
-						Selector: &v1.LabelSelector{
+						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app.kubernetes.io/component":  "opentelemetry-targetallocator",
 								"app.kubernetes.io/instance":   "test.test",

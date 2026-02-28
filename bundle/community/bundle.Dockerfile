@@ -19,4 +19,4 @@ COPY ./manifests /manifests/
 COPY ./metadata /metadata/
 COPY ./tests/scorecard /tests/scorecard/
 
-LABEL com.redhat.openshift.versions=v4.12
+LABEL com.redhat.openshift.versions=v4.14

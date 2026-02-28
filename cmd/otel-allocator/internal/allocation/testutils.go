@@ -65,6 +65,20 @@ func MakeNNewTargetsWithEmptyCollectors(n int, startingIndex int) []*target.Item
 	return toReturn
 }
 
+// MakeNTargetsForJob creates n targets all belonging to the same job.
+func MakeNTargetsForJob(n int, jobName string, startingIndex int) []*target.Item {
+	toReturn := []*target.Item{}
+	for i := startingIndex; i < n+startingIndex; i++ {
+		label := labels.New(
+			labels.Label{Name: "i", Value: strconv.Itoa(i)},
+			labels.Label{Name: "total", Value: strconv.Itoa(n + startingIndex)},
+		)
+		newTarget := target.NewItem(jobName, fmt.Sprintf("test-url-%d", i), label, "")
+		toReturn = append(toReturn, newTarget)
+	}
+	return toReturn
+}
+
 func RunForAllStrategies(t *testing.T, f func(t *testing.T, allocator Allocator)) {
 	allocatorNames := GetRegisteredAllocatorNames()
 	logger := logf.Log.WithName("unit-tests")

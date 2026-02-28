@@ -167,7 +167,7 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 		b components.Builder[*components.SingleEndpointConfig]
 	}
 	type args struct {
-		config interface{}
+		config any
 	}
 	tests := []struct {
 		name    string
@@ -182,7 +182,7 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 				b: components.NewSinglePortParserBuilder("testparser", 8080),
 			},
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"port": 8080,
 				},
 			},
@@ -208,7 +208,7 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 				b: components.NewSinglePortParserBuilder("testparser", 8080),
 			},
 			args: args{
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			want: []corev1.ServicePort{
 				{Name: "testparser", Port: 8080},
@@ -224,7 +224,7 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 					WithAppProtocol(&components.GrpcProtocol),
 			},
 			args: args{
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			want: []corev1.ServicePort{
 				{
@@ -243,7 +243,7 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 				b: components.NewSinglePortParserBuilder("testparser", components.UnsetPort),
 			},
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "garbageeeee",
 				},
 			},
@@ -281,7 +281,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 		b components.Builder[*components.SingleEndpointConfig]
 	}
 	type args struct {
-		config interface{}
+		config any
 	}
 	tests := []struct {
 		name    string
@@ -296,7 +296,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 				b: components.NewSilentSinglePortParserBuilder("testparser", 8080),
 			},
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"port": 8080,
 				},
 			},
@@ -311,7 +311,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 				b: components.NewSilentSinglePortParserBuilder("testparser", 8080),
 			},
 			args: args{
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			want: []corev1.ServicePort{
 				{Name: "testparser", Port: 8080},
@@ -327,7 +327,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 					WithAppProtocol(&components.GrpcProtocol),
 			},
 			args: args{
-				config: map[string]interface{}{},
+				config: map[string]any{},
 			},
 			want: []corev1.ServicePort{
 				{
@@ -346,7 +346,7 @@ func TestNewSilentSinglePortParser_Ports(t *testing.T) {
 				b: components.NewSilentSinglePortParserBuilder("testparser", components.UnsetPort),
 			},
 			args: args{
-				config: map[string]interface{}{
+				config: map[string]any{
 					"endpoint": "garbageeeee",
 				},
 			},

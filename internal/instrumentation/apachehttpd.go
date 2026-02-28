@@ -234,7 +234,8 @@ LoadModule otel_apache_module %[1]s/WebServerModule/Apache/libmod_apache_otel%[2
 		attrMap[attr.Name] = attr.Value
 	}
 
-	configFileContent := fmt.Sprintf(template,
+	var configFileContent strings.Builder
+	fmt.Fprintf(&configFileContent, template,
 		apacheAgentDirectory+apacheAgentSubDirectory,
 		versionSuffix)
 
@@ -245,10 +246,10 @@ LoadModule otel_apache_module %[1]s/WebServerModule/Apache/libmod_apache_otel%[2
 	sort.Strings(keys)
 
 	for _, key := range keys {
-		configFileContent += fmt.Sprintf("%s %s\n", key, attrMap[key])
+		fmt.Fprintf(&configFileContent, "%s %s\n", key, attrMap[key])
 	}
 
-	return configFileContent
+	return configFileContent.String()
 }
 
 func getApacheConfDir(configuredDir string) string {

@@ -134,6 +134,7 @@ receivers:
         ca_file: /tls/ca.crt
         cert_file: /tls/tls.crt
         key_file: /tls/tls.key
+        reload_interval: 5m
 service:
   pipelines:
     metrics:

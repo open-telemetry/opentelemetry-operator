@@ -4,6 +4,7 @@
 package manifestutils
 
 import (
+	"maps"
 	"regexp"
 	"strings"
 
@@ -37,14 +38,12 @@ func Labels(instance metav1.ObjectMeta, name string, image string, component str
 		}
 	}
 
-	for k, v := range SelectorLabels(instance, component) {
-		base[k] = v
-	}
+	maps.Copy(base, SelectorLabels(instance, component))
 
 	version := strings.Split(image, ":")
 	for _, v := range version {
-		if strings.HasSuffix(v, "@sha256") {
-			versionLabel = strings.TrimSuffix(v, "@sha256")
+		if before, ok := strings.CutSuffix(v, "@sha256"); ok {
+			versionLabel = before
 		}
 	}
 	switch lenVersion := len(version); lenVersion {
@@ -82,7 +81,7 @@ func TASelectorLabels(instance v1alpha1.TargetAllocator, component string) map[s
 	// TargetAllocator uses the name label as well for selection
 	// This is inconsistent with the Collector, but changing is a somewhat painful breaking change
 	// Don't override the app name if it already exists
-	if name, ok := instance.ObjectMeta.Labels["app.kubernetes.io/name"]; ok {
+	if name, ok := instance.Labels["app.kubernetes.io/name"]; ok {
 		selectorLabels["app.kubernetes.io/name"] = name
 	} else {
 		selectorLabels["app.kubernetes.io/name"] = naming.TargetAllocator(instance.Name)
