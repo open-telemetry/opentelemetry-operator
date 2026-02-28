@@ -420,6 +420,42 @@ func TestContainersToInstrument(t *testing.T) {
 			},
 			expectedNames: []string{},
 		},
+		{
+			name: "init containers returned first, in order",
+			inst: instrumentationWithContainers{Containers: []string{"app", "init-b", "init-a"}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{{Name: "init-a"}, {Name: "init-b"}},
+					Containers:     []corev1.Container{{Name: "app"}},
+				},
+			},
+			// init-a comes before init-b in pod spec, so they should be sorted that way
+			expectedNames: []string{"init-a", "init-b", "app"},
+		},
+		{
+			name: "init containers sorted by pod order, not annotation order",
+			inst: instrumentationWithContainers{Containers: []string{"init-c", "init-a", "init-b"}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{{Name: "init-a"}, {Name: "init-b"}, {Name: "init-c"}},
+					Containers:     []corev1.Container{{Name: "app"}},
+				},
+			},
+			// Annotation order is c, a, b but pod order is a, b, c
+			expectedNames: []string{"init-a", "init-b", "init-c"},
+		},
+		{
+			name: "mixed init and regular containers",
+			inst: instrumentationWithContainers{Containers: []string{"app2", "init-b", "app1", "init-a"}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{{Name: "init-a"}, {Name: "init-b"}},
+					Containers:     []corev1.Container{{Name: "app1"}, {Name: "app2"}},
+				},
+			},
+			// Init containers first (sorted by pod order), then regular containers (in annotation order)
+			expectedNames: []string{"init-a", "init-b", "app2", "app1"},
+		},
 	}
 
 	for _, test := range tests {
@@ -430,6 +466,216 @@ func TestContainersToInstrument(t *testing.T) {
 				names[i] = c.Name
 			}
 			assert.Equal(t, test.expectedNames, names)
+		})
+	}
+}
+
+func TestIsInitContainer(t *testing.T) {
+	tests := []struct {
+		name     string
+		pod      corev1.Pod
+		target   string
+		expected bool
+	}{
+		{
+			name: "matches init container",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{{Name: "init-db"}},
+					Containers:     []corev1.Container{{Name: "app"}},
+				},
+			},
+			target:   "init-db",
+			expected: true,
+		},
+		{
+			name: "matches regular container",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{{Name: "init-db"}},
+					Containers:     []corev1.Container{{Name: "app"}},
+				},
+			},
+			target:   "app",
+			expected: false,
+		},
+		{
+			name: "container not found",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{{Name: "init-db"}},
+					Containers:     []corev1.Container{{Name: "app"}},
+				},
+			},
+			target:   "nonexistent",
+			expected: false,
+		},
+		{
+			name:     "empty pod",
+			pod:      corev1.Pod{},
+			target:   "any",
+			expected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := isInitContainer(test.target, &test.pod)
+			assert.Equal(t, test.expected, result)
+		})
+	}
+}
+
+func TestFindContainerByName(t *testing.T) {
+	tests := []struct {
+		name         string
+		pod          corev1.Pod
+		target       string
+		expectedName string
+		expectNil    bool
+	}{
+		{
+			name: "finds regular container",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{{Name: "init-db"}},
+					Containers:     []corev1.Container{{Name: "app"}},
+				},
+			},
+			target:       "app",
+			expectedName: "app",
+		},
+		{
+			name: "finds init container",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{{Name: "init-db"}},
+					Containers:     []corev1.Container{{Name: "app"}},
+				},
+			},
+			target:       "init-db",
+			expectedName: "init-db",
+		},
+		{
+			name: "container not found",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app"}},
+				},
+			},
+			target:    "nonexistent",
+			expectNil: true,
+		},
+		{
+			name:      "empty pod",
+			pod:       corev1.Pod{},
+			target:    "any",
+			expectNil: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := findContainerByName(test.target, &test.pod)
+			if test.expectNil {
+				assert.Nil(t, result)
+			} else {
+				assert.NotNil(t, result)
+				assert.Equal(t, test.expectedName, result.Name)
+			}
+		})
+	}
+}
+
+func TestInsertInitContainer(t *testing.T) {
+	tests := []struct {
+		name                   string
+		pod                    corev1.Pod
+		toInsert               corev1.Container
+		targetContainerName    string
+		expectedInitContainers []string
+	}{
+		{
+			name: "insert before init container - first position",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{{Name: "init-a"}, {Name: "init-b"}},
+					Containers:     []corev1.Container{{Name: "app"}},
+				},
+			},
+			toInsert:               corev1.Container{Name: "otel-java"},
+			targetContainerName:    "init-a",
+			expectedInitContainers: []string{"otel-java", "init-a", "init-b"},
+		},
+		{
+			name: "insert before init container - middle position",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{{Name: "init-a"}, {Name: "init-b"}, {Name: "init-c"}},
+					Containers:     []corev1.Container{{Name: "app"}},
+				},
+			},
+			toInsert:               corev1.Container{Name: "otel-java"},
+			targetContainerName:    "init-b",
+			expectedInitContainers: []string{"init-a", "otel-java", "init-b", "init-c"},
+		},
+		{
+			name: "insert before init container - last position",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{{Name: "init-a"}, {Name: "init-b"}},
+					Containers:     []corev1.Container{{Name: "app"}},
+				},
+			},
+			toInsert:               corev1.Container{Name: "otel-java"},
+			targetContainerName:    "init-b",
+			expectedInitContainers: []string{"init-a", "otel-java", "init-b"},
+		},
+		{
+			name: "append for regular container",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{{Name: "init-a"}},
+					Containers:     []corev1.Container{{Name: "app"}},
+				},
+			},
+			toInsert:               corev1.Container{Name: "otel-java"},
+			targetContainerName:    "app",
+			expectedInitContainers: []string{"init-a", "otel-java"},
+		},
+		{
+			name: "append for regular container - no existing init containers",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "app"}},
+				},
+			},
+			toInsert:               corev1.Container{Name: "otel-java"},
+			targetContainerName:    "app",
+			expectedInitContainers: []string{"otel-java"},
+		},
+		{
+			name: "append when target not found",
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{{Name: "init-a"}},
+					Containers:     []corev1.Container{{Name: "app"}},
+				},
+			},
+			toInsert:               corev1.Container{Name: "otel-java"},
+			targetContainerName:    "nonexistent",
+			expectedInitContainers: []string{"init-a", "otel-java"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := insertInitContainer(&test.pod, test.toInsert, test.targetContainerName)
+			names := make([]string, len(result))
+			for i, c := range result {
+				names[i] = c.Name
+			}
+			assert.Equal(t, test.expectedInitContainers, names)
 		})
 	}
 }

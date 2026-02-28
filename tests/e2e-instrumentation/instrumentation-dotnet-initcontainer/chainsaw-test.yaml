@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kyverno/chainsaw/main/.schemas/json/test-chainsaw-v1alpha1.json
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: instrumentation-dotnet-initcontainer
+spec:
+  steps:
+  - name: Add OpenShift namespace annotations
+    use:
+      template: ../../step-templates/openshift-namespace-annotations.yaml
+  - name: step-00
+    try:
+    - apply:
+        file: 00-install-collector.yaml
+    - apply:
+        file: 00-install-instrumentation.yaml
+  - name: step-01
+    try:
+    - apply:
+        file: 01-install-app.yaml
+    - assert:
+        file: 01-assert.yaml
+    catch:
+      - podLogs:
+          selector: app=my-dotnet-initcontainer

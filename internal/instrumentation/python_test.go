@@ -776,24 +776,124 @@ func TestInjectPythonSDK(t *testing.T) {
 			},
 			err: errors.New("provided instrumentation.opentelemetry.io/otel-python-platform annotation value 'not-supported' is not supported"),
 		},
+		{
+			name:   "inject into init container",
+			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: "my-init",
+						},
+					},
+				},
+			},
+			platform: "glibc",
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: pythonVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-python",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-python"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-python",
+								MountPath: "/otel-auto-instrumentation-python",
+							}},
+						},
+						{
+							Name: "my-init",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-python",
+									MountPath: "/otel-auto-instrumentation-python",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "PYTHONPATH",
+									Value: fmt.Sprintf("%s:%s", "/otel-auto-instrumentation-python/opentelemetry/instrumentation/auto_instrumentation", "/otel-auto-instrumentation-python"),
+								},
+								{
+									Name:  "OTEL_EXPORTER_OTLP_PROTOCOL",
+									Value: "http/protobuf",
+								},
+								{
+									Name:  "OTEL_TRACES_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_METRICS_EXPORTER",
+									Value: "otlp",
+								},
+								{
+									Name:  "OTEL_LOGS_EXPORTER",
+									Value: "otlp",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
 	}
 
 	injector := sdkInjector{}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectPythonSDK(test.Python, test.pod, &test.pod.Spec.Containers[0], test.platform, v1alpha1.InstrumentationSpec{})
+			pod := test.pod
+
+			// Collect all containers (regular first, then init)
+			containers := allContainers(&pod)
+
+			err := injectPythonSDK(test.Python, &pod, containers, test.platform, v1alpha1.InstrumentationSpec{})
 			if err != nil {
 				assert.Equal(t, test.expected, pod)
 				assert.Equal(t, test.err, err)
 				return
 			}
 
-			if test.simulateDefaults {
-				injector.injectCommonEnvVar(test.inst, &pod.Spec.Containers[0])
+			for i := range pod.Spec.Containers {
+				if test.simulateDefaults {
+					injector.injectCommonEnvVar(test.inst, &pod.Spec.Containers[i])
+				}
+				injector.injectDefaultPythonEnvVars(&pod.Spec.Containers[i])
 			}
-			injector.injectDefaultPythonEnvVars(&pod.Spec.Containers[0])
+			for i := range pod.Spec.InitContainers {
+				// Skip the instrumentation init container we added
+				if pod.Spec.InitContainers[i].Name == pythonInitContainerName {
+					continue
+				}
+				if test.simulateDefaults {
+					injector.injectCommonEnvVar(test.inst, &pod.Spec.InitContainers[i])
+				}
+				injector.injectDefaultPythonEnvVars(&pod.Spec.InitContainers[i])
+			}
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})
 	}
+}
+
+func allContainers(pod *corev1.Pod) []*corev1.Container {
+	// Collect all containers (regular first, then init)
+	var containers []*corev1.Container
+	for i := range pod.Spec.Containers {
+		containers = append(containers, &pod.Spec.Containers[i])
+	}
+	for i := range pod.Spec.InitContainers {
+		containers = append(containers, &pod.Spec.InitContainers[i])
+	}
+	return containers
 }
