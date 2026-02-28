@@ -829,6 +829,16 @@ func (in *TargetAllocatorPrometheusCR) DeepCopyInto(out *TargetAllocatorPromethe
 		*out = new(metav1.Duration)
 		**out = **in
 	}
+	if in.EvaluationInterval != nil {
+		in, out := &in.EvaluationInterval, &out.EvaluationInterval
+		*out = new(metav1.Duration)
+		**out = **in
+	}
+	if in.ScrapeProtocols != nil {
+		in, out := &in.ScrapeProtocols, &out.ScrapeProtocols
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.ScrapeClasses != nil {
 		in, out := &in.ScrapeClasses, &out.ScrapeClasses
 		*out = make([]AnyConfig, len(*in))
@@ -841,8 +851,18 @@ func (in *TargetAllocatorPrometheusCR) DeepCopyInto(out *TargetAllocatorPromethe
 		*out = new(metav1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.PodMonitorNamespaceSelector != nil {
+		in, out := &in.PodMonitorNamespaceSelector, &out.PodMonitorNamespaceSelector
+		*out = new(metav1.LabelSelector)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.ServiceMonitorSelector != nil {
 		in, out := &in.ServiceMonitorSelector, &out.ServiceMonitorSelector
+		*out = new(metav1.LabelSelector)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ServiceMonitorNamespaceSelector != nil {
+		in, out := &in.ServiceMonitorNamespaceSelector, &out.ServiceMonitorNamespaceSelector
 		*out = new(metav1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
@@ -851,8 +871,18 @@ func (in *TargetAllocatorPrometheusCR) DeepCopyInto(out *TargetAllocatorPromethe
 		*out = new(metav1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.ScrapeConfigNamespaceSelector != nil {
+		in, out := &in.ScrapeConfigNamespaceSelector, &out.ScrapeConfigNamespaceSelector
+		*out = new(metav1.LabelSelector)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.ProbeSelector != nil {
 		in, out := &in.ProbeSelector, &out.ProbeSelector
+		*out = new(metav1.LabelSelector)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ProbeNamespaceSelector != nil {
+		in, out := &in.ProbeNamespaceSelector, &out.ProbeNamespaceSelector
 		*out = new(metav1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
