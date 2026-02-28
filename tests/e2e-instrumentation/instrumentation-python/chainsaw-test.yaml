@@ -5,10 +5,30 @@ metadata:
   name: instrumentation-python
 spec:
   bindings:
-    - name: LABEL_SELECTOR
+    - name: podLabelSelector
       value: app=my-python
-    - name: COLLECTOR_LABEL_SELECTOR
+    - name: appPort
+      value: "8080"
+    - name: appPath
+      value: /
+    - name: collectorLabelSelector
       value: app.kubernetes.io/name=deployment-collector
+    - name: collectorMetricsPort
+      value: "8888"
+    - name: containerName
+      value: otc-container
+    - name: retryTimeout
+      value: "120"
+    - name: retrySleep
+      value: "5"
+    - name: searchStrings
+      value: |
+        http.method: Str(GET)
+        k8s.container.name: Str(myapp)
+    - name: catchPodLabelSelector
+      value: app.kubernetes.io/name=deployment-collector
+    - name: catchContainer
+      value: otc-container
   steps:
   - name: Add OpenShift namespace annotations
     use:
@@ -32,16 +52,16 @@ spec:
         file: 01-assert.yaml
     catch:
       - podLogs:
-          selector: ($LABEL_SELECTOR)
+          selector: app=my-python
   - name: Make a request to the app
     use:
-      template: app-request.yaml
+      template: ../../step-templates/app-http-request.yaml
   - name: Wait for telemetry data
     use:
-      template: wait-for-telemetry-data.yaml
+      template: ../../step-templates/wait-for-telemetry.yaml
   - name: Check the instrumented app has sent the telemetry data successfully
     use:
-      template: check-telemetry-data.yaml
+      template: ../../step-templates/validate-collector-spans.yaml
 ---
 apiVersion: chainsaw.kyverno.io/v1alpha1
 kind: Test
@@ -49,10 +69,30 @@ metadata:
   name: instrumentation-python-oldest
 spec:
   bindings:
-    - name: LABEL_SELECTOR
+    - name: podLabelSelector
       value: app=my-python
-    - name: COLLECTOR_LABEL_SELECTOR
+    - name: appPort
+      value: "8080"
+    - name: appPath
+      value: /
+    - name: collectorLabelSelector
       value: app.kubernetes.io/name=deployment-collector
+    - name: collectorMetricsPort
+      value: "8888"
+    - name: containerName
+      value: otc-container
+    - name: retryTimeout
+      value: "120"
+    - name: retrySleep
+      value: "5"
+    - name: searchStrings
+      value: |
+        http.method: Str(GET)
+        k8s.container.name: Str(myapp)
+    - name: catchPodLabelSelector
+      value: app.kubernetes.io/name=deployment-collector
+    - name: catchContainer
+      value: otc-container
   steps:
     - name: Add OpenShift namespace annotations
       use:
@@ -76,13 +116,13 @@ spec:
             file: 01-assert.yaml
       catch:
         - podLogs:
-            selector: ($LABEL_SELECTOR)
+            selector: app=my-python
     - name: Make a request to the app
       use:
-        template: app-request.yaml
+        template: ../../step-templates/app-http-request.yaml
     - name: Wait for telemetry data
       use:
-        template: wait-for-telemetry-data.yaml
+        template: ../../step-templates/wait-for-telemetry.yaml
     - name: Check the instrumented app has sent the telemetry data successfully
       use:
-        template: check-telemetry-data.yaml
+        template: ../../step-templates/validate-collector-spans.yaml
