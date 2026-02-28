@@ -38,6 +38,8 @@ linters:
             - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Fatalf
     importas:
       alias:
+        - pkg: k8s.io/apimachinery/pkg/api/errors
+          alias: apierrors
         - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
           alias: metav1
     misspell:
@@ -48,6 +50,114 @@ linters:
       require-specific: true
     revive:
       confidence: 0.8
+      enable-all-rules: true
+      enable-default-rules: true
+      max-open-files: 2048
+      rules:
+        - name: add-constant
+          disabled: true
+        - name: bare-return
+          disabled: true # FIXME
+        - name: blank-imports
+          disabled: true
+        - name: context-as-argument
+          disabled: true
+        - name: cognitive-complexity
+          disabled: true
+        - name: cyclomatic
+          disabled: true
+        - name: confusing-naming
+          disabled: true # FIXME
+        - name: confusing-results
+          disabled: true # FIXME
+        - name: comment-spacings
+          disabled: true # FIXME
+        - name: deep-exit
+          disabled: true # FIXME
+        - name: defer
+          disabled: true # FIXME
+        - name: dot-imports
+          disabled: true
+        - name: duplicated-imports
+          disabled: true # FIXME
+        - name: early-return
+          disabled: true # FIXME
+        - name: empty-block
+          disabled: true
+        - name: empty-lines
+          disabled: true # FIXME
+        - name: enforce-switch-style
+          disabled: true # FIXME
+        - name: error-naming
+          disabled: true
+        - name: error-strings
+          disabled: true # FIXME
+        - name: exported
+          disabled: true
+        - name: flag-parameter
+          disabled: true
+        - name: function-length
+          disabled: true
+        - name: function-result-limit
+          disabled: true
+        - name: get-return
+          disabled: true # FIXME
+        - name: identical-ifelseif-branches
+          disabled: true # FIXME
+        - name: identical-switch-branches
+          disabled: true # FIXME
+        - name: if-return
+          disabled: true # FIXME
+        - name: increment-decrement
+          disabled: true # FIXME
+        - name: import-alias-naming
+          disabled: true # FIXME
+        - name: import-shadowing
+          disabled: true
+        - name: indent-error-flow
+          disabled: true # FIXME
+        - name: line-length-limit
+          disabled: true
+        - name: max-public-structs
+          disabled: true
+        - name: nested-structs
+          disabled: true
+        - name: package-directory-mismatch
+          disabled: true # FIXME
+        - name: receiver-naming
+          disabled: true
+        - name: redundant-test-main-exit
+          disabled: true # FIXME
+        - name: redefines-builtin-id
+          disabled: true
+        - name: redundant-import-alias
+          disabled: true # FIXME
+        - name: struct-tag
+          disabled: true # FIXME
+        - name: superfluous-else
+          disabled: true # FIXME
+        - name: unchecked-type-assertion
+          disabled: true
+        - name: unexported-return
+          disabled: true # FIXME
+        - name: unhandled-error
+          disabled: true
+        - name: unnecessary-stmt
+          disabled: true # FIXME
+        - name: unreachable-code
+          disabled: true # FIXME
+        - name: unsecure-url-scheme
+          disabled: true
+        - name: unused-parameter
+          disabled: true # FIXME
+        - name: unused-receiver
+          disabled: true # FIXME
+        - name: use-waitgroup-go
+          disabled: true
+        - name: var-declaration
+          disabled: true # FIXME
+        - name: var-naming
+          disabled: true
     staticcheck:
       checks:
         - all
@@ -68,6 +178,7 @@ linters:
     - misspell
     - noctx
     - nolintlint
+    - revive
     - staticcheck
     - unparam
     - unused
