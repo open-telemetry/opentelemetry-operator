@@ -328,6 +328,75 @@ func TestStatefulSetHostNetwork(t *testing.T) {
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, corev1.DNSClusterFirstWithHostNet)
 }
 
+func TestStatefulSetHostUsers(t *testing.T) {
+	// Test default (unset)
+	otelcol1 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+	}
+
+	cfg := config.New()
+
+	params1 := manifests.Params{
+		OtelCol: otelcol1,
+		Config:  cfg,
+		Log:     testLogger,
+	}
+
+	d1, err := StatefulSet(params1)
+	require.NoError(t, err)
+	assert.Nil(t, d1.Spec.Template.Spec.HostUsers)
+
+	// Test hostUsers=true
+	hostUsersTrue := true
+	otelcol2 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-hostusers-true",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				HostUsers: &hostUsersTrue,
+			},
+		},
+	}
+
+	params2 := manifests.Params{
+		OtelCol: otelcol2,
+		Config:  cfg,
+		Log:     testLogger,
+	}
+
+	d2, err := StatefulSet(params2)
+	require.NoError(t, err)
+	require.NotNil(t, d2.Spec.Template.Spec.HostUsers)
+	assert.True(t, *d2.Spec.Template.Spec.HostUsers)
+
+	// Test hostUsers=false
+	hostUsersFalse := false
+	otelcol3 := v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance-hostusers-false",
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+				HostUsers: &hostUsersFalse,
+			},
+		},
+	}
+
+	params3 := manifests.Params{
+		OtelCol: otelcol3,
+		Config:  cfg,
+		Log:     testLogger,
+	}
+
+	d3, err := StatefulSet(params3)
+	require.NoError(t, err)
+	require.NotNil(t, d3.Spec.Template.Spec.HostUsers)
+	assert.False(t, *d3.Spec.Template.Spec.HostUsers)
+}
+
 func TestStatefulSetDNSPolicy(t *testing.T) {
 	otelcol1 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{

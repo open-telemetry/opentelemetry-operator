@@ -120,6 +120,68 @@ func TestDaemonsetHostNetwork(t *testing.T) {
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
 
+func TestDaemonsetHostUsers(t *testing.T) {
+	params1 := manifests.Params{
+		Config: config.New(),
+		OtelCol: v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-instance",
+				Namespace: "my-namespace",
+			},
+			Spec: v1beta1.OpenTelemetryCollectorSpec{},
+		},
+		Log: testLogger,
+	}
+	// test default (unset)
+	d1, err := DaemonSet(params1)
+	require.NoError(t, err)
+	assert.Nil(t, d1.Spec.Template.Spec.HostUsers)
+
+	// verify hostUsers=true
+	hostUsersTrue := true
+	params2 := manifests.Params{
+		Config: config.New(),
+		OtelCol: v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-instance",
+				Namespace: "my-namespace",
+			},
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+					HostUsers: &hostUsersTrue,
+				},
+			},
+		},
+		Log: testLogger,
+	}
+	d2, err := DaemonSet(params2)
+	require.NoError(t, err)
+	require.NotNil(t, d2.Spec.Template.Spec.HostUsers)
+	assert.True(t, *d2.Spec.Template.Spec.HostUsers)
+
+	// verify hostUsers=false
+	hostUsersFalse := false
+	params3 := manifests.Params{
+		Config: config.New(),
+		OtelCol: v1beta1.OpenTelemetryCollector{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-instance",
+				Namespace: "my-namespace",
+			},
+			Spec: v1beta1.OpenTelemetryCollectorSpec{
+				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
+					HostUsers: &hostUsersFalse,
+				},
+			},
+		},
+		Log: testLogger,
+	}
+	d3, err := DaemonSet(params3)
+	require.NoError(t, err)
+	require.NotNil(t, d3.Spec.Template.Spec.HostUsers)
+	assert.False(t, *d3.Spec.Template.Spec.HostUsers)
+}
+
 func TestDaemonsetDNSPolicy(t *testing.T) {
 	params1 := manifests.Params{
 		Config: config.New(),

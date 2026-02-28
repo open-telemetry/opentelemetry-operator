@@ -193,6 +193,13 @@ For more info, see https://prometheus.io/docs/prometheus/latest/configuration/co
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>hostUsers</b></td>
+        <td>boolean</td>
+        <td>
+          HostUsers isolates pod processes in a separate user namespace, reducing the risk of privilege escalation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
