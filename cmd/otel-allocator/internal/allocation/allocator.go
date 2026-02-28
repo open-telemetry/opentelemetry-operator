@@ -9,6 +9,7 @@ import (
 	"maps"
 	"runtime"
 	"slices"
+	"strconv"
 	"sync"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
+	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/diff"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/target"
 )
@@ -109,6 +111,18 @@ func (a *allocator) SetFilter(filter Filter) {
 // SetFallbackStrategy sets the fallback strategy to use.
 func (a *allocator) SetFallbackStrategy(strategy Strategy) {
 	a.strategy.SetFallbackStrategy(strategy)
+}
+
+// getTargetWeight returns the numeric weight for a target.
+// Resolution order: pod annotation meta label > default (1).
+func (a *allocator) getTargetWeight(tg *target.Item) int {
+	// Check pod annotation (exposed as meta label by K8s SD)
+	if labelVal := tg.Labels.Get(config.WeightAnnotationMetaLabel); labelVal != "" {
+		if w, err := strconv.Atoi(labelVal); err == nil && w >= 1 && w <= 100 {
+			return w
+		}
+	}
+	return config.DefaultWeight
 }
 
 // SetTargets accepts a list of targets that will be used to make
@@ -258,6 +272,7 @@ func (a *allocator) addTargetToTargetItems(tg *target.Item) error {
 	tg.CollectorName = colOwner.Name
 	a.addCollectorTargetItemMapping(tg)
 	a.collectors[colOwner.Name].NumTargets++
+	a.collectors[colOwner.Name].WeightedLoad += a.getTargetWeight(tg)
 	a.collectors[colOwner.Name].TargetsPerJob[tg.JobName]++
 	a.targetsPerCollector.Record(context.Background(), int64(a.collectors[colOwner.String()].NumTargets), metric.WithAttributes(attribute.String("collector_name", colOwner.String()), attribute.String("strategy", a.strategy.GetName())))
 	return nil
@@ -274,6 +289,7 @@ func (a *allocator) unassignTargetItem(item *target.Item) {
 		return
 	}
 	c.NumTargets--
+	c.WeightedLoad -= a.getTargetWeight(item)
 	c.TargetsPerJob[item.JobName]--
 	if c.TargetsPerJob[item.JobName] == 0 {
 		delete(c.TargetsPerJob, item.JobName)
