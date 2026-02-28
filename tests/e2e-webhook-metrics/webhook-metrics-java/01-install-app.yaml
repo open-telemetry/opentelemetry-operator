@@ -1,0 +1,19 @@
+# This creates a simple Java app pod with instrumentation annotation
+apiVersion: v1
+kind: Pod
+metadata:
+  name: java-test-app
+  annotations:
+    instrumentation.opentelemetry.io/inject-java: "true"
+spec:
+  containers:
+    - name: java-app
+      image: openjdk:17-jdk-slim
+      command: ["sleep", "infinity"]
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+        requests:
+          memory: "64Mi"
+          cpu: "250m"
