@@ -18,7 +18,7 @@ var logger = logf.Log.WithName("unit-tests")
 
 func TestParserForReturns(t *testing.T) {
 	const testComponentName = "test"
-	parser := processors.ProcessorFor(testComponentName)
+	parser := processors.GetParser(testComponentName)
 	assert.Equal(t, "test", parser.ParserType())
 	assert.Equal(t, "__test", parser.ParserName())
 	ports, err := parser.Ports(logr.Discard(), testComponentName, map[string]any{
@@ -32,7 +32,7 @@ func TestCanRegister(t *testing.T) {
 	const testComponentName = "test"
 	processors.Register(testComponentName, components.NewSinglePortParserBuilder(testComponentName, 9000).MustBuild())
 	assert.True(t, processors.IsRegistered(testComponentName))
-	parser := processors.ProcessorFor(testComponentName)
+	parser := processors.GetParser(testComponentName)
 	assert.Equal(t, "test", parser.ParserType())
 	assert.Equal(t, "__test", parser.ParserName())
 	ports, err := parser.Ports(logr.Discard(), testComponentName, map[string]any{})
@@ -53,14 +53,14 @@ func TestDownstreamParsers(t *testing.T) {
 		t.Run(tt.processorName, func(t *testing.T) {
 			t.Run("builds successfully", func(t *testing.T) {
 				// test
-				parser := processors.ProcessorFor(tt.processorName)
+				parser := processors.GetParser(tt.processorName)
 
 				// verify
 				assert.Equal(t, tt.parserName, parser.ParserName())
 			})
 			t.Run("bad config errors", func(t *testing.T) {
 				// prepare
-				parser := processors.ProcessorFor(tt.processorName)
+				parser := processors.GetParser(tt.processorName)
 
 				// test throwing in pure junk
 				_, err := parser.Ports(logger, tt.processorName, func() {})

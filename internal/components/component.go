@@ -81,7 +81,26 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 	return int32(port), err
 }
 
-type ParserRetriever func(string) Parser
+// GetParserWithSinglePortParserBuilder returns a parser from the registry or creates a default silent single port parser.
+// This is used for receivers which need single port parser builders.
+func GetParserWithSinglePortParserBuilder(name string, registry map[string]Parser) Parser {
+	if parser, ok := registry[ComponentType(name)]; ok {
+		return parser
+	}
+	return NewSilentSinglePortParserBuilder(ComponentType(name), UnsetPort).MustBuild()
+}
+
+// GetParser returns a parser from the registry or creates a default nop parser.
+// This is used for exporters, processors, and extensions.
+func GetParser(name string, registry map[string]Parser) Parser {
+	if parser, ok := registry[ComponentType(name)]; ok {
+		return parser
+	}
+	// We want the default for exporters/processors/extensions to fail silently.
+	return NewBuilder[any]().WithName(name).MustBuild()
+}
+
+type ParserRetriever func(string, registry map[string]Parser) Parser
 
 type Parser interface {
 	// GetDefaultConfig returns a config with set default values.
