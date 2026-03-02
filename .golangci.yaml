@@ -78,8 +78,6 @@ linters:
           disabled: true # FIXME
         - name: dot-imports
           disabled: true
-        - name: duplicated-imports
-          disabled: true # FIXME
         - name: early-return
           disabled: true # FIXME
         - name: empty-block
