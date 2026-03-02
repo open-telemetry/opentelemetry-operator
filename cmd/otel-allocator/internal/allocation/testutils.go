@@ -79,14 +79,14 @@ func MakeNTargetsForJob(n int, jobName string, startingIndex int) []*target.Item
 	return toReturn
 }
 
-// MakeNTargetsWithWeightClass creates n targets with a specific weight class label.
-func MakeNTargetsWithWeightClass(n int, jobName string, startingIndex int, weightClassLabel string, weightClass string) []*target.Item {
+// MakeNTargetsWithWeight creates n targets with a specific weight annotation.
+func MakeNTargetsWithWeight(n int, jobName string, startingIndex int, weightAnnotation string, weight string) []*target.Item {
 	toReturn := []*target.Item{}
 	for i := startingIndex; i < n+startingIndex; i++ {
 		label := labels.New(
 			labels.Label{Name: "i", Value: strconv.Itoa(i)},
 			labels.Label{Name: "total", Value: strconv.Itoa(n + startingIndex)},
-			labels.Label{Name: weightClassLabel, Value: weightClass},
+			labels.Label{Name: weightAnnotation, Value: weight},
 		)
 		newTarget := target.NewItem(jobName, fmt.Sprintf("test-url-%d", i), label, "")
 		toReturn = append(toReturn, newTarget)

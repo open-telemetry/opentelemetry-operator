@@ -217,8 +217,8 @@ func TestWeightedLoadBalancing(t *testing.T) {
 
 	// Create 3 heavy targets (weight=10 each) and 30 light targets (weight=1 each)
 	// Total weight = 3*10 + 30*1 = 60, expect ~20 per collector
-	heavyTargets := MakeNTargetsWithWeightClass(3, "heavy-job", 0, config.WeightAnnotationMetaLabel, "10")
-	lightTargets := MakeNTargetsWithWeightClass(30, "light-job", 100, config.WeightAnnotationMetaLabel, "1")
+	heavyTargets := MakeNTargetsWithWeight(3, "heavy-job", 0, config.WeightAnnotationMetaLabel, "10")
+	lightTargets := MakeNTargetsWithWeight(30, "light-job", 100, config.WeightAnnotationMetaLabel, "1")
 
 	allTargets := append(heavyTargets, lightTargets...)
 	s.SetTargets(allTargets)
@@ -280,7 +280,7 @@ func TestWeightedLoadInvalidAnnotation(t *testing.T) {
 			cols := MakeNCollectors(1, 0)
 			s.SetCollectors(cols)
 
-			targets := MakeNTargetsWithWeightClass(2, "test-job", 0, config.WeightAnnotationMetaLabel, val)
+			targets := MakeNTargetsWithWeight(2, "test-job", 0, config.WeightAnnotationMetaLabel, val)
 			s.SetTargets(targets)
 
 			for _, col := range s.Collectors() {
