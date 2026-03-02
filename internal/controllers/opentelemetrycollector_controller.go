@@ -246,7 +246,9 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	}
 
 	// We have a deletion, short circuit and let the deletion happen
-	if deletionTimestamp := instance.GetDeletionTimestamp(); deletionTimestamp != nil {
+	// Remove finalizer if RBAC permission not available
+	deletionTimestamp := instance.GetDeletionTimestamp()
+	if deletionTimestamp != nil || params.Config.CreateRBACPermissions != rbac.Available {
 		if controllerutil.ContainsFinalizer(&instance, collectorFinalizer) {
 			// If the finalization logic fails, don't remove the finalizer so
 			// that we can retry during the next reconciliation.
@@ -263,8 +265,9 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 				}
 			}
 		}
-
-		return ctrl.Result{}, nil
+		if deletionTimestamp != nil {
+			return ctrl.Result{}, nil
+		}
 	}
 
 	if instance.Spec.ManagementState == v1beta1.ManagementStateUnmanaged {
