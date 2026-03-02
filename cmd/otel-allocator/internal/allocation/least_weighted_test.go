@@ -232,9 +232,9 @@ func TestWeightedLoadBalancing(t *testing.T) {
 		heavyPerCollector[col.Name] = len(targets)
 	}
 	t.Logf("Heavy targets per collector: %v", heavyPerCollector)
-	// Each collector should have at most 1 heavy target (3 heavy / 3 collectors)
+	// Each collector should have exactly 1 heavy target (3 heavy / 3 collectors)
 	for colName, count := range heavyPerCollector {
-		assert.LessOrEqual(t, count, 2, "collector %s should have at most 2 heavy targets, got %d", colName, count)
+		assert.Equal(t, 1, count, "collector %s should have exactly 1 heavy target, got %d", colName, count)
 	}
 
 	// Verify WeightedLoad is balanced across collectors
