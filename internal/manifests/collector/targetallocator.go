@@ -46,6 +46,7 @@ func TargetAllocator(params manifests.Params) (*v1alpha1.TargetAllocator, error)
 				ServiceAccount:            taSpec.ServiceAccount,
 				Image:                     taSpec.Image,
 				Affinity:                  taSpec.Affinity,
+				PriorityClassName:         taSpec.PriorityClassName,
 				SecurityContext:           taSpec.SecurityContext,
 				PodSecurityContext:        taSpec.PodSecurityContext,
 				TopologySpreadConstraints: taSpec.TopologySpreadConstraints,
