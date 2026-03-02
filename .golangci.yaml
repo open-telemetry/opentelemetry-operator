@@ -154,8 +154,6 @@ linters:
           disabled: true # FIXME
         - name: use-waitgroup-go
           disabled: true
-        - name: var-declaration
-          disabled: true # FIXME
         - name: var-naming
           disabled: true
     staticcheck:
