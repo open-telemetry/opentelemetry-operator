@@ -38,15 +38,16 @@ spec:
               - name: otelpod
                 value: ($otelpod)
             content: |
-              #!/bin/bash
-              set -euo pipefail
               kubectl port-forward -n "$otelnamespace" "$otelpod" 18081:8081 &
               PF_PID=$!
               trap "kill $PF_PID 2>/dev/null || true" EXIT
 
-              for i in $(seq 1 10); do
+              RESULT=""
+              i=0
+              while [ $i -lt 10 ]; do
                 RESULT=$(curl -sf http://localhost:18081/readyz?verbose 2>/dev/null) && break
                 sleep 2
+                i=$((i + 1))
               done
 
               echo "$RESULT"
