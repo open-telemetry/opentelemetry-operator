@@ -311,11 +311,7 @@ func unmarshal(cfg *Config, configFile string) error {
 	if err != nil {
 		return err
 	}
-	if err := decoder.Decode(m); err != nil {
-		return err
-	}
-
-	return nil
+	return decoder.Decode(m)
 }
 
 func CreateDefaultConfig() Config {
