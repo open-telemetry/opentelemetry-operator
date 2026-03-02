@@ -10,7 +10,7 @@ require (
 	github.com/aws/smithy-go v1.24.2
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buraksezer/consistent v0.10.0
-	github.com/cert-manager/cert-manager v1.19.3
+	github.com/cert-manager/cert-manager v1.19.4
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/distribution/reference v0.6.0
 	github.com/ghodss/yaml v1.0.0
