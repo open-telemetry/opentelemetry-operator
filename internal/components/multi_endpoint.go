@@ -154,9 +154,9 @@ func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, err
 }
 
 func (mp MultiPortBuilder[ComponentConfigType]) MustBuild() *MultiPortReceiver {
-	if p, err := mp.Build(); err != nil {
+	p, err := mp.Build()
+	if err != nil {
 		panic(err)
-	} else {
-		return p
 	}
+	return p
 }
