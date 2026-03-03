@@ -126,8 +126,6 @@ linters:
           disabled: true # FIXME
         - name: struct-tag
           disabled: true # FIXME
-        - name: superfluous-else
-          disabled: true # FIXME
         - name: unchecked-type-assertion
           disabled: true
         - name: unexported-return
