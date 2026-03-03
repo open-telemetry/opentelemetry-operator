@@ -136,8 +136,6 @@ linters:
           disabled: true # FIXME
         - name: unhandled-error
           disabled: true
-        - name: unnecessary-stmt
-          disabled: true # FIXME
         - name: unreachable-code
           disabled: true # FIXME
         - name: unsecure-url-scheme
