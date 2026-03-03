@@ -40,7 +40,7 @@ func (r *reportingGauge) Record(_ context.Context, value int64, _ ...metric.Reco
 	r.value.Store(value)
 }
 
-func (r *reportingGauge) Enabled(_ context.Context) bool {
+func (*reportingGauge) Enabled(context.Context) bool {
 	return true
 }
 

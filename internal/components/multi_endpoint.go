@@ -94,23 +94,23 @@ func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config any) (an
 	}, nil
 }
 
-func (m *MultiPortReceiver) GetLivenessProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
+func (*MultiPortReceiver) GetLivenessProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
 	return nil, nil
 }
 
-func (m *MultiPortReceiver) GetReadinessProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
+func (*MultiPortReceiver) GetReadinessProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
 	return nil, nil
 }
 
-func (m *MultiPortReceiver) GetStartupProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
+func (*MultiPortReceiver) GetStartupProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
 	return nil, nil
 }
 
-func (m *MultiPortReceiver) GetRBACRules(logr.Logger, any) ([]rbacv1.PolicyRule, error) {
+func (*MultiPortReceiver) GetRBACRules(logr.Logger, any) ([]rbacv1.PolicyRule, error) {
 	return nil, nil
 }
 
-func (m *MultiPortReceiver) GetEnvironmentVariables(logger logr.Logger, config any) ([]corev1.EnvVar, error) {
+func (*MultiPortReceiver) GetEnvironmentVariables(logger logr.Logger, config any) ([]corev1.EnvVar, error) {
 	return nil, nil
 }
 

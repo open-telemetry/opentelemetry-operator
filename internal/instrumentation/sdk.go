@@ -296,7 +296,7 @@ func containersToInstrument(inst *instrumentationWithContainers, pod *corev1.Pod
 	return append(initContainers, regularContainers...)
 }
 
-func (i *sdkInjector) setInitContainerSecurityContext(pod corev1.Pod, securityContext *corev1.SecurityContext, instrInitContainerName string) corev1.Pod {
+func (*sdkInjector) setInitContainerSecurityContext(pod corev1.Pod, securityContext *corev1.SecurityContext, instrInitContainerName string) corev1.Pod {
 	for i, initContainer := range pod.Spec.InitContainers {
 		if initContainer.Name == instrInitContainerName {
 			pod.Spec.InitContainers[i].SecurityContext = securityContext
@@ -352,7 +352,7 @@ func getContainerByName(containerName string, pod *corev1.Pod) *corev1.Container
 	return container
 }
 
-func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, container *corev1.Container) {
+func (*sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, container *corev1.Container) {
 	idx := getIndexOfEnv(container.Env, constants.EnvPodIP)
 	if idx == -1 {
 		container.Env = append([]corev1.EnvVar{{
@@ -386,23 +386,23 @@ func (i *sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, cont
 }
 
 // injectDefaultJavaEnvVars injects default environment variables for Java.
-func (i *sdkInjector) injectDefaultJavaEnvVars(container *corev1.Container, javaSpec v1alpha1.Java) {
+func (*sdkInjector) injectDefaultJavaEnvVars(container *corev1.Container, javaSpec v1alpha1.Java) {
 	container.Env = appendOrReplace(container.Env, getDefaultJavaEnvVars(container, javaSpec)...)
 }
 
 // injectDefaultNodeJSEnvVars injects default environment variables for Node.js.
-func (i *sdkInjector) injectDefaultNodeJSEnvVars(container *corev1.Container) {
+func (*sdkInjector) injectDefaultNodeJSEnvVars(container *corev1.Container) {
 	envVars := getDefaultNodeJSEnvVars(container)
 	container.Env = appendOrReplace(container.Env, envVars...)
 }
 
 // injectDefaultPythonEnvVars injects default environment variables for Python.
-func (i *sdkInjector) injectDefaultPythonEnvVars(container *corev1.Container) {
+func (*sdkInjector) injectDefaultPythonEnvVars(container *corev1.Container) {
 	container.Env = appendIfNotSet(container.Env, getDefaultPythonEnvVars()...)
 }
 
 // injectDefaultDotNetEnvVarsWrapper injects default environment variables for .NET.
-func (i *sdkInjector) injectDefaultDotNetEnvVarsWrapper(pod corev1.Pod, container *corev1.Container, runtime string) corev1.Pod {
+func (*sdkInjector) injectDefaultDotNetEnvVarsWrapper(pod corev1.Pod, container *corev1.Container, runtime string) corev1.Pod {
 	injectDefaultDotNetEnvVars(container, runtime)
 	return pod
 }

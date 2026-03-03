@@ -158,7 +158,7 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 }
 
 // getCollectorSelector destructures the collectors scale selector if present, it uses the labelmap from the operator.
-func (agent *Agent) getCollectorSelector(col v1beta1.OpenTelemetryCollector) map[string]string {
+func (*Agent) getCollectorSelector(col v1beta1.OpenTelemetryCollector) map[string]string {
 	if len(col.Status.Scale.Selector) > 0 {
 		selMap := map[string]string{}
 		for kvPair := range strings.SplitSeq(col.Status.Scale.Selector, ",") {

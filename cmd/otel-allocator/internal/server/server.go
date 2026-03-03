@@ -277,7 +277,7 @@ func (s *Server) JobsHandler(c *gin.Context) {
 	s.jsonHandler(c.Writer, displayData)
 }
 
-func (s *Server) LivenessProbeHandler(c *gin.Context) {
+func (*Server) LivenessProbeHandler(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
