@@ -21,7 +21,7 @@ import (
 )
 
 // Container builds a container for the given TargetAllocator.
-func Container(cfg config.Config, logger logr.Logger, instance v1alpha1.TargetAllocator) corev1.Container {
+func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocator) corev1.Container {
 	image := instance.Spec.Image
 	if len(image) == 0 {
 		image = cfg.TargetAllocatorImage

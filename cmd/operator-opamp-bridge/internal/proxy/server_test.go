@@ -152,7 +152,7 @@ func (*mockConnection) Disconnect() error {
 	panic("unimplemented")
 }
 
-func (*mockConnection) Send(ctx context.Context, msg *protobufs.ServerToAgent) error {
+func (*mockConnection) Send(context.Context, *protobufs.ServerToAgent) error {
 	return nil
 }
 

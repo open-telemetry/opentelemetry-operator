@@ -40,7 +40,7 @@ var opampBridgeMockAutoDetector = &mockAutoDetect{
 	PrometheusCRsAvailabilityFunc: func() (prometheus.Availability, error) {
 		return prometheus.Available, nil
 	},
-	RBACPermissionsFunc: func(ctx context.Context) (rbac.Availability, error) {
+	RBACPermissionsFunc: func(context.Context) (rbac.Availability, error) {
 		return rbac.Available, nil
 	},
 }

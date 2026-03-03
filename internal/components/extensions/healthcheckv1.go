@@ -25,7 +25,7 @@ type healthcheckV1Config struct {
 	Path                            string `mapstructure:"path"`
 }
 
-func healthCheckV1AddressDefaulter(logger logr.Logger, defaultRecAddr string, port int32, config healthcheckV1Config) (map[string]any, error) {
+func healthCheckV1AddressDefaulter(_ logr.Logger, defaultRecAddr string, port int32, config healthcheckV1Config) (map[string]any, error) {
 	if config.Endpoint == "" {
 		config.Endpoint = fmt.Sprintf("%s:%d", defaultRecAddr, port)
 	} else {

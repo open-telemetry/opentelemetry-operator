@@ -443,7 +443,7 @@ func buildInstrumentations(params manifests.Params) ([]client.Object, error) {
 }
 
 // buildInstrumentationEndpoint builds the OTLP endpoint for instrumentation.
-func buildInstrumentationEndpoint(spec v1alpha1.ClusterObservabilitySpec) (string, error) {
+func buildInstrumentationEndpoint(v1alpha1.ClusterObservabilitySpec) (string, error) {
 	// Point to local node's agent collector
 	endpoint := "http://$(OTEL_NODE_IP):4317"
 

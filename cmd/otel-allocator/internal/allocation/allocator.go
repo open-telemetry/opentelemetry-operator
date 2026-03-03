@@ -215,16 +215,16 @@ func (a *allocator) handleTargets(diff diff.Changes[target.ItemHash, *target.Ite
 	var assignmentErrors []error
 	for k, item := range diff.Additions() {
 		// Do nothing if the item is already there
-		if _, ok := a.targetItems[k]; ok {
+		_, ok := a.targetItems[k]
+		if ok {
 			continue
-		} else {
-			// TODO: track target -> collector relationship in a separate map
-			item.CollectorName = ""
-			// Add item to item pool and assign a collector
-			err := a.addTargetToTargetItems(item)
-			if err != nil {
-				assignmentErrors = append(assignmentErrors, err)
-			}
+		}
+		// TODO: track target -> collector relationship in a separate map
+		item.CollectorName = ""
+		// Add item to item pool and assign a collector
+		err := a.addTargetToTargetItems(item)
+		if err != nil {
+			assignmentErrors = append(assignmentErrors, err)
 		}
 	}
 
