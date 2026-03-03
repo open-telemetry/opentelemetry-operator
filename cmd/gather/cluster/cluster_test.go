@@ -125,7 +125,6 @@ func TestGetOperatorNamespace(t *testing.T) {
 }
 
 func TestGetOperatorDeployment(t *testing.T) {
-
 	mockClient := new(MockClient)
 	cfg := &config.Config{
 		KubernetesClient: mockClient,
@@ -151,7 +150,6 @@ func TestGetOperatorDeployment(t *testing.T) {
 }
 
 func TestGetOperatorDeploymentNotFound(t *testing.T) {
-
 	mockClient := new(MockClient)
 	cfg := &config.Config{
 		KubernetesClient: mockClient,

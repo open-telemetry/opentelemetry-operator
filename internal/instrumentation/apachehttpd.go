@@ -205,7 +205,6 @@ LoadModule otel_apache_module %[1]s/WebServerModule/Apache/libmod_apache_otel%[2
 		if len(serviceNamespace) == 0 {
 			serviceNamespace = "apache-httpd"
 		}
-
 	}
 	// Namespace name override TBD
 

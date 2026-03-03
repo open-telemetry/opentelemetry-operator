@@ -187,7 +187,6 @@ func getNamespaceInformer(ctx context.Context, allowList, denyList map[string]st
 		operatorMetrics.NewInstrumentedListerWatcher(lw),
 		&v1.Namespace{}, resyncPeriod, cache.Indexers{},
 	), nil
-
 }
 
 // checkCRDAvailability checks if a specific CRD is available in the cluster.

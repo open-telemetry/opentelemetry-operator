@@ -64,7 +64,6 @@ func CreateCLIParser(cfg Config) *pflag.FlagSet {
 }
 
 func ApplyCLI(cfg *Config) error {
-
 	f := CreateCLIParser(*cfg)
 	err := f.Parse(args)
 	if err != nil {

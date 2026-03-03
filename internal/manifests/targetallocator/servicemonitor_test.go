@@ -40,7 +40,6 @@ func TestDesiredServiceMonitors(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s-targetallocator", params.TargetAllocator.Name), actual.Name)
 	assert.Equal(t, params.TargetAllocator.Namespace, actual.Namespace)
 	assert.Equal(t, "targetallocation", actual.Spec.Endpoints[0].Port)
-
 }
 
 func TestDesiredServiceMonitorsWithEmptyExtraLabels(t *testing.T) {

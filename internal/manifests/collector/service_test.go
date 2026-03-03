@@ -37,12 +37,10 @@ func TestExtractPortNumbersAndNames(t *testing.T) {
 		actualPortNumbers, actualPortNames := extractPortNumbersAndNames(ports)
 		assert.Equal(t, expectedPortNames, actualPortNames)
 		assert.Equal(t, expectedPortNumbers, actualPortNumbers)
-
 	})
 }
 
 func TestFilterPort(t *testing.T) {
-
 	tests := []struct {
 		name        string
 		candidate   v1.ServicePort
@@ -135,9 +133,7 @@ func TestFilterPort(t *testing.T) {
 				return
 			}
 			assert.Nil(t, actual)
-
 		})
-
 	}
 }
 
@@ -156,7 +152,6 @@ func TestDesiredService(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("should return service with port mentioned in OtelCol.Spec.Ports and inferred ports", func(t *testing.T) {
-
 		grpc := "grpc"
 		jaegerPorts := v1beta1.PortsSpec{
 			ServicePort: v1.ServicePort{
@@ -172,7 +167,6 @@ func TestDesiredService(t *testing.T) {
 		actual, err := Service(params)
 		assert.NoError(t, err)
 		assert.Equal(t, expected, *actual)
-
 	})
 
 	t.Run("on OpenShift gRPC appProtocol should be h2c", func(t *testing.T) {
@@ -194,11 +188,9 @@ func TestDesiredService(t *testing.T) {
 		expected := service("test-collector", ports)
 		assert.NoError(t, err)
 		assert.Equal(t, expected, *actual)
-
 	})
 
 	t.Run("should return service with local internal traffic policy", func(t *testing.T) {
-
 		grpc := "grpc"
 		jaegerPorts := v1beta1.PortsSpec{
 			ServicePort: v1.ServicePort{
@@ -257,7 +249,6 @@ func TestDesiredService(t *testing.T) {
 		assert.Len(t, actual.Spec.Ports, 2)
 		assert.NoError(t, err)
 	})
-
 }
 
 func TestHeadlessService(t *testing.T) {

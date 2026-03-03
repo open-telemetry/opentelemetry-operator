@@ -84,8 +84,6 @@ linters:
           disabled: true # FIXME
         - name: empty-block
           disabled: true
-        - name: empty-lines
-          disabled: true # FIXME
         - name: enforce-switch-style
           disabled: true # FIXME
         - name: error-naming
@@ -182,6 +180,7 @@ linters:
     - staticcheck
     - unparam
     - unused
+    - whitespace
   exclusions:
     generated: lax
     presets:

@@ -257,7 +257,6 @@ func isNginxInitContainerMissing(pod corev1.Pod, containerName string) bool {
 // Calculate Nginx agent configuration file based on attributes provided by the injection rules
 // and by the pod values.
 func getNginxOtelConfig(pod corev1.Pod, useLabelsForResourceAttributes bool, nginxSpec v1alpha1.Nginx, container *corev1.Container, otelEndpoint string, resourceMap map[string]string) string {
-
 	if otelEndpoint == "" {
 		otelEndpoint = "http://localhost:4317/"
 	}

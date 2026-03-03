@@ -70,7 +70,6 @@ func (s *consistentHashingStrategy) SetCollectors(collectors map[string]*Collect
 	}
 
 	s.consistentHasher = consistent.New(members, s.config)
-
 }
 
 func (s *consistentHashingStrategy) SetFallbackStrategy(fallbackStrategy Strategy) {}
