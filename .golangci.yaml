@@ -83,7 +83,7 @@ linters:
         - name: empty-block
           disabled: true
         - name: enforce-switch-style
-          disabled: true # FIXME
+          arguments: ["allowNoDefault"]
         - name: error-naming
           disabled: true
         - name: error-strings
