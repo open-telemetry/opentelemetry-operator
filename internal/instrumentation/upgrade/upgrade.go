@@ -12,8 +12,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
@@ -67,7 +67,7 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 // ManagedInstances upgrades managed instances by the opentelemetry-operator.
 func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 	u.Logger.Info("looking for managed Instrumentation instances to upgrade")
-	list := &v1alpha1.InstrumentationList{}
+	list := &types.InstrumentationList{}
 	if err := u.Client.List(ctx, list); err != nil {
 		return fmt.Errorf("failed to list: %w", err)
 	}
@@ -90,7 +90,7 @@ func (u *InstrumentationUpgrade) ManagedInstances(ctx context.Context) error {
 	return nil
 }
 
-func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instrumentation) *v1alpha1.Instrumentation {
+func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst types.Instrumentation) *types.Instrumentation {
 	upgraded := inst.DeepCopy()
 	for annotation, instCfg := range u.defaultAnnotationToConfig {
 		autoInst := upgraded.Annotations[annotation]

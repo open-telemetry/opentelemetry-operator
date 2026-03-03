@@ -31,6 +31,7 @@ import (
 	otelv1alpha1 "github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/cmd/gather/config"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 type Cluster struct {
@@ -267,7 +268,7 @@ func (c *Cluster) GetTargetAllocators() error {
 }
 
 func (c *Cluster) GetInstrumentations() error {
-	instrumentations := otelv1alpha1.InstrumentationList{}
+	instrumentations := insttypes.InstrumentationList{}
 
 	err := c.config.KubernetesClient.List(context.TODO(), &instrumentations)
 	if err != nil {

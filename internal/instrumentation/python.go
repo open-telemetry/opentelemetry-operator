@@ -8,7 +8,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 const (
@@ -40,7 +40,7 @@ func pythonPlatformSrc(platform string) (string, error) {
 	}
 }
 
-func injectPythonSDKToContainer(pythonSpec v1alpha1.Python, container *corev1.Container, platform string) error {
+func injectPythonSDKToContainer(pythonSpec types.Python, container *corev1.Container, platform string) error {
 	volume := instrVolume(pythonSpec.VolumeClaimTemplate, pythonVolumeName, pythonSpec.VolumeSizeLimit)
 
 	err := validateContainerEnv(container.Env, envPythonPath)
@@ -73,7 +73,7 @@ func injectPythonSDKToContainer(pythonSpec v1alpha1.Python, container *corev1.Co
 	return nil
 }
 
-func injectPythonSDKToPod(pythonSpec v1alpha1.Python, pod corev1.Pod, firstContainerName string, platform string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
+func injectPythonSDKToPod(pythonSpec types.Python, pod corev1.Pod, firstContainerName string, platform string, instSpec types.InstrumentationSpec) corev1.Pod {
 	volume := instrVolume(pythonSpec.VolumeClaimTemplate, pythonVolumeName, pythonSpec.VolumeSizeLimit)
 
 	// This has been validated already
@@ -102,7 +102,7 @@ func injectPythonSDKToPod(pythonSpec v1alpha1.Python, pod corev1.Pod, firstConta
 
 // injectPythonSDK injects Python instrumentation into the specified containers.
 // Containers must point into the provided pod and be ordered with init containers first.
-func injectPythonSDK(pythonSpec v1alpha1.Python, pod *corev1.Pod, containers []*corev1.Container, platform string, instSpec v1alpha1.InstrumentationSpec) error {
+func injectPythonSDK(pythonSpec types.Python, pod *corev1.Pod, containers []*corev1.Container, platform string, instSpec types.InstrumentationSpec) error {
 	for _, container := range containers {
 		if err := injectPythonSDKToContainer(pythonSpec, container, platform); err != nil {
 			return err

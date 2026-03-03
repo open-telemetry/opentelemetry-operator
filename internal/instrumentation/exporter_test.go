@@ -9,20 +9,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 func TestExporter(t *testing.T) {
 	tests := []struct {
 		name     string
-		exporter v1alpha1.Exporter
+		exporter insttypes.Exporter
 		expected corev1.Pod
 	}{
 		{
 			name: "ca, crt and key from secret",
-			exporter: v1alpha1.Exporter{
+			exporter: insttypes.Exporter{
 				Endpoint: "https://collector:4318",
-				TLS: &v1alpha1.TLS{
+				TLS: &insttypes.TLS{
 					SecretName: "my-certs",
 					CA:         "ca.crt",
 					Cert:       "cert.crt",
@@ -75,9 +75,9 @@ func TestExporter(t *testing.T) {
 		},
 		{
 			name: "crt and key from secret and ca from configmap",
-			exporter: v1alpha1.Exporter{
+			exporter: insttypes.Exporter{
 				Endpoint: "https://collector:4318",
-				TLS: &v1alpha1.TLS{
+				TLS: &insttypes.TLS{
 					SecretName:    "my-certs",
 					ConfigMapName: "ca-bundle",
 					CA:            "ca.crt",
@@ -146,9 +146,9 @@ func TestExporter(t *testing.T) {
 		},
 		{
 			name: "ca, crt key absolute paths",
-			exporter: v1alpha1.Exporter{
+			exporter: insttypes.Exporter{
 				Endpoint: "https://collector:4318",
-				TLS: &v1alpha1.TLS{
+				TLS: &insttypes.TLS{
 					CA:   "/ca.crt",
 					Cert: "/cert.crt",
 					Key:  "/key.key",

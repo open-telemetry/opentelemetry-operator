@@ -13,7 +13,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 const (
@@ -51,7 +51,7 @@ const (
 	6) Inject mounting of volumes / files into appropriate directories in the application container
 */
 
-func injectNginxSDK(_ logr.Logger, nginxSpec v1alpha1.Nginx, pod corev1.Pod, useLabelsForResourceAttributes bool, container *corev1.Container, otlpEndpoint string, resourceMap map[string]string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
+func injectNginxSDK(_ logr.Logger, nginxSpec types.Nginx, pod corev1.Pod, useLabelsForResourceAttributes bool, container *corev1.Container, otlpEndpoint string, resourceMap map[string]string, instSpec types.InstrumentationSpec) corev1.Pod {
 	// inject env vars
 	container.Env = appendIfNotSet(container.Env, nginxSpec.Env...)
 
@@ -256,7 +256,7 @@ func isNginxInitContainerMissing(pod corev1.Pod, containerName string) bool {
 
 // Calculate Nginx agent configuration file based on attributes provided by the injection rules
 // and by the pod values.
-func getNginxOtelConfig(pod corev1.Pod, useLabelsForResourceAttributes bool, nginxSpec v1alpha1.Nginx, container *corev1.Container, otelEndpoint string, resourceMap map[string]string) string {
+func getNginxOtelConfig(pod corev1.Pod, useLabelsForResourceAttributes bool, nginxSpec types.Nginx, container *corev1.Container, otelEndpoint string, resourceMap map[string]string) string {
 	if otelEndpoint == "" {
 		otelEndpoint = "http://localhost:4317/"
 	}

@@ -30,6 +30,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/clusterobservability"
 	coStatus "github.com/open-telemetry/opentelemetry-operator/internal/status/clusterobservability"
@@ -155,7 +156,7 @@ func (r *ClusterObservabilityReconciler) Reconcile(ctx context.Context, req ctrl
 
 	for _, obj := range desiredObjects {
 		switch obj.(type) {
-		case *v1beta1.OpenTelemetryCollector, *v1alpha1.Instrumentation:
+		case *v1beta1.OpenTelemetryCollector, *insttypes.Instrumentation:
 			openTelemetryCRs = append(openTelemetryCRs, obj)
 		case *unstructured.Unstructured:
 			unstructuredObjects = append(unstructuredObjects, obj)
@@ -201,8 +202,8 @@ func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx cont
 	switch desired.(type) {
 	case *v1beta1.OpenTelemetryCollector:
 		existing = &v1beta1.OpenTelemetryCollector{}
-	case *v1alpha1.Instrumentation:
-		existing = &v1alpha1.Instrumentation{}
+	case *insttypes.Instrumentation:
+		existing = &insttypes.Instrumentation{}
 	default:
 		return fmt.Errorf("unsupported CRD type: %T", desired)
 	}
@@ -250,11 +251,11 @@ func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx cont
 			log.Info("Updated OpenTelemetryCollector", "name", key.Name, "namespace", key.Namespace)
 		}
 
-	case *v1alpha1.Instrumentation:
-		desiredCRD := desired.(*v1alpha1.Instrumentation)
+	case *insttypes.Instrumentation:
+		desiredCRD := desired.(*insttypes.Instrumentation)
 		if !apiequality.Semantic.DeepEqual(existingCRD.Spec, desiredCRD.Spec) {
 			err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				latest := &v1alpha1.Instrumentation{}
+				latest := &insttypes.Instrumentation{}
 				if err := r.Get(ctx, key, latest); err != nil {
 					return err
 				}
@@ -534,7 +535,7 @@ func (r *ClusterObservabilityReconciler) cleanupClusterScopedResources(ctx conte
 func (*ClusterObservabilityReconciler) GetOwnedResourceTypes() []client.Object {
 	return []client.Object{
 		&v1beta1.OpenTelemetryCollector{},
-		&v1alpha1.Instrumentation{},
+		&insttypes.Instrumentation{},
 	}
 }
 

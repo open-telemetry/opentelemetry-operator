@@ -12,13 +12,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 func TestInjectDotNetSDK(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.DotNet
+		insttypes.DotNet
 		pod      corev1.Pod
 		runtime  string
 		expected corev1.Pod
@@ -26,7 +26,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 	}{
 		{
 			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_SHARED_STORE, DOTNET_ADDITIONAL_DEPS, OTEL_DOTNET_AUTO_HOME not defined",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
+			DotNet: insttypes.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -104,7 +104,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 		},
 		{
 			name:   "CORECLR_ENABLE_PROFILING, CORECLR_PROFILER, CORECLR_PROFILER_PATH, DOTNET_STARTUP_HOOKS, DOTNET_ADDITIONAL_DEPS, DOTNET_SHARED_STORE defined",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			DotNet: insttypes.DotNet{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -205,7 +205,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 		},
 		{
 			name:   "DOTNET_STARTUP_HOOKS defined as ValueFrom",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			DotNet: insttypes.DotNet{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -238,7 +238,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 		},
 		{
 			name:   "DOTNET_ADDITIONAL_DEPS defined as ValueFrom",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			DotNet: insttypes.DotNet{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -271,7 +271,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 		},
 		{
 			name:   "DOTNET_SHARED_STORE defined as ValueFrom",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			DotNet: insttypes.DotNet{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -304,7 +304,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 		},
 		{
 			name:   "OTEL_DOTNET_AUTO_HOME already set in the container",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1"},
+			DotNet: insttypes.DotNet{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -337,7 +337,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 		},
 		{
 			name:   "OTEL_DOTNET_AUTO_HOME already set in the .NET instrumentation spec",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{{Name: envDotNetOTelAutoHome, Value: dotNetOTelAutoHomePath}}},
+			DotNet: insttypes.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{{Name: envDotNetOTelAutoHome, Value: dotNetOTelAutoHomePath}}},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -356,7 +356,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 		},
 		{
 			name:   "runtime linux-x64",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
+			DotNet: insttypes.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -435,7 +435,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 		},
 		{
 			name:   "runtime linux-musl-x64",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
+			DotNet: insttypes.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -514,7 +514,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 		},
 		{
 			name:   "runtime not-supported",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
+			DotNet: insttypes.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}, Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -535,7 +535,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 		},
 		{
 			name:   "inject into init container",
-			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
+			DotNet: insttypes.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					InitContainers: []corev1.Container{
@@ -628,7 +628,7 @@ func TestInjectDotNetSDK(t *testing.T) {
 				containers = append(containers, &pod.Spec.InitContainers[i])
 			}
 
-			err := injectDotNetSDK(test.DotNet, &pod, containers, test.runtime, v1alpha1.InstrumentationSpec{})
+			err := injectDotNetSDK(test.DotNet, &pod, containers, test.runtime, insttypes.InstrumentationSpec{})
 			if err != nil {
 				assert.Equal(t, test.expected, pod)
 				assert.Equal(t, test.err, err)

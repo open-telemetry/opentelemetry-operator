@@ -19,6 +19,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/clusterobservability/config"
 )
@@ -338,7 +339,7 @@ func checkInstrumentationStatus(ctx context.Context, cli client.Client, co *v1al
 	instrumentationName := co.Name
 
 	// Check Instrumentation CR in the same namespace as ClusterObservability
-	var instrumentation v1alpha1.Instrumentation
+	var instrumentation insttypes.Instrumentation
 	instrKey := types.NamespacedName{Name: instrumentationName, Namespace: co.Namespace}
 
 	if err := cli.Get(ctx, instrKey, &instrumentation); err != nil {

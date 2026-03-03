@@ -11,20 +11,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 func TestInjectJavaagent(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.Java
+		insttypes.Java
 		pod      corev1.Pod
 		expected corev1.Pod
 		err      error
 	}{
 		{
 			name: "JAVA_TOOL_OPTIONS not defined",
-			Java: v1alpha1.Java{Image: "foo/bar:1"},
+			Java: insttypes.Java{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -80,7 +80,7 @@ func TestInjectJavaagent(t *testing.T) {
 		},
 		{
 			name: "add extensions to JAVA_TOOL_OPTIONS",
-			Java: v1alpha1.Java{Image: "foo/bar:1", Extensions: []v1alpha1.Extensions{
+			Java: insttypes.Java{Image: "foo/bar:1", Extensions: []insttypes.Extensions{
 				{Image: "ex/ex:0", Dir: "/ex0"},
 				{Image: "ex/ex:1", Dir: "/ex1"},
 			}},
@@ -157,7 +157,7 @@ func TestInjectJavaagent(t *testing.T) {
 		},
 		{
 			name: "JAVA_TOOL_OPTIONS defined",
-			Java: v1alpha1.Java{Image: "foo/bar:1", Resources: testResourceRequirements},
+			Java: insttypes.Java{Image: "foo/bar:1", Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -220,7 +220,7 @@ func TestInjectJavaagent(t *testing.T) {
 		},
 		{
 			name: "JAVA_TOOL_OPTIONS defined as ValueFrom",
-			Java: v1alpha1.Java{Image: "foo/bar:1"},
+			Java: insttypes.Java{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -307,7 +307,7 @@ func TestInjectJavaagent(t *testing.T) {
 		},
 		{
 			name: "multiple containers with unique volume mount paths",
-			Java: v1alpha1.Java{Image: "foo/bar:1"},
+			Java: insttypes.Java{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -389,7 +389,11 @@ func TestInjectJavaagent(t *testing.T) {
 			// Collect all containers (regular first, then init)
 			var containers []*corev1.Container
 			for i := range pod.Spec.Containers {
+<<<<<<< HEAD
 				containers = append(containers, &pod.Spec.Containers[i])
+=======
+				pod, err = injectJavaagent(test.Java, pod, &pod.Spec.Containers[i], insttypes.InstrumentationSpec{})
+>>>>>>> 5a048138 ([chore] move types outside of CR definition)
 			}
 			for i := range pod.Spec.InitContainers {
 				containers = append(containers, &pod.Spec.InitContainers[i])

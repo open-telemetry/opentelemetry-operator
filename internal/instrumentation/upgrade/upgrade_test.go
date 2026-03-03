@@ -19,6 +19,7 @@ import (
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
@@ -31,14 +32,14 @@ func TestUpgrade(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	inst := &v1alpha1.Instrumentation{
+	inst := &insttypes.Instrumentation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-inst",
 			Namespace: nsName,
 		},
-		Spec: v1alpha1.InstrumentationSpec{
-			Sampler: v1alpha1.Sampler{
-				Type: v1alpha1.ParentBasedAlwaysOff,
+		Spec: insttypes.InstrumentationSpec{
+			Sampler: insttypes.Sampler{
+				Type: insttypes.ParentBasedAlwaysOff,
 			},
 		},
 	}
@@ -96,7 +97,7 @@ func TestUpgrade(t *testing.T) {
 	err = up.ManagedInstances(context.Background())
 	require.NoError(t, err)
 
-	updated := v1alpha1.Instrumentation{}
+	updated := insttypes.Instrumentation{}
 	err = k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: nsName,
 		Name:      "my-inst",

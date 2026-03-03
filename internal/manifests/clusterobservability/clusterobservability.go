@@ -13,6 +13,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
+	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/clusterobservability/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests/manifestutils"
@@ -379,7 +380,7 @@ func buildInstrumentations(params manifests.Params) ([]client.Object, error) {
 	instrumentationLabels["app.kubernetes.io/managed-by"] = "opentelemetry-operator"
 	instrumentationLabels["app.kubernetes.io/component"] = ComponentClusterObservability
 
-	instrumentation := &v1alpha1.Instrumentation{
+	instrumentation := &types.Instrumentation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      co.Name,
 			Namespace: co.Namespace,
@@ -395,18 +396,18 @@ func buildInstrumentations(params manifests.Params) ([]client.Object, error) {
 				},
 			},
 		},
-		Spec: v1alpha1.InstrumentationSpec{
-			Exporter: v1alpha1.Exporter{
+		Spec: types.InstrumentationSpec{
+			Exporter: types.Exporter{
 				Endpoint: endpoint,
 			},
-			Propagators: []v1alpha1.Propagator{
-				v1alpha1.TraceContext,
-				v1alpha1.Baggage,
-				v1alpha1.B3,
-				v1alpha1.Jaeger,
+			Propagators: []types.Propagator{
+				types.TraceContext,
+				types.Baggage,
+				types.B3,
+				types.Jaeger,
 			},
-			Sampler: v1alpha1.Sampler{
-				Type:     v1alpha1.ParentBasedTraceIDRatio,
+			Sampler: types.Sampler{
+				Type:     types.ParentBasedTraceIDRatio,
 				Argument: "1.0",
 			},
 		},
@@ -414,27 +415,27 @@ func buildInstrumentations(params manifests.Params) ([]client.Object, error) {
 
 	// Enable instrumentation based on operator configuration
 	if params.Config.EnableJavaAutoInstrumentation {
-		instrumentation.Spec.Java = v1alpha1.Java{
+		instrumentation.Spec.Java = types.Java{
 			Image: params.Config.AutoInstrumentationJavaImage,
 		}
 	}
 	if params.Config.EnableNodeJSAutoInstrumentation {
-		instrumentation.Spec.NodeJS = v1alpha1.NodeJS{
+		instrumentation.Spec.NodeJS = types.NodeJS{
 			Image: params.Config.AutoInstrumentationNodeJSImage,
 		}
 	}
 	if params.Config.EnablePythonAutoInstrumentation {
-		instrumentation.Spec.Python = v1alpha1.Python{
+		instrumentation.Spec.Python = types.Python{
 			Image: params.Config.AutoInstrumentationPythonImage,
 		}
 	}
 	if params.Config.EnableDotNetAutoInstrumentation {
-		instrumentation.Spec.DotNet = v1alpha1.DotNet{
+		instrumentation.Spec.DotNet = types.DotNet{
 			Image: params.Config.AutoInstrumentationDotNetImage,
 		}
 	}
 	if params.Config.EnableGoAutoInstrumentation {
-		instrumentation.Spec.Go = v1alpha1.Go{
+		instrumentation.Spec.Go = types.Go{
 			Image: params.Config.AutoInstrumentationGoImage,
 		}
 	}

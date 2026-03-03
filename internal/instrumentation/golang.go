@@ -9,8 +9,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 	kernelDebugVolumePath = "/sys/kernel/debug"
 )
 
-func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
+func injectGoSDK(goSpec types.Go, pod corev1.Pod, cfg config.Config, instSpec types.InstrumentationSpec) (corev1.Pod, error) {
 	// skip instrumentation if share process namespaces is explicitly disabled
 	if pod.Spec.ShareProcessNamespace != nil && !*pod.Spec.ShareProcessNamespace {
 		return pod, errors.New("shared process namespace has been explicitly disabled")

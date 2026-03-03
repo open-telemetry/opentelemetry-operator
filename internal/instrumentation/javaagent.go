@@ -8,7 +8,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 	javaInstrMountPath    = "/otel-auto-instrumentation-java"
 )
 
-func injectJavaagentToContainer(javaSpec v1alpha1.Java, container *corev1.Container) error {
+func injectJavaagentToContainer(javaSpec types.Java, container *corev1.Container) error {
 	volume := instrVolume(javaSpec.VolumeClaimTemplate, javaVolumeName, javaSpec.VolumeSizeLimit)
 
 	err := validateContainerEnv(container.Env, envJavaToolsOptions)
@@ -40,7 +40,7 @@ func injectJavaagentToContainer(javaSpec v1alpha1.Java, container *corev1.Contai
 	return nil
 }
 
-func injectJavaagentToPod(javaSpec v1alpha1.Java, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
+func injectJavaagentToPod(javaSpec types.Java, pod corev1.Pod, firstContainerName string, instSpec types.InstrumentationSpec) corev1.Pod {
 	volume := instrVolume(javaSpec.VolumeClaimTemplate, javaVolumeName, javaSpec.VolumeSizeLimit)
 
 	// We just inject Volumes and init containers for the first processed container.
@@ -80,7 +80,7 @@ func injectJavaagentToPod(javaSpec v1alpha1.Java, pod corev1.Pod, firstContainer
 
 // injectJavaagent injects Java instrumentation into the specified containers.
 // Containers must point into the provided pod and be ordered with init containers first.
-func injectJavaagent(javaSpec v1alpha1.Java, pod *corev1.Pod, containers []*corev1.Container, instSpec v1alpha1.InstrumentationSpec) error {
+func injectJavaagent(javaSpec types.Java, pod *corev1.Pod, containers []*corev1.Container, instSpec types.InstrumentationSpec) error {
 	for _, container := range containers {
 		if err := injectJavaagentToContainer(javaSpec, container); err != nil {
 			return err
@@ -92,7 +92,7 @@ func injectJavaagent(javaSpec v1alpha1.Java, pod *corev1.Pod, containers []*core
 	return nil
 }
 
-func getDefaultJavaEnvVars(container *corev1.Container, javaSpec v1alpha1.Java) []corev1.EnvVar {
+func getDefaultJavaEnvVars(container *corev1.Container, javaSpec types.Java) []corev1.EnvVar {
 	containerMountPath := fmt.Sprintf("%s-%s", javaInstrMountPath, container.Name)
 
 	javaJVMArgument := fmt.Sprintf(" -javaagent:%s/javaagent.jar", containerMountPath)

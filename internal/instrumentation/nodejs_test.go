@@ -10,20 +10,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 func TestInjectNodeJSSDK(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.NodeJS
+		insttypes.NodeJS
 		pod      corev1.Pod
 		expected corev1.Pod
 		err      error
 	}{
 		{
 			name:   "NODE_OPTIONS not defined",
-			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
+			NodeJS: insttypes.NodeJS{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -76,7 +76,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 		},
 		{
 			name:   "NODE_OPTIONS defined",
-			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1", Resources: testResourceRequirements},
+			NodeJS: insttypes.NodeJS{Image: "foo/bar:1", Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -137,7 +137,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 		},
 		{
 			name:   "NODE_OPTIONS defined as ValueFrom",
-			NodeJS: v1alpha1.NodeJS{Image: "foo/bar:1"},
+			NodeJS: insttypes.NodeJS{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -227,6 +227,7 @@ func TestInjectNodeJSSDK(t *testing.T) {
 	injector := sdkInjector{}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+<<<<<<< HEAD
 			pod := test.pod
 
 			// Collect all containers (regular first, then init)
@@ -255,6 +256,11 @@ func TestInjectNodeJSSDK(t *testing.T) {
 				}
 				injector.injectDefaultNodeJSEnvVars(&pod.Spec.InitContainers[i])
 			}
+=======
+			pod, err := injectNodeJSSDK(test.NodeJS, test.pod, &test.pod.Spec.Containers[0], insttypes.InstrumentationSpec{})
+			assert.Equal(t, test.err, err)
+			injector.injectDefaultNodeJSEnvVars(&pod.Spec.Containers[0])
+>>>>>>> 5a048138 ([chore] move types outside of CR definition)
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})

@@ -6,7 +6,7 @@ package instrumentation
 import (
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 const (
@@ -17,7 +17,7 @@ const (
 	nodejsInstrMountPath    = "/otel-auto-instrumentation-nodejs"
 )
 
-func injectNodeJSSDKToContainer(nodeJSSpec v1alpha1.NodeJS, container *corev1.Container) error {
+func injectNodeJSSDKToContainer(nodeJSSpec types.NodeJS, container *corev1.Container) error {
 	volume := instrVolume(nodeJSSpec.VolumeClaimTemplate, nodejsVolumeName, nodeJSSpec.VolumeSizeLimit)
 
 	err := validateContainerEnv(container.Env, envNodeOptions)
@@ -35,7 +35,7 @@ func injectNodeJSSDKToContainer(nodeJSSpec v1alpha1.NodeJS, container *corev1.Co
 	return nil
 }
 
-func injectNodeJSSDKToPod(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
+func injectNodeJSSDKToPod(nodeJSSpec types.NodeJS, pod corev1.Pod, firstContainerName string, instSpec types.InstrumentationSpec) corev1.Pod {
 	volume := instrVolume(nodeJSSpec.VolumeClaimTemplate, nodejsVolumeName, nodeJSSpec.VolumeSizeLimit)
 
 	// We just inject Volumes and init containers for the first processed container
@@ -61,7 +61,7 @@ func injectNodeJSSDKToPod(nodeJSSpec v1alpha1.NodeJS, pod corev1.Pod, firstConta
 
 // injectNodeJSSDK injects Node.js instrumentation into the specified containers.
 // Containers must point into the provided pod and be ordered with init containers first.
-func injectNodeJSSDK(nodeJSSpec v1alpha1.NodeJS, pod *corev1.Pod, containers []*corev1.Container, instSpec v1alpha1.InstrumentationSpec) error {
+func injectNodeJSSDK(nodeJSSpec types.NodeJS, pod *corev1.Pod, containers []*corev1.Container, instSpec types.InstrumentationSpec) error {
 	for _, container := range containers {
 		if err := injectNodeJSSDKToContainer(nodeJSSpec, container); err != nil {
 			return err

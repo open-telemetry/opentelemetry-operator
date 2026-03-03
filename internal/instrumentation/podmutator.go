@@ -17,8 +17,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 )
 
@@ -36,7 +36,7 @@ type instPodMutator struct {
 }
 
 type instrumentationWithContainers struct {
-	Instrumentation       *v1alpha1.Instrumentation
+	Instrumentation       *insttypes.Instrumentation
 	Containers            []string
 	AdditionalAnnotations map[string]string
 }
@@ -220,7 +220,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 		return pod, nil
 	}
 
-	var inst *v1alpha1.Instrumentation
+	var inst *insttypes.Instrumentation
 	var err error
 
 	insts := languageInstrumentations{}
@@ -358,7 +358,7 @@ func (pm *instPodMutator) Mutate(ctx context.Context, ns corev1.Namespace, pod c
 	return modifiedPod, nil
 }
 
-func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string) (*v1alpha1.Instrumentation, error) {
+func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns corev1.Namespace, pod corev1.Pod, instAnnotation string) (*insttypes.Instrumentation, error) {
 	instValue := annotationValue(ns.ObjectMeta, pod.ObjectMeta, instAnnotation)
 
 	if len(instValue) == 0 || strings.EqualFold(instValue, "false") {
@@ -376,7 +376,7 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 		instNamespacedName = types.NamespacedName{Name: instValue, Namespace: ns.Name}
 	}
 
-	otelInst := &v1alpha1.Instrumentation{}
+	otelInst := &insttypes.Instrumentation{}
 	err := pm.Client.Get(ctx, instNamespacedName, otelInst)
 	if err != nil {
 		return nil, err
@@ -385,8 +385,8 @@ func (pm *instPodMutator) getInstrumentationInstance(ctx context.Context, ns cor
 	return otelInst, nil
 }
 
-func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (*v1alpha1.Instrumentation, error) {
-	var otelInsts v1alpha1.InstrumentationList
+func (pm *instPodMutator) selectInstrumentationInstanceFromNamespace(ctx context.Context, ns corev1.Namespace) (*insttypes.Instrumentation, error) {
+	var otelInsts insttypes.InstrumentationList
 	if err := pm.Client.List(ctx, &otelInsts, client.InNamespace(ns.Name)); err != nil {
 		return nil, err
 	}
@@ -417,7 +417,7 @@ func (pm *instPodMutator) validateInstrumentations(ctx context.Context, inst lan
 	return nil
 }
 
-func (pm *instPodMutator) validateInstrumentation(ctx context.Context, inst *v1alpha1.Instrumentation, podNamespace string) error {
+func (pm *instPodMutator) validateInstrumentation(ctx context.Context, inst *insttypes.Instrumentation, podNamespace string) error {
 	// Check if secret and configmap exists
 	// If they don't exist pod cannot start
 	var errs []error
