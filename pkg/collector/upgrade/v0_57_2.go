@@ -23,7 +23,7 @@ func upgrade0_57_2(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.57.2, failed to parse configuration: %w", err)
 	}
 
-	//Remove deprecated port field from config. (https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/10853)
+	// Remove deprecated port field from config. (https://github.com/open-telemetry/opentelemetry-collector-contrib/pull/10853)
 	extensionsConfig, ok := otelCfg["extensions"].(map[any]any)
 	if !ok {
 		// In case there is no extensions config.
