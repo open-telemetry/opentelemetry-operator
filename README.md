@@ -361,12 +361,12 @@ The possible values for the annotation can be
 
 #### Multi-container pods with single instrumentation
 
-If nothing else is specified, instrumentation is performed on the first container available in the pod spec.
+If nothing else is specified, instrumentation is performed on the first container available in the pod spec (from `.spec.containers`, not init containers).
 In some cases (for example in the case of the injection of an Istio sidecar) it becomes necessary to specify on which container(s) this injection must be performed.
 
 For this, it is possible to fine-tune the pod(s) on which the injection will be carried out.
 
-For this, we will use the `instrumentation.opentelemetry.io/container-names` annotation for which we will indicate one or more container names (`.spec.containers.name`) on which the injection must be made:
+For this, we will use the `instrumentation.opentelemetry.io/container-names` annotation for which we will indicate one or more container names (from `.spec.containers.name` or `.spec.initContainers.name`) on which the injection must be made:
 
 ```yaml
 apiVersion: apps/v1
@@ -399,11 +399,59 @@ In the above case, `myapp` and `myapp2` containers will be instrumented, `myapp3
 
 > 🚨 **NOTE**: Go auto-instrumentation **does not** support multicontainer pods. When injecting Go auto-instrumentation the first pod should be the only pod you want instrumented.
 
+#### Instrumenting Init Containers
+
+Init containers can be instrumented by including their names in the `container-names` annotation. When an init container is targeted for instrumentation, the operator automatically inserts the instrumentation init container **before** the target init container in the pod's init container sequence. This ensures the instrumentation agent files are available when the target init container runs.
+
+Supported instrumentations for init containers:
+- Java
+- Python
+- Node.js
+- .NET
+- SDK-only injection
+
+**Not supported** for init containers:
+- Go (does not support multicontainer pods)
+- Apache HTTPD
+- Nginx
+
+> **Note**: Kubernetes guarantees that container names are unique across both the `initContainers` and `containers` lists within a pod spec. This allows the operator to unambiguously identify whether a container name refers to an init container or a regular container.
+
+Example with both init container and regular container instrumentation:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment-with-init-container
+spec:
+  selector:
+    matchLabels:
+      app: my-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-app
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "true"
+        instrumentation.opentelemetry.io/container-names: "my-init-job,myapp"
+    spec:
+      initContainers:
+        - name: my-init-job
+          image: my-python-init-image
+      containers:
+        - name: myapp
+          image: my-python-app-image
+```
+
+In this example, both `my-init-job` (an init container) and `myapp` (a regular container) will be instrumented with Python auto-instrumentation.
+
 #### Multi-container pods with multiple instrumentations
 
 Works only when `enable-multi-instrumentation` flag is `true`.
 
-Annotations defining which language instrumentation will be injected are required. When feature is enabled, specific for Instrumentation language containers annotations are used:
+Annotations defining which language instrumentation will be injected are required. When feature is enabled, specific for Instrumentation language containers annotations are used (these also support init container names for Java, Python, Node.js, .NET, and SDK):
 
 Java:
 
@@ -453,11 +501,11 @@ SDK:
 instrumentation.opentelemetry.io/sdk-container-names: "app1,app2"
 ```
 
-If language instrumentation specific container names are not specified, instrumentation is performed on the first container available in the pod spec (only if single instrumentation injection is configured).
+If language instrumentation specific container names are not specified, instrumentation is performed on the first regular container available in the pod spec (only if single instrumentation injection is configured).
 
 In some cases containers in the pod are using different technologies. It becomes necessary to specify language instrumentation for container(s) on which this injection must be performed.
 
-For this, we will use language instrumentation specific container names annotation for which we will indicate one or more container names (`.spec.containers.name`) on which the injection must be made:
+For this, we will use language instrumentation specific container names annotation for which we will indicate one or more container names (`.spec.containers.name` or `.spec.initContainers.name`) on which the injection must be made:
 
 ```yaml
 apiVersion: apps/v1
