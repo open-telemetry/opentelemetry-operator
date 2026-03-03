@@ -47,7 +47,7 @@ const (
 )
 
 var (
-	DefaultKubeConfigFilePath string = filepath.Join(homedir.HomeDir(), ".kube", "config")
+	DefaultKubeConfigFilePath = filepath.Join(homedir.HomeDir(), ".kube", "config")
 )
 
 var defaultScrapeProtocolsCR = []monitoringv1.ScrapeProtocol{
