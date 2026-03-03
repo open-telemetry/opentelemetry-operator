@@ -142,8 +142,6 @@ linters:
           disabled: true
         - name: unused-parameter
           disabled: true # FIXME
-        - name: unused-receiver
-          disabled: true # FIXME
         - name: use-waitgroup-go
           disabled: true
         - name: var-naming

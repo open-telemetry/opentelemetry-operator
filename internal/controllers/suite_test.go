@@ -100,11 +100,11 @@ type mockAutoDetect struct {
 	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
 }
 
-func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
+func (*mockAutoDetect) FIPSEnabled(context.Context) bool {
 	return false
 }
 
-func (m *mockAutoDetect) NativeSidecarSupport() (bool, error) {
+func (*mockAutoDetect) NativeSidecarSupport() (bool, error) {
 	return false, nil
 }
 

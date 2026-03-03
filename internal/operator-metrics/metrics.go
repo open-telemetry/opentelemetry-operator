@@ -69,7 +69,7 @@ func (om operatorMetrics) Start(ctx context.Context) error {
 	return nil
 }
 
-func (om operatorMetrics) NeedLeaderElection() bool {
+func (operatorMetrics) NeedLeaderElection() bool {
 	return true
 }
 

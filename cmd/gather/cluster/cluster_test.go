@@ -80,15 +80,15 @@ func (m *MockClient) RESTMapper() meta.RESTMapper {
 	return args.Get(0).(meta.RESTMapper)
 }
 
-func (m *MockClient) GroupVersionKindFor(obj runtime.Object) (schema.GroupVersionKind, error) {
+func (*MockClient) GroupVersionKindFor(obj runtime.Object) (schema.GroupVersionKind, error) {
 	return schema.GroupVersionKind{}, nil
 }
 
-func (m *MockClient) IsObjectNamespaced(_ runtime.Object) (bool, error) {
+func (*MockClient) IsObjectNamespaced(runtime.Object) (bool, error) {
 	return true, nil
 }
 
-func (m *MockClient) SubResource(string) client.SubResourceClient {
+func (*MockClient) SubResource(string) client.SubResourceClient {
 	return nil
 }
 
