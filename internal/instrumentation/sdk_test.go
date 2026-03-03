@@ -1875,7 +1875,6 @@ func TestInjectGo(t *testing.T) {
 }
 
 func TestInjectApacheHttpd(t *testing.T) {
-
 	tests := []struct {
 		name     string
 		insts    languageInstrumentations
@@ -2049,7 +2048,6 @@ func TestInjectApacheHttpd(t *testing.T) {
 }
 
 func TestInjectNginx(t *testing.T) {
-
 	tests := []struct {
 		name     string
 		insts    languageInstrumentations

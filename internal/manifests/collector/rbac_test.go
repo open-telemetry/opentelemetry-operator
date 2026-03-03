@@ -12,7 +12,6 @@ import (
 )
 
 func TestDesiredClusterRoles(t *testing.T) {
-
 	// No Cluster Roles
 	params, err := newParams("", "testdata/prometheus-exporter.yaml", nil)
 	assert.NoError(t, err, "No")
@@ -109,7 +108,6 @@ func TestDesiredClusterRoles(t *testing.T) {
 }
 
 func TestDesiredClusterRolBinding(t *testing.T) {
-
 	// No ClusterRoleBinding
 	params, err := newParams("", "testdata/prometheus-exporter.yaml", nil)
 	assert.NoError(t, err)

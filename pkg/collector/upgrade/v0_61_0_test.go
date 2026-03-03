@@ -23,7 +23,6 @@ var (
 )
 
 func Test0_61_0Upgrade(t *testing.T) {
-
 	collectorInstance := v1alpha1.OpenTelemetryCollector{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "OpenTelemetryCollector",

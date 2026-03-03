@@ -16,7 +16,6 @@ import (
 )
 
 func Test0_111_0Upgrade(t *testing.T) {
-
 	defaultCollector := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "otel-my-instance",

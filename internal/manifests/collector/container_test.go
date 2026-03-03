@@ -1261,7 +1261,6 @@ service:
 
 			envVars := getContainerEnvVars(test.otelcol, testLogger)
 			assert.ElementsMatch(t, test.expectedEnvVars, envVars)
-
 		})
 	}
 }

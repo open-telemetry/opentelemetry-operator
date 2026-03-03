@@ -14,7 +14,6 @@ import (
 )
 
 func upgrade0_57_2(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
-
 	if len(otelcol.Spec.Config) == 0 {
 		return otelcol, nil
 	}

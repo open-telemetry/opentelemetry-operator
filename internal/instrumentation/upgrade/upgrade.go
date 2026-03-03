@@ -60,7 +60,6 @@ func NewInstrumentationUpgrade(client client.Client, logger logr.Logger, recorde
 		Recorder:                   recorder,
 		defaultAnnotationToConfig:  defaultAnnotationToConfig,
 	}
-
 }
 
 // +kubebuilder:rbac:groups=opentelemetry.io,resources=instrumentations,verbs=get;list;watch;update;patch
@@ -134,7 +133,6 @@ func (u *InstrumentationUpgrade) upgrade(_ context.Context, inst v1alpha1.Instru
 						upgraded.Annotations[annotation] = u.DefaultAutoInstJava
 					}
 				}
-
 			} else {
 				u.Logger.V(4).Info("autoinstrumentation not enabled for this language", "flag", instCfg.id)
 			}

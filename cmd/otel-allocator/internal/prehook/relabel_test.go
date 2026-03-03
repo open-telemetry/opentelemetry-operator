@@ -282,7 +282,6 @@ func TestApplyHashmodAction(t *testing.T) {
 }
 
 func TestApplyEmptyRelabelCfg(t *testing.T) {
-
 	allocatorPrehook := New("relabel-config", logger)
 	assert.NotNil(t, allocatorPrehook)
 

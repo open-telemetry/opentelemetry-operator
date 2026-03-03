@@ -21,7 +21,6 @@ import (
 )
 
 func TestMutatePod(t *testing.T) {
-
 	true := true
 	zero := int64(0)
 

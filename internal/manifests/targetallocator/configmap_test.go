@@ -62,7 +62,6 @@ filter_strategy: relabel-config
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
-
 	})
 	t.Run("should return target allocator config map without collector", func(t *testing.T) {
 		expectedData := map[string]string{
@@ -83,7 +82,6 @@ filter_strategy: relabel-config
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
-
 	})
 	t.Run("should return target allocator config map without scrape configs", func(t *testing.T) {
 		expectedData := map[string]string{
@@ -116,7 +114,6 @@ filter_strategy: relabel-config
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData[targetAllocatorFilename], actual.Data[targetAllocatorFilename])
-
 	})
 	t.Run("should return expected target allocator config map with label selectors", func(t *testing.T) {
 		expectedData := map[string]string{
@@ -198,7 +195,6 @@ prometheus_cr:
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
-
 	})
 	t.Run("should return expected target allocator config map with scrape interval set", func(t *testing.T) {
 		expectedData := map[string]string{
@@ -242,7 +238,6 @@ prometheus_cr:
 		assert.Equal(t, "my-instance-targetallocator", actual.Name)
 		assert.Equal(t, expectedLabels, actual.Labels)
 		assert.Equal(t, expectedData, actual.Data)
-
 	})
 
 	t.Run("should return expected target allocator config map with scrape classes set", func(t *testing.T) {

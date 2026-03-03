@@ -188,7 +188,6 @@ func reactorFactory(status v1.SubjectAccessReviewStatus) fakeClientGenerator {
 }
 
 func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
-
 	for _, tt := range []struct {
 		description          string
 		expectedAvailability autoRBAC.Availability

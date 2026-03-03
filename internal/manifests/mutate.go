@@ -387,7 +387,6 @@ func mutatePodTemplate(existing, desired *corev1.PodTemplateSpec) error {
 	existing.Spec = desired.Spec
 
 	return nil
-
 }
 
 func hasImmutableLabelChange(existingSelectorLabels, desiredLabels map[string]string) error {

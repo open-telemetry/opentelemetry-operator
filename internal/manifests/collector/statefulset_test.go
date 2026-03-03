@@ -201,7 +201,6 @@ func TestStatefulSetPeristentVolumeRetentionPolicy(t *testing.T) {
 
 	// assert correct WhenScaled value
 	assert.Equal(t, ss.Spec.PersistentVolumeClaimRetentionPolicy.WhenScaled, appsv1.DeletePersistentVolumeClaimRetentionPolicyType)
-
 }
 
 func TestStatefulSetPodAnnotations(t *testing.T) {
@@ -940,7 +939,6 @@ func TestStatefulSetServiceName(t *testing.T) {
 }
 
 func TestStatefulSetHostPIDCanBeSet(t *testing.T) {
-
 	// Test default
 	otelcol1 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
