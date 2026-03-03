@@ -270,7 +270,3 @@ type ClusterObservabilityList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ClusterObservability `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&ClusterObservability{}, &ClusterObservabilityList{})
-}
