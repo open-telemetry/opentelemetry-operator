@@ -106,8 +106,6 @@ linters:
           disabled: true # FIXME
         - name: identical-switch-branches
           disabled: true # FIXME
-        - name: if-return
-          disabled: true # FIXME
         - name: increment-decrement
           disabled: true # FIXME
         - name: import-alias-naming
