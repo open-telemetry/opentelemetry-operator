@@ -44,13 +44,13 @@ func TestBuilder_Build(t *testing.T) {
 		wantRbacErr     assert.ErrorAssertionFunc
 		wantLivenessErr assert.ErrorAssertionFunc
 	}
-	examplePortParser := func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config sampleConfig) ([]corev1.ServicePort, error) {
+	examplePortParser := func(_ logr.Logger, _ string, defaultPort *corev1.ServicePort, _ sampleConfig) ([]corev1.ServicePort, error) {
 		if defaultPort != nil {
 			return []corev1.ServicePort{*defaultPort}, nil
 		}
 		return nil, nil
 	}
-	exampleProbeGen := func(logger logr.Logger, config sampleConfig) (*corev1.Probe, error) {
+	exampleProbeGen := func(logr.Logger, sampleConfig) (*corev1.Probe, error) {
 		return &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
@@ -112,7 +112,7 @@ func TestBuilder_Build(t *testing.T) {
 					WithName("secure-service").
 					WithPort(443).
 					WithProtocol(corev1.ProtocolTCP).
-					WithRbacGen(func(logger logr.Logger, config sampleConfig) ([]rbacv1.PolicyRule, error) {
+					WithRbacGen(func(_ logr.Logger, config sampleConfig) ([]rbacv1.PolicyRule, error) {
 						rules := []rbacv1.PolicyRule{
 							{
 								NonResourceURLs: []string{config.example},
@@ -163,7 +163,7 @@ func TestBuilder_Build(t *testing.T) {
 					WithName("secure-service").
 					WithPort(443).
 					WithProtocol(corev1.ProtocolTCP).
-					WithRbacGen(func(logger logr.Logger, config sampleConfig) ([]rbacv1.PolicyRule, error) {
+					WithRbacGen(func(_ logr.Logger, config sampleConfig) ([]rbacv1.PolicyRule, error) {
 						rules := []rbacv1.PolicyRule{
 							{
 								NonResourceURLs: []string{config.example},
@@ -246,7 +246,7 @@ func TestBuilder_Build(t *testing.T) {
 					WithName("secure-service").
 					WithPort(443).
 					WithProtocol(corev1.ProtocolTCP).
-					WithLivenessGen(func(logger logr.Logger, config sampleConfig) (*corev1.Probe, error) {
+					WithLivenessGen(func(logr.Logger, sampleConfig) (*corev1.Probe, error) {
 						return nil, errors.New("no probe")
 					}),
 			},

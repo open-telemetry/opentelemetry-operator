@@ -80,7 +80,7 @@ func (m *MockClient) RESTMapper() meta.RESTMapper {
 	return args.Get(0).(meta.RESTMapper)
 }
 
-func (*MockClient) GroupVersionKindFor(obj runtime.Object) (schema.GroupVersionKind, error) {
+func (*MockClient) GroupVersionKindFor(runtime.Object) (schema.GroupVersionKind, error) {
 	return schema.GroupVersionKind{}, nil
 }
 

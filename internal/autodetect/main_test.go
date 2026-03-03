@@ -55,7 +55,7 @@ func TestDetectPlatformBasedOnAvailableAPIGroups(t *testing.T) {
 			openshift.RoutesAvailable,
 		},
 	} {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			output, err := json.Marshal(tt.apiGroupList)
 			require.NoError(t, err)
 
@@ -241,7 +241,7 @@ func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
 			t.Setenv(autodetectutils.NAMESPACE_ENV_VAR, tt.namespace)
 			t.Setenv(autodetectutils.SA_ENV_VAR, tt.serviceAccount)
 
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {}))
+			server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 			defer server.Close()
 
 			r := rbac.NewReviewer(tt.clientGenerator())
@@ -324,7 +324,7 @@ func TestCertManagerAvailability(t *testing.T) {
 			t.Setenv(autodetectutils.NAMESPACE_ENV_VAR, tt.namespace)
 			t.Setenv(autodetectutils.SA_ENV_VAR, tt.serviceAccount)
 
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				output, err := json.Marshal(tt.apiGroupList)
 				require.NoError(t, err)
 
@@ -363,10 +363,10 @@ func TestConfigChangesOnAutoDetect(t *testing.T) {
 		PrometheusCRsAvailabilityFunc: func() (prometheus.Availability, error) {
 			return prometheus.Available, nil
 		},
-		RBACPermissionsFunc: func(ctx context.Context) (autoRBAC.Availability, error) {
+		RBACPermissionsFunc: func(context.Context) (autoRBAC.Availability, error) {
 			return autoRBAC.Available, nil
 		},
-		CertManagerAvailabilityFunc: func(ctx context.Context) (certmanager.Availability, error) {
+		CertManagerAvailabilityFunc: func(context.Context) (certmanager.Availability, error) {
 			return certmanager.Available, nil
 		},
 		TargetAllocatorAvailabilityFunc: func() (targetallocator.Availability, error) {

@@ -138,8 +138,6 @@ linters:
           disabled: true # FIXME
         - name: unsecure-url-scheme
           disabled: true
-        - name: unused-parameter
-          disabled: true # FIXME
         - name: use-waitgroup-go
           disabled: true
         - name: var-naming

@@ -119,7 +119,7 @@ func TestGenericParser_GetRBACRules(t *testing.T) {
 		wantErr assert.ErrorAssertionFunc
 	}
 
-	rbacGenFunc := func(logger logr.Logger, config *components.SingleEndpointConfig) ([]rbacv1.PolicyRule, error) {
+	rbacGenFunc := func(_ logr.Logger, config *components.SingleEndpointConfig) ([]rbacv1.PolicyRule, error) {
 		if config.Endpoint == "" && config.ListenAddress == "" {
 			return nil, errors.New("either endpoint or listen_address must be specified")
 		}
@@ -228,7 +228,7 @@ func TestGenericParser_GetProbe(t *testing.T) {
 		wantReadinessErr assert.ErrorAssertionFunc
 		wantStartupErr   assert.ErrorAssertionFunc
 	}
-	probeFunc := func(logger logr.Logger, config *components.SingleEndpointConfig) (*corev1.Probe, error) {
+	probeFunc := func(_ logr.Logger, config *components.SingleEndpointConfig) (*corev1.Probe, error) {
 		if config.Endpoint == "" && config.ListenAddress == "" {
 			return nil, errors.New("either endpoint or listen_address must be specified")
 		}
