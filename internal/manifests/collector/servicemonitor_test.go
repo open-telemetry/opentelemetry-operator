@@ -41,7 +41,6 @@ func TestDesiredServiceMonitors(t *testing.T) {
 		"operator.opentelemetry.io/collector-service-type": "monitoring",
 	}
 	assert.Equal(t, expectedSelectorLabelsMonitor, actual.Spec.Selector.MatchLabels)
-
 }
 
 func TestDesiredServiceMonitorsWithPrometheus(t *testing.T) {

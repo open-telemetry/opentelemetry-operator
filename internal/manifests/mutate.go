@@ -306,11 +306,7 @@ func mutateDaemonset(existing, desired *appsv1.DaemonSet) error {
 	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
 	existing.Spec.UpdateStrategy = desired.Spec.UpdateStrategy
 
-	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
-		return err
-	}
-
-	return nil
+	return mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template)
 }
 
 func mutateDeployment(existing, desired *appsv1.Deployment) error {
@@ -330,11 +326,7 @@ func mutateDeployment(existing, desired *appsv1.Deployment) error {
 	existing.Spec.RevisionHistoryLimit = desired.Spec.RevisionHistoryLimit
 	existing.Spec.Strategy = desired.Spec.Strategy
 
-	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
-		return err
-	}
-
-	return nil
+	return mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template)
 }
 
 func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
@@ -368,11 +360,7 @@ func mutateStatefulSet(existing, desired *appsv1.StatefulSet) error {
 		existing.Spec.VolumeClaimTemplates[i].Spec = desired.Spec.VolumeClaimTemplates[i].Spec
 	}
 
-	if err := mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template); err != nil {
-		return err
-	}
-
-	return nil
+	return mutatePodTemplate(&existing.Spec.Template, &desired.Spec.Template)
 }
 
 func mutateCertificate(existing, desired *cmv1.Certificate) {
@@ -399,7 +387,6 @@ func mutatePodTemplate(existing, desired *corev1.PodTemplateSpec) error {
 	existing.Spec = desired.Spec
 
 	return nil
-
 }
 
 func hasImmutableLabelChange(existingSelectorLabels, desiredLabels map[string]string) error {

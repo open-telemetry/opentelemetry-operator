@@ -542,7 +542,6 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.Equal(t, expected.Spec.AllocationStrategy, actual.Spec.AllocationStrategy)
 							assert.Equal(t, expected.Spec.FilterStrategy, actual.Spec.FilterStrategy)
 							assert.Equal(t, expected.Spec.ScrapeConfigs, actual.Spec.ScrapeConfigs)
-
 						},
 					},
 					wantErr:     assert.NoError,

@@ -151,7 +151,7 @@ func (k *Watcher) Close() {
 	close(k.close)
 }
 
-func (k *Watcher) isPodUnhealthy(pod *v1.Pod, collectorNotReadyGracePeriod time.Duration) bool {
+func (*Watcher) isPodUnhealthy(pod *v1.Pod, collectorNotReadyGracePeriod time.Duration) bool {
 	if collectorNotReadyGracePeriod == 0*time.Second {
 		return false
 	}

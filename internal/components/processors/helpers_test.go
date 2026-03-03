@@ -68,7 +68,6 @@ func TestDownstreamParsers(t *testing.T) {
 				// verify
 				assert.Nil(t, err)
 			})
-
 		})
 	}
 }

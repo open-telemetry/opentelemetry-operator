@@ -44,7 +44,6 @@ type MetricReporter struct {
 // TODO: do more validation on the endpoint, allow for gRPC.
 // TODO: set global provider and add more metrics to be reported.
 func NewMetricReporter(logger logr.Logger, dest *protobufs.TelemetryConnectionSettings, agentType string, agentVersion string, instanceId uuid.UUID) (*MetricReporter, error) {
-
 	if dest.DestinationEndpoint == "" {
 		return nil, errors.New("metric destination must specify DestinationEndpoint")
 	}

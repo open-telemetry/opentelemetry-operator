@@ -97,5 +97,4 @@ func TestHPA(t *testing.T) {
 			})
 		}
 	}
-
 }

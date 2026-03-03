@@ -188,7 +188,6 @@ func reactorFactory(status v1.SubjectAccessReviewStatus) fakeClientGenerator {
 }
 
 func TestDetectRBACPermissionsBasedOnAvailableClusterRoles(t *testing.T) {
-
 	for _, tt := range []struct {
 		description          string
 		expectedAvailability autoRBAC.Availability
@@ -432,7 +431,7 @@ func (m *mockAutoDetect) CollectorAvailability() (collector.Availability, error)
 	return collector.NotAvailable, nil
 }
 
-func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
+func (*mockAutoDetect) FIPSEnabled(context.Context) bool {
 	return false
 }
 

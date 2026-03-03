@@ -533,20 +533,120 @@ func TestInjectDotNetSDK(t *testing.T) {
 			},
 			err: errors.New("provided instrumentation.opentelemetry.io/dotnet-runtime annotation value 'not-supported' is not supported"),
 		},
+		{
+			name:   "inject into init container",
+			DotNet: v1alpha1.DotNet{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: "my-init",
+						},
+					},
+				},
+			},
+			runtime: "",
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-dotnet",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-dotnet",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "-r", "/autoinstrumentation/.", "/otel-auto-instrumentation-dotnet"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-dotnet",
+								MountPath: "/otel-auto-instrumentation-dotnet",
+							}},
+						},
+						{
+							Name: "my-init",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-dotnet",
+									MountPath: "/otel-auto-instrumentation-dotnet",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  envDotNetCoreClrEnableProfiling,
+									Value: dotNetCoreClrEnableProfilingEnabled,
+								},
+								{
+									Name:  envDotNetCoreClrProfiler,
+									Value: dotNetCoreClrProfilerID,
+								},
+								{
+									Name:  envDotNetCoreClrProfilerPath,
+									Value: dotNetCoreClrProfilerGlibcPath,
+								},
+								{
+									Name:  envDotNetStartupHook,
+									Value: dotNetStartupHookPath,
+								},
+								{
+									Name:  envDotNetAdditionalDeps,
+									Value: dotNetAdditionalDepsPath,
+								},
+								{
+									Name:  envDotNetOTelAutoHome,
+									Value: dotNetOTelAutoHomePath,
+								},
+								{
+									Name:  envDotNetSharedStore,
+									Value: dotNetSharedStorePath,
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
 	}
 
 	injector := sdkInjector{}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectDotNetSDK(test.DotNet, test.pod, &test.pod.Spec.Containers[0], test.runtime, v1alpha1.InstrumentationSpec{})
-			assert.Equal(t, test.err, err)
-			if err == nil {
-				pod = injector.injectDefaultDotNetEnvVarsWrapper(pod, &pod.Spec.Containers[0], test.runtime)
+			pod := test.pod
+
+			// Collect all containers (regular first, then init)
+			var containers []*corev1.Container
+			for i := range pod.Spec.Containers {
+				containers = append(containers, &pod.Spec.Containers[i])
+			}
+			for i := range pod.Spec.InitContainers {
+				containers = append(containers, &pod.Spec.InitContainers[i])
+			}
+
+			err := injectDotNetSDK(test.DotNet, &pod, containers, test.runtime, v1alpha1.InstrumentationSpec{})
+			if err != nil {
 				assert.Equal(t, test.expected, pod)
 				assert.Equal(t, test.err, err)
-			} else {
-				assert.Equal(t, test.expected, pod)
+				return
 			}
+
+			for i := range pod.Spec.Containers {
+				pod = injector.injectDefaultDotNetEnvVarsWrapper(pod, &pod.Spec.Containers[i], test.runtime)
+			}
+			for i := range pod.Spec.InitContainers {
+				// Skip the instrumentation init container we added
+				if pod.Spec.InitContainers[i].Name == dotnetInitContainerName {
+					continue
+				}
+				pod = injector.injectDefaultDotNetEnvVarsWrapper(pod, &pod.Spec.InitContainers[i], test.runtime)
+			}
+			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.err, err)
 		})
 	}
 }

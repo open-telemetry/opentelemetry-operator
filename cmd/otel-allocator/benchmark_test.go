@@ -92,7 +92,6 @@ func BenchmarkProcessTargetsWithRelabelConfig(b *testing.B) {
 			})
 		}
 	}
-
 }
 
 func prepareBenchmarkData(numTargets, targetsPerGroup, groupsPerJob int) map[string][]*targetgroup.Group {

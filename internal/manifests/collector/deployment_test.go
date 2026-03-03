@@ -935,7 +935,6 @@ func int32Ptr(i int32) *int32 {
 }
 
 func TestDeploymentHostPIDCanBeSet(t *testing.T) {
-
 	// Test default
 	otelcol1 := v1beta1.OpenTelemetryCollector{
 		ObjectMeta: metav1.ObjectMeta{
