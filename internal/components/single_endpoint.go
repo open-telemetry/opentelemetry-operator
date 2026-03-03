@@ -82,7 +82,7 @@ func NewSilentSinglePortParserBuilder(name string, port int32) Builder[*SingleEn
 	return NewBuilder[*SingleEndpointConfig]().WithPort(port).WithName(name).WithPortParser(ParseSingleEndpointSilent).WithDefaultsApplier(AddressDefaulter).WithDefaultRecAddress(DefaultRecAddress)
 }
 
-func AddressDefaulter(logger logr.Logger, defaultRecAddr string, port int32, config *SingleEndpointConfig) (map[string]any, error) {
+func AddressDefaulter(_ logr.Logger, defaultRecAddr string, port int32, config *SingleEndpointConfig) (map[string]any, error) {
 	if config == nil {
 		config = &SingleEndpointConfig{}
 	}

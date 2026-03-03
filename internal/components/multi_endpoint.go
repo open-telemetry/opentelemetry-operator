@@ -94,15 +94,15 @@ func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config any) (an
 	}, nil
 }
 
-func (*MultiPortReceiver) GetLivenessProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
+func (*MultiPortReceiver) GetLivenessProbe(logr.Logger, any) (*corev1.Probe, error) {
 	return nil, nil
 }
 
-func (*MultiPortReceiver) GetReadinessProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
+func (*MultiPortReceiver) GetReadinessProbe(logr.Logger, any) (*corev1.Probe, error) {
 	return nil, nil
 }
 
-func (*MultiPortReceiver) GetStartupProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
+func (*MultiPortReceiver) GetStartupProbe(logr.Logger, any) (*corev1.Probe, error) {
 	return nil, nil
 }
 
@@ -110,7 +110,7 @@ func (*MultiPortReceiver) GetRBACRules(logr.Logger, any) ([]rbacv1.PolicyRule, e
 	return nil, nil
 }
 
-func (*MultiPortReceiver) GetEnvironmentVariables(logger logr.Logger, config any) ([]corev1.EnvVar, error) {
+func (*MultiPortReceiver) GetEnvironmentVariables(logr.Logger, any) ([]corev1.EnvVar, error) {
 	return nil, nil
 }
 

@@ -400,7 +400,7 @@ func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *certw
 
 	// Register callback to reload CA when server cert changes
 	// Since Kubernetes updates secrets atomically, the CA will be updated at the same time
-	certWatcher.RegisterCallback(func(cert tls.Certificate) {
+	certWatcher.RegisterCallback(func(tls.Certificate) {
 		if reloadErr := caReloader.Reload(); reloadErr != nil {
 			logger.Error(reloadErr, "Failed to reload CA via callback")
 		}

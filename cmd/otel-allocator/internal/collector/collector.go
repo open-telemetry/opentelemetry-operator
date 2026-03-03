@@ -83,7 +83,7 @@ func (k *Watcher) Watch(
 	k.mutex.Lock()
 	k.eventHandlerReg, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: notifyFunc,
-		UpdateFunc: func(oldObj, newObj any) {
+		UpdateFunc: func(_, newObj any) {
 			notifyFunc(newObj)
 		},
 		DeleteFunc: notifyFunc,
