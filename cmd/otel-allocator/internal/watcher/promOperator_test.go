@@ -1553,7 +1553,6 @@ func getTestPrometheusCRWatcher(
 		store:                           store,
 		prometheusCR:                    prom,
 	}, source
-
 }
 
 // Remove relable configs fields from scrape configs for testing,

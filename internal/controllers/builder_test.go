@@ -1038,7 +1038,6 @@ service:
 				return
 			}
 			require.Equal(t, tt.want, got)
-
 		})
 	}
 }
@@ -1877,7 +1876,6 @@ service:
 				return
 			}
 			require.Equal(t, tt.want, got)
-
 		})
 	}
 }
@@ -3359,7 +3357,6 @@ prometheus_cr:
 			require.Equal(t, tt.want[0], got[0])
 			require.Equal(t, tt.want[1], got[1])
 			require.Equal(t, tt.want, got)
-
 		})
 	}
 }

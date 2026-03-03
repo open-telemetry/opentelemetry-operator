@@ -5,6 +5,7 @@ package instrumentation
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -251,6 +252,60 @@ func TestInjectJavaagent(t *testing.T) {
 			err: fmt.Errorf("the container defines env var value via ValueFrom, envVar: %s", envJavaToolsOptions),
 		},
 		{
+			name: "inject into init container",
+			Java: v1alpha1.Java{Image: "foo/bar:1"},
+			pod: corev1.Pod{
+				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name: "my-init",
+						},
+					},
+				},
+			},
+			expected: corev1.Pod{
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "opentelemetry-auto-instrumentation-java",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{
+									SizeLimit: &defaultVolumeLimitSize,
+								},
+							},
+						},
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:    "opentelemetry-auto-instrumentation-java",
+							Image:   "foo/bar:1",
+							Command: []string{"cp", "/javaagent.jar", "/otel-auto-instrumentation-java/javaagent.jar"},
+							VolumeMounts: []corev1.VolumeMount{{
+								Name:      "opentelemetry-auto-instrumentation-java",
+								MountPath: "/otel-auto-instrumentation-java",
+							}},
+						},
+						{
+							Name: "my-init",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "opentelemetry-auto-instrumentation-java",
+									MountPath: "/otel-auto-instrumentation-java-my-init",
+								},
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "JAVA_TOOL_OPTIONS",
+									Value: " -javaagent:/otel-auto-instrumentation-java-my-init/javaagent.jar",
+								},
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
 			name: "multiple containers with unique volume mount paths",
 			Java: v1alpha1.Java{Image: "foo/bar:1"},
 			pod: corev1.Pod{
@@ -330,15 +385,39 @@ func TestInjectJavaagent(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			pod := test.pod
-			var err error
+
+			// Collect all containers (regular first, then init)
+			var containers []*corev1.Container
 			for i := range pod.Spec.Containers {
-				pod, err = injectJavaagent(test.Java, pod, &pod.Spec.Containers[i], v1alpha1.InstrumentationSpec{})
+				containers = append(containers, &pod.Spec.Containers[i])
 			}
-			assert.Equal(t, test.err, err)
+			for i := range pod.Spec.InitContainers {
+				containers = append(containers, &pod.Spec.InitContainers[i])
+			}
+
+			err := injectJavaagent(test.Java, &pod, containers, v1alpha1.InstrumentationSpec{})
+			if err != nil {
+				assert.Equal(t, test.expected, pod)
+				assert.Equal(t, test.err, err)
+				return
+			}
+
 			for i := range pod.Spec.Containers {
 				injector.injectDefaultJavaEnvVars(&pod.Spec.Containers[i], test.Java)
 			}
+			for i := range pod.Spec.InitContainers {
+				// Skip the instrumentation init container we added
+				if pod.Spec.InitContainers[i].Name == javaInitContainerName {
+					continue
+				}
+				// Skip extension init containers
+				if strings.HasPrefix(pod.Spec.InitContainers[i].Name, initContainerName+"-extension-") {
+					continue
+				}
+				injector.injectDefaultJavaEnvVars(&pod.Spec.InitContainers[i], test.Java)
+			}
 			assert.Equal(t, test.expected, pod)
+			assert.Equal(t, test.err, err)
 		})
 	}
 }

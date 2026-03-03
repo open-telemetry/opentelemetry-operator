@@ -213,7 +213,7 @@ func (m *Discoverer) processTargetGroups(jobName string, groups []*targetgroup.G
 	defer func() {
 		m.processTargetGroupsDuration.Record(context.Background(), time.Since(begin).Seconds(), metric.WithAttributes(attribute.String("job.name", jobName)))
 	}()
-	var count float64 = 0
+	var count float64
 	index := 0
 	for _, tg := range groups {
 		groupBuilder.Reset()

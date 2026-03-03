@@ -66,7 +66,7 @@ func (o *OpAMPBridgeWebhook) ValidateDelete(ctx context.Context, obj runtime.Obj
 	return o.validate(opampBridge)
 }
 
-func (o *OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
+func (*OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
 	if len(r.Spec.UpgradeStrategy) == 0 {
 		r.Spec.UpgradeStrategy = UpgradeStrategyAutomatic
 	}
@@ -90,7 +90,7 @@ func (o *OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
 	return nil
 }
 
-func (o *OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error) {
+func (*OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 
 	// validate OpAMP server endpoint

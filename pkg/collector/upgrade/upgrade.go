@@ -141,7 +141,6 @@ func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenT
 				}
 				u.Log.V(1).Info("step upgrade", "name", updated.Name, "namespace", updated.Namespace, "version", available.String())
 			} else {
-
 				upgraded, err := available.upgradeV1beta1(u, &updated) //available.upgrade(params., &updated)
 				if err != nil {
 					u.Log.Error(err, "failed to upgrade managed otelcol instance", "name", updated.Name, "namespace", updated.Namespace)

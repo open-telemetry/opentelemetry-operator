@@ -198,7 +198,7 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	return nil
 }
 
-func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, error) {
+func (InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, error) {
 	var warnings []string
 	switch r.Spec.Type {
 	case "":

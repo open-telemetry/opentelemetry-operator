@@ -184,15 +184,15 @@ type mockOpampClient struct {
 	settings            types.StartSettings
 }
 
-func (m *mockOpampClient) SetCustomCapabilities(_ *protobufs.CustomCapabilities) error {
+func (*mockOpampClient) SetCustomCapabilities(*protobufs.CustomCapabilities) error {
 	return nil
 }
 
-func (m *mockOpampClient) SendCustomMessage(_ *protobufs.CustomMessage) (messageSendingChannel chan struct{}, err error) {
+func (*mockOpampClient) SendCustomMessage(*protobufs.CustomMessage) (messageSendingChannel chan struct{}, err error) {
 	return nil, nil
 }
 
-func (m *mockOpampClient) RequestConnectionSettings(_ *protobufs.ConnectionSettingsRequest) error {
+func (*mockOpampClient) RequestConnectionSettings(*protobufs.ConnectionSettingsRequest) error {
 	return nil
 }
 
@@ -203,15 +203,15 @@ func (m *mockOpampClient) Start(_ context.Context, settings types.StartSettings)
 	return nil
 }
 
-func (m *mockOpampClient) Stop(_ context.Context) error {
+func (*mockOpampClient) Stop(context.Context) error {
 	return nil
 }
 
-func (m *mockOpampClient) SetAgentDescription(_ *protobufs.AgentDescription) error {
+func (*mockOpampClient) SetAgentDescription(*protobufs.AgentDescription) error {
 	return nil
 }
 
-func (m *mockOpampClient) AgentDescription() *protobufs.AgentDescription {
+func (*mockOpampClient) AgentDescription() *protobufs.AgentDescription {
 	return nil
 }
 
@@ -240,7 +240,7 @@ func (m *mockOpampClient) SetRemoteConfigStatus(status *protobufs.RemoteConfigSt
 	return nil
 }
 
-func (m *mockOpampClient) SetPackageStatuses(_ *protobufs.PackageStatuses) error {
+func (*mockOpampClient) SetPackageStatuses(*protobufs.PackageStatuses) error {
 	return nil
 }
 

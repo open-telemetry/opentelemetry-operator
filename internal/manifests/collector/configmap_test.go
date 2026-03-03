@@ -28,7 +28,6 @@ func TestDesiredConfigMap(t *testing.T) {
 	}
 
 	t.Run("should return expected collector config map", func(t *testing.T) {
-
 		expectedData := map[string]string{
 			"collector.yaml": `receivers:
   jaeger:
@@ -116,7 +115,6 @@ service:
 		// Reset the value
 		expectedLables["app.kubernetes.io/version"] = "0.47.0"
 		assert.NoError(t, err)
-
 	})
 
 	t.Run("should return expected escaped collector config map with target_allocator and https config block", func(t *testing.T) {
@@ -177,7 +175,6 @@ service:
 		// Reset the value
 		expectedLables["app.kubernetes.io/version"] = "0.47.0"
 		assert.NoError(t, err)
-
 	})
 
 	t.Run("Should return expected collector config map without mTLS config", func(t *testing.T) {

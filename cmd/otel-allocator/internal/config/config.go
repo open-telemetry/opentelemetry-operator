@@ -47,7 +47,7 @@ const (
 )
 
 var (
-	DefaultKubeConfigFilePath string = filepath.Join(homedir.HomeDir(), ".kube", "config")
+	DefaultKubeConfigFilePath = filepath.Join(homedir.HomeDir(), ".kube", "config")
 )
 
 var defaultScrapeProtocolsCR = []monitoringv1.ScrapeProtocol{
@@ -311,11 +311,7 @@ func unmarshal(cfg *Config, configFile string) error {
 	if err != nil {
 		return err
 	}
-	if err := decoder.Decode(m); err != nil {
-		return err
-	}
-
-	return nil
+	return decoder.Decode(m)
 }
 
 func CreateDefaultConfig() Config {
