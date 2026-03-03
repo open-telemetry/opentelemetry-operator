@@ -506,7 +506,7 @@ func TestProcessTargetGroups_StableLabelIterationOrder(t *testing.T) {
 		expected := string(rune('a' + i))
 		assert.Equal(t, expected, l.Name, "unexpected label key at index %d", i)
 		assert.Equal(t, expected, l.Value, "unexpected label value at index %d", i)
-		i += 1
+		i++
 	})
 }
 
