@@ -244,11 +244,7 @@ func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, co
 		case KindReceiver:
 			retriever = receivers.ReceiverFor
 			cfg = c.Receivers
-		case KindExporter:
-			continue
-		case KindProcessor:
-			continue
-		case KindExtension:
+		case KindExporter, KindProcessor, KindExtension:
 			continue
 		}
 		for componentName := range enabledComponents[componentKind] {
@@ -283,9 +279,7 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 		case KindReceiver:
 			retriever = receivers.ReceiverFor
 			cfg = c.Receivers
-		case KindExporter:
-			continue
-		case KindProcessor:
+		case KindExporter, KindProcessor:
 			continue
 		case KindExtension:
 			if c.Extensions == nil {
