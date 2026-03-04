@@ -40,7 +40,7 @@ func (r *reportingGauge) Record(_ context.Context, value int64, _ ...metric.Reco
 	r.value.Store(value)
 }
 
-func (r *reportingGauge) Enabled(_ context.Context) bool {
+func (*reportingGauge) Enabled(context.Context) bool {
 	return true
 }
 
@@ -480,7 +480,7 @@ func Test_closeChannel(t *testing.T) {
 	var wg sync.WaitGroup
 
 	wg.Go(func() {
-		err := podWatcher.Watch("default", &labelSelector, func(colMap map[string]*allocation.Collector) {})
+		err := podWatcher.Watch("default", &labelSelector, func(map[string]*allocation.Collector) {})
 		require.NoError(t, err)
 	})
 

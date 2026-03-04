@@ -17,11 +17,11 @@ func newleastWeightedStrategy() Strategy {
 	return &leastWeightedStrategy{}
 }
 
-func (s *leastWeightedStrategy) GetName() string {
+func (*leastWeightedStrategy) GetName() string {
 	return leastWeightedStrategyName
 }
 
-func (s *leastWeightedStrategy) GetCollectorForTarget(collectors map[string]*Collector, item *target.Item) (*Collector, error) {
+func (*leastWeightedStrategy) GetCollectorForTarget(collectors map[string]*Collector, item *target.Item) (*Collector, error) {
 	// if a collector is already assigned, do nothing
 	// TODO: track this in a separate map
 	if item.CollectorName != "" {
@@ -53,6 +53,6 @@ func (s *leastWeightedStrategy) GetCollectorForTarget(collectors map[string]*Col
 	return col, nil
 }
 
-func (s *leastWeightedStrategy) SetCollectors(_ map[string]*Collector) {}
+func (*leastWeightedStrategy) SetCollectors(map[string]*Collector) {}
 
-func (s *leastWeightedStrategy) SetFallbackStrategy(fallbackStrategy Strategy) {}
+func (*leastWeightedStrategy) SetFallbackStrategy(Strategy) {}

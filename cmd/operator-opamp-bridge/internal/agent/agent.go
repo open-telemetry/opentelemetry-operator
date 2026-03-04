@@ -158,7 +158,7 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 }
 
 // getCollectorSelector destructures the collectors scale selector if present, it uses the labelmap from the operator.
-func (agent *Agent) getCollectorSelector(col v1beta1.OpenTelemetryCollector) map[string]string {
+func (*Agent) getCollectorSelector(col v1beta1.OpenTelemetryCollector) map[string]string {
 	if len(col.Status.Scale.Selector) > 0 {
 		selMap := map[string]string{}
 		for kvPair := range strings.SplitSeq(col.Status.Scale.Selector, ",") {
@@ -216,17 +216,17 @@ func (agent *Agent) generateCollectorHealth(selectorLabels map[string]string, na
 }
 
 // onConnect is called when an agent is successfully connected to a server.
-func (agent *Agent) onConnect(ctx context.Context) {
+func (agent *Agent) onConnect(context.Context) {
 	agent.logger.V(3).Info("Connected to the server.")
 }
 
 // onConnectFailed is called when an agent was unable to connect to a server.
-func (agent *Agent) onConnectFailed(ctx context.Context, err error) {
+func (agent *Agent) onConnectFailed(_ context.Context, err error) {
 	agent.logger.Error(err, "failed to connect to the server")
 }
 
 // onError is called when an agent receives an error response from the server.
-func (agent *Agent) onError(ctx context.Context, err *protobufs.ServerErrorResponse) {
+func (agent *Agent) onError(_ context.Context, err *protobufs.ServerErrorResponse) {
 	agent.logger.Error(errors.New(err.GetErrorMessage()), "server returned an error response")
 }
 
@@ -340,7 +340,7 @@ func (agent *Agent) updateAgentIdentity(instanceId uuid.UUID) {
 
 // getEffectiveConfig is called when a remote server needs to learn of the current effective configuration of each
 // collector the agent is managing.
-func (agent *Agent) getEffectiveConfig(ctx context.Context) (*protobufs.EffectiveConfig, error) {
+func (agent *Agent) getEffectiveConfig(context.Context) (*protobufs.EffectiveConfig, error) {
 	instances, err := agent.applier.ListInstances()
 	if err != nil {
 		agent.logger.Error(err, "failed to list instances")

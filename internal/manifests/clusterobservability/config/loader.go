@@ -146,7 +146,7 @@ func (c *ConfigLoader) loadDistroOverrides(collectorType CollectorType, distroPr
 }
 
 // buildExportersConfig builds exporters configuration from the single OTLP HTTP exporter spec.
-func (c *ConfigLoader) buildExportersConfig(spec v1alpha1.ClusterObservabilitySpec) map[string]any {
+func (*ConfigLoader) buildExportersConfig(spec v1alpha1.ClusterObservabilitySpec) map[string]any {
 	exporters := make(map[string]any)
 
 	// Build the otlphttp exporter configuration - map exactly to collector fields
@@ -257,7 +257,7 @@ func (c *ConfigLoader) buildExportersConfig(spec v1alpha1.ClusterObservabilitySp
 }
 
 // buildPipelinesWithExporters creates service pipelines based on collector type.
-func (c *ConfigLoader) buildPipelinesWithExporters(collectorType CollectorType) map[string]PipelineConfig {
+func (*ConfigLoader) buildPipelinesWithExporters(collectorType CollectorType) map[string]PipelineConfig {
 	pipelines := make(map[string]PipelineConfig)
 
 	// We only use the otlphttp exporter for now
@@ -299,7 +299,7 @@ func (c *ConfigLoader) buildPipelinesWithExporters(collectorType CollectorType) 
 }
 
 // convertToV1Beta1Config converts our internal config to v1beta1.Config.
-func (c *ConfigLoader) convertToV1Beta1Config(config CollectorConfigSpec) v1beta1.Config {
+func (*ConfigLoader) convertToV1Beta1Config(config CollectorConfigSpec) v1beta1.Config {
 	// Convert pipelines
 	v1beta1Pipelines := make(map[string]*v1beta1.Pipeline)
 	for name, pipeline := range config.Service.Pipelines {
@@ -327,7 +327,7 @@ func (c *ConfigLoader) convertToV1Beta1Config(config CollectorConfigSpec) v1beta
 }
 
 // GetAvailableDistroProviders returns a list of available distro/provider combinations.
-func (c *ConfigLoader) GetAvailableDistroProviders() []DistroProvider {
+func (*ConfigLoader) GetAvailableDistroProviders() []DistroProvider {
 	return []DistroProvider{
 		OpenShift,
 		// Add more as they become available
@@ -335,7 +335,7 @@ func (c *ConfigLoader) GetAvailableDistroProviders() []DistroProvider {
 }
 
 // DetectDistroProvider detects the Kubernetes distribution.
-func (c *ConfigLoader) DetectDistroProvider(cfg config.Config) DistroProvider {
+func (*ConfigLoader) DetectDistroProvider(cfg config.Config) DistroProvider {
 	if cfg.OpenShiftRoutesAvailability == openshift.RoutesAvailable {
 		return OpenShift
 	}
@@ -345,7 +345,7 @@ func (c *ConfigLoader) DetectDistroProvider(cfg config.Config) DistroProvider {
 }
 
 // ValidateConfig validates that a configuration is valid.
-func (c *ConfigLoader) ValidateConfig(config v1beta1.Config) error {
+func (*ConfigLoader) ValidateConfig(config v1beta1.Config) error {
 	if len(config.Receivers.Object) == 0 {
 		return errors.New("no receivers configured")
 	}
@@ -418,7 +418,7 @@ func (c *ConfigLoader) GetConfigVersion(collectorType CollectorType, distroProvi
 }
 
 // CompareConfigVersions compares two config versions and returns true if they differ.
-func (c *ConfigLoader) CompareConfigVersions(version1, version2 string) bool {
+func (*ConfigLoader) CompareConfigVersions(version1, version2 string) bool {
 	return version1 != version2
 }
 

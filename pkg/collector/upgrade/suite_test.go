@@ -139,7 +139,6 @@ func TestMain(m *testing.M) {
 			fmt.Printf("failed to wait for webhook server to be ready: %v", err)
 			os.Exit(1)
 		}
-
 	}(wg)
 	wg.Wait()
 

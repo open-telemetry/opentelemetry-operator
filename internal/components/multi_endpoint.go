@@ -94,23 +94,23 @@ func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config any) (an
 	}, nil
 }
 
-func (m *MultiPortReceiver) GetLivenessProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
+func (*MultiPortReceiver) GetLivenessProbe(logr.Logger, any) (*corev1.Probe, error) {
 	return nil, nil
 }
 
-func (m *MultiPortReceiver) GetReadinessProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
+func (*MultiPortReceiver) GetReadinessProbe(logr.Logger, any) (*corev1.Probe, error) {
 	return nil, nil
 }
 
-func (m *MultiPortReceiver) GetStartupProbe(logger logr.Logger, config any) (*corev1.Probe, error) {
+func (*MultiPortReceiver) GetStartupProbe(logr.Logger, any) (*corev1.Probe, error) {
 	return nil, nil
 }
 
-func (m *MultiPortReceiver) GetRBACRules(logr.Logger, any) ([]rbacv1.PolicyRule, error) {
+func (*MultiPortReceiver) GetRBACRules(logr.Logger, any) ([]rbacv1.PolicyRule, error) {
 	return nil, nil
 }
 
-func (m *MultiPortReceiver) GetEnvironmentVariables(logger logr.Logger, config any) ([]corev1.EnvVar, error) {
+func (*MultiPortReceiver) GetEnvironmentVariables(logr.Logger, any) ([]corev1.EnvVar, error) {
 	return nil, nil
 }
 
@@ -154,9 +154,9 @@ func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, err
 }
 
 func (mp MultiPortBuilder[ComponentConfigType]) MustBuild() *MultiPortReceiver {
-	if p, err := mp.Build(); err != nil {
+	p, err := mp.Build()
+	if err != nil {
 		panic(err)
-	} else {
-		return p
 	}
+	return p
 }

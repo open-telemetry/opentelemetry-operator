@@ -276,7 +276,6 @@ func TestSingleEndpointParser_Ports(t *testing.T) {
 }
 
 func TestNewSilentSinglePortParser_Ports(t *testing.T) {
-
 	type fields struct {
 		b components.Builder[*components.SingleEndpointConfig]
 	}

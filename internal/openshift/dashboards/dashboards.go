@@ -72,6 +72,6 @@ func (d dashboardManagement) Start(ctx context.Context) error {
 	return d.clientset.CoreV1().ConfigMaps(openshiftDashboardsNamespace).Delete(ctx, configMapName, metav1.DeleteOptions{})
 }
 
-func (d dashboardManagement) NeedLeaderElection() bool {
+func (dashboardManagement) NeedLeaderElection() bool {
 	return true
 }

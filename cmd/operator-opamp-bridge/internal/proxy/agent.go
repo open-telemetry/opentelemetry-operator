@@ -128,7 +128,7 @@ func (a *Agent) UpdateStatus(newStatus *protobufs.AgentToServer, response *proto
 	return agentDescrChanged
 }
 
-func (a *Agent) calcConnectionSettings(response *protobufs.ServerToAgent) {
+func (*Agent) calcConnectionSettings(response *protobufs.ServerToAgent) {
 	// Here we can use Agent's description to send the appropriate connection
 	// settings to the Agent.
 	// In this simple example the connection settings do not depend on the

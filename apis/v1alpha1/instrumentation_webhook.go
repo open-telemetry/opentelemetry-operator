@@ -46,7 +46,7 @@ type InstrumentationWebhook struct {
 	scheme *runtime.Scheme
 }
 
-func (w InstrumentationWebhook) Default(ctx context.Context, obj runtime.Object) error {
+func (w InstrumentationWebhook) Default(_ context.Context, obj runtime.Object) error {
 	instrumentation, ok := obj.(*Instrumentation)
 	if !ok {
 		return fmt.Errorf("expected an Instrumentation, received %T", obj)
@@ -54,7 +54,7 @@ func (w InstrumentationWebhook) Default(ctx context.Context, obj runtime.Object)
 	return w.defaulter(instrumentation)
 }
 
-func (w InstrumentationWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (w InstrumentationWebhook) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	inst, ok := obj.(*Instrumentation)
 	if !ok {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
@@ -62,7 +62,7 @@ func (w InstrumentationWebhook) ValidateCreate(ctx context.Context, obj runtime.
 	return w.validate(inst)
 }
 
-func (w InstrumentationWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (w InstrumentationWebhook) ValidateUpdate(_ context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
 	inst, ok := newObj.(*Instrumentation)
 	if !ok {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", newObj)
@@ -70,7 +70,7 @@ func (w InstrumentationWebhook) ValidateUpdate(ctx context.Context, oldObj, newO
 	return w.validate(inst)
 }
 
-func (w InstrumentationWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (w InstrumentationWebhook) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	inst, ok := obj.(*Instrumentation)
 	if !ok || inst == nil {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
@@ -198,7 +198,7 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	return nil
 }
 
-func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, error) {
+func (InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, error) {
 	var warnings []string
 	switch r.Spec.Type {
 	case "":

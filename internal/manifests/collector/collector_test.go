@@ -132,11 +132,11 @@ type mockReviewer struct{}
 
 var _ irbac.SAReviewer = &mockReviewer{}
 
-func (m *mockReviewer) CheckPolicyRules(ctx context.Context, serviceAccount, serviceAccountNamespace string, rules ...*rbacv1.PolicyRule) ([]*v1.SubjectAccessReview, error) {
+func (*mockReviewer) CheckPolicyRules(context.Context, string, string, ...*rbacv1.PolicyRule) ([]*v1.SubjectAccessReview, error) {
 	return nil, errors.New("error checking policy rules")
 }
 
-func (m *mockReviewer) CanAccess(ctx context.Context, serviceAccount, serviceAccountNamespace string, res *v1.ResourceAttributes, nonResourceAttributes *v1.NonResourceAttributes) (*v1.SubjectAccessReview, error) {
+func (*mockReviewer) CanAccess(context.Context, string, string, *v1.ResourceAttributes, *v1.NonResourceAttributes) (*v1.SubjectAccessReview, error) {
 	return nil, nil
 }
 
@@ -324,7 +324,6 @@ func TestBuild(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			objects, err := Build(tt.params)
 			if tt.wantErr {
 				require.Error(t, err)

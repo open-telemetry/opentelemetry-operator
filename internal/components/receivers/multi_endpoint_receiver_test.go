@@ -433,7 +433,6 @@ func TestMultiEndpointReceiverParsers(t *testing.T) {
 					assert.ElementsMatch(t, ports, kase.expectedSvc)
 				})
 			}
-
 		})
 	}
 }

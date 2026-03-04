@@ -152,9 +152,9 @@ func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigTyp
 }
 
 func (b Builder[ComponentConfigType]) MustBuild() *GenericParser[ComponentConfigType] {
-	if p, err := b.Build(); err != nil {
+	p, err := b.Build()
+	if err != nil {
 		panic(err)
-	} else {
-		return p
 	}
+	return p
 }

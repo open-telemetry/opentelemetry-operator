@@ -112,7 +112,6 @@ func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 }
 
 func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
-
 	two := int32(2)
 
 	tests := []struct {

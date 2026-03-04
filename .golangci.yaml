@@ -78,16 +78,12 @@ linters:
           disabled: true # FIXME
         - name: dot-imports
           disabled: true
-        - name: duplicated-imports
-          disabled: true # FIXME
         - name: early-return
           disabled: true # FIXME
         - name: empty-block
           disabled: true
-        - name: empty-lines
-          disabled: true # FIXME
         - name: enforce-switch-style
-          disabled: true # FIXME
+          arguments: ["allowNoDefault"]
         - name: error-naming
           disabled: true
         - name: error-strings
@@ -105,10 +101,6 @@ linters:
         - name: identical-ifelseif-branches
           disabled: true # FIXME
         - name: identical-switch-branches
-          disabled: true # FIXME
-        - name: if-return
-          disabled: true # FIXME
-        - name: increment-decrement
           disabled: true # FIXME
         - name: import-alias-naming
           disabled: true # FIXME
@@ -134,28 +126,18 @@ linters:
           disabled: true # FIXME
         - name: struct-tag
           disabled: true # FIXME
-        - name: superfluous-else
-          disabled: true # FIXME
         - name: unchecked-type-assertion
           disabled: true
         - name: unexported-return
           disabled: true # FIXME
         - name: unhandled-error
           disabled: true
-        - name: unnecessary-stmt
-          disabled: true # FIXME
         - name: unreachable-code
           disabled: true # FIXME
         - name: unsecure-url-scheme
           disabled: true
-        - name: unused-parameter
-          disabled: true # FIXME
-        - name: unused-receiver
-          disabled: true # FIXME
         - name: use-waitgroup-go
           disabled: true
-        - name: var-declaration
-          disabled: true # FIXME
         - name: var-naming
           disabled: true
     staticcheck:
@@ -182,6 +164,7 @@ linters:
     - staticcheck
     - unparam
     - unused
+    - whitespace
   exclusions:
     generated: lax
     presets:
