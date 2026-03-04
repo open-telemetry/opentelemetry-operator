@@ -524,10 +524,9 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 			}
 		}
 		return promCfg, nil
-	} else {
-		w.logger.Info("Unable to load config since resource selector is nil, returning empty prometheus config")
-		return promCfg, nil
 	}
+	w.logger.Info("Unable to load config since resource selector is nil, returning empty prometheus config")
+	return promCfg, nil
 }
 
 // WaitForNamedCacheSync adds a timeout to the informer's wait for the cache to be ready.

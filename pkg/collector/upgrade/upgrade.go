@@ -32,11 +32,11 @@ func (u VersionUpgrade) semVer() *semver.Version {
 	if len(u.Version.OpenTelemetryCollector) == 0 {
 		return &Latest.Version
 	}
-	if v, err := semver.NewVersion(u.Version.OpenTelemetryCollector); err != nil {
+	v, err := semver.NewVersion(u.Version.OpenTelemetryCollector)
+	if err != nil {
 		return &Latest.Version
-	} else {
-		return v
 	}
+	return v
 }
 
 // NeedsUpgrade checks if this CR needs to be upgraded.
