@@ -609,7 +609,3 @@ type ConfigMapsSpec struct {
 	Name      string `json:"name"`
 	MountPath string `json:"mountpath"`
 }
-
-func init() {
-	SchemeBuilder.Register(&OpenTelemetryCollector{}, &OpenTelemetryCollectorList{})
-}

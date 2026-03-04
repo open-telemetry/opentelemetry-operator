@@ -145,7 +145,3 @@ type OpAMPBridgeList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []OpAMPBridge `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&OpAMPBridge{}, &OpAMPBridgeList{})
-}
