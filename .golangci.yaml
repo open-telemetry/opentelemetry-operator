@@ -61,7 +61,8 @@ linters:
         - name: blank-imports
           disabled: true
         - name: context-as-argument
-          disabled: true
+          arguments:
+            - allow-types-before: "*testing.T"
         - name: cognitive-complexity
           disabled: true
         - name: cyclomatic
