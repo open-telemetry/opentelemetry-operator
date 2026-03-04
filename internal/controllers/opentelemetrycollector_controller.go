@@ -246,25 +246,10 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	}
 
 	// We have a deletion, short circuit and let the deletion happen
-	if deletionTimestamp := instance.GetDeletionTimestamp(); deletionTimestamp != nil {
-		if controllerutil.ContainsFinalizer(&instance, collectorFinalizer) {
-			// If the finalization logic fails, don't remove the finalizer so
-			// that we can retry during the next reconciliation.
-			if err = r.finalizeCollector(ctx, params); err != nil {
-				return ctrl.Result{}, err
-			}
-
-			// Once all finalizers have been
-			// removed, the object will be deleted.
-			if controllerutil.RemoveFinalizer(&instance, collectorFinalizer) {
-				err = r.Update(ctx, &instance)
-				if err != nil {
-					return ctrl.Result{}, err
-				}
-			}
-		}
-
-		return ctrl.Result{}, nil
+	// Remove finalizer if RBAC permission not available
+	deletionTimestamp, err := removeFinalizer(r, ctx, params, &instance)
+	if err != nil || deletionTimestamp != nil {
+		return ctrl.Result{}, err
 	}
 
 	if instance.Spec.ManagementState == v1beta1.ManagementStateUnmanaged {
@@ -397,4 +382,27 @@ func maybeAddFinalizer(params manifests.Params, instance *v1beta1.OpenTelemetryC
 		return controllerutil.AddFinalizer(instance, collectorFinalizer)
 	}
 	return false
+}
+
+func removeFinalizer(r *OpenTelemetryCollectorReconciler, ctx context.Context, params manifests.Params, instance *v1beta1.OpenTelemetryCollector) (*metav1.Time, error) {
+	deletionTimestamp := instance.GetDeletionTimestamp()
+	if deletionTimestamp != nil || params.Config.CreateRBACPermissions != rbac.Available {
+		if controllerutil.ContainsFinalizer(instance, collectorFinalizer) {
+			// If the finalization logic fails, don't remove the finalizer so
+			// that we can retry during the next reconciliation.
+			if err := r.finalizeCollector(ctx, params); err != nil {
+				return deletionTimestamp, err
+			}
+
+			// Once all finalizers have been
+			// removed, the object will be deleted.
+			if controllerutil.RemoveFinalizer(instance, collectorFinalizer) {
+				err := r.Update(ctx, instance)
+				if err != nil {
+					return deletionTimestamp, err
+				}
+			}
+		}
+	}
+	return deletionTimestamp, nil
 }
