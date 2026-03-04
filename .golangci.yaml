@@ -78,8 +78,6 @@ linters:
           disabled: true # FIXME
         - name: dot-imports
           disabled: true
-        - name: early-return
-          disabled: true # FIXME
         - name: empty-block
           disabled: true
         - name: enforce-switch-style
@@ -106,8 +104,6 @@ linters:
           disabled: true # FIXME
         - name: import-shadowing
           disabled: true
-        - name: indent-error-flow
-          disabled: true # FIXME
         - name: line-length-limit
           disabled: true
         - name: max-public-structs

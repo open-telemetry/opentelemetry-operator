@@ -42,16 +42,16 @@ func (m *MultiPortReceiver) Ports(logger logr.Logger, name string, config any) (
 	}
 	var ports []corev1.ServicePort
 	for protocol, ec := range multiProtoEndpointCfg.Protocols {
-		if defaultSvc, ok := m.portMappings[protocol]; ok {
-			port := defaultSvc.Port
-			if ec != nil {
-				port = ec.GetPortNumOrDefault(logger, port)
-			}
-			defaultSvc.Name = naming.PortName(fmt.Sprintf("%s-%s", name, protocol), port)
-			ports = append(ports, ConstructServicePort(defaultSvc, port))
-		} else {
+		defaultSvc, ok := m.portMappings[protocol]
+		if !ok {
 			return nil, fmt.Errorf("unknown protocol set: %s", protocol)
 		}
+		port := defaultSvc.Port
+		if ec != nil {
+			port = ec.GetPortNumOrDefault(logger, port)
+		}
+		defaultSvc.Name = naming.PortName(fmt.Sprintf("%s-%s", name, protocol), port)
+		ports = append(ports, ConstructServicePort(defaultSvc, port))
 	}
 	return ports, nil
 }
@@ -71,23 +71,23 @@ func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config any) (an
 	}
 	defaultedConfig := map[string]any{}
 	for protocol, ec := range multiProtoEndpointCfg.Protocols {
-		if defaultSvc, ok := m.portMappings[protocol]; ok {
-			port := defaultSvc.Port
-			if ec != nil {
-				port = ec.GetPortNumOrDefault(logger, port)
-			}
-			addr := m.defaultRecAddr
-			if defaultAddr, ok := m.addrMappings[protocol]; ok {
-				addr = defaultAddr
-			}
-			conf, err := AddressDefaulter(logger, addr, port, ec)
-			if err != nil {
-				return nil, err
-			}
-			defaultedConfig[protocol] = conf
-		} else {
+		defaultSvc, ok := m.portMappings[protocol]
+		if !ok {
 			return nil, fmt.Errorf("unknown protocol set: %s", protocol)
 		}
+		port := defaultSvc.Port
+		if ec != nil {
+			port = ec.GetPortNumOrDefault(logger, port)
+		}
+		addr := m.defaultRecAddr
+		if defaultAddr, ok := m.addrMappings[protocol]; ok {
+			addr = defaultAddr
+		}
+		conf, err := AddressDefaulter(logger, addr, port, ec)
+		if err != nil {
+			return nil, err
+		}
+		defaultedConfig[protocol] = conf
 	}
 	return map[string]any{
 		"protocols": defaultedConfig,

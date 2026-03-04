@@ -108,17 +108,16 @@ func getDefaultJavaEnvVars(container *corev1.Container, javaSpec v1alpha1.Java) 
 				Value: javaJVMArgument,
 			},
 		}
-	} else {
-		// Don't modify JAVA_TOOL_OPTIONS if it uses ValueFrom
-		if container.Env[idx].ValueFrom != nil {
-			return []corev1.EnvVar{}
-		}
-		// JAVA_TOOL_OPTIONS present, append our argument to its value
-		return []corev1.EnvVar{
-			{
-				Name:  envJavaToolsOptions,
-				Value: container.Env[idx].Value + javaJVMArgument,
-			},
-		}
+	}
+	// Don't modify JAVA_TOOL_OPTIONS if it uses ValueFrom
+	if container.Env[idx].ValueFrom != nil {
+		return []corev1.EnvVar{}
+	}
+	// JAVA_TOOL_OPTIONS present, append our argument to its value
+	return []corev1.EnvVar{
+		{
+			Name:  envJavaToolsOptions,
+			Value: container.Env[idx].Value + javaJVMArgument,
+		},
 	}
 }

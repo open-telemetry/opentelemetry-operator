@@ -180,11 +180,11 @@ func (c *Config) getRbacRulesForComponentKinds(logger logr.Logger, componentKind
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.
 			parser := retriever(componentName)
-			if parsedRules, err := parser.GetRBACRules(logger, cfg.Object[componentName]); err != nil {
+			parsedRules, err := parser.GetRBACRules(logger, cfg.Object[componentName])
+			if err != nil {
 				return nil, err
-			} else {
-				rules = append(rules, parsedRules...)
 			}
+			rules = append(rules, parsedRules...)
 		}
 	}
 	return rules, nil
@@ -217,11 +217,11 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.
 			parser := retriever(componentName)
-			if parsedPorts, err := parser.Ports(logger, componentName, cfg.Object[componentName]); err != nil {
+			parsedPorts, err := parser.Ports(logger, componentName, cfg.Object[componentName])
+			if err != nil {
 				return nil, err
-			} else {
-				ports = append(ports, parsedPorts...)
 			}
+			ports = append(ports, parsedPorts...)
 		}
 	}
 
@@ -253,11 +253,11 @@ func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, co
 		}
 		for componentName := range enabledComponents[componentKind] {
 			parser := retriever(componentName)
-			if parsedEnvVars, err := parser.GetEnvironmentVariables(logger, cfg.Object[componentName]); err != nil {
+			parsedEnvVars, err := parser.GetEnvironmentVariables(logger, cfg.Object[componentName])
+			if err != nil {
 				return nil, err
-			} else {
-				envVars = append(envVars, parsedEnvVars...)
 			}
+			envVars = append(envVars, parsedEnvVars...)
 		}
 	}
 
