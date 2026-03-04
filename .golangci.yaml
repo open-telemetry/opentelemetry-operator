@@ -71,7 +71,8 @@ linters:
         - name: confusing-results
           disabled: true # FIXME
         - name: comment-spacings
-          disabled: true # FIXME
+          arguments:
+            - +kubebuilder
         - name: deep-exit
           disabled: true # FIXME
         - name: defer
