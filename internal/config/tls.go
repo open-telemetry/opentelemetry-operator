@@ -11,8 +11,12 @@ import (
 )
 
 type TLSConfig struct {
-	MinVersion   string
-	CipherSuites []string
+	// Instructs the operator to get the TLS profile from the cluster.
+	UseClusterProfile bool
+	// Configures TLS in operands created by the operator.
+	ConfigureOperands bool
+	MinVersion        string
+	CipherSuites      []string
 }
 
 // ApplyTLSConfig get the option from command argument (tlsConfig), check the validity through k8s apiflag

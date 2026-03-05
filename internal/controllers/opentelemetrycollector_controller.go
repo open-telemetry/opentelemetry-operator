@@ -247,7 +247,7 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 
 	// We have a deletion, short circuit and let the deletion happen
 	// Remove finalizer if RBAC permission not available
-	deletionTimestamp, err := removeFinalizer(r, ctx, params, &instance)
+	deletionTimestamp, err := removeFinalizer(ctx, r, params, &instance)
 	if err != nil || deletionTimestamp != nil {
 		return ctrl.Result{}, err
 	}
@@ -384,7 +384,7 @@ func maybeAddFinalizer(params manifests.Params, instance *v1beta1.OpenTelemetryC
 	return false
 }
 
-func removeFinalizer(r *OpenTelemetryCollectorReconciler, ctx context.Context, params manifests.Params, instance *v1beta1.OpenTelemetryCollector) (*metav1.Time, error) {
+func removeFinalizer(ctx context.Context, r *OpenTelemetryCollectorReconciler, params manifests.Params, instance *v1beta1.OpenTelemetryCollector) (*metav1.Time, error) {
 	deletionTimestamp := instance.GetDeletionTimestamp()
 	if deletionTimestamp != nil || params.Config.CreateRBACPermissions != rbac.Available {
 		if controllerutil.ContainsFinalizer(instance, collectorFinalizer) {
