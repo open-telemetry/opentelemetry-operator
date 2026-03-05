@@ -247,7 +247,7 @@ func TestRemoveFinalizer(t *testing.T) {
 				},
 			}
 
-			deletionTS, err := removeFinalizer(reconciler, context.Background(), params, instance)
+			deletionTS, err := removeFinalizer(context.Background(), reconciler, params, instance)
 
 			if tc.expectError {
 				require.Error(t, err)
