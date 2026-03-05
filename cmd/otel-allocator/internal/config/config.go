@@ -76,6 +76,17 @@ type Config struct {
 	CollectorNotReadyGracePeriod time.Duration         `yaml:"collector_not_ready_grace_period,omitempty"`
 }
 
+const (
+	// WeightAnnotation is the pod annotation name used to specify a target's weight.
+	WeightAnnotation = "opentelemetry.io/target-allocation-weight"
+
+	// WeightAnnotationMetaLabel is the Kubernetes SD meta label that surfaces the weight annotation.
+	WeightAnnotationMetaLabel = "__meta_kubernetes_pod_annotation_opentelemetry_io_target_allocation_weight"
+
+	// DefaultWeight is the weight used when no weight is specified.
+	DefaultWeight = 1
+)
+
 type PrometheusCRConfig struct {
 	Enabled                         bool                          `yaml:"enabled,omitempty"`
 	AllowNamespaces                 []string                      `yaml:"allow_namespaces,omitempty"`

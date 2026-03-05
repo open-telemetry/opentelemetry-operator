@@ -34,9 +34,9 @@ func (*leastWeightedStrategy) GetCollectorForTarget(collectors map[string]*Colle
 	jobName := item.JobName
 	for _, v := range collectors {
 		// If the initial collector is empty, set the initial collector to the first element of map
-		if col == nil || v.NumTargets < col.NumTargets {
+		if col == nil || v.WeightedLoad < col.WeightedLoad {
 			col = v
-		} else if v.NumTargets == col.NumTargets {
+		} else if v.WeightedLoad == col.WeightedLoad {
 			vPerJob := v.TargetsPerJob[jobName]
 			colPerJob := col.TargetsPerJob[jobName]
 			// Tiebreaker: prefer collector with fewer targets from this job
