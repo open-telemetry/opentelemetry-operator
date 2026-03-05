@@ -12,19 +12,19 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 func TestInjectApacheHttpdagent(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.ApacheHttpd
+		insttypes.ApacheHttpd
 		pod      corev1.Pod
 		expected corev1.Pod
 	}{
 		{
 			name:        "Clone Container not present",
-			ApacheHttpd: v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
+			ApacheHttpd: insttypes.ApacheHttpd{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -114,7 +114,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 		// === Test ConfigPath configuration =============================
 		{
 			name: "ConfigPath honored",
-			ApacheHttpd: v1alpha1.ApacheHttpd{
+			ApacheHttpd: insttypes.ApacheHttpd{
 				Image:      "foo/bar:1",
 				ConfigPath: "/opt/customPath",
 			},
@@ -207,7 +207,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 		// === Test Removal of probes and lifecycle =============================
 		{
 			name:        "Init-container-incompatible fields not copied",
-			ApacheHttpd: v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
+			ApacheHttpd: insttypes.ApacheHttpd{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -314,7 +314,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 		// Pod Namespace specified
 		{
 			name:        "Pod Namespace specified",
-			ApacheHttpd: v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
+			ApacheHttpd: insttypes.ApacheHttpd{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "my-namespace",
@@ -416,7 +416,7 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, false, &test.pod.Spec.Containers[0], "http://otlp-endpoint:4317", resourceMap, v1alpha1.InstrumentationSpec{})
+			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, false, &test.pod.Spec.Containers[0], "http://otlp-endpoint:4317", resourceMap, insttypes.InstrumentationSpec{})
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -425,13 +425,13 @@ func TestInjectApacheHttpdagent(t *testing.T) {
 func TestInjectApacheHttpdagentUnknownNamespace(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.ApacheHttpd
+		insttypes.ApacheHttpd
 		pod      corev1.Pod
 		expected corev1.Pod
 	}{
 		{
 			name:        "Clone Container not present, unknown namespace",
-			ApacheHttpd: v1alpha1.ApacheHttpd{Image: "foo/bar:1"},
+			ApacheHttpd: insttypes.ApacheHttpd{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -526,7 +526,7 @@ func TestInjectApacheHttpdagentUnknownNamespace(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, false, &test.pod.Spec.Containers[0], "http://otlp-endpoint:4317", resourceMap, v1alpha1.InstrumentationSpec{})
+			pod := injectApacheHttpdagent(logr.Discard(), test.ApacheHttpd, test.pod, false, &test.pod.Spec.Containers[0], "http://otlp-endpoint:4317", resourceMap, insttypes.InstrumentationSpec{})
 			assert.Equal(t, test.expected, pod)
 		})
 	}

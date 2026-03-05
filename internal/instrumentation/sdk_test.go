@@ -21,8 +21,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 var testNamespace = corev1.Namespace{
@@ -107,25 +107,25 @@ func TestSDKInjection(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		inst     v1alpha1.Instrumentation
+		inst     insttypes.Instrumentation
 		pod      corev1.Pod
 		expected corev1.Pod
 	}{
 		{
 			name: "SDK env vars not defined",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{
-					Exporter: v1alpha1.Exporter{
+			inst: insttypes.Instrumentation{
+				Spec: insttypes.InstrumentationSpec{
+					Exporter: insttypes.Exporter{
 						Endpoint: "https://collector:4317",
 					},
-					Resource: v1alpha1.Resource{
+					Resource: insttypes.Resource{
 						AddK8sUIDAttributes: true,
 						Attributes: map[string]string{
 							"foo": "hidden",
 						},
 					},
-					Propagators: []v1alpha1.Propagator{"b3", "jaeger"},
-					Sampler: v1alpha1.Sampler{
+					Propagators: []insttypes.Propagator{"b3", "jaeger"},
+					Sampler: insttypes.Sampler{
 						Type:     "parentbased_traceidratio",
 						Argument: "0.25",
 					},
@@ -236,12 +236,12 @@ func TestSDKInjection(t *testing.T) {
 		},
 		{
 			name: "Resource attribute from CRD",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{
-					Exporter: v1alpha1.Exporter{
+			inst: insttypes.Instrumentation{
+				Spec: insttypes.InstrumentationSpec{
+					Exporter: insttypes.Exporter{
 						Endpoint: "https://collector:4317",
 					},
-					Resource: v1alpha1.Resource{
+					Resource: insttypes.Resource{
 						AddK8sUIDAttributes: true,
 						Attributes: map[string]string{
 							"k8s.container.name":  "explicit-container",
@@ -257,8 +257,8 @@ func TestSDKInjection(t *testing.T) {
 							"service.version":     "explicit-version",
 						},
 					},
-					Propagators: []v1alpha1.Propagator{"b3", "jaeger"},
-					Sampler: v1alpha1.Sampler{
+					Propagators: []insttypes.Propagator{"b3", "jaeger"},
+					Sampler: insttypes.Sampler{
 						Type:     "parentbased_traceidratio",
 						Argument: "0.25",
 					},
@@ -349,20 +349,20 @@ func TestSDKInjection(t *testing.T) {
 		},
 		{
 			name: "SDK env vars not defined - use labels for resource attributes",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{
-					Exporter: v1alpha1.Exporter{
+			inst: insttypes.Instrumentation{
+				Spec: insttypes.InstrumentationSpec{
+					Exporter: insttypes.Exporter{
 						Endpoint: "https://collector:4317",
 					},
-					Resource: v1alpha1.Resource{
+					Resource: insttypes.Resource{
 						AddK8sUIDAttributes: true,
 					},
-					Propagators: []v1alpha1.Propagator{"b3", "jaeger"},
-					Sampler: v1alpha1.Sampler{
+					Propagators: []insttypes.Propagator{"b3", "jaeger"},
+					Sampler: insttypes.Sampler{
 						Type:     "parentbased_traceidratio",
 						Argument: "0.25",
 					},
-					Defaults: v1alpha1.Defaults{
+					Defaults: insttypes.Defaults{
 						UseLabelsForResourceAttributes: true,
 					},
 				},
@@ -472,22 +472,22 @@ func TestSDKInjection(t *testing.T) {
 		},
 		{
 			name: "SDK env vars defined",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{
-					Exporter: v1alpha1.Exporter{
+			inst: insttypes.Instrumentation{
+				Spec: insttypes.InstrumentationSpec{
+					Exporter: insttypes.Exporter{
 						Endpoint: "https://collector:4317",
 					},
-					Resource: v1alpha1.Resource{
+					Resource: insttypes.Resource{
 						Attributes: map[string]string{
 							"fromcr": "val",
 						},
 					},
-					Propagators: []v1alpha1.Propagator{"jaeger"},
-					Sampler: v1alpha1.Sampler{
+					Propagators: []insttypes.Propagator{"jaeger"},
+					Sampler: insttypes.Sampler{
 						Type:     "parentbased_traceidratio",
 						Argument: "0.25",
 					},
-					Defaults: v1alpha1.Defaults{
+					Defaults: insttypes.Defaults{
 						UseLabelsForResourceAttributes: true,
 					},
 				},
@@ -589,8 +589,8 @@ func TestSDKInjection(t *testing.T) {
 		},
 		{
 			name: "Empty instrumentation spec",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{},
+			inst: insttypes.Instrumentation{
+				Spec: insttypes.InstrumentationSpec{},
 			},
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -667,7 +667,7 @@ func TestSDKInjection(t *testing.T) {
 		},
 		{
 			name: "SDK image with port number, no version",
-			inst: v1alpha1.Instrumentation{},
+			inst: insttypes.Instrumentation{},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -715,7 +715,7 @@ func TestSDKInjection(t *testing.T) {
 		},
 		{
 			name: "SDK image with port number, with version",
-			inst: v1alpha1.Instrumentation{},
+			inst: insttypes.Instrumentation{},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -763,18 +763,18 @@ func TestSDKInjection(t *testing.T) {
 		},
 		{
 			name: "Resource attribute propagate",
-			inst: v1alpha1.Instrumentation{
-				Spec: v1alpha1.InstrumentationSpec{
-					Exporter: v1alpha1.Exporter{
+			inst: insttypes.Instrumentation{
+				Spec: insttypes.InstrumentationSpec{
+					Exporter: insttypes.Exporter{
 						Endpoint: "https://collector:4317",
 					},
-					Resource: v1alpha1.Resource{
+					Resource: insttypes.Resource{
 						Attributes: map[string]string{
 							"fromcr": "val",
 						},
 					},
-					Propagators: []v1alpha1.Propagator{"jaeger"},
-					Sampler: v1alpha1.Sampler{
+					Propagators: []insttypes.Propagator{"jaeger"},
+					Sampler: insttypes.Sampler{
 						Type:     "parentbased_traceidratio",
 						Argument: "0.25",
 					},
@@ -892,13 +892,13 @@ func TestSDKInjection(t *testing.T) {
 }
 
 func TestInjectJava(t *testing.T) {
-	inst := v1alpha1.Instrumentation{
-		Spec: v1alpha1.InstrumentationSpec{
-			Java: v1alpha1.Java{
+	inst := insttypes.Instrumentation{
+		Spec: insttypes.InstrumentationSpec{
+			Java: insttypes.Java{
 				Image:     "img:1",
 				Resources: testResourceRequirements,
 			},
-			Exporter: v1alpha1.Exporter{
+			Exporter: insttypes.Exporter{
 				Endpoint: "https://collector:4317",
 			},
 		},
@@ -1016,13 +1016,13 @@ func TestInjectJava(t *testing.T) {
 }
 
 func TestInjectNodeJS(t *testing.T) {
-	inst := v1alpha1.Instrumentation{
-		Spec: v1alpha1.InstrumentationSpec{
-			NodeJS: v1alpha1.NodeJS{
+	inst := insttypes.Instrumentation{
+		Spec: insttypes.InstrumentationSpec{
+			NodeJS: insttypes.NodeJS{
 				Image:     "img:1",
 				Resources: testResourceRequirements,
 			},
-			Exporter: v1alpha1.Exporter{
+			Exporter: insttypes.Exporter{
 				Endpoint: "https://collector:4318",
 			},
 		},
@@ -1140,12 +1140,12 @@ func TestInjectNodeJS(t *testing.T) {
 }
 
 func TestInjectPython(t *testing.T) {
-	inst := v1alpha1.Instrumentation{
-		Spec: v1alpha1.InstrumentationSpec{
-			Python: v1alpha1.Python{
+	inst := insttypes.Instrumentation{
+		Spec: insttypes.InstrumentationSpec{
+			Python: insttypes.Python{
 				Image: "img:1",
 			},
-			Exporter: v1alpha1.Exporter{
+			Exporter: insttypes.Exporter{
 				Endpoint: "https://collector:4318",
 			},
 		},
@@ -1279,12 +1279,12 @@ func TestInjectPython(t *testing.T) {
 }
 
 func TestInjectDotNet(t *testing.T) {
-	inst := v1alpha1.Instrumentation{
-		Spec: v1alpha1.InstrumentationSpec{
-			DotNet: v1alpha1.DotNet{
+	inst := insttypes.Instrumentation{
+		Spec: insttypes.InstrumentationSpec{
+			DotNet: insttypes.DotNet{
 				Image: "img:1",
 			},
-			Exporter: v1alpha1.Exporter{
+			Exporter: insttypes.Exporter{
 				Endpoint: "https://collector:4318",
 			},
 		},
@@ -1441,9 +1441,9 @@ func TestInjectGo(t *testing.T) {
 			insts: languageInstrumentations{
 				Go: instrumentationWithContainers{
 					Containers: []string{"app"},
-					Instrumentation: &v1alpha1.Instrumentation{
-						Spec: v1alpha1.InstrumentationSpec{
-							Go: v1alpha1.Go{
+					Instrumentation: &insttypes.Instrumentation{
+						Spec: insttypes.InstrumentationSpec{
+							Go: insttypes.Go{
 								Image: "otel/go:1",
 							},
 						},
@@ -1476,9 +1476,9 @@ func TestInjectGo(t *testing.T) {
 			insts: languageInstrumentations{
 				Go: instrumentationWithContainers{
 					Containers: []string{"app"},
-					Instrumentation: &v1alpha1.Instrumentation{
-						Spec: v1alpha1.InstrumentationSpec{
-							Go: v1alpha1.Go{
+					Instrumentation: &insttypes.Instrumentation{
+						Spec: insttypes.InstrumentationSpec{
+							Go: insttypes.Go{
 								Image: "otel/go:1",
 							},
 						},
@@ -1509,9 +1509,9 @@ func TestInjectGo(t *testing.T) {
 			insts: languageInstrumentations{
 				Go: instrumentationWithContainers{
 					Containers: []string{"app"},
-					Instrumentation: &v1alpha1.Instrumentation{
-						Spec: v1alpha1.InstrumentationSpec{
-							Go: v1alpha1.Go{
+					Instrumentation: &insttypes.Instrumentation{
+						Spec: insttypes.InstrumentationSpec{
+							Go: insttypes.Go{
 								Image: "otel/go:1",
 								Env: []corev1.EnvVar{
 									{
@@ -1622,9 +1622,9 @@ func TestInjectGo(t *testing.T) {
 			insts: languageInstrumentations{
 				Go: instrumentationWithContainers{
 					Containers: []string{"app"},
-					Instrumentation: &v1alpha1.Instrumentation{
-						Spec: v1alpha1.InstrumentationSpec{
-							Go: v1alpha1.Go{
+					Instrumentation: &insttypes.Instrumentation{
+						Spec: insttypes.InstrumentationSpec{
+							Go: insttypes.Go{
 								Image: "otel/go:1",
 							},
 						},
@@ -1739,9 +1739,9 @@ func TestInjectGo(t *testing.T) {
 			insts: languageInstrumentations{
 				Go: instrumentationWithContainers{
 					Containers: []string{"app"},
-					Instrumentation: &v1alpha1.Instrumentation{
-						Spec: v1alpha1.InstrumentationSpec{
-							Go: v1alpha1.Go{
+					Instrumentation: &insttypes.Instrumentation{
+						Spec: insttypes.InstrumentationSpec{
+							Go: insttypes.Go{
 								Image: "otel/go:1",
 							},
 						},
@@ -1886,12 +1886,12 @@ func TestInjectApacheHttpd(t *testing.T) {
 			name: "injection enabled, exporter set",
 			insts: languageInstrumentations{
 				ApacheHttpd: instrumentationWithContainers{
-					Instrumentation: &v1alpha1.Instrumentation{
-						Spec: v1alpha1.InstrumentationSpec{
-							ApacheHttpd: v1alpha1.ApacheHttpd{
+					Instrumentation: &insttypes.Instrumentation{
+						Spec: insttypes.InstrumentationSpec{
+							ApacheHttpd: insttypes.ApacheHttpd{
 								Image: "img:1",
 							},
-							Exporter: v1alpha1.Exporter{
+							Exporter: insttypes.Exporter{
 								Endpoint: "https://collector:4318",
 							},
 						},
@@ -2059,16 +2059,16 @@ func TestInjectNginx(t *testing.T) {
 			name: "injection enabled, exporter set",
 			insts: languageInstrumentations{
 				Nginx: instrumentationWithContainers{
-					Instrumentation: &v1alpha1.Instrumentation{
-						Spec: v1alpha1.InstrumentationSpec{
-							Nginx: v1alpha1.Nginx{
+					Instrumentation: &insttypes.Instrumentation{
+						Spec: insttypes.InstrumentationSpec{
+							Nginx: insttypes.Nginx{
 								Image: "img:1",
 								Attrs: []corev1.EnvVar{{
 									Name:  "NginxModuleOtelMaxQueueSize",
 									Value: "4096",
 								}},
 							},
-							Exporter: v1alpha1.Exporter{
+							Exporter: insttypes.Exporter{
 								Endpoint: "http://otlp-endpoint:4317",
 							},
 						},
@@ -2234,9 +2234,9 @@ func TestInjectNginx(t *testing.T) {
 }
 
 func TestInjectSdkOnly(t *testing.T) {
-	inst := v1alpha1.Instrumentation{
-		Spec: v1alpha1.InstrumentationSpec{
-			Exporter: v1alpha1.Exporter{
+	inst := insttypes.Instrumentation{
+		Spec: insttypes.InstrumentationSpec{
+			Exporter: insttypes.Exporter{
 				Endpoint: "https://collector:4318",
 			},
 		},

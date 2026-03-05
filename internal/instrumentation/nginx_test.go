@@ -12,7 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 var nginxSdkInitContainerTestCommand = "echo -e $OTEL_NGINX_I13N_SCRIPT > /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && chmod +x /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && cat /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh && /opt/opentelemetry-webserver/agent/nginx_instrumentation.sh \"/opt/opentelemetry-webserver/agent\" \"/opt/opentelemetry-webserver/source-conf\" \"nginx.conf\" \"<<SID-PLACEHOLDER>>\""
@@ -22,13 +22,13 @@ var nginxSdkInitContainerI13nScript = "\nNGINX_AGENT_DIR_FULL=$1\t\\n\nNGINX_AGE
 func TestInjectNginxSDK(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.Nginx
+		insttypes.Nginx
 		pod      corev1.Pod
 		expected corev1.Pod
 	}{
 		{
 			name: "Clone Container not present",
-			Nginx: v1alpha1.Nginx{
+			Nginx: insttypes.Nginx{
 				Image: "foo/bar:1",
 				Attrs: []corev1.EnvVar{
 					{
@@ -138,7 +138,7 @@ func TestInjectNginxSDK(t *testing.T) {
 		// === Test ConfigFile configuration =============================
 		{
 			name: "ConfigFile honored",
-			Nginx: v1alpha1.Nginx{
+			Nginx: insttypes.Nginx{
 				Image:      "foo/bar:1",
 				ConfigFile: "/opt/nginx/custom-nginx.conf",
 			},
@@ -242,7 +242,7 @@ func TestInjectNginxSDK(t *testing.T) {
 		// === Test init-container-incompatible fields not copied =============================
 		{
 			name: "Init-container-incompatible fields not copied",
-			Nginx: v1alpha1.Nginx{
+			Nginx: insttypes.Nginx{
 				Image: "foo/bar:1",
 			},
 			pod: corev1.Pod{
@@ -363,7 +363,7 @@ func TestInjectNginxSDK(t *testing.T) {
 		// Pod Namespace specified
 		{
 			name:  "Pod Namespace specified",
-			Nginx: v1alpha1.Nginx{Image: "foo/bar:1"},
+			Nginx: insttypes.Nginx{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "my-namespace",
@@ -473,7 +473,7 @@ func TestInjectNginxSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectNginxSDK(logr.Discard(), test.Nginx, test.pod, false, &test.pod.Spec.Containers[0], "http://otlp-endpoint:4317", resourceMap, v1alpha1.InstrumentationSpec{})
+			pod := injectNginxSDK(logr.Discard(), test.Nginx, test.pod, false, &test.pod.Spec.Containers[0], "http://otlp-endpoint:4317", resourceMap, insttypes.InstrumentationSpec{})
 			assert.Equal(t, test.expected, pod)
 		})
 	}
@@ -482,13 +482,13 @@ func TestInjectNginxSDK(t *testing.T) {
 func TestInjectNginxUnknownNamespace(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.Nginx
+		insttypes.Nginx
 		pod      corev1.Pod
 		expected corev1.Pod
 	}{
 		{
 			name:  "Clone Container not present, unknown namespace",
-			Nginx: v1alpha1.Nginx{Image: "foo/bar:1"},
+			Nginx: insttypes.Nginx{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-nginx-6c44bcbdd",
@@ -595,7 +595,7 @@ func TestInjectNginxUnknownNamespace(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod := injectNginxSDK(logr.Discard(), test.Nginx, test.pod, false, &test.pod.Spec.Containers[0], "http://otlp-endpoint:4317", resourceMap, v1alpha1.InstrumentationSpec{})
+			pod := injectNginxSDK(logr.Discard(), test.Nginx, test.pod, false, &test.pod.Spec.Containers[0], "http://otlp-endpoint:4317", resourceMap, insttypes.InstrumentationSpec{})
 			assert.Equal(t, test.expected, pod)
 		})
 	}

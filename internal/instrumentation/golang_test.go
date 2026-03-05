@@ -11,8 +11,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 func TestInjectGoSDK(t *testing.T) {
@@ -22,7 +22,7 @@ func TestInjectGoSDK(t *testing.T) {
 
 	tests := []struct {
 		name string
-		v1alpha1.Go
+		insttypes.Go
 		pod      corev1.Pod
 		expected corev1.Pod
 		err      error
@@ -30,7 +30,7 @@ func TestInjectGoSDK(t *testing.T) {
 	}{
 		{
 			name: "shared process namespace disabled",
-			Go:   v1alpha1.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
+			Go:   insttypes.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					ShareProcessNamespace: &falsee,
@@ -45,7 +45,7 @@ func TestInjectGoSDK(t *testing.T) {
 		},
 		{
 			name: "using go-container-names",
-			Go:   v1alpha1.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
+			Go:   insttypes.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
@@ -67,7 +67,7 @@ func TestInjectGoSDK(t *testing.T) {
 		},
 		{
 			name: "using container-names",
-			Go:   v1alpha1.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
+			Go:   insttypes.Go{Image: "foo/bar:1", Env: []corev1.EnvVar{}},
 			pod: corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
@@ -86,7 +86,7 @@ func TestInjectGoSDK(t *testing.T) {
 		},
 		{
 			name: "pod annotation takes precedence",
-			Go: v1alpha1.Go{
+			Go: insttypes.Go{
 				Image: "foo/bar:1",
 				Env: []corev1.EnvVar{
 					{
@@ -149,7 +149,7 @@ func TestInjectGoSDK(t *testing.T) {
 		},
 		{
 			name: "use instrumentation env var",
-			Go: v1alpha1.Go{
+			Go: insttypes.Go{
 				Image: "foo/bar:1",
 				Env: []corev1.EnvVar{
 					{
@@ -210,7 +210,7 @@ func TestInjectGoSDK(t *testing.T) {
 		},
 		{
 			name: "inject env vars",
-			Go: v1alpha1.Go{
+			Go: insttypes.Go{
 				Image: "foo/bar:1",
 				Env: []corev1.EnvVar{
 					{
@@ -270,7 +270,7 @@ func TestInjectGoSDK(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			pod, err := injectGoSDK(test.Go, test.pod, test.config, v1alpha1.InstrumentationSpec{})
+			pod, err := injectGoSDK(test.Go, test.pod, test.config, insttypes.InstrumentationSpec{})
 			assert.Equal(t, test.expected, pod)
 			assert.Equal(t, test.err, err)
 		})

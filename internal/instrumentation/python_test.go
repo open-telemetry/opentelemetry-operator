@@ -11,23 +11,23 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 func TestInjectPythonSDK(t *testing.T) {
 	tests := []struct {
 		name string
-		v1alpha1.Python
+		insttypes.Python
 		pod              corev1.Pod
 		platform         string
 		expected         corev1.Pod
 		err              error
-		inst             v1alpha1.Instrumentation
+		inst             insttypes.Instrumentation
 		simulateDefaults bool
 	}{
 		{
 			name:   "PYTHONPATH not defined",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: insttypes.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -97,14 +97,14 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "spec.env overrides defaults",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: insttypes.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{}},
 				},
 			},
 			platform:         "glibc",
-			inst:             v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{Env: []corev1.EnvVar{{Name: "OTEL_METRICS_EXPORTER", Value: "none"}}}},
+			inst:             insttypes.Instrumentation{Spec: insttypes.InstrumentationSpec{Env: []corev1.EnvVar{{Name: "OTEL_METRICS_EXPORTER", Value: "none"}}}},
 			simulateDefaults: true,
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
@@ -148,14 +148,14 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "defaults applied when no spec.env",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: insttypes.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{}},
 				},
 			},
 			platform:         "glibc",
-			inst:             v1alpha1.Instrumentation{},
+			inst:             insttypes.Instrumentation{},
 			simulateDefaults: true,
 			expected: corev1.Pod{
 				Spec: corev1.PodSpec{
@@ -199,7 +199,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "PYTHONPATH defined",
-			Python: v1alpha1.Python{Image: "foo/bar:1", Resources: testResourceRequirements},
+			Python: insttypes.Python{Image: "foo/bar:1", Resources: testResourceRequirements},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -277,7 +277,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "OTEL_TRACES_EXPORTER defined",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: insttypes.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -354,7 +354,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "OTEL_METRICS_EXPORTER defined",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: insttypes.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -431,7 +431,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "OTEL_LOGS_EXPORTER defined",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: insttypes.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -507,7 +507,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "OTEL_EXPORTER_OTLP_PROTOCOL defined",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: insttypes.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -584,7 +584,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "PYTHONPATH defined as ValueFrom",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: insttypes.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -618,7 +618,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "musl platform defined",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: insttypes.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -688,7 +688,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "platform not defined",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: insttypes.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -758,7 +758,7 @@ func TestInjectPythonSDK(t *testing.T) {
 		},
 		{
 			name:   "platform not supported",
-			Python: v1alpha1.Python{Image: "foo/bar:1"},
+			Python: insttypes.Python{Image: "foo/bar:1"},
 			pod: corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -852,12 +852,16 @@ func TestInjectPythonSDK(t *testing.T) {
 	injector := sdkInjector{}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+<<<<<<< HEAD
 			pod := test.pod
 
 			// Collect all containers (regular first, then init)
 			containers := allContainers(&pod)
 
 			err := injectPythonSDK(test.Python, &pod, containers, test.platform, v1alpha1.InstrumentationSpec{})
+=======
+			pod, err := injectPythonSDK(test.Python, test.pod, &test.pod.Spec.Containers[0], test.platform, insttypes.InstrumentationSpec{})
+>>>>>>> 5a048138 ([chore] move types outside of CR definition)
 			if err != nil {
 				assert.Equal(t, test.expected, pod)
 				assert.Equal(t, test.err, err)

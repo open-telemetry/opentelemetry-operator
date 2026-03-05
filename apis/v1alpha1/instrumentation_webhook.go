@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
@@ -47,7 +48,7 @@ type InstrumentationWebhook struct {
 }
 
 func (w InstrumentationWebhook) Default(_ context.Context, obj runtime.Object) error {
-	instrumentation, ok := obj.(*Instrumentation)
+	instrumentation, ok := obj.(*types.Instrumentation)
 	if !ok {
 		return fmt.Errorf("expected an Instrumentation, received %T", obj)
 	}
@@ -55,7 +56,7 @@ func (w InstrumentationWebhook) Default(_ context.Context, obj runtime.Object) e
 }
 
 func (w InstrumentationWebhook) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	inst, ok := obj.(*Instrumentation)
+	inst, ok := obj.(*types.Instrumentation)
 	if !ok {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
 	}
@@ -63,7 +64,7 @@ func (w InstrumentationWebhook) ValidateCreate(_ context.Context, obj runtime.Ob
 }
 
 func (w InstrumentationWebhook) ValidateUpdate(_ context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	inst, ok := newObj.(*Instrumentation)
+	inst, ok := newObj.(*types.Instrumentation)
 	if !ok {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", newObj)
 	}
@@ -71,14 +72,14 @@ func (w InstrumentationWebhook) ValidateUpdate(_ context.Context, _, newObj runt
 }
 
 func (w InstrumentationWebhook) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	inst, ok := obj.(*Instrumentation)
+	inst, ok := obj.(*types.Instrumentation)
 	if !ok || inst == nil {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
 	}
 	return w.validate(inst)
 }
 
-func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
+func (w InstrumentationWebhook) defaulter(r *types.Instrumentation) error {
 	if r.Labels == nil {
 		r.Labels = map[string]string{}
 	}
@@ -198,12 +199,12 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	return nil
 }
 
-func (InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, error) {
+func (w InstrumentationWebhook) validate(r *types.Instrumentation) (admission.Warnings, error) {
 	var warnings []string
 	switch r.Spec.Type {
 	case "":
 		warnings = append(warnings, "sampler type not set")
-	case TraceIDRatio, ParentBasedTraceIDRatio:
+	case types.TraceIDRatio, types.ParentBasedTraceIDRatio:
 		if r.Spec.Argument != "" {
 			rate, err := strconv.ParseFloat(r.Spec.Argument, 64)
 			if err != nil {
@@ -213,7 +214,7 @@ func (InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, 
 				return warnings, fmt.Errorf("spec.sampler.argument should be in rage [0..1]: %s", r.Spec.Argument)
 			}
 		}
-	case JaegerRemote, ParentBasedJaegerRemote:
+	case types.JaegerRemote, types.ParentBasedJaegerRemote:
 		// value is a comma separated list of endpoint, pollingIntervalMs, initialSamplingRate
 		// Example: `endpoint=http://localhost:14250,pollingIntervalMs=5000,initialSamplingRate=0.25`
 		if r.Spec.Argument != "" {
@@ -223,7 +224,7 @@ func (InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, 
 				return warnings, fmt.Errorf("spec.sampler.argument is not a valid argument for sampler %s: %w", r.Spec.Type, err)
 			}
 		}
-	case AlwaysOn, AlwaysOff, ParentBasedAlwaysOn, ParentBasedAlwaysOff, XRaySampler:
+	case types.AlwaysOn, types.AlwaysOff, types.ParentBasedAlwaysOn, types.ParentBasedAlwaysOff, types.XRaySampler:
 	default:
 		return warnings, fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Type)
 	}
@@ -286,7 +287,7 @@ func (InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, 
 	return warnings, nil
 }
 
-func validateExporter(exporter Exporter) []string {
+func validateExporter(exporter types.Exporter) []string {
 	var warnings []string
 	if exporter.TLS != nil {
 		tls := exporter.TLS
@@ -358,8 +359,12 @@ func SetupInstrumentationWebhook(mgr ctrl.Manager, cfg config.Config) error {
 		cfg,
 	)
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(&Instrumentation{}).
+		For(&types.Instrumentation{}).
 		WithValidator(ivw).
 		WithDefaulter(ivw).
 		Complete()
+}
+
+func init() {
+	SchemeBuilder.Register(&types.Instrumentation{}, &types.InstrumentationList{})
 }

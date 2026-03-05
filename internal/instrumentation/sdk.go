@@ -27,8 +27,8 @@ import (
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
+	insttypes "github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
@@ -352,7 +352,7 @@ func getContainerByName(containerName string, pod *corev1.Pod) *corev1.Container
 	return container
 }
 
-func (*sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, container *corev1.Container) {
+func (*sdkInjector) injectCommonEnvVar(otelinst insttypes.Instrumentation, container *corev1.Container) {
 	idx := getIndexOfEnv(container.Env, constants.EnvPodIP)
 	if idx == -1 {
 		container.Env = append([]corev1.EnvVar{{
@@ -386,7 +386,7 @@ func (*sdkInjector) injectCommonEnvVar(otelinst v1alpha1.Instrumentation, contai
 }
 
 // injectDefaultJavaEnvVars injects default environment variables for Java.
-func (*sdkInjector) injectDefaultJavaEnvVars(container *corev1.Container, javaSpec v1alpha1.Java) {
+func (*sdkInjector) injectDefaultJavaEnvVars(container *corev1.Container, javaSpec insttypes.Java) {
 	container.Env = appendOrReplace(container.Env, getDefaultJavaEnvVars(container, javaSpec)...)
 }
 
@@ -414,7 +414,7 @@ func (*sdkInjector) injectDefaultDotNetEnvVarsWrapper(pod corev1.Pod, container 
 // and appIndex should be the same value.  This is true for dotnet, java, nodejs, and python instrumentations.
 // Go requires the agent to be a different container in the pod, so the agentIndex should represent this new sidecar
 // and appIndex should represent the application being instrumented.
-func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, container *corev1.Container, appContainer *corev1.Container) corev1.Pod {
+func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst insttypes.Instrumentation, ns corev1.Namespace, pod corev1.Pod, container *corev1.Container, appContainer *corev1.Container) corev1.Pod {
 	useLabelsForResourceAttributes := otelinst.Spec.Defaults.UseLabelsForResourceAttributes
 	resourceMap := i.createResourceMap(ctx, otelinst, ns, pod, appContainer)
 	idx := getIndexOfEnv(container.Env, constants.EnvOTELServiceName)
@@ -654,7 +654,7 @@ func createServiceInstanceId(pod corev1.Pod, namespaceName, podName, containerNa
 
 // createResourceMap creates resource attribute map.
 // User defined attributes (in explicitly set env var) have higher precedence.
-func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, container *corev1.Container) map[string]string {
+func (i *sdkInjector) createResourceMap(ctx context.Context, otelinst insttypes.Instrumentation, ns corev1.Namespace, pod corev1.Pod, container *corev1.Container) map[string]string {
 	// get existing resources env var and parse it into a map
 	existingRes := map[string]bool{}
 	existingResourceEnvIdx := getIndexOfEnv(container.Env, constants.EnvOTELResourceAttrs)

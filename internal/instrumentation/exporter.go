@@ -9,12 +9,12 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
 
-func configureExporter(exporter v1alpha1.Exporter, pod *corev1.Pod, container *corev1.Container) {
+func configureExporter(exporter types.Exporter, pod *corev1.Pod, container *corev1.Container) {
 	if exporter.Endpoint != "" {
 		container.Env = appendIfNotSet(container.Env, corev1.EnvVar{
 			Name:  constants.EnvOTELExporterOTLPEndpoint,

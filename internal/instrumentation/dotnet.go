@@ -9,7 +9,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
+	"github.com/open-telemetry/opentelemetry-operator/internal/instrumentation/types"
 )
 
 const (
@@ -39,7 +39,7 @@ const (
 	dotNetRuntimeLinuxMusl  = "linux-musl-x64"
 )
 
-func injectDotNetSDKToContainer(dotNetSpec v1alpha1.DotNet, container *corev1.Container, runtime string) error {
+func injectDotNetSDKToContainer(dotNetSpec types.DotNet, container *corev1.Container, runtime string) error {
 	volume := instrVolume(dotNetSpec.VolumeClaimTemplate, dotnetVolumeName, dotNetSpec.VolumeSizeLimit)
 
 	err := validateContainerEnv(container.Env, envDotNetStartupHook, envDotNetAdditionalDeps, envDotNetSharedStore)
@@ -72,7 +72,7 @@ func injectDotNetSDKToContainer(dotNetSpec v1alpha1.DotNet, container *corev1.Co
 	return nil
 }
 
-func injectDotNetSDKToPod(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, firstContainerName string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
+func injectDotNetSDKToPod(dotNetSpec types.DotNet, pod corev1.Pod, firstContainerName string, instSpec types.InstrumentationSpec) corev1.Pod {
 	volume := instrVolume(dotNetSpec.VolumeClaimTemplate, dotnetVolumeName, dotNetSpec.VolumeSizeLimit)
 
 	// We just inject Volumes and init containers for the first processed container.
@@ -98,7 +98,7 @@ func injectDotNetSDKToPod(dotNetSpec v1alpha1.DotNet, pod corev1.Pod, firstConta
 
 // injectDotNetSDK injects .NET instrumentation into the specified containers.
 // Containers must point into the provided pod and be ordered with init containers first.
-func injectDotNetSDK(dotNetSpec v1alpha1.DotNet, pod *corev1.Pod, containers []*corev1.Container, runtime string, instSpec v1alpha1.InstrumentationSpec) error {
+func injectDotNetSDK(dotNetSpec types.DotNet, pod *corev1.Pod, containers []*corev1.Container, runtime string, instSpec types.InstrumentationSpec) error {
 	for _, container := range containers {
 		if err := injectDotNetSDKToContainer(dotNetSpec, container, runtime); err != nil {
 			return err
