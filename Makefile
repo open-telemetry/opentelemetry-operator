@@ -321,7 +321,7 @@ add-rbac-permissions-to-operator: manifests kustomize
 .PHONY: deploy
 deploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
-	go run hack/check-operator-ready.go 300
+	kubectl wait --for=condition=available deployment/opentelemetry-operator-controller-manager -n opentelemetry-operator-system --timeout=300s
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: undeploy
