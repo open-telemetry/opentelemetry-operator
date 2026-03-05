@@ -115,7 +115,7 @@ func (a *allocator) SetFallbackStrategy(strategy Strategy) {
 
 // getTargetWeight returns the numeric weight for a target.
 // Resolution order: pod annotation meta label > default (1).
-func (a *allocator) getTargetWeight(tg *target.Item) int {
+func (_ *allocator) getTargetWeight(tg *target.Item) int {
 	// Check pod annotation (exposed as meta label by K8s SD)
 	if labelVal := tg.Labels.Get(config.WeightAnnotationMetaLabel); labelVal != "" {
 		if w, err := strconv.Atoi(labelVal); err == nil && w >= 1 && w <= 100 {
