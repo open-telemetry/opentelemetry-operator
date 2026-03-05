@@ -176,7 +176,6 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 
 	// if we have no ports, we don't need a service
 	if len(ports) == 0 {
-
 		params.Log.V(1).Info("the instance's configuration didn't yield any ports to open, skipping service", "instance.name", params.OtelCol.Name, "instance.namespace", params.OtelCol.Namespace)
 		return nil, err
 	}

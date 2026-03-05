@@ -180,11 +180,11 @@ func (c *Config) getRbacRulesForComponentKinds(logger logr.Logger, componentKind
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.
 			parser := retriever(componentName)
-			if parsedRules, err := parser.GetRBACRules(logger, cfg.Object[componentName]); err != nil {
+			parsedRules, err := parser.GetRBACRules(logger, cfg.Object[componentName])
+			if err != nil {
 				return nil, err
-			} else {
-				rules = append(rules, parsedRules...)
 			}
+			rules = append(rules, parsedRules...)
 		}
 	}
 	return rules, nil
@@ -217,11 +217,11 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 		for componentName := range enabledComponents[componentKind] {
 			// TODO: Clean up the naming here and make it simpler to use a retriever.
 			parser := retriever(componentName)
-			if parsedPorts, err := parser.Ports(logger, componentName, cfg.Object[componentName]); err != nil {
+			parsedPorts, err := parser.Ports(logger, componentName, cfg.Object[componentName])
+			if err != nil {
 				return nil, err
-			} else {
-				ports = append(ports, parsedPorts...)
 			}
+			ports = append(ports, parsedPorts...)
 		}
 	}
 
@@ -244,20 +244,16 @@ func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, co
 		case KindReceiver:
 			retriever = receivers.ReceiverFor
 			cfg = c.Receivers
-		case KindExporter:
-			continue
-		case KindProcessor:
-			continue
-		case KindExtension:
+		case KindExporter, KindProcessor, KindExtension:
 			continue
 		}
 		for componentName := range enabledComponents[componentKind] {
 			parser := retriever(componentName)
-			if parsedEnvVars, err := parser.GetEnvironmentVariables(logger, cfg.Object[componentName]); err != nil {
+			parsedEnvVars, err := parser.GetEnvironmentVariables(logger, cfg.Object[componentName])
+			if err != nil {
 				return nil, err
-			} else {
-				envVars = append(envVars, parsedEnvVars...)
 			}
+			envVars = append(envVars, parsedEnvVars...)
 		}
 	}
 
@@ -269,8 +265,9 @@ func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, co
 }
 
 // applyDefaultForComponentKinds applies defaults to the endpoints for the given ComponentKind(s).
+// If defaultsCfg.TLSProfile is set, TLS defaults are also applied via the Parser.GetDefaultConfig method.
 // Returns a list of events that should be recorded by the caller.
-func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]EventInfo, error) {
+func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, parserOpts []components.DefaultOption, componentKinds ...ComponentKind) ([]EventInfo, error) {
 	events, err := c.Service.ApplyDefaults(logger)
 	if err != nil {
 		return events, err
@@ -283,10 +280,9 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 		case KindReceiver:
 			retriever = receivers.ReceiverFor
 			cfg = c.Receivers
-		case KindExporter:
-			continue
-		case KindProcessor:
-			continue
+		case KindExporter, KindProcessor:
+			retriever = exporters.ParserFor
+			cfg = c.Exporters
 		case KindExtension:
 			if c.Extensions == nil {
 				continue
@@ -297,7 +293,7 @@ func (c *Config) applyDefaultForComponentKinds(logger logr.Logger, componentKind
 		for componentName := range enabledComponents[componentKind] {
 			parser := retriever(componentName)
 			componentConf := cfg.Object[componentName]
-			newCfg, err := parser.GetDefaultConfig(logger, componentConf)
+			newCfg, err := parser.GetDefaultConfig(logger, componentConf, parserOpts...)
 			if err != nil {
 				return events, err
 			}
@@ -353,8 +349,10 @@ func (c *Config) GetAllRbacRules(logger logr.Logger) ([]rbacv1.PolicyRule, error
 	return c.getRbacRulesForComponentKinds(logger, KindReceiver, KindExporter, KindProcessor, KindExtension)
 }
 
-func (c *Config) ApplyDefaults(logger logr.Logger) ([]EventInfo, error) {
-	return c.applyDefaultForComponentKinds(logger, KindReceiver, KindExtension)
+// ApplyDefaults applies default configuration values to the collector config.
+// Optional DefaultsOption arguments can be provided to customize behavior.
+func (c *Config) ApplyDefaults(logger logr.Logger, opts ...components.DefaultOption) ([]EventInfo, error) {
+	return c.applyDefaultForComponentKinds(logger, opts, KindReceiver, KindExporter, KindExtension)
 }
 
 // GetLivenessProbe gets the first enabled liveness probe. There should only ever be one extension enabled

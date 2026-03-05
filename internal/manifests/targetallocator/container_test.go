@@ -606,7 +606,7 @@ func TestContainerLifecycle(t *testing.T) {
 }
 
 func TestContainerEnvFrom(t *testing.T) {
-	//prepare
+	// prepare
 	envFrom1 := corev1.EnvFromSource{
 		SecretRef: &corev1.SecretEnvSource{
 			LocalObjectReference: corev1.LocalObjectReference{

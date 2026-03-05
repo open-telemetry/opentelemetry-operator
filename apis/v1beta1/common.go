@@ -241,6 +241,9 @@ type OpenTelemetryCommonFields struct {
 	// This is only applicable to Service resources.
 	// +optional
 	TrafficDistribution *string `json:"trafficDistribution,omitempty"`
+	// HostUsers isolates pod processes in a separate user namespace, reducing the risk of privilege escalation.
+	// +optional
+	HostUsers *bool `json:"hostUsers,omitempty"`
 }
 
 type StatefulSetCommonFields struct {

@@ -77,7 +77,6 @@ func (c *Cluster) getOperatorDeployment() (appsv1.Deployment, error) {
 	}
 
 	return operatorDeployments.Items[0], nil
-
 }
 
 func (c *Cluster) GetOperatorLogs() error {
@@ -157,7 +156,6 @@ func (c *Cluster) GetOLMInfo() error {
 	}
 	for _, o := range operators.Items {
 		writeToFile(outputDir, &o)
-
 	}
 
 	// OperatorGroups
@@ -184,7 +182,6 @@ func (c *Cluster) GetOLMInfo() error {
 	}
 	for _, o := range subscriptions.Items {
 		writeToFile(outputDir, &o)
-
 	}
 
 	// InstallPlan
@@ -386,7 +383,6 @@ func (c *Cluster) getOwnerResources(objList client.ObjectList, owner any) ([]cli
 		}
 	}
 	return resources, nil
-
 }
 
 func (c *Cluster) processResourceType(list client.ObjectList, owner any, folder string) error {

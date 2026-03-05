@@ -32,11 +32,11 @@ func (u VersionUpgrade) semVer() *semver.Version {
 	if len(u.Version.OpenTelemetryCollector) == 0 {
 		return &Latest.Version
 	}
-	if v, err := semver.NewVersion(u.Version.OpenTelemetryCollector); err != nil {
+	v, err := semver.NewVersion(u.Version.OpenTelemetryCollector)
+	if err != nil {
 		return &Latest.Version
-	} else {
-		return v
 	}
+	return v
 }
 
 // NeedsUpgrade checks if this CR needs to be upgraded.
@@ -141,8 +141,7 @@ func (u VersionUpgrade) ManagedInstance(_ context.Context, otelcol v1beta1.OpenT
 				}
 				u.Log.V(1).Info("step upgrade", "name", updated.Name, "namespace", updated.Namespace, "version", available.String())
 			} else {
-
-				upgraded, err := available.upgradeV1beta1(u, &updated) //available.upgrade(params., &updated)
+				upgraded, err := available.upgradeV1beta1(u, &updated) // available.upgrade(params., &updated)
 				if err != nil {
 					u.Log.Error(err, "failed to upgrade managed otelcol instance", "name", updated.Name, "namespace", updated.Namespace)
 					return updated, err

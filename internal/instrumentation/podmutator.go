@@ -133,9 +133,8 @@ func (langInsts *languageInstrumentations) setCommonInstrumentedContainers(ns co
 	var containers []string
 	if containersAnnotation == "" {
 		return nil
-	} else {
-		containers = strings.Split(containersAnnotation, ",")
 	}
+	containers = strings.Split(containersAnnotation, ",")
 
 	for _, lang := range instrumentationsList(langInsts) {
 		if lang.Instrumentation != nil {

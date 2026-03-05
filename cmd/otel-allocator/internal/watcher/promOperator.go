@@ -66,7 +66,7 @@ func NewPrometheusCRWatcher(
 	// we want to use endpointslices by default
 	serviceDiscoveryRole := monitoringv1.ServiceDiscoveryRole("EndpointSlice")
 
-	//no need to hardcode durations, use default if not set
+	// no need to hardcode durations, use default if not set
 	prom := &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cfg.CollectorNamespace,
@@ -187,7 +187,6 @@ func getNamespaceInformer(ctx context.Context, allowList, denyList map[string]st
 		operatorMetrics.NewInstrumentedListerWatcher(lw),
 		&v1.Namespace{}, resyncPeriod, cache.Indexers{},
 	), nil
-
 }
 
 // checkCRDAvailability checks if a specific CRD is available in the cluster.
@@ -314,7 +313,7 @@ func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.
 }
 
 // Watch wrapped informers and wait for an initial sync.
-func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors chan error) error {
+func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, _ chan error) error {
 	success := true
 	// this channel needs to be buffered because notifications are asynchronous and neither producers nor consumers wait
 	notifyEvents := make(chan struct{}, 1)
@@ -380,19 +379,19 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 		resource.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			// these functions only write to the notification channel if it's empty to avoid blocking
 			// if scrape config updates are being rate-limited
-			AddFunc: func(obj any) {
+			AddFunc: func(any) {
 				select {
 				case notifyEvents <- struct{}{}:
 				default:
 				}
 			},
-			UpdateFunc: func(oldObj, newObj any) {
+			UpdateFunc: func(any, any) {
 				select {
 				case notifyEvents <- struct{}{}:
 				default:
 				}
 			},
-			DeleteFunc: func(obj any) {
+			DeleteFunc: func(any) {
 				select {
 				case notifyEvents <- struct{}{}:
 				default:
@@ -525,10 +524,9 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 			}
 		}
 		return promCfg, nil
-	} else {
-		w.logger.Info("Unable to load config since resource selector is nil, returning empty prometheus config")
-		return promCfg, nil
 	}
+	w.logger.Info("Unable to load config since resource selector is nil, returning empty prometheus config")
+	return promCfg, nil
 }
 
 // WaitForNamedCacheSync adds a timeout to the informer's wait for the cache to be ready.

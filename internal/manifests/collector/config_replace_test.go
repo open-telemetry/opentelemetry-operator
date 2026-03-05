@@ -98,7 +98,6 @@ func TestPrometheusParser(t *testing.T) {
 		}
 		assert.True(t, cfg.TargetAllocConfig == nil)
 	})
-
 }
 
 func TestReplaceConfig(t *testing.T) {
@@ -117,7 +116,6 @@ func TestReplaceConfig(t *testing.T) {
 	})
 
 	t.Run("should remove scrape configs if TargetAllocator is enabled", func(t *testing.T) {
-
 		expectedConfigBytes, err := os.ReadFile("testdata/config_expected_targetallocator.yaml")
 		assert.NoError(t, err)
 		expectedConfig := string(expectedConfigBytes)

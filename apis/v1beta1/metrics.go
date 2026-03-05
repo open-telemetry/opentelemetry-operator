@@ -61,7 +61,7 @@ func BootstrapMetrics() (metric.MeterProvider, error) {
 	return sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter)), err
 }
 
-func NewMetrics(prv metric.MeterProvider, ctx context.Context, cl client.Reader) (*Metrics, error) {
+func NewMetrics(prv metric.MeterProvider, ctx context.Context, cl client.Reader) (*Metrics, error) { //nolint:revive //context-as-argument
 	meter := prv.Meter(meterName)
 	modeCounter, err := meter.Int64UpDownCounter(modeMetricName)
 	if err != nil {
@@ -137,7 +137,6 @@ func (m *Metrics) update(ctx context.Context, oldCollector *OpenTelemetryCollect
 }
 
 func (m *Metrics) updateGeneralCRMetricsComponents(ctx context.Context, collector *OpenTelemetryCollector, up bool) {
-
 	inc := 1
 	if !up {
 		inc = -1
@@ -155,7 +154,6 @@ func (m *Metrics) updateComponentCounters(ctx context.Context, collector *OpenTe
 	moveCounter(ctx, collector, components.processors, m.processorCounter, up)
 	moveCounter(ctx, collector, components.extensions, m.extensionsCounter, up)
 	moveCounter(ctx, collector, components.connectors, m.connectorsCounter, up)
-
 }
 
 func extractElements(elements map[string]any) []string {
@@ -178,7 +176,6 @@ func extractElements(elements map[string]any) []string {
 }
 
 func getComponentsFromConfig(yamlContent Config) *componentDefinitions {
-
 	info := &componentDefinitions{
 		receivers: extractElements(yamlContent.Receivers.Object),
 		exporters: extractElements(yamlContent.Exporters.Object),

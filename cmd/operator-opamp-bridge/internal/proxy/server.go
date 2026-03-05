@@ -68,7 +68,7 @@ func (s *OpAMPProxy) Start() error {
 		Settings: server.Settings{
 			CustomCapabilities: []string{},
 			Callbacks: server.CallbacksStruct{
-				OnConnectingFunc: func(request *http.Request) types.ConnectionResponse {
+				OnConnectingFunc: func(*http.Request) types.ConnectionResponse {
 					return types.ConnectionResponse{
 						Accept: true,
 						ConnectionCallbacks: server.ConnectionCallbacksStruct{
@@ -115,7 +115,7 @@ func (s *OpAMPProxy) onDisconnect(conn types.Connection) {
 	s.updatesChan <- struct{}{}
 }
 
-func (s *OpAMPProxy) onMessage(ctx context.Context, conn types.Connection, msg *protobufs.AgentToServer) *protobufs.ServerToAgent {
+func (s *OpAMPProxy) onMessage(_ context.Context, conn types.Connection, msg *protobufs.AgentToServer) *protobufs.ServerToAgent {
 	// Start building the response.
 	response := &protobufs.ServerToAgent{}
 

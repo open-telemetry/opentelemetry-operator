@@ -479,8 +479,7 @@ func tov1alpha1TA(in v1beta1.TargetAllocatorEmbedded) OpenTelemetryTargetAllocat
 }
 
 func tov1alpha1TAFilterStrategy(strategy v1beta1.TargetAllocatorFilterStrategy) string {
-	switch strategy {
-	case v1beta1.TargetAllocatorFilterStrategyRelabelConfig:
+	if strategy == v1beta1.TargetAllocatorFilterStrategyRelabelConfig {
 		return string(strategy)
 	}
 	return ""

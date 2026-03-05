@@ -82,7 +82,6 @@ func TestNumRemapped(t *testing.T) {
 }
 
 func TestTargetsWithNoCollectorsConsistentHashing(t *testing.T) {
-
 	c, _ := New("consistent-hashing", logger)
 
 	// Adding 10 new targets

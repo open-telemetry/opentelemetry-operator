@@ -70,7 +70,7 @@ func (w TargetAllocatorWebhook) ValidateDelete(ctx context.Context, obj runtime.
 	return w.validate(ctx, otelcol)
 }
 
-func (w TargetAllocatorWebhook) defaulter(ta *TargetAllocator) error {
+func (TargetAllocatorWebhook) defaulter(ta *TargetAllocator) error {
 	if ta.Labels == nil {
 		ta.Labels = map[string]string{}
 	}

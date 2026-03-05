@@ -1,0 +1,23 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: java
+spec:
+  env:
+    - name: OTEL_TRACES_SAMPLER
+      value: always_on
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_LOGS_EXPORTER
+      value: none
+  exporter:
+    endpoint: http://deployment-collector:4318
+  propagators:
+    - jaeger
+    - b3
+  java:
+    env:
+    - name: OTEL_JAVAAGENT_DEBUG
+      value: "true"
+    - name: OTEL_INSTRUMENTATION_JDBC_ENABLED
+      value: "false"

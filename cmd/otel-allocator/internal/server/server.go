@@ -277,7 +277,7 @@ func (s *Server) JobsHandler(c *gin.Context) {
 	s.jsonHandler(c.Writer, displayData)
 }
 
-func (s *Server) LivenessProbeHandler(c *gin.Context) {
+func (*Server) LivenessProbeHandler(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
@@ -602,7 +602,7 @@ func (s *Server) ScrapeConfigsHTMLHandler(c *gin.Context) {
 	WriteHTMLPageHeader(c.Writer, HeaderData{
 		Title: "OpenTelemetry Target Allocator - Scrape Configs",
 	})
-	//s.scrapeConfigResponse
+	// s.scrapeConfigResponse
 	// Marshal the scrape config to JSON
 	scrapeConfigs := make(map[string]any)
 	err := json.Unmarshal(s.scrapeConfigResponse, &scrapeConfigs)

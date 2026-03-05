@@ -463,6 +463,40 @@ func TestDeploymentHostNetwork(t *testing.T) {
 	assert.Equal(t, d2.Spec.Template.Spec.DNSPolicy, v1.DNSClusterFirstWithHostNet)
 }
 
+func TestDeploymentHostUsers(t *testing.T) {
+	// Test default (unset)
+	targetAllocator := targetAllocatorInstance()
+	otelcol := collectorInstance()
+	params := Params{
+		Collector:       otelcol,
+		TargetAllocator: targetAllocator,
+		Config:          config.New(),
+		Log:             logger,
+	}
+
+	d1, err := Deployment(params)
+	require.NoError(t, err)
+	assert.Nil(t, d1.Spec.Template.Spec.HostUsers)
+
+	// Test hostUsers=true
+	hostUsersTrue := true
+	params.TargetAllocator.Spec.HostUsers = &hostUsersTrue
+
+	d2, err := Deployment(params)
+	require.NoError(t, err)
+	require.NotNil(t, d2.Spec.Template.Spec.HostUsers)
+	assert.True(t, *d2.Spec.Template.Spec.HostUsers)
+
+	// Test hostUsers=false
+	hostUsersFalse := false
+	params.TargetAllocator.Spec.HostUsers = &hostUsersFalse
+
+	d3, err := Deployment(params)
+	require.NoError(t, err)
+	require.NotNil(t, d3.Spec.Template.Spec.HostUsers)
+	assert.False(t, *d3.Spec.Template.Spec.HostUsers)
+}
+
 func TestDeploymentShareProcessNamespace(t *testing.T) {
 	// Test default
 	targetAllocator := targetAllocatorInstance()

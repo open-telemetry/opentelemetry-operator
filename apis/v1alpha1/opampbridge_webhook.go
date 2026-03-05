@@ -34,7 +34,7 @@ type OpAMPBridgeWebhook struct {
 	scheme *runtime.Scheme
 }
 
-func (o *OpAMPBridgeWebhook) Default(ctx context.Context, obj runtime.Object) error {
+func (o *OpAMPBridgeWebhook) Default(_ context.Context, obj runtime.Object) error {
 	opampBridge, ok := obj.(*OpAMPBridge)
 	if !ok {
 		return fmt.Errorf("expected an OpAMPBridge, received %T", obj)
@@ -42,7 +42,7 @@ func (o *OpAMPBridgeWebhook) Default(ctx context.Context, obj runtime.Object) er
 	return o.defaulter(opampBridge)
 }
 
-func (o *OpAMPBridgeWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (o *OpAMPBridgeWebhook) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	opampBridge, ok := obj.(*OpAMPBridge)
 	if !ok {
 		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", obj)
@@ -50,7 +50,7 @@ func (o *OpAMPBridgeWebhook) ValidateCreate(ctx context.Context, obj runtime.Obj
 	return o.validate(opampBridge)
 }
 
-func (o *OpAMPBridgeWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (o *OpAMPBridgeWebhook) ValidateUpdate(_ context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
 	opampBridge, ok := newObj.(*OpAMPBridge)
 	if !ok {
 		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", newObj)
@@ -58,7 +58,7 @@ func (o *OpAMPBridgeWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj 
 	return o.validate(opampBridge)
 }
 
-func (o *OpAMPBridgeWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (o *OpAMPBridgeWebhook) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	opampBridge, ok := obj.(*OpAMPBridge)
 	if !ok || opampBridge == nil {
 		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", obj)
@@ -66,7 +66,7 @@ func (o *OpAMPBridgeWebhook) ValidateDelete(ctx context.Context, obj runtime.Obj
 	return o.validate(opampBridge)
 }
 
-func (o *OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
+func (*OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
 	if len(r.Spec.UpgradeStrategy) == 0 {
 		r.Spec.UpgradeStrategy = UpgradeStrategyAutomatic
 	}
@@ -90,7 +90,7 @@ func (o *OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
 	return nil
 }
 
-func (o *OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error) {
+func (*OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 
 	// validate OpAMP server endpoint

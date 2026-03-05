@@ -32,7 +32,7 @@ type kubeletStatsConfig struct {
 	AuthType            string   `mapstructure:"auth_type"`
 }
 
-func generateKubeletStatsEnvVars(_ logr.Logger, config kubeletStatsConfig) ([]corev1.EnvVar, error) {
+func generateKubeletStatsEnvVars(logr.Logger, kubeletStatsConfig) ([]corev1.EnvVar, error) {
 	// The documentation mentions that the K8S_NODE_NAME environment variable is required when using the serviceAccount auth type.
 	// Also, it mentions that it is a good idea to use it for the Read Only Endpoint. Added always to make it easier for users.
 	// https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/kubeletstatsreceiver/README.md

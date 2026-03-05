@@ -155,7 +155,7 @@ MANIFESTS_DIR = config/manifests/$(BUNDLE_VARIANT)
 BUNDLE_BUILD_GEN_FLAGS ?= $(BUNDLE_GEN_FLAGS) --output-dir . --kustomize-dir ../../$(MANIFESTS_DIR)
 
 MIN_KUBERNETES_VERSION ?= 1.25.0
-MIN_OPENSHIFT_VERSION ?= 4.14
+MIN_OPENSHIFT_VERSION ?= 4.12
 
 ## On MacOS, use gsed instead of sed, to make sed behavior
 ## consistent with Linux.
@@ -321,7 +321,7 @@ add-rbac-permissions-to-operator: manifests kustomize
 .PHONY: deploy
 deploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
-	go run hack/check-operator-ready.go 300
+	kubectl wait --for=condition=available deployment/opentelemetry-operator-controller-manager -n opentelemetry-operator-system --timeout=300s
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: undeploy

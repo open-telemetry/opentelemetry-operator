@@ -262,7 +262,7 @@ func (a *autoDetect) OpAmpBridgeAvailablity() (opampbridge.Availability, error) 
 	return opampbridge.NotAvailable, nil
 }
 
-func (a *autoDetect) FIPSEnabled(_ context.Context) bool {
+func (*autoDetect) FIPSEnabled(context.Context) bool {
 	return fips.IsFipsEnabled()
 }
 

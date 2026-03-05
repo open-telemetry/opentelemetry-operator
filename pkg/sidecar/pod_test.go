@@ -394,5 +394,4 @@ func TestAddSidecarWithAditionalEnv(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, changed.Spec.Containers, 2)
 	assert.Contains(t, changed.Spec.Containers[1].Env, extraEnv)
-
 }

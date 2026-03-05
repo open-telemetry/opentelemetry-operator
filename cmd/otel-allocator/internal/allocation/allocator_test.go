@@ -162,7 +162,6 @@ func TestAddingAndRemovingCollectors(t *testing.T) {
 // Tests that two targets with the same target url and job name but different label set are both added.
 func TestAllocationCollision(t *testing.T) {
 	RunForAllStrategies(t, func(t *testing.T, allocator Allocator) {
-
 		cols := MakeNCollectors(3, 0)
 		allocator.SetCollectors(cols)
 		firstLabels := labels.New(labels.Label{Name: "test", Value: "test1"})
