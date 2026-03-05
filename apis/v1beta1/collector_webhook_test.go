@@ -1769,6 +1769,192 @@ func TestValidationViaCRDAnnotations(t *testing.T) {
 	}
 }
 
+func TestOTLPExporterMigration(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    v1beta1.Config
+		expected v1beta1.Config
+		events   int // number of migration events expected
+	}{
+		{
+			name: "migrate otlp to otlp_grpc",
+			input: v1beta1.Config{
+				Exporters: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"otlp": map[string]interface{}{
+							"endpoint": "localhost:4317",
+						},
+					},
+				},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"traces": {
+							Receivers: []string{"otlp"},
+							Exporters: []string{"otlp"},
+						},
+					},
+				},
+			},
+			expected: v1beta1.Config{
+				Exporters: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"otlp_grpc": map[string]interface{}{
+							"endpoint": "localhost:4317",
+						},
+					},
+				},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"traces": {
+							Receivers: []string{"otlp"},
+							Exporters: []string{"otlp_grpc"},
+						},
+					},
+				},
+			},
+			events: 1,
+		},
+		{
+			name: "migrate otlphttp to otlp_http",
+			input: v1beta1.Config{
+				Exporters: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"otlphttp": map[string]interface{}{
+							"endpoint": "http://localhost:4318",
+						},
+					},
+				},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"metrics": {
+							Receivers: []string{"prometheus"},
+							Exporters: []string{"otlphttp"},
+						},
+					},
+				},
+			},
+			expected: v1beta1.Config{
+				Exporters: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"otlp_http": map[string]interface{}{
+							"endpoint": "http://localhost:4318",
+						},
+					},
+				},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"metrics": {
+							Receivers: []string{"prometheus"},
+							Exporters: []string{"otlp_http"},
+						},
+					},
+				},
+			},
+			events: 1,
+		},
+		{
+			name: "migrate both otlp and otlphttp",
+			input: v1beta1.Config{
+				Exporters: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"otlp": map[string]interface{}{
+							"endpoint": "localhost:4317",
+						},
+						"otlphttp": map[string]interface{}{
+							"endpoint": "http://localhost:4318",
+						},
+					},
+				},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"traces": {
+							Receivers: []string{"otlp"},
+							Exporters: []string{"otlp", "otlphttp"},
+						},
+					},
+				},
+			},
+			expected: v1beta1.Config{
+				Exporters: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"otlp_grpc": map[string]interface{}{
+							"endpoint": "localhost:4317",
+						},
+						"otlp_http": map[string]interface{}{
+							"endpoint": "http://localhost:4318",
+						},
+					},
+				},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"traces": {
+							Receivers: []string{"otlp"},
+							Exporters: []string{"otlp_grpc", "otlp_http"},
+						},
+					},
+				},
+			},
+			events: 2,
+		},
+		{
+			name: "no migration needed",
+			input: v1beta1.Config{
+				Exporters: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"otlp_grpc": map[string]interface{}{
+							"endpoint": "localhost:4317",
+						},
+					},
+				},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"traces": {
+							Receivers: []string{"otlp"},
+							Exporters: []string{"otlp_grpc"},
+						},
+					},
+				},
+			},
+			expected: v1beta1.Config{
+				Exporters: v1beta1.AnyConfig{
+					Object: map[string]interface{}{
+						"otlp_grpc": map[string]interface{}{
+							"endpoint": "localhost:4317",
+						},
+					},
+				},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"traces": {
+							Receivers: []string{"otlp"},
+							Exporters: []string{"otlp_grpc"},
+						},
+					},
+				},
+			},
+			events: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := tt.input
+			events := v1beta1.MigrateOTLPExporters(&config)
+
+			assert.Equal(t, tt.expected.Exporters.Object, config.Exporters.Object)
+			assert.Equal(t, tt.expected.Service.Pipelines, config.Service.Pipelines)
+			assert.Len(t, events, tt.events)
+
+			// Verify warning events contain correct info
+			for _, event := range events {
+				assert.Equal(t, "Warning", event.Type)
+				assert.Equal(t, "ExporterRenamed", event.Reason)
+				assert.Contains(t, event.Message, "automatically renamed")
+			}
+		})
+	}
+}
+
 func getReviewer(shouldFailSAR bool) *rbac.Reviewer {
 	c := fake.NewSimpleClientset()
 	c.PrependReactor("create", "subjectaccessreviews", func(action kubeTesting.Action) (handled bool, ret runtime.Object, err error) {

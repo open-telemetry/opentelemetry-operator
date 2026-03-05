@@ -106,6 +106,11 @@ func (c CollectorWebhook) Default(_ context.Context, obj runtime.Object) error {
 	if err != nil {
 		return err
 	}
+
+	// Migrate deprecated OTLP exporter names
+	migrationEvents := MigrateOTLPExporters(&otelcol.Spec.Config)
+	events = append(events, migrationEvents...)
+
 	for _, event := range events {
 		if c.recorder != nil {
 			c.recorder.Event(otelcol, event.Type, event.Reason, event.Message)
@@ -378,6 +383,75 @@ func ValidatePorts(ports []PortsSpec) error {
 		}
 	}
 	return nil
+}
+
+// MigrateOTLPExporters renames deprecated OTLP exporter names to their new names.
+// otlp -> otlp_grpc, otlphttp -> otlp_http
+// This ensures new collectors use the correct names even before an upgrade runs.
+func MigrateOTLPExporters(config *Config) []EventInfo {
+	var events []EventInfo
+
+	if config.Exporters.Object == nil {
+		return events
+	}
+
+	// Track renames for pipeline updates
+	renames := make(map[string]string)
+	exportersToRename := make(map[string]string)
+
+	// Identify exporters that need renaming
+	for exporterName := range config.Exporters.Object {
+		newName := ""
+		if exporterName == "otlp" {
+			newName = "otlp_grpc"
+		} else if strings.HasPrefix(exporterName, "otlp/") {
+			newName = strings.Replace(exporterName, "otlp/", "otlp_grpc/", 1)
+		} else if exporterName == "otlphttp" {
+			newName = "otlp_http"
+		} else if strings.HasPrefix(exporterName, "otlphttp/") {
+			newName = strings.Replace(exporterName, "otlphttp/", "otlp_http/", 1)
+		}
+
+		if newName != "" {
+			exportersToRename[exporterName] = newName
+			renames[exporterName] = newName
+		}
+	}
+
+	// Apply renames to exporters
+	for oldName, newName := range exportersToRename {
+		exporterConfig := config.Exporters.Object[oldName]
+		config.Exporters.Object[newName] = exporterConfig
+		delete(config.Exporters.Object, oldName)
+
+		// Record warning event
+		events = append(events, EventInfo{
+			Type:    "Warning",
+			Reason:  "ExporterRenamed",
+			Message: fmt.Sprintf("Deprecated exporter '%s' was automatically renamed to '%s'. Please update your configuration to use the new name.", oldName, newName),
+		})
+	}
+
+	// Update pipeline references
+	if config.Service.Pipelines != nil {
+		for pipelineName, pipeline := range config.Service.Pipelines {
+			if pipeline == nil {
+				continue
+			}
+
+			// Update exporters in this pipeline
+			for i, exporterName := range pipeline.Exporters {
+				if newName, ok := renames[exporterName]; ok {
+					pipeline.Exporters[i] = newName
+				}
+			}
+
+			// Update the pipeline back to the map
+			config.Service.Pipelines[pipelineName] = pipeline
+		}
+	}
+
+	return events
 }
 
 func checkAutoscalerSpec(autoscaler *AutoscalerSpec) error {
