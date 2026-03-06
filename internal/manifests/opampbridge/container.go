@@ -30,7 +30,7 @@ func Container(cfg config.Config, _ logr.Logger, opampBridge v1alpha1.OpAMPBridg
 		volumeMounts = append(volumeMounts, opampBridge.Spec.VolumeMounts...)
 	}
 
-	var envVars = opampBridge.Spec.Env
+	envVars := opampBridge.Spec.Env
 	if opampBridge.Spec.Env == nil {
 		envVars = []corev1.EnvVar{}
 	}

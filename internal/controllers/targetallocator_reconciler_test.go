@@ -30,9 +30,7 @@ import (
 
 var testLogger = logf.Log.WithName("opamp-bridge-controller-unit-tests")
 
-var (
-	testScheme *runtime.Scheme = scheme.Scheme
-)
+var testScheme *runtime.Scheme = scheme.Scheme
 
 func init() {
 	utilruntime.Must(monitoringv1.AddToScheme(testScheme))

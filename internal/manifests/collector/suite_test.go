@@ -67,7 +67,6 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 			},
 			Spec: v1beta1.OpenTelemetryCollectorSpec{
 				OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-
 					Image: "ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.47.0",
 					Ports: []v1beta1.PortsSpec{
 						{
@@ -93,7 +92,7 @@ func paramsWithMode(mode v1beta1.Mode) manifests.Params {
 	}
 }
 
-func newParams(taContainerImage string, file string, cfg *config.Config) (manifests.Params, error) {
+func newParams(taContainerImage, file string, cfg *config.Config) (manifests.Params, error) {
 	replicas := int32(1)
 	var configYAML []byte
 	var err error
