@@ -36,136 +36,134 @@ func NewScraperParser(name string) *components.GenericParser[any] {
 	return components.NewBuilder[any]().WithName(name).WithPort(components.UnsetPort).MustBuild()
 }
 
-var (
-	componentParsers = []components.Parser{
-		components.NewMultiPortReceiverBuilder("otlp").
-			AddPortMapping(components.NewProtocolBuilder("grpc", 4317).
-				WithAppProtocol(&components.GrpcProtocol).
-				WithTargetPort(4317)).
-			AddPortMapping(components.NewProtocolBuilder("http", 4318).
-				WithAppProtocol(&components.HttpProtocol).
-				WithTargetPort(4318)).
-			MustBuild(),
-		components.NewMultiPortReceiverBuilder("skywalking").
-			AddPortMapping(components.NewProtocolBuilder(components.GrpcProtocol, 11800).
-				WithTargetPort(11800).
-				WithAppProtocol(&components.GrpcProtocol)).
-			AddPortMapping(components.NewProtocolBuilder(components.HttpProtocol, 12800).
-				WithTargetPort(12800).
-				WithAppProtocol(&components.HttpProtocol)).
-			MustBuild(),
-		components.NewMultiPortReceiverBuilder("jaeger").
-			AddPortMapping(components.NewProtocolBuilder(components.GrpcProtocol, 14250).
-				WithTargetPort(14250).
-				WithProtocol(corev1.ProtocolTCP).
-				WithAppProtocol(&components.GrpcProtocol)).
-			AddPortMapping(components.NewProtocolBuilder("thrift_http", 14268).
-				WithTargetPort(14268).
-				WithProtocol(corev1.ProtocolTCP).
-				WithAppProtocol(&components.HttpProtocol)).
-			AddPortMapping(components.NewProtocolBuilder("thrift_compact", 6831).
-				WithTargetPort(6831).
-				WithProtocol(corev1.ProtocolUDP)).
-			AddPortMapping(components.NewProtocolBuilder("thrift_binary", 6832).
-				WithTargetPort(6832).
-				WithProtocol(corev1.ProtocolUDP)).
-			MustBuild(),
-		components.NewMultiPortReceiverBuilder("loki").
-			AddPortMapping(components.NewProtocolBuilder(components.GrpcProtocol, 9095).
-				WithTargetPort(9095).
-				WithAppProtocol(&components.GrpcProtocol)).
-			AddPortMapping(components.NewProtocolBuilder(components.HttpProtocol, 3100).
-				WithTargetPort(3100).
-				WithAppProtocol(&components.HttpProtocol)).
-			MustBuild(),
-		components.NewSinglePortParserBuilder("awsxray", 2000).
-			WithTargetPort(2000).
-			WithProtocol(corev1.ProtocolUDP).
-			MustBuild(),
-		components.NewSinglePortParserBuilder("carbon", 2003).
-			WithTargetPort(2003).
-			MustBuild(),
-		components.NewSinglePortParserBuilder("collectd", 8081).
-			WithTargetPort(8081).
-			MustBuild(),
-		components.NewSinglePortParserBuilder("fluentforward", 8006).
-			WithTargetPort(8006).
-			MustBuild(),
-		components.NewSinglePortParserBuilder("influxdb", 8086).
-			WithTargetPort(8086).
-			MustBuild(),
-		components.NewSinglePortParserBuilder("sapm", 7276).
-			WithTargetPort(7276).
-			MustBuild(),
-		components.NewSinglePortParserBuilder("signalfx", 9943).
-			WithTargetPort(9943).
-			MustBuild(),
-		components.NewSinglePortParserBuilder("splunk_hec", 8088).
-			WithTargetPort(8088).
-			MustBuild(),
-		components.NewSinglePortParserBuilder("statsd", 8125).
-			WithProtocol(corev1.ProtocolUDP).
-			WithTargetPort(8125).
-			MustBuild(),
-		components.NewSinglePortParserBuilder("tcplog", components.UnsetPort).
-			WithProtocol(corev1.ProtocolTCP).
-			MustBuild(),
-		components.NewSinglePortParserBuilder("udplog", components.UnsetPort).
-			WithProtocol(corev1.ProtocolUDP).
-			MustBuild(),
-		components.NewSinglePortParserBuilder("wavefront", 2003).
-			WithTargetPort(2003).
-			MustBuild(),
-		components.NewSinglePortParserBuilder("zipkin", 9411).
+var componentParsers = []components.Parser{
+	components.NewMultiPortReceiverBuilder("otlp").
+		AddPortMapping(components.NewProtocolBuilder("grpc", 4317).
+			WithAppProtocol(&components.GrpcProtocol).
+			WithTargetPort(4317)).
+		AddPortMapping(components.NewProtocolBuilder("http", 4318).
 			WithAppProtocol(&components.HttpProtocol).
+			WithTargetPort(4318)).
+		MustBuild(),
+	components.NewMultiPortReceiverBuilder("skywalking").
+		AddPortMapping(components.NewProtocolBuilder(components.GrpcProtocol, 11800).
+			WithTargetPort(11800).
+			WithAppProtocol(&components.GrpcProtocol)).
+		AddPortMapping(components.NewProtocolBuilder(components.HttpProtocol, 12800).
+			WithTargetPort(12800).
+			WithAppProtocol(&components.HttpProtocol)).
+		MustBuild(),
+	components.NewMultiPortReceiverBuilder("jaeger").
+		AddPortMapping(components.NewProtocolBuilder(components.GrpcProtocol, 14250).
+			WithTargetPort(14250).
 			WithProtocol(corev1.ProtocolTCP).
+			WithAppProtocol(&components.GrpcProtocol)).
+		AddPortMapping(components.NewProtocolBuilder("thrift_http", 14268).
+			WithTargetPort(14268).
+			WithProtocol(corev1.ProtocolTCP).
+			WithAppProtocol(&components.HttpProtocol)).
+		AddPortMapping(components.NewProtocolBuilder("thrift_compact", 6831).
+			WithTargetPort(6831).
+			WithProtocol(corev1.ProtocolUDP)).
+		AddPortMapping(components.NewProtocolBuilder("thrift_binary", 6832).
+			WithTargetPort(6832).
+			WithProtocol(corev1.ProtocolUDP)).
+		MustBuild(),
+	components.NewMultiPortReceiverBuilder("loki").
+		AddPortMapping(components.NewProtocolBuilder(components.GrpcProtocol, 9095).
+			WithTargetPort(9095).
+			WithAppProtocol(&components.GrpcProtocol)).
+		AddPortMapping(components.NewProtocolBuilder(components.HttpProtocol, 3100).
 			WithTargetPort(3100).
-			MustBuild(),
-		components.NewBuilder[kubeletStatsConfig]().WithName("kubeletstats").
-			WithRbacGen(generateKubeletStatsRbacRules).
-			WithEnvVarGen(generateKubeletStatsEnvVars).
-			MustBuild(),
-		components.NewBuilder[k8seventsConfig]().WithName("k8s_events").
-			WithRbacGen(generatek8seventsRbacRules).
-			MustBuild(),
-		components.NewBuilder[k8sclusterConfig]().WithName("k8s_cluster").
-			WithRbacGen(generatek8sclusterRbacRules).
-			MustBuild(),
-		components.NewBuilder[k8sobjectsConfig]().WithName("k8sobjects").
-			WithRbacGen(generatek8sobjectsRbacRules).
-			MustBuild(),
-		NewScraperParser("prometheus"),
-		NewScraperParser("sshcheck"),
-		NewScraperParser("cloudfoundry"),
-		NewScraperParser("vcenter"),
-		NewScraperParser("oracledb"),
-		NewScraperParser("snmp"),
-		NewScraperParser("googlecloudpubsub"),
-		NewScraperParser("chrony"),
-		NewScraperParser("jmx"),
-		NewScraperParser("podman_stats"),
-		NewScraperParser("pulsar"),
-		NewScraperParser("docker_stats"),
-		NewScraperParser("aerospike"),
-		NewScraperParser("zookeeper"),
-		NewScraperParser("prometheus_simple"),
-		NewScraperParser("saphana"),
-		NewScraperParser("riak"),
-		NewScraperParser("redis"),
-		NewScraperParser("rabbitmq"),
-		NewScraperParser("purefb"),
-		NewScraperParser("postgresql"),
-		NewScraperParser("nsxt"),
-		NewScraperParser("nginx"),
-		NewScraperParser("mysql"),
-		NewScraperParser("memcached"),
-		NewScraperParser("httpcheck"),
-		NewScraperParser("haproxy"),
-		NewScraperParser("flinkmetrics"),
-		NewScraperParser("couchdb"),
-		NewScraperParser("filelog"),
-	}
-)
+			WithAppProtocol(&components.HttpProtocol)).
+		MustBuild(),
+	components.NewSinglePortParserBuilder("awsxray", 2000).
+		WithTargetPort(2000).
+		WithProtocol(corev1.ProtocolUDP).
+		MustBuild(),
+	components.NewSinglePortParserBuilder("carbon", 2003).
+		WithTargetPort(2003).
+		MustBuild(),
+	components.NewSinglePortParserBuilder("collectd", 8081).
+		WithTargetPort(8081).
+		MustBuild(),
+	components.NewSinglePortParserBuilder("fluentforward", 8006).
+		WithTargetPort(8006).
+		MustBuild(),
+	components.NewSinglePortParserBuilder("influxdb", 8086).
+		WithTargetPort(8086).
+		MustBuild(),
+	components.NewSinglePortParserBuilder("sapm", 7276).
+		WithTargetPort(7276).
+		MustBuild(),
+	components.NewSinglePortParserBuilder("signalfx", 9943).
+		WithTargetPort(9943).
+		MustBuild(),
+	components.NewSinglePortParserBuilder("splunk_hec", 8088).
+		WithTargetPort(8088).
+		MustBuild(),
+	components.NewSinglePortParserBuilder("statsd", 8125).
+		WithProtocol(corev1.ProtocolUDP).
+		WithTargetPort(8125).
+		MustBuild(),
+	components.NewSinglePortParserBuilder("tcplog", components.UnsetPort).
+		WithProtocol(corev1.ProtocolTCP).
+		MustBuild(),
+	components.NewSinglePortParserBuilder("udplog", components.UnsetPort).
+		WithProtocol(corev1.ProtocolUDP).
+		MustBuild(),
+	components.NewSinglePortParserBuilder("wavefront", 2003).
+		WithTargetPort(2003).
+		MustBuild(),
+	components.NewSinglePortParserBuilder("zipkin", 9411).
+		WithAppProtocol(&components.HttpProtocol).
+		WithProtocol(corev1.ProtocolTCP).
+		WithTargetPort(3100).
+		MustBuild(),
+	components.NewBuilder[kubeletStatsConfig]().WithName("kubeletstats").
+		WithRbacGen(generateKubeletStatsRbacRules).
+		WithEnvVarGen(generateKubeletStatsEnvVars).
+		MustBuild(),
+	components.NewBuilder[k8seventsConfig]().WithName("k8s_events").
+		WithRbacGen(generatek8seventsRbacRules).
+		MustBuild(),
+	components.NewBuilder[k8sclusterConfig]().WithName("k8s_cluster").
+		WithRbacGen(generatek8sclusterRbacRules).
+		MustBuild(),
+	components.NewBuilder[k8sobjectsConfig]().WithName("k8sobjects").
+		WithRbacGen(generatek8sobjectsRbacRules).
+		MustBuild(),
+	NewScraperParser("prometheus"),
+	NewScraperParser("sshcheck"),
+	NewScraperParser("cloudfoundry"),
+	NewScraperParser("vcenter"),
+	NewScraperParser("oracledb"),
+	NewScraperParser("snmp"),
+	NewScraperParser("googlecloudpubsub"),
+	NewScraperParser("chrony"),
+	NewScraperParser("jmx"),
+	NewScraperParser("podman_stats"),
+	NewScraperParser("pulsar"),
+	NewScraperParser("docker_stats"),
+	NewScraperParser("aerospike"),
+	NewScraperParser("zookeeper"),
+	NewScraperParser("prometheus_simple"),
+	NewScraperParser("saphana"),
+	NewScraperParser("riak"),
+	NewScraperParser("redis"),
+	NewScraperParser("rabbitmq"),
+	NewScraperParser("purefb"),
+	NewScraperParser("postgresql"),
+	NewScraperParser("nsxt"),
+	NewScraperParser("nginx"),
+	NewScraperParser("mysql"),
+	NewScraperParser("memcached"),
+	NewScraperParser("httpcheck"),
+	NewScraperParser("haproxy"),
+	NewScraperParser("flinkmetrics"),
+	NewScraperParser("couchdb"),
+	NewScraperParser("filelog"),
+}
 
 func init() {
 	for _, parser := range componentParsers {
