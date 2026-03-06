@@ -15,7 +15,6 @@ import (
 var logger = log.New(log.Default().Writer(), "[MAIN] ", log.Default().Flags()|log.Lmsgprefix|log.Lmicroseconds)
 
 func main() {
-
 	logger.Println("OpAMP Server starting...")
 	agents := data.NewAgents()
 	opampSrv := opampsrv.NewServer(agents)
