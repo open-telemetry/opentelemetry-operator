@@ -79,7 +79,8 @@ func configureExporter(exporter v1alpha1.Exporter, pod *corev1.Pod, container *c
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: exporter.TLS.SecretName,
 					},
-				}})
+				},
+			})
 		}
 		addVolumeMount := true
 		for _, vol := range container.VolumeMounts {
@@ -112,7 +113,8 @@ func configureExporter(exporter v1alpha1.Exporter, pod *corev1.Pod, container *c
 							Name: exporter.TLS.ConfigMapName,
 						},
 					},
-				}})
+				},
+			})
 		}
 		addVolumeMount := true
 		for _, vol := range container.VolumeMounts {

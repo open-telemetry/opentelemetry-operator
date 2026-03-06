@@ -44,27 +44,23 @@ var (
 	pathTypePrefix = networkingv1.PathTypePrefix
 )
 
-var (
-	opampbridgeSelectorLabels = map[string]string{
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		"app.kubernetes.io/part-of":    "opentelemetry",
-		"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
-		"app.kubernetes.io/instance":   "test.test",
-	}
-)
+var opampbridgeSelectorLabels = map[string]string{
+	"app.kubernetes.io/managed-by": "opentelemetry-operator",
+	"app.kubernetes.io/part-of":    "opentelemetry",
+	"app.kubernetes.io/component":  "opentelemetry-opamp-bridge",
+	"app.kubernetes.io/instance":   "test.test",
+}
 
-var (
-	taSelectorLabels = map[string]string{
-		"app.kubernetes.io/managed-by": "opentelemetry-operator",
-		"app.kubernetes.io/part-of":    "opentelemetry",
-		"app.kubernetes.io/component":  "opentelemetry-targetallocator",
-		"app.kubernetes.io/instance":   "test.test",
-		"app.kubernetes.io/name":       "test-targetallocator",
-	}
-)
+var taSelectorLabels = map[string]string{
+	"app.kubernetes.io/managed-by": "opentelemetry-operator",
+	"app.kubernetes.io/part-of":    "opentelemetry",
+	"app.kubernetes.io/component":  "opentelemetry-targetallocator",
+	"app.kubernetes.io/instance":   "test.test",
+	"app.kubernetes.io/name":       "test-targetallocator",
+}
 
 func TestBuildCollector(t *testing.T) {
-	var goodConfigYaml = `receivers:
+	goodConfigYaml := `receivers:
   examplereceiver:
     endpoint: "0.0.0.0:12345"
 exporters:
@@ -1054,7 +1050,6 @@ func TestBuildAll_OpAMPBridge(t *testing.T) {
 		wantErr bool
 	}{
 		{
-
 			name: "base case",
 			args: args{
 				instance: v1alpha1.OpAMPBridge{
@@ -1219,7 +1214,8 @@ componentsAllowed:
   receivers:
   - otlp
 endpoint: ws://opamp-server:4320/v1/opamp
-`},
+`,
+					},
 				},
 				&corev1.ServiceAccount{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1291,7 +1287,7 @@ endpoint: ws://opamp-server:4320/v1/opamp
 }
 
 func TestBuildCollectorTargetAllocatorCR(t *testing.T) {
-	var goodConfigYaml = `
+	goodConfigYaml := `
 receivers:
   prometheus:
     config:

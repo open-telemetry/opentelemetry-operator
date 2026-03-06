@@ -132,7 +132,8 @@ func instrVolume(volumeClaimTemplate corev1.PersistentVolumeClaimTemplate, name 
 			EmptyDir: &corev1.EmptyDirVolumeSource{
 				SizeLimit: volumeSize(quantity),
 			},
-		}}
+		},
+	}
 }
 
 func volumeSize(quantity *resource.Quantity) *resource.Quantity {
@@ -158,7 +159,7 @@ func isValidContainersAnnotation(containersAnnotation string) error {
 }
 
 // setContainersFromAnnotation sets the containers associated to one intrumentation based on the content of the provided annotation.
-func setContainersFromAnnotation(inst *instrumentationWithContainers, annotation string, ns metav1.ObjectMeta, pod metav1.ObjectMeta) error {
+func setContainersFromAnnotation(inst *instrumentationWithContainers, annotation string, ns, pod metav1.ObjectMeta) error {
 	annotationValue := annotationValue(ns, pod, annotation)
 	if annotationValue == "" {
 		return nil

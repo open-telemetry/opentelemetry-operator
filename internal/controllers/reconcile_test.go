@@ -62,16 +62,14 @@ const (
 	annotationVal  = "true"
 )
 
-var (
-	extraPorts = v1beta1.PortsSpec{
-		ServicePort: v1.ServicePort{
-			Name:       "port-web",
-			Protocol:   "TCP",
-			Port:       8080,
-			TargetPort: intstr.FromInt32(8080),
-		},
-	}
-)
+var extraPorts = v1beta1.PortsSpec{
+	ServicePort: v1.ServicePort{
+		Name:       "port-web",
+		Protocol:   "TCP",
+		Port:       8080,
+		TargetPort: intstr.FromInt32(8080),
+	},
+}
 
 type check[T any] func(t *testing.T, params T)
 
@@ -1481,7 +1479,7 @@ func TestUpgrade(t *testing.T) {
 	}
 }
 
-func namespacedObjectName(name string, namespace string) types.NamespacedName {
+func namespacedObjectName(name, namespace string) types.NamespacedName {
 	return types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
