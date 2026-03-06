@@ -24,7 +24,7 @@ import (
 
 func BenchmarkServerTargetsHandler(b *testing.B) {
 	random := rand.New(rand.NewSource(time.Now().UnixNano()))
-	var table = []struct {
+	table := []struct {
 		numCollectors int
 		numJobs       int
 	}{
