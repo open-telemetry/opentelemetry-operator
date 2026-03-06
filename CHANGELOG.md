@@ -2,6 +2,62 @@
 
 <!-- next version -->
 
+## 0.146.0
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Expose missing Prometheus CR fields in the Operator API (#1934)
+  Added `podMonitorNamespaceSelector`, `serviceMonitorNamespaceSelector`, `scrapeConfigNamespaceSelector`,
+  `probeNamespaceSelector`, `evaluationInterval`, and `scrapeProtocols` to the `prometheusCR`
+  configuration within the `TargetAllocator` and `OpenTelemetryCollector`
+  APIs to achieve feature parity with the underlying Target Allocator.
+  
+- `collector`: Add the hostUsers field to OpenTelemetryCommonFields to enable toggling support for isolating pod processes under a separate user namespace (#4366)
+- `auto-instrumentation`: Add support for initContainers to instrumentation injector (#3308)
+  Add support for instrumenting init containers.
+  Init container support is available for Java, Python, Node.js, .NET and SDK-only, and works using the same annotation as for regular containers.
+  
+- `operator, collector`: Allow operator to get TLS settings from OpenShift `APIServer` CR and configure operands TLS settings. (#4669)
+  Added operator flag `--tls-cluster-profile` which obtains the TLS min version and cipher suites from the OpenShift `APIServer` `cluster` custom resource (CR).
+  It overrides the `--tls-min-version` and `--tls-cipher-suites` flags if set.
+  The flags is disabled by default on Kubernetes and enabled on OpenShift.
+  
+  Added operator flag `--tls-configure-operands` which configures operands TLS settings (min version, cipher suites)
+  based on the supplied operator TLS flags (`--tls-cipher-suites` and `--tls-min-version`) or from the OpenShift `APIServer` CR
+  if `--tls-cluster-profile` is enabled.
+  The flag is disabled by default on Kubernetes and enabled on OpenShift.
+  
+  The `--tls-min-version` defaults to `TLSv1.2` which matches the collector's default.
+  The `--tls-cipher-suites` is empty by default which matches the collector's default.
+  Therefore enabling `--tls-configure-operands` with the default TLS flags should not change the collector's behavior.
+  
+- `operator`: Add webhook server readiness check to the operator's /readyz endpoint so the pod is not marked ready before the webhook server is listening. (#3772)
+  Previously the readiness probe used only healthz.Ping, causing a race where CRs 
+  created right after deployment could hit "connection refused" from the webhook.
+  Now the readyz endpoint includes a check using controller-runtime's
+  StartedChecker which verifies the webhook TLS listener is actually accepting connections.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Remove legacy finalizer from OpenTelemetryCollector CR when RBAC not available. (#4769)
+  Finalizer usage was restricted to cluster scoped resources only. Legacy finalizer added by OpenTelemetry Operator
+  <= v0.141.0 still blocks namespace deletion if the operator is removed first. The change removes finalizer with
+  cluster-level RBAC availability.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.145.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.145.0)
+* [OpenTelemetry Contrib - v0.145.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.145.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.71.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.71.0)
+* [Python - v0.60b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.60b1)
+* [Go - v0.23.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.23.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.145.0
 
 ### 🛑 Breaking changes 🛑
