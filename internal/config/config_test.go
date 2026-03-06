@@ -43,6 +43,8 @@ func TestToStringMap(t *testing.T) {
 		"enable-nginx-auto-instrumentation":       "false",
 		"enable-node-js-auto-instrumentation":     "false",
 		"enable-python-auto-instrumentation":      "false",
+		"enable-webhook-metrics":                  "false",
+		"enable-webhooks":                         "false",
 		"feature-gates":                           "",
 		"fips-disabled-components":                "",
 		"ignore-missing-collector-crds":           "true",
@@ -62,7 +64,6 @@ func TestToStringMap(t *testing.T) {
 		"target-allocator-configmap-entry":        "",
 		"targetallocator-image":                   "",
 		"webhook-port":                            "0",
-		"enable-webhooks":                         "false",
 	}, cfg.ToStringMap())
 }
 
