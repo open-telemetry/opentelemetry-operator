@@ -163,6 +163,7 @@ type Java struct {
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
+	//
 	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
@@ -202,6 +203,7 @@ type NodeJS struct {
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
+	//
 	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
@@ -228,6 +230,7 @@ type Python struct {
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
+	//
 	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
@@ -254,6 +257,7 @@ type DotNet struct {
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
+	//
 	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
@@ -278,6 +282,7 @@ type Go struct {
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
+	//
 	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
@@ -304,6 +309,7 @@ type ApacheHttpd struct {
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
+	//
 	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 
@@ -345,6 +351,7 @@ type Nginx struct {
 
 	// VolumeSizeLimit defines size limit for volume used for auto-instrumentation.
 	// The default size is 200Mi.
+	//
 	// Deprecated: use spec.<lang>.volume.size instead. This field will be inactive in a future release.
 	VolumeSizeLimit *resource.Quantity `json:"volumeLimitSize,omitempty"`
 

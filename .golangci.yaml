@@ -19,6 +19,40 @@ linters:
               desc: Use 'errors.Join' instead of go.uber.org/multierr
     exhaustive:
       default-signifies-exhaustive: true
+    gocritic:
+      disabled-checks:
+        - appendAssign
+        - appendCombine
+        - argOrder
+        - assignOp
+        - builtinShadow
+        - commentedOutCode
+        - deferInLoop
+        - elseif
+        - emptyFallthrough
+        - emptyStringTest
+        - exitAfterDefer
+        - filepathJoin
+        - httpNoBody
+        - hugeParam
+        - ifElseChain
+        - importShadow
+        - nestingReduce
+        - octalLiteral
+        - offBy1
+        - paramTypeCombine
+        - rangeValCopy
+        - redundantSprint
+        - regexpMust
+        - regexpSimplify
+        - sloppyReassign
+        - stringXbytes
+        - typeDefFirst
+        - typeSwitchVar
+        - unlambda
+        - unnamedResult
+        - whyNoLint
+      enable-all: true
     goheader:
       template: |-
         Copyright The OpenTelemetry Authors
@@ -144,6 +178,7 @@ linters:
     - errcheck
     - errorlint
     - exhaustive
+    - gocritic
     - godot
     - goheader
     - gosec
@@ -167,6 +202,9 @@ linters:
       - legacy
       - std-error-handling
     rules:
+      - linters:
+          - staticcheck
+        text: ".*.VolumeSizeLimit is deprecated:"
       - linters:
           - gosec
         path: _test\.go

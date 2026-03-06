@@ -237,6 +237,7 @@ It is only effective when healthcheckextension is configured in the OpenTelemetr
         <td>integer</td>
         <td>
           MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
+
 Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas" instead.<br/>
           <br/>
             <i>Format</i>: int32<br/>
@@ -247,6 +248,7 @@ Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas" instead.<br
         <td>integer</td>
         <td>
           MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
+
 Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.<br/>
           <br/>
             <i>Format</i>: int32<br/>
@@ -19955,6 +19957,7 @@ OpenTelemetryCollectorStatus defines the observed state of OpenTelemetryCollecto
         <td>[]string</td>
         <td>
           Messages about actions performed by the operator on this resource.
+
 Deprecated: use Kubernetes events instead.<br/>
         </td>
         <td>false</td>
@@ -19963,6 +19966,7 @@ Deprecated: use Kubernetes events instead.<br/>
         <td>integer</td>
         <td>
           Replicas is currently not being set and might be removed in the next version.
+
 Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas" instead.<br/>
           <br/>
             <i>Format</i>: int32<br/>

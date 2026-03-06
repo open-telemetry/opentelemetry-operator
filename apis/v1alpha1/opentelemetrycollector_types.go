@@ -106,10 +106,12 @@ type OpenTelemetryCollectorSpec struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 	// MinReplicas sets a lower bound to the autoscaling feature.  Set this if you are using autoscaling. It must be at least 1
 	// +optional
+	//
 	// Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MinReplicas" instead.
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 	// MaxReplicas sets an upper bound to the autoscaling feature. If MaxReplicas is set autoscaling is enabled.
 	// +optional
+	//
 	// Deprecated: use "OpenTelemetryCollector.Spec.Autoscaler.MaxReplicas" instead.
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
 	// Autoscaler specifies the pod autoscaling configuration to use
@@ -448,11 +450,13 @@ type OpenTelemetryCollectorStatus struct {
 	// Messages about actions performed by the operator on this resource.
 	// +optional
 	// +listType=atomic
+	//
 	// Deprecated: use Kubernetes events instead.
 	Messages []string `json:"messages,omitempty"`
 
 	// Replicas is currently not being set and might be removed in the next version.
 	// +optional
+	//
 	// Deprecated: use "OpenTelemetryCollector.Status.Scale.Replicas" instead.
 	Replicas int32 `json:"replicas,omitempty"`
 }
