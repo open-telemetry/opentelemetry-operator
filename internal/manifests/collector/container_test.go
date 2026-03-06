@@ -29,7 +29,7 @@ var metricContainerPort = corev1.ContainerPort{
 
 func TestContainerNewDefault(t *testing.T) {
 	// prepare
-	var defaultConfig = `receivers:
+	defaultConfig := `receivers:
   otlp:
     protocols:
     http:
@@ -89,7 +89,7 @@ func TestContainerWithImageOverridden(t *testing.T) {
 }
 
 func TestContainerPorts(t *testing.T) {
-	var goodConfig = `receivers:
+	goodConfig := `receivers:
   examplereceiver:
     endpoint: "0.0.0.0:12345"
 exporters:
@@ -477,7 +477,6 @@ func TestContainerCustomSecurityContext(t *testing.T) {
 	c2 := Container(config.New(), testLogger, v1beta1.OpenTelemetryCollector{
 		Spec: v1beta1.OpenTelemetryCollectorSpec{
 			OpenTelemetryCommonFields: v1beta1.OpenTelemetryCommonFields{
-
 				SecurityContext: &corev1.SecurityContext{
 					Privileged: &isPrivileged,
 					RunAsUser:  &uid,
@@ -1140,7 +1139,8 @@ service:
     pipelines:
         metrics:
             receivers: [kubeletstats]
-`)},
+`),
+				},
 			},
 			expectedEnvVars: []corev1.EnvVar{
 				{

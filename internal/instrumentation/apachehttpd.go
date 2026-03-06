@@ -64,7 +64,8 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 				EmptyDir: &corev1.EmptyDirVolumeSource{
 					SizeLimit: volumeSize(apacheSpec.VolumeSizeLimit),
 				},
-			}})
+			},
+		})
 
 		apacheConfDir := getApacheConfDir(apacheSpec.ConfigPath)
 
@@ -139,7 +140,8 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 					Name:  apacheAttributesEnvVar,
 					Value: getApacheOtelConfig(pod, useLabelsForResourceAttributes, apacheSpec, container, otlpEndpoint, resourceMap),
 				},
-				{Name: apacheServiceInstanceIdEnvVar,
+				{
+					Name: apacheServiceInstanceIdEnvVar,
 					ValueFrom: &corev1.EnvVarSource{
 						FieldRef: &corev1.ObjectFieldSelector{
 							FieldPath: "metadata.name",

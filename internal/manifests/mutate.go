@@ -32,9 +32,7 @@ func (e *ImmutableFieldChangeErr) Error() string {
 	return fmt.Sprintf("Immutable field change attempted: %s", e.Field)
 }
 
-var (
-	ImmutableChangeErr *ImmutableFieldChangeErr
-)
+var ImmutableChangeErr *ImmutableFieldChangeErr
 
 // MutateFuncFor returns a mutate function based on the
 // existing resource's concrete type. It supports currently
