@@ -131,12 +131,12 @@ func TargetAllocatorNetworkPolicy(otelcol string) string {
 }
 
 // Route builds the route name based on the instance.
-func Route(otelcol string, prefix string) string {
+func Route(otelcol, prefix string) string {
 	return DNSName(Truncate("%s-%s-route", 63, prefix, otelcol))
 }
 
 // ClusterRole builds the cluster role name based on the instance.
-func ClusterRole(otelcol string, namespace string) string {
+func ClusterRole(otelcol, namespace string) string {
 	return DNSName(Truncate("%s-%s-cluster-role", 63, otelcol, namespace))
 }
 

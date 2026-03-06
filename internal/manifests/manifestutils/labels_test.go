@@ -40,6 +40,7 @@ func TestLabelsCommonSet(t *testing.T) {
 	assert.Equal(t, "opentelemetry", labels["app.kubernetes.io/part-of"])
 	assert.Equal(t, "opentelemetry-collector", labels["app.kubernetes.io/component"])
 }
+
 func TestLabelsSha256Set(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{
@@ -79,6 +80,7 @@ func TestLabelsSha256Set(t *testing.T) {
 	assert.Equal(t, "opentelemetry", labelsTag["app.kubernetes.io/part-of"])
 	assert.Equal(t, "opentelemetry-collector", labelsTag["app.kubernetes.io/component"])
 }
+
 func TestLabelsTagUnset(t *testing.T) {
 	// prepare
 	otelcol := v1alpha1.OpenTelemetryCollector{

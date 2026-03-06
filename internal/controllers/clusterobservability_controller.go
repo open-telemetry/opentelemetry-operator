@@ -242,7 +242,6 @@ func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx cont
 
 				return r.Update(ctx, latest)
 			})
-
 			if err != nil {
 				return fmt.Errorf("failed to update OpenTelemetryCollector %s: %w", key, err)
 			}
@@ -272,7 +271,6 @@ func (r *ClusterObservabilityReconciler) reconcileOpenTelemetryResource(ctx cont
 
 				return r.Update(ctx, latest)
 			})
-
 			if err != nil {
 				return fmt.Errorf("failed to update Instrumentation %s: %w", key, err)
 			}

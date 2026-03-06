@@ -14,7 +14,7 @@ import (
 )
 
 func TestDnsName(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		in  string
 		out string
 	}{
