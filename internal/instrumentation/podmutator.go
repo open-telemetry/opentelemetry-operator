@@ -144,7 +144,7 @@ func (langInsts *languageInstrumentations) setCommonInstrumentedContainers(ns co
 	return nil
 }
 
-func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns metav1.ObjectMeta, pod metav1.ObjectMeta) error {
+func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns, pod metav1.ObjectMeta) error {
 	inst := []struct {
 		iwc        *instrumentationWithContainers
 		annotation string

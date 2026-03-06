@@ -137,7 +137,7 @@ func injectDefaultDotNetEnvVars(container *corev1.Container, runtime string) {
 // setDotNetEnvVar function sets env var to the container if not exist already.
 // value of concatValues should be set to true if the env var supports multiple values separated by :.
 // If it is set to false, the original container's env var value has priority.
-func setDotNetEnvVar(container *corev1.Container, envVarName string, envVarValue string, concatValues bool) {
+func setDotNetEnvVar(container *corev1.Container, envVarName, envVarValue string, concatValues bool) {
 	idx := getIndexOfEnv(container.Env, envVarName)
 	if idx < 0 {
 		container.Env = append(container.Env, corev1.EnvVar{
