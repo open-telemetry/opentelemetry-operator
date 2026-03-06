@@ -61,8 +61,10 @@ var testAffinityValue = &v1.Affinity{
 	},
 }
 
-var runAsUser int64 = 1000
-var runAsGroup int64 = 1000
+var (
+	runAsUser  int64 = 1000
+	runAsGroup int64 = 1000
+)
 
 var testSecurityContextValue = &v1.PodSecurityContext{
 	RunAsUser:  &runAsUser,

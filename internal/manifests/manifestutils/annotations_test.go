@@ -79,9 +79,10 @@ func TestUserAnnotations(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-instance",
 			Namespace: "my-ns",
-			Annotations: map[string]string{"prometheus.io/scrape": "false",
-				"prometheus.io/port": "1234",
-				"prometheus.io/path": "/test",
+			Annotations: map[string]string{
+				"prometheus.io/scrape": "false",
+				"prometheus.io/port":   "1234",
+				"prometheus.io/path":   "/test",
 			},
 		},
 		Spec: v1beta1.OpenTelemetryCollectorSpec{

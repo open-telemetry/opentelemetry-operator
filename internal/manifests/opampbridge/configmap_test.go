@@ -52,7 +52,8 @@ description:
 endpoint: ws://opamp-server:4320/v1/opamp
 headers:
   authorization: access-12345-token
-`}
+`,
+	}
 	tests := []struct {
 		description    string
 		image          string

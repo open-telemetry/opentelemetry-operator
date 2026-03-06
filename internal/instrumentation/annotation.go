@@ -35,7 +35,7 @@ const (
 )
 
 // annotationValue returns the effective annotationInjectJava value, based on the annotations from the pod and namespace.
-func annotationValue(ns metav1.ObjectMeta, pod metav1.ObjectMeta, annotation string) string {
+func annotationValue(ns, pod metav1.ObjectMeta, annotation string) string {
 	// is the pod annotated with instructions to inject sidecars? is the namespace annotated?
 	// if any of those is true, a sidecar might be desired.
 	podAnnValue := pod.Annotations[annotation]
