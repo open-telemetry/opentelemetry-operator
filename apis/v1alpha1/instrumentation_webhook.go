@@ -218,7 +218,6 @@ func (InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, 
 		// Example: `endpoint=http://localhost:14250,pollingIntervalMs=5000,initialSamplingRate=0.25`
 		if r.Spec.Argument != "" {
 			err := validateJaegerRemoteSamplerArgument(r.Spec.Argument)
-
 			if err != nil {
 				return warnings, fmt.Errorf("spec.sampler.argument is not a valid argument for sampler %s: %w", r.Spec.Type, err)
 			}
