@@ -70,8 +70,10 @@ func (c *AnyConfig) DeepCopy() *AnyConfig {
 	return out
 }
 
-var _ json.Marshaler = &AnyConfig{}
-var _ json.Unmarshaler = &AnyConfig{}
+var (
+	_ json.Marshaler   = &AnyConfig{}
+	_ json.Unmarshaler = &AnyConfig{}
+)
 
 // UnmarshalJSON implements an alternative parser for this field.
 func (c *AnyConfig) UnmarshalJSON(b []byte) error {
@@ -234,7 +236,7 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 
 // getEnvironmentVariablesForComponentKinds gets the environment variables for the given ComponentKind(s).
 func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, componentKinds ...ComponentKind) ([]corev1.EnvVar, error) {
-	var envVars = []corev1.EnvVar{}
+	envVars := []corev1.EnvVar{}
 	enabledComponents := c.GetEnabledComponents()
 	for _, componentKind := range componentKinds {
 		var retriever components.ParserRetriever

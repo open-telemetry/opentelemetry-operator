@@ -104,7 +104,7 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 		},
 	}
 
-	var tests = []struct {
+	tests := []struct {
 		name         string
 		testFunction func(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector, reader metric.Reader)
 	}{
