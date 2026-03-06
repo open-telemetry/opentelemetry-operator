@@ -24,9 +24,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
 
-var (
-	clientLogger = logr.Discard()
-)
+var clientLogger = logr.Discard()
 
 const (
 	bridgeName = "bridge-test"
@@ -285,9 +283,11 @@ func TestClient_GetCollectorPods(t *testing.T) {
 				},
 				Spec: v1.PodSpec{},
 			},
-		}}
+		},
+	}
 	emptyList := &v1.PodList{
-		Items: []v1.Pod{}}
+		Items: []v1.Pod{},
+	}
 	type args struct {
 		selector  map[string]string
 		namespace string

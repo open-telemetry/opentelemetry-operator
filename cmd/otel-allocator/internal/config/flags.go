@@ -56,7 +56,7 @@ func getListenAddr(flagSet *pflag.FlagSet) (value string, changed bool, err erro
 	return getFlagValueAndChangedString(flagSet, listenAddrFlagName)
 }
 
-func getPrometheusCREnabled(flagSet *pflag.FlagSet) (value bool, changed bool, err error) {
+func getPrometheusCREnabled(flagSet *pflag.FlagSet) (value, changed bool, err error) {
 	return getFlagValueAndChangedBool(flagSet, prometheusCREnabledFlagName)
 }
 
@@ -64,7 +64,7 @@ func getHttpsListenAddr(flagSet *pflag.FlagSet) (value string, changed bool, err
 	return getFlagValueAndChangedString(flagSet, listenAddrHttpsFlagName)
 }
 
-func getHttpsEnabled(flagSet *pflag.FlagSet) (value bool, changed bool, err error) {
+func getHttpsEnabled(flagSet *pflag.FlagSet) (value, changed bool, err error) {
 	return getFlagValueAndChangedBool(flagSet, httpsEnabledFlagName)
 }
 
@@ -84,18 +84,18 @@ func getHttpsTLSKeyFilePath(flagSet *pflag.FlagSet) (value string, changed bool,
 func getFlagValueAndChangedString(flagSet *pflag.FlagSet, flagName string) (value string, changed bool, err error) {
 	if changed = flagSet.Changed(flagName); !changed {
 		value, err = "", nil
-		return
+		return value, changed, err
 	}
 	value, err = flagSet.GetString(flagName)
-	return
+	return value, changed, err
 }
 
 // getFlagValueAndChanged returns the given flag's string value and whether it was changed.
-func getFlagValueAndChangedBool(flagSet *pflag.FlagSet, flagName string) (value bool, changed bool, err error) {
+func getFlagValueAndChangedBool(flagSet *pflag.FlagSet, flagName string) (value, changed bool, err error) {
 	if changed = flagSet.Changed(flagName); !changed {
 		value, err = false, nil
-		return
+		return value, changed, err
 	}
 	value, err = flagSet.GetBool(flagName)
-	return
+	return value, changed, err
 }

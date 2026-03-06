@@ -194,7 +194,7 @@ func (ad *AgentDescription) nonIdentifyingAttributes() []*protobufs.KeyValue {
 	return toReturn
 }
 
-func keyValuePair(key string, value string) *protobufs.KeyValue {
+func keyValuePair(key, value string) *protobufs.KeyValue {
 	return &protobufs.KeyValue{
 		Key: key,
 		Value: &protobufs.AnyValue{

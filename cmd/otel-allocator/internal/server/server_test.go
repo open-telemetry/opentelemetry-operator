@@ -570,7 +570,8 @@ func TestServer_JobHandler(t *testing.T) {
 				1: target.NewItem("job2", "", labels.New(), ""),
 				2: target.NewItem("job3", "", labels.New(), ""),
 				3: target.NewItem("job3", "", labels.New(), ""),
-				4: target.NewItem("job3", "", labels.New(), "")},
+				4: target.NewItem("job3", "", labels.New(), ""),
+			},
 			expectedCode: http.StatusOK,
 			expectedJobs: map[string]linkJSON{
 				"job1": newLink("job1"),
@@ -601,6 +602,7 @@ func TestServer_JobHandler(t *testing.T) {
 		})
 	}
 }
+
 func TestServer_JobsHandler_HTML(t *testing.T) {
 	tests := []struct {
 		description  string
@@ -635,7 +637,8 @@ func TestServer_JobsHandler_HTML(t *testing.T) {
 				1: target.NewItem("job2", "1.1.1.2:8080", labels.New(), ""),
 				2: target.NewItem("job3", "1.1.1.3:8080", labels.New(), ""),
 				3: target.NewItem("job3", "1.1.1.4:8080", labels.New(), ""),
-				4: target.NewItem("job3", "1.1.1.5:8080", labels.New(), "")},
+				4: target.NewItem("job3", "1.1.1.5:8080", labels.New(), ""),
+			},
 			expectedCode: http.StatusOK,
 			Golden:       "jobs_multiple.html",
 		},
@@ -795,6 +798,7 @@ func TestServer_IndexHandler(t *testing.T) {
 		})
 	}
 }
+
 func TestServer_TargetsHTMLHandler(t *testing.T) {
 	allocator, _ := allocation.New("consistent-hashing", logger)
 	tests := []struct {

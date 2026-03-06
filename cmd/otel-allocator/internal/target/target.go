@@ -119,7 +119,7 @@ func (t *Item) GetEndpointSliceName() string {
 // NewItem Creates a new target item.
 // INVARIANTS:
 // * Item fields must not be modified after creation.
-func NewItem(jobName string, targetURL string, itemLabels labels.Labels, collectorName string, opts ...ItemOption) *Item {
+func NewItem(jobName, targetURL string, itemLabels labels.Labels, collectorName string, opts ...ItemOption) *Item {
 	item := &Item{
 		JobName:       jobName,
 		TargetURL:     targetURL,
