@@ -131,7 +131,7 @@ func (m *Metrics) delete(ctx context.Context, collector *OpenTelemetryCollector)
 	m.updateGeneralCRMetricsComponents(ctx, collector, false)
 }
 
-func (m *Metrics) update(ctx context.Context, oldCollector *OpenTelemetryCollector, newCollector *OpenTelemetryCollector) {
+func (m *Metrics) update(ctx context.Context, oldCollector, newCollector *OpenTelemetryCollector) {
 	m.delete(ctx, oldCollector)
 	m.create(ctx, newCollector)
 }
@@ -147,6 +147,7 @@ func (m *Metrics) updateGeneralCRMetricsComponents(ctx context.Context, collecto
 		attribute.Key("type").String(string(collector.Spec.Mode)),
 	))
 }
+
 func (m *Metrics) updateComponentCounters(ctx context.Context, collector *OpenTelemetryCollector, up bool) {
 	components := getComponentsFromConfig(collector.Spec.Config)
 	moveCounter(ctx, collector, components.receivers, m.receiversCounter, up)
@@ -197,7 +198,8 @@ func getComponentsFromConfig(yamlContent Config) *componentDefinitions {
 }
 
 func moveCounter(
-	ctx context.Context, collector *OpenTelemetryCollector, types []string, upDown metric.Int64UpDownCounter, up bool) {
+	ctx context.Context, collector *OpenTelemetryCollector, types []string, upDown metric.Int64UpDownCounter, up bool,
+) {
 	for _, exporter := range types {
 		inc := 1
 		if !up {

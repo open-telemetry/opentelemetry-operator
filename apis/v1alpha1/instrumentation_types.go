@@ -371,8 +371,7 @@ type Nginx struct {
 }
 
 // InstrumentationStatus defines status of the instrumentation.
-type InstrumentationStatus struct {
-}
+type InstrumentationStatus struct{}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=otelinst;otelinsts

@@ -12,45 +12,43 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
-var (
-
-	// targetAllocatorCRPolicyRules are the policy rules required for the CR functionality.
-	targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
-		{
-			APIGroups: []string{"monitoring.coreos.com"},
-			Resources: []string{"servicemonitors", "podmonitors"},
-			Verbs:     []string{"*"},
-		}, {
-			APIGroups: []string{""},
-			Resources: []string{"nodes", "nodes/metrics", "services", "endpoints", "pods", "namespaces"},
-			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			APIGroups: []string{""},
-			Resources: []string{"configmaps"},
-			Verbs:     []string{"get"},
-		}, {
-			APIGroups: []string{"discovery.k8s.io"},
-			Resources: []string{"endpointslices"},
-			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			APIGroups: []string{"networking.k8s.io"},
-			Resources: []string{"ingresses"},
-			Verbs:     []string{"get", "list", "watch"},
-		}, {
-			NonResourceURLs: []string{"/metrics"},
-			Verbs:           []string{"get"},
-		}, {
-			NonResourceURLs: []string{"/api", "/api/*", "/apis", "/apis/*"},
-			Verbs:           []string{"get"},
-		},
-	}
-)
+// targetAllocatorCRPolicyRules are the policy rules required for the CR functionality.
+var targetAllocatorCRPolicyRules = []*rbacv1.PolicyRule{
+	{
+		APIGroups: []string{"monitoring.coreos.com"},
+		Resources: []string{"servicemonitors", "podmonitors"},
+		Verbs:     []string{"*"},
+	}, {
+		APIGroups: []string{""},
+		Resources: []string{"nodes", "nodes/metrics", "services", "endpoints", "pods", "namespaces"},
+		Verbs:     []string{"get", "list", "watch"},
+	}, {
+		APIGroups: []string{""},
+		Resources: []string{"configmaps"},
+		Verbs:     []string{"get"},
+	}, {
+		APIGroups: []string{"discovery.k8s.io"},
+		Resources: []string{"endpointslices"},
+		Verbs:     []string{"get", "list", "watch"},
+	}, {
+		APIGroups: []string{"networking.k8s.io"},
+		Resources: []string{"ingresses"},
+		Verbs:     []string{"get", "list", "watch"},
+	}, {
+		NonResourceURLs: []string{"/metrics"},
+		Verbs:           []string{"get"},
+	}, {
+		NonResourceURLs: []string{"/api", "/api/*", "/apis", "/apis/*"},
+		Verbs:           []string{"get"},
+	},
+}
 
 func CheckTargetAllocatorPrometheusCRPolicyRules(
 	ctx context.Context,
 	reviewer *rbac.Reviewer,
 	namespace string,
-	serviceAccountName string) (warnings []string, err error) {
+	serviceAccountName string,
+) (warnings []string, err error) {
 	subjectAccessReviews, err := reviewer.CheckPolicyRules(
 		ctx,
 		serviceAccountName,

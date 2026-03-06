@@ -104,7 +104,7 @@ func (agent *Agent) UpdateStatus(
 	agent.processStatusUpdate(statusMsg, response)
 
 	if statusMsg.ConnectionSettingsRequest != nil {
-		//agent.processConnectionSettingsRequest(statusMsg.ConnectionSettingsRequest.Opamp, response)
+		// agent.processConnectionSettingsRequest(statusMsg.ConnectionSettingsRequest.Opamp, response)
 	}
 
 	statusUpdateWatchers := agent.statusUpdateWatchers

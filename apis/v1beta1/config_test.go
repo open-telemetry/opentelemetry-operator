@@ -559,7 +559,6 @@ func TestConfig_GetEnabledComponents(t *testing.T) {
 		file string
 		want map[ComponentKind]map[string]any
 	}{
-
 		{
 			name: "connectors",
 			file: "testdata/otelcol-connectors.yaml",
@@ -826,7 +825,6 @@ func TestConfig_GetExporterPorts(t *testing.T) {
 		want    []v1.ServicePort
 		wantErr bool
 	}{
-
 		{
 			name:    "connectors",
 			file:    "testdata/otelcol-connectors.yaml",

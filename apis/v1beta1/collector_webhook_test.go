@@ -37,9 +37,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 )
 
-var (
-	testScheme = scheme.Scheme
-)
+var testScheme = scheme.Scheme
 
 func TestValidate(t *testing.T) {
 	tests := []struct {

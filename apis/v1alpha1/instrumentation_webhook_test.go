@@ -621,6 +621,7 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		})
 	}
 }
+
 func TestInstrumentationValidatingWebhook_DeprecationWarnings(t *testing.T) {
 	defaultSize := resource.MustParse("200Mi")
 

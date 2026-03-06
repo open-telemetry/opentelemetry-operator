@@ -168,5 +168,4 @@ func (srv *Server) getAgentById(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 	writer.Write(marshaled)
-
 }
