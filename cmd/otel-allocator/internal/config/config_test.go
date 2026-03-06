@@ -778,7 +778,7 @@ users:
   user:
     token: dummy-token
 `
-		err := os.WriteFile(kubeConfigPath, []byte(kubeConfigContent), 0600)
+		err := os.WriteFile(kubeConfigPath, []byte(kubeConfigContent), 0o600)
 		require.NoError(t, err)
 		return kubeConfigPath
 	}
@@ -787,7 +787,7 @@ users:
 		// Setup: create empty config file and dummy kube config
 		tempDir := t.TempDir()
 		emptyConfigPath := filepath.Join(tempDir, "empty.yaml")
-		err := os.WriteFile(emptyConfigPath, []byte("{}"), 0600)
+		err := os.WriteFile(emptyConfigPath, []byte("{}"), 0o600)
 		require.NoError(t, err)
 
 		kubeConfigPath := createDummyKubeConfig(t, tempDir)
@@ -822,7 +822,7 @@ https:
   enabled: false
 `
 		configPath := filepath.Join(tempDir, "config.yaml")
-		err := os.WriteFile(configPath, []byte(configContent), 0600)
+		err := os.WriteFile(configPath, []byte(configContent), 0o600)
 		require.NoError(t, err)
 
 		kubeConfigPath := createDummyKubeConfig(t, tempDir)
@@ -857,7 +857,7 @@ https:
 kube_config_file_path: "/config/kube.config"
 `
 		configPath := filepath.Join(tempDir, "config.yaml")
-		err := os.WriteFile(configPath, []byte(configContent), 0600)
+		err := os.WriteFile(configPath, []byte(configContent), 0o600)
 		require.NoError(t, err)
 
 		kubeConfigPath := createDummyKubeConfig(t, tempDir)
@@ -910,7 +910,7 @@ https:
 kube_config_file_path: "` + kubeConfigPath + `"
 `
 		configPath := filepath.Join(tempDir, "config.yaml")
-		err := os.WriteFile(configPath, []byte(configContent), 0600)
+		err := os.WriteFile(configPath, []byte(configContent), 0o600)
 		require.NoError(t, err)
 
 		// Prepare args for Load function with only config file path
@@ -935,7 +935,7 @@ kube_config_file_path: "` + kubeConfigPath + `"
 		// Setup: create empty config file and dummy kube config
 		tempDir := t.TempDir()
 		emptyConfigPath := filepath.Join(tempDir, "empty.yaml")
-		err := os.WriteFile(emptyConfigPath, []byte("{}"), 0600)
+		err := os.WriteFile(emptyConfigPath, []byte("{}"), 0o600)
 		require.NoError(t, err)
 
 		kubeConfigPath := createDummyKubeConfig(t, tempDir)
@@ -972,7 +972,7 @@ prometheus_cr:
 kube_config_file_path: "` + kubeConfigPath + `"
 `
 		configPath := filepath.Join(tempDir, "config.yaml")
-		err := os.WriteFile(configPath, []byte(configContent), 0600)
+		err := os.WriteFile(configPath, []byte(configContent), 0o600)
 		require.NoError(t, err)
 
 		// Environment variable sets value

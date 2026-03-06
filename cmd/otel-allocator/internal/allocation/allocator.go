@@ -162,7 +162,7 @@ func (a *allocator) SetCollectors(collectors map[string]*Collector) {
 	}
 }
 
-func (a *allocator) GetTargetsForCollectorAndJob(collector string, job string) []*target.Item {
+func (a *allocator) GetTargetsForCollectorAndJob(collector, job string) []*target.Item {
 	a.m.RLock()
 	defer a.m.RUnlock()
 	if _, ok := a.targetItemsPerJobPerCollector[collector]; !ok {

@@ -80,9 +80,9 @@ func TestNewTLSConfig_LoadsCertificates(t *testing.T) {
 	keyPath := filepath.Join(tmpDir, "tls.key")
 	caPath := filepath.Join(tmpDir, "ca.crt")
 
-	require.NoError(t, os.WriteFile(certPath, certPEM, 0600))
-	require.NoError(t, os.WriteFile(keyPath, keyPEM, 0600))
-	require.NoError(t, os.WriteFile(caPath, caPEM, 0600))
+	require.NoError(t, os.WriteFile(certPath, certPEM, 0o600))
+	require.NoError(t, os.WriteFile(keyPath, keyPEM, 0o600))
+	require.NoError(t, os.WriteFile(caPath, caPEM, 0o600))
 
 	config := HTTPSServerConfig{
 		TLSCertFilePath: certPath,
@@ -115,9 +115,9 @@ func TestNewTLSConfig_InvalidCertificate(t *testing.T) {
 	keyPath := filepath.Join(tmpDir, "tls.key")
 	caPath := filepath.Join(tmpDir, "ca.crt")
 
-	require.NoError(t, os.WriteFile(certPath, []byte("invalid"), 0600))
-	require.NoError(t, os.WriteFile(keyPath, []byte("invalid"), 0600))
-	require.NoError(t, os.WriteFile(caPath, []byte("invalid"), 0600))
+	require.NoError(t, os.WriteFile(certPath, []byte("invalid"), 0o600))
+	require.NoError(t, os.WriteFile(keyPath, []byte("invalid"), 0o600))
+	require.NoError(t, os.WriteFile(caPath, []byte("invalid"), 0o600))
 
 	config := HTTPSServerConfig{
 		TLSCertFilePath: certPath,
@@ -219,9 +219,9 @@ func TestNewTLSConfig_VerifyConnection_WithIntermediateCertificates(t *testing.T
 	keyPath := filepath.Join(tmpDir, "tls.key")
 	caPath := filepath.Join(tmpDir, "ca.crt")
 
-	require.NoError(t, os.WriteFile(certPath, serverCertPEM, 0600))
-	require.NoError(t, os.WriteFile(keyPath, serverKeyPEM, 0600))
-	require.NoError(t, os.WriteFile(caPath, rootCAPEM, 0600))
+	require.NoError(t, os.WriteFile(certPath, serverCertPEM, 0o600))
+	require.NoError(t, os.WriteFile(keyPath, serverKeyPEM, 0o600))
+	require.NoError(t, os.WriteFile(caPath, rootCAPEM, 0o600))
 
 	config := HTTPSServerConfig{
 		TLSCertFilePath: certPath,
@@ -290,9 +290,9 @@ func TestNewTLSConfig_VerifyConnection_OnlyVerifiesLeafCertificate(t *testing.T)
 	keyPath := filepath.Join(tmpDir, "tls.key")
 	caPath := filepath.Join(tmpDir, "ca.crt")
 
-	require.NoError(t, os.WriteFile(certPath, serverCertPEM, 0600))
-	require.NoError(t, os.WriteFile(keyPath, serverKeyPEM, 0600))
-	require.NoError(t, os.WriteFile(caPath, rootCAPEM, 0600))
+	require.NoError(t, os.WriteFile(certPath, serverCertPEM, 0o600))
+	require.NoError(t, os.WriteFile(keyPath, serverKeyPEM, 0o600))
+	require.NoError(t, os.WriteFile(caPath, rootCAPEM, 0o600))
 
 	config := HTTPSServerConfig{
 		TLSCertFilePath: certPath,

@@ -13,7 +13,7 @@ func TestRelativelyEvenDistribution(t *testing.T) {
 	numCols := 15
 	numItems := 10000
 	cols := MakeNCollectors(numCols, 0)
-	var expectedPerCollector = float64(numItems / numCols)
+	expectedPerCollector := float64(numItems / numCols)
 	expectedDelta := (expectedPerCollector * 1.5) - expectedPerCollector
 	c, _ := New("consistent-hashing", logger)
 	c.SetCollectors(cols)
@@ -106,7 +106,7 @@ func TestTargetsWithNoCollectorsConsistentHashing(t *testing.T) {
 	numCols := 2
 	cols := MakeNCollectors(2, 0)
 	c.SetCollectors(cols)
-	var expectedPerCollector = float64(numItemsUpdate / numCols)
+	expectedPerCollector := float64(numItemsUpdate / numCols)
 	expectedDelta := (expectedPerCollector * 1.5) - expectedPerCollector
 	// Checking to see that there is no change to number of targets
 	actualTargetItems = c.TargetItems()
