@@ -403,42 +403,7 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 					}
 				},
 				UpdateFunc: func(oldObj, newObj interface{}) {
-					oldMeta, _ := oldObj.(metav1.ObjectMetaAccessor)
-					newMeta, _ := newObj.(metav1.ObjectMetaAccessor)
-					secretName := newMeta.GetObjectMeta().GetName()
-					secretNamespace := newMeta.GetObjectMeta().GetNamespace()
-					_, exists, err := w.store.GetObject(&v1.Secret{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      secretName,
-							Namespace: secretNamespace,
-						},
-					})
-					if !exists || err != nil {
-						if err != nil {
-							w.logger.Debug("unexpected store error when checking if secret exists, skipping update", "secret", secretName, "error", err)
-							return
-						}
-						// if the secret does not exist in the store, we skip the update
-						return
-					}
-
-					newSecret, err := w.store.GetSecretClient().Secrets(secretNamespace).Get(context.Background(), secretName, metav1.GetOptions{})
-
-					if err != nil {
-						w.logger.Debug("unexpected store error when getting updated secret - ", "secret", secretName, "error", err)
-						return
-					}
-					w.logger.Debug("Updating secret in store", "newObjName", newMeta.GetObjectMeta().GetName(), "newobjnamespace", newMeta.GetObjectMeta().GetNamespace())
-					if err := w.store.UpdateObject(newSecret); err != nil {
-						w.logger.Debug("unexpected store error when updating secret  - ", "secret", newMeta.GetObjectMeta().GetName(), "error", err)
-					} else {
-						w.logger.Debug(
-							"Successfully updated store, sending update event to notifyEvents channel",
-							"oldObjName", oldMeta.GetObjectMeta().GetName(),
-							"oldobjnamespace", oldMeta.GetObjectMeta().GetNamespace(),
-							"newObjName", newMeta.GetObjectMeta().GetName(),
-							"newobjnamespace", newMeta.GetObjectMeta().GetNamespace(),
-						)
+					if w.handleSecretUpdate(oldObj, newObj) {
 						select {
 						case notifyEvents <- struct{}{}:
 						default:
@@ -446,40 +411,7 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 					}
 				},
 				DeleteFunc: func(obj interface{}) {
-					secretMeta, _ := obj.(metav1.ObjectMetaAccessor)
-
-					secretName := secretMeta.GetObjectMeta().GetName()
-					secretNamespace := secretMeta.GetObjectMeta().GetNamespace()
-
-					// check if the secret exists in the store
-					secretObj := &v1.Secret{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      secretName,
-							Namespace: secretNamespace,
-						},
-					}
-					_, exists, err := w.store.GetObject(secretObj)
-					// if the secret does not exist in the store, we skip the delete
-					if !exists || err != nil {
-						if err != nil {
-							w.logger.Debug("unexpected store error when checking if secret exists, skipping delete", "secret", secretMeta.GetObjectMeta().GetName(), "error", err)
-							return
-						}
-						// if the secret does not exist in the store, we skip the delete
-						return
-					}
-					w.logger.Debug("Deleting secret from store", "objName", secretMeta.GetObjectMeta().GetName(), "objnamespace", secretMeta.GetObjectMeta().GetNamespace())
-					// if the secret exists in the store, we delete it
-					// and send an event notification to the notifyEvents channel
-					if err := w.store.DeleteObject(secretObj); err != nil {
-						w.logger.Debug("unexpected store error when deleting secret - ", "secret", secretMeta.GetObjectMeta().GetName(), "error", err)
-						//return
-					} else {
-						w.logger.Debug(
-							"Successfully removed secret from store, sending update event to notifyEvents channel",
-							"objName", secretMeta.GetObjectMeta().GetName(),
-							"objnamespace", secretMeta.GetObjectMeta().GetNamespace(),
-						)
+					if w.handleSecretDelete(obj) {
 						select {
 						case notifyEvents <- struct{}{}:
 						default:
@@ -524,6 +456,88 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 
 	<-w.stopChannel
 	return nil
+}
+
+// handleSecretUpdate handles secret update events and returns true if the config needs to be reloaded.
+func (w *PrometheusCRWatcher) handleSecretUpdate(oldObj, newObj interface{}) bool {
+	oldMeta, _ := oldObj.(metav1.ObjectMetaAccessor)
+	newMeta, _ := newObj.(metav1.ObjectMetaAccessor)
+	secretName := newMeta.GetObjectMeta().GetName()
+	secretNamespace := newMeta.GetObjectMeta().GetNamespace()
+
+	_, exists, err := w.store.GetObject(&v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: secretNamespace,
+		},
+	})
+	if !exists || err != nil {
+		if err != nil {
+			w.logger.Debug("unexpected store error when checking if secret exists, skipping update", "secret", secretName, "error", err)
+		}
+		// if the secret does not exist in the store, we skip the update
+		return false
+	}
+
+	newSecret, err := w.store.GetSecretClient().Secrets(secretNamespace).Get(context.Background(), secretName, metav1.GetOptions{})
+	if err != nil {
+		w.logger.Debug("unexpected store error when getting updated secret", "secret", secretName, "error", err)
+		return false
+	}
+
+	w.logger.Debug("Updating secret in store", "newObjName", newMeta.GetObjectMeta().GetName(), "newobjnamespace", newMeta.GetObjectMeta().GetNamespace())
+	if err := w.store.UpdateObject(newSecret); err != nil {
+		w.logger.Debug("unexpected store error when updating secret", "secret", newMeta.GetObjectMeta().GetName(), "error", err)
+		return false
+	}
+
+	w.logger.Debug(
+		"Successfully updated store, sending update event to notifyEvents channel",
+		"oldObjName", oldMeta.GetObjectMeta().GetName(),
+		"oldobjnamespace", oldMeta.GetObjectMeta().GetNamespace(),
+		"newObjName", newMeta.GetObjectMeta().GetName(),
+		"newobjnamespace", newMeta.GetObjectMeta().GetNamespace(),
+	)
+	return true
+}
+
+// handleSecretDelete handles secret delete events and returns true if the config needs to be reloaded.
+func (w *PrometheusCRWatcher) handleSecretDelete(obj interface{}) bool {
+	secretMeta, _ := obj.(metav1.ObjectMetaAccessor)
+	secretName := secretMeta.GetObjectMeta().GetName()
+	secretNamespace := secretMeta.GetObjectMeta().GetNamespace()
+
+	// check if the secret exists in the store
+	secretObj := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: secretNamespace,
+		},
+	}
+	_, exists, err := w.store.GetObject(secretObj)
+	// if the secret does not exist in the store, we skip the delete
+	if !exists || err != nil {
+		if err != nil {
+			w.logger.Debug("unexpected store error when checking if secret exists, skipping delete", "secret", secretMeta.GetObjectMeta().GetName(), "error", err)
+		}
+		// if the secret does not exist in the store, we skip the delete
+		return false
+	}
+
+	w.logger.Debug("Deleting secret from store", "objName", secretMeta.GetObjectMeta().GetName(), "objnamespace", secretMeta.GetObjectMeta().GetNamespace())
+	// if the secret exists in the store, we delete it
+	// and send an event notification to the notifyEvents channel
+	if err := w.store.DeleteObject(secretObj); err != nil {
+		w.logger.Debug("unexpected store error when deleting secret", "secret", secretMeta.GetObjectMeta().GetName(), "error", err)
+		return false
+	}
+
+	w.logger.Debug(
+		"Successfully removed secret from store, sending update event to notifyEvents channel",
+		"objName", secretMeta.GetObjectMeta().GetName(),
+		"objnamespace", secretMeta.GetObjectMeta().GetNamespace(),
+	)
+	return true
 }
 
 // rateLimitedEventSender sends events to the upstreamEvents channel whenever it gets a notification on the notifyEvents channel,
