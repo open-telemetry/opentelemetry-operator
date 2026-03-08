@@ -205,7 +205,8 @@ func TestInstrVolume(t *testing.T) {
 							},
 						},
 					},
-				}},
+				},
+			},
 		},
 		{
 			name:       "With volume size limit",
@@ -218,7 +219,8 @@ func TestInstrVolume(t *testing.T) {
 					EmptyDir: &corev1.EmptyDirVolumeSource{
 						SizeLimit: &defaultVolumeLimitSize,
 					},
-				}},
+				},
+			},
 		},
 		{
 			name:       "No volume or size limit",
@@ -231,7 +233,8 @@ func TestInstrVolume(t *testing.T) {
 					EmptyDir: &corev1.EmptyDirVolumeSource{
 						SizeLimit: &defaultSize,
 					},
-				}},
+				},
+			},
 		},
 		{
 			name: "With volume and size limit",
@@ -252,7 +255,8 @@ func TestInstrVolume(t *testing.T) {
 							},
 						},
 					},
-				}},
+				},
+			},
 		},
 	}
 

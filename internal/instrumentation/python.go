@@ -73,7 +73,7 @@ func injectPythonSDKToContainer(pythonSpec v1alpha1.Python, container *corev1.Co
 	return nil
 }
 
-func injectPythonSDKToPod(pythonSpec v1alpha1.Python, pod corev1.Pod, firstContainerName string, platform string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
+func injectPythonSDKToPod(pythonSpec v1alpha1.Python, pod corev1.Pod, firstContainerName, platform string, instSpec v1alpha1.InstrumentationSpec) corev1.Pod {
 	volume := instrVolume(pythonSpec.VolumeClaimTemplate, pythonVolumeName, pythonSpec.VolumeSizeLimit)
 
 	// This has been validated already

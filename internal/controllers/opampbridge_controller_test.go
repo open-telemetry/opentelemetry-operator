@@ -32,18 +32,20 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/controllers"
 )
 
-var opampBridgeLogger = logf.Log.WithName("opamp-bridge-controller-unit-tests")
-var opampBridgeMockAutoDetector = &mockAutoDetect{
-	OpenShiftRoutesAvailabilityFunc: func() (openshift.RoutesAvailability, error) {
-		return openshift.RoutesAvailable, nil
-	},
-	PrometheusCRsAvailabilityFunc: func() (prometheus.Availability, error) {
-		return prometheus.Available, nil
-	},
-	RBACPermissionsFunc: func(context.Context) (rbac.Availability, error) {
-		return rbac.Available, nil
-	},
-}
+var (
+	opampBridgeLogger           = logf.Log.WithName("opamp-bridge-controller-unit-tests")
+	opampBridgeMockAutoDetector = &mockAutoDetect{
+		OpenShiftRoutesAvailabilityFunc: func() (openshift.RoutesAvailability, error) {
+			return openshift.RoutesAvailable, nil
+		},
+		PrometheusCRsAvailabilityFunc: func() (prometheus.Availability, error) {
+			return prometheus.Available, nil
+		},
+		RBACPermissionsFunc: func(context.Context) (rbac.Availability, error) {
+			return rbac.Available, nil
+		},
+	}
+)
 
 func TestNewObjectsOnReconciliation_OpAMPBridge(t *testing.T) {
 	// prepare

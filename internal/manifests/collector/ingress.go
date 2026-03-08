@@ -59,7 +59,7 @@ func Ingress(params manifests.Params) (*networkingv1.Ingress, error) {
 	}, nil
 }
 
-func createPathIngressRules(otelcol string, hostname string, ports []corev1.ServicePort) networkingv1.IngressRule {
+func createPathIngressRules(otelcol, hostname string, ports []corev1.ServicePort) networkingv1.IngressRule {
 	pathType := networkingv1.PathTypePrefix
 	paths := make([]networkingv1.HTTPIngressPath, len(ports))
 	for i, port := range ports {
@@ -87,7 +87,7 @@ func createPathIngressRules(otelcol string, hostname string, ports []corev1.Serv
 	}
 }
 
-func createSubdomainIngressRules(otelcol string, hostname string, ports []corev1.ServicePort) []networkingv1.IngressRule {
+func createSubdomainIngressRules(otelcol, hostname string, ports []corev1.ServicePort) []networkingv1.IngressRule {
 	var rules []networkingv1.IngressRule
 	pathType := networkingv1.PathTypePrefix
 	for _, port := range ports {

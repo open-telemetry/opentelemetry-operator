@@ -33,7 +33,7 @@ type K8sAttributeConfig struct {
 
 func GenerateK8SAttrRbacRules(_ logr.Logger, config K8sAttributeConfig) ([]rbacv1.PolicyRule, error) {
 	// These policies need to be added always
-	var prs = []rbacv1.PolicyRule{
+	prs := []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},
 			Resources: []string{"pods", "namespaces"},

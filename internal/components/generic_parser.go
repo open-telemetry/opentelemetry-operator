@@ -12,9 +12,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-var (
-	_ Parser = &GenericParser[SingleEndpointConfig]{}
-)
+var _ Parser = &GenericParser[SingleEndpointConfig]{}
 
 // GenericParser serves as scaffolding for custom parsing logic by isolating
 // functionality to idempotent functions.
