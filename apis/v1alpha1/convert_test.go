@@ -37,7 +37,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [resourcedetection]
-      exporters: [otlp]
+      exporters: [otlp_grpc]
 `
 
 func Test_tov1beta1_config(t *testing.T) {

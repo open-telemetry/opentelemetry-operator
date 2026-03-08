@@ -1,11 +1,11 @@
 receivers:
-  otlp:
+  otlp_grpc:
     protocols:
       grpc:
       http:
 processors:
 exporters:
-  otlp:
+  otlp_grpc:
     endpoint: jaeger-allinone-collector-headless.chainsaw-otlp-metrics.svc:4317
     tls:
       insecure: true
@@ -17,7 +17,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [otlp]
+      exporters: [otlp_grpc]
     metrics:
       receivers: [otlp]
       exporters: [prometheus]

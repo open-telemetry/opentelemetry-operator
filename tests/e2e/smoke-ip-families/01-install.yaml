@@ -25,6 +25,6 @@ spec:
     service:
       pipelines:
         traces:
-          receivers: [jaeger, otlp]
+          receivers: [jaeger, otlp_grpc]
           processors: []
           exporters: [debug]
