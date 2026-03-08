@@ -86,6 +86,12 @@ type TargetAllocatorSpec struct {
 	// NetworkPolicy defines the network policy to be applied to the Target Allocator pods.
 	// +optional
 	NetworkPolicy v1beta1.NetworkPolicy `json:"networkPolicy,omitempty"`
+	// CollectorSelector defines the label selector for collector pods that the TargetAllocator should
+	// assign targets to. This is required when using the standalone TargetAllocator CR without an
+	// associated OpenTelemetryCollector CR. If not set and no collector is linked, all pods in the
+	// namespace will be treated as collectors.
+	// +optional
+	CollectorSelector *metav1.LabelSelector `json:"collectorSelector,omitempty"`
 	// CollectorNotReadyGracePeriod defines the grace period after which a TargetAllocator stops considering a collector is target assignable.
 	// The default is 30s, which means that if a collector becomes not Ready, the target allocator will wait for 30 seconds before reassigning its targets. The assumption is that the state is temporary, and an expensive target reallocation should be avoided if possible.
 	//
