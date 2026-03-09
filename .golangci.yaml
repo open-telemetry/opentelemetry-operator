@@ -40,7 +40,6 @@ linters:
         - offBy1
         - paramTypeCombine
         - rangeValCopy
-        - redundantSprint
         - regexpMust
         - regexpSimplify
         - sloppyReassign
