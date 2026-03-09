@@ -94,7 +94,7 @@ func (*OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error) 
 	warnings := admission.Warnings{}
 
 	// validate OpAMP server endpoint
-	if len(strings.TrimSpace(r.Spec.Endpoint)) == 0 {
+	if strings.TrimSpace(r.Spec.Endpoint) == "" {
 		return warnings, errors.New("the OpAMP server endpoint is not specified")
 	}
 

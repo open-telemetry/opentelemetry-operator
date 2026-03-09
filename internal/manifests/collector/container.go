@@ -29,7 +29,7 @@ const maxPortLen = 15
 // Container builds a container for the given collector.
 func Container(cfg config.Config, logger logr.Logger, otelcol v1beta1.OpenTelemetryCollector, addConfig bool) corev1.Container {
 	image := otelcol.Spec.Image
-	if len(image) == 0 {
+	if image == "" {
 		image = cfg.CollectorImage
 	}
 

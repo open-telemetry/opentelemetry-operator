@@ -23,7 +23,7 @@ func ConfigMap(params manifests.Params) (*corev1.ConfigMap, error) {
 
 	config := make(map[any]any)
 
-	if len(params.OpAMPBridge.Spec.Endpoint) > 0 {
+	if params.OpAMPBridge.Spec.Endpoint != "" {
 		config["endpoint"] = params.OpAMPBridge.Spec.Endpoint
 	}
 

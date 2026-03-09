@@ -14,7 +14,7 @@ import (
 
 // ServiceAccountName returns the name of the existing or self-provisioned service account to use for the given instance.
 func ServiceAccountName(instance v1alpha1.TargetAllocator) string {
-	if len(instance.Spec.ServiceAccount) == 0 {
+	if instance.Spec.ServiceAccount == "" {
 		return naming.TargetAllocatorServiceAccount(instance.Name)
 	}
 
@@ -23,7 +23,7 @@ func ServiceAccountName(instance v1alpha1.TargetAllocator) string {
 
 // ServiceAccount returns the service account for the given instance.
 func ServiceAccount(params Params) *corev1.ServiceAccount {
-	if len(params.TargetAllocator.Spec.ServiceAccount) > 0 {
+	if params.TargetAllocator.Spec.ServiceAccount != "" {
 		return nil
 	}
 	name := naming.TargetAllocatorServiceAccount(params.TargetAllocator.Name)

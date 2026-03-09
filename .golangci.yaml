@@ -30,7 +30,6 @@ linters:
         - deferInLoop
         - elseif
         - emptyFallthrough
-        - emptyStringTest
         - exitAfterDefer
         - filepathJoin
         - hugeParam

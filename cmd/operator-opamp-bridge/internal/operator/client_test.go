@@ -124,7 +124,7 @@ func TestClient_Apply(t *testing.T) {
 			c := NewClient(bridgeName, clientLogger, fakeClient, nil)
 			var colConfig []byte
 			var err error
-			if len(tt.args.file) > 0 {
+			if tt.args.file != "" {
 				colConfig, err = loadConfig(tt.args.file)
 				require.NoError(t, err, "Should be no error on loading test configuration")
 			} else {

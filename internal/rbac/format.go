@@ -19,7 +19,7 @@ func WarningsGroupedByResource(reviews []*v1.SubjectAccessReview) []string {
 		}
 		if review.Spec.ResourceAttributes != nil {
 			key := fmt.Sprintf("%s/%s", review.Spec.ResourceAttributes.Group, review.Spec.ResourceAttributes.Resource)
-			if len(review.Spec.ResourceAttributes.Group) == 0 {
+			if review.Spec.ResourceAttributes.Group == "" {
 				key = review.Spec.ResourceAttributes.Resource
 			}
 			userFullResourceToVerbs[review.Spec.User][key] = append(userFullResourceToVerbs[review.Spec.User][key], review.Spec.ResourceAttributes.Verb)
