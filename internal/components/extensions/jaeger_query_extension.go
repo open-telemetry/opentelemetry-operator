@@ -42,7 +42,7 @@ func (g *JaegerQueryExtensionConfig) GetPortNumOrDefault(logger logr.Logger, p i
 // GetPortNum attempts to get the port for the given config. If it cannot, the UnsetPort and the given missingPortError
 // are returned.
 func (g *JaegerQueryExtensionConfig) GetPortNum() (int32, error) {
-	if len(g.HTTP.Endpoint) > 0 {
+	if g.HTTP.Endpoint != "" {
 		return components.PortFromEndpoint(g.HTTP.Endpoint)
 	}
 	return components.UnsetPort, components.PortNotFoundErr

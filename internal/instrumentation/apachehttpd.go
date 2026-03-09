@@ -202,9 +202,9 @@ LoadModule otel_apache_module %[1]s/WebServerModule/Apache/libmod_apache_otel%[2
 	}
 	serviceName := chooseServiceName(pod, useLabelsForResourceAttributes, resourceMap, container)
 	serviceNamespace := pod.GetNamespace()
-	if len(serviceNamespace) == 0 {
+	if serviceNamespace == "" {
 		serviceNamespace = resourceMap[string(semconv.K8SNamespaceNameKey)]
-		if len(serviceNamespace) == 0 {
+		if serviceNamespace == "" {
 			serviceNamespace = "apache-httpd"
 		}
 	}

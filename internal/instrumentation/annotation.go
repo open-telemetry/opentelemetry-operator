@@ -42,12 +42,12 @@ func annotationValue(ns, pod metav1.ObjectMeta, annotation string) string {
 	nsAnnValue := ns.Annotations[annotation]
 
 	// if the namespace value is empty, the pod annotation should be used, whatever it is
-	if len(nsAnnValue) == 0 {
+	if nsAnnValue == "" {
 		return podAnnValue
 	}
 
 	// if the pod value is empty, the annotation should be used (true, false, instance)
-	if len(podAnnValue) == 0 {
+	if podAnnValue == "" {
 		return nsAnnValue
 	}
 

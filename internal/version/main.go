@@ -81,7 +81,7 @@ func (v Version) String() string {
 
 // OpenTelemetryCollector returns the default OpenTelemetryCollector to use when no versions are specified via CLI or configuration.
 func OpenTelemetryCollector() string {
-	if len(otelCol) > 0 {
+	if otelCol != "" {
 		// this should always be set, as it's specified during the build
 		return otelCol
 	}
@@ -92,7 +92,7 @@ func OpenTelemetryCollector() string {
 
 // TargetAllocator returns the default TargetAllocator to use when no versions are specified via CLI or configuration.
 func TargetAllocator() string {
-	if len(targetAllocator) > 0 {
+	if targetAllocator != "" {
 		// this should always be set, as it's specified during the build
 		return targetAllocator
 	}
@@ -103,7 +103,7 @@ func TargetAllocator() string {
 
 // OperatorOpAMPBridge returns the default OperatorOpAMPBridge to use when no versions are specified via CLI or configuration.
 func OperatorOpAMPBridge() string {
-	if len(operatorOpAMPBridge) > 0 {
+	if operatorOpAMPBridge != "" {
 		// this should always be set, as it's specified during the build
 		return operatorOpAMPBridge
 	}
@@ -113,49 +113,49 @@ func OperatorOpAMPBridge() string {
 }
 
 func AutoInstrumentationJava() string {
-	if len(autoInstrumentationJava) > 0 {
+	if autoInstrumentationJava != "" {
 		return autoInstrumentationJava
 	}
 	return "0.0.0"
 }
 
 func AutoInstrumentationNodeJS() string {
-	if len(autoInstrumentationNodeJS) > 0 {
+	if autoInstrumentationNodeJS != "" {
 		return autoInstrumentationNodeJS
 	}
 	return "0.0.0"
 }
 
 func AutoInstrumentationPython() string {
-	if len(autoInstrumentationPython) > 0 {
+	if autoInstrumentationPython != "" {
 		return autoInstrumentationPython
 	}
 	return "0.0.0"
 }
 
 func AutoInstrumentationDotNet() string {
-	if len(autoInstrumentationDotNet) > 0 {
+	if autoInstrumentationDotNet != "" {
 		return autoInstrumentationDotNet
 	}
 	return "0.0.0"
 }
 
 func AutoInstrumentationApacheHttpd() string {
-	if len(autoInstrumentationApacheHttpd) > 0 {
+	if autoInstrumentationApacheHttpd != "" {
 		return autoInstrumentationApacheHttpd
 	}
 	return "0.0.0"
 }
 
 func AutoInstrumentationNginx() string {
-	if len(autoInstrumentationNginx) > 0 {
+	if autoInstrumentationNginx != "" {
 		return autoInstrumentationNginx
 	}
 	return "0.0.0"
 }
 
 func AutoInstrumentationGo() string {
-	if len(autoInstrumentationGo) > 0 {
+	if autoInstrumentationGo != "" {
 		return autoInstrumentationGo
 	}
 	return "0.0.0"

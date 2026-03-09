@@ -15,7 +15,7 @@ import (
 )
 
 func upgrade0_24_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
-	if len(otelcol.Spec.Config) == 0 {
+	if otelcol.Spec.Config == "" {
 		return otelcol, nil
 	}
 
@@ -42,7 +42,7 @@ func upgrade0_24_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 					u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.24.0 migrated the property 'port' to 'endpoint' for extension %q", k))
 				}
 			case string:
-				if len(extension) == 0 {
+				if extension == "" {
 					// This extension is using the default configuration.
 					continue
 				}

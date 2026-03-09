@@ -359,7 +359,7 @@ func (c CollectorWebhook) validateTargetAllocatorConfig(ctx context.Context, r *
 	// if the prometheusCR is enabled, it needs a suite of permissions to function
 	if r.Spec.TargetAllocator.PrometheusCR.Enabled {
 		saname := r.Spec.TargetAllocator.ServiceAccount
-		if len(r.Spec.TargetAllocator.ServiceAccount) == 0 {
+		if r.Spec.TargetAllocator.ServiceAccount == "" {
 			saname = naming.TargetAllocatorServiceAccount(r.Name)
 		}
 		warnings, err := CheckTargetAllocatorPrometheusCRPolicyRules(

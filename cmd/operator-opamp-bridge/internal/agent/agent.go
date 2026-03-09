@@ -159,7 +159,7 @@ func (agent *Agent) generateCollectorPoolHealth() (map[string]*protobufs.Compone
 
 // getCollectorSelector destructures the collectors scale selector if present, it uses the labelmap from the operator.
 func (*Agent) getCollectorSelector(col v1beta1.OpenTelemetryCollector) map[string]string {
-	if len(col.Status.Scale.Selector) > 0 {
+	if col.Status.Scale.Selector != "" {
 		selMap := map[string]string{}
 		for kvPair := range strings.SplitSeq(col.Status.Scale.Selector, ",") {
 			kv := strings.Split(kvPair, "=")
@@ -401,7 +401,7 @@ func (agent *Agent) applyRemoteConfig(config *protobufs.AgentRemoteConfig) (*pro
 	var errs []error
 	// Apply changes from the received config map
 	for key, file := range config.Config.GetConfigMap() {
-		if len(key) == 0 || len(file.Body) == 0 {
+		if key == "" || len(file.Body) == 0 {
 			continue
 		}
 		colKey, err := kubeResourceFromKey(key)

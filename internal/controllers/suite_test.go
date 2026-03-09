@@ -331,7 +331,7 @@ func testCollectorWithModeAndReplicas(t *testing.T, name string, mode v1beta1.Mo
 func testCollectorAssertNoErr(t *testing.T, name, taContainerImage, file string) v1beta1.OpenTelemetryCollector {
 	p, err := testCollectorWithConfigFile(name, taContainerImage, file)
 	assert.NoError(t, err)
-	if len(taContainerImage) == 0 {
+	if taContainerImage == "" {
 		p.Spec.TargetAllocator.Enabled = false
 	}
 	return p

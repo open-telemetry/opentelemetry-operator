@@ -4,8 +4,6 @@
 package processors
 
 import (
-	"fmt"
-
 	"github.com/go-logr/logr"
 	rbacv1 "k8s.io/api/rbac/v1"
 )
@@ -19,7 +17,7 @@ type ResourceDetectionConfig struct {
 func GenerateResourceDetectionRbacRules(_ logr.Logger, config ResourceDetectionConfig) ([]rbacv1.PolicyRule, error) {
 	var prs []rbacv1.PolicyRule
 	for _, d := range config.Detectors {
-		detectorName := fmt.Sprint(d)
+		detectorName := d
 		switch detectorName {
 		case "k8snode":
 			policy := rbacv1.PolicyRule{
