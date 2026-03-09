@@ -4,7 +4,7 @@
 package components
 
 import (
-	"fmt"
+	"errors"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -63,41 +63,49 @@ func (b Builder[ComponentConfigType]) WithProtocol(protocol corev1.Protocol) Bui
 		o.protocol = protocol
 	})
 }
+
 func (b Builder[ComponentConfigType]) WithAppProtocol(appProtocol *string) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.appProtocol = appProtocol
 	})
 }
+
 func (b Builder[ComponentConfigType]) WithDefaultRecAddress(defaultRecAddr string) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.defaultRecAddr = defaultRecAddr
 	})
 }
+
 func (b Builder[ComponentConfigType]) WithTargetPort(targetPort int32) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.targetPort = intstr.FromInt32(targetPort)
 	})
 }
+
 func (b Builder[ComponentConfigType]) WithNodePort(nodePort int32) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.nodePort = nodePort
 	})
 }
+
 func (b Builder[ComponentConfigType]) WithName(name string) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.name = name
 	})
 }
+
 func (b Builder[ComponentConfigType]) WithPort(port int32) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.port = port
 	})
 }
+
 func (b Builder[ComponentConfigType]) WithPortParser(portParser PortParser[ComponentConfigType]) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.portParser = portParser
 	})
 }
+
 func (b Builder[ComponentConfigType]) WithRbacGen(rbacGen RBACRuleGenerator[ComponentConfigType]) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.rbacGen = rbacGen
@@ -121,11 +129,13 @@ func (b Builder[ComponentConfigType]) WithStartupGen(startupGen ProbeGenerator[C
 		o.startupGen = startupGen
 	})
 }
+
 func (b Builder[ComponentConfigType]) WithEnvVarGen(envVarGen EnvVarGenerator[ComponentConfigType]) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.envVarGen = envVarGen
 	})
 }
+
 func (b Builder[ComponentConfigType]) WithDefaultsApplier(defaultsApplier Defaulter[ComponentConfigType]) Builder[ComponentConfigType] {
 	return append(b, func(o *Settings[ComponentConfigType]) {
 		o.defaultsApplier = defaultsApplier
@@ -136,7 +146,7 @@ func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigTyp
 	o := NewEmptySettings[ComponentConfigType]()
 	o.Apply(b...)
 	if len(o.name) == 0 {
-		return nil, fmt.Errorf("invalid settings struct, no name specified")
+		return nil, errors.New("invalid settings struct, no name specified")
 	}
 	return &GenericParser[ComponentConfigType]{
 		name:            o.name,
@@ -152,9 +162,9 @@ func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigTyp
 }
 
 func (b Builder[ComponentConfigType]) MustBuild() *GenericParser[ComponentConfigType] {
-	if p, err := b.Build(); err != nil {
+	p, err := b.Build()
+	if err != nil {
 		panic(err)
-	} else {
-		return p
 	}
+	return p
 }

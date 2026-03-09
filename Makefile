@@ -321,7 +321,7 @@ add-rbac-permissions-to-operator: manifests kustomize
 .PHONY: deploy
 deploy: set-image-controller
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
-	go run hack/check-operator-ready.go 300
+	kubectl rollout status deployment/opentelemetry-operator-controller-manager -n opentelemetry-operator-system --timeout=300s
 
 # Undeploy controller in the current Kubernetes context, configured in ~/.kube/config
 .PHONY: undeploy
@@ -679,11 +679,11 @@ CHAINSAW ?= $(LOCALBIN)/chainsaw
 GOTESTSUM ?= $(LOCALBIN)/gotestsum
 
 # renovate: datasource=go depName=sigs.k8s.io/kustomize/kustomize/v5
-KUSTOMIZE_VERSION ?= v5.8.0
+KUSTOMIZE_VERSION ?= v5.8.1
 # renovate: datasource=go depName=sigs.k8s.io/controller-tools/cmd/controller-gen
-CONTROLLER_TOOLS_VERSION ?= v0.20.0
+CONTROLLER_TOOLS_VERSION ?= v0.20.1
 # renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION ?= v2.8.0
+GOLANGCI_LINT_VERSION ?= v2.11.2
 # renovate: datasource=go depName=sigs.k8s.io/kind
 KIND_VERSION ?= v0.31.0
 # renovate: datasource=go depName=github.com/kyverno/chainsaw
@@ -840,7 +840,11 @@ api-docs: crdoc kustomize
 	for crdmanifest in $$TMP_DIR/*; do \
 	  filename="$$(basename -s .opentelemetry.io.yaml $$crdmanifest)" ;\
 	  filename="$${filename#apiextensions.k8s.io_v1_customresourcedefinition_}" ;\
-	  $(CRDOC) --resources $$crdmanifest --output docs/api/$$filename.md ;\
+	  if [ "$$filename" = "clusterobservabilities" ]; then \
+	    echo "Skipping API documentation generation for clusterobservabilities (internal alpha API)" ;\
+	  else \
+	    $(CRDOC) --resources $$crdmanifest --output docs/api/$$filename.md ;\
+	  fi ;\
 	done;\
 	}
 

@@ -1,0 +1,11 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: capture-initial-cert-date
+status:
+  succeeded: 1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cert-date-tracker

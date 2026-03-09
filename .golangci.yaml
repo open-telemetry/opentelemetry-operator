@@ -1,7 +1,6 @@
 version: "2"
 run:
   concurrency: 3
-  timeout: 5m
   issues-exit-code: 1
   tests: true
 
@@ -12,10 +11,45 @@ linters:
       rules:
         main:
           deny:
-            - pkg: sync/atomic
-              desc: Use go.uber.org/atomic instead of sync/atomic
             - pkg: github.com/pkg/errors
               desc: Use 'errors' or 'fmt' instead of github.com/pkg/errors
+            - pkg: go.uber.org/atomic
+              desc: Use sync/atomic instead of go.uber.org/atomic
+            - pkg: go.uber.org/multierr
+              desc: Use 'errors.Join' instead of go.uber.org/multierr
+    exhaustive:
+      default-signifies-exhaustive: true
+    gocritic:
+      disabled-checks:
+        - appendAssign
+        - appendCombine
+        - argOrder
+        - assignOp
+        - builtinShadow
+        - commentedOutCode
+        - deferInLoop
+        - elseif
+        - emptyFallthrough
+        - emptyStringTest
+        - exitAfterDefer
+        - filepathJoin
+        - hugeParam
+        - importShadow
+        - nestingReduce
+        - octalLiteral
+        - offBy1
+        - paramTypeCombine
+        - rangeValCopy
+        - redundantSprint
+        - regexpMust
+        - regexpSimplify
+        - sloppyReassign
+        - stringXbytes
+        - typeDefFirst
+        - unlambda
+        - unnamedResult
+        - whyNoLint
+      enable-all: true
     goheader:
       template: |-
         Copyright The OpenTelemetry Authors
@@ -33,40 +67,130 @@ linters:
             - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Warnf
             - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Errorf
             - (github.com/golangci/golangci-lint/v2/pkg/logutils.Log).Fatalf
+    importas:
+      alias:
+        - pkg: k8s.io/apimachinery/pkg/api/errors
+          alias: apierrors
+        - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
+          alias: metav1
     misspell:
       locale: US
       ignore-rules:
         - cancelled
+    nolintlint:
+      require-specific: true
     revive:
       confidence: 0.8
+      enable-all-rules: true
+      enable-default-rules: true
+      max-open-files: 2048
+      rules:
+        - name: add-constant
+          disabled: true
+        - name: bare-return
+          disabled: true # FIXME
+        - name: blank-imports
+          disabled: true
+        - name: context-as-argument
+          arguments:
+            - allow-types-before: "*testing.T"
+        - name: cognitive-complexity
+          disabled: true
+        - name: cyclomatic
+          disabled: true
+        - name: confusing-naming
+          disabled: true # FIXME
+        - name: confusing-results
+          disabled: true # FIXME
+        - name: comment-spacings
+          arguments:
+            - +kubebuilder
+        - name: deep-exit
+          disabled: true # FIXME
+        - name: defer
+          disabled: true # FIXME
+        - name: dot-imports
+          disabled: true
+        - name: empty-block
+          disabled: true
+        - name: enforce-switch-style
+          arguments: ["allowNoDefault"]
+        - name: error-naming
+          disabled: true
+        - name: error-strings
+          disabled: true # FIXME
+        - name: exported
+          disabled: true
+        - name: flag-parameter
+          disabled: true
+        - name: function-length
+          disabled: true
+        - name: function-result-limit
+          disabled: true
+        - name: get-return
+          disabled: true # FIXME
+        - name: import-alias-naming
+          disabled: true # FIXME
+        - name: import-shadowing
+          disabled: true
+        - name: line-length-limit
+          disabled: true
+        - name: max-public-structs
+          disabled: true
+        - name: nested-structs
+          disabled: true
+        - name: package-directory-mismatch
+          disabled: true # FIXME
+        - name: receiver-naming
+          disabled: true
+        - name: redundant-test-main-exit
+          disabled: true # FIXME
+        - name: redefines-builtin-id
+          disabled: true
+        - name: redundant-import-alias
+          disabled: true # FIXME
+        - name: struct-tag
+          disabled: true # FIXME
+        - name: unchecked-type-assertion
+          disabled: true
+        - name: unexported-return
+          disabled: true # FIXME
+        - name: unhandled-error
+          disabled: true
+        - name: unreachable-code
+          disabled: true # FIXME
+        - name: unsecure-url-scheme
+          disabled: true
+        - name: use-waitgroup-go
+          disabled: true
+        - name: var-naming
+          disabled: true
     staticcheck:
       checks:
         - all
-        - -QF1001 # FIXME Apply De Morgan’s law
-        - -QF1003 # FIXME Convert if/else-if chain to tagged switch
-        - -QF1004 # FIXME Use strings.ReplaceAll instead of strings.Replace with n == -1
-        - -QF1008 # FIXME Omit embedded fields from selector expression
-        - -QF1011 # FIXME Omit redundant type from variable declaration
         - -ST1003 # FIXME Poorly chosen identifier
-        - -ST1005 # FIXME Incorrectly formatted error string
         - -ST1012 # FIXME Poorly chosen name for error variable
-        - -ST1016 # FIXME Use consistent method receiver names
-        - -ST1019 # FIXME Importing the same package multiple times
-        - -ST1023 # FIXME Redundant type in variable declaration
   enable:
     - depguard
     - errcheck
     - errorlint
     - exhaustive
+    - gocritic
     - godot
     - goheader
     - gosec
     - govet
+    - importas
     - ineffassign
+    - modernize
     - misspell
+    - noctx
+    - nolintlint
+    - revive
     - staticcheck
     - unparam
     - unused
+    - whitespace
   exclusions:
     generated: lax
     presets:
@@ -74,6 +198,16 @@ linters:
       - common-false-positives
       - legacy
       - std-error-handling
+    rules:
+      - linters:
+          - staticcheck
+        text: ".*.VolumeSizeLimit is deprecated:"
+      - linters:
+          - gosec
+        path: _test\.go
+      - linters:
+          - gosec
+        path: tests/
 formatters:
   enable:
     - gci

@@ -4,6 +4,7 @@
 package manifestutils
 
 import (
+	"maps"
 	"regexp"
 	"strings"
 
@@ -25,7 +26,7 @@ func IsFilteredSet(sourceSet string, filterSet []string) bool {
 }
 
 // Labels return the common labels to all objects that are part of a managed CR.
-func Labels(instance metav1.ObjectMeta, name string, image string, component string, filterLabels []string) map[string]string {
+func Labels(instance metav1.ObjectMeta, name, image, component string, filterLabels []string) map[string]string {
 	var versionLabel string
 	// new map every time, so that we don't touch the instance's label
 	base := map[string]string{}
@@ -37,14 +38,12 @@ func Labels(instance metav1.ObjectMeta, name string, image string, component str
 		}
 	}
 
-	for k, v := range SelectorLabels(instance, component) {
-		base[k] = v
-	}
+	maps.Copy(base, SelectorLabels(instance, component))
 
 	version := strings.Split(image, ":")
 	for _, v := range version {
-		if strings.HasSuffix(v, "@sha256") {
-			versionLabel = strings.TrimSuffix(v, "@sha256")
+		if before, ok := strings.CutSuffix(v, "@sha256"); ok {
+			versionLabel = before
 		}
 	}
 	switch lenVersion := len(version); lenVersion {
@@ -82,7 +81,7 @@ func TASelectorLabels(instance v1alpha1.TargetAllocator, component string) map[s
 	// TargetAllocator uses the name label as well for selection
 	// This is inconsistent with the Collector, but changing is a somewhat painful breaking change
 	// Don't override the app name if it already exists
-	if name, ok := instance.ObjectMeta.Labels["app.kubernetes.io/name"]; ok {
+	if name, ok := instance.Labels["app.kubernetes.io/name"]; ok {
 		selectorLabels["app.kubernetes.io/name"] = name
 	} else {
 		selectorLabels["app.kubernetes.io/name"] = naming.TargetAllocator(instance.Name)
@@ -91,7 +90,7 @@ func TASelectorLabels(instance v1alpha1.TargetAllocator, component string) map[s
 }
 
 // AddExtraLabels adds extra labels to the ServiceMonitor labels map.
-func AddExtraLabels(logger *logr.Logger, labels map[string]string, extraLabels map[string]string) {
+func AddExtraLabels(logger *logr.Logger, labels, extraLabels map[string]string) {
 	for k, v := range extraLabels {
 		if existingValue, exists := (labels)[k]; exists {
 			if existingValue != v {

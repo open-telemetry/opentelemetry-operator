@@ -5,6 +5,7 @@ package v1alpha1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -45,7 +46,7 @@ type InstrumentationWebhook struct {
 	scheme *runtime.Scheme
 }
 
-func (w InstrumentationWebhook) Default(ctx context.Context, obj runtime.Object) error {
+func (w InstrumentationWebhook) Default(_ context.Context, obj runtime.Object) error {
 	instrumentation, ok := obj.(*Instrumentation)
 	if !ok {
 		return fmt.Errorf("expected an Instrumentation, received %T", obj)
@@ -53,7 +54,7 @@ func (w InstrumentationWebhook) Default(ctx context.Context, obj runtime.Object)
 	return w.defaulter(instrumentation)
 }
 
-func (w InstrumentationWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (w InstrumentationWebhook) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	inst, ok := obj.(*Instrumentation)
 	if !ok {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
@@ -61,7 +62,7 @@ func (w InstrumentationWebhook) ValidateCreate(ctx context.Context, obj runtime.
 	return w.validate(inst)
 }
 
-func (w InstrumentationWebhook) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (w InstrumentationWebhook) ValidateUpdate(_ context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
 	inst, ok := newObj.(*Instrumentation)
 	if !ok {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", newObj)
@@ -69,7 +70,7 @@ func (w InstrumentationWebhook) ValidateUpdate(ctx context.Context, oldObj, newO
 	return w.validate(inst)
 }
 
-func (w InstrumentationWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (w InstrumentationWebhook) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	inst, ok := obj.(*Instrumentation)
 	if !ok || inst == nil {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
@@ -197,34 +198,33 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	return nil
 }
 
-func (w InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, error) {
+func (InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, error) {
 	var warnings []string
-	switch r.Spec.Sampler.Type {
+	switch r.Spec.Type {
 	case "":
 		warnings = append(warnings, "sampler type not set")
 	case TraceIDRatio, ParentBasedTraceIDRatio:
-		if r.Spec.Sampler.Argument != "" {
-			rate, err := strconv.ParseFloat(r.Spec.Sampler.Argument, 64)
+		if r.Spec.Argument != "" {
+			rate, err := strconv.ParseFloat(r.Spec.Argument, 64)
 			if err != nil {
-				return warnings, fmt.Errorf("spec.sampler.argument is not a number: %s", r.Spec.Sampler.Argument)
+				return warnings, fmt.Errorf("spec.sampler.argument is not a number: %s", r.Spec.Argument)
 			}
 			if rate < 0 || rate > 1 {
-				return warnings, fmt.Errorf("spec.sampler.argument should be in rage [0..1]: %s", r.Spec.Sampler.Argument)
+				return warnings, fmt.Errorf("spec.sampler.argument should be in rage [0..1]: %s", r.Spec.Argument)
 			}
 		}
 	case JaegerRemote, ParentBasedJaegerRemote:
 		// value is a comma separated list of endpoint, pollingIntervalMs, initialSamplingRate
 		// Example: `endpoint=http://localhost:14250,pollingIntervalMs=5000,initialSamplingRate=0.25`
-		if r.Spec.Sampler.Argument != "" {
-			err := validateJaegerRemoteSamplerArgument(r.Spec.Sampler.Argument)
-
+		if r.Spec.Argument != "" {
+			err := validateJaegerRemoteSamplerArgument(r.Spec.Argument)
 			if err != nil {
-				return warnings, fmt.Errorf("spec.sampler.argument is not a valid argument for sampler %s: %w", r.Spec.Sampler.Type, err)
+				return warnings, fmt.Errorf("spec.sampler.argument is not a valid argument for sampler %s: %w", r.Spec.Type, err)
 			}
 		}
 	case AlwaysOn, AlwaysOff, ParentBasedAlwaysOn, ParentBasedAlwaysOff, XRaySampler:
 	default:
-		return warnings, fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Sampler.Type)
+		return warnings, fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Type)
 	}
 
 	var err error
@@ -305,9 +305,9 @@ func validateExporter(exporter Exporter) []string {
 }
 
 func validateJaegerRemoteSamplerArgument(argument string) error {
-	parts := strings.Split(argument, ",")
+	parts := strings.SplitSeq(argument, ",")
 
-	for _, part := range parts {
+	for part := range parts {
 		kv := strings.Split(part, "=")
 		if len(kv) != 2 {
 			return fmt.Errorf("invalid argument: %s, the argument should be in the form of key=value", part)
@@ -316,7 +316,7 @@ func validateJaegerRemoteSamplerArgument(argument string) error {
 		switch kv[0] {
 		case "endpoint":
 			if kv[1] == "" {
-				return fmt.Errorf("endpoint cannot be empty")
+				return errors.New("endpoint cannot be empty")
 			}
 		case "pollingIntervalMs":
 			if _, err := strconv.Atoi(kv[1]); err != nil {
@@ -337,7 +337,7 @@ func validateJaegerRemoteSamplerArgument(argument string) error {
 
 func validateInstrVolume(volumeClaimTemplate corev1.PersistentVolumeClaimTemplate, volumeSizeLimit *resource.Quantity) error {
 	if !reflect.ValueOf(volumeClaimTemplate).IsZero() && volumeSizeLimit != nil {
-		return fmt.Errorf("unable to resolve volume size")
+		return errors.New("unable to resolve volume size")
 	}
 	return nil
 }

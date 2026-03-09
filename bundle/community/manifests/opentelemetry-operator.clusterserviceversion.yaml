@@ -96,16 +96,16 @@ metadata:
         }
       ]
     capabilities: Deep Insights
-    categories: Logging & Tracing,Monitoring
+    categories: Logging & Tracing,Monitoring,Observability
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
-    createdAt: "2026-01-15T17:19:15Z"
+    createdAt: "2026-03-05T21:42:04Z"
     description: Provides the OpenTelemetry components, including the Collector
     operators.operatorframework.io/builder: operator-sdk-v1.29.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: github.com/open-telemetry/opentelemetry-operator
     support: OpenTelemetry Community
-  name: opentelemetry-operator.v0.143.0
+  name: opentelemetry-operator.v0.146.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -401,6 +401,13 @@ spec:
           - list
           - update
         - apiGroups:
+          - discovery.k8s.io
+          resources:
+          - endpointslices
+          verbs:
+          - get
+          - list
+        - apiGroups:
           - monitoring.coreos.com
           resources:
           - podmonitors
@@ -429,18 +436,10 @@ spec:
         - apiGroups:
           - opentelemetry.io
           resources:
+          - clusterobservabilities
           - instrumentations
-          - opentelemetrycollectors
-          verbs:
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - opentelemetry.io
-          resources:
           - opampbridges
+          - opentelemetrycollectors
           - targetallocators
           - targetallocators/finalizers
           verbs:
@@ -454,12 +453,14 @@ spec:
         - apiGroups:
           - opentelemetry.io
           resources:
+          - clusterobservabilities/finalizers
           - opampbridges/finalizers
           verbs:
           - update
         - apiGroups:
           - opentelemetry.io
           resources:
+          - clusterobservabilities/status
           - opampbridges/status
           - opentelemetrycollectors/finalizers
           - opentelemetrycollectors/status
@@ -485,6 +486,18 @@ spec:
           resources:
           - routes
           - routes/custom-host
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - security.openshift.io
+          resources:
+          - securitycontextconstraints
           verbs:
           - create
           - delete
@@ -545,7 +558,7 @@ spec:
                   value: "true"
                 - name: ENABLE_NGINX_AUTO_INSTRUMENTATION
                   value: "true"
-                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.143.0
+                image: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.146.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -630,7 +643,7 @@ spec:
   minKubeVersion: 1.25.0
   provider:
     name: OpenTelemetry Community
-  version: 0.143.0
+  version: 0.146.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1alpha1

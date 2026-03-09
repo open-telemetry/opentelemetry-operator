@@ -44,6 +44,7 @@ func NewCluster(cfg *config.Config) Cluster {
 		apiAvailabilityCache: make(map[schema.GroupVersionResource]bool),
 	}
 }
+
 func (c *Cluster) getOperatorNamespace() (string, error) {
 	if c.config.OperatorNamespace != "" {
 		return c.config.OperatorNamespace, nil
@@ -67,7 +68,6 @@ func (c *Cluster) getOperatorDeployment() (appsv1.Deployment, error) {
 			"app.kubernetes.io/name": "opentelemetry-operator",
 		}),
 	})
-
 	if err != nil {
 		return appsv1.Deployment{}, err
 	}
@@ -77,7 +77,6 @@ func (c *Cluster) getOperatorDeployment() (appsv1.Deployment, error) {
 	}
 
 	return operatorDeployments.Items[0], nil
-
 }
 
 func (c *Cluster) GetOperatorLogs() error {
@@ -156,9 +155,7 @@ func (c *Cluster) GetOLMInfo() error {
 		return err
 	}
 	for _, o := range operators.Items {
-		o := o
 		writeToFile(outputDir, &o)
-
 	}
 
 	// OperatorGroups
@@ -170,7 +167,6 @@ func (c *Cluster) GetOLMInfo() error {
 		return err
 	}
 	for _, o := range operatorGroups.Items {
-		o := o
 		if strings.Contains(o.Name, "opentelemetry") {
 			writeToFile(outputDir, &o)
 		}
@@ -185,9 +181,7 @@ func (c *Cluster) GetOLMInfo() error {
 		return err
 	}
 	for _, o := range subscriptions.Items {
-		o := o
 		writeToFile(outputDir, &o)
-
 	}
 
 	// InstallPlan
@@ -199,7 +193,6 @@ func (c *Cluster) GetOLMInfo() error {
 		return err
 	}
 	for _, o := range ips.Items {
-		o := o
 		writeToFile(outputDir, &o)
 	}
 
@@ -212,7 +205,6 @@ func (c *Cluster) GetOLMInfo() error {
 		return err
 	}
 	for _, o := range csvs.Items {
-		o := o
 		if strings.Contains(o.Name, "opentelemetry") {
 			writeToFile(outputDir, &o)
 		}
@@ -234,7 +226,6 @@ func (c *Cluster) GetOpenTelemetryCollectors() error {
 	errorDetected := false
 
 	for _, otelCol := range otelCols.Items {
-		otelCol := otelCol
 		err := c.processOTELCollector(&otelCol)
 		if err != nil {
 			log.Fatalln(err)
@@ -243,7 +234,7 @@ func (c *Cluster) GetOpenTelemetryCollectors() error {
 	}
 
 	if errorDetected {
-		return fmt.Errorf("something failed while getting the opentelemtrycollectors")
+		return errors.New("something failed while getting the opentelemtrycollectors")
 	}
 	return nil
 }
@@ -270,7 +261,7 @@ func (c *Cluster) GetTargetAllocators() error {
 	}
 
 	if errorDetected {
-		return fmt.Errorf("something failed while getting the targetallocators")
+		return errors.New("something failed while getting the targetallocators")
 	}
 	return nil
 }
@@ -288,7 +279,6 @@ func (c *Cluster) GetInstrumentations() error {
 	errorDetected := false
 
 	for _, instr := range instrumentations.Items {
-		instr := instr
 		outputDir := filepath.Join(c.config.CollectionDir, instr.Namespace)
 		err := os.MkdirAll(outputDir, os.ModePerm)
 		if err != nil {
@@ -301,7 +291,7 @@ func (c *Cluster) GetInstrumentations() error {
 	}
 
 	if errorDetected {
-		return fmt.Errorf("something failed while getting the opentelemtrycollectors")
+		return errors.New("something failed while getting the opentelemtrycollectors")
 	}
 	return nil
 }
@@ -338,7 +328,7 @@ func (c *Cluster) processOTELTargetAllocator(ta *otelv1alpha1.TargetAllocator) e
 	return nil
 }
 
-func (c *Cluster) processOwnedResources(owner interface{}, folder string) error {
+func (c *Cluster) processOwnedResources(owner any, folder string) error {
 	resourceTypes := []struct {
 		list     client.ObjectList
 		apiCheck func() bool
@@ -374,7 +364,7 @@ func (c *Cluster) processOwnedResources(owner interface{}, folder string) error 
 	return nil
 }
 
-func (c *Cluster) getOwnerResources(objList client.ObjectList, owner interface{}) ([]client.Object, error) {
+func (c *Cluster) getOwnerResources(objList client.ObjectList, owner any) ([]client.Object, error) {
 	err := c.config.KubernetesClient.List(context.TODO(), objList, &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set{
 			"app.kubernetes.io/managed-by": "opentelemetry-operator",
@@ -393,10 +383,9 @@ func (c *Cluster) getOwnerResources(objList client.ObjectList, owner interface{}
 		}
 	}
 	return resources, nil
-
 }
 
-func (c *Cluster) processResourceType(list client.ObjectList, owner interface{}, folder string) error {
+func (c *Cluster) processResourceType(list client.ObjectList, owner any, folder string) error {
 	resources, err := c.getOwnerResources(list, owner)
 	if err != nil {
 		return fmt.Errorf("failed to get resources: %w", err)
@@ -437,7 +426,7 @@ func (c *Cluster) isAPIAvailable(gvr schema.GroupVersionResource) bool {
 	return result
 }
 
-func hasOwnerReference(obj client.Object, owner interface{}) bool {
+func hasOwnerReference(obj client.Object, owner any) bool {
 	var ownerKind string
 	var ownerUID types.UID
 

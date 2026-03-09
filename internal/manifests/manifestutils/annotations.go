@@ -16,8 +16,8 @@ func Annotations(instance v1beta1.OpenTelemetryCollector, filterAnnotations []st
 	// new map every time, so that we don't touch the instance's annotations
 	annotations := map[string]string{}
 
-	if instance.ObjectMeta.Annotations != nil {
-		for k, v := range instance.ObjectMeta.Annotations {
+	if instance.Annotations != nil {
+		for k, v := range instance.Annotations {
 			if !IsFilteredSet(k, filterAnnotations) {
 				annotations[k] = v
 			}

@@ -14,7 +14,7 @@ type kubeResourceKey struct {
 	namespace string
 }
 
-func newKubeResourceKey(namespace string, name string) kubeResourceKey {
+func newKubeResourceKey(namespace, name string) kubeResourceKey {
 	return kubeResourceKey{name: name, namespace: namespace}
 }
 

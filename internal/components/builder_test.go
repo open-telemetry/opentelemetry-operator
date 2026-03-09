@@ -4,7 +4,7 @@
 package components_test
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -20,7 +20,7 @@ func TestBuilder_Build(t *testing.T) {
 	type sampleConfig struct {
 		example string
 		number  int
-		m       map[string]interface{}
+		m       map[string]any
 	}
 	type want struct {
 		name           string
@@ -33,7 +33,7 @@ func TestBuilder_Build(t *testing.T) {
 		b components.Builder[T]
 	}
 	type params struct {
-		conf interface{}
+		conf any
 	}
 	type testCase[T any] struct {
 		name            string
@@ -44,13 +44,13 @@ func TestBuilder_Build(t *testing.T) {
 		wantRbacErr     assert.ErrorAssertionFunc
 		wantLivenessErr assert.ErrorAssertionFunc
 	}
-	examplePortParser := func(logger logr.Logger, name string, defaultPort *corev1.ServicePort, config sampleConfig) ([]corev1.ServicePort, error) {
+	examplePortParser := func(_ logr.Logger, _ string, defaultPort *corev1.ServicePort, _ sampleConfig) ([]corev1.ServicePort, error) {
 		if defaultPort != nil {
 			return []corev1.ServicePort{*defaultPort}, nil
 		}
 		return nil, nil
 	}
-	exampleProbeGen := func(logger logr.Logger, config sampleConfig) (*corev1.Probe, error) {
+	exampleProbeGen := func(logr.Logger, sampleConfig) (*corev1.Probe, error) {
 		return &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
@@ -112,7 +112,7 @@ func TestBuilder_Build(t *testing.T) {
 					WithName("secure-service").
 					WithPort(443).
 					WithProtocol(corev1.ProtocolTCP).
-					WithRbacGen(func(logger logr.Logger, config sampleConfig) ([]rbacv1.PolicyRule, error) {
+					WithRbacGen(func(_ logr.Logger, config sampleConfig) ([]rbacv1.PolicyRule, error) {
 						rules := []rbacv1.PolicyRule{
 							{
 								NonResourceURLs: []string{config.example},
@@ -135,7 +135,7 @@ func TestBuilder_Build(t *testing.T) {
 				conf: sampleConfig{
 					example: "test",
 					number:  100,
-					m: map[string]interface{}{
+					m: map[string]any{
 						"key": "value",
 					},
 				},
@@ -163,7 +163,7 @@ func TestBuilder_Build(t *testing.T) {
 					WithName("secure-service").
 					WithPort(443).
 					WithProtocol(corev1.ProtocolTCP).
-					WithRbacGen(func(logger logr.Logger, config sampleConfig) ([]rbacv1.PolicyRule, error) {
+					WithRbacGen(func(_ logr.Logger, config sampleConfig) ([]rbacv1.PolicyRule, error) {
 						rules := []rbacv1.PolicyRule{
 							{
 								NonResourceURLs: []string{config.example},
@@ -173,7 +173,7 @@ func TestBuilder_Build(t *testing.T) {
 							},
 						}
 						if v, ok := config.m["key"]; ok && v == "value" {
-							return nil, fmt.Errorf("errors from function")
+							return nil, errors.New("errors from function")
 						}
 						return rules, nil
 					}),
@@ -182,7 +182,7 @@ func TestBuilder_Build(t *testing.T) {
 				conf: sampleConfig{
 					example: "test",
 					number:  100,
-					m: map[string]interface{}{
+					m: map[string]any{
 						"key": "value",
 					},
 				},
@@ -210,7 +210,7 @@ func TestBuilder_Build(t *testing.T) {
 				conf: sampleConfig{
 					example: "test",
 					number:  100,
-					m: map[string]interface{}{
+					m: map[string]any{
 						"key": "value",
 					},
 				},
@@ -246,15 +246,15 @@ func TestBuilder_Build(t *testing.T) {
 					WithName("secure-service").
 					WithPort(443).
 					WithProtocol(corev1.ProtocolTCP).
-					WithLivenessGen(func(logger logr.Logger, config sampleConfig) (*corev1.Probe, error) {
-						return nil, fmt.Errorf("no probe")
+					WithLivenessGen(func(logr.Logger, sampleConfig) (*corev1.Probe, error) {
+						return nil, errors.New("no probe")
 					}),
 			},
 			params: params{
 				conf: sampleConfig{
 					example: "test",
 					number:  100,
-					m: map[string]interface{}{
+					m: map[string]any{
 						"key": "value",
 					},
 				},

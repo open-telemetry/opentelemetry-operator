@@ -102,22 +102,22 @@ func (langInsts languageInstrumentations) areInstrumentedContainersCorrect() (bo
 
 	// Look for mixed multiple instrumentations with and without container names.
 	if instrWithoutContainers > 0 && instrWithContainers > 0 {
-		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
+		return false, errors.New("incorrect instrumentation configuration - please provide container names for all instrumentations")
 	}
 
 	// Look for multiple instrumentations without container names.
 	if instrWithoutContainers > 1 && instrWithContainers == 0 {
-		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
+		return false, errors.New("incorrect instrumentation configuration - please provide container names for all instrumentations")
 	}
 
 	if instrWithoutContainers == 0 && instrWithContainers == 0 {
-		return false, fmt.Errorf("instrumentation configuration not provided")
+		return false, errors.New("instrumentation configuration not provided")
 	}
 
 	enabledInstrumentations := instrWithContainers + instrWithoutContainers
 
 	if enabledInstrumentations > 1 && instrumentationWithNoContainers {
-		return false, fmt.Errorf("incorrect instrumentation configuration - please provide container names for all instrumentations")
+		return false, errors.New("incorrect instrumentation configuration - please provide container names for all instrumentations")
 	}
 
 	return true, nil
@@ -133,9 +133,8 @@ func (langInsts *languageInstrumentations) setCommonInstrumentedContainers(ns co
 	var containers []string
 	if containersAnnotation == "" {
 		return nil
-	} else {
-		containers = strings.Split(containersAnnotation, ",")
 	}
+	containers = strings.Split(containersAnnotation, ",")
 
 	for _, lang := range instrumentationsList(langInsts) {
 		if lang.Instrumentation != nil {
@@ -145,7 +144,7 @@ func (langInsts *languageInstrumentations) setCommonInstrumentedContainers(ns co
 	return nil
 }
 
-func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns metav1.ObjectMeta, pod metav1.ObjectMeta) error {
+func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns, pod metav1.ObjectMeta) error {
 	inst := []struct {
 		iwc        *instrumentationWithContainers
 		annotation string
@@ -185,7 +184,6 @@ func (langInsts *languageInstrumentations) setLanguageSpecificContainers(ns meta
 	}
 
 	for _, i := range inst {
-		i := i
 		if err := setContainersFromAnnotation(i.iwc, i.annotation, ns, pod); err != nil {
 			return err
 		}
@@ -423,15 +421,15 @@ func (pm *instPodMutator) validateInstrumentation(ctx context.Context, inst *v1a
 	// Check if secret and configmap exists
 	// If they don't exist pod cannot start
 	var errs []error
-	if inst.Spec.Exporter.TLS != nil {
-		if inst.Spec.Exporter.TLS.SecretName != "" {
-			nsn := types.NamespacedName{Name: inst.Spec.Exporter.TLS.SecretName, Namespace: podNamespace}
+	if inst.Spec.TLS != nil {
+		if inst.Spec.TLS.SecretName != "" {
+			nsn := types.NamespacedName{Name: inst.Spec.TLS.SecretName, Namespace: podNamespace}
 			if err := pm.Client.Get(ctx, nsn, &corev1.Secret{}); apierrors.IsNotFound(err) {
 				errs = append(errs, fmt.Errorf("secret %s with certificates does not exists: %w", nsn.String(), err))
 			}
 		}
-		if inst.Spec.Exporter.TLS.ConfigMapName != "" {
-			nsn := types.NamespacedName{Name: inst.Spec.Exporter.TLS.ConfigMapName, Namespace: podNamespace}
+		if inst.Spec.TLS.ConfigMapName != "" {
+			nsn := types.NamespacedName{Name: inst.Spec.TLS.ConfigMapName, Namespace: podNamespace}
 			if err := pm.Client.Get(ctx, nsn, &corev1.ConfigMap{}); apierrors.IsNotFound(err) {
 				errs = append(errs, fmt.Errorf("configmap %s with CA certificate does not exists: %w", nsn.String(), err))
 			}

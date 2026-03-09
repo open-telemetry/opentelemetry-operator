@@ -186,7 +186,7 @@ func colIndex(index, numCols int) int {
 	return index % numCols
 }
 
-func makeNNewTargets(rCfgs []relabelConfigObj, n int, numCollectors int, startingIndex int) ([]*target.Item, int, []*target.Item, map[string][]*relabel.Config, error) {
+func makeNNewTargets(rCfgs []relabelConfigObj, n, numCollectors, startingIndex int) ([]*target.Item, int, []*target.Item, map[string][]*relabel.Config, error) {
 	toReturn := []*target.Item{}
 	expected := []*target.Item{}
 	numItemsRemaining := n
@@ -282,7 +282,6 @@ func TestApplyHashmodAction(t *testing.T) {
 }
 
 func TestApplyEmptyRelabelCfg(t *testing.T) {
-
 	allocatorPrehook := New("relabel-config", logger)
 	assert.NotNil(t, allocatorPrehook)
 

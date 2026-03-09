@@ -37,8 +37,8 @@ func Test0_105_0Upgrade(t *testing.T) {
 			},
 			Config: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"prometheus": []interface{}{},
+					Object: map[string]any{
+						"prometheus": []any{},
 					},
 				},
 			},

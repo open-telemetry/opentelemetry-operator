@@ -175,7 +175,6 @@ func TestMutateDaemonsetAdditionalContainers(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()
@@ -320,7 +319,6 @@ func TestMutateDeploymentAdditionalContainers(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()
@@ -465,7 +463,6 @@ func TestMutateStatefulSetAdditionalContainers(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()
@@ -662,7 +659,6 @@ func TestMutateDaemonsetAffinity(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()
@@ -859,7 +855,6 @@ func TestMutateDeploymentAffinity(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()
@@ -1056,7 +1051,6 @@ func TestMutateStatefulSetAffinity(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()
@@ -1191,7 +1185,6 @@ func TestMutateDaemonsetCollectorArgs(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()
@@ -1326,7 +1319,6 @@ func TestMutateDeploymentCollectorArgs(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()
@@ -1461,7 +1453,6 @@ func TestMutateStatefulSetCollectorArgs(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()
@@ -1671,7 +1662,6 @@ func TestMutateDaemonsetError(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()
@@ -1828,7 +1818,6 @@ func TestMutateDeploymentError(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()
@@ -2049,7 +2038,6 @@ func TestMutateStatefulSetError(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()
@@ -2211,7 +2199,6 @@ func TestMutateDaemonsetLabelChange(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()
@@ -2374,7 +2361,6 @@ func TestMutateDeploymentLabelChange(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()
@@ -2537,7 +2523,6 @@ func TestMutateStatefulSetLabelChange(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mutateFn := MutateFuncFor(&tt.existing, &tt.desired)
 			err := mutateFn()

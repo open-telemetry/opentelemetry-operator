@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Deep Insights
-    categories: Logging & Tracing,Monitoring
+    categories: Logging & Tracing,Monitoring,Observability
     certified: "false"
     containerImage: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
     createdAt: "2020-12-16T13:37:00+00:00"

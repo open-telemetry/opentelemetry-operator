@@ -62,15 +62,15 @@ spec:
   - name: tcp-replication
     port: 9091
     protocol: TCP
-    targetPort: 9091
+    targetPort: tcp-replication
   - name: tcp-clients
     port: 9092
     protocol: TCP
-    targetPort: 9092
+    targetPort: tcp-clients
   - name: tcp-clientstls
     port: 9093
     protocol: TCP
-    targetPort: 9093
+    targetPort: tcp-clientstls
   selector:
     strimzi.io/cluster: my-cluster
     strimzi.io/kind: Kafka
@@ -96,23 +96,23 @@ spec:
   - name: tcp-ctrlplane
     port: 9090
     protocol: TCP
-    targetPort: 9090
+    targetPort: tcp-ctrlplane
   - name: tcp-replication
     port: 9091
     protocol: TCP
-    targetPort: 9091
+    targetPort: tcp-replication
   - name: tcp-kafkaagent
     port: 8443
     protocol: TCP
-    targetPort: 8443
+    targetPort: tcp-kafkaagent
   - name: tcp-clients
     port: 9092
     protocol: TCP
-    targetPort: 9092
+    targetPort: tcp-clients
   - name: tcp-clientstls
     port: 9093
     protocol: TCP
-    targetPort: 9093
+    targetPort: tcp-clientstls
   publishNotReadyAddresses: true
   selector:
     strimzi.io/cluster: my-cluster

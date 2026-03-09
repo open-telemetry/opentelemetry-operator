@@ -125,8 +125,11 @@ func TestMain(m *testing.M) {
 		}, func(error) bool {
 			return true
 		}, func() error {
-			// #nosec G402
-			conn, tlsErr := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
+			tlsDialer := &tls.Dialer{
+				NetDialer: dialer,
+				Config:    &tls.Config{InsecureSkipVerify: true},
+			}
+			conn, tlsErr := tlsDialer.DialContext(ctx, "tcp", addrPort)
 			if tlsErr != nil {
 				return tlsErr
 			}
@@ -136,7 +139,6 @@ func TestMain(m *testing.M) {
 			fmt.Printf("failed to wait for webhook server to be ready: %v", err)
 			os.Exit(1)
 		}
-
 	}(wg)
 	wg.Wait()
 

@@ -24,7 +24,7 @@ func upgrade0_9_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.9.0, failed to parse configuration: %w", err)
 	}
 
-	exporters, ok := cfg["exporters"].(map[interface{}]interface{})
+	exporters, ok := cfg["exporters"].(map[any]any)
 	if !ok {
 		return otelcol, fmt.Errorf("couldn't upgrade to v0.9.0, failed to extract list of exporters from the configuration: %q", cfg["exporters"])
 	}
@@ -32,7 +32,7 @@ func upgrade0_9_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*
 	for k, v := range exporters {
 		if strings.HasPrefix("opencensus", k.(string)) {
 			switch exporter := v.(type) {
-			case map[interface{}]interface{}:
+			case map[any]any:
 				// delete is a noop if there's no such entry
 				delete(exporter, "reconnection_delay")
 				existing := &corev1.ConfigMap{}

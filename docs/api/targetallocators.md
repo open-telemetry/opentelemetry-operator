@@ -193,6 +193,13 @@ For more info, see https://prometheus.io/docs/prometheus/latest/configuration/co
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>hostUsers</b></td>
+        <td>boolean</td>
+        <td>
+          HostUsers isolates pod processes in a separate user namespace, reducing the risk of privilege escalation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>image</b></td>
         <td>string</td>
         <td>
@@ -239,6 +246,13 @@ to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies
         <td>object</td>
         <td>
           Actions that the management system should take in response to container lifecycle events. Cannot be updated.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspeclivenessprobe">livenessProbe</a></b></td>
+        <td>object</td>
+        <td>
+          LivenessProbe defines the liveness probe configuration for the Target Allocator container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -331,6 +345,13 @@ default.<br/>
         <td>object</td>
         <td>
           PrometheusCR defines the configuration for the retrieval of PrometheusOperator CRDs ( servicemonitor.monitoring.coreos.com/v1 and podmonitor.monitoring.coreos.com/v1 ).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecreadinessprobe">readinessProbe</a></b></td>
+        <td>object</td>
+        <td>
+          ReadinessProbe defines the readiness probe configuration for the Target Allocator container.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -9201,6 +9222,325 @@ Name must be an IANA_SVC_NAME.<br/>
 </table>
 
 
+### TargetAllocator.spec.livenessProbe
+<sup><sup>[↩ Parent](#targetallocatorspec)</sup></sup>
+
+
+
+LivenessProbe defines the liveness probe configuration for the Target Allocator container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspeclivenessprobeexec">exec</a></b></td>
+        <td>object</td>
+        <td>
+          Exec specifies a command to execute in the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive failures for the probe to be considered failed after having succeeded.
+Defaults to 3. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspeclivenessprobegrpc">grpc</a></b></td>
+        <td>object</td>
+        <td>
+          GRPC specifies a GRPC HealthCheckRequest.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspeclivenessprobehttpget">httpGet</a></b></td>
+        <td>object</td>
+        <td>
+          HTTPGet specifies an HTTP GET request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after the container has started before liveness probes are initiated.
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          How often (in seconds) to perform the probe.
+Default to 10 seconds. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive successes for the probe to be considered successful after having failed.
+Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspeclivenessprobetcpsocket">tcpSocket</a></b></td>
+        <td>object</td>
+        <td>
+          TCPSocket specifies a connection to a TCP port.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationGracePeriodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
+The grace period is the duration in seconds after the processes running in the pod are sent
+a termination signal and the time when the processes are forcibly halted with a kill signal.
+Set this value longer than the expected cleanup time for your process.
+If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this
+value overrides the value provided by the pod spec.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down).
+This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
+Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after which the probe times out.
+Defaults to 1 second. Minimum value is 1.
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.livenessProbe.exec
+<sup><sup>[↩ Parent](#targetallocatorspeclivenessprobe)</sup></sup>
+
+
+
+Exec specifies a command to execute in the container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command is the command line to execute inside the container, the working directory for the
+command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+a shell, you need to explicitly call out to that shell.
+Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.livenessProbe.grpc
+<sup><sup>[↩ Parent](#targetallocatorspeclivenessprobe)</sup></sup>
+
+
+
+GRPC specifies a GRPC HealthCheckRequest.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port number of the gRPC service. Number must be in the range 1 to 65535.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>service</b></td>
+        <td>string</td>
+        <td>
+          Service is the name of the service to place in the gRPC HealthCheckRequest
+(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
+
+If this is not specified, the default behavior is defined by gRPC.<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.livenessProbe.httpGet
+<sup><sup>[↩ Parent](#targetallocatorspeclivenessprobe)</sup></sup>
+
+
+
+HTTPGet specifies an HTTP GET request to perform.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Name or number of the port to access on the container.
+Number must be in the range 1 to 65535.
+Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host name to connect to, defaults to the pod IP. You probably want to set
+"Host" in httpHeaders instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspeclivenessprobehttpgethttpheadersindex">httpHeaders</a></b></td>
+        <td>[]object</td>
+        <td>
+          Custom headers to set in the request. HTTP allows repeated headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheme</b></td>
+        <td>string</td>
+        <td>
+          Scheme to use for connecting to the host.
+Defaults to HTTP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.livenessProbe.httpGet.httpHeaders[index]
+<sup><sup>[↩ Parent](#targetallocatorspeclivenessprobehttpget)</sup></sup>
+
+
+
+HTTPHeader describes a custom header to be used in HTTP probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The header field name.
+This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.livenessProbe.tcpSocket
+<sup><sup>[↩ Parent](#targetallocatorspeclivenessprobe)</sup></sup>
+
+
+
+TCPSocket specifies a connection to a TCP port.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the container.
+Number must be in the range 1 to 65535.
+Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Optional: Host name to connect to, defaults to the pod IP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### TargetAllocator.spec.networkPolicy
 <sup><sup>[↩ Parent](#targetallocatorspec)</sup></sup>
 
@@ -9994,6 +10334,30 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>evaluationInterval</b></td>
+        <td>string</td>
+        <td>
+          Default interval between rule evaluations.
+
+Default: "30s"<br/>
+          <br/>
+            <i>Format</i>: duration<br/>
+            <i>Default</i>: 30s<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrpodmonitornamespaceselector">podMonitorNamespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          Namespaces to be selected for PodMonitor discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.<br/>
+          <br/>
+            <i>Default</i>: map[]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#targetallocatorspecprometheuscrpodmonitorselector">podMonitorSelector</a></b></td>
         <td>object</td>
         <td>
@@ -10001,6 +10365,18 @@ PrometheusCR defines the configuration for the retrieval of PrometheusOperator C
 A label selector is a label query over a set of resources. The result of matchLabels and
 matchExpressions are ANDed. An empty label selector matches all objects. A null
 label selector matches no objects.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrprobenamespaceselector">probeNamespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          Namespaces to be selected for Probe discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.<br/>
+          <br/>
+            <i>Default</i>: map[]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10022,6 +10398,18 @@ If specified, expects an array of ScrapeClass objects as specified by https://pr
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrscrapeconfignamespaceselector">scrapeConfigNamespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          Namespaces to be selected for ScrapeConfig discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.<br/>
+          <br/>
+            <i>Default</i>: map[]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#targetallocatorspecprometheuscrscrapeconfigselector">scrapeConfigSelector</a></b></td>
         <td>object</td>
         <td>
@@ -10036,12 +10424,31 @@ label selector matches no objects.<br/>
         <td>string</td>
         <td>
           Default interval between consecutive scrapes. Intervals set in ServiceMonitors and PodMonitors override it.
-Equivalent to the same setting on the Prometheus CR.
 
 Default: "30s"<br/>
           <br/>
             <i>Format</i>: duration<br/>
             <i>Default</i>: 30s<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scrapeProtocols</b></td>
+        <td>[]string</td>
+        <td>
+          ScrapeProtocols define the protocols to negotiate during a scrape. It tells clients the
+protocols supported by Prometheus in order of preference (from most to least preferred).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrservicemonitornamespaceselector">serviceMonitorNamespaceSelector</a></b></td>
+        <td>object</td>
+        <td>
+          Namespaces to be selected for ServiceMonitor discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.<br/>
+          <br/>
+            <i>Default</i>: map[]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -10052,6 +10459,91 @@ Default: "30s"<br/>
 A label selector is a label query over a set of resources. The result of matchLabels and
 matchExpressions are ANDed. An empty label selector matches all objects. A null
 label selector matches no objects.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.prometheusCR.podMonitorNamespaceSelector
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscr)</sup></sup>
+
+
+
+Namespaces to be selected for PodMonitor discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrpodmonitornamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.prometheusCR.podMonitorNamespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscrpodmonitornamespaceselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -10099,6 +10591,91 @@ operator is "In", and the values array contains only "value". The requirements a
 
 ### TargetAllocator.spec.prometheusCR.podMonitorSelector.matchExpressions[index]
 <sup><sup>[↩ Parent](#targetallocatorspecprometheuscrpodmonitorselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.prometheusCR.probeNamespaceSelector
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscr)</sup></sup>
+
+
+
+Namespaces to be selected for Probe discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrprobenamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.prometheusCR.probeNamespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscrprobenamespaceselector)</sup></sup>
 
 
 
@@ -10228,6 +10805,91 @@ merge patch.<br/>
 </table>
 
 
+### TargetAllocator.spec.prometheusCR.scrapeConfigNamespaceSelector
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscr)</sup></sup>
+
+
+
+Namespaces to be selected for ScrapeConfig discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrscrapeconfignamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.prometheusCR.scrapeConfigNamespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscrscrapeconfignamespaceselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### TargetAllocator.spec.prometheusCR.scrapeConfigSelector
 <sup><sup>[↩ Parent](#targetallocatorspecprometheuscr)</sup></sup>
 
@@ -10269,6 +10931,91 @@ operator is "In", and the values array contains only "value". The requirements a
 
 ### TargetAllocator.spec.prometheusCR.scrapeConfigSelector.matchExpressions[index]
 <sup><sup>[↩ Parent](#targetallocatorspecprometheuscrscrapeconfigselector)</sup></sup>
+
+
+
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          key is the label key that the selector applies to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>values</b></td>
+        <td>[]string</td>
+        <td>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.prometheusCR.serviceMonitorNamespaceSelector
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscr)</sup></sup>
+
+
+
+Namespaces to be selected for ServiceMonitor discovery.
+A label selector is a label query over a set of resources. The result of matchLabels and
+matchExpressions are ANDed. An empty label selector matches all objects. A null
+label selector matches no objects.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspecprometheuscrservicemonitornamespaceselectormatchexpressionsindex">matchExpressions</a></b></td>
+        <td>[]object</td>
+        <td>
+          matchExpressions is a list of label selector requirements. The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>matchLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.prometheusCR.serviceMonitorNamespaceSelector.matchExpressions[index]
+<sup><sup>[↩ Parent](#targetallocatorspecprometheuscrservicemonitornamespaceselector)</sup></sup>
 
 
 
@@ -10392,6 +11139,325 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
 the values array must be empty. This array is replaced during a strategic
 merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.readinessProbe
+<sup><sup>[↩ Parent](#targetallocatorspec)</sup></sup>
+
+
+
+ReadinessProbe defines the readiness probe configuration for the Target Allocator container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#targetallocatorspecreadinessprobeexec">exec</a></b></td>
+        <td>object</td>
+        <td>
+          Exec specifies a command to execute in the container.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>failureThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive failures for the probe to be considered failed after having succeeded.
+Defaults to 3. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecreadinessprobegrpc">grpc</a></b></td>
+        <td>object</td>
+        <td>
+          GRPC specifies a GRPC HealthCheckRequest.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecreadinessprobehttpget">httpGet</a></b></td>
+        <td>object</td>
+        <td>
+          HTTPGet specifies an HTTP GET request to perform.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>initialDelaySeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after the container has started before liveness probes are initiated.
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>periodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          How often (in seconds) to perform the probe.
+Default to 10 seconds. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>successThreshold</b></td>
+        <td>integer</td>
+        <td>
+          Minimum consecutive successes for the probe to be considered successful after having failed.
+Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecreadinessprobetcpsocket">tcpSocket</a></b></td>
+        <td>object</td>
+        <td>
+          TCPSocket specifies a connection to a TCP port.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>terminationGracePeriodSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
+The grace period is the duration in seconds after the processes running in the pod are sent
+a termination signal and the time when the processes are forcibly halted with a kill signal.
+Set this value longer than the expected cleanup time for your process.
+If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this
+value overrides the value provided by the pod spec.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down).
+This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
+Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeoutSeconds</b></td>
+        <td>integer</td>
+        <td>
+          Number of seconds after which the probe times out.
+Defaults to 1 second. Minimum value is 1.
+More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.readinessProbe.exec
+<sup><sup>[↩ Parent](#targetallocatorspecreadinessprobe)</sup></sup>
+
+
+
+Exec specifies a command to execute in the container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>command</b></td>
+        <td>[]string</td>
+        <td>
+          Command is the command line to execute inside the container, the working directory for the
+command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+a shell, you need to explicitly call out to that shell.
+Exit status of 0 is treated as live/healthy and non-zero is unhealthy.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.readinessProbe.grpc
+<sup><sup>[↩ Parent](#targetallocatorspecreadinessprobe)</sup></sup>
+
+
+
+GRPC specifies a GRPC HealthCheckRequest.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>integer</td>
+        <td>
+          Port number of the gRPC service. Number must be in the range 1 to 65535.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>service</b></td>
+        <td>string</td>
+        <td>
+          Service is the name of the service to place in the gRPC HealthCheckRequest
+(see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
+
+If this is not specified, the default behavior is defined by gRPC.<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.readinessProbe.httpGet
+<sup><sup>[↩ Parent](#targetallocatorspecreadinessprobe)</sup></sup>
+
+
+
+HTTPGet specifies an HTTP GET request to perform.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Name or number of the port to access on the container.
+Number must be in the range 1 to 65535.
+Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Host name to connect to, defaults to the pod IP. You probably want to set
+"Host" in httpHeaders instead.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#targetallocatorspecreadinessprobehttpgethttpheadersindex">httpHeaders</a></b></td>
+        <td>[]object</td>
+        <td>
+          Custom headers to set in the request. HTTP allows repeated headers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>path</b></td>
+        <td>string</td>
+        <td>
+          Path to access on the HTTP server.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scheme</b></td>
+        <td>string</td>
+        <td>
+          Scheme to use for connecting to the host.
+Defaults to HTTP.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.readinessProbe.httpGet.httpHeaders[index]
+<sup><sup>[↩ Parent](#targetallocatorspecreadinessprobehttpget)</sup></sup>
+
+
+
+HTTPHeader describes a custom header to be used in HTTP probes
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The header field name.
+This will be canonicalized upon output, so case-variant names will be understood as the same header.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          The header field value<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### TargetAllocator.spec.readinessProbe.tcpSocket
+<sup><sup>[↩ Parent](#targetallocatorspecreadinessprobe)</sup></sup>
+
+
+
+TCPSocket specifies a connection to a TCP port.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>port</b></td>
+        <td>int or string</td>
+        <td>
+          Number or name of the port to access on the container.
+Number must be in the range 1 to 65535.
+Name must be an IANA_SVC_NAME.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>host</b></td>
+        <td>string</td>
+        <td>
+          Optional: Host name to connect to, defaults to the pod IP.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

@@ -27,9 +27,7 @@ const (
 	defaultHeartbeatInterval  = 30 * time.Second
 )
 
-var (
-	defaultKubeConfigPath = filepath.Join(homedir.HomeDir(), ".kube", "config")
-)
+var defaultKubeConfigPath = filepath.Join(homedir.HomeDir(), ".kube", "config")
 
 // We can't bind this flag to our FlagSet, so we need to handle it separately.
 var zapCmdLineOpts zap.Options
@@ -71,7 +69,7 @@ func getFlagValueAndChanged[T any](flagSet *pflag.FlagSet, flagName string) (val
 	var zero T
 	if changed = flagSet.Changed(flagName); !changed {
 		value, err = zero, nil
-		return
+		return value, changed, err
 	}
 	switch any(zero).(type) {
 	case string:
@@ -85,5 +83,5 @@ func getFlagValueAndChanged[T any](flagSet *pflag.FlagSet, flagName string) (val
 	default:
 		err = fmt.Errorf("unsupported flag type %T", zero)
 	}
-	return
+	return value, changed, err
 }

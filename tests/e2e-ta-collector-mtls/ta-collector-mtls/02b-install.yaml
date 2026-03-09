@@ -1,0 +1,110 @@
+# RBAC for cert date tracking Jobs
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cert-tracker-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cert-tracker-role
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cert-tracker-rolebinding
+subjects:
+  - kind: ServiceAccount
+    name: cert-tracker-sa
+roleRef:
+  kind: Role
+  name: cert-tracker-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Capture initial certificate date before renewal
+# This will be compared after cert renewal to verify rotation occurred
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: capture-initial-cert-date
+spec:
+  template:
+    spec:
+      serviceAccountName: cert-tracker-sa
+      restartPolicy: OnFailure
+      containers:
+        - name: capture-cert
+          image: docker.io/nicolaka/netshoot:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+
+              echo "Attempting to connect to prometheus-cr-targetallocator:443..."
+
+              # Retry logic - target allocator might take a moment to be ready
+              MAX_RETRIES=30
+              RETRY_INTERVAL=2
+              CERT_DATE=""
+
+              for i in $(seq 1 $MAX_RETRIES); do
+                echo "Attempt $i/$MAX_RETRIES: Getting certificate from target allocator..."
+
+                # Capture both stdout and stderr for debugging
+                RAW_OUTPUT=$(echo | openssl s_client -connect prometheus-cr-targetallocator:443 -servername prometheus-cr-targetallocator 2>&1) || true
+
+                # Try to extract the certificate date
+                CERT_DATE=$(echo "$RAW_OUTPUT" | openssl x509 -noout -startdate 2>/dev/null | cut -d= -f2) || true
+
+                if [ -n "$CERT_DATE" ]; then
+                  echo "Successfully retrieved certificate date"
+                  break
+                fi
+
+                echo "Failed to get certificate. Raw output:"
+                echo "$RAW_OUTPUT" | head -20
+                echo "---"
+
+                if [ $i -lt $MAX_RETRIES ]; then
+                  echo "Retrying in ${RETRY_INTERVAL}s..."
+                  sleep $RETRY_INTERVAL
+                fi
+              done
+
+              if [ -z "$CERT_DATE" ]; then
+                echo "ERROR: Failed to get certificate date after $MAX_RETRIES attempts"
+                echo "Please check that the target allocator is running and serving TLS"
+                exit 1
+              fi
+
+              echo "Initial certificate notBefore date: $CERT_DATE"
+
+              # Store the date in a ConfigMap using the Kubernetes API
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+
+              echo "Creating ConfigMap cert-date-tracker in namespace $NAMESPACE..."
+
+              # Create ConfigMap and capture response
+              RESPONSE=$(curl -s -k -X POST \
+                -H "Authorization: Bearer $TOKEN" \
+                -H "Content-Type: application/json" \
+                -w "\n%{http_code}" \
+                "https://kubernetes.default.svc/api/v1/namespaces/${NAMESPACE}/configmaps" \
+                -d "{\"apiVersion\":\"v1\",\"kind\":\"ConfigMap\",\"metadata\":{\"name\":\"cert-date-tracker\"},\"data\":{\"initial-date\":\"${CERT_DATE}\"}}")
+
+              HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+              BODY=$(echo "$RESPONSE" | sed '$d')
+
+              if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+                echo "Successfully stored initial cert date in ConfigMap"
+              else
+                echo "ERROR: Failed to create ConfigMap. HTTP code: $HTTP_CODE"
+                echo "Response: $BODY"
+                exit 1
+              fi

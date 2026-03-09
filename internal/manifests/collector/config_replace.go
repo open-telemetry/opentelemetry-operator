@@ -23,7 +23,7 @@ type targetAllocator struct {
 	CollectorID string        `yaml:"collector_id"`
 	// HTTPSDConfig is a preference that can be set for the collector's target allocator, but the operator doesn't
 	// care about what the value is set to. We just need this for validation when unmarshalling the configmap.
-	HTTPSDConfig interface{} `yaml:"http_sd_config,omitempty"`
+	HTTPSDConfig any `yaml:"http_sd_config,omitempty"`
 }
 
 type Config struct {
@@ -72,7 +72,7 @@ func ReplaceConfig(otelcol v1beta1.OpenTelemetryCollector, targetAllocator *v1al
 	}
 
 	// type coercion checks are handled in the AddTAConfigToPromConfig method above
-	config["receivers"].(map[interface{}]interface{})["prometheus"] = updPromCfgMap
+	config["receivers"].(map[any]any)["prometheus"] = updPromCfgMap
 
 	out, updCfgMarshalErr := go_yaml.MarshalWithOptions(config, go_yaml.Indent(4), go_yaml.IndentSequence(true), go_yaml.AutoInt())
 	if updCfgMarshalErr != nil {

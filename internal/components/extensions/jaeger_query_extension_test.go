@@ -40,17 +40,17 @@ func TestJaegerQueryExtensionParser_config(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		config interface{}
-		want   interface{}
+		config any
+		want   any
 	}{
 		{
 			name:   "valid config",
-			config: map[string]interface{}{"http": map[string]interface{}{"endpoint": "127.0.0.0:16686"}},
-			want:   map[string]interface{}{"http": map[string]interface{}{"endpoint": "127.0.0.0:16686"}},
+			config: map[string]any{"http": map[string]any{"endpoint": "127.0.0.0:16686"}},
+			want:   map[string]any{"http": map[string]any{"endpoint": "127.0.0.0:16686"}},
 		},
 		{
 			name: "missing config",
-			want: map[string]interface{}{"http": map[string]interface{}{"endpoint": "0.0.0.0:16686"}},
+			want: map[string]any{"http": map[string]any{"endpoint": "0.0.0.0:16686"}},
 		},
 	}
 

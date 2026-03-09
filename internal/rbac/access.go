@@ -41,10 +41,7 @@ func AllSubjectAccessReviewsAllowed(subjectAccessReviews []*v1.SubjectAccessRevi
 	allowed := true
 	var deniedReviews []*v1.SubjectAccessReview
 	for _, review := range subjectAccessReviews {
-		if review.Status.Denied {
-			allowed = false
-			deniedReviews = append(deniedReviews, review)
-		} else if !review.Status.Allowed {
+		if review.Status.Denied || !review.Status.Allowed {
 			allowed = false
 			deniedReviews = append(deniedReviews, review)
 		}

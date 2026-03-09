@@ -6,7 +6,8 @@ package controllers
 
 import (
 	"context"
-	"sort"
+	"maps"
+	"slices"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -47,12 +48,10 @@ import (
 
 const resourceOwnerKey = ".metadata.owner"
 
-var (
-	ownedClusterObjectTypes = []client.Object{
-		&rbacv1.ClusterRole{},
-		&rbacv1.ClusterRoleBinding{},
-	}
-)
+var ownedClusterObjectTypes = []client.Object{
+	&rbacv1.ClusterRole{},
+	&rbacv1.ClusterRoleBinding{},
+}
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
 type OpenTelemetryCollectorReconciler struct {
@@ -89,9 +88,7 @@ func (r *OpenTelemetryCollectorReconciler) findOtelOwnedObjects(ctx context.Cont
 		if err != nil {
 			return nil, err
 		}
-		for uid, object := range objs {
-			ownedObjects[uid] = object
-		}
+		maps.Copy(ownedObjects, objs)
 		// save Collector ConfigMaps into a separate slice, we need to do additional filtering on them
 		switch objectType.(type) {
 		case *corev1.ConfigMap:
@@ -128,9 +125,7 @@ func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Co
 		if err != nil {
 			return nil, err
 		}
-		for uid, object := range objs {
-			ownedObjects[uid] = object
-		}
+		maps.Copy(ownedObjects, objs)
 	}
 	return ownedObjects, nil
 }
@@ -140,11 +135,17 @@ func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Co
 // Fundamentally, this just sorts by time created and picks configVersionsToKeep latest ones.
 func getCollectorConfigMapsToKeep(configVersionsToKeep int, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
 	configVersionsToKeep = max(1, configVersionsToKeep)
-	sort.Slice(configMaps, func(i, j int) bool {
-		iTime := configMaps[i].GetCreationTimestamp().Time
-		jTime := configMaps[j].GetCreationTimestamp().Time
+	slices.SortFunc(configMaps, func(i, j *corev1.ConfigMap) int {
+		iTime := i.GetCreationTimestamp().Time
+		jTime := j.GetCreationTimestamp().Time
 		// sort the ConfigMaps newest to oldest
-		return iTime.After(jTime)
+		if jTime.Before(iTime) {
+			return -1
+		}
+		if jTime.After(iTime) {
+			return 1
+		}
+		return 0
 	})
 
 	configMapsToKeep := min(configVersionsToKeep, len(configMaps))
@@ -176,7 +177,7 @@ func (r *OpenTelemetryCollectorReconciler) getTargetAllocator(ctx context.Contex
 	if taName, ok := params.OtelCol.GetLabels()[constants.LabelTargetAllocator]; ok {
 		targetAllocator := &v1alpha1.TargetAllocator{}
 		taKey := client.ObjectKey{Name: taName, Namespace: params.OtelCol.GetNamespace()}
-		err := r.Client.Get(ctx, taKey, targetAllocator)
+		err := r.Get(ctx, taKey, targetAllocator)
 		if err != nil {
 			return nil, err
 		}
@@ -212,6 +213,7 @@ func NewReconciler(p Params) *OpenTelemetryCollectorReconciler {
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
+// +kubebuilder:rbac:groups=discovery.k8s.io,resources=endpointslices,verbs=get;list
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors;podmonitors,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
@@ -248,25 +250,10 @@ func (r *OpenTelemetryCollectorReconciler) Reconcile(ctx context.Context, req ct
 	}
 
 	// We have a deletion, short circuit and let the deletion happen
-	if deletionTimestamp := instance.GetDeletionTimestamp(); deletionTimestamp != nil {
-		if controllerutil.ContainsFinalizer(&instance, collectorFinalizer) {
-			// If the finalization logic fails, don't remove the finalizer so
-			// that we can retry during the next reconciliation.
-			if err = r.finalizeCollector(ctx, params); err != nil {
-				return ctrl.Result{}, err
-			}
-
-			// Once all finalizers have been
-			// removed, the object will be deleted.
-			if controllerutil.RemoveFinalizer(&instance, collectorFinalizer) {
-				err = r.Update(ctx, &instance)
-				if err != nil {
-					return ctrl.Result{}, err
-				}
-			}
-		}
-
-		return ctrl.Result{}, nil
+	// Remove finalizer if RBAC permission not available
+	deletionTimestamp, err := removeFinalizer(ctx, r, params, &instance)
+	if err != nil || deletionTimestamp != nil {
+		return ctrl.Result{}, err
 	}
 
 	if instance.Spec.ManagementState == v1beta1.ManagementStateUnmanaged {
@@ -399,4 +386,27 @@ func maybeAddFinalizer(params manifests.Params, instance *v1beta1.OpenTelemetryC
 		return controllerutil.AddFinalizer(instance, collectorFinalizer)
 	}
 	return false
+}
+
+func removeFinalizer(ctx context.Context, r *OpenTelemetryCollectorReconciler, params manifests.Params, instance *v1beta1.OpenTelemetryCollector) (*metav1.Time, error) {
+	deletionTimestamp := instance.GetDeletionTimestamp()
+	if deletionTimestamp != nil || params.Config.CreateRBACPermissions != rbac.Available {
+		if controllerutil.ContainsFinalizer(instance, collectorFinalizer) {
+			// If the finalization logic fails, don't remove the finalizer so
+			// that we can retry during the next reconciliation.
+			if err := r.finalizeCollector(ctx, params); err != nil {
+				return deletionTimestamp, err
+			}
+
+			// Once all finalizers have been
+			// removed, the object will be deleted.
+			if controllerutil.RemoveFinalizer(instance, collectorFinalizer) {
+				err := r.Update(ctx, instance)
+				if err != nil {
+					return deletionTimestamp, err
+				}
+			}
+		}
+	}
+	return deletionTimestamp, nil
 }

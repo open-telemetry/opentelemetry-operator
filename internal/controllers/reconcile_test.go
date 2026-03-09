@@ -5,6 +5,7 @@ package controllers_test
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"regexp"
 	"slices"
@@ -42,6 +43,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/openshift"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/prometheus"
 	autoRBAC "github.com/open-telemetry/opentelemetry-operator/internal/autodetect/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/components"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/controllers"
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
@@ -60,16 +62,14 @@ const (
 	annotationVal  = "true"
 )
 
-var (
-	extraPorts = v1beta1.PortsSpec{
-		ServicePort: v1.ServicePort{
-			Name:       "port-web",
-			Protocol:   "TCP",
-			Port:       8080,
-			TargetPort: intstr.FromInt32(8080),
-		},
-	}
-)
+var extraPorts = v1beta1.PortsSpec{
+	ServicePort: v1.ServicePort{
+		Name:       "port-web",
+		Protocol:   "TCP",
+		Port:       8080,
+		TargetPort: intstr.FromInt32(8080),
+	},
+}
 
 type check[T any] func(t *testing.T, params T)
 
@@ -272,7 +272,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result:  controllerruntime.Result{},
 					checks:  []check[v1beta1.OpenTelemetryCollector]{},
 					wantErr: assert.NoError,
-					validateErr: func(t assert.TestingT, err2 error, msgAndArgs ...interface{}) bool {
+					validateErr: func(t assert.TestingT, err2 error, msgAndArgs ...any) bool {
 						return assert.ErrorContains(t, err2, "Unsupported value: \"bad\"", msgAndArgs)
 					},
 				},
@@ -289,7 +289,7 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 					result:  controllerruntime.Result{},
 					checks:  []check[v1beta1.OpenTelemetryCollector]{},
 					wantErr: assert.NoError,
-					validateErr: func(t assert.TestingT, err2 error, msgAndArgs ...interface{}) bool {
+					validateErr: func(t assert.TestingT, err2 error, msgAndArgs ...any) bool {
 						return assert.ErrorContains(t, err2, "no prometheus available as part of the configuration", msgAndArgs)
 					},
 				},
@@ -542,7 +542,6 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 							assert.Equal(t, expected.Spec.AllocationStrategy, actual.Spec.AllocationStrategy)
 							assert.Equal(t, expected.Spec.FilterStrategy, actual.Spec.FilterStrategy)
 							assert.Equal(t, expected.Spec.ScrapeConfigs, actual.Spec.ScrapeConfigs)
-
 						},
 					},
 					wantErr:     assert.NoError,
@@ -607,12 +606,10 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			testContext := context.Background()
 			nsn := types.NamespacedName{Name: tt.args.params.Name, Namespace: tt.args.params.Namespace}
-			testCtx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			testCtx := t.Context()
 
 			cfg := config.Config{
 				CollectorImage:                "default-collector",
@@ -665,7 +662,6 @@ func TestOpenTelemetryCollectorReconciler_Reconcile(t *testing.T) {
 			}
 			// run the next set of checks
 			for pid, updateParam := range tt.args.updates {
-				updateParam := updateParam
 				existing := v1beta1.OpenTelemetryCollector{}
 				found, err := populateObjectIfExists(t, &existing, nsn)
 				assert.True(t, found)
@@ -730,17 +726,17 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 			},
 			Config: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"prometheus": map[string]interface{}{
-							"config": map[string]interface{}{
-								"scrape_configs": []interface{}{},
+					Object: map[string]any{
+						"prometheus": map[string]any{
+							"config": map[string]any{
+								"scrape_configs": []any{},
 							},
 						},
 					},
 				},
 				Exporters: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"nop": map[string]interface{}{},
+					Object: map[string]any{
+						"nop": map[string]any{},
 					},
 				},
 				Service: v1beta1.Service{
@@ -777,7 +773,7 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 		{
 			name: "disable default service account",
 			mutateCollector: func(obj *v1beta1.OpenTelemetryCollector) {
-				obj.Spec.OpenTelemetryCommonFields.ServiceAccount = "placeholder"
+				obj.Spec.ServiceAccount = "placeholder"
 			},
 			expectedResourcesDeletedCount: 1,
 		},
@@ -803,7 +799,6 @@ func TestOpenTelemetryCollectorReconciler_RemoveDisabled(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			namespace, err := createRandomNamespace(k8sClient)
 			require.NoError(t, err)
@@ -879,13 +874,13 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 			Mode:           v1beta1.ModeStatefulSet,
 			Config: v1beta1.Config{
 				Receivers: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"nop": map[string]interface{}{},
+					Object: map[string]any{
+						"nop": map[string]any{},
 					},
 				},
 				Exporters: v1beta1.AnyConfig{
-					Object: map[string]interface{}{
-						"nop": map[string]interface{}{},
+					Object: map[string]any{
+						"nop": map[string]any{},
 					},
 				},
 				Service: v1beta1.Service{
@@ -948,7 +943,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 	time.Sleep(time.Second)
 	err = k8sClient.Get(clientCtx, nsn, collector)
 	require.NoError(t, err)
-	collector.Spec.Config.Exporters.Object["debug"] = map[string]interface{}{}
+	collector.Spec.Config.Exporters.Object["debug"] = map[string]any{}
 	err = k8sClient.Update(clientCtx, collector)
 	require.NoError(t, err)
 	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
@@ -974,7 +969,7 @@ func TestOpenTelemetryCollectorReconciler_VersionedConfigMaps(t *testing.T) {
 	time.Sleep(time.Second)
 	err = k8sClient.Get(clientCtx, nsn, collector)
 	require.NoError(t, err)
-	collector.Spec.Config.Exporters.Object["debug/2"] = map[string]interface{}{}
+	collector.Spec.Config.Exporters.Object["debug/2"] = map[string]any{}
 	err = k8sClient.Update(clientCtx, collector)
 	require.NoError(t, err)
 	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
@@ -1092,7 +1087,6 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			testContext := context.Background()
 			nsn := types.NamespacedName{Name: tt.args.params.OpAMPBridge.Name, Namespace: tt.args.params.OpAMPBridge.Namespace}
@@ -1131,7 +1125,6 @@ func TestOpAMPBridgeReconciler_Reconcile(t *testing.T) {
 			}
 			// run the next set of checks
 			for pid, updateParam := range tt.args.updates {
-				updateParam := updateParam
 				existing := v1alpha1.OpAMPBridge{}
 				found, err := populateObjectIfExists(t, &existing, nsn)
 				assert.True(t, found)
@@ -1245,8 +1238,7 @@ service:
 	clientErr = k8sClient.Create(context.Background(), otelcol)
 	require.NoError(t, clientErr)
 
-	testCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	testCtx := t.Context()
 
 	cfg := config.Config{
 		CollectorImage:                    "default-collector",
@@ -1302,8 +1294,7 @@ service:
 }
 
 func TestUpgrade(t *testing.T) {
-	testCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	testCtx := t.Context()
 
 	cfg := config.Config{
 		CollectorImage:                "default-collector",
@@ -1362,7 +1353,7 @@ func TestUpgrade(t *testing.T) {
 			expected: func(t *testing.T, otelcol v1beta1.OpenTelemetryCollector) {
 				assert.Equal(t, upgrade.Latest.String(), otelcol.Status.Version)
 				// The '-component.UseLocalHostAsDefaultHost' feature gate was removed in the 0.110.0 upgrade step
-				assert.Equal(t, "", otelcol.Spec.OpenTelemetryCommonFields.Args["feature-gates"])
+				assert.Equal(t, "", otelcol.Spec.Args["feature-gates"])
 			},
 		},
 		{
@@ -1488,11 +1479,147 @@ func TestUpgrade(t *testing.T) {
 	}
 }
 
-func namespacedObjectName(name string, namespace string) types.NamespacedName {
+func namespacedObjectName(name, namespace string) types.NamespacedName {
 	return types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
+}
+
+func TestTLSDefaultingAtReconcileTime(t *testing.T) {
+	// This test verifies that when a collector with TLS config is reconciled,
+	// the TLS defaults from OperandTLSProfile are injected into the generated ConfigMap.
+	// This happens at reconciliation time (ConfigMap generation), not via webhook.
+
+	collectorName := sanitizeResourceName(t.Name())
+	collector := &v1beta1.OpenTelemetryCollector{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      collectorName,
+			Namespace: metav1.NamespaceDefault,
+		},
+		Spec: v1beta1.OpenTelemetryCollectorSpec{
+			Mode: v1beta1.ModeDeployment,
+			Config: v1beta1.Config{
+				Receivers: v1beta1.AnyConfig{
+					Object: map[string]any{
+						"otlp": map[string]any{
+							"protocols": map[string]any{
+								"grpc": map[string]any{
+									"endpoint": "0.0.0.0:4317",
+									"tls": map[string]any{
+										"cert_file": "/certs/tls.crt",
+										"key_file":  "/certs/tls.key",
+									},
+								},
+							},
+						},
+					},
+				},
+				Exporters: v1beta1.AnyConfig{
+					Object: map[string]any{
+						"debug": map[string]any{},
+					},
+				},
+				Service: v1beta1.Service{
+					Pipelines: map[string]*v1beta1.Pipeline{
+						"traces": {
+							Receivers: []string{"otlp"},
+							Exporters: []string{"debug"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	testCtx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	// Create a config with OperandTLSProfile set (TLS 1.2 and specific cipher)
+	cfg := config.Config{
+		CollectorImage:          "default-collector",
+		TargetAllocatorImage:    "default-ta-allocator",
+		CollectorConfigMapEntry: "collector.yaml",
+	}
+	cfg.Internal.OperandTLSProfile = components.NewStaticTLSProfile(
+		tls.VersionTLS12,
+		[]uint16{tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256},
+	)
+	reconciler := createTestReconciler(t, testCtx, cfg)
+
+	clientCtx := context.Background()
+	err := k8sClient.Create(clientCtx, collector)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		deleteErr := k8sClient.Delete(clientCtx, collector)
+		assert.NoError(t, deleteErr)
+	})
+
+	nsn := types.NamespacedName{Name: collector.Name, Namespace: collector.Namespace}
+	err = k8sClient.Get(clientCtx, nsn, collector)
+	require.NoError(t, err)
+
+	// Reconcile to generate the ConfigMap
+	req := k8sreconcile.Request{NamespacedName: nsn}
+	_, reconcileErr := reconciler.Reconcile(clientCtx, req)
+	require.NoError(t, reconcileErr)
+
+	// Find and verify the generated ConfigMap
+	opts := []client.ListOption{
+		client.InNamespace(collector.Namespace),
+		client.MatchingLabels(map[string]string{
+			"app.kubernetes.io/managed-by": "opentelemetry-operator",
+			"app.kubernetes.io/instance":   naming.Truncate("%s.%s", 63, nsn.Namespace, nsn.Name),
+		}),
+	}
+
+	var configMap *v1.ConfigMap
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		configMaps := &v1.ConfigMapList{}
+		listErr := k8sClient.List(clientCtx, configMaps, opts...)
+		assert.NoError(collect, listErr)
+		if len(configMaps.Items) > 0 {
+			configMap = &configMaps.Items[0]
+		}
+		assert.NotNil(collect, configMap, "ConfigMap should be created")
+	}, time.Second*30, time.Millisecond*100)
+
+	require.NotNil(t, configMap, "ConfigMap should be created")
+
+	// Parse the collector config from the ConfigMap
+	collectorYAML, ok := configMap.Data["collector.yaml"]
+	require.True(t, ok, "ConfigMap should contain collector.yaml")
+
+	var configData map[string]any
+	err = yaml.Unmarshal([]byte(collectorYAML), &configData)
+	require.NoError(t, err)
+
+	// Navigate to the TLS config in the OTLP receiver
+	receivers, ok := configData["receivers"].(map[string]any)
+	require.True(t, ok, "receivers should exist")
+
+	otlp, ok := receivers["otlp"].(map[string]any)
+	require.True(t, ok, "otlp receiver should exist")
+
+	protocols, ok := otlp["protocols"].(map[string]any)
+	require.True(t, ok, "protocols should exist")
+
+	grpc, ok := protocols["grpc"].(map[string]any)
+	require.True(t, ok, "grpc protocol should exist")
+
+	tlsConfig, ok := grpc["tls"].(map[string]any)
+	require.True(t, ok, "tls config should exist")
+
+	// Check that min_version was injected (TLS 1.2 = "1.2")
+	minVersion, ok := tlsConfig["min_version"]
+	assert.True(t, ok, "min_version should be set at reconcile time")
+	assert.Equal(t, "1.2", minVersion, "min_version should be 1.2 from TLS profile")
+
+	// Check that cipher_suites was injected
+	cipherSuites, ok := tlsConfig["cipher_suites"]
+	assert.True(t, ok, "cipher_suites should be set at reconcile time")
+	expectedCiphers := []any{"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"}
+	assert.Equal(t, expectedCiphers, cipherSuites, "cipher_suites should match TLS profile")
 }
 
 // getAllResources gets all the resource types owned by the controller.

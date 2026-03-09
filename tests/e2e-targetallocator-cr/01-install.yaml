@@ -17,6 +17,18 @@ spec:
   env:
     - name: TEST_ENV
       value: test
+  livenessProbe:
+    httpGet:
+      path: /livez
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 20
+  readinessProbe:
+    httpGet:
+      path: /readyz
+      port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 15
   podSecurityContext:
     fsGroup: 3000
     runAsGroup: 3000

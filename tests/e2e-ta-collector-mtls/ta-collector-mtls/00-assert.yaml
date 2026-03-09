@@ -52,6 +52,7 @@ data:
                     ca_file: /tls/ca.crt
                     cert_file: /tls/tls.crt
                     key_file: /tls/tls.key
+                    reload_interval: 5m
     service:
         pipelines:
             metrics:
@@ -79,12 +80,12 @@ metadata:
     app.kubernetes.io/managed-by: opentelemetry-operator
 spec:
   containers:
-  - name: ta-container
-    ports:
-    - containerPort: 8080
-      name: http
-    - containerPort: 8443
-      name: https
+    - name: ta-container
+      ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8443
+          name: https
 ---
 apiVersion: batch/v1
 kind: Job

@@ -4,7 +4,7 @@
 package instrumentation
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -23,7 +23,7 @@ const (
 func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config, instSpec v1alpha1.InstrumentationSpec) (corev1.Pod, error) {
 	// skip instrumentation if share process namespaces is explicitly disabled
 	if pod.Spec.ShareProcessNamespace != nil && !*pod.Spec.ShareProcessNamespace {
-		return pod, fmt.Errorf("shared process namespace has been explicitly disabled")
+		return pod, errors.New("shared process namespace has been explicitly disabled")
 	}
 
 	// skip instrumentation when more than one container is provided
@@ -36,7 +36,7 @@ func injectGoSDK(goSpec v1alpha1.Go, pod corev1.Pod, cfg config.Config, instSpec
 	}
 
 	if ok && len(strings.Split(containerNames, ",")) > 1 {
-		return pod, fmt.Errorf("go instrumentation cannot be injected into a pod, multiple containers configured")
+		return pod, errors.New("go instrumentation cannot be injected into a pod, multiple containers configured")
 	}
 
 	true := true

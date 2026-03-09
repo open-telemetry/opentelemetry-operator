@@ -1,0 +1,29 @@
+# OpenShift specific overrides for cluster collector
+# These settings will be merged with cluster-collector-base.yaml
+
+receivers:
+  k8s_cluster:
+    auth_type: serviceAccount
+    node_conditions_to_report: ["Ready", "MemoryPressure", "DiskPressure", "PIDPressure", "NetworkUnavailable"]
+    allocatable_types_to_report: ["cpu", "memory", "storage", "pods"]
+    distribution: "openshift"
+    
+  k8s_events:
+    auth_type: serviceAccount
+    namespaces: ["default", "openshift-*", "kube-*"]
+
+processors:
+  batch:
+    send_batch_size: 1000
+    timeout: 10s
+    
+  resourcedetection:
+    # OpenShift resource detector will determine cloud provider automatically
+    detectors: ["env", "system", "openshift"]
+    timeout: 5s
+    
+  attributes/openshift:
+    actions:
+      - key: "k8s.cluster.distribution"
+        value: "openshift"
+        action: insert

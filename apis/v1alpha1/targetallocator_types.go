@@ -4,14 +4,11 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 )
-
-func init() {
-	SchemeBuilder.Register(&TargetAllocator{}, &TargetAllocatorList{})
-}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -96,4 +93,10 @@ type TargetAllocatorSpec struct {
 	// +kubebuilder:default:="30s"
 	// +kubebuilder:validation:Format:=duration
 	CollectorNotReadyGracePeriod *metav1.Duration `json:"collectorNotReadyGracePeriod,omitempty"`
+	// LivenessProbe defines the liveness probe configuration for the Target Allocator container.
+	// +optional
+	LivenessProbe *corev1.Probe `json:"livenessProbe,omitempty"`
+	// ReadinessProbe defines the readiness probe configuration for the Target Allocator container.
+	// +optional
+	ReadinessProbe *corev1.Probe `json:"readinessProbe,omitempty"`
 }

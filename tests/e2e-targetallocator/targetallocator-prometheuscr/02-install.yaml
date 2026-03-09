@@ -27,6 +27,9 @@ spec:
     prometheusCR:
       enabled: true
       scrapeInterval: 1s
+      evaluationInterval: 2m
+      scrapeProtocols:
+        - PrometheusText1.0.0
       scrapeConfigSelector: {}
       probeSelector: {}
       scrapeClasses:

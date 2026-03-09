@@ -5,7 +5,7 @@ package instrumentation
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -64,7 +64,8 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 				EmptyDir: &corev1.EmptyDirVolumeSource{
 					SizeLimit: volumeSize(apacheSpec.VolumeSizeLimit),
 				},
-			}})
+			},
+		})
 
 		apacheConfDir := getApacheConfDir(apacheSpec.ConfigPath)
 
@@ -139,7 +140,8 @@ func injectApacheHttpdagent(_ logr.Logger, apacheSpec v1alpha1.ApacheHttpd, pod 
 					Name:  apacheAttributesEnvVar,
 					Value: getApacheOtelConfig(pod, useLabelsForResourceAttributes, apacheSpec, container, otlpEndpoint, resourceMap),
 				},
-				{Name: apacheServiceInstanceIdEnvVar,
+				{
+					Name: apacheServiceInstanceIdEnvVar,
 					ValueFrom: &corev1.EnvVarSource{
 						FieldRef: &corev1.ObjectFieldSelector{
 							FieldPath: "metadata.name",
@@ -205,7 +207,6 @@ LoadModule otel_apache_module %[1]s/WebServerModule/Apache/libmod_apache_otel%[2
 		if len(serviceNamespace) == 0 {
 			serviceNamespace = "apache-httpd"
 		}
-
 	}
 	// Namespace name override TBD
 
@@ -234,7 +235,8 @@ LoadModule otel_apache_module %[1]s/WebServerModule/Apache/libmod_apache_otel%[2
 		attrMap[attr.Name] = attr.Value
 	}
 
-	configFileContent := fmt.Sprintf(template,
+	var configFileContent strings.Builder
+	fmt.Fprintf(&configFileContent, template,
 		apacheAgentDirectory+apacheAgentSubDirectory,
 		versionSuffix)
 
@@ -242,13 +244,13 @@ LoadModule otel_apache_module %[1]s/WebServerModule/Apache/libmod_apache_otel%[2
 	for key := range attrMap {
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 
 	for _, key := range keys {
-		configFileContent += fmt.Sprintf("%s %s\n", key, attrMap[key])
+		fmt.Fprintf(&configFileContent, "%s %s\n", key, attrMap[key])
 	}
 
-	return configFileContent
+	return configFileContent.String()
 }
 
 func getApacheConfDir(configuredDir string) string {

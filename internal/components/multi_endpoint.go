@@ -4,6 +4,7 @@
 package components
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -34,23 +35,23 @@ type MultiPortReceiver struct {
 	portMappings map[string]*corev1.ServicePort
 }
 
-func (m *MultiPortReceiver) Ports(logger logr.Logger, name string, config interface{}) ([]corev1.ServicePort, error) {
+func (m *MultiPortReceiver) Ports(logger logr.Logger, name string, config any) ([]corev1.ServicePort, error) {
 	multiProtoEndpointCfg := &MultiProtocolEndpointConfig{}
 	if err := mapstructure.Decode(config, multiProtoEndpointCfg); err != nil {
 		return nil, err
 	}
 	var ports []corev1.ServicePort
 	for protocol, ec := range multiProtoEndpointCfg.Protocols {
-		if defaultSvc, ok := m.portMappings[protocol]; ok {
-			port := defaultSvc.Port
-			if ec != nil {
-				port = ec.GetPortNumOrDefault(logger, port)
-			}
-			defaultSvc.Name = naming.PortName(fmt.Sprintf("%s-%s", name, protocol), port)
-			ports = append(ports, ConstructServicePort(defaultSvc, port))
-		} else {
+		defaultSvc, ok := m.portMappings[protocol]
+		if !ok {
 			return nil, fmt.Errorf("unknown protocol set: %s", protocol)
 		}
+		port := defaultSvc.Port
+		if ec != nil {
+			port = ec.GetPortNumOrDefault(logger, port)
+		}
+		defaultSvc.Name = naming.PortName(fmt.Sprintf("%s-%s", name, protocol), port)
+		ports = append(ports, ConstructServicePort(defaultSvc, port))
 	}
 	return ports, nil
 }
@@ -63,53 +64,61 @@ func (m *MultiPortReceiver) ParserName() string {
 	return fmt.Sprintf("__%s", m.name)
 }
 
-func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config interface{}) (interface{}, error) {
+func (m *MultiPortReceiver) GetDefaultConfig(logger logr.Logger, config any, opts ...DefaultOption) (any, error) {
+	// Apply options to build the DefaultConfig
+	defaultCfg := &DefaultConfig{}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(defaultCfg)
+		}
+	}
+
 	multiProtoEndpointCfg := &MultiProtocolEndpointConfig{}
 	if err := mapstructure.Decode(config, multiProtoEndpointCfg); err != nil {
 		return nil, err
 	}
-	defaultedConfig := map[string]interface{}{}
+	defaultedConfig := map[string]any{}
 	for protocol, ec := range multiProtoEndpointCfg.Protocols {
-		if defaultSvc, ok := m.portMappings[protocol]; ok {
-			port := defaultSvc.Port
-			if ec != nil {
-				port = ec.GetPortNumOrDefault(logger, port)
-			}
-			addr := m.defaultRecAddr
-			if defaultAddr, ok := m.addrMappings[protocol]; ok {
-				addr = defaultAddr
-			}
-			conf, err := AddressDefaulter(logger, addr, port, ec)
-			if err != nil {
-				return nil, err
-			}
-			defaultedConfig[protocol] = conf
-		} else {
+		defaultSvc, ok := m.portMappings[protocol]
+		if !ok {
 			return nil, fmt.Errorf("unknown protocol set: %s", protocol)
 		}
+		port := defaultSvc.Port
+		if ec != nil {
+			port = ec.GetPortNumOrDefault(logger, port)
+		}
+		addr := m.defaultRecAddr
+		if defaultAddr, ok := m.addrMappings[protocol]; ok {
+			addr = defaultAddr
+		}
+		conf, err := AddressDefaulter(logger, defaultCfg, addr, port, ec)
+		if err != nil {
+			return nil, err
+		}
+		defaultedConfig[protocol] = conf
 	}
-	return map[string]interface{}{
+	return map[string]any{
 		"protocols": defaultedConfig,
 	}, nil
 }
 
-func (m *MultiPortReceiver) GetLivenessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+func (*MultiPortReceiver) GetLivenessProbe(logr.Logger, any) (*corev1.Probe, error) {
 	return nil, nil
 }
 
-func (m *MultiPortReceiver) GetReadinessProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+func (*MultiPortReceiver) GetReadinessProbe(logr.Logger, any) (*corev1.Probe, error) {
 	return nil, nil
 }
 
-func (m *MultiPortReceiver) GetStartupProbe(logger logr.Logger, config interface{}) (*corev1.Probe, error) {
+func (*MultiPortReceiver) GetStartupProbe(logr.Logger, any) (*corev1.Probe, error) {
 	return nil, nil
 }
 
-func (m *MultiPortReceiver) GetRBACRules(logr.Logger, interface{}) ([]rbacv1.PolicyRule, error) {
+func (*MultiPortReceiver) GetRBACRules(logr.Logger, any) ([]rbacv1.PolicyRule, error) {
 	return nil, nil
 }
 
-func (m *MultiPortReceiver) GetEnvironmentVariables(logger logr.Logger, config interface{}) ([]corev1.EnvVar, error) {
+func (*MultiPortReceiver) GetEnvironmentVariables(logr.Logger, any) ([]corev1.EnvVar, error) {
 	return nil, nil
 }
 
@@ -129,7 +138,7 @@ func (mp MultiPortBuilder[ComponentConfigType]) AddPortMapping(builder Builder[C
 
 func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, error) {
 	if len(mp) < 1 {
-		return nil, fmt.Errorf("must provide at least one port mapping")
+		return nil, errors.New("must provide at least one port mapping")
 	}
 
 	mb := mp[0].MustBuild()
@@ -153,9 +162,9 @@ func (mp MultiPortBuilder[ComponentConfigType]) Build() (*MultiPortReceiver, err
 }
 
 func (mp MultiPortBuilder[ComponentConfigType]) MustBuild() *MultiPortReceiver {
-	if p, err := mp.Build(); err != nil {
+	p, err := mp.Build()
+	if err != nil {
 		panic(err)
-	} else {
-		return p
 	}
+	return p
 }

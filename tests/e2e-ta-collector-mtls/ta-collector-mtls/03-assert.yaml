@@ -9,6 +9,13 @@ metadata:
 status:
   succeeded: 1
 ---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: verify-cert-rotation
+status:
+  succeeded: 1
+---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:

@@ -92,7 +92,6 @@ func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			cfg := config.Config{
 				CollectorImage:           "collector:v0.0.0",
@@ -113,10 +112,9 @@ func TestOpAMPBridgeDefaultingWebhook(t *testing.T) {
 }
 
 func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
-
 	two := int32(2)
 
-	tests := []struct { //nolint:govet
+	tests := []struct {
 		name             string
 		opampBridge      OpAMPBridge
 		expectedErr      string
@@ -280,7 +278,6 @@ func TestOpAMPBridgeValidatingWebhook(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			cfg := config.Config{
 				CollectorImage:           "collector:v0.0.0",

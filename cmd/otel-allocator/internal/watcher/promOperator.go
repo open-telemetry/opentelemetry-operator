@@ -5,6 +5,7 @@ package watcher
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -71,7 +72,7 @@ func NewPrometheusCRWatcher(
 	// we want to use endpointslices by default
 	serviceDiscoveryRole := monitoringv1.ServiceDiscoveryRole("EndpointSlice")
 
-	//no need to hardcode durations, use default if not set
+	// no need to hardcode durations, use default if not set
 	prom := &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cfg.CollectorNamespace,
@@ -96,7 +97,6 @@ func NewPrometheusCRWatcher(
 	}
 
 	generator, err := prometheus.NewConfigGenerator(promLogger, prom, prometheus.WithEndpointSliceSupport(), prometheus.WithInlineTLSConfig())
-
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +192,6 @@ func getNamespaceInformer(ctx context.Context, allowList, denyList map[string]st
 		operatorMetrics.NewInstrumentedListerWatcher(lw),
 		&v1.Namespace{}, resyncPeriod, cache.Indexers{},
 	), nil
-
 }
 
 // checkCRDAvailability checks if a specific CRD is available in the cluster.
@@ -327,7 +326,7 @@ func getInformers(factory informers.FactoriesForNamespaces, clusterConfig *rest.
 }
 
 // Watch wrapped informers and wait for an initial sync.
-func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors chan error) error {
+func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, _ chan error) error {
 	success := true
 	// this channel needs to be buffered because notifications are asynchronous and neither producers nor consumers wait
 	notifyEvents := make(chan struct{}, 1)
@@ -339,7 +338,7 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 		}
 
 		_, _ = w.nsInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-			UpdateFunc: func(oldObj, newObj interface{}) {
+			UpdateFunc: func(oldObj, newObj any) {
 				old := oldObj.(*v1.Namespace)
 				cur := newObj.(*v1.Namespace)
 
@@ -448,7 +447,7 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, upstreamErrors ch
 
 	}
 	if !success {
-		return fmt.Errorf("failed to sync one of the caches")
+		return errors.New("failed to sync one of the caches")
 	}
 
 	// limit the rate of outgoing events
@@ -648,16 +647,15 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 		for _, scrapeConfig := range promCfg.ScrapeConfigs {
 			for _, serviceDiscoveryConfig := range scrapeConfig.ServiceDiscoveryConfigs {
 				if serviceDiscoveryConfig.Name() == "kubernetes" {
-					sdConfig := interface{}(serviceDiscoveryConfig).(*kubeDiscovery.SDConfig)
+					sdConfig := any(serviceDiscoveryConfig).(*kubeDiscovery.SDConfig)
 					sdConfig.KubeConfig = w.kubeConfigPath
 				}
 			}
 		}
 		return promCfg, nil
-	} else {
-		w.logger.Info("Unable to load config since resource selector is nil, returning empty prometheus config")
-		return promCfg, nil
 	}
+	w.logger.Info("Unable to load config since resource selector is nil, returning empty prometheus config")
+	return promCfg, nil
 }
 
 // WaitForNamedCacheSync adds a timeout to the informer's wait for the cache to be ready.
@@ -670,6 +668,7 @@ func (w *PrometheusCRWatcher) LoadConfig(ctx context.Context) (*promconfig.Confi
 // https://github.com/prometheus-operator/prometheus-operator/blob/293c16c854ce69d1da9fdc8f0705de2d67bfdbfa/pkg/operator/operator.go#L433
 func (w *PrometheusCRWatcher) WaitForNamedCacheSync(controllerName string, inf cache.InformerSynced) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	defer cancel()
 	t := time.NewTicker(time.Second * 5)
 	defer t.Stop()
 

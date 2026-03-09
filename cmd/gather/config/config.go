@@ -46,12 +46,12 @@ func NewConfig(scheme *runtime.Scheme) (Config, error) {
 
 	clusterClient, err := client.New(config, client.Options{Scheme: scheme})
 	if err != nil {
-		return Config{}, fmt.Errorf("creating the Kubernetes client: %w\n", err)
+		return Config{}, fmt.Errorf("creating the Kubernetes client: %w", err)
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return Config{}, fmt.Errorf("creating the Kubernetes clienset: %w\n", err)
+		return Config{}, fmt.Errorf("creating the Kubernetes clienset: %w", err)
 	}
 
 	return Config{

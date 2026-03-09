@@ -6,7 +6,7 @@ package upgrade
 import (
 	"fmt"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -38,25 +38,25 @@ func upgrade0_38_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 			return otelcol, fmt.Errorf("couldn't upgrade to v0.38.0, failed to parse configuration: %w", err)
 		}
 
-		serviceConfig, ok := cfg["service"].(map[interface{}]interface{})
+		serviceConfig, ok := cfg["service"].(map[any]any)
 		if !ok {
 			// no serviceConfig? create one as we need to configure logging parameters
-			cfg["service"] = make(map[interface{}]interface{})
-			serviceConfig, _ = cfg["service"].(map[interface{}]interface{})
+			cfg["service"] = make(map[any]any)
+			serviceConfig, _ = cfg["service"].(map[any]any)
 		}
 
-		telemetryConfig, ok := serviceConfig["telemetry"].(map[interface{}]interface{})
+		telemetryConfig, ok := serviceConfig["telemetry"].(map[any]any)
 		if !ok {
 			// no telemetryConfig? create one as we need to configure logging parameters
-			serviceConfig["telemetry"] = make(map[interface{}]interface{})
-			telemetryConfig, _ = serviceConfig["telemetry"].(map[interface{}]interface{})
+			serviceConfig["telemetry"] = make(map[any]any)
+			telemetryConfig, _ = serviceConfig["telemetry"].(map[any]any)
 		}
 
-		logsConfig, ok := telemetryConfig["logs"].(map[interface{}]interface{})
+		logsConfig, ok := telemetryConfig["logs"].(map[any]any)
 		if !ok {
 			// no logsConfig? create one as we need to configure logging parameters
-			telemetryConfig["logs"] = make(map[interface{}]interface{})
-			logsConfig, _ = telemetryConfig["logs"].(map[interface{}]interface{})
+			telemetryConfig["logs"] = make(map[any]any)
+			logsConfig, _ = telemetryConfig["logs"].(map[any]any)
 		}
 
 		// if there is already loggingConfig
@@ -80,8 +80,8 @@ func upgrade0_38_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		otelcol.Spec.Config = string(res)
 		keys := reflect.ValueOf(foundLoggingArgs).MapKeys()
 		// sort keys to get always the same message
-		sort.Slice(keys, func(i, j int) bool {
-			return strings.Compare(keys[i].String(), keys[j].String()) <= 0
+		slices.SortFunc(keys, func(i, j reflect.Value) int {
+			return strings.Compare(i.String(), j.String())
 		})
 		existing := &corev1.ConfigMap{}
 		updated := existing.DeepCopy()

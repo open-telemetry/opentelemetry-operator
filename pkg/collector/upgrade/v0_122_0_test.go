@@ -37,8 +37,8 @@ func TestUpgrade0_122_0(t *testing.T) {
 					Config: v1beta1.Config{
 						Service: v1beta1.Service{
 							Telemetry: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{
-									"metrics": map[string]interface{}{
+								Object: map[string]any{
+									"metrics": map[string]any{
 										"address": "0.0.0.0:8888",
 									},
 								},
@@ -60,13 +60,13 @@ func TestUpgrade0_122_0(t *testing.T) {
 					Config: v1beta1.Config{
 						Service: v1beta1.Service{
 							Telemetry: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{
-									"metrics": map[string]interface{}{
-										"readers": []interface{}{
-											map[string]interface{}{
-												"pull": map[string]interface{}{
-													"exporter": map[string]interface{}{
-														"prometheus": map[string]interface{}{
+								Object: map[string]any{
+									"metrics": map[string]any{
+										"readers": []any{
+											map[string]any{
+												"pull": map[string]any{
+													"exporter": map[string]any{
+														"prometheus": map[string]any{
 															"host": "0.0.0.0",
 															"port": int32(8888),
 														},
@@ -97,8 +97,8 @@ func TestUpgrade0_122_0(t *testing.T) {
 					Config: v1beta1.Config{
 						Service: v1beta1.Service{
 							Telemetry: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{
-									"metrics": map[string]interface{}{
+								Object: map[string]any{
+									"metrics": map[string]any{
 										"address": "",
 									},
 								},
@@ -120,8 +120,8 @@ func TestUpgrade0_122_0(t *testing.T) {
 					Config: v1beta1.Config{
 						Service: v1beta1.Service{
 							Telemetry: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{
-									"metrics": map[string]interface{}{
+								Object: map[string]any{
+									"metrics": map[string]any{
 										"address": "",
 									},
 								},
@@ -146,13 +146,13 @@ func TestUpgrade0_122_0(t *testing.T) {
 					Config: v1beta1.Config{
 						Service: v1beta1.Service{
 							Telemetry: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{
-									"metrics": map[string]interface{}{
-										"readers": []interface{}{
-											map[string]interface{}{
-												"pull": map[string]interface{}{
-													"exporter": map[string]interface{}{
-														"prometheus": map[string]interface{}{
+								Object: map[string]any{
+									"metrics": map[string]any{
+										"readers": []any{
+											map[string]any{
+												"pull": map[string]any{
+													"exporter": map[string]any{
+														"prometheus": map[string]any{
 															"host": "0.0.0.0",
 															"port": int32(8888),
 														},
@@ -180,13 +180,13 @@ func TestUpgrade0_122_0(t *testing.T) {
 					Config: v1beta1.Config{
 						Service: v1beta1.Service{
 							Telemetry: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{
-									"metrics": map[string]interface{}{
-										"readers": []interface{}{
-											map[string]interface{}{
-												"pull": map[string]interface{}{
-													"exporter": map[string]interface{}{
-														"prometheus": map[string]interface{}{
+								Object: map[string]any{
+									"metrics": map[string]any{
+										"readers": []any{
+											map[string]any{
+												"pull": map[string]any{
+													"exporter": map[string]any{
+														"prometheus": map[string]any{
 															"host": "0.0.0.0",
 															"port": int32(8888),
 														},
@@ -217,14 +217,14 @@ func TestUpgrade0_122_0(t *testing.T) {
 					Config: v1beta1.Config{
 						Service: v1beta1.Service{
 							Telemetry: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{
-									"metrics": map[string]interface{}{
-										"readers": []interface{}{
-											map[string]interface{}{
-												"periodic": map[string]interface{}{
+								Object: map[string]any{
+									"metrics": map[string]any{
+										"readers": []any{
+											map[string]any{
+												"periodic": map[string]any{
 													"interval": "30000",
-													"exporter": map[string]interface{}{
-														"otlp": map[string]interface{}{
+													"exporter": map[string]any{
+														"otlp": map[string]any{
 															"endpoint": "localhost:4317",
 														},
 													},
@@ -251,14 +251,14 @@ func TestUpgrade0_122_0(t *testing.T) {
 					Config: v1beta1.Config{
 						Service: v1beta1.Service{
 							Telemetry: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{
-									"metrics": map[string]interface{}{
-										"readers": []interface{}{
-											map[string]interface{}{
-												"periodic": map[string]interface{}{
+								Object: map[string]any{
+									"metrics": map[string]any{
+										"readers": []any{
+											map[string]any{
+												"periodic": map[string]any{
 													"interval": "30000",
-													"exporter": map[string]interface{}{
-														"otlp": map[string]interface{}{
+													"exporter": map[string]any{
+														"otlp": map[string]any{
 															"endpoint": "localhost:4317",
 														},
 													},
@@ -288,7 +288,7 @@ func TestUpgrade0_122_0(t *testing.T) {
 					Config: v1beta1.Config{
 						Service: v1beta1.Service{
 							Telemetry: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{},
+								Object: map[string]any{},
 							},
 						},
 					},
@@ -307,7 +307,7 @@ func TestUpgrade0_122_0(t *testing.T) {
 					Config: v1beta1.Config{
 						Service: v1beta1.Service{
 							Telemetry: &v1beta1.AnyConfig{
-								Object: map[string]interface{}{},
+								Object: map[string]any{},
 							},
 						},
 					},
@@ -328,7 +328,7 @@ func TestUpgrade0_122_0(t *testing.T) {
 
 			if tt.initialConfig.Spec.Config.Service.Telemetry != nil &&
 				tt.initialConfig.Spec.Config.Service.Telemetry.Object != nil {
-				metrics, ok := tt.initialConfig.Spec.Config.Service.Telemetry.Object["metrics"].(map[string]interface{})
+				metrics, ok := tt.initialConfig.Spec.Config.Service.Telemetry.Object["metrics"].(map[string]any)
 				if ok {
 					address, ok := metrics["address"].(string)
 					if ok && address != "" {

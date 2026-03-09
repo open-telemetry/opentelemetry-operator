@@ -6,6 +6,7 @@ package controllers_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -21,7 +22,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -99,11 +100,11 @@ type mockAutoDetect struct {
 	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
 }
 
-func (m *mockAutoDetect) FIPSEnabled(_ context.Context) bool {
+func (*mockAutoDetect) FIPSEnabled(context.Context) bool {
 	return false
 }
 
-func (m *mockAutoDetect) NativeSidecarSupport() (bool, error) {
+func (*mockAutoDetect) NativeSidecarSupport() (bool, error) {
 	return false, nil
 }
 
@@ -258,8 +259,11 @@ func TestMain(m *testing.M) {
 		}, func(error) bool {
 			return true
 		}, func() error {
-			// #nosec G402
-			conn, tlsErr := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
+			tlsDialer := &tls.Dialer{
+				NetDialer: dialer,
+				Config:    &tls.Config{InsecureSkipVerify: true},
+			}
+			conn, tlsErr := tlsDialer.DialContext(ctx, "tcp", addrPort)
 			if tlsErr != nil {
 				return tlsErr
 			}
@@ -314,7 +318,8 @@ func testCollectorWithModeAndReplicas(t *testing.T, name string, mode v1beta1.Mo
 							IntVal: 80,
 						},
 						NodePort: 0,
-					}}},
+					},
+				}},
 				Replicas: &replicas,
 			},
 			Config: otelConfig,
@@ -323,7 +328,7 @@ func testCollectorWithModeAndReplicas(t *testing.T, name string, mode v1beta1.Mo
 	}
 }
 
-func testCollectorAssertNoErr(t *testing.T, name string, taContainerImage string, file string) v1beta1.OpenTelemetryCollector {
+func testCollectorAssertNoErr(t *testing.T, name, taContainerImage, file string) v1beta1.OpenTelemetryCollector {
 	p, err := testCollectorWithConfigFile(name, taContainerImage, file)
 	assert.NoError(t, err)
 	if len(taContainerImage) == 0 {
@@ -332,7 +337,7 @@ func testCollectorAssertNoErr(t *testing.T, name string, taContainerImage string
 	return p
 }
 
-func testCollectorWithConfigFile(name string, taContainerImage string, file string) (v1beta1.OpenTelemetryCollector, error) {
+func testCollectorWithConfigFile(name, taContainerImage, file string) (v1beta1.OpenTelemetryCollector, error) {
 	replicas := int32(1)
 	var configYAML []byte
 	var err error
@@ -371,7 +376,8 @@ func testCollectorWithConfigFile(name string, taContainerImage string, file stri
 							IntVal: 80,
 						},
 						NodePort: 0,
-					}}},
+					},
+				}},
 				Replicas: &replicas,
 			},
 			Mode: v1beta1.ModeStatefulSet,
@@ -415,7 +421,8 @@ func testCollectorWithHPA(t *testing.T, minReps, maxReps int32) v1beta1.OpenTele
 							IntVal: 80,
 						},
 						NodePort: 0,
-					}}},
+					},
+				}},
 			},
 
 			Config: otelConfig,
@@ -445,7 +452,7 @@ func testCollectorWithPDB(t *testing.T, minAvailable, maxUnavailable int32) v1be
 	pdb := &v1beta1.PodDisruptionBudgetSpec{}
 
 	if maxUnavailable > 0 && minAvailable > 0 {
-		fmt.Printf("worng configuration: %v", fmt.Errorf("minAvailable and maxUnavailable cannot be both set"))
+		fmt.Printf("worng configuration: %v", errors.New("minAvailable and maxUnavailable cannot be both set"))
 	}
 	if maxUnavailable > 0 {
 		pdb.MaxUnavailable = &intstr.IntOrString{
@@ -480,7 +487,8 @@ func testCollectorWithPDB(t *testing.T, minAvailable, maxUnavailable int32) v1be
 							IntVal: 80,
 						},
 						NodePort: 0,
-					}}},
+					},
+				}},
 				PodDisruptionBudget: pdb,
 			},
 
@@ -544,7 +552,7 @@ func opampBridgeParams() manifests.Params {
 func populateObjectIfExists(t testing.TB, object client.Object, namespacedName types.NamespacedName) (bool, error) {
 	t.Helper()
 	err := k8sClient.Get(context.Background(), namespacedName, object)
-	if errors.IsNotFound(err) {
+	if apierrors.IsNotFound(err) {
 		return false, nil
 	}
 	if err != nil {

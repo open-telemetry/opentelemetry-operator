@@ -16,7 +16,7 @@ const consistentHashingStrategyName = "consistent-hashing"
 
 type hasher struct{}
 
-func (h hasher) Sum64(data []byte) uint64 {
+func (hasher) Sum64(data []byte) uint64 {
 	return xxhash.Sum64(data)
 }
 
@@ -42,7 +42,7 @@ func newConsistentHashingStrategy() Strategy {
 	return chStrategy
 }
 
-func (s *consistentHashingStrategy) GetName() string {
+func (*consistentHashingStrategy) GetName() string {
 	return consistentHashingStrategyName
 }
 
@@ -70,7 +70,6 @@ func (s *consistentHashingStrategy) SetCollectors(collectors map[string]*Collect
 	}
 
 	s.consistentHasher = consistent.New(members, s.config)
-
 }
 
-func (s *consistentHashingStrategy) SetFallbackStrategy(fallbackStrategy Strategy) {}
+func (*consistentHashingStrategy) SetFallbackStrategy(Strategy) {}

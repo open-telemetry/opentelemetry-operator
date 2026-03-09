@@ -40,10 +40,6 @@ spec:
     - ports:
         - port: 8080
           protocol: TCP
-  egress:
-    - ports:
-        - port: 6443
-          protocol: TCP
   podSelector:
     matchLabels:
       app.kubernetes.io/component: opentelemetry-targetallocator

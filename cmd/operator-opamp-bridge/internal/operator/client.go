@@ -30,16 +30,16 @@ const (
 
 type ConfigApplier interface {
 	// Apply receives a name and namespace to apply an OpenTelemetryCollector CRD that is contained in the configmap.
-	Apply(name string, namespace string, configmap *protobufs.AgentConfigFile) error
+	Apply(name, namespace string, configmap *protobufs.AgentConfigFile) error
 
 	// Delete attempts to delete an OpenTelemetryCollector object given a name and namespace.
-	Delete(name string, namespace string) error
+	Delete(name, namespace string) error
 
 	// ListInstances retrieves all OpenTelemetryCollector CRDs created by the operator-opamp-bridge agent.
 	ListInstances() ([]v1beta1.OpenTelemetryCollector, error)
 
 	// GetInstance retrieves an OpenTelemetryCollector CRD given a name and namespace.
-	GetInstance(name string, namespace string) (*v1beta1.OpenTelemetryCollector, error)
+	GetInstance(name, namespace string) (*v1beta1.OpenTelemetryCollector, error)
 
 	// GetCollectorPods retrieves all pods that match the given collector's selector labels and namespace.
 	GetCollectorPods(selectorLabels map[string]string, namespace string) (*v1.PodList, error)
@@ -65,7 +65,7 @@ func NewClient(name string, log logr.Logger, c client.Client, componentsAllowed 
 	}
 }
 
-func (c Client) Apply(name string, namespace string, configmap *protobufs.AgentConfigFile) error {
+func (c Client) Apply(name, namespace string, configmap *protobufs.AgentConfigFile) error {
 	c.log.Info("Received new config", "name", name, "namespace", namespace)
 
 	if len(configmap.Body) == 0 {
@@ -110,7 +110,7 @@ func (c Client) validateComponents(collectorConfig *v1beta1.Config) error {
 		return nil
 	}
 
-	configuredComponents := map[string]map[string]interface{}{
+	configuredComponents := map[string]map[string]any{
 		"receivers":  collectorConfig.Receivers.Object,
 		"processors": collectorConfig.Processors.Object,
 		"exporters":  collectorConfig.Exporters.Object,
@@ -166,22 +166,22 @@ func labelSetContainsLabel(resourceLabelSet map[string]string, label, value stri
 	return strings.EqualFold(resourceLabelSet[label], value)
 }
 
-func (c Client) create(ctx context.Context, name string, namespace string, collector *v1beta1.OpenTelemetryCollector) error {
+func (c Client) create(ctx context.Context, name, namespace string, collector *v1beta1.OpenTelemetryCollector) error {
 	// Set the defaults
 	setTypedMeta(collector)
-	collector.ObjectMeta.Name = name
-	collector.ObjectMeta.Namespace = namespace
+	collector.Name = name
+	collector.Namespace = namespace
 
-	if collector.ObjectMeta.Labels == nil {
-		collector.ObjectMeta.Labels = map[string]string{}
+	if collector.Labels == nil {
+		collector.Labels = map[string]string{}
 	}
-	collector.ObjectMeta.Labels[ResourceIdentifierKey] = ResourceIdentifierValue
+	collector.Labels[ResourceIdentifierKey] = ResourceIdentifierValue
 
 	c.log.Info("Creating collector")
 	return c.k8sClient.Create(ctx, collector)
 }
 
-func (c Client) update(ctx context.Context, old *v1beta1.OpenTelemetryCollector, new *v1beta1.OpenTelemetryCollector) error {
+func (c Client) update(ctx context.Context, old, new *v1beta1.OpenTelemetryCollector) error {
 	new.ObjectMeta = old.ObjectMeta
 	new.TypeMeta = old.TypeMeta
 
@@ -189,7 +189,7 @@ func (c Client) update(ctx context.Context, old *v1beta1.OpenTelemetryCollector,
 	return c.k8sClient.Update(ctx, new)
 }
 
-func (c Client) Delete(name string, namespace string) error {
+func (c Client) Delete(name, namespace string) error {
 	ctx := context.Background()
 	result := v1beta1.OpenTelemetryCollector{}
 	err := c.k8sClient.Get(ctx, client.ObjectKey{
@@ -240,7 +240,7 @@ func (c Client) ListInstances() ([]v1beta1.OpenTelemetryCollector, error) {
 	return instances, nil
 }
 
-func (c Client) GetInstance(name string, namespace string) (*v1beta1.OpenTelemetryCollector, error) {
+func (c Client) GetInstance(name, namespace string) (*v1beta1.OpenTelemetryCollector, error) {
 	ctx := context.Background()
 	result := v1beta1.OpenTelemetryCollector{}
 
@@ -268,6 +268,6 @@ func (c Client) GetCollectorPods(selectorLabels map[string]string, namespace str
 // setTypedMeta sets the TypeMeta of the given collector to the correct values. The controller-runtime
 // client will not set the TypeMeta for us, so we need to do it manually.
 func setTypedMeta(collector *v1beta1.OpenTelemetryCollector) {
-	collector.TypeMeta.Kind = CollectorResource
-	collector.TypeMeta.APIVersion = v1beta1.GroupVersion.String()
+	collector.Kind = CollectorResource
+	collector.APIVersion = v1beta1.GroupVersion.String()
 }

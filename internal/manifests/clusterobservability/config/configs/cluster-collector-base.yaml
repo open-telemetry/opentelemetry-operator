@@ -1,0 +1,22 @@
+# Base configuration for cluster collectors (Deployment)
+# Collects cluster-level metrics and events
+receivers:
+  k8s_cluster:
+    auth_type: serviceAccount
+    collection_interval: 30s
+    node_conditions_to_report: ["Ready", "MemoryPressure", "DiskPressure", "PIDPressure"]
+    allocatable_types_to_report: ["cpu", "memory", "storage", "pods"]
+    
+  k8s_events:
+    auth_type: serviceAccount
+
+processors:
+  batch: {}
+  resourcedetection:
+    detectors: ["env", "system"]
+    timeout: 2s
+
+exporters: {} # Will be populated by controller
+
+service:
+  pipelines: {} # Will be populated by controller based on enabled signals

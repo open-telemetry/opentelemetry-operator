@@ -2,6 +2,170 @@
 
 <!-- next version -->
 
+## 0.146.0
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Expose missing Prometheus CR fields in the Operator API (#1934)
+  Added `podMonitorNamespaceSelector`, `serviceMonitorNamespaceSelector`, `scrapeConfigNamespaceSelector`,
+  `probeNamespaceSelector`, `evaluationInterval`, and `scrapeProtocols` to the `prometheusCR`
+  configuration within the `TargetAllocator` and `OpenTelemetryCollector`
+  APIs to achieve feature parity with the underlying Target Allocator.
+  
+- `collector`: Add the hostUsers field to OpenTelemetryCommonFields to enable toggling support for isolating pod processes under a separate user namespace (#4366)
+- `auto-instrumentation`: Add support for initContainers to instrumentation injector (#3308)
+  Add support for instrumenting init containers.
+  Init container support is available for Java, Python, Node.js, .NET and SDK-only, and works using the same annotation as for regular containers.
+  
+- `operator, collector`: Allow operator to get TLS settings from OpenShift `APIServer` CR and configure operands TLS settings. (#4669)
+  Added operator flag `--tls-cluster-profile` which obtains the TLS min version and cipher suites from the OpenShift `APIServer` `cluster` custom resource (CR).
+  It overrides the `--tls-min-version` and `--tls-cipher-suites` flags if set.
+  The flags is disabled by default on Kubernetes and enabled on OpenShift.
+  
+  Added operator flag `--tls-configure-operands` which configures operands TLS settings (min version, cipher suites)
+  based on the supplied operator TLS flags (`--tls-cipher-suites` and `--tls-min-version`) or from the OpenShift `APIServer` CR
+  if `--tls-cluster-profile` is enabled.
+  The flag is disabled by default on Kubernetes and enabled on OpenShift.
+  
+  The `--tls-min-version` defaults to `TLSv1.2` which matches the collector's default.
+  The `--tls-cipher-suites` is empty by default which matches the collector's default.
+  Therefore enabling `--tls-configure-operands` with the default TLS flags should not change the collector's behavior.
+  
+- `operator`: Add webhook server readiness check to the operator's /readyz endpoint so the pod is not marked ready before the webhook server is listening. (#3772)
+  Previously the readiness probe used only healthz.Ping, causing a race where CRs 
+  created right after deployment could hit "connection refused" from the webhook.
+  Now the readyz endpoint includes a check using controller-runtime's
+  StartedChecker which verifies the webhook TLS listener is actually accepting connections.
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Remove legacy finalizer from OpenTelemetryCollector CR when RBAC not available. (#4769)
+  Finalizer usage was restricted to cluster scoped resources only. Legacy finalizer added by OpenTelemetry Operator
+  <= v0.141.0 still blocks namespace deletion if the operator is removed first. The change removes finalizer with
+  cluster-level RBAC availability.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.145.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.145.0)
+* [OpenTelemetry Contrib - v0.145.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.145.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.71.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.71.0)
+* [Python - v0.60b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.60b1)
+* [Go - v0.23.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.23.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.145.0
+
+### 🛑 Breaking changes 🛑
+
+- `collector`: Remove operator.collector.default.config feature gate (#4473)
+
+### 🚀 New components 🚀
+
+- `clusterObservability`: Inital implementation of ClusterObservability CRD (#3820)
+  This change provides an initial implementation of the Cluster Observability CRD and operator control loop.
+  Reconcilation is disabled by default.
+  Currently, the CRD is **not** included in the operator bundle and must be installed manually.
+  To enable reconciliation, enable the `--feature-gates=+operator.clusterobservability` feature gate.
+  
+
+### 💡 Enhancements 💡
+
+- `target allocator`: Add readiness and liveness probe configurations for target allocator CRD (#4639)
+- `target allocator`: Make the least-weighted target allocation strategy take job name into account. (#3128)
+  Uses job name instead of "first match" to when number of targets is equal. The effect is to spread out targets with the same job name across collectors.
+
+### 🧰 Bug fixes 🧰
+
+- `target allocator`: Fix TLS certificate hot-reload for mTLS connections (#4368)
+  The Target Allocator now automatically reloads TLS certificates when they are renewed
+  by cert-manager. Previously, certificate renewals required a pod restart because
+  certificates were only loaded once at startup. The fix uses fsnotify to watch the
+  certificate directory and dynamically reloads certificates via the GetCertificate
+  callback, enabling seamless certificate rotation without downtime.
+  
+- `collector`: Configure collector to reload client certificate periodically (#4657)
+  When the collector connects to the target allocator over mTLS, certificates were not automatically reloaded after expiration. This adds reload_interval to the TLS configuration, enabling the Prometheus receiver to periodically reload certificates from disk.
+  
+  The default interval of 5 minutes provides a good balance between picking up renewed certificates promptly and avoiding unnecessary overhead.
+  
+- `operator`: Set Kubernetes API server egress network policy port dynamically. (#4411)
+  The operator network policy egress rule for the Kubernetes API server was hardcoded to port 6443.
+  This PR uses uses `endpointslices.discovery.k8s.io -n default kubernetes` to get the port and IP addresses of the Kubernetes API server
+  for the operator egress network policy.
+  
+
+### Components
+
+* [OpenTelemetry Collector - v0.145.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.145.0)
+* [OpenTelemetry Contrib - v0.145.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.145.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.70.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.70.0)
+* [Python - v0.60b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.60b1)
+* [Go - v0.23.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.23.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
+## 0.144.0
+
+### 💡 Enhancements 💡
+
+- `operator`: change operator args in bundle to env variables (#4612)
+  The default configuration in the OLM bundle has been changed from command-line arguments to environment variables,
+  making it easily overwritable when deployed using OLM's Subscription config. Command-line flags continue to work.
+  All Config struct fields now support environment variable configuration.
+  
+  Configuration set via the Subscription's config section will persist and be reapplied after operator upgrades.
+  
+  Example of overriding configuration via OLM Subscription:
+  
+  ```yaml
+  apiVersion: operators.coreos.com/v1alpha1
+  kind: Subscription
+  metadata:
+    name: opentelemetry-operator
+  spec:
+    channel: stable
+    name: opentelemetry-operator
+    source: operatorhubio-catalog
+    sourceNamespace: olm
+    config:
+      env:
+      - name: FEATURE_GATES
+        value: "operator.networkpolicy,operand.networkpolicy"
+      - name: ENABLE_GO_AUTO_INSTRUMENTATION
+        value: "true"
+      - name: METRICS_SECURE
+        value: "false"
+  ```
+  
+
+### 🧰 Bug fixes 🧰
+
+- `collector`: Fix PodDisruptionBudget using all labels instead of selector labels, preventing PDB breakage during rollouts (#4623)
+  Use stable selector labels instead of all CR labels to prevent PDB breakage when mutable labels change during rollouts.
+- `auto-instrumentation`: Fix NGINX and Apache instrumentation init container creation to avoid copying init-container-incompatible fields. (#3729)
+  The NGINX and Apache instrumentation init containers are now created from scratch instead of 
+  cloning the main container, preventing probes, lifecycle hooks, and resize policies from being 
+  applied to init containers.
+
+### Components
+
+* [OpenTelemetry Collector - v0.144.0](https://github.com/open-telemetry/opentelemetry-collector/releases/tag/v0.144.0)
+* [OpenTelemetry Contrib - v0.144.0](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.144.0)
+* [Java auto-instrumentation - v1.33.6](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.33.6)
+* [.NET auto-instrumentation - v1.2.0](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/tag/v1.2.0)
+* [Node.JS - v0.69.0](https://github.com/open-telemetry/opentelemetry-js/releases/tag/experimental%2Fv0.69.0)
+* [Python - v0.60b1](https://github.com/open-telemetry/opentelemetry-python-contrib/releases/tag/v0.60b1)
+* [Go - v0.23.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/releases/tag/v0.23.0)
+* [ApacheHTTPD - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+* [Nginx - 1.0.4](https://github.com/open-telemetry/opentelemetry-cpp-contrib/releases/tag/webserver%2Fv1.0.4)
+
 ## 0.143.0
 
 ### 🧰 Bug fixes 🧰

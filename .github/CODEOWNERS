@@ -16,4 +16,4 @@
 * @open-telemetry/operator-approvers
 
 # AutoInstrumentation owners
-# TBD
+/autoinstrumentation/dotnet/ @open-telemetry/dotnet-instrumentation-approvers @open-telemetry/operator-approvers

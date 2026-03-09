@@ -40,3 +40,65 @@ spec:
         - name: tls-secret
           secret:
             secretName: prometheus-cr-ta-client-cert
+---
+# Verify certificate was actually rotated by comparing dates
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: verify-cert-rotation
+spec:
+  template:
+    spec:
+      serviceAccountName: cert-tracker-sa
+      restartPolicy: OnFailure
+      containers:
+        - name: verify-cert
+          image: docker.io/nicolaka/netshoot:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Get current certificate's notBefore date
+              CURRENT_DATE=$(echo | openssl s_client -connect prometheus-cr-targetallocator:443 -servername prometheus-cr-targetallocator 2>/dev/null | openssl x509 -noout -startdate 2>/dev/null | cut -d= -f2)
+
+              if [ -z "$CURRENT_DATE" ]; then
+                echo "ERROR: Failed to get current certificate date"
+                exit 1
+              fi
+
+              echo "Current certificate notBefore date: $CURRENT_DATE"
+
+              # Get the initial date from ConfigMap
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+
+              echo "Fetching ConfigMap cert-date-tracker from namespace $NAMESPACE..."
+
+              CM_RESPONSE=$(curl -s -k \
+                -H "Authorization: Bearer $TOKEN" \
+                "https://kubernetes.default.svc/api/v1/namespaces/${NAMESPACE}/configmaps/cert-date-tracker")
+
+              echo "ConfigMap response: $CM_RESPONSE"
+
+              # Use jq to parse JSON (available in netshoot)
+              INITIAL_DATE=$(echo "$CM_RESPONSE" | jq -r '.data["initial-date"]' 2>/dev/null)
+
+              if [ -z "$INITIAL_DATE" ] || [ "$INITIAL_DATE" = "null" ]; then
+                echo "ERROR: Failed to get initial certificate date from ConfigMap"
+                echo "Raw response was: $CM_RESPONSE"
+                exit 1
+              fi
+
+              echo "Initial certificate notBefore date: $INITIAL_DATE"
+
+              # Compare dates - they should be different after rotation
+              if [ "$CURRENT_DATE" = "$INITIAL_DATE" ]; then
+                echo "ERROR: Certificate was NOT rotated - dates are identical!"
+                echo "  Initial: $INITIAL_DATE"
+                echo "  Current: $CURRENT_DATE"
+                exit 1
+              fi
+
+              echo "SUCCESS: Certificate was rotated!"
+              echo "  Initial: $INITIAL_DATE"
+              echo "  Current: $CURRENT_DATE"

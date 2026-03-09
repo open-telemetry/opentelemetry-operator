@@ -354,6 +354,7 @@ func TestContainerDoesNotOverrideEnvVars(t *testing.T) {
 	// verify
 	assert.Equal(t, expected, c)
 }
+
 func TestReadinessProbe(t *testing.T) {
 	targetAllocator := v1alpha1.TargetAllocator{}
 	cfg := config.New()
@@ -372,6 +373,7 @@ func TestReadinessProbe(t *testing.T) {
 	// verify
 	assert.Equal(t, expected, c.ReadinessProbe)
 }
+
 func TestLivenessProbe(t *testing.T) {
 	// prepare
 	targetAllocator := v1alpha1.TargetAllocator{}
@@ -390,6 +392,58 @@ func TestLivenessProbe(t *testing.T) {
 
 	// verify
 	assert.Equal(t, expected, c.LivenessProbe)
+}
+
+func TestCustomReadinessProbe(t *testing.T) {
+	// prepare
+	customProbe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/custom-ready",
+				Port: intstr.FromInt(9090),
+			},
+		},
+		InitialDelaySeconds: 10,
+		PeriodSeconds:       5,
+	}
+	targetAllocator := v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{
+			ReadinessProbe: customProbe,
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, targetAllocator)
+
+	// verify
+	assert.Equal(t, customProbe, c.ReadinessProbe)
+}
+
+func TestCustomLivenessProbe(t *testing.T) {
+	// prepare
+	customProbe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/custom-live",
+				Port: intstr.FromInt(9090),
+			},
+		},
+		InitialDelaySeconds: 15,
+		PeriodSeconds:       10,
+	}
+	targetAllocator := v1alpha1.TargetAllocator{
+		Spec: v1alpha1.TargetAllocatorSpec{
+			LivenessProbe: customProbe,
+		},
+	}
+	cfg := config.New()
+
+	// test
+	c := Container(cfg, logger, targetAllocator)
+
+	// verify
+	assert.Equal(t, customProbe, c.LivenessProbe)
 }
 
 func TestSecurityContext(t *testing.T) {
@@ -554,7 +608,7 @@ func TestContainerLifecycle(t *testing.T) {
 }
 
 func TestContainerEnvFrom(t *testing.T) {
-	//prepare
+	// prepare
 	envFrom1 := corev1.EnvFromSource{
 		SecretRef: &corev1.SecretEnvSource{
 			LocalObjectReference: corev1.LocalObjectReference{

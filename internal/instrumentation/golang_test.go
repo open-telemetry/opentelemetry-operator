@@ -4,7 +4,7 @@
 package instrumentation
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -41,7 +41,7 @@ func TestInjectGoSDK(t *testing.T) {
 					ShareProcessNamespace: &falsee,
 				},
 			},
-			err: fmt.Errorf("shared process namespace has been explicitly disabled"),
+			err: errors.New("shared process namespace has been explicitly disabled"),
 		},
 		{
 			name: "using go-container-names",
@@ -60,7 +60,7 @@ func TestInjectGoSDK(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("go instrumentation cannot be injected into a pod, multiple containers configured"),
+			err: errors.New("go instrumentation cannot be injected into a pod, multiple containers configured"),
 			config: config.Config{
 				EnableMultiInstrumentation: true,
 			},
@@ -82,7 +82,7 @@ func TestInjectGoSDK(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("go instrumentation cannot be injected into a pod, multiple containers configured"),
+			err: errors.New("go instrumentation cannot be injected into a pod, multiple containers configured"),
 		},
 		{
 			name: "pod annotation takes precedence",

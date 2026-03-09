@@ -5,6 +5,7 @@ package collector
 
 import (
 	"fmt"
+	"maps"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -52,9 +53,7 @@ func HeadlessService(params manifests.Params) (*corev1.Service, error) {
 	annotations := map[string]string{
 		"service.beta.openshift.io/serving-cert-secret-name": fmt.Sprintf("%s-tls", h.Name),
 	}
-	for k, v := range h.Annotations {
-		annotations[k] = v
-	}
+	maps.Copy(annotations, h.Annotations)
 	h.Annotations = annotations
 
 	h.Spec.ClusterIP = "None"
@@ -177,7 +176,6 @@ func Service(params manifests.Params) (*corev1.Service, error) {
 
 	// if we have no ports, we don't need a service
 	if len(ports) == 0 {
-
 		params.Log.V(1).Info("the instance's configuration didn't yield any ports to open, skipping service", "instance.name", params.OtelCol.Name, "instance.namespace", params.OtelCol.Namespace)
 		return nil, err
 	}

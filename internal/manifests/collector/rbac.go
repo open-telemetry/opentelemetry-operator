@@ -90,7 +90,6 @@ func CheckRbacRules(params manifests.Params, saName string) ([]string, error) {
 	r := []*rbacv1.PolicyRule{}
 
 	for _, rule := range rules {
-		rule := rule
 		r = append(r, &rule)
 	}
 

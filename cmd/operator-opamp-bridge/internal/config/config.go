@@ -157,11 +157,11 @@ func (c *Config) GetAgentScheme() string {
 	return uri.Scheme
 }
 
-func (c *Config) GetAgentType() string {
+func (*Config) GetAgentType() string {
 	return agentType
 }
 
-func (c *Config) GetAgentVersion() string {
+func (*Config) GetAgentVersion() string {
 	return agentVersion
 }
 
@@ -194,7 +194,7 @@ func (ad *AgentDescription) nonIdentifyingAttributes() []*protobufs.KeyValue {
 	return toReturn
 }
 
-func keyValuePair(key string, value string) *protobufs.KeyValue {
+func keyValuePair(key, value string) *protobufs.KeyValue {
 	return &protobufs.KeyValue{
 		Key: key,
 		Value: &protobufs.AnyValue{

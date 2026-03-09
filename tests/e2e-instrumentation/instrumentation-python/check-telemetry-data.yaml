@@ -25,9 +25,9 @@ spec:
         env:
           - name: podName
             value: ($podName)
+        shell: /bin/bash
         timeout: 60s
         content: |
-          #!/bin/bash
           # Add retry logic for metrics collection to handle timing issues
           for i in {1..12}; do
             echo "Attempt $i: Fetching metrics from pod ${podName}..." >&2
