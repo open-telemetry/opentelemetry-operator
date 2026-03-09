@@ -45,7 +45,6 @@ linters:
         - regexpMust
         - regexpSimplify
         - sloppyReassign
-        - stringXbytes
         - typeDefFirst
         - typeSwitchVar
         - unlambda

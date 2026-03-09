@@ -23,7 +23,7 @@ func DNSName(name string) string {
 	var d []rune
 
 	for i, x := range strings.ToLower(name) {
-		if regex.Match([]byte(string(x))) {
+		if regex.MatchString(string(x)) {
 			d = append(d, x)
 		} else {
 			if i == 0 || i == utf8.RuneCountInString(name)-1 {
