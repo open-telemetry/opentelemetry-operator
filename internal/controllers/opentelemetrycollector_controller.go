@@ -7,7 +7,7 @@ package controllers
 import (
 	"context"
 	"maps"
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -135,11 +135,17 @@ func (r *OpenTelemetryCollectorReconciler) findClusterRoleObjects(ctx context.Co
 // Fundamentally, this just sorts by time created and picks configVersionsToKeep latest ones.
 func getCollectorConfigMapsToKeep(configVersionsToKeep int, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
 	configVersionsToKeep = max(1, configVersionsToKeep)
-	sort.Slice(configMaps, func(i, j int) bool {
-		iTime := configMaps[i].GetCreationTimestamp().Time
-		jTime := configMaps[j].GetCreationTimestamp().Time
+	slices.SortFunc(configMaps, func(i, j *corev1.ConfigMap) int {
+		iTime := i.GetCreationTimestamp().Time
+		jTime := j.GetCreationTimestamp().Time
 		// sort the ConfigMaps newest to oldest
-		return iTime.After(jTime)
+		if jTime.Before(iTime) {
+			return -1
+		}
+		if jTime.After(iTime) {
+			return 1
+		}
+		return 0
 	})
 
 	configMapsToKeep := min(configVersionsToKeep, len(configMaps))

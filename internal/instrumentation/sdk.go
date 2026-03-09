@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"sort"
 	"strings"
 	"time"
 	"unsafe"
@@ -796,7 +795,7 @@ func resourceMapToStr(res map[string]string) string {
 	for k := range res {
 		keys = append(keys, k)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 
 	str := ""
 	for _, k := range keys {

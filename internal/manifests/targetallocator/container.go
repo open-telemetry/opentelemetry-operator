@@ -5,7 +5,7 @@ package targetallocator
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/operator-lib/proxy"
@@ -101,7 +101,7 @@ func Container(cfg config.Config, _ logr.Logger, instance v1alpha1.TargetAllocat
 	for k, v := range argsMap {
 		args = append(args, fmt.Sprintf("--%s=%s", k, v))
 	}
-	sort.Strings(args)
+	slices.Sort(args)
 
 	readinessProbe := instance.Spec.ReadinessProbe
 	if readinessProbe == nil {

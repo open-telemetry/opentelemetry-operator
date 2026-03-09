@@ -112,6 +112,7 @@ func main() {
 	}
 
 	discoveryCtx, discoveryCancel := context.WithCancel(ctx)
+	defer discoveryCancel()
 	sdMetrics, discErr := discovery.CreateAndRegisterSDMetrics(prometheus.DefaultRegisterer)
 	if discErr != nil {
 		setupLog.Error(discErr, "Unable to register metrics for Prometheus service discovery")
@@ -232,7 +233,7 @@ func main() {
 
 		// Start certificate watchers for hot-reload
 		certWatcherCtx, certWatcherCancel := context.WithCancel(ctx)
-
+		defer certWatcherCancel()
 		// Server certificate watcher
 		runGroup.Add(
 			func() error {
