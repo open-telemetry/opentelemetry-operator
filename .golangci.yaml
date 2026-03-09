@@ -46,7 +46,6 @@ linters:
         - sloppyReassign
         - stringXbytes
         - typeDefFirst
-        - typeSwitchVar
         - unlambda
         - unnamedResult
         - whyNoLint
