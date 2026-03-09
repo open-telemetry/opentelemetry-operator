@@ -186,8 +186,9 @@ func (m *Discoverer) Reload() {
 
 	targetsAssigned := 0
 	for jobName, groups := range m.targetSets {
+		intoTargets := targets[targetsAssigned:]
 		wg.Go(func() {
-			m.processTargetGroups(jobName, groups, targets[targetsAssigned:])
+			m.processTargetGroups(jobName, groups, intoTargets)
 		})
 		for _, group := range groups {
 			targetsAssigned += len(group.Targets)
