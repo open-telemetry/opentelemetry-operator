@@ -34,7 +34,6 @@ linters:
         - exitAfterDefer
         - filepathJoin
         - hugeParam
-        - ifElseChain
         - importShadow
         - nestingReduce
         - octalLiteral
