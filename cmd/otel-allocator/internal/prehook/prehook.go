@@ -18,11 +18,9 @@ type Hook interface {
 
 type HookProvider func(log logr.Logger) Hook
 
-var (
-	registry = map[string]HookProvider{
-		relabelConfigTargetFilterName: newRelabelConfigTargetFilter,
-	}
-)
+var registry = map[string]HookProvider{
+	relabelConfigTargetFilterName: newRelabelConfigTargetFilter,
+}
 
 func New(name string, log logr.Logger) Hook {
 	if p, ok := registry[name]; ok {

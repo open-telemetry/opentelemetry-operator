@@ -44,6 +44,7 @@ func NewCluster(cfg *config.Config) Cluster {
 		apiAvailabilityCache: make(map[schema.GroupVersionResource]bool),
 	}
 }
+
 func (c *Cluster) getOperatorNamespace() (string, error) {
 	if c.config.OperatorNamespace != "" {
 		return c.config.OperatorNamespace, nil
@@ -67,7 +68,6 @@ func (c *Cluster) getOperatorDeployment() (appsv1.Deployment, error) {
 			"app.kubernetes.io/name": "opentelemetry-operator",
 		}),
 	})
-
 	if err != nil {
 		return appsv1.Deployment{}, err
 	}

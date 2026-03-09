@@ -22,11 +22,14 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/allocation"
 )
 
-var logger = logf.Log.WithName("collector-unit-tests")
-var labelMap = map[string]string{
-	"app.kubernetes.io/instance":   "default.test",
-	"app.kubernetes.io/managed-by": "opentelemetry-operator",
-}
+var (
+	logger   = logf.Log.WithName("collector-unit-tests")
+	labelMap = map[string]string{
+		"app.kubernetes.io/instance":   "default.test",
+		"app.kubernetes.io/managed-by": "opentelemetry-operator",
+	}
+)
+
 var labelSelector = metav1.LabelSelector{
 	MatchLabels: labelMap,
 }

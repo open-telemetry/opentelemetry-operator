@@ -34,9 +34,7 @@ import (
 	allocatorWatcher "github.com/open-telemetry/opentelemetry-operator/cmd/otel-allocator/internal/watcher"
 )
 
-var (
-	setupLog = ctrl.Log.WithName("setup")
-)
+var setupLog = ctrl.Log.WithName("setup")
 
 func main() {
 	var (

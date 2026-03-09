@@ -14,7 +14,7 @@ type Hasher[K comparable] interface {
 	Hash() K
 }
 
-func NewChanges[K comparable, T Hasher[K]](additions map[K]T, removals map[K]T) Changes[K, T] {
+func NewChanges[K comparable, T Hasher[K]](additions, removals map[K]T) Changes[K, T] {
 	return Changes[K, T]{additions: additions, removals: removals}
 }
 

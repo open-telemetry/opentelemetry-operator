@@ -14,13 +14,11 @@ import (
 
 type AllocatorProvider func(log logr.Logger, opts ...Option) Allocator
 
-var (
-	strategies = map[string]Strategy{
-		leastWeightedStrategyName:     newleastWeightedStrategy(),
-		consistentHashingStrategyName: newConsistentHashingStrategy(),
-		perNodeStrategyName:           newPerNodeStrategy(),
-	}
-)
+var strategies = map[string]Strategy{
+	leastWeightedStrategyName:     newleastWeightedStrategy(),
+	consistentHashingStrategyName: newConsistentHashingStrategy(),
+	perNodeStrategyName:           newPerNodeStrategy(),
+}
 
 type Option func(Allocator)
 
@@ -35,7 +33,7 @@ func WithFilter(filter Filter) Option {
 }
 
 func WithFallbackStrategy(fallbackStrategy string) Option {
-	var strategy, ok = strategies[fallbackStrategy]
+	strategy, ok := strategies[fallbackStrategy]
 	if fallbackStrategy != "" && !ok {
 		panic(fmt.Errorf("unregistered strategy used as fallback: %s", fallbackStrategy))
 	}
@@ -64,7 +62,7 @@ type Allocator interface {
 	SetTargets(targets []*target.Item)
 	TargetItems() map[target.ItemHash]*target.Item
 	Collectors() map[string]*Collector
-	GetTargetsForCollectorAndJob(collector string, job string) []*target.Item
+	GetTargetsForCollectorAndJob(collector, job string) []*target.Item
 	SetFilter(filter Filter)
 	SetFallbackStrategy(strategy Strategy)
 }

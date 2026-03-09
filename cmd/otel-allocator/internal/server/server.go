@@ -482,6 +482,7 @@ func jobAnchorLink(jobId string) Cell {
 		Text: jobId,
 	}
 }
+
 func (s *Server) JobHTMLHandler(c *gin.Context) {
 	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
 	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -595,6 +596,7 @@ func scrapeConfigAnchorLink() Cell {
 		Text: "Scrape Configs",
 	}
 }
+
 func (s *Server) ScrapeConfigsHTMLHandler(c *gin.Context) {
 	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
 	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -731,7 +733,7 @@ func GetAllTargetsByJob(allocator allocation.Allocator, job string) map[string]c
 }
 
 // GetAllTargetsByCollector returns all the targets for a given collector and job.
-func GetAllTargetsByCollectorAndJob(allocator allocation.Allocator, collectorName string, jobName string) []*targetJSON {
+func GetAllTargetsByCollectorAndJob(allocator allocation.Allocator, collectorName, jobName string) []*targetJSON {
 	items := allocator.GetTargetsForCollectorAndJob(collectorName, jobName)
 	targets := make([]*targetJSON, len(items))
 	for i, item := range items {

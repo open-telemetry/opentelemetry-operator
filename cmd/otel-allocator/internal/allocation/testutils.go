@@ -24,7 +24,7 @@ func colIndex(index, numCols int) int {
 	return index % numCols
 }
 
-func MakeNNewTargets(n int, numCollectors int, startingIndex int) []*target.Item {
+func MakeNNewTargets(n, numCollectors, startingIndex int) []*target.Item {
 	toReturn := []*target.Item{}
 	for i := startingIndex; i < n+startingIndex; i++ {
 		collector := fmt.Sprintf("collector-%d", colIndex(i, numCollectors))
@@ -38,7 +38,7 @@ func MakeNNewTargets(n int, numCollectors int, startingIndex int) []*target.Item
 	return toReturn
 }
 
-func MakeNCollectors(n int, startingIndex int) map[string]*Collector {
+func MakeNCollectors(n, startingIndex int) map[string]*Collector {
 	toReturn := map[string]*Collector{}
 	for i := startingIndex; i < n+startingIndex; i++ {
 		collector := fmt.Sprintf("collector-%d", i)
@@ -51,7 +51,7 @@ func MakeNCollectors(n int, startingIndex int) map[string]*Collector {
 	return toReturn
 }
 
-func MakeNNewTargetsWithEmptyCollectors(n int, startingIndex int) []*target.Item {
+func MakeNNewTargetsWithEmptyCollectors(n, startingIndex int) []*target.Item {
 	toReturn := []*target.Item{}
 	for i := startingIndex; i < n+startingIndex; i++ {
 		label := labels.New(
