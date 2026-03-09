@@ -51,7 +51,7 @@ func healthCheckV1Probe(logger logr.Logger, config healthcheckV1Config) (*corev1
 	// but since the function runs only when manifests are deployed,
 	// we must keep these runtime defaults for backward compatibility.
 	path := config.Path
-	if len(path) == 0 {
+	if path == "" {
 		path = defaultHealthcheckV1Path
 	}
 	return &corev1.Probe{

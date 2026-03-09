@@ -29,7 +29,7 @@ type VersionUpgrade struct {
 const RecordBufferSize int = 100
 
 func (u VersionUpgrade) semVer() *semver.Version {
-	if len(u.Version.OpenTelemetryCollector) == 0 {
+	if u.Version.OpenTelemetryCollector == "" {
 		return &Latest.Version
 	}
 	v, err := semver.NewVersion(u.Version.OpenTelemetryCollector)

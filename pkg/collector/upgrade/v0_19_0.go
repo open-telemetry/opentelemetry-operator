@@ -15,7 +15,7 @@ import (
 )
 
 func upgrade0_19_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*v1alpha1.OpenTelemetryCollector, error) {
-	if len(otelcol.Spec.Config) == 0 {
+	if otelcol.Spec.Config == "" {
 		return otelcol, nil
 	}
 
@@ -95,7 +95,7 @@ func upgrade0_19_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 
 				processors[k] = processor
 			case string:
-				if len(processor) == 0 {
+				if processor == "" {
 					// this processor is using the default configuration
 					continue
 				}

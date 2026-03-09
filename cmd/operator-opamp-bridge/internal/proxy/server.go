@@ -105,7 +105,7 @@ func (s *OpAMPProxy) onDisconnect(conn types.Connection) {
 	defer s.mux.Unlock()
 
 	for instanceId := range s.connections[conn] {
-		if hostName := s.agentsById[instanceId].GetHostname(); len(hostName) > 0 {
+		if hostName := s.agentsById[instanceId].GetHostname(); hostName != "" {
 			delete(s.agentsByHostName, hostName)
 		}
 		delete(s.agentsById, instanceId)
@@ -141,7 +141,7 @@ func (s *OpAMPProxy) onMessage(_ context.Context, conn types.Connection, msg *pr
 		agentUpdated = true
 	}
 	agentUpdated = s.agentsById[instanceId].UpdateStatus(msg, response) || agentUpdated
-	if hostName := s.agentsById[instanceId].GetHostname(); len(hostName) > 0 {
+	if hostName := s.agentsById[instanceId].GetHostname(); hostName != "" {
 		s.agentsByHostName[hostName] = instanceId
 	}
 	s.mux.Unlock()

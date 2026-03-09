@@ -145,7 +145,7 @@ func (b Builder[ComponentConfigType]) WithDefaultsApplier(defaultsApplier Defaul
 func (b Builder[ComponentConfigType]) Build() (*GenericParser[ComponentConfigType], error) {
 	o := NewEmptySettings[ComponentConfigType]()
 	o.Apply(b...)
-	if len(o.name) == 0 {
+	if o.name == "" {
 		return nil, errors.New("invalid settings struct, no name specified")
 	}
 	return &GenericParser[ComponentConfigType]{

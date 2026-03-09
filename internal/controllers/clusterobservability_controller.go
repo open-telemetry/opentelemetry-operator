@@ -309,17 +309,15 @@ func (r *ClusterObservabilityReconciler) reconcileUnstructuredResource(ctx conte
 		log.Info("Created unstructured resource",
 			"kind", unstructuredObj.GetKind(),
 			"name", unstructuredObj.GetName())
-	} else {
 		// Check if update is needed by comparing specs
-		if !apiequality.Semantic.DeepEqual(existing.Object, unstructuredObj.Object) {
-			unstructuredObj.SetResourceVersion(existing.GetResourceVersion())
-			if updateErr := r.Update(ctx, unstructuredObj); updateErr != nil {
-				return fmt.Errorf("failed to update unstructured resource %s: %w", unstructuredObj.GetName(), updateErr)
-			}
-			log.Info("Updated unstructured resource",
-				"kind", unstructuredObj.GetKind(),
-				"name", unstructuredObj.GetName())
+	} else if !apiequality.Semantic.DeepEqual(existing.Object, unstructuredObj.Object) {
+		unstructuredObj.SetResourceVersion(existing.GetResourceVersion())
+		if updateErr := r.Update(ctx, unstructuredObj); updateErr != nil {
+			return fmt.Errorf("failed to update unstructured resource %s: %w", unstructuredObj.GetName(), updateErr)
 		}
+		log.Info("Updated unstructured resource",
+			"kind", unstructuredObj.GetKind(),
+			"name", unstructuredObj.GetName())
 	}
 
 	return nil

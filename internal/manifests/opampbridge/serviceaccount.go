@@ -15,7 +15,7 @@ import (
 
 // ServiceAccountName returns the name of the existing or self-provisioned service account to use for the given instance.
 func ServiceAccountName(instance v1alpha1.OpAMPBridge) string {
-	if len(instance.Spec.ServiceAccount) == 0 {
+	if instance.Spec.ServiceAccount == "" {
 		return naming.OpAMPBridgeServiceAccount(instance.Name)
 	}
 	return instance.Spec.ServiceAccount

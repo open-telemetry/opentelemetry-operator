@@ -165,7 +165,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 			body := result.Body
 			bodyBytes, err := io.ReadAll(body)
 			assert.NoError(t, err)
-			if len(tt.want.errString) != 0 {
+			if tt.want.errString != "" {
 				assert.EqualError(t, err, tt.want.errString)
 				return
 			}
