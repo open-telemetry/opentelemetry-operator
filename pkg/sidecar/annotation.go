@@ -22,12 +22,12 @@ func annotationValue(ns corev1.Namespace, pod corev1.Pod) string {
 	nsAnnValue := ns.Annotations[Annotation]
 
 	// if the namespace value is empty, the pod annotation should be used, whatever it is
-	if len(nsAnnValue) == 0 {
+	if nsAnnValue == "" {
 		return podAnnValue
 	}
 
 	// if the pod value is empty, the namespace annotation should be used (true, false, instance)
-	if len(podAnnValue) == 0 {
+	if podAnnValue == "" {
 		return nsAnnValue
 	}
 

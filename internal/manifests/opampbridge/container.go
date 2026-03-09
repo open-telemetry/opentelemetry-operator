@@ -17,7 +17,7 @@ import (
 // Container builds a container for the given OpAMPBridge.
 func Container(cfg config.Config, _ logr.Logger, opampBridge v1alpha1.OpAMPBridge) corev1.Container {
 	image := opampBridge.Spec.Image
-	if len(image) == 0 {
+	if image == "" {
 		image = cfg.OperatorOpAMPBridgeImage
 	}
 

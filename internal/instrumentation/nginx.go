@@ -262,9 +262,9 @@ func getNginxOtelConfig(pod corev1.Pod, useLabelsForResourceAttributes bool, ngi
 	}
 	serviceName := chooseServiceName(pod, useLabelsForResourceAttributes, resourceMap, container)
 	serviceNamespace := pod.GetNamespace()
-	if len(serviceNamespace) == 0 {
+	if serviceNamespace == "" {
 		serviceNamespace = resourceMap[string(semconv.K8SNamespaceNameKey)]
-		if len(serviceNamespace) == 0 {
+		if serviceNamespace == "" {
 			serviceNamespace = "nginx"
 		}
 	}

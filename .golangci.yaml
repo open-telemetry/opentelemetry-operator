@@ -29,7 +29,6 @@ linters:
         - commentedOutCode
         - deferInLoop
         - emptyFallthrough
-        - emptyStringTest
         - exitAfterDefer
         - hugeParam
         - importShadow

@@ -43,9 +43,9 @@ func (g *SingleEndpointConfig) GetPortNumOrDefault(logger logr.Logger, p int32) 
 // GetPortNum attempts to get the port for the given config. If it cannot, the UnsetPort and the given missingPortError
 // are returned.
 func (g *SingleEndpointConfig) GetPortNum() (int32, error) {
-	if len(g.Endpoint) > 0 {
+	if g.Endpoint != "" {
 		return PortFromEndpoint(g.Endpoint)
-	} else if len(g.ListenAddress) > 0 {
+	} else if g.ListenAddress != "" {
 		return PortFromEndpoint(g.ListenAddress)
 	}
 	return UnsetPort, PortNotFoundErr
