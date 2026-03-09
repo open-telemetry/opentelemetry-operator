@@ -162,7 +162,6 @@ linters:
         - name: unsecure-url-scheme
           disabled: true
         - name: use-waitgroup-go
-          disabled: true
         - name: var-naming
           disabled: true
     staticcheck:

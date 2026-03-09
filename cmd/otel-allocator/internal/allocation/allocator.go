@@ -364,13 +364,11 @@ func buildTargetMap(targets []*target.Item, concurrency int) map[target.ItemHash
 	chunkSize = max(chunkSize, minChunkSize)
 	wg := sync.WaitGroup{}
 	for chunk := range slices.Chunk(targets, chunkSize) {
-		wg.Add(1)
-		go func(ch []*target.Item) {
-			defer wg.Done()
-			for _, item := range ch {
+		wg.Go(func() {
+			for _, item := range chunk {
 				item.Hash()
 			}
-		}(chunk)
+		})
 	}
 	wg.Wait()
 	for _, item := range targets {

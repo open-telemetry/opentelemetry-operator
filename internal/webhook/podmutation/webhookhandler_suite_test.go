@@ -10,10 +10,10 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"sync"
 	"testing"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -109,13 +109,11 @@ func TestMain(m *testing.M) {
 	}()
 
 	// wait for the webhook server to get ready
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	g := &errgroup.Group{}
 	dialer := &net.Dialer{Timeout: time.Second}
 	addrPort := fmt.Sprintf("%s:%d", webhookInstallOptions.LocalServingHost, webhookInstallOptions.LocalServingPort)
-	go func(wg *sync.WaitGroup) {
-		defer wg.Done()
-		if err = retry.OnError(wait.Backoff{
+	g.Go(func() error {
+		return retry.OnError(wait.Backoff{
 			Steps:    20,
 			Duration: 10 * time.Millisecond,
 			Factor:   1.5,
@@ -134,12 +132,12 @@ func TestMain(m *testing.M) {
 			}
 			_ = conn.Close()
 			return nil
-		}); err != nil {
-			fmt.Printf("failed to wait for webhook server to be ready: %v", err)
-			os.Exit(1)
-		}
-	}(wg)
-	wg.Wait()
+		})
+	})
+	if err = g.Wait(); err != nil {
+		fmt.Printf("failed to wait for webhook server to be ready: %v", err)
+		os.Exit(1)
+	}
 
 	code := m.Run()
 

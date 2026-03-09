@@ -186,12 +186,9 @@ func (m *Discoverer) Reload() {
 
 	targetsAssigned := 0
 	for jobName, groups := range m.targetSets {
-		wg.Add(1)
-		// Run the sync in parallel as these take a while and at high load can't catch up.
-		go func(jobName string, groups []*targetgroup.Group, intoTargets []*Item) {
-			m.processTargetGroups(jobName, groups, intoTargets)
-			wg.Done()
-		}(jobName, groups, targets[targetsAssigned:])
+		wg.Go(func() {
+			m.processTargetGroups(jobName, groups, targets[targetsAssigned:])
+		})
 		for _, group := range groups {
 			targetsAssigned += len(group.Targets)
 		}
