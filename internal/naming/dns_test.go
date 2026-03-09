@@ -33,7 +33,7 @@ func TestDnsName(t *testing.T) {
 
 	for _, tt := range tests {
 		assert.Equal(t, tt.out, DNSName(tt.in))
-		matched := rule.Match([]byte(tt.out))
+		matched := rule.MatchString(tt.out)
 		assert.True(t, matched, "%v is not a valid name", tt.out)
 	}
 }

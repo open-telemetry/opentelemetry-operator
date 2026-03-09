@@ -39,7 +39,6 @@ linters:
         - regexpMust
         - regexpSimplify
         - sloppyReassign
-        - stringXbytes
         - typeDefFirst
         - unlambda
         - unnamedResult
