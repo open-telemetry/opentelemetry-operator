@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-collector
+    app.kubernetes.io/instance: ($namespace).prometheus-cr-secrets
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: prometheus-cr-secrets-collector
+    app.kubernetes.io/part-of: opentelemetry
+status:
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: ($namespace).prometheus-cr-secrets
+    app.kubernetes.io/managed-by: opentelemetry-operator
+    app.kubernetes.io/name: prometheus-cr-secrets-targetallocator
+    app.kubernetes.io/part-of: opentelemetry
+status:
+  phase: Running

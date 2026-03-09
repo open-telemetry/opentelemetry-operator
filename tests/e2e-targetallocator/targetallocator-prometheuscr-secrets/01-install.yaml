@@ -1,0 +1,120 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metrics-app-secret
+type: Opaque
+stringData:
+  username: user
+  password: t0p$ecreT
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-app
+  labels:
+    app: metrics-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metrics-app
+  template:
+    metadata:
+      labels:
+        app: metrics-app
+    spec:
+      containers:
+      - name: metrics-app
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-metrics-basic-auth:main
+        ports:
+        - containerPort: 9123
+        env:
+        - name: BASIC_AUTH_USERNAME
+          value: user
+        - name: BASIC_AUTH_PASSWORD
+          value: t0p$ecreT
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics-service
+  labels:
+    app: metrics-app
+spec:
+  ports:
+  - name: metrics
+    port: 9123
+    targetPort: 9123
+    protocol: TCP
+  selector:
+    app: metrics-app
+  type: ClusterIP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: metrics-servicemonitor
+  labels:
+    app: metrics-app
+spec:
+  selector:
+    matchLabels:
+      app: metrics-app
+  endpoints:
+  - port: metrics
+    interval: 10s
+    basicAuth:
+      username:
+        name: metrics-app-secret
+        key: username
+      password:
+        name: metrics-app-secret
+        key: password
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-secret-in-config
+spec:
+  template:
+    metadata:
+      labels:
+        checker: "true"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-config
+          image: docker.io/curlimages/curl:latest
+          args:
+            - /bin/sh
+            - -c
+            - |
+              # Wait for ServiceMonitor to be discovered and config to be generated
+              for i in $(seq 30); do
+                CONFIG=$(curl -s http://prometheus-cr-secrets-targetallocator/scrape_configs)
+                if echo "$CONFIG" | grep -q "metrics-servicemonitor"; then
+                  echo "ServiceMonitor found in config"
+                  # Verify basicAuth is present with correct username
+                  if echo "$CONFIG" | grep -q "basic_auth"; then
+                    echo "BasicAuth configuration found"
+                    # Verify the actual username value from the secret
+                    if echo "$CONFIG" | grep -q "user"; then
+                      echo "Correct username 'user' found in config"
+                      # Verify password is present (value: t0p$ecreT)
+                      if echo "$CONFIG" | grep -q "t0p"; then
+                        echo "Password value found in config"
+                        exit 0
+                      else
+                        echo "Password value not found in config"
+                      fi
+                    else
+                      echo "Username 'user' not found in config"
+                    fi
+                  fi
+                fi
+                echo "Waiting for ServiceMonitor with correct basicAuth credentials... attempt $i"
+                sleep 5
+              done
+              echo "Failed to find ServiceMonitor with correct basicAuth credentials in config"
+              exit 1

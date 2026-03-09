@@ -1,0 +1,17 @@
+# After secret deletion, verify the system handles it gracefully
+# The ServiceMonitor should still be in the config, but the secret reference should be handled
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: metrics-servicemonitor
+---
+# Verify pods are still running after secret deletion
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/component: opentelemetry-targetallocator
+    app.kubernetes.io/instance: ($namespace).prometheus-cr-secrets
+    app.kubernetes.io/managed-by: opentelemetry-operator
+status:
+  phase: Running

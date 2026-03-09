@@ -1,0 +1,94 @@
+---
+# Update the secret with new credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metrics-app-secret
+type: Opaque
+stringData:
+  username: newuser
+  password: newP@ssw0rd
+---
+# Update the app to use new credentials
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-app
+  labels:
+    app: metrics-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metrics-app
+  template:
+    metadata:
+      labels:
+        app: metrics-app
+    spec:
+      containers:
+      - name: metrics-app
+        image: ghcr.io/open-telemetry/opentelemetry-operator/e2e-test-app-metrics-basic-auth:main
+        ports:
+        - containerPort: 9123
+        env:
+        - name: BASIC_AUTH_USERNAME
+          value: newuser
+        - name: BASIC_AUTH_PASSWORD
+          value: newP@ssw0rd
+---
+# Job to verify secret update was processed
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: check-secret-update
+spec:
+  template:
+    metadata:
+      labels:
+        checker: "true"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: check-update
+          image: docker.io/curlimages/curl:latest
+          args:
+            - /bin/sh
+            - -c
+            - |
+              # Wait a bit for the secret update to propagate through the watcher
+              sleep 10
+              # Verify the config is still valid and contains the ServiceMonitor
+              for i in $(seq 20); do
+                CONFIG=$(curl -s http://prometheus-cr-secrets-targetallocator/scrape_configs)
+                if echo "$CONFIG" | grep -q "metrics-servicemonitor"; then
+                  echo "ServiceMonitor still present after secret update"
+                  # Verify basicAuth is still present after update
+                  if echo "$CONFIG" | grep -q "basic_auth"; then
+                    echo "BasicAuth still configured after secret update"
+                    # Verify the NEW username value is present (proving secret was updated)
+                    if echo "$CONFIG" | grep -q "newuser"; then
+                      echo "Updated username 'newuser' found in config"
+                      # Verify the NEW password value is present
+                      if echo "$CONFIG" | grep -q "newP@ssw0rd"; then
+                        echo "Updated password 'newP@ssw0rd' found in config"
+                        # Verify old username is NOT present (confirming update, not addition)
+                        if ! echo "$CONFIG" | grep -q '"user"'; then
+                          echo "Old username 'user' correctly replaced"
+                          exit 0
+                        else
+                          echo "Warning: Old username still present, update may not have worked"
+                        fi
+                      else
+                        echo "New password not found in config"
+                      fi
+                    else
+                      echo "New username 'newuser' not found in config"
+                    fi
+                  fi
+                fi
+                echo "Waiting for config to update with new credentials... attempt $i"
+                sleep 3
+              done
+              echo "Failed to verify updated credentials in config after secret update"
+              exit 1
