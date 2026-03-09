@@ -6,7 +6,7 @@ package sidecar
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -89,7 +89,7 @@ func mapToValue(attributesMap map[attribute.Key]string) string {
 	for k := range attributesMap {
 		keys = append(keys, string(k))
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 
 	for _, key := range keys {
 		parts = append(parts, fmt.Sprintf("%s=%s", key, attributesMap[attribute.Key(key)]))

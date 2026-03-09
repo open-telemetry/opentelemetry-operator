@@ -6,7 +6,7 @@ package upgrade
 import (
 	"fmt"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -80,8 +80,8 @@ func upgrade0_38_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 		otelcol.Spec.Config = string(res)
 		keys := reflect.ValueOf(foundLoggingArgs).MapKeys()
 		// sort keys to get always the same message
-		sort.Slice(keys, func(i, j int) bool {
-			return strings.Compare(keys[i].String(), keys[j].String()) <= 0
+		slices.SortFunc(keys, func(i, j reflect.Value) int {
+			return strings.Compare(i.String(), j.String())
 		})
 		existing := &corev1.ConfigMap{}
 		updated := existing.DeepCopy()

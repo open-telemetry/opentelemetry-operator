@@ -4,13 +4,14 @@
 package server
 
 import (
+	"cmp"
 	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
 	"net/url"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -313,7 +314,7 @@ func (s *Server) IndexHandler(c *gin.Context) {
 			for k := range s.allocator.Collectors() {
 				collectorNames = append(collectorNames, k)
 			}
-			sort.Strings(collectorNames)
+			slices.Sort(collectorNames)
 
 			for _, colName := range collectorNames {
 				jobCount := strconv.Itoa(s.getJobCountForCollector(colName))
@@ -464,7 +465,7 @@ func (s *Server) JobsHTMLHandler(c *gin.Context) {
 			for k := range jobs {
 				jobNames = append(jobNames, k)
 			}
-			sort.Strings(jobNames)
+			slices.Sort(jobNames)
 
 			for _, j := range jobNames {
 				v := jobs[j]
@@ -511,7 +512,7 @@ func (s *Server) JobHTMLHandler(c *gin.Context) {
 			for _, v := range s.allocator.Collectors() {
 				collectorNames = append(collectorNames, v.Name)
 			}
-			sort.Strings(collectorNames)
+			slices.Sort(collectorNames)
 			for _, colName := range collectorNames {
 				count := 0
 				for _, target := range targets {
@@ -676,8 +677,8 @@ func (s *Server) sortedTargetItems() []*target.Item {
 	for _, v := range s.allocator.TargetItems() {
 		targetItems = append(targetItems, v)
 	}
-	sort.Slice(targetItems, func(i, j int) bool {
-		return targetItems[i].Hash() < targetItems[j].Hash()
+	slices.SortFunc(targetItems, func(i, j *target.Item) int {
+		return cmp.Compare(i.Hash(), j.Hash())
 	})
 	return targetItems
 }

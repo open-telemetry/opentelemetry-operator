@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sort"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -1173,7 +1173,7 @@ func getMessageDataFromConfigFile(filemap map[string]string) (*types.MessageData
 		i++
 	}
 	// We sort the filenames so we get consistent results for multiple file loads
-	sort.Strings(fileNames)
+	slices.Sort(fileNames)
 
 	for _, key := range fileNames {
 		yamlFile, err := os.ReadFile(filemap[key])

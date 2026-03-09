@@ -6,7 +6,7 @@ package instrumentation
 import (
 	"fmt"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -291,7 +291,7 @@ func getNginxOtelConfig(pod corev1.Pod, useLabelsForResourceAttributes bool, ngi
 	for key := range attrMap {
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 
 	for _, key := range keys {
 		fmt.Fprintf(&configFileContent, "%s %s;\n", key, attrMap[key])

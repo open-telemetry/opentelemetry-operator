@@ -9,7 +9,8 @@ import (
 	"fmt"
 	"maps"
 	"math"
-	"sort"
+	"slices"
+	"strings"
 
 	"dario.cat/mergo"
 	"github.com/go-logr/logr"
@@ -227,8 +228,8 @@ func (c *Config) getPortsForComponentKinds(logger logr.Logger, componentKinds ..
 		}
 	}
 
-	sort.Slice(ports, func(i, j int) bool {
-		return ports[i].Name < ports[j].Name
+	slices.SortFunc(ports, func(i, j corev1.ServicePort) int {
+		return strings.Compare(i.Name, j.Name)
 	})
 
 	return ports, nil
@@ -259,8 +260,8 @@ func (c *Config) getEnvironmentVariablesForComponentKinds(logger logr.Logger, co
 		}
 	}
 
-	sort.Slice(envVars, func(i, j int) bool {
-		return envVars[i].Name < envVars[j].Name
+	slices.SortFunc(envVars, func(i, j corev1.EnvVar) int {
+		return strings.Compare(i.Name, j.Name)
 	})
 
 	return envVars, nil
@@ -452,7 +453,7 @@ func (c *Config) nullObjects() []string {
 		}
 	}
 	// Make the return deterministic. The config uses maps therefore processing order is non-deterministic.
-	sort.Strings(nullKeys)
+	slices.Sort(nullKeys)
 	return nullKeys
 }
 

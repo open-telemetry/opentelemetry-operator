@@ -8,7 +8,6 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
-	"sort"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -88,7 +87,7 @@ func findDuplicatedContainers(ctrs []string) error {
 	}
 
 	if duplicates != nil {
-		sort.Strings(duplicates)
+		slices.Sort(duplicates)
 		return fmt.Errorf("duplicated container names detected: %s", duplicates)
 	}
 

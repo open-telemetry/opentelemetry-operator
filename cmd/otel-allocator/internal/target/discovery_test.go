@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 	"hash"
-	"sort"
+	"slices"
 	"testing"
 	"time"
 
@@ -94,8 +94,8 @@ func TestDiscovery(t *testing.T) {
 			assert.NoError(t, err)
 
 			gotTargets := <-results
-			sort.Strings(gotTargets)
-			sort.Strings(tt.want)
+			slices.Sort(gotTargets)
+			slices.Sort(tt.want)
 			assert.Equal(t, tt.want, gotTargets)
 
 			// check the updated scrape configs
