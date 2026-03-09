@@ -28,7 +28,6 @@ linters:
         - builtinShadow
         - commentedOutCode
         - deferInLoop
-        - deprecatedComment
         - elseif
         - emptyFallthrough
         - emptyStringTest
@@ -202,6 +201,9 @@ linters:
       - legacy
       - std-error-handling
     rules:
+      - linters:
+          - staticcheck
+        text: ".*.VolumeSizeLimit is deprecated:"
       - linters:
           - gosec
         path: _test\.go
