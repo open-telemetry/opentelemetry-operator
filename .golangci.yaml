@@ -28,7 +28,6 @@ linters:
         - builtinShadow
         - commentedOutCode
         - deferInLoop
-        - elseif
         - emptyFallthrough
         - emptyStringTest
         - exitAfterDefer
