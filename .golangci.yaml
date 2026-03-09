@@ -40,7 +40,6 @@ linters:
         - regexpSimplify
         - sloppyReassign
         - typeDefFirst
-        - unlambda
         - unnamedResult
         - whyNoLint
       enable-all: true
