@@ -41,7 +41,6 @@ linters:
         - paramTypeCombine
         - rangeValCopy
         - redundantSprint
-        - regexpMust
         - regexpSimplify
         - sloppyReassign
         - stringXbytes
