@@ -48,12 +48,10 @@ import (
 
 const resourceOwnerKey = ".metadata.owner"
 
-var (
-	ownedClusterObjectTypes = []client.Object{
-		&rbacv1.ClusterRole{},
-		&rbacv1.ClusterRoleBinding{},
-	}
-)
+var ownedClusterObjectTypes = []client.Object{
+	&rbacv1.ClusterRole{},
+	&rbacv1.ClusterRoleBinding{},
+}
 
 // OpenTelemetryCollectorReconciler reconciles a OpenTelemetryCollector object.
 type OpenTelemetryCollectorReconciler struct {

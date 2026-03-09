@@ -18,11 +18,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 )
 
-var k8sClient client.Client
-var testEnv *envtest.Environment
-var testScheme = scheme.Scheme
-var err error
-var cfg *rest.Config
+var (
+	k8sClient  client.Client
+	testEnv    *envtest.Environment
+	testScheme = scheme.Scheme
+	err        error
+	cfg        *rest.Config
+)
 
 func TestMain(m *testing.M) {
 	testEnv = &envtest.Environment{

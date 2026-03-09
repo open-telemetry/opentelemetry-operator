@@ -20,9 +20,7 @@ const (
 	port = 16686
 )
 
-var (
-	_ components.Parser = &components.GenericParser[*JaegerQueryExtensionConfig]{}
-)
+var _ components.Parser = &components.GenericParser[*JaegerQueryExtensionConfig]{}
 
 type JaegerQueryExtensionConfig struct {
 	HTTP jaegerHTTPAddress `mapstructure:"http,omitempty" yaml:"http,omitempty"`

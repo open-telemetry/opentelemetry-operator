@@ -26,7 +26,7 @@ func IsFilteredSet(sourceSet string, filterSet []string) bool {
 }
 
 // Labels return the common labels to all objects that are part of a managed CR.
-func Labels(instance metav1.ObjectMeta, name string, image string, component string, filterLabels []string) map[string]string {
+func Labels(instance metav1.ObjectMeta, name, image, component string, filterLabels []string) map[string]string {
 	var versionLabel string
 	// new map every time, so that we don't touch the instance's label
 	base := map[string]string{}
@@ -90,7 +90,7 @@ func TASelectorLabels(instance v1alpha1.TargetAllocator, component string) map[s
 }
 
 // AddExtraLabels adds extra labels to the ServiceMonitor labels map.
-func AddExtraLabels(logger *logr.Logger, labels map[string]string, extraLabels map[string]string) {
+func AddExtraLabels(logger *logr.Logger, labels, extraLabels map[string]string) {
 	for k, v := range extraLabels {
 		if existingValue, exists := (labels)[k]; exists {
 			if existingValue != v {

@@ -45,7 +45,7 @@ func TestServer_LivenessProbeHandler(t *testing.T) {
 	listenAddr := ":8080"
 	s, err := NewServer(logger, leastWeighted, listenAddr)
 	require.NoError(t, err)
-	request := httptest.NewRequest("GET", "/livez", nil)
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/livez", http.NoBody)
 	w := httptest.NewRecorder()
 
 	s.server.Handler.ServeHTTP(w, request)
@@ -155,7 +155,7 @@ func TestServer_TargetsHandler(t *testing.T) {
 
 			tt.args.allocator.SetCollectors(map[string]*allocation.Collector{"test-collector": {Name: "test-collector"}})
 			tt.args.allocator.SetTargets(tt.args.targets)
-			request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/%s/targets?collector_id=%s", tt.args.job, tt.args.collector), nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, fmt.Sprintf("/jobs/%s/targets?collector_id=%s", tt.args.job, tt.args.collector), http.NoBody)
 			w := httptest.NewRecorder()
 
 			s.server.Handler.ServeHTTP(w, request)
@@ -495,7 +495,7 @@ func TestServer_ScrapeConfigsHandler(t *testing.T) {
 			require.NoError(t, err)
 			assert.NoError(t, s.UpdateScrapeConfigResponse(tc.scrapeConfigs))
 
-			request := httptest.NewRequest("GET", "/scrape_configs", nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/scrape_configs", http.NoBody)
 			w := httptest.NewRecorder()
 
 			if s.httpsServer != nil {
@@ -585,7 +585,7 @@ func TestServer_JobHandler(t *testing.T) {
 			a := &mockAllocator{targetItems: tc.targetItems}
 			s, err := NewServer(logger, a, listenAddr)
 			require.NoError(t, err)
-			request := httptest.NewRequest("GET", "/jobs", nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/jobs", http.NoBody)
 			w := httptest.NewRecorder()
 
 			s.server.Handler.ServeHTTP(w, request)
@@ -650,7 +650,7 @@ func TestServer_JobsHandler_HTML(t *testing.T) {
 				"test-collector":  {Name: "test-collector"},
 				"test-collector2": {Name: "test-collector2"},
 			})
-			request := httptest.NewRequest("GET", "/debug/jobs", nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/debug/jobs", http.NoBody)
 			request.Header.Set("Accept", "text/html")
 			w := httptest.NewRecorder()
 
@@ -721,7 +721,7 @@ func TestServer_JobHandler_HTML(t *testing.T) {
 				"test-collector2": {Name: "test-collector2"},
 			})
 			tt.args.allocator.SetTargets(tt.args.cMap)
-			request := httptest.NewRequest("GET", fmt.Sprintf("/debug/job?job_id=%s", tt.args.job), nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, fmt.Sprintf("/debug/job?job_id=%s", tt.args.job), http.NoBody)
 			request.Header.Set("Accept", "text/html")
 			w := httptest.NewRecorder()
 
@@ -780,7 +780,7 @@ func TestServer_IndexHandler(t *testing.T) {
 				"test-collector2": {Name: "test-collector2"},
 			})
 			tc.allocator.SetTargets(tc.targetItems)
-			request := httptest.NewRequest("GET", "/", nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", http.NoBody)
 			request.Header.Set("Accept", "text/html")
 			w := httptest.NewRecorder()
 
@@ -838,7 +838,7 @@ func TestServer_TargetsHTMLHandler(t *testing.T) {
 				"test-collector2": {Name: "test-collector2"},
 			})
 			tc.allocator.SetTargets(tc.targetItems)
-			request := httptest.NewRequest("GET", "/debug/targets", nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/debug/targets", http.NoBody)
 			request.Header.Set("Accept", "text/html")
 			w := httptest.NewRecorder()
 
@@ -926,7 +926,7 @@ func TestServer_CollectorHandler(t *testing.T) {
 				"test-collector2": {Name: "test-collector2"},
 			})
 			tc.allocator.SetTargets(tc.targetItems)
-			request := httptest.NewRequest("GET", "/debug/collector", nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/debug/collector", http.NoBody)
 			request.Header.Set("Accept", "text/html")
 			request.URL.RawQuery = "collector_id=" + tc.collectorId
 			w := httptest.NewRecorder()
@@ -993,7 +993,7 @@ func TestServer_TargetHTMLHandler(t *testing.T) {
 				"test-collector2": {Name: "test-collector2"},
 			})
 			tc.allocator.SetTargets(tc.targetItems)
-			request := httptest.NewRequest("GET", "/debug/target", nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/debug/target", http.NoBody)
 			request.Header.Set("Accept", "text/html")
 			request.URL.RawQuery = "target_hash=" + tc.targetHash.String()
 			w := httptest.NewRecorder()
@@ -1064,7 +1064,7 @@ func TestServer_Readiness(t *testing.T) {
 				assert.NoError(t, s.UpdateScrapeConfigResponse(tc.scrapeConfigs))
 			}
 
-			request := httptest.NewRequest("GET", "/readyz", nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/readyz", http.NoBody)
 			w := httptest.NewRecorder()
 
 			s.server.Handler.ServeHTTP(w, request)
@@ -1115,7 +1115,7 @@ func TestServer_ScrapeConfigResponse(t *testing.T) {
 
 			assert.NoError(t, s.UpdateScrapeConfigResponse(jobToScrapeConfig))
 
-			request := httptest.NewRequest("GET", "/scrape_configs", nil)
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/scrape_configs", http.NoBody)
 			w := httptest.NewRecorder()
 
 			s.server.Handler.ServeHTTP(w, request)

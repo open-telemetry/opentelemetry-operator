@@ -16,9 +16,7 @@ import (
 
 const DefaultRecAddress = "0.0.0.0"
 
-var (
-	_ Parser = &GenericParser[*SingleEndpointConfig]{}
-)
+var _ Parser = &GenericParser[*SingleEndpointConfig]{}
 
 // SingleEndpointConfig represents the minimal struct for a given YAML configuration input containing either
 // endpoint or listen_address.

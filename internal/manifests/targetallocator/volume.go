@@ -24,7 +24,8 @@ func Volumes(cfg config.Config, instance v1alpha1.TargetAllocator) []corev1.Volu
 					{
 						Key:  cfg.TargetAllocatorConfigMapEntry,
 						Path: cfg.TargetAllocatorConfigMapEntry,
-					}},
+					},
+				},
 			},
 		},
 	}}

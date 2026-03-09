@@ -6,6 +6,7 @@ package server
 import (
 	"fmt"
 	"math/rand"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -23,7 +24,7 @@ import (
 
 func BenchmarkServerTargetsHandler(b *testing.B) {
 	random := rand.New(rand.NewSource(time.Now().UnixNano()))
-	var table = []struct {
+	table := []struct {
 		numCollectors int
 		numJobs       int
 	}{
@@ -52,7 +53,7 @@ func BenchmarkServerTargetsHandler(b *testing.B) {
 				for i := 0; i < b.N; i++ {
 					randomJob := random.Intn(v.numJobs)
 					randomCol := random.Intn(v.numCollectors)
-					request := httptest.NewRequest("GET", fmt.Sprintf("/jobs/test-job-%d/targets?collector_id=collector-%d", randomJob, randomCol), nil)
+					request := httptest.NewRequestWithContext(b.Context(), http.MethodGet, fmt.Sprintf("/jobs/test-job-%d/targets?collector_id=collector-%d", randomJob, randomCol), http.NoBody)
 					w := httptest.NewRecorder()
 					s.server.Handler.ServeHTTP(w, request)
 				}
@@ -77,7 +78,7 @@ func BenchmarkScrapeConfigsHandler(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				c, _ := gin.CreateTestContext(httptest.NewRecorder())
 				gin.SetMode(gin.ReleaseMode)
-				c.Request = httptest.NewRequest("GET", "/scrape_configs", nil)
+				c.Request = httptest.NewRequestWithContext(b.Context(), http.MethodGet, "/scrape_configs", http.NoBody)
 
 				s.ScrapeConfigsHandler(c)
 			}

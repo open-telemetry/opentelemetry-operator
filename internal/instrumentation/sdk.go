@@ -414,7 +414,7 @@ func (*sdkInjector) injectDefaultDotNetEnvVarsWrapper(pod corev1.Pod, container 
 // and appIndex should be the same value.  This is true for dotnet, java, nodejs, and python instrumentations.
 // Go requires the agent to be a different container in the pod, so the agentIndex should represent this new sidecar
 // and appIndex should represent the application being instrumented.
-func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, container *corev1.Container, appContainer *corev1.Container) corev1.Pod {
+func (i *sdkInjector) injectCommonSDKConfig(ctx context.Context, otelinst v1alpha1.Instrumentation, ns corev1.Namespace, pod corev1.Pod, container, appContainer *corev1.Container) corev1.Pod {
 	useLabelsForResourceAttributes := otelinst.Spec.Defaults.UseLabelsForResourceAttributes
 	resourceMap := i.createResourceMap(ctx, otelinst, ns, pod, appContainer)
 	idx := getIndexOfEnv(container.Env, constants.EnvOTELServiceName)
@@ -798,7 +798,7 @@ func resourceMapToStr(res map[string]string) string {
 	}
 	sort.Strings(keys)
 
-	var str = ""
+	str := ""
 	for _, k := range keys {
 		if str != "" {
 			str += ","

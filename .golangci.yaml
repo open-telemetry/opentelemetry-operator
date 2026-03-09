@@ -33,7 +33,6 @@ linters:
         - emptyStringTest
         - exitAfterDefer
         - filepathJoin
-        - httpNoBody
         - hugeParam
         - ifElseChain
         - importShadow

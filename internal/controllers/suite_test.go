@@ -318,7 +318,8 @@ func testCollectorWithModeAndReplicas(t *testing.T, name string, mode v1beta1.Mo
 							IntVal: 80,
 						},
 						NodePort: 0,
-					}}},
+					},
+				}},
 				Replicas: &replicas,
 			},
 			Config: otelConfig,
@@ -327,7 +328,7 @@ func testCollectorWithModeAndReplicas(t *testing.T, name string, mode v1beta1.Mo
 	}
 }
 
-func testCollectorAssertNoErr(t *testing.T, name string, taContainerImage string, file string) v1beta1.OpenTelemetryCollector {
+func testCollectorAssertNoErr(t *testing.T, name, taContainerImage, file string) v1beta1.OpenTelemetryCollector {
 	p, err := testCollectorWithConfigFile(name, taContainerImage, file)
 	assert.NoError(t, err)
 	if len(taContainerImage) == 0 {
@@ -336,7 +337,7 @@ func testCollectorAssertNoErr(t *testing.T, name string, taContainerImage string
 	return p
 }
 
-func testCollectorWithConfigFile(name string, taContainerImage string, file string) (v1beta1.OpenTelemetryCollector, error) {
+func testCollectorWithConfigFile(name, taContainerImage, file string) (v1beta1.OpenTelemetryCollector, error) {
 	replicas := int32(1)
 	var configYAML []byte
 	var err error
@@ -375,7 +376,8 @@ func testCollectorWithConfigFile(name string, taContainerImage string, file stri
 							IntVal: 80,
 						},
 						NodePort: 0,
-					}}},
+					},
+				}},
 				Replicas: &replicas,
 			},
 			Mode: v1beta1.ModeStatefulSet,
@@ -419,7 +421,8 @@ func testCollectorWithHPA(t *testing.T, minReps, maxReps int32) v1beta1.OpenTele
 							IntVal: 80,
 						},
 						NodePort: 0,
-					}}},
+					},
+				}},
 			},
 
 			Config: otelConfig,
@@ -484,7 +487,8 @@ func testCollectorWithPDB(t *testing.T, minAvailable, maxUnavailable int32) v1be
 							IntVal: 80,
 						},
 						NodePort: 0,
-					}}},
+					},
+				}},
 				PodDisruptionBudget: pdb,
 			},
 

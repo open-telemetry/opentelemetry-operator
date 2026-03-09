@@ -16,7 +16,8 @@ spec:
     try:
     - script:
         timeout: 5m
-        content: cd ../../../ && make deploy VERSION=e2e
+        content: |
+          make -C ../../../ deploy
   - name: step-02
     try:
     - apply:

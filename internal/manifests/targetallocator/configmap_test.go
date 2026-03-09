@@ -175,15 +175,18 @@ prometheus_cr:
 		targetAllocator.Spec.PrometheusCR.ServiceMonitorSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"release": "my-instance",
-			}}
+			},
+		}
 		targetAllocator.Spec.PrometheusCR.ScrapeConfigSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"release": "my-instance",
-			}}
+			},
+		}
 		targetAllocator.Spec.PrometheusCR.ProbeSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"release": "my-instance",
-			}}
+			},
+		}
 		targetAllocator.Spec.GlobalConfig = v1beta1.AnyConfig{
 			Object: map[string]any{
 				"scrape_interval":  "30s",
@@ -261,15 +264,18 @@ prometheus_cr:
 		targetAllocator.Spec.PrometheusCR.ServiceMonitorNamespaceSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"release": "my-instance",
-			}}
+			},
+		}
 		targetAllocator.Spec.PrometheusCR.ScrapeConfigNamespaceSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"release": "my-instance",
-			}}
+			},
+		}
 		targetAllocator.Spec.PrometheusCR.ProbeNamespaceSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"release": "my-instance",
-			}}
+			},
+		}
 		targetAllocator.Spec.GlobalConfig = v1beta1.AnyConfig{
 			Object: map[string]any{
 				"scrape_interval":  "30s",
