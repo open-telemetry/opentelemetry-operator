@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1
+package webhook
 
 import (
 	"context"
@@ -14,6 +14,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/internal/naming"
@@ -39,7 +40,7 @@ type TargetAllocatorWebhook struct {
 }
 
 func (w TargetAllocatorWebhook) Default(_ context.Context, obj runtime.Object) error {
-	targetallocator, ok := obj.(*TargetAllocator)
+	targetallocator, ok := obj.(*v1alpha1.TargetAllocator)
 	if !ok {
 		return fmt.Errorf("expected an TargetAllocator, received %T", obj)
 	}
@@ -47,7 +48,7 @@ func (w TargetAllocatorWebhook) Default(_ context.Context, obj runtime.Object) e
 }
 
 func (w TargetAllocatorWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := obj.(*TargetAllocator)
+	otelcol, ok := obj.(*v1alpha1.TargetAllocator)
 	if !ok {
 		return nil, fmt.Errorf("expected an TargetAllocator, received %T", obj)
 	}
@@ -55,7 +56,7 @@ func (w TargetAllocatorWebhook) ValidateCreate(ctx context.Context, obj runtime.
 }
 
 func (w TargetAllocatorWebhook) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := newObj.(*TargetAllocator)
+	otelcol, ok := newObj.(*v1alpha1.TargetAllocator)
 	if !ok {
 		return nil, fmt.Errorf("expected an TargetAllocator, received %T", newObj)
 	}
@@ -63,14 +64,14 @@ func (w TargetAllocatorWebhook) ValidateUpdate(ctx context.Context, _, newObj ru
 }
 
 func (w TargetAllocatorWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	otelcol, ok := obj.(*TargetAllocator)
+	otelcol, ok := obj.(*v1alpha1.TargetAllocator)
 	if !ok || otelcol == nil {
 		return nil, fmt.Errorf("expected an TargetAllocator, received %T", obj)
 	}
 	return w.validate(ctx, otelcol)
 }
 
-func (TargetAllocatorWebhook) defaulter(ta *TargetAllocator) error {
+func (TargetAllocatorWebhook) defaulter(ta *v1alpha1.TargetAllocator) error {
 	if ta.Labels == nil {
 		ta.Labels = map[string]string{}
 	}
@@ -102,7 +103,7 @@ func (TargetAllocatorWebhook) defaulter(ta *TargetAllocator) error {
 	return nil
 }
 
-func (w TargetAllocatorWebhook) validate(ctx context.Context, ta *TargetAllocator) (admission.Warnings, error) {
+func (w TargetAllocatorWebhook) validate(ctx context.Context, ta *v1alpha1.TargetAllocator) (admission.Warnings, error) {
 	// TODO: Further validate scrape configs
 
 	warnings := admission.Warnings{}
@@ -140,7 +141,7 @@ func SetupTargetAllocatorWebhook(mgr ctrl.Manager, cfg config.Config, reviewer *
 		cfg:      cfg,
 	}
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(&TargetAllocator{}).
+		For(&v1alpha1.TargetAllocator{}).
 		WithValidator(cvw).
 		WithDefaulter(cvw).
 		Complete()
