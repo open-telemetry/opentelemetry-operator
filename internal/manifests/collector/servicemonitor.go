@@ -81,13 +81,14 @@ func shouldCreateServiceMonitor(params manifests.Params) bool {
 		"params.OtelCol.namespace", params.OtelCol.Namespace,
 	)
 
-	if !params.OtelCol.Spec.Observability.Metrics.EnableMetrics {
+	switch {
+	case !params.OtelCol.Spec.Observability.Metrics.EnableMetrics:
 		l.V(2).Info("Metrics disabled for this OTEL Collector. ServiceMonitor will not ve created")
 		return false
-	} else if params.Config.PrometheusCRAvailability == prometheus.NotAvailable {
+	case params.Config.PrometheusCRAvailability == prometheus.NotAvailable:
 		l.V(2).Info("Cannot enable ServiceMonitor when prometheus CRDs are unavailable")
 		return false
-	} else if params.OtelCol.Spec.Mode == v1beta1.ModeSidecar {
+	case params.OtelCol.Spec.Mode == v1beta1.ModeSidecar:
 		l.V(2).Info("Using sidecar mode. ServiceMonitor will not be created")
 		return false
 	}
