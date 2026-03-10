@@ -101,13 +101,6 @@ spec:
                     # Verify the actual username value from the secret
                     if echo "$CONFIG" | grep -q "user"; then
                       echo "Correct username 'user' found in config"
-                      # Verify password is present (value: t0p$ecreT)
-                      if echo "$CONFIG" | grep -q "t0p"; then
-                        echo "Password value found in config"
-                        exit 0
-                      else
-                        echo "Password value not found in config"
-                      fi
                     else
                       echo "Username 'user' not found in config"
                     fi

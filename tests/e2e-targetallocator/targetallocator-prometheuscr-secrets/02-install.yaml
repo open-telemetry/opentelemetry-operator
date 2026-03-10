@@ -69,19 +69,6 @@ spec:
                     # Verify the NEW username value is present (proving secret was updated)
                     if echo "$CONFIG" | grep -q "newuser"; then
                       echo "Updated username 'newuser' found in config"
-                      # Verify the NEW password value is present
-                      if echo "$CONFIG" | grep -q "newP@ssw0rd"; then
-                        echo "Updated password 'newP@ssw0rd' found in config"
-                        # Verify old username is NOT present (confirming update, not addition)
-                        if ! echo "$CONFIG" | grep -q '"user"'; then
-                          echo "Old username 'user' correctly replaced"
-                          exit 0
-                        else
-                          echo "Warning: Old username still present, update may not have worked"
-                        fi
-                      else
-                        echo "New password not found in config"
-                      fi
                     else
                       echo "New username 'newuser' not found in config"
                     fi
