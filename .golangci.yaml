@@ -23,7 +23,6 @@ linters:
       disabled-checks:
         - appendAssign
         - appendCombine
-        - argOrder
         - assignOp
         - builtinShadow
         - commentedOutCode
