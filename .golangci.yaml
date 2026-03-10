@@ -34,7 +34,6 @@ linters:
         - offBy1
         - paramTypeCombine
         - rangeValCopy
-        - regexpMust
         - regexpSimplify
         - sloppyReassign
         - typeDefFirst

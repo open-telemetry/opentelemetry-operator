@@ -28,8 +28,7 @@ func TestDnsName(t *testing.T) {
 		{"foo-", "fooa"},
 		{"-foo", "afoo"},
 	}
-	rule, err := regexp.Compile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`)
-	assert.NoError(t, err)
+	rule := regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`)
 
 	for _, tt := range tests {
 		assert.Equal(t, tt.out, DNSName(tt.in))
