@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   name: create-pm-prometheus
 ---
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
@@ -13,12 +13,12 @@ spec:
   observability:
     metrics:
       enableMetrics: true
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
+          grpc: {}
+          http: {}
 
     exporters:
       prometheus/prod:

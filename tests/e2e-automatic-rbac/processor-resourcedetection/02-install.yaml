@@ -1,22 +1,22 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
   namespace: chainsaw-resourcedetection
 spec:
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
+          grpc: {}
+          http: {}
     processors:
       resourcedetection:
         detectors: [k8snode]
         timeout: 2s
         override: false
     exporters:
-      debug:
+      debug: {}
     service:
       pipelines:
         traces:

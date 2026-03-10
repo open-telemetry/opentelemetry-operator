@@ -14,7 +14,7 @@ data:
   otel.ini: |
     - OTEL_ENDPOINT=localhost
 ---
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest-with-configmaps
@@ -25,15 +25,15 @@ spec:
       mountpath: /
     - name: mount-test2
       mountpath: /dir
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
+          grpc: {}
+          http: {}
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:

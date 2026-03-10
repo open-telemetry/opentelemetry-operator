@@ -1,4 +1,4 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: pdb
@@ -9,6 +9,8 @@ spec:
     allocationStrategy: consistent-hashing
     prometheusCR:
       enabled: true
+      serviceMonitorSelector: {}
+      podMonitorSelector: {}
     podDisruptionBudget:
       minAvailable: 1
   resources:
@@ -19,13 +21,13 @@ spec:
       cpu: 5m
       memory: 64Mi
 
-  config: |
+  config:
     receivers:
       prometheus:
         config:
           scrape_configs: []
     exporters:
-      debug:
+      debug: {}
     service:
       pipelines:
         metrics:

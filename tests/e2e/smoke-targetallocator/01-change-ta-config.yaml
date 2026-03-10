@@ -1,4 +1,4 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: stateful
@@ -10,12 +10,13 @@ spec:
     prometheusCR:
       enabled: true
       serviceMonitorSelector:
-        key: value # this is just an arbitrary change to the target allocator config
-  config: |
+        matchLabels:
+          key: value # this is just an arbitrary change to the target allocator config
+  config:
     receivers:
       jaeger:
           protocols:
-            grpc:
+            grpc: {}
 
       # Collect own metrics
       prometheus:
@@ -25,11 +26,8 @@ spec:
               scrape_interval: 10s
               static_configs:
                 - targets: [ '0.0.0.0:8888' ]
-
-    processors:
-
     exporters:
-      debug:
+      debug: {}
     service:
       pipelines:
         traces:

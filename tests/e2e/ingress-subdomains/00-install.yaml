@@ -1,5 +1,5 @@
 ---
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
@@ -11,15 +11,15 @@ spec:
     hostname: "test.otel"
     annotations:
       something.com: "true"
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
+          grpc: {}
+          http: {}
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
