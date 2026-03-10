@@ -25,7 +25,6 @@ linters:
         - appendCombine
         - builtinShadow
         - deferInLoop
-        - emptyFallthrough
         - exitAfterDefer
         - hugeParam
         - importShadow
