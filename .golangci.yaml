@@ -31,7 +31,6 @@ linters:
         - exitAfterDefer
         - hugeParam
         - importShadow
-        - paramTypeCombine
         - rangeValCopy
         - regexpSimplify
         - sloppyReassign
@@ -201,6 +200,7 @@ formatters:
   enable:
     - gci
     - gofmt
+    - gofumpt
   settings:
     gci:
       sections:
@@ -209,5 +209,7 @@ formatters:
         - prefix(github.com/open-telemetry/opentelemetry-operator)
     gofmt:
       simplify: true
+    gofumpt:
+      extra-rules: true
   exclusions:
     generated: lax
