@@ -62,7 +62,7 @@ func TestNullObjects(t *testing.T) {
 	err = json.Unmarshal(collectorJson, cfg)
 	require.NoError(t, err)
 
-	nullObjects := cfg.nullObjects()
+	nullObjects := cfg.NullObjects()
 	assert.Equal(t, []string{"connectors.spanmetrics:", "exporters.otlp.endpoint:", "extensions.health_check:", "processors.batch:", "receivers.otlp.protocols.grpc:", "receivers.otlp.protocols.http:"}, nullObjects)
 }
 
@@ -79,7 +79,7 @@ func TestNullObjects_issue_3445(t *testing.T) {
 
 	_, err = cfg.ApplyDefaults(logr.Discard())
 	require.NoError(t, err)
-	assert.Empty(t, cfg.nullObjects())
+	assert.Empty(t, cfg.NullObjects())
 }
 
 func TestConfigFiles_go_yaml(t *testing.T) {
@@ -116,7 +116,7 @@ func TestNullObjects_go_yaml(t *testing.T) {
 	err = go_yaml.Unmarshal(collectorYaml, cfg)
 	require.NoError(t, err)
 
-	nullObjects := cfg.nullObjects()
+	nullObjects := cfg.NullObjects()
 	assert.Equal(t, []string{"connectors.spanmetrics:", "exporters.otlp.endpoint:", "extensions.health_check:", "processors.batch:", "receivers.otlp.protocols.grpc:", "receivers.otlp.protocols.http:"}, nullObjects)
 }
 
