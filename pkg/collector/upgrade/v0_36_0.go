@@ -60,13 +60,14 @@ func upgrade0_36_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 							}
 							for k4, v4 := range grpcHTTPConfig {
 								// change tls_settings to tls
-								if k4.(string) == "tls_settings" {
-									grpcHTTPConfig["tls"] = v4
-									delete(grpcHTTPConfig, "tls_settings")
-									existing := &corev1.ConfigMap{}
-									updated := existing.DeepCopy()
-									u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", k3, k1))
+								if k4.(string) != "tls_settings" {
+									continue
 								}
+								grpcHTTPConfig["tls"] = v4
+								delete(grpcHTTPConfig, "tls_settings")
+								existing := &corev1.ConfigMap{}
+								updated := existing.DeepCopy()
+								u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.36.0 has changed the tls_settings field name to tls in %s protocol of %s receiver", k3, k1))
 							}
 						}
 					}

@@ -28,20 +28,21 @@ func upgrade0_41_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 			otlpReceiver, _ := v1.(map[any]any)
 			var createdCors bool
 			for k2, v2 := range otlpReceiver {
-				if k2.(string) == "cors_allowed_origins" || k2.(string) == "cors_allowed_headers" {
-					if !createdCors {
-						otlpReceiver["cors"] = make(map[any]any)
-						createdCors = true
-					}
-					newsCorsKey := strings.Replace(k2.(string), "cors_", "", 1)
-					otlpCors, _ := otlpReceiver["cors"].(map[any]any)
-					otlpCors[newsCorsKey] = v2
-					delete(otlpReceiver, k2)
-
-					existing := &corev1.ConfigMap{}
-					updated := existing.DeepCopy()
-					u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.41.0 has re-structured the %s inside otlp "+"receiver config according to the upstream otlp receiver changes in 0.41.0 release.", k2))
+				if k2.(string) != "cors_allowed_origins" && k2.(string) != "cors_allowed_headers" {
+					continue
 				}
+				if !createdCors {
+					otlpReceiver["cors"] = make(map[any]any)
+					createdCors = true
+				}
+				newsCorsKey := strings.Replace(k2.(string), "cors_", "", 1)
+				otlpCors, _ := otlpReceiver["cors"].(map[any]any)
+				otlpCors[newsCorsKey] = v2
+				delete(otlpReceiver, k2)
+
+				existing := &corev1.ConfigMap{}
+				updated := existing.DeepCopy()
+				u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.41.0 has re-structured the %s inside otlp "+"receiver config according to the upstream otlp receiver changes in 0.41.0 release.", k2))
 			}
 		}
 	}
