@@ -31,7 +31,6 @@ linters:
         - exitAfterDefer
         - hugeParam
         - importShadow
-        - offBy1
         - paramTypeCombine
         - rangeValCopy
         - regexpMust
