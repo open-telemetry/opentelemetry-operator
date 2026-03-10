@@ -5,13 +5,11 @@ kind: ServiceMonitor
 metadata:
   name: metrics-servicemonitor
 ---
-# Verify pods are still running after secret deletion
-apiVersion: v1
-kind: Pod
+# Verify target allocator deployment is still running and healthy after secret deletion
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  labels:
-    app.kubernetes.io/component: opentelemetry-targetallocator
-    app.kubernetes.io/instance: ($namespace).prometheus-cr-secrets
-    app.kubernetes.io/managed-by: opentelemetry-operator
+  name: prometheus-cr-secrets-targetallocator
 status:
-  phase: Running
+  readyReplicas: 1
+  replicas: 1
