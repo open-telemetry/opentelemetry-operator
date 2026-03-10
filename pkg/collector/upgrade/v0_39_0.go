@@ -49,46 +49,47 @@ func upgrade0_39_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 	receivers, _ := cfg["receivers"].(map[any]any)
 
 	for k1, v1 := range receivers {
-		if strings.HasPrefix(k1.(string), "httpd") {
-			// Rename httpd with apache
-			apacheKey := strings.Replace(k1.(string), "httpd", "apache", 1)
-			receivers[apacheKey] = v1
-			delete(receivers, k1)
+		if !strings.HasPrefix(k1.(string), "httpd") {
+			continue
+		}
+		// Rename httpd with apache
+		apacheKey := strings.Replace(k1.(string), "httpd", "apache", 1)
+		receivers[apacheKey] = v1
+		delete(receivers, k1)
 
-			// rename receiver name in service pipelines config
-			serviceConfig, ok := cfg["service"].(map[any]any)
-			if !ok {
-				// no serviceConfig?
-				return otelcol, nil
-			}
+		// rename receiver name in service pipelines config
+		serviceConfig, ok := cfg["service"].(map[any]any)
+		if !ok {
+			// no serviceConfig?
+			return otelcol, nil
+		}
 
-			pipelinesConfig, ok := serviceConfig["pipelines"].(map[any]any)
-			if !ok {
-				// no pipelinesConfig?
-				return otelcol, nil
-			}
+		pipelinesConfig, ok := serviceConfig["pipelines"].(map[any]any)
+		if !ok {
+			// no pipelinesConfig?
+			return otelcol, nil
+		}
 
-			for k2, v2 := range pipelinesConfig {
-				if k2.(string) == "metrics" {
-					metricsConfig, ok := v2.(map[any]any)
-					if !ok {
-						// no metricsConfig in service pipelines?
-						return otelcol, nil
-					}
-					for k3, v3 := range metricsConfig {
-						if k3.(string) == "receivers" {
-							receiversList, ok := v3.([]any)
-							if !ok {
-								// no receivers list in service pipeline?
-								return otelcol, nil
-							}
-							for i, k4 := range receiversList {
-								if strings.HasPrefix(k4.(string), "httpd") {
-									receiversList[i] = strings.Replace(k4.(string), "httpd", "apache", 1)
-									existing := &corev1.ConfigMap{}
-									updated := existing.DeepCopy()
-									u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", receiversList[i]))
-								}
+		for k2, v2 := range pipelinesConfig {
+			if k2.(string) == "metrics" {
+				metricsConfig, ok := v2.(map[any]any)
+				if !ok {
+					// no metricsConfig in service pipelines?
+					return otelcol, nil
+				}
+				for k3, v3 := range metricsConfig {
+					if k3.(string) == "receivers" {
+						receiversList, ok := v3.([]any)
+						if !ok {
+							// no receivers list in service pipeline?
+							return otelcol, nil
+						}
+						for i, k4 := range receiversList {
+							if strings.HasPrefix(k4.(string), "httpd") {
+								receiversList[i] = strings.Replace(k4.(string), "httpd", "apache", 1)
+								existing := &corev1.ConfigMap{}
+								updated := existing.DeepCopy()
+								u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.39.0 has dropped the ballast_size_mib field name from %s processor", receiversList[i]))
 							}
 						}
 					}
