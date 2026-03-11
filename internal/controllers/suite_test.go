@@ -92,13 +92,14 @@ const (
 var _ autodetect.AutoDetect = (*mockAutoDetect)(nil)
 
 type mockAutoDetect struct {
-	OpenShiftRoutesAvailabilityFunc func() (openshift.RoutesAvailability, error)
-	PrometheusCRsAvailabilityFunc   func() (prometheus.Availability, error)
-	RBACPermissionsFunc             func(ctx context.Context) (autoRBAC.Availability, error)
-	CertManagerAvailabilityFunc     func(ctx context.Context) (certmanager.Availability, error)
-	TargetAllocatorAvailabilityFunc func() (targetallocator.Availability, error)
-	CollectorCRDAvailabilityFunc    func() (collector.Availability, error)
-	OpAmpBridgeAvailabilityFunc     func() (opampbridge.Availability, error)
+	OpenShiftRoutesAvailabilityFunc    func() (openshift.RoutesAvailability, error)
+	PrometheusCRsAvailabilityFunc      func() (prometheus.Availability, error)
+	RBACPermissionsFunc                func(ctx context.Context) (autoRBAC.Availability, error)
+	CertManagerAvailabilityFunc        func(ctx context.Context) (certmanager.Availability, error)
+	TargetAllocatorAvailabilityFunc    func() (targetallocator.Availability, error)
+	CollectorCRDAvailabilityFunc       func() (collector.Availability, error)
+	OpAmpBridgeAvailabilityFunc        func() (opampbridge.Availability, error)
+	KubeletFineGrainedAuthzSupportFunc func() (bool, error)
 }
 
 func (*mockAutoDetect) FIPSEnabled(context.Context) bool {
@@ -106,6 +107,13 @@ func (*mockAutoDetect) FIPSEnabled(context.Context) bool {
 }
 
 func (*mockAutoDetect) NativeSidecarSupport() (bool, error) {
+	return false, nil
+}
+
+func (m *mockAutoDetect) KubeletFineGrainedAuthzSupport() (bool, error) {
+	if m.KubeletFineGrainedAuthzSupportFunc != nil {
+		return m.KubeletFineGrainedAuthzSupportFunc()
+	}
 	return false, nil
 }
 
