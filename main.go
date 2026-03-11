@@ -64,6 +64,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/operatornetworkpolicy"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
 	"github.com/open-telemetry/opentelemetry-operator/internal/version"
+	wh "github.com/open-telemetry/opentelemetry-operator/internal/webhook"
 	"github.com/open-telemetry/opentelemetry-operator/internal/webhook/podmutation"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/featuregate"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/sidecar"
@@ -492,12 +493,12 @@ func main() {
 			}
 		}
 		if cfg.TargetAllocatorAvailability == targetallocator.Available {
-			if err = otelv1alpha1.SetupTargetAllocatorWebhook(mgr, cfg, reviewer); err != nil {
+			if err = wh.SetupTargetAllocatorWebhook(mgr, cfg, reviewer); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "TargetAllocator")
 				os.Exit(1)
 			}
 		}
-		if err = otelv1alpha1.SetupInstrumentationWebhook(mgr, cfg); err != nil {
+		if err = wh.SetupInstrumentationWebhook(mgr, cfg); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Instrumentation")
 			os.Exit(1)
 		}
@@ -511,7 +512,7 @@ func main() {
 		})
 
 		if cfg.OpAmpBridgeAvailability == opampbridge.Available {
-			if err = otelv1alpha1.SetupOpAMPBridgeWebhook(mgr, cfg); err != nil {
+			if err = wh.SetupOpAMPBridgeWebhook(mgr, cfg); err != nil {
 				setupLog.Error(err, "unable to create webhook", "webhook", "OpAMPBridge")
 				os.Exit(1)
 			}

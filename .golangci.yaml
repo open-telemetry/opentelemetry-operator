@@ -31,14 +31,10 @@ linters:
         - exitAfterDefer
         - hugeParam
         - importShadow
-        - offBy1
-        - paramTypeCombine
         - rangeValCopy
-        - regexpMust
         - regexpSimplify
         - sloppyReassign
         - typeDefFirst
-        - unlambda
         - unnamedResult
         - whyNoLint
       enable-all: true
@@ -204,6 +200,7 @@ formatters:
   enable:
     - gci
     - gofmt
+    - gofumpt
   settings:
     gci:
       sections:
@@ -212,5 +209,7 @@ formatters:
         - prefix(github.com/open-telemetry/opentelemetry-operator)
     gofmt:
       simplify: true
+    gofumpt:
+      extra-rules: true
   exclusions:
     generated: lax

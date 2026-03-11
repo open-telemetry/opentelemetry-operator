@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1
+package webhook
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
@@ -35,7 +36,7 @@ type OpAMPBridgeWebhook struct {
 }
 
 func (o *OpAMPBridgeWebhook) Default(_ context.Context, obj runtime.Object) error {
-	opampBridge, ok := obj.(*OpAMPBridge)
+	opampBridge, ok := obj.(*v1alpha1.OpAMPBridge)
 	if !ok {
 		return fmt.Errorf("expected an OpAMPBridge, received %T", obj)
 	}
@@ -43,7 +44,7 @@ func (o *OpAMPBridgeWebhook) Default(_ context.Context, obj runtime.Object) erro
 }
 
 func (o *OpAMPBridgeWebhook) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	opampBridge, ok := obj.(*OpAMPBridge)
+	opampBridge, ok := obj.(*v1alpha1.OpAMPBridge)
 	if !ok {
 		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", obj)
 	}
@@ -51,7 +52,7 @@ func (o *OpAMPBridgeWebhook) ValidateCreate(_ context.Context, obj runtime.Objec
 }
 
 func (o *OpAMPBridgeWebhook) ValidateUpdate(_ context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	opampBridge, ok := newObj.(*OpAMPBridge)
+	opampBridge, ok := newObj.(*v1alpha1.OpAMPBridge)
 	if !ok {
 		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", newObj)
 	}
@@ -59,16 +60,16 @@ func (o *OpAMPBridgeWebhook) ValidateUpdate(_ context.Context, _, newObj runtime
 }
 
 func (o *OpAMPBridgeWebhook) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	opampBridge, ok := obj.(*OpAMPBridge)
+	opampBridge, ok := obj.(*v1alpha1.OpAMPBridge)
 	if !ok || opampBridge == nil {
 		return nil, fmt.Errorf("expected an OpAMPBridge, received %T", obj)
 	}
 	return o.validate(opampBridge)
 }
 
-func (*OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
+func (*OpAMPBridgeWebhook) defaulter(r *v1alpha1.OpAMPBridge) error {
 	if len(r.Spec.UpgradeStrategy) == 0 {
-		r.Spec.UpgradeStrategy = UpgradeStrategyAutomatic
+		r.Spec.UpgradeStrategy = v1alpha1.UpgradeStrategyAutomatic
 	}
 
 	if r.Labels == nil {
@@ -81,16 +82,16 @@ func (*OpAMPBridgeWebhook) defaulter(r *OpAMPBridge) error {
 
 	// ReportsStatus Capability must be set
 	if r.Spec.Capabilities == nil {
-		r.Spec.Capabilities = make(map[OpAMPBridgeCapability]bool)
+		r.Spec.Capabilities = make(map[v1alpha1.OpAMPBridgeCapability]bool)
 	}
-	enabled, found := r.Spec.Capabilities[OpAMPBridgeCapabilityReportsStatus]
+	enabled, found := r.Spec.Capabilities[v1alpha1.OpAMPBridgeCapabilityReportsStatus]
 	if !enabled || !found {
-		r.Spec.Capabilities[OpAMPBridgeCapabilityReportsStatus] = true
+		r.Spec.Capabilities[v1alpha1.OpAMPBridgeCapabilityReportsStatus] = true
 	}
 	return nil
 }
 
-func (*OpAMPBridgeWebhook) validate(r *OpAMPBridge) (admission.Warnings, error) {
+func (*OpAMPBridgeWebhook) validate(r *v1alpha1.OpAMPBridge) (admission.Warnings, error) {
 	warnings := admission.Warnings{}
 
 	// validate OpAMP server endpoint
@@ -127,7 +128,7 @@ func SetupOpAMPBridgeWebhook(mgr ctrl.Manager, cfg config.Config) error {
 		cfg:    cfg,
 	}
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(&OpAMPBridge{}).
+		For(&v1alpha1.OpAMPBridge{}).
 		WithValidator(webhook).
 		WithDefaulter(webhook).
 		Complete()
