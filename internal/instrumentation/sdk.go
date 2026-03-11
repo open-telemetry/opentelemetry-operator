@@ -90,10 +90,10 @@ func (i *sdkInjector) injectJava(ctx context.Context, inst instrumentationWithCo
 				i.injectCommonEnvVar(otelinst, container)
 				i.injectDefaultJavaEnvVars(container, otelinst.Spec.Java)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
-				pod = i.setInitContainerSecurityContext(pod, container.SecurityContext, javaInitContainerName)
 			}
 		}
 		pod = injectJavaagentToPod(otelinst.Spec.Java, pod, containers[0].Name, otelinst.Spec)
+		pod = i.setInitContainerSecurityContext(pod, containers[0].SecurityContext, javaInitContainerName)
 	}
 
 	return pod
@@ -113,11 +113,11 @@ func (i *sdkInjector) injectNodeJS(ctx context.Context, inst instrumentationWith
 				i.injectCommonEnvVar(otelinst, container)
 				i.injectDefaultNodeJSEnvVars(container)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
-				pod = i.setInitContainerSecurityContext(pod, container.SecurityContext, nodejsInitContainerName)
 			}
 		}
 
 		pod = injectNodeJSSDKToPod(otelinst.Spec.NodeJS, pod, containers[0].Name, otelinst.Spec)
+		pod = i.setInitContainerSecurityContext(pod, containers[0].SecurityContext, nodejsInitContainerName)
 	}
 
 	return pod
@@ -138,11 +138,11 @@ func (i *sdkInjector) injectPython(ctx context.Context, inst instrumentationWith
 				i.injectCommonEnvVar(otelinst, container)
 				i.injectDefaultPythonEnvVars(container)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
-				pod = i.setInitContainerSecurityContext(pod, container.SecurityContext, pythonInitContainerName)
 			}
 		}
 
 		pod = injectPythonSDKToPod(otelinst.Spec.Python, pod, containers[0].Name, platform, otelinst.Spec)
+		pod = i.setInitContainerSecurityContext(pod, containers[0].SecurityContext, pythonInitContainerName)
 	}
 
 	return pod
@@ -163,11 +163,11 @@ func (i *sdkInjector) injectDotNet(ctx context.Context, inst instrumentationWith
 				i.injectCommonEnvVar(otelinst, container)
 				pod = i.injectDefaultDotNetEnvVarsWrapper(pod, container, runtime)
 				pod = i.injectCommonSDKConfig(ctx, otelinst, ns, pod, container, container)
-				pod = i.setInitContainerSecurityContext(pod, container.SecurityContext, dotnetInitContainerName)
 			}
 		}
 
 		pod = injectDotNetSDKToPod(otelinst.Spec.DotNet, pod, containers[0].Name, otelinst.Spec)
+		pod = i.setInitContainerSecurityContext(pod, containers[0].SecurityContext, dotnetInitContainerName)
 	}
 
 	return pod
