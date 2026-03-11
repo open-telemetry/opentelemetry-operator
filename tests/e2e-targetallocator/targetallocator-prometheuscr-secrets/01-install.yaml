@@ -101,6 +101,8 @@ spec:
                     # Verify the actual username value from the secret
                     if echo "$CONFIG" | grep -q "user"; then
                       echo "Correct username 'user' found in config"
+                      echo "SUCCESS: All checks passed"
+                      exit 0
                     else
                       echo "Username 'user' not found in config"
                     fi
