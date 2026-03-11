@@ -81,7 +81,7 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 	var err error
 	var port int64
 
-	r := regexp.MustCompile(":[0-9]+")
+	r := regexp.MustCompile(`:\d+`)
 
 	if r.MatchString(endpoint) {
 		portStr := r.FindString(endpoint)

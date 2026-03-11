@@ -651,13 +651,9 @@ func addDependencies(_ context.Context, mgr ctrl.Manager, cfg config.Config) err
 	return nil
 }
 
-func parseFipsFlag(fipsFlag string) ([]string, []string, []string, []string) {
-	split := strings.Split(fipsFlag, ",")
-	var receivers []string
-	var exporters []string
-	var processors []string
-	var extensions []string
-	for _, val := range split {
+func parseFipsFlag(fipsFlag string) (receivers, exporters, processors, extensions []string) {
+	split := strings.SplitSeq(fipsFlag, ",")
+	for val := range split {
 		val = strings.TrimSpace(val)
 		typeAndName := strings.Split(val, ".")
 		if len(typeAndName) == 2 {
