@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1_test
+package webhook_test
 
 import (
 	"context"
@@ -66,12 +66,12 @@ func prepareNamespace(t *testing.T, ctx context.Context) string {
 
 	err := k8sClient.Create(ctx, namespace)
 	if err != nil {
-		t.Fatalf("failed to create namespace: %v", err)
+		t.Fatalf("failed to Create namespace: %v", err)
 	}
 
 	t.Cleanup(func() {
 		if err := k8sClient.Delete(ctx, namespace); err != nil {
-			t.Fatalf("failed to delete namespace: %v", err)
+			t.Fatalf("failed to Delete namespace: %v", err)
 		}
 	})
 	return name

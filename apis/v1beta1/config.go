@@ -428,8 +428,8 @@ func (c *Config) Yaml() (string, error) {
 	return buf.String(), nil
 }
 
-// Returns null objects in the config.
-func (c *Config) nullObjects() []string {
+// NullObjects returns null objects in the config.
+func (c *Config) NullObjects() []string {
 	var nullKeys []string
 	if nulls := getNullValuedKeys(c.Receivers.Object); len(nulls) > 0 {
 		nullKeys = append(nullKeys, addPrefix("receivers.", nulls)...)

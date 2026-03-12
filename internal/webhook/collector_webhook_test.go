@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1beta1_test
+package webhook_test
 
 import (
 	"context"
@@ -35,6 +35,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-operator/internal/manifests"
 	collectorManifests "github.com/open-telemetry/opentelemetry-operator/internal/manifests/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/rbac"
+	"github.com/open-telemetry/opentelemetry-operator/internal/webhook"
 )
 
 var testScheme = scheme.Scheme
@@ -98,7 +99,7 @@ func TestValidate(t *testing.T) {
 			CollectorImage:       "default-collector",
 			TargetAllocatorImage: "default-ta-allocator",
 		}
-		webhook := v1beta1.NewCollectorWebhook(
+		webhook := webhook.NewCollectorWebhook(
 			logr.Discard(),
 			testScheme,
 			cfg,
@@ -537,7 +538,7 @@ func TestCollectorDefaultingWebhook(t *testing.T) {
 				CollectorImage:       "collector:v0.0.0",
 				TargetAllocatorImage: "ta:v0.0.0",
 			}
-			cvw := v1beta1.NewCollectorWebhook(
+			cvw := webhook.NewCollectorWebhook(
 				logr.Discard(),
 				testScheme,
 				cfg,
@@ -1419,7 +1420,7 @@ func TestOTELColValidatingWebhook(t *testing.T) {
 				CollectorImage:       "default-collector",
 				TargetAllocatorImage: "default-ta-allocator",
 			}
-			cvw := v1beta1.NewCollectorWebhook(
+			cvw := webhook.NewCollectorWebhook(
 				logr.Discard(),
 				testScheme,
 				cfg,
@@ -1488,7 +1489,7 @@ func TestOTELColValidateUpdateWebhook(t *testing.T) {
 				CollectorImage:       "collector:v0.0.0",
 				TargetAllocatorImage: "ta:v0.0.0",
 			}
-			cvw := v1beta1.NewCollectorWebhook(
+			cvw := webhook.NewCollectorWebhook(
 				logr.Discard(),
 				testScheme,
 				cfg,

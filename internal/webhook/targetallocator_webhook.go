@@ -109,7 +109,7 @@ func (w TargetAllocatorWebhook) validate(ctx context.Context, ta *v1alpha1.Targe
 	warnings := admission.Warnings{}
 
 	// validate port config
-	if err := v1beta1.ValidatePorts(ta.Spec.Ports); err != nil {
+	if err := ValidatePorts(ta.Spec.Ports); err != nil {
 		return warnings, err
 	}
 
