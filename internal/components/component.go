@@ -70,8 +70,9 @@ type Defaulter[ComponentConfigType any] func(logger logr.Logger, defaultCfg *Def
 // - mycomponent
 // we extract the "mycomponent" part and see if we have a parser for the component.
 func ComponentType(name string) string {
-	if strings.Contains(name, "/") {
-		return name[:strings.Index(name, "/")]
+	before, _, ok := strings.Cut(name, "/")
+	if ok {
+		return before
 	}
 	return name
 }
@@ -80,7 +81,7 @@ func PortFromEndpoint(endpoint string) (int32, error) {
 	var err error
 	var port int64
 
-	r := regexp.MustCompile(":[0-9]+")
+	r := regexp.MustCompile(`:\d+`)
 
 	if r.MatchString(endpoint) {
 		portStr := r.FindString(endpoint)

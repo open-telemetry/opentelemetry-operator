@@ -1,14 +1,14 @@
 # This updates an existing deployment with a new Spec.
 # Target memory utilization is now added. 
 # scaleDown and scaleUp behavior is now added.
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest-set-utilization
 spec:
-  minReplicas: 1
-  maxReplicas: 2
   autoscaler:
+    minReplicas: 1
+    maxReplicas: 2
     targetCPUUtilization: 60
     targetMemoryUtilization: 60
     # Without this behavior the HPA will default to a scaledown stabilization
@@ -26,16 +26,14 @@ spec:
       cpu: 5m
       memory: 64Mi
 
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
-    processors:
-
+          grpc: {}
+          http: {}
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:

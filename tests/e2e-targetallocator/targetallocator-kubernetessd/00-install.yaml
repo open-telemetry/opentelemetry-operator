@@ -48,12 +48,12 @@ subjects:
   name: collector
   namespace: ($namespace)
 ---
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: prometheus-kubernetessd
 spec:
-  config: |
+  config:
     receivers:
       prometheus:
         config:
@@ -72,9 +72,6 @@ spec:
               - action: keep
                 regex: "kubelet_running_pods"
                 source_labels: [__name__]
-
-    processors:
-
     exporters:
       prometheus:
         endpoint: 0.0.0.0:9090

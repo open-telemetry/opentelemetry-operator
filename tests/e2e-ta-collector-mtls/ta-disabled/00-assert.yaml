@@ -30,7 +30,7 @@ data:
                 - targets:
                     - 0.0.0.0:8888
     exporters:
-      debug: null
+      debug: {}
     service:
       telemetry:
         metrics:

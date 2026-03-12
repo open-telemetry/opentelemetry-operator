@@ -1,4 +1,4 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: pdb
@@ -11,16 +11,14 @@ spec:
       cpu: 5m
       memory: 64Mi
 
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
-    processors:
-
+          grpc: {}
+          http: {}
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:

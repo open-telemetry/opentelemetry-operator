@@ -4,16 +4,14 @@
 #   * The second is to check that scaling works properly and that
 #     spec updates are working as expected.
 #
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
 spec:
-# TODO: these tests use .Spec.MaxReplicas and .Spec.MinReplicas. These fields are
-# deprecated and moved to .Spec.Autoscaler. Fine to use these fields to test that old CRD is
-# still supported but should eventually be updated.
-  minReplicas: 1
-  maxReplicas: 2
+  autoscaler:
+    minReplicas: 1
+    maxReplicas: 2
   resources:
     limits:
       cpu: 500m
@@ -22,16 +20,14 @@ spec:
       cpu: 5m
       memory: 64Mi
 
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
-    processors:
-
+          grpc: {}
+          http: {}
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
@@ -39,13 +35,14 @@ spec:
           receivers: [otlp]
           exporters: [debug]
 ---
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest-set-utilization
 spec:
-  minReplicas: 1
-  maxReplicas: 2
+  autoscaler:
+    minReplicas: 1
+    maxReplicas: 2
   resources:
     limits:
       cpu: 250m
@@ -54,16 +51,14 @@ spec:
       cpu: 5m
       memory: 64Mi
 
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
-    processors:
-
+          grpc: {}
+          http: {}
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:

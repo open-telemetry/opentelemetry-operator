@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1
+package webhook
 
 import (
 	"context"
@@ -18,6 +18,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 	"github.com/open-telemetry/opentelemetry-operator/pkg/constants"
 )
@@ -47,7 +48,7 @@ type InstrumentationWebhook struct {
 }
 
 func (w InstrumentationWebhook) Default(_ context.Context, obj runtime.Object) error {
-	instrumentation, ok := obj.(*Instrumentation)
+	instrumentation, ok := obj.(*v1alpha1.Instrumentation)
 	if !ok {
 		return fmt.Errorf("expected an Instrumentation, received %T", obj)
 	}
@@ -55,7 +56,7 @@ func (w InstrumentationWebhook) Default(_ context.Context, obj runtime.Object) e
 }
 
 func (w InstrumentationWebhook) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	inst, ok := obj.(*Instrumentation)
+	inst, ok := obj.(*v1alpha1.Instrumentation)
 	if !ok {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
 	}
@@ -63,7 +64,7 @@ func (w InstrumentationWebhook) ValidateCreate(_ context.Context, obj runtime.Ob
 }
 
 func (w InstrumentationWebhook) ValidateUpdate(_ context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	inst, ok := newObj.(*Instrumentation)
+	inst, ok := newObj.(*v1alpha1.Instrumentation)
 	if !ok {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", newObj)
 	}
@@ -71,14 +72,14 @@ func (w InstrumentationWebhook) ValidateUpdate(_ context.Context, _, newObj runt
 }
 
 func (w InstrumentationWebhook) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	inst, ok := obj.(*Instrumentation)
+	inst, ok := obj.(*v1alpha1.Instrumentation)
 	if !ok || inst == nil {
 		return nil, fmt.Errorf("expected an Instrumentation, received %T", obj)
 	}
 	return w.validate(inst)
 }
 
-func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
+func (w InstrumentationWebhook) defaulter(r *v1alpha1.Instrumentation) error {
 	if r.Labels == nil {
 		r.Labels = map[string]string{}
 	}
@@ -198,12 +199,12 @@ func (w InstrumentationWebhook) defaulter(r *Instrumentation) error {
 	return nil
 }
 
-func (InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, error) {
+func (InstrumentationWebhook) validate(r *v1alpha1.Instrumentation) (admission.Warnings, error) {
 	var warnings []string
 	switch r.Spec.Type {
 	case "":
 		warnings = append(warnings, "sampler type not set")
-	case TraceIDRatio, ParentBasedTraceIDRatio:
+	case v1alpha1.TraceIDRatio, v1alpha1.ParentBasedTraceIDRatio:
 		if r.Spec.Argument != "" {
 			rate, err := strconv.ParseFloat(r.Spec.Argument, 64)
 			if err != nil {
@@ -213,7 +214,7 @@ func (InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, 
 				return warnings, fmt.Errorf("spec.sampler.argument should be in rage [0..1]: %s", r.Spec.Argument)
 			}
 		}
-	case JaegerRemote, ParentBasedJaegerRemote:
+	case v1alpha1.JaegerRemote, v1alpha1.ParentBasedJaegerRemote:
 		// value is a comma separated list of endpoint, pollingIntervalMs, initialSamplingRate
 		// Example: `endpoint=http://localhost:14250,pollingIntervalMs=5000,initialSamplingRate=0.25`
 		if r.Spec.Argument != "" {
@@ -222,7 +223,7 @@ func (InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, 
 				return warnings, fmt.Errorf("spec.sampler.argument is not a valid argument for sampler %s: %w", r.Spec.Type, err)
 			}
 		}
-	case AlwaysOn, AlwaysOff, ParentBasedAlwaysOn, ParentBasedAlwaysOff, XRaySampler:
+	case v1alpha1.AlwaysOn, v1alpha1.AlwaysOff, v1alpha1.ParentBasedAlwaysOn, v1alpha1.ParentBasedAlwaysOff, v1alpha1.XRaySampler:
 	default:
 		return warnings, fmt.Errorf("spec.sampler.type is not valid: %s", r.Spec.Type)
 	}
@@ -285,7 +286,7 @@ func (InstrumentationWebhook) validate(r *Instrumentation) (admission.Warnings, 
 	return warnings, nil
 }
 
-func validateExporter(exporter Exporter) []string {
+func validateExporter(exporter v1alpha1.Exporter) []string {
 	var warnings []string
 	if exporter.TLS != nil {
 		tls := exporter.TLS
@@ -357,7 +358,7 @@ func SetupInstrumentationWebhook(mgr ctrl.Manager, cfg config.Config) error {
 		cfg,
 	)
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(&Instrumentation{}).
+		For(&v1alpha1.Instrumentation{}).
 		WithValidator(ivw).
 		WithDefaulter(ivw).
 		Complete()

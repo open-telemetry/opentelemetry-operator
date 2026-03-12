@@ -428,8 +428,8 @@ func (c *Config) Yaml() (string, error) {
 	return buf.String(), nil
 }
 
-// Returns null objects in the config.
-func (c *Config) nullObjects() []string {
+// NullObjects returns null objects in the config.
+func (c *Config) NullObjects() []string {
 	var nullKeys []string
 	if nulls := getNullValuedKeys(c.Receivers.Object); len(nulls) > 0 {
 		nullKeys = append(nullKeys, addPrefix("receivers.", nulls)...)
@@ -476,7 +476,7 @@ const (
 // from the env var, i.e. the address looks like "${env:POD_IP}:4317", "${env:POD_IP}", or "${POD_IP}".
 // In cases which the port itself is a variable, i.e. "${env:POD_IP}:${env:PORT}", this returns an error. This happens
 // because the port is used to generate Service objects and mappings.
-func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
+func (s *Service) MetricsEndpoint(logger logr.Logger) (host string, port int32, err error) {
 	telemetry := s.GetTelemetry(logger)
 	if telemetry == nil {
 		return defaultServiceHost, defaultServicePort, nil

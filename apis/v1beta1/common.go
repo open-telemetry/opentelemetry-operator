@@ -140,7 +140,7 @@ type OpenTelemetryCommonFields struct {
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
-	// the operator will not automatically create a ServiceAccount.
+	// the operator will not automatically Create a ServiceAccount.
 	// +optional
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	// Image indicates the container image to use for the generated pods.

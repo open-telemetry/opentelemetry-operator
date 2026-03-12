@@ -30,7 +30,7 @@ func upgrade0_9_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (*
 	}
 
 	for k, v := range exporters {
-		if strings.HasPrefix("opencensus", k.(string)) {
+		if strings.HasPrefix(k.(string), "opencensus") {
 			switch exporter := v.(type) {
 			case map[any]any:
 				// delete is a noop if there's no such entry

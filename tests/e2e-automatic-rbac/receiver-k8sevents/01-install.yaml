@@ -1,15 +1,14 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
   namespace: chainsaw-k8s-events
 spec:
-  config: |
+  config:
     receivers:
-      k8s_events:
-    processors:
+      k8s_events: {}
     exporters:
-      debug:
+      debug: {}
     service:
       pipelines:
         traces:

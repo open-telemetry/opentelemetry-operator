@@ -109,15 +109,15 @@ func TestOTELCollectorCRDMetrics(t *testing.T) {
 		testFunction func(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector, reader metric.Reader)
 	}{
 		{
-			name:         "create",
+			name:         "Create",
 			testFunction: checkCreate,
 		},
 		{
-			name:         "update",
+			name:         "Update",
 			testFunction: checkUpdate,
 		},
 		{
-			name:         "delete",
+			name:         "Delete",
 			testFunction: checkDelete,
 		},
 	}
@@ -336,7 +336,7 @@ func checkCreate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector,
 	provider := metric.NewMeterProvider(metric.WithReader(reader))
 	otel.SetMeterProvider(provider)
 
-	m.create(context.Background(), collectors[0])
+	m.Create(context.Background(), collectors[0])
 	rm := metricdata.ResourceMetrics{}
 	err := reader.Collect(context.Background(), &rm)
 	assert.NoError(t, err)
@@ -405,7 +405,7 @@ func checkCreate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector,
 	require.Len(t, rm.ScopeMetrics, 1)
 	metricdatatest.AssertEqual(t, want, rm.ScopeMetrics[0], metricdatatest.IgnoreTimestamp())
 
-	m.create(context.Background(), collectors[1])
+	m.Create(context.Background(), collectors[1])
 
 	rm = metricdata.ResourceMetrics{}
 	err = reader.Collect(context.Background(), &rm)
@@ -526,7 +526,7 @@ func checkCreate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector,
 }
 
 func checkUpdate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector, reader metric.Reader) {
-	m.update(context.Background(), collectors[0], collectors[2])
+	m.Update(context.Background(), collectors[0], collectors[2])
 
 	rm := metricdata.ResourceMetrics{}
 	err := reader.Collect(context.Background(), &rm)
@@ -678,7 +678,7 @@ func checkUpdate(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector,
 }
 
 func checkDelete(t *testing.T, m *Metrics, collectors []*OpenTelemetryCollector, reader metric.Reader) {
-	m.delete(context.Background(), collectors[1])
+	m.Delete(context.Background(), collectors[1])
 	rm := metricdata.ResourceMetrics{}
 	err := reader.Collect(context.Background(), &rm)
 	assert.NoError(t, err)

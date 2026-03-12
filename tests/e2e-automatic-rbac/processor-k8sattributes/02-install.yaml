@@ -1,22 +1,22 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: simplest
   namespace: chainsaw-k8sattributes
 spec:
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
+          grpc: {}
+          http: {}
     processors:
       k8sattributes:
         extract:
           metadata:
             - k8s.node.name
     exporters:
-      debug:
+      debug: {}
     service:
       pipelines:
         traces:

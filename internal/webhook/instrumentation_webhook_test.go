@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package v1alpha1
+package webhook
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/config"
 )
 
@@ -21,15 +22,15 @@ var defaultVolumeSize = resource.MustParse("200Mi")
 func TestInstrumentationDefaultingWebhook(t *testing.T) {
 	type testCase struct {
 		name   string
-		input  *Instrumentation
+		input  *v1alpha1.Instrumentation
 		config config.Config
-		verify func(t *testing.T, inst *Instrumentation)
+		verify func(t *testing.T, inst *v1alpha1.Instrumentation)
 	}
 
 	tests := []testCase{
 		{
 			name:  "default images",
-			input: &Instrumentation{},
+			input: &v1alpha1.Instrumentation{},
 			config: config.Config{
 				AutoInstrumentationJavaImage:        "java-img:1",
 				AutoInstrumentationNodeJSImage:      "nodejs-img:1",
@@ -39,7 +40,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 				AutoInstrumentationNginxImage:       "nginx-img:1",
 				AutoInstrumentationApacheHttpdImage: "apache-httpd-img:1",
 			},
-			verify: func(t *testing.T, inst *Instrumentation) {
+			verify: func(t *testing.T, inst *v1alpha1.Instrumentation) {
 				assert.Equal(t, "java-img:1", inst.Spec.Java.Image)
 				assert.Equal(t, "nodejs-img:1", inst.Spec.NodeJS.Image)
 				assert.Equal(t, "python-img:1", inst.Spec.Python.Image)
@@ -59,27 +60,27 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 		},
 		{
 			name: "do not override custom image",
-			input: &Instrumentation{
-				Spec: InstrumentationSpec{
-					Java: Java{
+			input: &v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Java: v1alpha1.Java{
 						Image: "custom-java-img:2",
 					},
-					NodeJS: NodeJS{
+					NodeJS: v1alpha1.NodeJS{
 						Image: "custom-nodejs-img:2",
 					},
-					Python: Python{
+					Python: v1alpha1.Python{
 						Image: "custom-python-img:2",
 					},
-					DotNet: DotNet{
+					DotNet: v1alpha1.DotNet{
 						Image: "custom-dotnet-img:2",
 					},
-					Go: Go{
+					Go: v1alpha1.Go{
 						Image: "custom-go-img:2",
 					},
-					Nginx: Nginx{
+					Nginx: v1alpha1.Nginx{
 						Image: "custom-nginx-img:2",
 					},
-					ApacheHttpd: ApacheHttpd{
+					ApacheHttpd: v1alpha1.ApacheHttpd{
 						Image: "custom-apache-httpd-img:2",
 					},
 				},
@@ -93,7 +94,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 				AutoInstrumentationNginxImage:       "nginx-img:1",
 				AutoInstrumentationApacheHttpdImage: "apache-httpd-img:1",
 			},
-			verify: func(t *testing.T, inst *Instrumentation) {
+			verify: func(t *testing.T, inst *v1alpha1.Instrumentation) {
 				assert.Equal(t, "custom-java-img:2", inst.Spec.Java.Image)
 				assert.Equal(t, "custom-nodejs-img:2", inst.Spec.NodeJS.Image)
 				assert.Equal(t, "custom-python-img:2", inst.Spec.Python.Image)
@@ -113,9 +114,9 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 		},
 		{
 			name:   "default resource and config settings",
-			input:  &Instrumentation{},
+			input:  &v1alpha1.Instrumentation{},
 			config: config.New(),
-			verify: func(t *testing.T, inst *Instrumentation) {
+			verify: func(t *testing.T, inst *v1alpha1.Instrumentation) {
 				assert.Equal(t, resource.MustParse("500m"), inst.Spec.Java.Resources.Limits[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("256Mi"), inst.Spec.Java.Resources.Limits[corev1.ResourceMemory])
 				assert.Equal(t, resource.MustParse("50m"), inst.Spec.Java.Resources.Requests[corev1.ResourceCPU])
@@ -158,9 +159,9 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 		},
 		{
 			name: "preserve custom requirements and config settings",
-			input: &Instrumentation{
-				Spec: InstrumentationSpec{
-					Java: Java{
+			input: &v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Java: v1alpha1.Java{
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
 								corev1.ResourceCPU:    resource.MustParse("500m"),
@@ -172,7 +173,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 							},
 						},
 					},
-					NodeJS: NodeJS{
+					NodeJS: v1alpha1.NodeJS{
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
 								corev1.ResourceCPU:    resource.MustParse("300m"),
@@ -184,7 +185,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 							},
 						},
 					},
-					Python: Python{
+					Python: v1alpha1.Python{
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
 								corev1.ResourceCPU:    resource.MustParse("400m"),
@@ -196,7 +197,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 							},
 						},
 					},
-					DotNet: DotNet{
+					DotNet: v1alpha1.DotNet{
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
 								corev1.ResourceCPU:    resource.MustParse("600m"),
@@ -208,7 +209,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 							},
 						},
 					},
-					Go: Go{
+					Go: v1alpha1.Go{
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
 								corev1.ResourceCPU:    resource.MustParse("700m"),
@@ -220,7 +221,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 							},
 						},
 					},
-					Nginx: Nginx{
+					Nginx: v1alpha1.Nginx{
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
 								corev1.ResourceCPU:    resource.MustParse("800m"),
@@ -233,7 +234,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 						},
 						ConfigFile: "/custom/path/nginx.conf",
 					},
-					ApacheHttpd: ApacheHttpd{
+					ApacheHttpd: v1alpha1.ApacheHttpd{
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
 								corev1.ResourceCPU:    resource.MustParse("900m"),
@@ -250,7 +251,7 @@ func TestInstrumentationDefaultingWebhook(t *testing.T) {
 				},
 			},
 			config: config.New(),
-			verify: func(t *testing.T, inst *Instrumentation) {
+			verify: func(t *testing.T, inst *v1alpha1.Instrumentation) {
 				assert.Equal(t, resource.MustParse("500m"), inst.Spec.Java.Resources.Limits[corev1.ResourceCPU])
 				assert.Equal(t, resource.MustParse("128Mi"), inst.Spec.Java.Resources.Limits[corev1.ResourceMemory])
 				assert.Equal(t, resource.MustParse("100m"), inst.Spec.Java.Resources.Requests[corev1.ResourceCPU])
@@ -311,20 +312,20 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		name     string
 		err      string
 		warnings admission.Warnings
-		inst     Instrumentation
+		inst     v1alpha1.Instrumentation
 	}{
 		{
 			name: "all defaults",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{},
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{},
 			},
 			warnings: []string{"sampler type not set"},
 		},
 		{
 			name: "sampler configuration not present",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{},
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{},
 				},
 			},
 			warnings: []string{"sampler type not set"},
@@ -332,10 +333,10 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		{
 			name: "argument is not a number",
 			err:  "spec.sampler.argument is not a number",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{
-						Type:     ParentBasedTraceIDRatio,
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{
+						Type:     v1alpha1.ParentBasedTraceIDRatio,
 						Argument: "abc",
 					},
 				},
@@ -344,10 +345,10 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		{
 			name: "argument is a wrong number",
 			err:  "spec.sampler.argument should be in rage [0..1]",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{
-						Type:     ParentBasedTraceIDRatio,
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{
+						Type:     v1alpha1.ParentBasedTraceIDRatio,
 						Argument: "1.99",
 					},
 				},
@@ -355,10 +356,10 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		},
 		{
 			name: "argument is a number",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{
-						Type:     ParentBasedTraceIDRatio,
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{
+						Type:     v1alpha1.ParentBasedTraceIDRatio,
 						Argument: "0.99",
 					},
 				},
@@ -366,25 +367,25 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		},
 		{
 			name: "argument is missing",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{
-						Type: ParentBasedTraceIDRatio,
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{
+						Type: v1alpha1.ParentBasedTraceIDRatio,
 					},
 				},
 			},
 		},
 		{
 			name: "exporter: tls cert set but missing key",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{
-						Type:     ParentBasedTraceIDRatio,
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{
+						Type:     v1alpha1.ParentBasedTraceIDRatio,
 						Argument: "0.99",
 					},
-					Exporter: Exporter{
+					Exporter: v1alpha1.Exporter{
 						Endpoint: "https://collector:4317",
-						TLS: &TLS{
+						TLS: &v1alpha1.TLS{
 							Cert: "cert",
 						},
 					},
@@ -394,15 +395,15 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		},
 		{
 			name: "exporter: tls key set but missing cert",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{
-						Type:     ParentBasedTraceIDRatio,
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{
+						Type:     v1alpha1.ParentBasedTraceIDRatio,
 						Argument: "0.99",
 					},
-					Exporter: Exporter{
+					Exporter: v1alpha1.Exporter{
 						Endpoint: "https://collector:4317",
-						TLS: &TLS{
+						TLS: &v1alpha1.TLS{
 							Key: "key",
 						},
 					},
@@ -412,15 +413,15 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		},
 		{
 			name: "exporter: tls set but using http://",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{
-						Type:     ParentBasedTraceIDRatio,
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{
+						Type:     v1alpha1.ParentBasedTraceIDRatio,
 						Argument: "0.99",
 					},
-					Exporter: Exporter{
+					Exporter: v1alpha1.Exporter{
 						Endpoint: "http://collector:4317",
-						TLS: &TLS{
+						TLS: &v1alpha1.TLS{
 							Key:  "key",
 							Cert: "cert",
 						},
@@ -431,13 +432,13 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		},
 		{
 			name: "exporter: exporter using http://, but the tls is nil",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{
-						Type:     ParentBasedTraceIDRatio,
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{
+						Type:     v1alpha1.ParentBasedTraceIDRatio,
 						Argument: "0.99",
 					},
-					Exporter: Exporter{
+					Exporter: v1alpha1.Exporter{
 						Endpoint: "https://collector:4317",
 					},
 				},
@@ -446,15 +447,15 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		},
 		{
 			name: "exporter no warning set",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{
-						Type:     ParentBasedTraceIDRatio,
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{
+						Type:     v1alpha1.ParentBasedTraceIDRatio,
 						Argument: "0.99",
 					},
-					Exporter: Exporter{
+					Exporter: v1alpha1.Exporter{
 						Endpoint: "https://collector:4317",
-						TLS: &TLS{
+						TLS: &v1alpha1.TLS{
 							Key:  "key",
 							Cert: "cert",
 						},
@@ -465,9 +466,9 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		{
 			name: "sampler type is invalid",
 			err:  "spec.sampler.type is not valid",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Sampler: Sampler{
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Sampler: v1alpha1.Sampler{
 						Type: "InvalidSamplerType",
 					},
 				},
@@ -476,9 +477,9 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		{
 			name: "NodeJS with volume and volumeSizeLimit",
 			err:  "spec.nodejs.volumeClaimTemplate and spec.nodejs.volumeSizeLimit cannot both be defined",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					NodeJS: NodeJS{
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					NodeJS: v1alpha1.NodeJS{
 						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
 							Spec: corev1.PersistentVolumeClaimSpec{
 								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -493,9 +494,9 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		{
 			name: "Java with volume and volumeSizeLimit",
 			err:  "spec.java.volumeClaimTemplate and spec.java.volumeSizeLimit cannot both be defined",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Java: Java{
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Java: v1alpha1.Java{
 						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
 							Spec: corev1.PersistentVolumeClaimSpec{
 								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -510,9 +511,9 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		{
 			name: "Python with volume and volumeSizeLimit",
 			err:  "spec.python.volumeClaimTemplate and spec.python.volumeSizeLimit cannot both be defined",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Python: Python{
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Python: v1alpha1.Python{
 						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
 							Spec: corev1.PersistentVolumeClaimSpec{
 								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -527,9 +528,9 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		{
 			name: "Go with volume and volumeSizeLimit",
 			err:  "spec.go.volumeClaimTemplate and spec.go.volumeSizeLimit cannot both be defined",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Go: Go{
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Go: v1alpha1.Go{
 						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
 							Spec: corev1.PersistentVolumeClaimSpec{
 								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -544,9 +545,9 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		{
 			name: "DotNet with volume and volumeSizeLimit",
 			err:  "spec.dotnet.volumeClaimTemplate and spec.dotnet.volumeSizeLimit cannot both be defined",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					DotNet: DotNet{
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					DotNet: v1alpha1.DotNet{
 						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
 							Spec: corev1.PersistentVolumeClaimSpec{
 								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -561,9 +562,9 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		{
 			name: "ApacheHttpd with volume and volumeSizeLimit",
 			err:  "spec.apachehttpd.volumeClaimTemplate and spec.apachehttpd.volumeSizeLimit cannot both be defined",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					ApacheHttpd: ApacheHttpd{
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					ApacheHttpd: v1alpha1.ApacheHttpd{
 						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
 							Spec: corev1.PersistentVolumeClaimSpec{
 								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -578,9 +579,9 @@ func TestInstrumentationValidatingWebhook(t *testing.T) {
 		{
 			name: "Nginx with volume and volumeSizeLimit",
 			err:  "spec.nginx.volumeClaimTemplate and spec.nginx.volumeSizeLimit cannot both be defined",
-			inst: Instrumentation{
-				Spec: InstrumentationSpec{
-					Nginx: Nginx{
+			inst: v1alpha1.Instrumentation{
+				Spec: v1alpha1.InstrumentationSpec{
+					Nginx: v1alpha1.Nginx{
 						VolumeClaimTemplate: corev1.PersistentVolumeClaimTemplate{
 							Spec: corev1.PersistentVolumeClaimSpec{
 								AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -627,42 +628,42 @@ func TestInstrumentationValidatingWebhook_DeprecationWarnings(t *testing.T) {
 
 	tests := []struct {
 		name string
-		inst Instrumentation
+		inst v1alpha1.Instrumentation
 		want string
 	}{
 		{
 			name: "java volumeSizeLimit deprecated",
-			inst: Instrumentation{Spec: InstrumentationSpec{Java: Java{VolumeSizeLimit: &defaultSize}}},
+			inst: v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{Java: v1alpha1.Java{VolumeSizeLimit: &defaultSize}}},
 			want: "spec.java.volumeSizeLimit is deprecated and will be removed in a future release; use spec.java.volume.size instead",
 		},
 		{
 			name: "nodejs volumeSizeLimit deprecated",
-			inst: Instrumentation{Spec: InstrumentationSpec{NodeJS: NodeJS{VolumeSizeLimit: &defaultSize}}},
+			inst: v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{NodeJS: v1alpha1.NodeJS{VolumeSizeLimit: &defaultSize}}},
 			want: "spec.nodejs.volumeSizeLimit is deprecated and will be removed in a future release; use spec.nodejs.volume.size instead",
 		},
 		{
 			name: "python volumeSizeLimit deprecated",
-			inst: Instrumentation{Spec: InstrumentationSpec{Python: Python{VolumeSizeLimit: &defaultSize}}},
+			inst: v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{Python: v1alpha1.Python{VolumeSizeLimit: &defaultSize}}},
 			want: "spec.python.volumeSizeLimit is deprecated and will be removed in a future release; use spec.python.volume.size instead",
 		},
 		{
 			name: "dotnet volumeSizeLimit deprecated",
-			inst: Instrumentation{Spec: InstrumentationSpec{DotNet: DotNet{VolumeSizeLimit: &defaultSize}}},
+			inst: v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{DotNet: v1alpha1.DotNet{VolumeSizeLimit: &defaultSize}}},
 			want: "spec.dotnet.volumeSizeLimit is deprecated and will be removed in a future release; use spec.dotnet.volume.size instead",
 		},
 		{
 			name: "go volumeSizeLimit deprecated",
-			inst: Instrumentation{Spec: InstrumentationSpec{Go: Go{VolumeSizeLimit: &defaultSize}}},
+			inst: v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{Go: v1alpha1.Go{VolumeSizeLimit: &defaultSize}}},
 			want: "spec.go.volumeSizeLimit is deprecated and will be removed in a future release; use spec.go.volume.size instead",
 		},
 		{
 			name: "apachehttpd volumeSizeLimit deprecated",
-			inst: Instrumentation{Spec: InstrumentationSpec{ApacheHttpd: ApacheHttpd{VolumeSizeLimit: &defaultSize}}},
+			inst: v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{ApacheHttpd: v1alpha1.ApacheHttpd{VolumeSizeLimit: &defaultSize}}},
 			want: "spec.apachehttpd.volumeSizeLimit is deprecated and will be removed in a future release; use spec.apachehttpd.volume.size instead",
 		},
 		{
 			name: "nginx volumeSizeLimit deprecated",
-			inst: Instrumentation{Spec: InstrumentationSpec{Nginx: Nginx{VolumeSizeLimit: &defaultSize}}},
+			inst: v1alpha1.Instrumentation{Spec: v1alpha1.InstrumentationSpec{Nginx: v1alpha1.Nginx{VolumeSizeLimit: &defaultSize}}},
 			want: "spec.nginx.volumeSizeLimit is deprecated and will be removed in a future release; use spec.nginx.volume.size instead",
 		},
 	}
@@ -732,14 +733,14 @@ func TestInstrumentationJaegerRemote(t *testing.T) {
 		},
 	}
 
-	samplers := []SamplerType{JaegerRemote, ParentBasedJaegerRemote}
+	samplers := []v1alpha1.SamplerType{v1alpha1.JaegerRemote, v1alpha1.ParentBasedJaegerRemote}
 
 	for _, sampler := range samplers {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				inst := Instrumentation{
-					Spec: InstrumentationSpec{
-						Sampler: Sampler{
+				inst := v1alpha1.Instrumentation{
+					Spec: v1alpha1.InstrumentationSpec{
+						Sampler: v1alpha1.Sampler{
 							Type:     sampler,
 							Argument: test.arg,
 						},
