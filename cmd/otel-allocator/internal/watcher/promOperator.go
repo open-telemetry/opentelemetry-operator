@@ -395,7 +395,7 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, _ chan error) err
 			resource.AddEventHandler(cache.ResourceEventHandlerFuncs{
 				// these functions only write to the notification channel if it's empty to avoid blocking
 				// if scrape config updates are being rate-limited
-				AddFunc: func(obj any) {
+				AddFunc: func(_ any) {
 					select {
 					case notifyEvents <- struct{}{}:
 					default:
@@ -424,19 +424,19 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, _ chan error) err
 			resource.AddEventHandler(cache.ResourceEventHandlerFuncs{
 				// these functions only write to the notification channel if it's empty to avoid blocking
 				// if scrape config updates are being rate-limited
-				AddFunc: func(obj any) {
+				AddFunc: func(_ any) {
 					select {
 					case notifyEvents <- struct{}{}:
 					default:
 					}
 				},
-				UpdateFunc: func(oldObj, newObj any) {
+				UpdateFunc: func(_, _ any) {
 					select {
 					case notifyEvents <- struct{}{}:
 					default:
 					}
 				},
-				DeleteFunc: func(obj any) {
+				DeleteFunc: func(_ any) {
 					select {
 					case notifyEvents <- struct{}{}:
 					default:
