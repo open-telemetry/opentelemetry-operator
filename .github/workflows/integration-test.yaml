@@ -27,7 +27,7 @@ jobs:
         run: kubectl certificate approve operator
       - name: register our image
         run: |
-          img=$(docker images | grep operator | awk '{print $1":"$2}')
+          img=$(docker images | grep operator | grep dev | awk '{print $1":"$2}')
           docker tag $img manager:dev
           kind load docker-image manager:dev --name kind
           kind load docker-image java-autoinstrumentation:dev --name kind
