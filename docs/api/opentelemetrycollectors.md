@@ -20455,7 +20455,7 @@ injected sidecar container.<br/>
         <td>string</td>
         <td>
           ServiceAccount indicates the name of an existing service account to use with this instance. When set,
-the operator will not automatically create a ServiceAccount.<br/>
+the operator will not automatically Create a ServiceAccount.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -32181,7 +32181,7 @@ the targetallocator.<br/>
         <td>string</td>
         <td>
           ServiceAccount indicates the name of an existing service account to use with this instance. When set,
-the operator will not automatically create a ServiceAccount for the TargetAllocator.<br/>
+the operator will not automatically Create a ServiceAccount for the TargetAllocator.<br/>
         </td>
         <td>false</td>
       </tr><tr>

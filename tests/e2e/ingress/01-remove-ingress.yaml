@@ -1,20 +1,20 @@
 ---
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: otel-simplest
 spec:
   mode: deployment
   ingress: ~
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
+          grpc: {}
+          http: {}
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:

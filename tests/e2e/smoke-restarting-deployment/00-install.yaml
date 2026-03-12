@@ -1,16 +1,15 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: restarting
 spec:
-  config: |
+  config:
     receivers:
       jaeger:
         protocols:
-          grpc:
-    processors:
+          grpc: {}
     exporters:
-      debug:
+      debug: {}
     service:
       pipelines:
         traces:

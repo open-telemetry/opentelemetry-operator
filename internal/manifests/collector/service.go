@@ -253,10 +253,9 @@ func filterPort(logger logr.Logger, candidate corev1.ServicePort, portNumbers ma
 	return &candidate
 }
 
-func extractPortNumbersAndNames(ports []v1beta1.PortsSpec) (map[PortNumberKey]bool, map[string]bool) {
-	numbers := map[PortNumberKey]bool{}
-	names := map[string]bool{}
-
+func extractPortNumbersAndNames(ports []v1beta1.PortsSpec) (numbers map[PortNumberKey]bool, names map[string]bool) {
+	numbers = map[PortNumberKey]bool{}
+	names = map[string]bool{}
 	for _, port := range ports {
 		numbers[newPortNumberKey(port.Port, port.Protocol)] = true
 		names[port.Name] = true

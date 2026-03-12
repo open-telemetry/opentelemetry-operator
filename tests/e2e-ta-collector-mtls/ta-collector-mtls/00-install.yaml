@@ -49,19 +49,16 @@ subjects:
   name: collector
   namespace: ($namespace)
 ---
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: prometheus-cr
 spec:
-  config: |
+  config:
     receivers:
       prometheus:
         config:
           scrape_configs: []
-
-    processors:
-
     exporters:
       prometheus:
         endpoint: 0.0.0.0:9090
@@ -77,6 +74,8 @@ spec:
     prometheusCR:
       enabled: true
       scrapeInterval: 1s
+      serviceMonitorSelector: {}
+      podMonitorSelector: {}
     serviceAccount: ta
 ---
 apiVersion: batch/v1

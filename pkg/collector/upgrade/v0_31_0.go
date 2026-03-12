@@ -42,13 +42,14 @@ func upgrade0_31_0(u VersionUpgrade, otelcol *v1alpha1.OpenTelemetryCollector) (
 				return otelcol, nil
 			}
 			for fieldKey := range influxdbConfig {
-				if strings.HasPrefix(fieldKey.(string), "metrics_schema") {
-					delete(influxdbConfig, fieldKey)
-					existing := &corev1.ConfigMap{}
-					updated := existing.DeepCopy()
-					u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.31.0 dropped the 'metrics_schema' field from %q receiver", k))
+				if !strings.HasPrefix(fieldKey.(string), "metrics_schema") {
 					continue
 				}
+				delete(influxdbConfig, fieldKey)
+				existing := &corev1.ConfigMap{}
+				updated := existing.DeepCopy()
+				u.Recorder.Event(updated, "Normal", "Upgrade", fmt.Sprintf("upgrade to v0.31.0 dropped the 'metrics_schema' field from %q receiver", k))
+				continue
 			}
 		}
 	}

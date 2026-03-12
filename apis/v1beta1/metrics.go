@@ -116,24 +116,24 @@ func (m *Metrics) init(ctx context.Context, cl client.Reader) error {
 	}
 
 	for i := range list.Items {
-		m.create(ctx, &list.Items[i])
+		m.Create(ctx, &list.Items[i])
 	}
 	return nil
 }
 
-func (m *Metrics) create(ctx context.Context, collector *OpenTelemetryCollector) {
+func (m *Metrics) Create(ctx context.Context, collector *OpenTelemetryCollector) {
 	m.updateComponentCounters(ctx, collector, true)
 	m.updateGeneralCRMetricsComponents(ctx, collector, true)
 }
 
-func (m *Metrics) delete(ctx context.Context, collector *OpenTelemetryCollector) {
+func (m *Metrics) Delete(ctx context.Context, collector *OpenTelemetryCollector) {
 	m.updateComponentCounters(ctx, collector, false)
 	m.updateGeneralCRMetricsComponents(ctx, collector, false)
 }
 
-func (m *Metrics) update(ctx context.Context, oldCollector, newCollector *OpenTelemetryCollector) {
-	m.delete(ctx, oldCollector)
-	m.create(ctx, newCollector)
+func (m *Metrics) Update(ctx context.Context, oldCollector, newCollector *OpenTelemetryCollector) {
+	m.Delete(ctx, oldCollector)
+	m.Create(ctx, newCollector)
 }
 
 func (m *Metrics) updateGeneralCRMetricsComponents(ctx context.Context, collector *OpenTelemetryCollector, up bool) {

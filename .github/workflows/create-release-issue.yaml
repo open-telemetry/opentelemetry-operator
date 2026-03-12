@@ -1,0 +1,28 @@
+name: "Create release issue"
+on:
+  schedule:
+    # Daily at midnight UTC. The dedup check ensures only one issue
+    # is created per release cycle.
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Override version (e.g. 0.146.0). If empty, auto-detected from RELEASE.md."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  create-release-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create release issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          hack/create-release-issue.sh ${{ inputs.version && format('--version {0}', inputs.version) || '' }}

@@ -168,7 +168,7 @@ type TargetAllocatorEmbedded struct {
 	// +kubebuilder:default:=relabel-config
 	FilterStrategy TargetAllocatorFilterStrategy `json:"filterStrategy,omitempty"`
 	// ServiceAccount indicates the name of an existing service account to use with this instance. When set,
-	// the operator will not automatically create a ServiceAccount for the TargetAllocator.
+	// the operator will not automatically Create a ServiceAccount for the TargetAllocator.
 	// +optional
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	// Image indicates the container image to use for the OpenTelemetry TargetAllocator.

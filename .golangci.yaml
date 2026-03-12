@@ -23,7 +23,6 @@ linters:
       disabled-checks:
         - appendAssign
         - appendCombine
-        - argOrder
         - assignOp
         - builtinShadow
         - commentedOutCode
@@ -31,16 +30,9 @@ linters:
         - exitAfterDefer
         - hugeParam
         - importShadow
-        - nestingReduce
-        - offBy1
-        - paramTypeCombine
         - rangeValCopy
-        - regexpMust
-        - regexpSimplify
         - sloppyReassign
         - typeDefFirst
-        - unlambda
-        - unnamedResult
         - whyNoLint
       enable-all: true
     goheader:
@@ -205,6 +197,7 @@ formatters:
   enable:
     - gci
     - gofmt
+    - gofumpt
   settings:
     gci:
       sections:
@@ -213,5 +206,7 @@ formatters:
         - prefix(github.com/open-telemetry/opentelemetry-operator)
     gofmt:
       simplify: true
+    gofumpt:
+      extra-rules: true
   exclusions:
     generated: lax
