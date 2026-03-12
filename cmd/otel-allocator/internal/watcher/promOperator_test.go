@@ -1245,18 +1245,24 @@ func TestSecretInformerUpdatesStore(t *testing.T) {
 			Endpoints: []monitoringv1.Endpoint{
 				{
 					Port: portName,
-					BasicAuth: &monitoringv1.BasicAuth{
-						Username: v1.SecretKeySelector{
-							LocalObjectReference: v1.LocalObjectReference{
-								Name: "basic-auth",
+					HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
+						HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
+							HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+								BasicAuth: &monitoringv1.BasicAuth{
+									Username: v1.SecretKeySelector{
+										LocalObjectReference: v1.LocalObjectReference{
+											Name: "basic-auth",
+										},
+										Key: "username",
+									},
+									Password: v1.SecretKeySelector{
+										LocalObjectReference: v1.LocalObjectReference{
+											Name: "basic-auth",
+										},
+										Key: "password",
+									},
+								},
 							},
-							Key: "username",
-						},
-						Password: v1.SecretKeySelector{
-							LocalObjectReference: v1.LocalObjectReference{
-								Name: "basic-auth",
-							},
-							Key: "password",
 						},
 					},
 				},
