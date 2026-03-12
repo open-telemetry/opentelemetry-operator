@@ -1,4 +1,4 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: pa
@@ -8,15 +8,13 @@ spec:
   podAnnotations:
     pod-annotation1: value1
     pod-annotation2: value2
-  config: |
+  config:
     receivers:
       jaeger:
         protocols:
-          grpc:
-    processors:
-
+          grpc: {}
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:

@@ -13,11 +13,9 @@ spec:
             static_configs:        
             - targets: [ '0.0.0.0:8888' ]
     
-    processors:
-    
     exporters:
-      debug:
-    
+      debug: {}
+
     service:
       pipelines:
         metrics:
@@ -29,6 +27,8 @@ spec:
     enabled: true
     prometheusCR:
       enabled: true
+      serviceMonitorSelector: {}
+      podMonitorSelector: {}
     observability:
       metrics:
         enableMetrics: true

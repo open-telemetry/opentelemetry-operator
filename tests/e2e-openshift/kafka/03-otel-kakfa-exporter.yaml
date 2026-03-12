@@ -1,17 +1,16 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: kafka-exporter
   namespace: chainsaw-kafka
 spec:
   mode: deployment
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
-    processors:
+          grpc: {}
+          http: {}
     exporters:
       kafka:
         brokers: ["my-cluster-kafka-brokers.chainsaw-kafka.svc:9092"]

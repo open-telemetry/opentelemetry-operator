@@ -1,15 +1,15 @@
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: testlabel
 spec:
   image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.121.0
-  config: |
+  config:
     receivers:
       otlp:
         protocols:
-          grpc:
-          http:
+          grpc: {}
+          http: {}
     processors:
       memory_limiter:
         check_interval: 1s
@@ -20,7 +20,7 @@ spec:
         timeout: 10s
 
     exporters:
-      debug:
+      debug: {}
 
     service:
       pipelines:
