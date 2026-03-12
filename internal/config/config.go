@@ -6,10 +6,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 
 	"github.com/goccy/go-yaml"
 
+	"github.com/open-telemetry/opentelemetry-operator/apis/v1alpha1"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/certmanager"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/collector"
 	"github.com/open-telemetry/opentelemetry-operator/internal/autodetect/opampbridge"
