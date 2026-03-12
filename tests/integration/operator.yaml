@@ -10,7 +10,7 @@ data:
     enable-instrumentation-crds: false
     enable-multi-instrumentation: false
     instrumentations:
-      java:
+      spec:
         exporter:
           endpoint: http://collector.default.svc:4318
         propagators:
