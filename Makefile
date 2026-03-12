@@ -938,6 +938,15 @@ catalog-push: ## Push a catalog image.
 	docker push $(CATALOG_IMG)
 
 ##@ Release
+
+.PHONY: create-release-issue
+create-release-issue: ## Create a GitHub issue for the next release (use DRY_RUN=true to preview)
+ifeq ($(DRY_RUN),true)
+	hack/create-release-issue.sh $(if $(RELEASE_VERSION),--version $(RELEASE_VERSION)) --dry-run
+else
+	hack/create-release-issue.sh $(if $(RELEASE_VERSION),--version $(RELEASE_VERSION))
+endif
+
 # Create container image archive with all images
 container-image-archive: IMAGE_LIST_FILE = images-$(VERSION).txt
 container-image-archive: container container-target-allocator container-operator-opamp-bridge container-bridge-test-server container-instrumentation-all
