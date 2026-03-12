@@ -1643,7 +1643,7 @@ func getTestPrometheusCRWatcher(
 
 	// Create fake metadata client for secret informer
 	scheme := metadatafake.NewTestScheme()
-	metav1.AddMetaToScheme(scheme)
+	_ = metav1.AddMetaToScheme(scheme)
 	mdClient := metadatafake.NewSimpleMetadataClient(scheme)
 	metadataFactory := informers.NewMetadataInformerFactory(map[string]struct{}{v1.NamespaceAll: {}}, map[string]struct{}{}, mdClient, 0, nil)
 
@@ -1733,7 +1733,7 @@ func sanitizeScrapeConfigsForTest(scs []*promconfig.ScrapeConfig) {
 }
 
 // getTestInformers creates informers for testing without CRD availability checks.
-func getTestInformers(factory informers.FactoriesForNamespaces, metadataFactory informers.FactoriesForNamespaces) (map[string]*informers.ForResource, error) {
+func getTestInformers(factory, metadataFactory informers.FactoriesForNamespaces) (map[string]*informers.ForResource, error) {
 	informersMap := make(map[string]*informers.ForResource)
 
 	// Create ServiceMonitor informers
