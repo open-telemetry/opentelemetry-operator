@@ -395,13 +395,13 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, _ chan error) err
 			resource.AddEventHandler(cache.ResourceEventHandlerFuncs{
 				// these functions only write to the notification channel if it's empty to avoid blocking
 				// if scrape config updates are being rate-limited
-				AddFunc: func(obj interface{}) {
+				AddFunc: func(obj any) {
 					select {
 					case notifyEvents <- struct{}{}:
 					default:
 					}
 				},
-				UpdateFunc: func(oldObj, newObj interface{}) {
+				UpdateFunc: func(oldObj, newObj any) {
 					if w.handleSecretUpdate(oldObj, newObj) {
 						select {
 						case notifyEvents <- struct{}{}:
@@ -409,7 +409,7 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, _ chan error) err
 						}
 					}
 				},
-				DeleteFunc: func(obj interface{}) {
+				DeleteFunc: func(obj any) {
 					if w.handleSecretDelete(obj) {
 						select {
 						case notifyEvents <- struct{}{}:
@@ -424,19 +424,19 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, _ chan error) err
 			resource.AddEventHandler(cache.ResourceEventHandlerFuncs{
 				// these functions only write to the notification channel if it's empty to avoid blocking
 				// if scrape config updates are being rate-limited
-				AddFunc: func(obj interface{}) {
+				AddFunc: func(obj any) {
 					select {
 					case notifyEvents <- struct{}{}:
 					default:
 					}
 				},
-				UpdateFunc: func(oldObj, newObj interface{}) {
+				UpdateFunc: func(oldObj, newObj any) {
 					select {
 					case notifyEvents <- struct{}{}:
 					default:
 					}
 				},
-				DeleteFunc: func(obj interface{}) {
+				DeleteFunc: func(obj any) {
 					select {
 					case notifyEvents <- struct{}{}:
 					default:
@@ -444,7 +444,6 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, _ chan error) err
 				},
 			})
 		}
-
 	}
 	if !success {
 		return errors.New("failed to sync one of the caches")
@@ -458,7 +457,7 @@ func (w *PrometheusCRWatcher) Watch(upstreamEvents chan Event, _ chan error) err
 }
 
 // handleSecretUpdate handles secret update events and returns true if the config needs to be reloaded.
-func (w *PrometheusCRWatcher) handleSecretUpdate(oldObj, newObj interface{}) bool {
+func (w *PrometheusCRWatcher) handleSecretUpdate(oldObj, newObj any) bool {
 	oldMeta, _ := oldObj.(metav1.ObjectMetaAccessor)
 	newMeta, _ := newObj.(metav1.ObjectMetaAccessor)
 	secretName := newMeta.GetObjectMeta().GetName()
@@ -501,7 +500,7 @@ func (w *PrometheusCRWatcher) handleSecretUpdate(oldObj, newObj interface{}) boo
 }
 
 // handleSecretDelete handles secret delete events and returns true if the config needs to be reloaded.
-func (w *PrometheusCRWatcher) handleSecretDelete(obj interface{}) bool {
+func (w *PrometheusCRWatcher) handleSecretDelete(obj any) bool {
 	secretMeta, _ := obj.(metav1.ObjectMetaAccessor)
 	secretName := secretMeta.GetObjectMeta().GetName()
 	secretNamespace := secretMeta.GetObjectMeta().GetNamespace()
