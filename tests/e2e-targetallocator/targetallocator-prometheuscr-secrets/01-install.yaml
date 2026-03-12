@@ -90,26 +90,7 @@ spec:
             - /bin/sh
             - -c
             - |
-              # Wait for ServiceMonitor to be discovered and config to be generated
-              for i in $(seq 30); do
-                CONFIG=$(curl -s http://prometheus-cr-secrets-targetallocator/scrape_configs)
-                if echo "$CONFIG" | grep -q "metrics-servicemonitor"; then
-                  echo "ServiceMonitor found in config"
-                  # Verify basicAuth is present with correct username
-                  if echo "$CONFIG" | grep -q "basic_auth"; then
-                    echo "BasicAuth configuration found"
-                    # Verify the actual username value from the secret
-                    if echo "$CONFIG" | grep -q "user"; then
-                      echo "Correct username 'user' found in config"
-                      echo "SUCCESS: All checks passed"
-                      exit 0
-                    else
-                      echo "Username 'user' not found in config"
-                    fi
-                  fi
-                fi
-                echo "Waiting for ServiceMonitor with correct basicAuth credentials... attempt $i"
-                sleep 5
-              done
-              echo "Failed to find ServiceMonitor with correct basicAuth credentials in config"
-              exit 1
+              CONFIG=$(curl -s http://prometheus-cr-secrets-targetallocator/scrape_configs)
+              echo "$CONFIG" | grep -q "metrics-servicemonitor" && \
+              echo "$CONFIG" | grep -q "basic_auth" && \
+              echo "$CONFIG" | grep -q "user"

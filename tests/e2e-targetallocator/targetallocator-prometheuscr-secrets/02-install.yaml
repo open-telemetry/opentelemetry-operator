@@ -56,26 +56,7 @@ spec:
             - /bin/sh
             - -c
             - |
-              # Wait a bit for the secret update to propagate through the watcher
-              sleep 10
-              # Verify the config is still valid and contains the ServiceMonitor
-              for i in $(seq 20); do
-                CONFIG=$(curl -s http://prometheus-cr-secrets-targetallocator/scrape_configs)
-                if echo "$CONFIG" | grep -q "metrics-servicemonitor"; then
-                  echo "ServiceMonitor still present after secret update"
-                  # Verify basicAuth is still present after update
-                  if echo "$CONFIG" | grep -q "basic_auth"; then
-                    echo "BasicAuth still configured after secret update"
-                    # Verify the NEW username value is present (proving secret was updated)
-                    if echo "$CONFIG" | grep -q "newuser"; then
-                      echo "Updated username 'newuser' found in config"
-                    else
-                      echo "New username 'newuser' not found in config"
-                    fi
-                  fi
-                fi
-                echo "Waiting for config to update with new credentials... attempt $i"
-                sleep 3
-              done
-              echo "Failed to verify updated credentials in config after secret update"
-              exit 1
+              CONFIG=$(curl -s http://prometheus-cr-secrets-targetallocator/scrape_configs)
+              echo "$CONFIG" | grep -q "metrics-servicemonitor" && \
+              echo "$CONFIG" | grep -q "basic_auth" && \
+              echo "$CONFIG" | grep -q "newuser"
