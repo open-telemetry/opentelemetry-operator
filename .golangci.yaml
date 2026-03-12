@@ -32,10 +32,8 @@ linters:
         - hugeParam
         - importShadow
         - rangeValCopy
-        - regexpSimplify
         - sloppyReassign
         - typeDefFirst
-        - unnamedResult
         - whyNoLint
       enable-all: true
     goheader:

@@ -443,8 +443,8 @@ func (c HTTPSServerConfig) NewTLSConfig(logger logr.Logger) (*tls.Config, *certw
 
 // GetAllowDenyLists returns the allow and deny lists as maps. If the allow list is empty, it defaults to all namespaces.
 // If the deny list is empty, it defaults to an empty map.
-func (c PrometheusCRConfig) GetAllowDenyLists() (map[string]struct{}, map[string]struct{}) {
-	allowList := map[string]struct{}{}
+func (c PrometheusCRConfig) GetAllowDenyLists() (allowList, denyList map[string]struct{}) {
+	allowList = map[string]struct{}{}
 	if len(c.AllowNamespaces) != 0 {
 		for _, ns := range c.AllowNamespaces {
 			allowList[ns] = struct{}{}
@@ -453,7 +453,7 @@ func (c PrometheusCRConfig) GetAllowDenyLists() (map[string]struct{}, map[string
 		allowList = map[string]struct{}{v1.NamespaceAll: {}}
 	}
 
-	denyList := map[string]struct{}{}
+	denyList = map[string]struct{}{}
 	if len(c.DenyNamespaces) != 0 {
 		for _, ns := range c.DenyNamespaces {
 			denyList[ns] = struct{}{}

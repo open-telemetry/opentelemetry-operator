@@ -476,7 +476,7 @@ const (
 // from the env var, i.e. the address looks like "${env:POD_IP}:4317", "${env:POD_IP}", or "${POD_IP}".
 // In cases which the port itself is a variable, i.e. "${env:POD_IP}:${env:PORT}", this returns an error. This happens
 // because the port is used to generate Service objects and mappings.
-func (s *Service) MetricsEndpoint(logger logr.Logger) (string, int32, error) {
+func (s *Service) MetricsEndpoint(logger logr.Logger) (host string, port int32, err error) {
 	telemetry := s.GetTelemetry(logger)
 	if telemetry == nil {
 		return defaultServiceHost, defaultServicePort, nil

@@ -186,11 +186,11 @@ func colIndex(index, numCols int) int {
 	return index % numCols
 }
 
-func makeNNewTargets(rCfgs []relabelConfigObj, n, numCollectors, startingIndex int) ([]*target.Item, int, []*target.Item, map[string][]*relabel.Config, error) {
-	toReturn := []*target.Item{}
-	expected := []*target.Item{}
-	numItemsRemaining := n
-	relabelConfig := make(map[string][]*relabel.Config)
+func makeNNewTargets(rCfgs []relabelConfigObj, n, numCollectors, startingIndex int) (toReturn []*target.Item, numItemsRemaining int, expected []*target.Item, relabelConfig map[string][]*relabel.Config, err error) {
+	toReturn = []*target.Item{}
+	expected = []*target.Item{}
+	numItemsRemaining = n
+	relabelConfig = make(map[string][]*relabel.Config)
 	for i := startingIndex; i < n+startingIndex; i++ {
 		collector := fmt.Sprintf("collector-%d", colIndex(i, numCollectors))
 		jobName := fmt.Sprintf("test-job-%d", i)
