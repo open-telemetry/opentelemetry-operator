@@ -29,8 +29,6 @@ linters:
         - hugeParam
         - importShadow
         - rangeValCopy
-        - sloppyReassign
-        - typeDefFirst
         - whyNoLint
       enable-all: true
     goheader:
