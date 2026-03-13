@@ -1308,16 +1308,18 @@ func TestSecretInformerUpdatesStore(t *testing.T) {
 		require.NoError(t, watchErr)
 	}()
 
-	// Wait for informers to sync
+	// Wait for the first event from Watch, which confirms all informers are synced,
+	// event handlers are registered, and the rate-limited event sender is running.
+	// This avoids a race between HasSynced() (cache synced) and AddEventHandler()
+	// (handler registered), since w.informers is a map with non-deterministic iteration order.
 	require.Eventually(t, func() bool {
-		return w.nsInformer.HasSynced()
-	}, time.Second*5, time.Millisecond*10)
-
-	for _, inf := range w.informers {
-		require.Eventually(t, func() bool {
-			return inf.HasSynced()
-		}, time.Second*5, time.Millisecond*10)
-	}
+		select {
+		case <-events:
+			return true
+		default:
+			return false
+		}
+	}, time.Second*10, time.Millisecond*10)
 
 	// Initial config should reflect the original secret values.
 	got, err := w.LoadConfig(context.Background())
